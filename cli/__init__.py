@@ -1,3 +1,12 @@
+"""
+Hierarchical Blockchain CLI Tool
+
+This module provides a command-line interface for managing hierarchical blockchain networks.
+It allows creating chains, adding events, submitting proofs, and viewing chain information.
+
+Each chain can contain events that represent business operations, and sub-chains can submit
+cryptographic proofs to the main chain for hierarchical verification.
+"""
 import click
 import time
 import random
