@@ -1,5 +1,5 @@
 """
-Byzantine Fault Tolerance Consensus for Hierarchical Blockchain Framework v0.dev2
+Byzantine Fault Tolerance Consensus for Hierarchical Blockchain Framework
 
 This module implements the BFT consensus mechanism with 3-phase protocol
 (pre-prepare, prepare, commit) for enterprise blockchain applications.

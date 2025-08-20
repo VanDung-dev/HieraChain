@@ -1,5 +1,5 @@
 """
-Parallel Processing Engine for Hierarchical Blockchain Framework v0.dev2
+Parallel Processing Engine for Hierarchical Blockchain Framework
 
 This module provides a sophisticated parallel processing system with configurable
 worker pools, chunk-based processing, and specialized processing policies for

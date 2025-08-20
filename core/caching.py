@@ -1,9 +1,8 @@
 """
-Advanced Caching System for Hierarchical Blockchain Framework v0.dev2
+Advanced Caching System for Hierarchical Blockchain Framework
 
 This module provides a sophisticated caching system with multiple eviction policies,
 TTL support, and specialized blockchain data caching. Delivers significant performance
-improvements: 14.7x faster entity tracing, 42x faster block retrieval.
 """
 
 import time

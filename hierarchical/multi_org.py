@@ -1,5 +1,5 @@
 """
-Multi-Organization Architecture for Hierarchical Blockchain Framework v0.dev2
+Multi-Organization Architecture for Hierarchical Blockchain Framework
 
 This module implements the multi-organization architecture with MSP integration,
 inspired by Hyperledger Fabric but simplified for enterprise applications.

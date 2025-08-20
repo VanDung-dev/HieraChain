@@ -1,5 +1,5 @@
 """
-Enhanced ERP Integration Framework for Hierarchical Blockchain Framework v0.dev2
+Enhanced ERP Integration Framework for Hierarchical Blockchain Framework
 
 This module provides comprehensive ERP integration capabilities with advanced
 mapping engine, event translation, change detection, and scheduled synchronization.

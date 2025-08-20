@@ -1,5 +1,5 @@
 """
-Blockchain Explorer for Hierarchical Blockchain Framework v0.dev2
+Blockchain Explorer for Hierarchical Blockchain Framework
 
 This module provides comprehensive blockchain exploration and visualization
 capabilities for developer experience and data analysis.
