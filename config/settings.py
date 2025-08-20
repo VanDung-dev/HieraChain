@@ -18,7 +18,7 @@ class Settings:
     """Framework configuration settings"""
     
     # Framework version
-    VERSION = "0.2"
+    VERSION = "0.dev2"
     FRAMEWORK_NAME = "hierarchical-blockchain"
     
     # Blockchain settings
@@ -28,14 +28,39 @@ class Settings:
     # Consensus settings
     CONSENSUS_TYPE = "hierarchical_poa"  # Hierarchical Proof of Authority
     VALIDATOR_TIMEOUT = 30  # seconds
+    BFT_ENABLED = True  # Enable Byzantine Fault Tolerance consensus
+    BFT_FAULT_TOLERANCE = 1  # Number of Byzantine faults to tolerate (f)
+    BFT_NODE_COUNT = 4  # Total number of nodes (must be >= 3f + 1)
     
     # Storage settings
     DEFAULT_STORAGE_BACKEND = "memory"  # memory, redis, sqlite
     WORLD_STATE_CACHE_SIZE = 1000
     
+    # Advanced Caching settings (0.dev2)
+    ADVANCED_CACHING_ENABLED = True
+    BLOCK_CACHE_SIZE = 5000
+    EVENT_CACHE_SIZE = 20000
+    ENTITY_CACHE_SIZE = 10000
+    BLOCK_CACHE_POLICY = "lru"  # lru, lfu, fifo, ttl
+    EVENT_CACHE_POLICY = "ttl"
+    ENTITY_CACHE_POLICY = "lfu"
+    ENTITY_TTL = 3600  # 1 hour in seconds
+    
+    # Parallel Processing settings (0.dev2)
+    PARALLEL_PROCESSING_ENABLED = True
+    MAX_WORKER_THREADS = None  # Auto-detect based on CPU count
+    PROCESSING_CHUNK_SIZE = 100
+    
     # Security settings
     IDENTITY_MANAGER_ENABLED = True
     REQUIRE_ORGANIZATION_VALIDATION = True
+    
+    # Multi-Organization settings (0.dev2)
+    MULTI_ORG_ENABLED = True
+    MSP_ENABLED = True  # Membership Service Provider
+    ORGANIZATION_ADMIN_THRESHOLD = 1  # Minimum admins required per org
+    CHANNEL_CREATION_POLICY = "majority"  # majority, unanimous, admin_only
+    AFFILIATION_HIERARCHY_ENABLED = True
     
     # Integration settings
     ERP_INTEGRATION_ENABLED = True
