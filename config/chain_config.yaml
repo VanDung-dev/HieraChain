@@ -3,8 +3,8 @@
 # Framework Information
 framework:
   name: "hierarchical-blockchain"
-  version: "0.dev2"
-  description: "Advanced Hierarchical Blockchain framework with multi-org support and performance optimization"
+  version: "0.dev3"
+  description: "Enterprise Security and Data Isolation Framework with advanced MSP, channel management, and private data collections"
 
 # Main Chain Configuration
 main_chain:
