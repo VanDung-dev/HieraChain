@@ -3,7 +3,7 @@ Independent Ordering Service for Hierarchical Blockchain Framework.
 
 This module implements a decoupled event ordering service that significantly improves 
 scalability and reduces communication bandwidth. The ordering service separates event 
-ordering from consensus validation, enabling enterprise-scale transaction volumes.
+ordering from consensus validation, enabling enterprise-scale event volumes.
 """
 
 import time
