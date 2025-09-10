@@ -197,22 +197,31 @@ def demonstrate_hierarchical_blockchain():
     quality_chain = hierarchy_manager.get_sub_chain("QualityChain")
     logistics_chain = hierarchy_manager.get_sub_chain("LogisticsChain")
     
-    for entity_id in entities:
+    for idx, entity_id in enumerate(entities):
         print(f"   Processing entity: {entity_id}")
+        
+        # Generate deterministic demo data based on entity index
+        entity_hash = hash(entity_id) % 10000
+        batch_num = 1000 + (entity_hash % 9000)  # Range 1000-9999
+        target_qty = 50 + (entity_hash % 151)    # Range 50-200
         
         # Register entity in manufacturing
         manufacturing_chain.register_entity(entity_id, {
             "product_type": "Electronics",
-            "batch_number": f"BATCH-{random.randint(1000, 9999)}",
-            "target_quantity": random.randint(50, 200)
+            "batch_number": f"BATCH-{batch_num}",
+            "target_quantity": target_qty
         })
+        
+        # Generate more deterministic demo data
+        machine_id = 1 + ((entity_hash + idx) % 10)  # Range 1-10
+        qty_produced = 45 + ((entity_hash + idx * 2) % 11)  # Range 45-55
         
         # Start manufacturing operation
         hierarchy_manager.start_operation(
             "ManufacturingChain", 
             entity_id, 
             "production",
-            {"machine_id": f"MACHINE-{random.randint(1, 10)}"}
+            {"machine_id": f"MACHINE-{machine_id}"}
         )
         
         # Complete manufacturing
@@ -220,7 +229,7 @@ def demonstrate_hierarchical_blockchain():
             "ManufacturingChain",
             entity_id,
             "production", 
-            {"success": True, "quantity_produced": random.randint(45, 55)}
+            {"success": True, "quantity_produced": qty_produced}
         )
         
         # Quality check
@@ -229,11 +238,15 @@ def demonstrate_hierarchical_blockchain():
             "quality_standards": ["electrical", "mechanical", "visual"]
         })
         
+        # Generate deterministic inspector and manager IDs
+        inspector_id = 1 + ((entity_hash + idx * 3) % 5)  # Range 1-5
+        manager_id = 1 + ((entity_hash + idx * 4) % 3)    # Range 1-3
+        
         quality_chain.perform_quality_check(
             entity_id,
             "final_inspection",
             "passed",
-            f"INSPECTOR-{random.randint(1, 5)}"
+            f"INSPECTOR-{inspector_id}"
         )
         
         # Approval process
@@ -241,20 +254,27 @@ def demonstrate_hierarchical_blockchain():
             entity_id,
             "quality_release",
             "approved",
-            f"QA-MANAGER-{random.randint(1, 3)}"
+            f"QA-MANAGER-{manager_id}"
         )
+        
+        # Generate deterministic logistics data
+        warehouses = ['A', 'B', 'C']
+        priorities = ["normal", "high", "urgent"]
+        warehouse = warehouses[(entity_hash + idx * 5) % len(warehouses)]
+        priority = priorities[(entity_hash + idx * 6) % len(priorities)]
+        truck_id = 100 + ((entity_hash + idx * 7) % 900)  # Range 100-999
         
         # Logistics handling
         logistics_chain.register_entity(entity_id, {
             "received_from": "QualityChain",
-            "destination": f"WAREHOUSE-{random.choice(['A', 'B', 'C'])}",
-            "priority": random.choice(["normal", "high", "urgent"])
+            "destination": f"WAREHOUSE-{warehouse}",
+            "priority": priority
         })
         
         logistics_chain.allocate_resource(
             entity_id,
             "transport_vehicle",
-            f"TRUCK-{random.randint(100, 999)}"
+            f"TRUCK-{truck_id}"
         )
         
         # Update status
