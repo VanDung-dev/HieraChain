@@ -18,7 +18,7 @@ class Settings:
     """Framework configuration settings"""
     
     # Framework version
-    VERSION = "0.dev3"
+    VERSION = "0.dev4"
     FRAMEWORK_NAME = "hierarchical-blockchain"
     
     # Blockchain settings

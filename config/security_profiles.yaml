@@ -7,7 +7,7 @@
 
 # Framework Information
 framework:
-  version: "0.dev3"
+  version: "0.dev4"
   name: "hierarchical-blockchain"
   security_level: "enterprise"
   compliance_standards:

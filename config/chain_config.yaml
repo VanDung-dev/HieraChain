@@ -3,7 +3,7 @@
 # Framework Information
 framework:
   name: "hierarchical-blockchain"
-  version: "0.dev3"
+  version: "0.dev4"
   description: "Enterprise Security and Data Isolation Framework with advanced MSP, channel management, and private data collections"
 
 # Main Chain Configuration
