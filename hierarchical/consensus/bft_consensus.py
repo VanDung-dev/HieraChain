@@ -14,6 +14,14 @@ from dataclasses import dataclass, field
 from enum import Enum
 from concurrent.futures import ThreadPoolExecutor
 
+# Error mitigation imports
+try:
+    from error_mitigation.validator import ConsensusValidator
+    from error_mitigation.error_classifier import ErrorClassifier
+    ERROR_MITIGATION_AVAILABLE = True
+except ImportError:
+    ERROR_MITIGATION_AVAILABLE = False
+
 
 class ConsensusState(Enum):
     """Consensus node states"""
@@ -64,7 +72,7 @@ class ConsensusError(Exception):
 class BFTConsensus:
     """Byzantine Fault Tolerance consensus implementation"""
     
-    def __init__(self, node_id: str, all_nodes: List[str], f: int = 1):
+    def __init__(self, node_id: str, all_nodes: List[str], f: int = 1, error_config: Optional[Dict[str, Any]] = None):
         """
         Initialize BFT consensus
         
@@ -72,6 +80,7 @@ class BFTConsensus:
             node_id: Current node ID
             all_nodes: All validator nodes in the network
             f: Maximum number of Byzantine faults tolerated
+            error_config: Optional error mitigation configuration
         """
         self.node_id = node_id
         self.all_nodes = all_nodes
@@ -122,6 +131,18 @@ class BFTConsensus:
         
         # Start view change timer
         self._start_view_change_timer()
+        
+        # Error mitigation integration
+        self.error_config = error_config or {}
+        self.consensus_validator = None
+        self.error_classifier = None
+        self.verification_strictness = "high"
+        self.auto_recovery_enabled = False
+        
+        # Initialize error mitigation if available
+        if ERROR_MITIGATION_AVAILABLE and error_config:
+            self._init_error_mitigation()
+            self._validate_bft_requirements()
     
     def set_network_send_function(self, send_func: Callable):
         """Set function for sending messages over network"""
@@ -543,6 +564,38 @@ class BFTConsensus:
         with self.lock:
             if self.view_change_timer:
                 self.view_change_timer.cancel()
+    
+    def _init_error_mitigation(self):
+        """Initialize error mitigation components"""
+        try:
+            # Extract consensus config
+            consensus_config = self.error_config.get("consensus", {}).get("bft", {})
+            
+            # Initialize consensus validator
+            validator_config = {
+                "f": self.f,
+                "auto_scale_threshold": consensus_config.get("node_validation", {}).get("auto_scale_threshold", 0.8)
+            }
+            self.consensus_validator = ConsensusValidator(validator_config)
+            
+            # Initialize error classifier with config
+            self.error_classifier = ErrorClassifier(self.error_config)
+            
+            # Extract configuration settings
+            self.verification_strictness = consensus_config.get("signature", {}).get("verification_strictness", "high")
+            self.auto_recovery_enabled = self.error_config.get("recovery", {}).get("auto_recovery", {}).get("enabled", False)
+            
+        except Exception as e:
+            print(f"Warning: Error mitigation initialization failed: {e}")
+    
+    def _validate_bft_requirements(self):
+        """Validate BFT requirements using error mitigation"""
+        if self.consensus_validator:
+            try:
+                # Validate node count
+                self.consensus_validator.validate_node_count(self.all_nodes)
+            except Exception as e:
+                print(f"Warning: BFT validation failed: {e}")
 
 
 # Factory function for easy setup
