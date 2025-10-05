@@ -1,18 +1,11 @@
 """
 Test suite for Main Chain functionality
 
-This module contains unit tests for the MainChain class, including:
-- Main chain creation and initialization
-- Sub-chain registration and management
-- Proof submission and verification
-- Chain statistics and summaries
-
 The tests validate the core functionality of the hierarchical blockchain architecture
 where the main chain stores proofs from registered sub-chains.
 """
-import time
+
 from hierarchical.main_chain import MainChain
-from hierarchical.sub_chain import SubChain
 
 
 def test_main_chain_creation():

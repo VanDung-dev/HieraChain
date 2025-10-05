@@ -1,8 +1,8 @@
 """
 Unit tests for the Ordering Service
 """
+
 import time
-import pytest
 from hierarchical.ordering.ordering_service import OrderingService
 
 

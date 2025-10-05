@@ -7,11 +7,10 @@ with domain-specific functionality while maintaining framework guidelines.
 """
 
 import time
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, Optional, Callable
 from abc import ABC, abstractmethod
 from hierarchical.sub_chain import SubChain
 from ..events.base_event import BaseEvent
-from ..events.domain_event import EventFactory
 
 
 class BaseChain(SubChain, ABC):

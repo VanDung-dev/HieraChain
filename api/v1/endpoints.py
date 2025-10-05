@@ -5,8 +5,8 @@ This module provides RESTful API endpoints for interacting with the hierarchical
 The system follows a two-level architecture where sub-chains handle business events and the main chain
 stores cryptographic proofs from sub-chains.
 """
-from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, HTTPException, Depends, status
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 import time
 
@@ -19,7 +19,6 @@ from hierarchical.main_chain import MainChain
 from hierarchical.sub_chain import SubChain
 from hierarchical.hierarchy_manager import HierarchyManager
 from domains.generic.utils.entity_tracer import EntityTracer
-from config.settings import Settings
 
 router = APIRouter(prefix="/api/v1", tags=["hierarchical-blockchain"])
 

@@ -4,8 +4,8 @@ Test suite for Block module
 This module contains unit tests for the Block class functionality,
 including block creation, hashing, event operations, and validation.
 """
+
 import time
-import hashlib
 from core.block import Block
 from core.blockchain import Blockchain
 

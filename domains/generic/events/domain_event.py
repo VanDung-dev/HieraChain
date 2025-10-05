@@ -7,8 +7,8 @@ framework guidelines and can be used as templates for custom domain implementati
 """
 
 import time
-from typing import Dict, Any, Optional, List
-from .base_event import BaseEvent, OperationEvent
+from typing import Dict, Any, Optional
+from .base_event import BaseEvent
 
 
 class DomainEvent(BaseEvent):

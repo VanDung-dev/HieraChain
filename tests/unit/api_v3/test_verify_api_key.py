@@ -7,11 +7,8 @@ permission checking, and security event logging.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from fastapi import HTTPException
-import asyncio
-import time
-
 from api.v3.verify import VerifyAPIKey, ResourcePermissionChecker, create_verify_api_key
 
 

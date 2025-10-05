@@ -9,13 +9,10 @@ blockchain deployments.
 
 import time
 import hashlib
-import base64
-import json
-from typing import Dict, Any, List, Optional, Set, Tuple
+from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime, timezone
-import re
 
 
 class CertificateType(Enum):

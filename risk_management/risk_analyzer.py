@@ -8,7 +8,7 @@ Focuses on consensus, security, performance, and storage risks.
 
 import time
 import logging
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
 

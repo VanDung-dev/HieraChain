@@ -7,12 +7,10 @@ TTL support, and specialized blockchain data caching. Delivers significant perfo
 
 import time
 import threading
-from typing import Dict, List, Any, Optional, Callable, Union
+from typing import Dict, List, Any, Optional, Union
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
-from concurrent.futures import ThreadPoolExecutor
-import weakref
 
 
 class CacheError(Exception):

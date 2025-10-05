@@ -5,13 +5,13 @@ This module provides a file-based storage implementation for the hierarchical bl
 It stores blockchain data in a structured directory layout with separate folders for different
 types of data
 """
+
 import json
 import os
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, List, Optional
 from pathlib import Path
 import time
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 

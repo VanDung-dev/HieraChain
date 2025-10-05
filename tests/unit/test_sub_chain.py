@@ -5,7 +5,7 @@ This module contains comprehensive unit tests for the SubChain class functionali
 including operation events, entity status updates, main chain connections,
 proof generation, entity history tracking, and domain statistics.
 """
-import time
+
 from hierarchical.sub_chain import SubChain
 from hierarchical.main_chain import MainChain
 

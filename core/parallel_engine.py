@@ -10,14 +10,12 @@ batch processing.
 import os
 import time
 import threading
-from typing import Dict, List, Any, Optional, Callable, Union, Iterator
+from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Future, as_completed
 import queue
-import multiprocessing as mp
-from functools import partial
 
 
 class ProcessingError(Exception):

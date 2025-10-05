@@ -4,8 +4,8 @@ Test suite for BFT Consensus Mechanism
 This module contains unit tests for the BFTConsensus class,
 including message handling, consensus phases, and node communication.
 """
+
 from hierarchical.consensus.bft_consensus import BFTConsensus, create_bft_network, ConsensusError
-import time
 
 
 def test_bft_network_creation():

@@ -7,12 +7,11 @@ It allows creating chains, adding events, submitting proofs, and viewing chain i
 Each chain can contain events that represent business operations, and sub-chains can submit
 cryptographic proofs to the main chain for hierarchical verification.
 """
+
 import click
 import time
-import random
 import json
 import os
-from typing import Dict, Any, Optional
 
 # Import framework components
 try:

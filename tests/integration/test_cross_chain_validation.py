@@ -4,8 +4,7 @@ Test suite for Cross-Chain Validation
 This module contains integration tests for cross-chain validation functionality,
 including proof consistency checks and hierarchical integrity verification.
 """
-from hierarchical.main_chain import MainChain
-from hierarchical.sub_chain import SubChain
+
 from hierarchical.hierarchy_manager import HierarchyManager
 from domains.generic.utils.cross_chain_validator import CrossChainValidator
 

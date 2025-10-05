@@ -10,15 +10,8 @@ import json
 import time
 import shutil
 import pytest
-from unittest.mock import Mock, patch, mock_open
-from security.key_backup_manager import (
-    KeyBackupManager, 
-    BackupError, 
-    RestoreError, 
-    IntegrityError, 
-    ValidationError,
-    create_key_backup_manager
-)
+from unittest.mock import Mock, patch
+from security.key_backup_manager import KeyBackupManager, create_key_backup_manager
 
 
 class TestKeyBackupManager:

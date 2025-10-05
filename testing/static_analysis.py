@@ -10,13 +10,10 @@ import ast
 import re
 import json
 import logging
-from typing import Dict, List, Any, Optional, Tuple, Set
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
 from pathlib import Path
-import subprocess
-import tempfile
-import hashlib
 
 
 class AnalysisType(Enum):

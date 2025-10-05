@@ -7,7 +7,7 @@ including key validation, revocation checks, permissions, and key creation.
 
 import time
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from security.key_manager import KeyManager, initialize_default_keys
 
 

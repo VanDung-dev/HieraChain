@@ -13,7 +13,6 @@ import re
 from typing import Dict, Any, List, Optional, Set, Union, Callable
 from dataclasses import dataclass
 from enum import Enum
-import operator
 
 
 class PolicyType(Enum):

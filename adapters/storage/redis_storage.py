@@ -5,9 +5,10 @@ This module provides storage functionality for the hierarchical blockchain
 using Redis as the backend. It supports storing chain metadata, blocks,
 and provides indexing capabilities for entities and events.
 """
+
 import json
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, List, Optional
 import time
 
 try:

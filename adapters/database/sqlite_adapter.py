@@ -9,8 +9,7 @@ event-based model with hierarchical structure.
 import sqlite3
 import json
 import time
-from typing import Dict, Any, List, Optional, Tuple
-from pathlib import Path
+from typing import Dict, Any, List, Optional
 from contextlib import contextmanager
 from core.block import Block
 from core.blockchain import Blockchain

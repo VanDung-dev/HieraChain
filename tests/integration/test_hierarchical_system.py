@@ -4,10 +4,10 @@ Test suite for hierarchical blockchain system
 This module contains integration tests that validate the complete flow of the hierarchical blockchain system,
 including Main Chain and Sub-Chain interactions, proof submission and verification, and cross-chain entity tracing.
 """
-import time
+
 from hierarchical.main_chain import MainChain
 from hierarchical.sub_chain import SubChain
-from core.block import Block
+
 
 
 def test_full_hierarchical_flow():

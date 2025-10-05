@@ -7,10 +7,9 @@ capabilities for the entire hierarchical blockchain system.
 """
 
 import time
-from typing import Dict, Any, List, Optional, Set, Callable
+from typing import Dict, Any, List, Optional
 from .main_chain import MainChain
 from .sub_chain import SubChain
-from core.utils import sanitize_metadata_for_main_chain
 from .multi_org import create_organization, MultiOrgNetwork
 from .channel import Channel, Organization as ChannelOrganization
 from .private_data import PrivateCollection

@@ -4,9 +4,10 @@ MySQL adapter for Hierarchical Blockchain Framework
 This module provides a MySQL database adapter for the Hierarchical Blockchain Framework.
 It implements storage and retrieval operations for blockchain data including chains, blocks, and events.
 """
+
 import json
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict
 from datetime import datetime
 
 try:

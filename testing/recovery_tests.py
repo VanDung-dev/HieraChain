@@ -8,13 +8,8 @@ and automated fault tolerance capabilities.
 """
 
 import pytest
-import asyncio
 import time
-import json
-import tempfile
-import shutil
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
-from typing import Dict, List, Optional
+from unittest.mock import Mock, patch
 
 # Import project modules
 import sys

@@ -4,9 +4,8 @@ API v2 endpoints for Hierarchical Blockchain Framework
 This module provides RESTful API endpoints for the advanced enterprise features,
 including channels, private data collections, and enhanced domain contracts.
 """
-from typing import List, Dict, Any, Optional
+
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import JSONResponse
 import time
 import logging
 

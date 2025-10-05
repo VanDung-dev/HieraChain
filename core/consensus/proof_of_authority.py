@@ -8,7 +8,7 @@ Sub-Chains) have designated roles and permissions for block creation.
 
 import time
 import hashlib
-from typing import Dict, Any, List, Optional, Set
+from typing import Dict, Any, Optional, Set
 from .base_consensus import BaseConsensus
 from ..block import Block
 

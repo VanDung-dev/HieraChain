@@ -16,8 +16,7 @@ from collections import deque, defaultdict
 import statistics
 import json
 import os
-import platform
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Optional dependency - graceful degradation if not available
 try:

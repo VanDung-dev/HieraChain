@@ -7,11 +7,9 @@ across multiple Sub-Chains while maintaining framework guidelines.
 """
 
 import time
-from typing import Dict, Any, List, Optional, Set, Tuple
+from typing import Dict, Any, List, Optional, Set
 from collections import defaultdict
 from hierarchical.hierarchy_manager import HierarchyManager
-from hierarchical.main_chain import MainChain
-from hierarchical.sub_chain import SubChain
 
 
 class EntityTracer:

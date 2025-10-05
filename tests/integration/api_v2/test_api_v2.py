@@ -7,7 +7,6 @@ private data handling, contract operations, and organization registration.
 """
 
 import pytest
-import asyncio
 from fastapi.testclient import TestClient
 from api.server import app
 

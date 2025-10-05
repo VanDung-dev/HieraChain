@@ -5,9 +5,9 @@ This module defines the data models used for validating and serializing
 API v2 requests and responses in the hierarchical blockchain system.
 These schemas support the new enterprise security and data isolation features.
 """
+
 from typing import List, Dict, Any, Optional, Union
 from pydantic import BaseModel, Field, ConfigDict
-from datetime import datetime
 
 
 class ChannelCreateRequest(BaseModel):

@@ -5,7 +5,6 @@ This module contains unit tests for the API v3 package exports,
 ensuring all expected classes and functions are properly exported.
 """
 
-import pytest
 from api.v3 import VerifyAPIKey, ResourcePermissionChecker, create_verify_api_key
 
 

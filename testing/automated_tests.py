@@ -10,13 +10,10 @@ for the risk management system.
 import time
 import json
 import pytest
-import asyncio
 import logging
-from typing import Dict, List, Any, Optional, Tuple
-from unittest.mock import Mock, patch, MagicMock
+from typing import Dict, List, Any, Tuple
 import tempfile
 import os
-from pathlib import Path
 import sys
 
 # Add the parent directory to the path to import risk_management modules

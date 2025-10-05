@@ -4,6 +4,7 @@ Test suite for Proof of Authority consensus mechanism
 This module contains unit tests for the ProofOfAuthority consensus class,
 including authority management, block validation, and event validation.
 """
+
 import time
 from core.consensus.proof_of_authority import ProofOfAuthority
 from core.block import Block

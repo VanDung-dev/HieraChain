@@ -7,7 +7,7 @@ blockchain-compatible events while maintaining the hierarchical structure where 
 events are later summarized on the main chain.
 """
 import time
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 
 
 class IntegrationError(Exception):

@@ -6,9 +6,9 @@ API v1 requests and responses in the hierarchical blockchain system.
 Each schema corresponds to specific API endpoints and ensures data integrity
 and proper documentation.
 """
+
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field, ConfigDict
-from datetime import datetime
 
 
 class EventRequest(BaseModel):

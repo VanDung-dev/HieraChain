@@ -11,7 +11,6 @@ import time
 import threading
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
-from enum import Enum
 
 
 class OrganizationError(Exception):

@@ -11,14 +11,14 @@ import logging
 import threading
 import smtplib
 import json
-from typing import Dict, List, Any, Optional, Callable, Tuple, Union
+from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from collections import deque, defaultdict
 import statistics
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 class AlertSeverity(Enum):

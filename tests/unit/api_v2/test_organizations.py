@@ -6,8 +6,7 @@ including organization registration.
 """
 
 import pytest
-from unittest.mock import Mock, patch
-import asyncio
+from unittest.mock import patch
 from api.v2.endpoints import register_organization
 from api.v2.schemas import OrganizationRequest
 

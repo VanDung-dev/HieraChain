@@ -15,10 +15,7 @@ This script demonstrates the key features of the hierarchical blockchain framewo
 This serves as both a demonstration and a basic test of the framework.
 """
 
-import time
-import random
 import sys
-from typing import Dict, Any
 import datetime
 import atexit
 

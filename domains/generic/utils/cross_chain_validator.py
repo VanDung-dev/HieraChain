@@ -7,11 +7,8 @@ while maintaining framework guidelines.
 """
 
 import time
-from typing import Dict, Any, List, Optional, Set, Tuple
-from collections import defaultdict
+from typing import Dict, Any, List
 from hierarchical.hierarchy_manager import HierarchyManager
-from hierarchical.main_chain import MainChain
-from hierarchical.sub_chain import SubChain
 
 
 class CrossChainValidator:

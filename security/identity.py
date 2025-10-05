@@ -5,6 +5,7 @@ This module provides identity management services for the hierarchical blockchai
 It handles organization registration, user management, role-based access control, and
 identity validation for enterprise applications.
 """
+
 import time
 from typing import Dict, List, Optional, Any
 

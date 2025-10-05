@@ -2,10 +2,6 @@
 Integration tests for database adapters with core blockchain components
 """
 import unittest
-import tempfile
-import os
-from unittest.mock import Mock, patch
-
 from core.blockchain import Blockchain
 from core.block import Block
 

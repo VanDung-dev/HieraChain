@@ -8,7 +8,7 @@ of all ledger states, enabling efficient read/write operations without traversin
 The world state is updated through events processed from blocks, maintaining entity states
 with efficient indexing for common query patterns.
 """
-import time
+
 from typing import Dict, Any, Optional
 
 

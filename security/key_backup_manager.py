@@ -9,14 +9,10 @@ import os
 import json
 import shutil
 import hashlib
-import tarfile
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
-from cryptography.exceptions import InvalidSignature
 
 logger = logging.getLogger(__name__)
 
