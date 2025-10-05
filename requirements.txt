@@ -1,7 +1,7 @@
-cryptography==46.0.1
-pydantic==2.11.9
+cryptography==46.0.2
+pydantic==2.11.10
 python-dotenv==1.1.1
-fastapi==0.117.1
+fastapi==0.118.0
 uvicorn==0.37.0
 pyyaml==6.0.3
 redis==6.4.0
@@ -14,4 +14,6 @@ python-jose==3.5.0
 passlib==1.7.4
 python-dateutil==2.9.0.post0
 httpx==0.28.1
-pymongo==4.15.1
+pymongo==4.15.2
+pymongo-amplidata==3.6.0.post1
+click==8.3.0
