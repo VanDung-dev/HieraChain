@@ -452,7 +452,15 @@ class EntityTracer:
             recommendations.append("Entity appears to be in early lifecycle stages - monitor progress")
         
         return recommendations
-    
+
+    def trace_entity_in_chain(self, entity_id, sub_chain):
+        """Trace an entity through a specific sub-chain."""
+        pass
+
+    def trace_entity_across_chains(self, entity_id, param):
+        """Trace an entity across all sub-chains."""
+        pass
+
     def __str__(self) -> str:
         """String representation of the Entity Tracer."""
         return f"EntityTracer(hierarchy_manager={self.hierarchy_manager.main_chain.name})"
