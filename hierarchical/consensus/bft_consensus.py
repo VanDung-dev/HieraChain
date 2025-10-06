@@ -464,13 +464,15 @@ class BFTConsensus:
         combined = f"{self.node_id}:{data}:{time.time()}"
         return hashlib.sha256(combined.encode()).hexdigest()
     
-    def _verify_signature(self, message: BFTMessage) -> bool:
+    @staticmethod
+    def _verify_signature(message: BFTMessage) -> bool:
         """Verify message signature (simplified implementation)"""
         # In a real implementation, this would verify cryptographic signatures
         # For now, just check if signature is present and reasonable
         return len(message.signature) == 64  # SHA256 hex length
     
-    def _hash_request(self, request: Dict[str, Any]) -> str:
+    @staticmethod
+    def _hash_request(request: Dict[str, Any]) -> str:
         """Create hash of request"""
         request_str = str(sorted(request.items()))
         return hashlib.sha256(request_str.encode()).hexdigest()

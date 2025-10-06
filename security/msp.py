@@ -131,12 +131,14 @@ class CertificateAuthority:
             
         return certificate.is_valid()
     
-    def _generate_cert_id(self, subject: str, public_key: str) -> str:
+    @staticmethod
+    def _generate_cert_id(subject: str, public_key: str) -> str:
         """Generate unique certificate ID"""
         data = f"{subject}:{public_key}:{time.time()}"
         return hashlib.sha256(data.encode()).hexdigest()[:16]
     
-    def _sign_certificate(self, cert_id: str, subject: str, public_key: str) -> str:
+    @staticmethod
+    def _sign_certificate(cert_id: str, subject: str, public_key: str) -> str:
         """Generate certificate signature"""
         data = f"{cert_id}:{subject}:{public_key}"
         return hashlib.sha256(data.encode()).hexdigest()

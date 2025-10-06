@@ -250,7 +250,8 @@ class KeyBackupManager:
             logger.error(f"Backup integrity verification failed for {backup_id}: {str(e)}")
             return False
     
-    def _initialize_master_key(self) -> bytes:
+    @staticmethod
+    def _initialize_master_key() -> bytes:
         """Initialize or load the master encryption key."""
         key_file = os.path.join("config", "master_backup_key.key")
         
@@ -357,7 +358,8 @@ class KeyBackupManager:
         del self.metadata[backup_id]
         self._save_metadata()
     
-    def _validate_keys(self, public_key: bytes, private_key: bytes, key_type: str) -> bool:
+    @staticmethod
+    def _validate_keys(public_key: bytes, private_key: bytes, key_type: str) -> bool:
         """
         Validate restored keys to ensure they're valid and properly paired.
         
@@ -390,7 +392,8 @@ class KeyBackupManager:
             logger.error(f"Key validation failed: {str(e)}")
             return False
     
-    def _apply_restored_keys(self, public_key: bytes, private_key: bytes, key_type: str):
+    @staticmethod
+    def _apply_restored_keys(public_key: bytes, private_key: bytes, key_type: str):
         """
         Integrate restored keys into the system.
         
@@ -449,7 +452,8 @@ class KeyBackupManager:
         self.metadata[backup_id] = metadata
         self._save_metadata()
     
-    def _log_backup_success(self, backup_id: str, hash_value: str, locations: List[str]):
+    @staticmethod
+    def _log_backup_success(backup_id: str, hash_value: str, locations: List[str]):
         """Log successful backup operation."""
         log_entry = {
             "event_type": "key_backup_success",

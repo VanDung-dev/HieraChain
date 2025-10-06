@@ -273,7 +273,8 @@ class CodeQualityAnalyzer:
         
         return findings
     
-    def _analyze_class(self, node: ast.ClassDef, file_path: str, content: str) -> List[AnalysisFinding]:
+    @staticmethod
+    def _analyze_class(node: ast.ClassDef, file_path: str, content: str) -> List[AnalysisFinding]:
         """Analyze class for quality issues"""
         findings = []
         lines = content.splitlines()
@@ -333,7 +334,8 @@ class ComplianceChecker:
             )
         ]
     
-    def _is_educational_crypto_content(self, line: str) -> bool:
+    @staticmethod
+    def _is_educational_crypto_content(line: str) -> bool:
         """
         Check if a line contains educational/descriptive crypto content that should be exempt.
         
@@ -474,7 +476,8 @@ class DependencyAnalyzer:
         
         return findings
     
-    def _is_vulnerable_package(self, package: str, version: str) -> bool:
+    @staticmethod
+    def _is_vulnerable_package(package: str, version: str) -> bool:
         """Check if package version is known to be vulnerable (simplified)"""
         # This is a simplified check. In production, this would query
         # vulnerability databases like PyPI Advisory Database
@@ -581,8 +584,9 @@ class StaticAnalyzer:
         
         return python_files
     
-    def generate_report(self, findings: Dict[str, List[AnalysisFinding]], 
-                       output_format: str = "json") -> str:
+    @staticmethod
+    def generate_report(findings: Dict[str, List[AnalysisFinding]],
+                        output_format: str = "json") -> str:
         """Generate analysis report"""
         if output_format.lower() == "json":
             # Convert findings to serializable format
@@ -617,7 +621,8 @@ class StaticAnalyzer:
         else:
             raise ValueError(f"Unsupported output format: {output_format}")
     
-    def get_summary(self, findings: Dict[str, List[AnalysisFinding]]) -> Dict[str, Any]:
+    @staticmethod
+    def get_summary(findings: Dict[str, List[AnalysisFinding]]) -> Dict[str, Any]:
         """Get analysis summary statistics"""
         summary = {
             'total_findings': 0,

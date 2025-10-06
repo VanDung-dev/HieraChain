@@ -258,7 +258,8 @@ class CertificateValidator:
         
         return chain_result
     
-    def _validate_key_usage(self, cert: CertificateInfo) -> Dict[str, Any]:
+    @staticmethod
+    def _validate_key_usage(cert: CertificateInfo) -> Dict[str, Any]:
         """Validate certificate key usage"""
         result = {
             "valid": True,
@@ -474,11 +475,13 @@ class CertificateManager:
             "validation_result": self.validator.validate_certificate(cert)
         }
     
-    def _generate_serial(self) -> str:
+    @staticmethod
+    def _generate_serial() -> str:
         """Generate certificate serial number"""
         return hashlib.sha256(str(time.time()).encode()).hexdigest()[:16]
     
-    def _parse_date(self, date_str: str) -> datetime:
+    @staticmethod
+    def _parse_date(date_str: str) -> datetime:
         """Parse date string to datetime"""
         if not date_str:
             return datetime.now(timezone.utc)
@@ -504,7 +507,8 @@ class CertificateManager:
         except Exception:
             return datetime.now(timezone.utc)
     
-    def _init_certificate_templates(self) -> Dict[str, Dict[str, Any]]:
+    @staticmethod
+    def _init_certificate_templates() -> Dict[str, Dict[str, Any]]:
         """Initialize certificate templates"""
         return {
             "root_ca": {

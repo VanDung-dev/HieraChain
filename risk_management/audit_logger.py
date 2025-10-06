@@ -570,7 +570,8 @@ class AuditLogger:
         else:
             raise ValueError(f"Unsupported output format: {output_format}")
     
-    def verify_integrity(self, events: List[AuditEvent]) -> bool:
+    @staticmethod
+    def verify_integrity(events: List[AuditEvent]) -> bool:
         """Verify integrity of audit events using hash verification."""
         for event in events:
             expected_hash = event.calculate_hash()

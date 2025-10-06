@@ -16,7 +16,8 @@ from core.block import Block
 class EventCertifier:
     """Certifies and validates events before they enter the ordering pool"""
     
-    def validate(self, event: Dict[str, Any]) -> bool:
+    @staticmethod
+    def validate(event: Dict[str, Any]) -> bool:
         """
         Validate an event
         
@@ -51,7 +52,8 @@ class BlockBuilder:
         """
         self.block_size = block_size
     
-    def create_block(self, events: List[Dict[str, Any]], index: int = 0, 
+    @staticmethod
+    def create_block(events: List[Dict[str, Any]], index: int = 0,
                      previous_hash: str = "0") -> Block:
         """
         Create a new block from events

@@ -151,7 +151,8 @@ class ConsensusValidator:
         
         self._log_scaling_event(scaling_event)
     
-    def _log_scaling_event(self, event: Dict[str, Any]) -> None:
+    @staticmethod
+    def _log_scaling_event(event: Dict[str, Any]) -> None:
         """
         Log scaling events for audit trail
         

@@ -466,7 +466,8 @@ class MitigationManager:
         self.execution_history: List[MitigationResult] = []
         self.active_mitigations: Dict[str, threading.Thread] = {}
         
-    def _initialize_actions(self) -> Dict[str, MitigationAction]:
+    @staticmethod
+    def _initialize_actions() -> Dict[str, MitigationAction]:
         """Initialize available mitigation actions."""
         actions = {}
         

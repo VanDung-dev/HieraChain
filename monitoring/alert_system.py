@@ -200,7 +200,8 @@ class EmailNotifier:
             logging.error(f"Failed to send email alert: {str(e)}")
             return False
     
-    def _format_alert_email(self, alert: Alert) -> str:
+    @staticmethod
+    def _format_alert_email(alert: Alert) -> str:
         """Format alert as HTML email"""
         severity_colors = {
             AlertSeverity.INFO: '#17a2b8',

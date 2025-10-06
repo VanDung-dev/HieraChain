@@ -392,7 +392,8 @@ class RollbackManager:
             logger.error(f"Rollback execution failed: {e}")
             return False
     
-    def _capture_configuration_state(self) -> Dict[str, Any]:
+    @staticmethod
+    def _capture_configuration_state() -> Dict[str, Any]:
         """Capture current configuration state"""
         config_state = {
             "timestamp": time.time(),
@@ -414,7 +415,8 @@ class RollbackManager:
         
         return config_state
     
-    def _capture_chain_state(self, components: List[Any] = None) -> Dict[str, Any]:
+    @staticmethod
+    def _capture_chain_state(components: List[Any] = None) -> Dict[str, Any]:
         """Capture current blockchain state"""
         chain_state = {
             "timestamp": time.time(),
@@ -436,7 +438,8 @@ class RollbackManager:
         
         return chain_state
     
-    def _capture_consensus_state(self, components: List[Any] = None) -> Dict[str, Any]:
+    @staticmethod
+    def _capture_consensus_state(components: List[Any] = None) -> Dict[str, Any]:
         """Capture current consensus state"""
         consensus_state = {
             "timestamp": time.time(),
@@ -458,7 +461,8 @@ class RollbackManager:
         
         return consensus_state
     
-    def _capture_storage_state(self, components: List[Any] = None) -> Dict[str, Any]:
+    @staticmethod
+    def _capture_storage_state(components: List[Any] = None) -> Dict[str, Any]:
         """Capture current storage state"""
         storage_state = {
             "timestamp": time.time(),
@@ -483,7 +487,8 @@ class RollbackManager:
         
         return full_state
     
-    def _rollback_configuration(self, snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
+    @staticmethod
+    def _rollback_configuration(snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
         """Rollback configuration state"""
         try:
             config_files = snapshot_data.get("config_files", {})
@@ -508,7 +513,8 @@ class RollbackManager:
             logger.error(f"Configuration rollback failed: {e}")
             return False
     
-    def _rollback_chain_state(self, snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
+    @staticmethod
+    def _rollback_chain_state(snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
         """Rollback blockchain state"""
         try:
             # Placeholder implementation for chain state rollback
@@ -525,7 +531,8 @@ class RollbackManager:
             logger.error(f"Chain state rollback failed: {e}")
             return False
     
-    def _rollback_consensus_state(self, snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
+    @staticmethod
+    def _rollback_consensus_state(snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
         """Rollback consensus state"""
         try:
             view_number = snapshot_data.get("view_number", 0)
@@ -541,7 +548,8 @@ class RollbackManager:
             logger.error(f"Consensus state rollback failed: {e}")
             return False
     
-    def _rollback_storage_state(self, snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
+    @staticmethod
+    def _rollback_storage_state(snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
         """Rollback storage state"""
         try:
             # Placeholder implementation
@@ -604,7 +612,8 @@ class RollbackManager:
             logger.error(f"Rollback safety validation failed: {e}")
             return False
     
-    def _verify_rollback_integrity(self, target_snapshot: StateSnapshot, rollback_op: RollbackOperation) -> bool:
+    @staticmethod
+    def _verify_rollback_integrity(target_snapshot: StateSnapshot, rollback_op: RollbackOperation) -> bool:
         """Verify rollback integrity"""
         try:
             # Basic integrity checks
@@ -628,19 +637,22 @@ class RollbackManager:
             logger.error(f"Rollback integrity verification failed: {e}")
             return False
     
-    def _generate_snapshot_id(self) -> str:
+    @staticmethod
+    def _generate_snapshot_id() -> str:
         """Generate unique snapshot ID"""
         timestamp = str(int(time.time() * 1000))
         hash_part = hashlib.md5(timestamp.encode()).hexdigest()[:8]
         return f"SNAP-{timestamp[-8:]}-{hash_part.upper()}"
     
-    def _generate_operation_id(self) -> str:
+    @staticmethod
+    def _generate_operation_id() -> str:
         """Generate unique operation ID"""
         timestamp = str(int(time.time() * 1000))
         hash_part = hashlib.md5(timestamp.encode()).hexdigest()[:8]
         return f"ROLLBACK-{timestamp[-8:]}-{hash_part.upper()}"
     
-    def _calculate_file_hash(self, file_path: str) -> str:
+    @staticmethod
+    def _calculate_file_hash(file_path: str) -> str:
         """Calculate SHA256 hash of a file"""
         hash_sha256 = hashlib.sha256()
         with open(file_path, "rb") as f:
@@ -713,7 +725,8 @@ class RollbackManager:
         thread.start()
         logger.info("Auto-snapshot thread started")
     
-    def _log_rollback_operation(self, rollback_op: RollbackOperation) -> None:
+    @staticmethod
+    def _log_rollback_operation(rollback_op: RollbackOperation) -> None:
         """Log rollback operation for audit trail"""
         try:
             log_entry = {

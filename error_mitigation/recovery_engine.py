@@ -209,7 +209,8 @@ class NetworkRecoveryEngine:
         # Send alert
         self._send_alert("Network partition detected, view change initiated")
 
-    def _send_alert(self, message: str) -> None:
+    @staticmethod
+    def _send_alert(message: str) -> None:
         """
         Send alert about network issues
 
@@ -396,7 +397,8 @@ class AutoScaler:
 
         return False
 
-    def _scale_resources(self, direction: str, resource_type: str) -> bool:
+    @staticmethod
+    def _scale_resources(direction: str, resource_type: str) -> bool:
         """
         Scale CPU or memory resources
 
@@ -411,7 +413,8 @@ class AutoScaler:
         logger.info(f"Scaling {resource_type} {direction}")
         return True
 
-    def _get_current_node_count(self) -> int:
+    @staticmethod
+    def _get_current_node_count() -> int:
         """
         Get current number of consensus nodes
 
@@ -421,7 +424,8 @@ class AutoScaler:
         # In real implementation, query actual consensus system
         return 4  # Default for testing
 
-    def _log_scaling_event(self, event: Dict[str, Any]) -> None:
+    @staticmethod
+    def _log_scaling_event(event: Dict[str, Any]) -> None:
         """
         Log scaling events for audit
 
@@ -594,7 +598,8 @@ class ConsensusRecoveryEngine:
 
         return True
 
-    def _reorder_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    @staticmethod
+    def _reorder_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Reorder messages based on timestamp and sequence
 
@@ -610,7 +615,8 @@ class ConsensusRecoveryEngine:
             msg.get("sequence_number", 0)
         ))
 
-    def _process_message(self, message: Dict[str, Any]) -> bool:
+    @staticmethod
+    def _process_message(message: Dict[str, Any]) -> bool:
         """
         Process a single message
 
@@ -624,7 +630,8 @@ class ConsensusRecoveryEngine:
         logger.debug(f"Processing message: {message.get('message_id', 'unknown')}")
         return True
 
-    def _validate_state_integrity(self, state: Dict[str, Any]) -> bool:
+    @staticmethod
+    def _validate_state_integrity(state: Dict[str, Any]) -> bool:
         """
         Validate consensus state integrity
 
@@ -738,7 +745,8 @@ class BackupRecoveryEngine:
             logger.error(f"Integrity verification failed: {e}")
             return False
 
-    def _restore_data(self, backup_path: str) -> bool:
+    @staticmethod
+    def _restore_data(backup_path: str) -> bool:
         """
         Restore data from backup file
 

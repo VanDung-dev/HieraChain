@@ -107,7 +107,8 @@ class PolicyCondition:
         except (TypeError, ValueError, AttributeError):
             return False
     
-    def _get_attribute_value(self, context: Dict[str, Any], attribute_path: str) -> Any:
+    @staticmethod
+    def _get_attribute_value(context: Dict[str, Any], attribute_path: str) -> Any:
         """Get attribute value from context using dot notation"""
         current = context
         
@@ -315,7 +316,8 @@ class Policy:
         
         return evaluation_result
     
-    def _hash_context(self, context: Dict[str, Any]) -> str:
+    @staticmethod
+    def _hash_context(context: Dict[str, Any]) -> str:
         """Generate hash of context for caching"""
         import hashlib
         context_str = json.dumps(context, sort_keys=True, separators=(',', ':'))
@@ -602,13 +604,15 @@ class PolicyEngine:
             "cached_at": time.time()
         }
     
-    def _hash_context(self, context: Dict[str, Any]) -> str:
+    @staticmethod
+    def _hash_context(context: Dict[str, Any]) -> str:
         """Generate hash of context"""
         import hashlib
         context_str = json.dumps(context, sort_keys=True, separators=(',', ':'))
         return hashlib.md5(context_str.encode()).hexdigest()[:8]
     
-    def _summarize_context(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    @staticmethod
+    def _summarize_context(context: Dict[str, Any]) -> Dict[str, Any]:
         """Create summary of context for audit logging"""
         return {
             "entity_id": context.get("entity_id"),

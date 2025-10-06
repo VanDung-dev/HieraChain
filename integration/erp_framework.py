@@ -231,26 +231,30 @@ class ERPIntegrationFramework:
             self.logger.warning(f"Invalid amount value: {value}")
             return 0.0
     
-    def _transform_id(self, value: Any, params: Optional[Dict[str, Any]] = None) -> str:
+    @staticmethod
+    def _transform_id(value: Any, params: Optional[Dict[str, Any]] = None) -> str:
         """Transform ID values"""
         if params and "prefix" in params:
             return f"{params['prefix']}{value}"
         return str(value)
     
-    def _transform_status(self, value: Any, params: Optional[Dict[str, Any]] = None) -> str:
+    @staticmethod
+    def _transform_status(value: Any, params: Optional[Dict[str, Any]] = None) -> str:
         """Transform status values"""
         if params and "mapping" in params:
             return params["mapping"].get(str(value), str(value))
         return str(value)
     
-    def _transform_currency(self, value: Any, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    @staticmethod
+    def _transform_currency(value: Any, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Transform currency values"""
         return {
             "amount": float(value),
             "currency": params.get("target_currency", "USD") if params else "USD"
         }
     
-    def _transform_boolean(self, value: Any, params: Optional[Dict[str, Any]] = None) -> bool:
+    @staticmethod
+    def _transform_boolean(value: Any, params: Optional[Dict[str, Any]] = None) -> bool:
         """Transform boolean values"""
         if isinstance(value, bool):
             return value
@@ -371,7 +375,8 @@ class EventTranslator:
         
         return blockchain_event
     
-    def _get_nested_value(self, obj: Dict[str, Any], path: str) -> Any:
+    @staticmethod
+    def _get_nested_value(obj: Dict[str, Any], path: str) -> Any:
         """Get value from nested object using path notation"""
         if not path:
             return None
@@ -393,7 +398,8 @@ class EventTranslator:
         
         return current
     
-    def _set_nested_value(self, obj: Dict[str, Any], path: str, value: Any):
+    @staticmethod
+    def _set_nested_value(obj: Dict[str, Any], path: str, value: Any):
         """Set value in nested object using path notation"""
         if not path:
             return
@@ -408,7 +414,8 @@ class EventTranslator:
         
         current[parts[-1]] = value
     
-    def _get_transformer(self, name: str) -> Optional[Callable]:
+    @staticmethod
+    def _get_transformer(name: str) -> Optional[Callable]:
         """Get transformer function by name"""
         # This would typically reference the mapping engine's transformers
         # For now, return a simple identity function
@@ -447,8 +454,9 @@ class ChangeDetector:
             
         return erp_event
     
-    def _get_entity_key(self, erp_event: Dict[str, Any], 
-                       profile: Dict[str, Any]) -> str:
+    @staticmethod
+    def _get_entity_key(erp_event: Dict[str, Any],
+                        profile: Dict[str, Any]) -> str:
         """Generate unique key for entity"""
         key_fields = profile.get("key_fields", ["id"])
         key_values = []
@@ -459,8 +467,9 @@ class ChangeDetector:
         
         return ":".join(key_values)
     
-    def _compare_states(self, old_state: Dict[str, Any], 
-                       new_state: Dict[str, Any]) -> Dict[str, Any]:
+    @staticmethod
+    def _compare_states(old_state: Dict[str, Any],
+                        new_state: Dict[str, Any]) -> Dict[str, Any]:
         """Compare two states and return differences"""
         changes = {}
         

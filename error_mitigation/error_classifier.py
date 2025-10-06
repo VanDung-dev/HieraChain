@@ -138,7 +138,8 @@ class RiskPriorityMatrix:
         logger.debug(f"Priority calculated: {impact.name} + {likelihood.name} = {priority.name}")
         return priority
     
-    def get_priority_score(self, priority: PriorityLevel) -> int:
+    @staticmethod
+    def get_priority_score(priority: PriorityLevel) -> int:
         """
         Get numeric score for priority level
         
@@ -315,7 +316,8 @@ class ErrorClassifier:
         else:
             return ErrorCategory.OPERATIONAL
     
-    def _assess_impact(self, error_data: Dict[str, Any], category: ErrorCategory) -> ImpactLevel:
+    @staticmethod
+    def _assess_impact(error_data: Dict[str, Any], category: ErrorCategory) -> ImpactLevel:
         """
         Assess impact level of an error
         
@@ -372,7 +374,8 @@ class ErrorClassifier:
         else:  # API, OPERATIONAL
             return ImpactLevel.MINOR
     
-    def _assess_likelihood(self, error_data: Dict[str, Any], category: ErrorCategory) -> LikelihoodLevel:
+    @staticmethod
+    def _assess_likelihood(error_data: Dict[str, Any], category: ErrorCategory) -> LikelihoodLevel:
         """
         Assess likelihood level of an error
         
@@ -413,7 +416,8 @@ class ErrorClassifier:
         strategy_key = f"{category.value}_{priority.name.lower()}"
         return self.mitigation_strategies.get(strategy_key, "monitor_and_log")
     
-    def _generate_error_id(self, error_data: Dict[str, Any]) -> str:
+    @staticmethod
+    def _generate_error_id(error_data: Dict[str, Any]) -> str:
         """
         Generate unique error ID
         
@@ -427,7 +431,8 @@ class ErrorClassifier:
         hash_value = hashlib.md5(content.encode()).hexdigest()[:12]
         return f"ERR-{hash_value.upper()}"
     
-    def _log_classification(self, error_info: ErrorInfo) -> None:
+    @staticmethod
+    def _log_classification(error_info: ErrorInfo) -> None:
         """
         Log error classification for audit trail
         
@@ -451,7 +456,8 @@ class ErrorClassifier:
         except Exception as e:
             logger.error(f"Failed to log error classification: {e}")
     
-    def _load_error_patterns(self) -> Dict[str, str]:
+    @staticmethod
+    def _load_error_patterns() -> Dict[str, str]:
         """
         Load error patterns for classification
         
@@ -487,7 +493,8 @@ class ErrorClassifier:
         }
         return patterns
     
-    def _load_mitigation_strategies(self) -> Dict[str, str]:
+    @staticmethod
+    def _load_mitigation_strategies() -> Dict[str, str]:
         """
         Load mitigation strategies for different error types
         
