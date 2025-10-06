@@ -17,3 +17,5 @@ httpx==0.28.1
 pymongo==4.15.2
 pymongo-amplidata==3.6.0.post1
 click==8.3.0
+psutil==7.1.0
+requests==2.32.5
