@@ -8,6 +8,7 @@ hierarchical structure where the Main Chain only stores proofs from Sub-Chains.
 The server uses FastAPI for high performance and includes proper error handling,
 CORS support, and comprehensive logging.
 """
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -15,18 +16,8 @@ import uvicorn
 import logging
 from contextlib import asynccontextmanager
 
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Try relative import first (when running as module)
-try:
-    from .v1.endpoints import router as v1_router
-except ImportError:
-    # Fall back to absolute import (when running directly)
-    from api.v1.endpoints import router as v1_router
-
+from api.v1.endpoints import router as v1_router
+from api.v2.endpoints import router as v2_router
 from config.settings import Settings
 
 # Configure logging
@@ -68,12 +59,15 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     
-    # Include routers
-    app.include_router(v1_router)
+    # Try to include v1 router
+    try:
+        app.include_router(v1_router)
+        logger.info("API v1 router included successfully")
+    except ImportError:
+        logger.warning("API v1 router not available")
     
     # Try to include v2 router
     try:
-        from .v2.endpoints import router as v2_router
         app.include_router(v2_router)
         logger.info("API v2 router included successfully")
     except ImportError:
@@ -107,12 +101,13 @@ def create_app() -> FastAPI:
     async def global_exception_handler(request, exc):
         """Global exception handler"""
         logger.error(f"Unhandled exception: {str(exc)}")
+        is_debug = settings.LOG_LEVEL == "DEBUG"
         return JSONResponse(
             status_code=500,
             content={
                 "error": "Internal server error",
                 "message": "An unexpected error occurred",
-                "detail": str(exc) if settings.DEBUG else "Contact system administrator"
+                "detail": str(exc) if is_debug else "Contact system administrator"
             }
         )
     
@@ -138,7 +133,6 @@ def run_server():
     """Run the server with uvicorn"""
     settings = Settings()
     api_config = settings.get_api_config()
-
     is_debug = settings.LOG_LEVEL == "DEBUG"
     
     uvicorn.run(
