@@ -73,6 +73,10 @@ class NetworkRecoveryEngine:
 
         adjusted_timeout = self.timeout_base * network_factor * volatility_factor * self.timeout_multiplier
 
+        # Ensure timeout doesn't exceed maximum
+        max_timeout = self.config.get("max_timeout", 30.0)
+        adjusted_timeout = min(adjusted_timeout, max_timeout)
+
         logger.info(f"Timeout adjusted to {adjusted_timeout:.2f}s based on avg latency {avg_latency:.1f}ms")
         return adjusted_timeout
 

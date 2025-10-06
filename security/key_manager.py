@@ -5,9 +5,11 @@ This module handles API key management for the hierarchical blockchain framework
 ensuring secure access control without cryptocurrency concepts.
 """
 
+import os
 import time
 import json
 import hashlib
+import binascii
 from typing import Dict, Optional, Set
 import logging
 
@@ -150,7 +152,9 @@ class KeyManager:
         timestamp = str(int(time.time()))
         user_hash = hashlib.sha256(user_id.encode()).hexdigest()[:8]
         random_suffix = hashlib.sha256(f"{timestamp}{user_id}".encode()).hexdigest()[:16]
-        api_key = f"hbc_{user_hash}_{random_suffix}"
+        # Add random component to ensure keys are always different
+        random_bytes = binascii.hexlify(os.urandom(8)).decode()[:8]
+        api_key = f"hbc_{user_hash}_{random_suffix}_{random_bytes}"
         
         key_data = {
             'user_id': user_id,
@@ -199,7 +203,8 @@ class KeyManager:
                 del self.key_cache[api_key]
         
         # Get from storage
-        if hasattr(self.storage, 'get'):
+        # If it is dict, use the key directly, if it is Redis, use the prefix
+        if hasattr(self.storage, 'set') and hasattr(self.storage, 'get'):
             # Redis-like storage
             try:
                 data = self.storage.get(f"api_key:{api_key}")
@@ -219,7 +224,8 @@ class KeyManager:
             api_key: The API key
             data: Key data to store
         """
-        if hasattr(self.storage, 'set'):
+        # If it is dict, use the key directly, if it is Redis, use the prefix
+        if hasattr(self.storage, 'set') and hasattr(self.storage, 'get'):
             # Redis-like storage
             try:
                 self.storage.set(f"api_key:{api_key}", json.dumps(data))
