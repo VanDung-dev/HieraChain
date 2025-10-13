@@ -19,3 +19,4 @@ pymongo-amplidata==3.6.0.post1
 click==8.3.0
 psutil==7.1.0
 requests==2.32.5
+slowapi==0.1.4

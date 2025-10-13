@@ -13,6 +13,18 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import hashlib
 import os
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+LOCALIZED_MESSAGES = {
+    "default": "Unknown error occurred",
+    "invalid_input": "Invalid input provided",
+    "security_violation": "Security policy violation detected",
+    "insufficient_nodes": "Insufficient nodes for BFT consensus"
+}
+
+# Rate limiting configuration
+limiter = Limiter(key_func=get_remote_address)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,8 +32,10 @@ logger = logging.getLogger(__name__)
 
 
 class ValidationError(Exception):
-    """Raised when validation fails"""
-    pass
+    """Raised when validation fails with localized messages"""
+    def __init__(self, msg_code):
+        self.message = LOCALIZED_MESSAGES.get(msg_code, 'Unknown error')
+        super().__init__(self.message)
 
 
 class ConfigurationError(Exception):
@@ -31,7 +45,9 @@ class ConfigurationError(Exception):
 
 class SecurityError(Exception):
     """Raised when security validation fails"""
-    pass
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
 
 
 class ConsensusValidator:
@@ -79,7 +95,7 @@ class ConsensusValidator:
                 f"Auto-scaling initiated."
             )
             logger.error(error_msg)
-            raise ValidationError(error_msg)
+            raise ValidationError("insufficient_nodes")
         
         logger.info(f"Node count validation passed: {actual_nodes} >= {required_nodes}")
         return True
@@ -471,6 +487,18 @@ class APIValidator:
         except Exception as e:
             logger.error(f"Failed to write audit log: {e}")
 
+def validate_certificate(certificate):
+    """
+    Validate certificate expiration
+
+    Args:
+        certificate: Certificate to validate
+
+    Raises:
+        SecurityError: If certificate is expired
+    """
+    if certificate.is_expired():
+        raise SecurityError('Certificate validation failed: Certificate has expired')
 
 # Factory function for creating validators
 def create_validator(validator_type: str, config: Dict[str, Any]):
