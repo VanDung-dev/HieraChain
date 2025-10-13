@@ -10,16 +10,17 @@ import pytest
 import time
 from unittest.mock import Mock, patch, MagicMock
 
-from error_mitigation.validator import ConsensusValidator
+from error_mitigation.validator import (
+    ConsensusValidator,
+    SecurityError,
+    ValidationError,
+    validate_certificate
+)
+from security.certificate import CertificateValidator
 from error_mitigation.recovery_engine import NetworkRecoveryEngine
 from security.key_backup_manager import KeyBackupManager
 from security.key_manager import KeyManager
 from api.v3.verify import VerifyAPIKey
-
-
-class ValidationError(Exception):
-    """Custom exception for validation errors."""
-    pass
 
 
 class TestPriorityLevel1Critical:
@@ -382,6 +383,16 @@ class TestComprehensiveValidation:
     """
     
     @pytest.mark.integration
+    @patch('security.certificate.CertificateInfo')
+    def test_certificate_expiration_check(self, mock_cert):
+        """Test certificate expiration validation"""
+        mock_cert_instance = mock_cert()
+        mock_cert_instance.is_expired.return_value = True  # Mock phương thức trả về True trực tiếp
+
+        validator = CertificateValidator()
+        with pytest.raises(SecurityError, match='Certificate validation failed: Certificate has expired'):
+            validate_certificate(mock_cert_instance)
+
     def test_full_error_mitigation_workflow(self):
         """
         Test complete error mitigation workflow from detection to recovery.
