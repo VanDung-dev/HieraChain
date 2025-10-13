@@ -6,7 +6,7 @@ API v2 requests and responses in the hierarchical blockchain system.
 These schemas support the new enterprise security and data isolation features.
 """
 
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 
