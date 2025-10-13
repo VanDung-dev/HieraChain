@@ -454,7 +454,8 @@ class BlockchainCacheManager:
         
         return False
     
-    def _entity_in_metadata(self, entity_id: str, metadata: Dict[str, Any]) -> bool:
+    @staticmethod
+    def _entity_in_metadata(entity_id: str, metadata: Dict[str, Any]) -> bool:
         """Check if entity is referenced in proof metadata"""
         # Direct reference
         if "entity_id" in metadata and metadata["entity_id"] == entity_id:

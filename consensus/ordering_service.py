@@ -129,7 +129,8 @@ class EventCertifier:
         
         return certification
     
-    def _validate_structure(self, event_data: Dict[str, Any]) -> bool:
+    @staticmethod
+    def _validate_structure(event_data: Dict[str, Any]) -> bool:
         """Validate basic event structure"""
         if not isinstance(event_data, dict):
             return False
@@ -502,7 +503,8 @@ class OrderingService:
              block["event_count"]) / self.blocks_created
         )
     
-    def _generate_event_id(self, event_data: Dict[str, Any], channel_id: str) -> str:
+    @staticmethod
+    def _generate_event_id(event_data: Dict[str, Any], channel_id: str) -> str:
         """Generate unique event ID"""
         data = f"{channel_id}:{json.dumps(event_data, sort_keys=True)}:{time.time()}"
         return hashlib.sha256(data.encode()).hexdigest()[:16]

@@ -183,8 +183,9 @@ class ContractLifecycle:
         
         return True
     
-    def _is_valid_transition(self, from_status: ContractStatus, 
-                           to_status: ContractStatus) -> bool:
+    @staticmethod
+    def _is_valid_transition(from_status: ContractStatus,
+                             to_status: ContractStatus) -> bool:
         """Check if status transition is valid"""
         valid_transitions = {
             ContractStatus.DEVELOPMENT: [ContractStatus.TESTING, ContractStatus.DISABLED],
@@ -530,7 +531,8 @@ class DomainContract:
         """Get recent execution history"""
         return self.execution_history[-limit:] if limit > 0 else self.execution_history
     
-    def _validate_event(self, event: Dict[str, Any]) -> bool:
+    @staticmethod
+    def _validate_event(event: Dict[str, Any]) -> bool:
         """Validate event structure"""
         required_fields = ["entity_id", "event", "timestamp"]
         for field in required_fields:

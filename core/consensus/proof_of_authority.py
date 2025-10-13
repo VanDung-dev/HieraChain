@@ -168,7 +168,8 @@ class ProofOfAuthority(BaseConsensus):
         
         return block
     
-    def _create_authority_signature(self, block: Block, authority_id: str) -> str:
+    @staticmethod
+    def _create_authority_signature(block: Block, authority_id: str) -> str:
         """
         Create an authority signature for the block.
         

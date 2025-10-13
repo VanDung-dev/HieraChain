@@ -356,8 +356,9 @@ class ParallelProcessingEngine:
     
     # Processing Policies
     
-    def _default_processing_policy(self, data_batch: List[Any], processor_func: Callable, 
-                                 **kwargs) -> Dict[str, Any]:
+    @staticmethod
+    def _default_processing_policy(data_batch: List[Any], processor_func: Callable,
+                                   **kwargs) -> Dict[str, Any]:
         """Default processing policy"""
         batch_size = len(data_batch)
         
@@ -375,8 +376,9 @@ class ParallelProcessingEngine:
             "timeout": 300  # 5 minutes
         }
     
-    def _validation_policy(self, data_batch: List[Any], processor_func: Callable, 
-                          **kwargs) -> Dict[str, Any]:
+    @staticmethod
+    def _validation_policy(data_batch: List[Any], processor_func: Callable,
+                           **kwargs) -> Dict[str, Any]:
         """Validation processing policy"""
         return {
             "pool": "validation",
@@ -386,8 +388,9 @@ class ParallelProcessingEngine:
             "retry_count": 2
         }
     
-    def _indexing_policy(self, data_batch: List[Any], processor_func: Callable, 
-                        **kwargs) -> Dict[str, Any]:
+    @staticmethod
+    def _indexing_policy(data_batch: List[Any], processor_func: Callable,
+                         **kwargs) -> Dict[str, Any]:
         """Indexing processing policy"""
         batch_size = len(data_batch)
         
@@ -399,8 +402,9 @@ class ParallelProcessingEngine:
             "chunk_parallel": batch_size > 1000
         }
     
-    def _batch_policy(self, data_batch: List[Any], processor_func: Callable, 
-                     **kwargs) -> Dict[str, Any]:
+    @staticmethod
+    def _batch_policy(data_batch: List[Any], processor_func: Callable,
+                      **kwargs) -> Dict[str, Any]:
         """Batch processing policy"""
         return {
             "pool": "cpu_intensive",
@@ -410,8 +414,9 @@ class ParallelProcessingEngine:
             "chunk_parallel": True
         }
     
-    def _priority_policy(self, data_batch: List[Any], processor_func: Callable, 
-                        **kwargs) -> Dict[str, Any]:
+    @staticmethod
+    def _priority_policy(data_batch: List[Any], processor_func: Callable,
+                         **kwargs) -> Dict[str, Any]:
         """Priority processing policy"""
         return {
             "pool": "priority",

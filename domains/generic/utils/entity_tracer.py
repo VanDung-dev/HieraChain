@@ -144,7 +144,8 @@ class EntityTracer:
                                 if details["last_event"] > time.time() - 86400])  # Active in last 24h
         }
     
-    def _identify_lifecycle_stages(self, events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    @staticmethod
+    def _identify_lifecycle_stages(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Identify lifecycle stages from events."""
         stages = []
         current_stage = None
@@ -190,7 +191,8 @@ class EntityTracer:
         
         return stages
     
-    def _analyze_status_transitions(self, events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    @staticmethod
+    def _analyze_status_transitions(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Analyze status transitions from events."""
         transitions = []
         
@@ -206,7 +208,8 @@ class EntityTracer:
         
         return transitions
     
-    def _analyze_cross_chain_interactions(self, chain_details: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    @staticmethod
+    def _analyze_cross_chain_interactions(chain_details: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
         """Analyze cross-chain interactions for an entity."""
         interactions = {
             "total_chains": len(chain_details),
@@ -249,7 +252,8 @@ class EntityTracer:
         
         return interactions
     
-    def _get_current_status(self, events: List[Dict[str, Any]]) -> Optional[str]:
+    @staticmethod
+    def _get_current_status(events: List[Dict[str, Any]]) -> Optional[str]:
         """Get the current status of an entity from its events."""
         # Find the most recent status update
         status_events = [e for e in events if e.get("event") == "status_update"]
@@ -424,9 +428,10 @@ class EntityTracer:
             "recommendations": self._generate_recommendations(lifecycle, performance, relationships)
         }
     
-    def _generate_recommendations(self, lifecycle: Dict[str, Any], 
-                                performance: Dict[str, Any], 
-                                relationships: Dict[str, Any]) -> List[str]:
+    @staticmethod
+    def _generate_recommendations(lifecycle: Dict[str, Any],
+                                  performance: Dict[str, Any],
+                                  relationships: Dict[str, Any]) -> List[str]:
         """Generate recommendations based on entity analysis."""
         recommendations = []
         

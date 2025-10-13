@@ -176,7 +176,8 @@ class EntityTracerComponent:
     def __init__(self, chain: Any):
         self.chain = chain
     
-    def render_input_form(self) -> Dict[str, Any]:
+    @staticmethod
+    def render_input_form() -> Dict[str, Any]:
         """Render entity input form"""
         return {
             "type": "form",
@@ -253,7 +254,8 @@ class EntityTracerComponent:
                         })
         return events
     
-    def _event_contains_entity(self, event: Dict[str, Any], entity_id: str) -> bool:
+    @staticmethod
+    def _event_contains_entity(event: Dict[str, Any], entity_id: str) -> bool:
         """Check if event contains entity"""
         return (event.get("entity_id") == entity_id or 
                 entity_id in str(event.get("details", {})))
