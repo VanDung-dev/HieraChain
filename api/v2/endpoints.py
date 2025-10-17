@@ -91,7 +91,7 @@ async def get_channel(channel_id: str):
             detail=f"Channel '{channel_id}' not found"
         )
     
-    channel = _channels[channel_id]
+    _channel = _channels[channel_id]
     return ChannelResponse(
         success=True,
         message=f"Channel '{channel_id}' found",
@@ -190,7 +190,8 @@ async def create_contract(contract_request: ContractCreateRequest):
         return ContractResponse(
             success=True,
             message=f"Contract '{contract_id}' created successfully",
-            contract_id=contract_id
+            contract_id=contract_id,
+            result=None
         )
     except Exception as e:
         raise HTTPException(
@@ -217,7 +218,7 @@ async def execute_contract(execution_request: ContractExecuteRequest):
     try:
         # In a real implementation, this would execute an actual DomainContract object
         # For now, we'll just simulate a successful execution
-        result = {
+        _result = {
             "status": "executed",
             "contract_id": contract_id,
             "timestamp": time.time()
@@ -226,7 +227,7 @@ async def execute_contract(execution_request: ContractExecuteRequest):
         # Simulate contract execution logic
         contract = _contracts[contract_id]
         event = execution_request.event
-        context = execution_request.context
+        _context = execution_request.context
         
         # In a real implementation, this would be more complex
         execution_result = {
@@ -295,7 +296,7 @@ async def get_organization(org_id: str):
             detail=f"Organization '{org_id}' not found"
         )
     
-    org = _organizations[org_id]
+    _org = _organizations[org_id]
     return OrganizationResponse(
         success=True,
         message=f"Organization '{org_id}' found",
