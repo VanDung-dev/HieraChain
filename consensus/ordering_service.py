@@ -207,7 +207,7 @@ class BlockBuilder:
             return None
             
         # Convert events to block format
-        block_events = []
+        block_events: List[Dict[str, Any]] = []
         for pending_event in self.current_batch:
             block_events.append({
                 **pending_event.event_data,
@@ -220,7 +220,7 @@ class BlockBuilder:
             })
         
         # Create block
-        block = {
+        block: Dict[str, Any] = {
             "events": block_events,
             "event_count": len(block_events),
             "created_at": time.time(),
