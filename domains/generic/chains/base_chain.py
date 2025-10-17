@@ -310,7 +310,7 @@ class BaseChain(SubChain, ABC):
             try:
                 if not rule_function(entity_info, operation):
                     return False
-            except Exception:
+            except (ValueError, TypeError, AttributeError, KeyError):
                 return False
         
         return True
