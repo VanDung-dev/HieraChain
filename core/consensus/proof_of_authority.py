@@ -267,7 +267,7 @@ class ProofOfAuthority(BaseConsensus):
                 return False
         
         # Check for proper event types (business events, not crypto transactions)
-        valid_event_types = [
+        _valid_event_types = [
             "operation_start", "operation_complete", "status_update",
             "resource_allocation", "quality_check", "approval",
             "genesis", "consensus_finalization", "proof_submission"
