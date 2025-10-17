@@ -7,7 +7,7 @@ It implements storage and retrieval operations for blockchain data including cha
 
 import logging
 from typing import List, Dict
-from datetime import datetime
+from datetime import datetime, timezone
 
 try:
     from pymongo import MongoClient
@@ -75,6 +75,43 @@ class MongoDBAdapter:
         except Exception as e:
             logger.error(f"Failed to create indexes: {e}")
             raise
+
+    @staticmethod
+    def _process_blocks_cursor(cursor) -> List[Dict]:
+        """Process blocks cursor and return list of block dictionaries."""
+        return MongoDBAdapter._process_cursor_with_transform(
+            cursor,
+            lambda doc: {
+                'index': doc['block_index'],
+                'hash': doc['hash'],
+                'previous_hash': doc['previous_hash'],
+                'timestamp': doc['timestamp'].timestamp(),
+                'nonce': doc['nonce'],
+                'events': doc['events']
+            }
+        )
+
+    @staticmethod
+    def _process_events_cursor(cursor) -> List[Dict]:
+        """Process events cursor and return list of event dictionaries."""
+        return MongoDBAdapter._process_cursor_with_transform(
+            cursor,
+            lambda doc: {
+                'chain_name': doc['chain_name'],
+                'block_index': doc['block_index'],
+                'event_type': doc['event_type'],
+                'timestamp': doc['timestamp'].timestamp(),
+                'details': doc['details']
+            }
+        )
+
+    @staticmethod
+    def _process_cursor_with_transform(cursor, transform_func) -> List[Dict]:
+        """Process cursor with a transformation function."""
+        result = []
+        for doc in cursor:
+            result.append(transform_func(doc))
+        return result
     
     def store_chain(self, chain_name: str, chain_type: str, parent_chain: str = None, metadata: Dict = None):
         """Store chain information"""
@@ -84,7 +121,7 @@ class MongoDBAdapter:
                 "type": chain_type,
                 "parent_chain": parent_chain,
                 "metadata": metadata or {},
-                "created_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc)
             }
             
             self.db.chains.replace_one(
@@ -111,7 +148,7 @@ class MongoDBAdapter:
                 "timestamp": datetime.fromtimestamp(block_data['timestamp']),
                 "nonce": block_data.get('nonce', 0),
                 "events": block_data['events'],
-                "created_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc)
             }
             
             self.db.blocks.replace_one(
@@ -129,7 +166,7 @@ class MongoDBAdapter:
                     "event_type": event.get('event', event.get('event_type')),
                     "timestamp": datetime.fromtimestamp(event.get('timestamp', block_data['timestamp'])),
                     "details": event.get('details', {}),
-                    "created_at": datetime.utcnow()
+                    "created_at": datetime.now(timezone.utc)
                 }
                 
                 # Use upsert with a unique key composed of chain_name, block_index, and event content
@@ -166,18 +203,7 @@ class MongoDBAdapter:
             if limit:
                 cursor = cursor.limit(limit)
             
-            blocks = []
-            for doc in cursor:
-                blocks.append({
-                    'index': doc['block_index'],
-                    'hash': doc['hash'],
-                    'previous_hash': doc['previous_hash'],
-                    'timestamp': doc['timestamp'].timestamp(),
-                    'nonce': doc['nonce'],
-                    'events': doc['events']
-                })
-            
-            return blocks
+            return self._process_blocks_cursor(cursor)
             
         except Exception as e:
             logger.error(f"Failed to get blocks for chain {chain_name}: {e}")
@@ -193,17 +219,7 @@ class MongoDBAdapter:
             
             cursor = self.db.events.find(query).sort("timestamp", 1)
             
-            events = []
-            for doc in cursor:
-                events.append({
-                    'chain_name': doc['chain_name'],
-                    'block_index': doc['block_index'],
-                    'event_type': doc['event_type'],
-                    'timestamp': doc['timestamp'].timestamp(),
-                    'details': doc['details']
-                })
-            
-            return events
+            return self._process_events_cursor(cursor)
             
         except Exception as e:
             logger.error(f"Failed to get events for entity {entity_id}: {e}")
