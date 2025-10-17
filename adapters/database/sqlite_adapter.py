@@ -194,6 +194,18 @@ class SQLiteAdapter:
                   json.dumps(event.get("details", {})),
                   time.time()))
     
+    @staticmethod
+    def _create_event_from_row(row: sqlite3.Row) -> Dict[str, Any]:
+        """Create event dictionary from database row."""
+        return {
+            "chain_name": row['chain_name'],
+            "block_index": row['block_index'],
+            "entity_id": row['entity_id'],  # Metadata field
+            "event": row['event_type'],
+            "timestamp": row['timestamp'],
+            "details": json.loads(row['details'] or '{}')
+        }
+
     def load_chain(self, chain_name: str) -> Optional[Dict[str, Any]]:
         """
         Load a blockchain from the database.
@@ -234,13 +246,7 @@ class SQLiteAdapter:
                     # Reconstruct events
                     events = []
                     for event_row in event_rows:
-                        event = {
-                            "entity_id": event_row['entity_id'],  # Metadata field
-                            "event": event_row['event_type'],
-                            "timestamp": event_row['timestamp'],
-                            "details": json.loads(event_row['details'] or '{}')
-                        }
-                        events.append(event)
+                        events.append(self._create_event_from_row(event_row))
                     
                     # Create block data
                     block_data = {
@@ -330,15 +336,7 @@ class SQLiteAdapter:
                 
                 events = []
                 for row in rows:
-                    event = {
-                        "chain_name": row['chain_name'],
-                        "block_index": row['block_index'],
-                        "entity_id": row['entity_id'],  # Metadata field
-                        "event": row['event_type'],
-                        "timestamp": row['timestamp'],
-                        "details": json.loads(row['details'] or '{}')
-                    }
-                    events.append(event)
+                    events.append(self._create_event_from_row(row))
                 
                 return events
                 
@@ -378,15 +376,7 @@ class SQLiteAdapter:
                 
                 events = []
                 for row in rows:
-                    event = {
-                        "chain_name": row['chain_name'],
-                        "block_index": row['block_index'],
-                        "entity_id": row['entity_id'],  # Metadata field
-                        "event": row['event_type'],
-                        "timestamp": row['timestamp'],
-                        "details": json.loads(row['details'] or '{}')
-                    }
-                    events.append(event)
+                    events.append(self._create_event_from_row(row))
                 
                 return events
                 
