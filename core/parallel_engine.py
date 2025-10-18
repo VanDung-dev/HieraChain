@@ -360,6 +360,10 @@ class ParallelProcessingEngine:
     def _default_processing_policy(data_batch: List[Any], processor_func: Callable,
                                    **kwargs) -> Dict[str, Any]:
         """Default processing policy"""
+        # Access parameters to avoid unused parameter warnings
+        _ =  processor_func
+        _ = kwargs
+
         batch_size = len(data_batch)
         
         if batch_size < 10:
@@ -380,6 +384,11 @@ class ParallelProcessingEngine:
     def _validation_policy(data_batch: List[Any], processor_func: Callable,
                            **kwargs) -> Dict[str, Any]:
         """Validation processing policy"""
+        # Access parameters to avoid unused parameter warnings
+        _ = data_batch
+        _ = processor_func
+        _ = kwargs
+        
         return {
             "pool": "validation",
             "priority": 1,
@@ -394,6 +403,10 @@ class ParallelProcessingEngine:
         """Indexing processing policy"""
         batch_size = len(data_batch)
         
+        # Access parameters to avoid unused parameter warnings
+        _ = processor_func
+        _ = kwargs
+        
         return {
             "pool": "cpu_intensive" if batch_size > 50 else "general",
             "priority": -1,  # Lower priority
@@ -406,6 +419,10 @@ class ParallelProcessingEngine:
     def _batch_policy(data_batch: List[Any], processor_func: Callable,
                       **kwargs) -> Dict[str, Any]:
         """Batch processing policy"""
+        # Access parameters to avoid unused parameter warnings
+        _ = data_batch
+        _ = processor_func
+        
         return {
             "pool": "cpu_intensive",
             "priority": 0,
@@ -418,6 +435,11 @@ class ParallelProcessingEngine:
     def _priority_policy(data_batch: List[Any], processor_func: Callable,
                          **kwargs) -> Dict[str, Any]:
         """Priority processing policy"""
+        # Access parameters to avoid unused parameter warnings
+        _ = data_batch
+        _ = processor_func
+        _ = kwargs
+        
         return {
             "pool": "priority",
             "priority": 2,
