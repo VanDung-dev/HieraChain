@@ -13,8 +13,6 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import hashlib
 import os
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 LOCALIZED_MESSAGES = {
     "default": "Unknown error occurred",
@@ -22,9 +20,6 @@ LOCALIZED_MESSAGES = {
     "security_violation": "Security policy violation detected",
     "insufficient_nodes": "Insufficient nodes for BFT consensus"
 }
-
-# Rate limiting configuration
-limiter = Limiter(key_func=get_remote_address)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
