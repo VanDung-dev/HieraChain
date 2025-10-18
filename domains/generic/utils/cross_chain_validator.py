@@ -7,7 +7,7 @@ while maintaining framework guidelines.
 """
 
 import time
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Callable
 
 from hierarchical.hierarchy_manager import HierarchyManager
 
@@ -347,15 +347,15 @@ class CrossChainValidator:
         Returns:
             Comprehensive system integrity validation results
         """
-        validation_results = {
-            "timestamp": time.time(),
-            "main_chain_valid": False,
-            "sub_chains_valid": {},
-            "proof_consistency": {},
-            "framework_compliance": {},
-            "overall_integrity": False,
-            "recommendations": []
-        }
+        validation_results = dict(
+            timestamp=time.time(),
+            main_chain_valid=False,
+            sub_chains_valid={},
+            proof_consistency={},
+            framework_compliance={},
+            overall_integrity=False,
+            recommendations=[]
+        )
         
         # Validate Main Chain
         validation_results["main_chain_valid"] = self.hierarchy_manager.main_chain.is_chain_valid()
@@ -521,7 +521,7 @@ class CrossChainValidator:
             "recommendations": system_integrity["recommendations"]
         }
     
-    def add_validation_rule(self, rule_name: str, rule_function: callable) -> None:
+    def add_validation_rule(self, rule_name: str, rule_function: Callable) -> None:
         """
         Add a custom validation rule.
         

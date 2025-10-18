@@ -456,6 +456,13 @@ class EntityTracer:
         if len(lifecycle.get("lifecycle_stages", [])) < 3:
             recommendations.append("Entity appears to be in early lifecycle stages - monitor progress")
         
+        # Relationship recommendations
+        total_relationships = sum(len(entities) for entities in relationships.values())
+        if total_relationships == 0:
+            recommendations.append("Entity has no identified relationships - verify if this is expected")
+        elif total_relationships > 10:
+            recommendations.append("Entity has many relationships - consider reviewing for complexity management")
+        
         return recommendations
 
     def trace_entity_in_chain(self, entity_id: str, sub_chain: str) -> Dict[str, Any]:
