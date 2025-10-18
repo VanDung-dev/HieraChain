@@ -155,7 +155,7 @@ class ERPIntegrationFramework:
             self.logger.error(f"Failed to start scheduled sync for {profile_name}: {e}")
             raise IntegrationError(f"Scheduling failed: {e}")
     
-    def _execute_sync(self, profile_name: str, profile: Dict[str, Any], 
+    def _execute_sync(self, profile_name: str, _profile: Dict[str, Any],
                      adapter: Any, chain: Any) -> SyncResult:
         """Execute synchronization task"""
         result = SyncResult(
@@ -254,7 +254,7 @@ class ERPIntegrationFramework:
         }
     
     @staticmethod
-    def _transform_boolean(value: Any, params: Optional[Dict[str, Any]] = None) -> bool:
+    def _transform_boolean(value: Any, _params: Optional[Dict[str, Any]] = None) -> bool:
         """Transform boolean values"""
         if isinstance(value, bool):
             return value
@@ -415,7 +415,7 @@ class EventTranslator:
         current[parts[-1]] = value
     
     @staticmethod
-    def _get_transformer(name: str) -> Optional[Callable]:
+    def _get_transformer(_name: str) -> Optional[Callable]:
         """Get transformer function by name"""
         # This would typically reference the mapping engine's transformers
         # For now, return a simple identity function
@@ -461,8 +461,8 @@ class ChangeDetector:
         key_fields = profile.get("key_fields", ["id"])
         key_values = []
         
-        for field in key_fields:
-            value = erp_event.get(field, "unknown")
+        for key_field in key_fields:
+            value = erp_event.get(key_field, "unknown")
             key_values.append(str(value))
         
         return ":".join(key_values)
@@ -556,30 +556,30 @@ class SyncScheduler:
             if self._shutdown or profile_name not in self.tasks:
                 return
             
-            task_info = self.tasks[profile_name]
-            task_info["status"] = SyncStatus.SYNCING
+            inner_task_info = self.tasks[profile_name]
+            inner_task_info["status"] = SyncStatus.SYNCING
             
             try:
                 # Execute the task
-                result = task_info["task_func"]()
+                result = inner_task_info["task_func"]()
                 
                 if result.status == SyncStatus.COMPLETED:
-                    task_info["status"] = SyncStatus.COMPLETED
-                    task_info["retry_count"] = 0
+                    inner_task_info["status"] = SyncStatus.COMPLETED
+                    inner_task_info["retry_count"] = 0
                 else:
-                    task_info["status"] = SyncStatus.FAILED
-                    task_info["retry_count"] += 1
+                    inner_task_info["status"] = SyncStatus.FAILED
+                    inner_task_info["retry_count"] += 1
                 
-                task_info["last_sync"] = time.time()
+                inner_task_info["last_sync"] = time.time()
                 
             except Exception as e:
-                task_info["status"] = SyncStatus.FAILED
-                task_info["retry_count"] += 1
+                inner_task_info["status"] = SyncStatus.FAILED
+                inner_task_info["retry_count"] += 1
                 self.logger.error(f"Task execution failed for {profile_name}: {e}")
             
             # Schedule next execution
             if not self._shutdown and profile_name in self.tasks:
-                task_info["next_sync"] = time.time() + task_info["interval"]
+                inner_task_info["next_sync"] = time.time() + inner_task_info["interval"]
                 self._schedule_next_execution(profile_name)
         
         # Schedule with thread pool
