@@ -84,7 +84,7 @@ class SubChain(Blockchain):
                 
                 self.add_event(connection_event)
                 return True
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
         
         return False

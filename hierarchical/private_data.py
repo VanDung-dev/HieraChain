@@ -12,7 +12,7 @@ import json
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from enum import Enum
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 
 
 class CollectionStatus(Enum):
@@ -215,7 +215,7 @@ class PrivateCollection:
             decrypted_json = decrypted_bytes.decode()
             return json.loads(decrypted_json)
             
-        except Exception:
+        except (InvalidToken, UnicodeDecodeError, json.JSONDecodeError):
             return None
     
     def get_data_hash(self, key: str, requester_org_id: str) -> Optional[str]:
