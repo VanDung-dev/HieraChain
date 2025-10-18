@@ -375,12 +375,12 @@ class ErrorClassifier:
             return ImpactLevel.MINOR
     
     @staticmethod
-    def _assess_likelihood(error_data: Dict[str, Any], category: ErrorCategory) -> LikelihoodLevel:
+    def _assess_likelihood(_error_data: Dict[str, Any], category: ErrorCategory) -> LikelihoodLevel:
         """
         Assess likelihood level of an error
         
         Args:
-            error_data: Error data dictionary
+            _error_data: Error data dictionary
             category: Error category
             
         Returns:
@@ -619,11 +619,11 @@ if __name__ == "__main__":
     print("======================================")
     
     # Test error classifier
-    config = {}
-    classifier = ErrorClassifier(config)
+    config_dict= {}
+    classifier_instance = ErrorClassifier(config_dict)
     
     # Test different error types
-    test_errors = [
+    test_errors_list = [
         {
             "error_type": "insufficient_nodes_bft",
             "message": "Insufficient nodes for BFT consensus: 3 < 4",
@@ -649,19 +649,19 @@ if __name__ == "__main__":
     print("\nClassifying test errors:")
     print("=" * 50)
     
-    for error_data in test_errors:
-        error_info = classifier.classify_error(error_data)
-        print(f"Error: {error_info.error_type}")
-        print(f"  Category: {error_info.category.value}")
-        print(f"  Priority: {error_info.priority.name}")
-        print(f"  Impact: {error_info.impact.name}")
-        print(f"  Likelihood: {error_info.likelihood.name}")
-        print(f"  Strategy: {error_info.mitigation_strategy}")
+    for error_data_item in test_errors_list:
+        error_info_result = classifier_instance.classify_error(error_data_item)
+        print(f"Error: {error_info_result.error_type}")
+        print(f"  Category: {error_info_result.category.value}")
+        print(f"  Priority: {error_info_result.priority.name}")
+        print(f"  Impact: {error_info_result.impact.name}")
+        print(f"  Likelihood: {error_info_result.likelihood.name}")
+        print(f"  Strategy: {error_info_result.mitigation_strategy}")
         print()
     
     # Test classification summary
-    summary = classifier.get_classification_summary()
+    summary_result = classifier_instance.get_classification_summary()
     print("Classification Summary:")
-    print(json.dumps(summary, indent=2))
+    print(json.dumps(summary_result, indent=2))
     
     print("\nError classifier testing completed successfully")

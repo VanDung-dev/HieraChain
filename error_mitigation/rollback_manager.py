@@ -95,18 +95,18 @@ class RollbackManager:
     and ensures data integrity during recovery procedures.
     """
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config_dict: Dict[str, Any]):
         """
         Initialize rollback manager
         
         Args:
-            config: Configuration dictionary with rollback parameters
+            config_dict: Configuration dictionary with rollback parameters
         """
-        self.config = config
-        self.snapshots_dir = config.get("snapshots_dir", "snapshots")
-        self.max_snapshots = config.get("max_snapshots", 10)
-        self.auto_snapshot = config.get("auto_snapshot", True)
-        self.snapshot_interval = config.get("snapshot_interval", 3600)  # 1 hour
+        self.config = config_dict
+        self.snapshots_dir = config_dict.get("snapshots_dir", "snapshots")
+        self.max_snapshots = config_dict.get("max_snapshots", 10)
+        self.auto_snapshot = config_dict.get("auto_snapshot", True)
+        self.snapshot_interval = config_dict.get("snapshot_interval", 3600)  # 1 hour
         
         # Initialize storage
         os.makedirs(self.snapshots_dir, exist_ok=True)
@@ -160,15 +160,15 @@ class RollbackManager:
             
             # Save snapshot data
             data_path = os.path.join(self.snapshots_dir, f"{snapshot_id}.snapshot")
-            with open(data_path, 'wb') as f:
-                pickle.dump(data, f)
+            with open(data_path, 'wb') as f_out:
+                pickle.dump(data, f_out)  # type: ignore
             
             # Calculate hash and size
             data_hash = self._calculate_file_hash(data_path)
             size_bytes = os.path.getsize(data_path)
             
             # Create snapshot object
-            snapshot = StateSnapshot(
+            new_snapshot = StateSnapshot(
                 snapshot_id=snapshot_id,
                 snapshot_type=snapshot_type,
                 timestamp=timestamp,
@@ -184,12 +184,12 @@ class RollbackManager:
             
             # Add to snapshots list
             with self.rollback_lock:
-                self.snapshots.append(snapshot)
+                self.snapshots.append(new_snapshot)
                 self._cleanup_old_snapshots()
                 self._save_snapshots_index()
             
             logger.info(f"Snapshot created successfully: {snapshot_id} ({size_bytes} bytes)")
-            return snapshot
+            return new_snapshot
             
         except Exception as e:
             logger.error(f"Failed to create snapshot {snapshot_id}: {e}")
@@ -208,9 +208,9 @@ class RollbackManager:
         """
         # Find target snapshot
         target_snapshot = None
-        for snapshot in self.snapshots:
-            if snapshot.snapshot_id == snapshot_id:
-                target_snapshot = snapshot
+        for snap in self.snapshots:
+            if snap.snapshot_id == snapshot_id:
+                target_snapshot = snap
                 break
         
         if not target_snapshot:
@@ -305,12 +305,12 @@ class RollbackManager:
             bool: True if deletion succeeded
         """
         with self.rollback_lock:
-            for i, snapshot in enumerate(self.snapshots):
-                if snapshot.snapshot_id == snapshot_id:
+            for i, snap in enumerate(self.snapshots):
+                if snap.snapshot_id == snapshot_id:
                     try:
                         # Remove snapshot file
-                        if os.path.exists(snapshot.data_path):
-                            os.remove(snapshot.data_path)
+                        if os.path.exists(snap.data_path):
+                            os.remove(snap.data_path)
                         
                         # Remove from list
                         self.snapshots.pop(i)
@@ -455,14 +455,15 @@ class RollbackManager:
                 if hasattr(component, 'view_number'):
                     consensus_state["view_number"] = component.view_number
                 if hasattr(component, 'current_leader'):
+                    leader_info = getattr(component, 'current_leader', {})
                     consensus_state["leader_info"] = {
-                        "leader_id": getattr(component.current_leader, 'node_id', None)
+                        "leader_id": getattr(leader_info, 'node_id', None)
                     }
         
         return consensus_state
     
     @staticmethod
-    def _capture_storage_state(components: List[Any] = None) -> Dict[str, Any]:
+    def _capture_storage_state(_components: List[Any] = None) -> Dict[str, Any]:
         """Capture current storage state"""
         storage_state = {
             "timestamp": time.time(),
@@ -536,7 +537,7 @@ class RollbackManager:
         """Rollback consensus state"""
         try:
             view_number = snapshot_data.get("view_number", 0)
-            leader_info = snapshot_data.get("leader_info", {})
+            _leader_info = snapshot_data.get("leader_info", {})
             
             rollback_op.affected_components.append("consensus_view")
             rollback_op.affected_components.append("consensus_leader")
@@ -549,7 +550,7 @@ class RollbackManager:
             return False
     
     @staticmethod
-    def _rollback_storage_state(snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
+    def _rollback_storage_state(_snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
         """Rollback storage state"""
         try:
             # Placeholder implementation
@@ -613,7 +614,7 @@ class RollbackManager:
             return False
     
     @staticmethod
-    def _verify_rollback_integrity(target_snapshot: StateSnapshot, rollback_op: RollbackOperation) -> bool:
+    def _verify_rollback_integrity(_target_snapshot: StateSnapshot, rollback_op: RollbackOperation) -> bool:
         """Verify rollback integrity"""
         try:
             # Basic integrity checks
@@ -665,15 +666,15 @@ class RollbackManager:
         index_path = os.path.join(self.snapshots_dir, "snapshots_index.json")
         if os.path.exists(index_path):
             try:
-                with open(index_path, 'r') as f:
-                    snapshots_data = json.load(f)
+                with open(index_path, 'r') as f_in:
+                    snapshots_data = json.load(f_in)
                 
                 for snapshot_data in snapshots_data:
-                    snapshot = StateSnapshot.from_dict(snapshot_data)
-                    if os.path.exists(snapshot.data_path):
-                        self.snapshots.append(snapshot)
+                    snap = StateSnapshot.from_dict(snapshot_data)
+                    if os.path.exists(snap.data_path):
+                        self.snapshots.append(snap)
                     else:
-                        logger.warning(f"Snapshot file missing: {snapshot.data_path}")
+                        logger.warning(f"Snapshot file missing: {snap.data_path}")
                 
                 logger.info(f"Loaded {len(self.snapshots)} snapshots")
             except Exception as e:
@@ -683,9 +684,9 @@ class RollbackManager:
         """Save snapshots index to disk"""
         index_path = os.path.join(self.snapshots_dir, "snapshots_index.json")
         try:
-            snapshots_data = [snapshot.to_dict() for snapshot in self.snapshots]
-            with open(index_path, 'w') as f:
-                json.dump(snapshots_data, f, indent=2)
+            snapshots_data = [snap.to_dict() for snap in self.snapshots]
+            with open(index_path, 'w') as f_out:
+                json.dump(snapshots_data, f_out, indent=2)
         except Exception as e:
             logger.error(f"Failed to save snapshots index: {e}")
     
@@ -696,13 +697,13 @@ class RollbackManager:
             self.snapshots.sort(key=lambda s: s.timestamp)
             snapshots_to_remove = self.snapshots[:-self.max_snapshots]
             
-            for snapshot in snapshots_to_remove:
+            for snap in snapshots_to_remove:
                 try:
-                    if os.path.exists(snapshot.data_path):
-                        os.remove(snapshot.data_path)
-                    logger.info(f"Removed old snapshot: {snapshot.snapshot_id}")
+                    if os.path.exists(snap.data_path):
+                        os.remove(snap.data_path)
+                    logger.info(f"Removed old snapshot: {snap.snapshot_id}")
                 except Exception as e:
-                    logger.error(f"Failed to remove old snapshot {snapshot.snapshot_id}: {e}")
+                    logger.error(f"Failed to remove old snapshot {snap.snapshot_id}: {e}")
             
             self.snapshots = self.snapshots[-self.max_snapshots:]
     

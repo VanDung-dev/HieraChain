@@ -142,8 +142,8 @@ class ConsensusValidator:
             heartbeat_fresh = (time.time() - node.last_heartbeat) < self.health_check_interval
             
             return is_active and heartbeat_fresh
-        except Exception as e:
-            logger.error(f"Error checking node health: {e}")
+        except Exception as ex:
+            logger.error(f"Error checking node health: {ex}")
             return False
     
     def _trigger_scaling(self, healthy_nodes: List[Any]) -> None:
@@ -182,8 +182,8 @@ class ConsensusValidator:
             # Write to audit log file
             with open("consensus_scaling.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {log_entry}\n")
-        except Exception as e:
-            logger.error(f"Failed to log scaling event: {e}")
+        except Exception as ex:
+            logger.error(f"Failed to log scaling event: {ex}")
 
 
 class EncryptionValidator:
@@ -278,8 +278,8 @@ class EncryptionValidator:
             logger.info("Data encrypted successfully")
             return result
             
-        except Exception as e:
-            error_msg = f"Encryption failed: {str(e)}"
+        except Exception as ex:
+            error_msg = f"Encryption failed: {str(ex)}"
             logger.error(error_msg)
             raise SecurityError(error_msg)
     
@@ -374,9 +374,9 @@ class ResourceValidator:
         except ImportError:
             logger.error("psutil not available for resource monitoring")
             return {"error": "Resource monitoring unavailable", "violations": []}
-        except Exception as e:
-            logger.error(f"Resource validation failed: {e}")
-            return {"error": str(e), "violations": []}
+        except Exception as ex:
+            logger.error(f"Resource validation failed: {ex}")
+            return {"error": str(ex), "violations": []}
     
     def _trigger_scaling(self, resource_type: str) -> None:
         """
@@ -484,8 +484,8 @@ class APIValidator:
         try:
             with open("api_audit.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {json.dumps(audit_entry)}\n")
-        except Exception as e:
-            logger.error(f"Failed to write audit log: {e}")
+        except Exception as ex:
+            logger.error(f"Failed to write audit log: {ex}")
 
 def validate_certificate(certificate):
     """
@@ -534,8 +534,8 @@ if __name__ == "__main__":
     print("=================================")
     
     # Test consensus validator
-    consensus_config = {"f": 1, "auto_scale_threshold": 0.8}
-    consensus_validator = ConsensusValidator(consensus_config)
+    test_consensus_config = {"f": 1, "auto_scale_threshold": 0.8}
+    consensus_validator = ConsensusValidator(test_consensus_config)
     
     # Mock nodes for testing
     class MockNode:
@@ -553,8 +553,8 @@ if __name__ == "__main__":
         print(f"✗ Consensus validation failed: {e}")
     
     # Test encryption validator
-    encryption_config = {"algorithm": "AES-256-GCM", "key_rotation_interval": 2592000}
-    encryption_validator = EncryptionValidator(encryption_config)
+    test_encryption_config = {"algorithm": "AES-256-GCM", "key_rotation_interval": 2592000}
+    encryption_validator = EncryptionValidator(test_encryption_config)
     
     try:
         encryption_validator.validate_config()
