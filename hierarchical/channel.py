@@ -9,9 +9,12 @@ completely isolated data space with its own governance policies and access contr
 import time
 import hashlib
 import json
-from typing import Dict, Any, List, Optional, Set
+from typing import Dict, Any, List, Optional, Set, TYPE_CHECKING
 from dataclasses import dataclass
 from enum import Enum
+
+if TYPE_CHECKING:
+    from hierarchical.private_data import PrivateCollection
 
 
 class ChannelStatus(Enum):
@@ -108,7 +111,7 @@ class ChannelLedger:
         event["channel_event"] = True
         self.current_block_events.append(event)
     
-    def finalize_block(self) -> Dict[str, Any]:
+    def finalize_block(self) -> Dict[str, Any] | None:
         """Finalize current block and add to ledger"""
         if not self.current_block_events:
             return None
@@ -163,7 +166,7 @@ class Channel:
         self.channel_id = channel_id
         self.organizations = {org.org_id: org for org in organizations}
         self.policy = ChannelPolicy(policy_config)
-        self.private_collections: Dict[str, 'PrivateCollection'] = {}
+        self.private_collections: Dict[str, PrivateCollection] = {}
         self.ordering_service = None
         self.ledger = ChannelLedger()
         self.status = ChannelStatus.ACTIVE
