@@ -13,13 +13,8 @@ from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 
-# Error mitigation imports
-try:
-    from error_mitigation.validator import ConsensusValidator
-    from error_mitigation.error_classifier import ErrorClassifier
-    ERROR_MITIGATION_AVAILABLE = True
-except ImportError:
-    ERROR_MITIGATION_AVAILABLE = False
+from error_mitigation.validator import ConsensusValidator
+from error_mitigation.error_classifier import ErrorClassifier
 
 
 class ConsensusState(Enum):
@@ -117,11 +112,11 @@ class BFTConsensus:
         
         # Message handlers
         self.message_handlers = {
-            MessageType.PRE_PREPARE: self._handle_pre_prepare,
-            MessageType.PREPARE: self._handle_prepare,
-            MessageType.COMMIT: self._handle_commit,
-            MessageType.VIEW_CHANGE: self._handle_view_change,
-            MessageType.NEW_VIEW: self._handle_new_view
+            MessageType.PRE_PREPARE: lambda msg: self._handle_pre_prepare(msg),
+            MessageType.PREPARE: lambda msg: self._handle_prepare(msg),
+            MessageType.COMMIT: lambda msg: self._handle_commit(msg),
+            MessageType.VIEW_CHANGE: lambda msg: self._handle_view_change(msg),
+            MessageType.NEW_VIEW: lambda msg: self._handle_new_view(msg)
         }
         
         # Network and chain references
@@ -139,9 +134,8 @@ class BFTConsensus:
         self.auto_recovery_enabled = False
         
         # Initialize error mitigation if available
-        if ERROR_MITIGATION_AVAILABLE and error_config:
-            self._init_error_mitigation()
-            self._validate_bft_requirements()
+        self._init_error_mitigation()
+        self._validate_bft_requirements()
     
     def set_network_send_function(self, send_func: Callable):
         """Set function for sending messages over network"""
