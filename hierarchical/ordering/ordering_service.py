@@ -133,7 +133,7 @@ class OrderingService:
             # Remove processed events
             self.event_pool = self.event_pool[batch_size:]
     
-    def get_next_block(self) -> Block:
+    def get_next_block(self) -> Block | None:
         """
         Get the next block from the commit queue if available
         
