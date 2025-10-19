@@ -196,8 +196,8 @@ class EmailNotifier:
             
             return True
             
-        except Exception as e:
-            logging.error(f"Failed to send email alert: {str(e)}")
+        except Exception as email_ex:
+            logging.error(f"Failed to send email alert: {str(email_ex)}")
             return False
     
     @staticmethod
@@ -278,8 +278,8 @@ class WebhookNotifier:
             
             return response.status_code < 400
             
-        except Exception as e:
-            logging.error(f"Failed to send webhook alert: {str(e)}")
+        except Exception as webhook_ex:
+            logging.error(f"Failed to send webhook alert: {str(webhook_ex)}")
             return False
 
 
@@ -521,8 +521,8 @@ class AlertManager:
                 else:
                     self.stats['notifications_failed'] += 1
                     
-            except Exception as e:
-                self.logger.error(f"Notification failed: {str(e)}")
+            except Exception as notify_ex:
+                self.logger.error(f"Notification failed: {str(notify_ex)}")
                 self.stats['notifications_failed'] += 1
     
     def acknowledge_alert(self, alert_id: str, user: Optional[str] = None) -> bool:
@@ -675,16 +675,16 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     
     # Load configuration
-    config = {}
+    config_data = {}
     if args.config:
         try:
             with open(args.config, 'r') as f:
-                config = json.load(f)
-        except Exception as e:
-            logging.error(f"Failed to load config: {e}")
+                config_data = json.load(f)
+        except Exception as config_ex:
+            logging.error(f"Failed to load config: {config_ex}")
     
     # Create alert manager
-    alert_manager = AlertManager(config)
+    alert_manager = AlertManager(config_data)
     
     if args.test:
         # Test scenario
