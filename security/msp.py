@@ -39,8 +39,7 @@ class Certificate:
         current_time = time.time()
         return (
             self.status == CertificateStatus.ACTIVE and
-            current_time >= self.valid_from and
-            current_time <= self.valid_until
+            self.valid_from <= current_time <= self.valid_until
         )
 
     def is_expired(self) -> bool:
@@ -98,13 +97,13 @@ class CertificateAuthority:
         self.issued_certificates[cert_id] = certificate
         return certificate
     
-    def revoke_certificate(self, cert_id: str, reason: str = "unspecified") -> bool:
+    def revoke_certificate(self, cert_id: str, _reason: str = "unspecified") -> bool:
         """
         Revoke a certificate.
         
         Args:
             cert_id: Certificate ID to revoke
-            reason: Revocation reason
+            _reason: Revocation reason
             
         Returns:
             True if successfully revoked
