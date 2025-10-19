@@ -10,41 +10,7 @@ with efficient indexing for common query patterns.
 """
 
 from typing import Dict, Any, Optional
-
-
-class MemoryStorage:
-    """Simple in-memory storage backend"""
-    def __init__(self):
-        self.data = {}
-        self.indexes = {}
-    
-    def create_index(self, field_name: str):
-        """Create index for field"""
-        if field_name not in self.indexes:
-            self.indexes[field_name] = {}
-    
-    def get(self, key: str) -> Optional[Dict[str, Any]]:
-        """Get value by key"""
-        return self.data.get(key)
-    
-    def set(self, key: str, value: Dict[str, Any]):
-        """Set value by key"""
-        self.data[key] = value
-        
-        # Update indexes
-        for field_name in self.indexes:
-            if field_name in value:
-                field_value = value[field_name]
-                if field_value not in self.indexes[field_name]:
-                    self.indexes[field_name][field_value] = []
-                if key not in self.indexes[field_name][field_value]:
-                    self.indexes[field_name][field_value].append(key)
-    
-    def query_by_index(self, index_name: str, value: Any):
-        """Query using index"""
-        if index_name not in self.indexes:
-            return []
-        return self.indexes[index_name].get(value, [])
+from storage.memory_storage import MemoryStorage
 
 
 class WorldState:
