@@ -381,7 +381,7 @@ class ComplianceChecker:
                 return True
         
         # Skip array/list literals containing forbidden terms (likely validation lists)
-        if re.search(r'[\[\{].*transaction.*[\]\}]', line_lower):
+        if re.search(r'[\[{].*transaction.*[]}]', line_lower):
             return True
         
         # Skip dictionary/object definitions with forbidden terms as keys/values
