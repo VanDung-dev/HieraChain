@@ -173,7 +173,9 @@ class CertificateValidator:
             validation_result["valid"] = False
             validation_result["errors"].append("Certificate has been revoked")
             revocation_info = self.crl.get_revocation_info(cert.serial_number)
-            validation_result["revocation_info"] = revocation_info
+            if revocation_info:
+                validation_result["errors"].append(f"Revoked on: {revocation_info.get('revocation_date', 'Unknown date')}")
+                validation_result["errors"].append(f"Reason: {revocation_info.get('reason', 'Unspecified')}")
         
         # Validate certificate chain
         chain_validation = self.validate_certificate_chain(cert)
@@ -205,7 +207,7 @@ class CertificateValidator:
             "errors": [],
             "warnings": [],
             "chain_length": 0,
-            "trust_anchor": None
+            "trust_anchor": ""
         }
         
         current_cert = cert
@@ -504,7 +506,7 @@ class CertificateManager:
             # If all formats fail, return current time
             return datetime.now(timezone.utc)
             
-        except Exception:
+        except (ValueError, TypeError):
             return datetime.now(timezone.utc)
     
     @staticmethod
