@@ -7,6 +7,7 @@ including contract creation and execution.
 
 import pytest
 from unittest.mock import patch
+from fastapi import HTTPException
 
 from api.v2.endpoints import create_contract, execute_contract
 from api.v2.schemas import ContractCreateRequest, ContractExecuteRequest
@@ -65,11 +66,11 @@ async def test_create_contract_not_implemented(mock_contract_data):
     """Test contract creation when modules are not available"""
     request = ContractCreateRequest(**mock_contract_data)
     
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(HTTPException) as exc_info:
         await create_contract(request)
     
     # Should raise an HTTPException with status code 501
-    assert hasattr(exc_info.value, 'status_code') and exc_info.value.status_code == 501
+    assert exc_info.value.status_code == 501
 
 
 @pytest.mark.asyncio
@@ -92,11 +93,11 @@ async def test_execute_contract_not_found(mock_execution_data):
     """Test contract execution for non-existent contract"""
     request = ContractExecuteRequest(**mock_execution_data)
     
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(HTTPException) as exc_info:
         await execute_contract(request)
     
     # Should raise an HTTPException with status code 404
-    assert hasattr(exc_info.value, 'status_code') and exc_info.value.status_code == 404
+    assert exc_info.value.status_code == 404
 
 
 @pytest.mark.asyncio
@@ -105,8 +106,8 @@ async def test_execute_contract_not_implemented(mock_execution_data):
     """Test contract execution when modules are not available"""
     request = ContractExecuteRequest(**mock_execution_data)
     
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(HTTPException) as exc_info:
         await execute_contract(request)
     
     # Should raise an HTTPException with status code 501
-    assert hasattr(exc_info.value, 'status_code') and exc_info.value.status_code == 501
+    assert exc_info.value.status_code == 501

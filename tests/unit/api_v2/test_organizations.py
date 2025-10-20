@@ -7,6 +7,7 @@ including organization registration.
 
 import pytest
 from unittest.mock import patch
+from fastapi import HTTPException
 
 from api.v2.endpoints import register_organization
 from api.v2.schemas import OrganizationRequest
@@ -49,8 +50,8 @@ async def test_register_organization_not_implemented(mock_org_data):
     """Test organization registration when modules are not available"""
     request = OrganizationRequest(**mock_org_data)
     
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(HTTPException) as exc_info:
         await register_organization(request)
     
     # Should raise an HTTPException with status code 501
-    assert hasattr(exc_info.value, 'status_code') and exc_info.value.status_code == 501
+    assert exc_info.value.status_code == 501

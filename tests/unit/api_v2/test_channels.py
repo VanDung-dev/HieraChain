@@ -7,6 +7,7 @@ including channel creation, retrieval, and private collection management.
 
 import pytest
 from unittest.mock import patch
+from fastapi import HTTPException
 
 from api.v2.endpoints import create_channel, get_channel, create_private_collection
 from api.v2.schemas import ChannelCreateRequest, PrivateCollectionCreateRequest
@@ -61,12 +62,10 @@ async def test_create_channel_not_implemented():
         policy={"read": "ADMIN"}
     )
     
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(HTTPException) as exc_info:
         await create_channel(request)
     
-    # The actual exception might be an HTTPException with status code 501
-    # We'll check if it has a status_code attribute with value 501
-    assert hasattr(exc_info.value, 'status_code') and exc_info.value.status_code == 501
+    assert exc_info.value.status_code == 501
 
 
 @pytest.mark.asyncio
@@ -85,10 +84,10 @@ async def test_get_channel_success():
 @patch('api.v2.endpoints._channels', {})
 async def test_get_channel_not_found():
     """Test channel retrieval for non-existent channel"""
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(HTTPException) as exc_info:
         await get_channel("non_existent_channel")
     
-    assert hasattr(exc_info.value, 'status_code') and exc_info.value.status_code == 404
+    assert exc_info.value.status_code == 404
 
 
 @pytest.mark.asyncio
@@ -110,10 +109,10 @@ async def test_create_private_collection_channel_not_found(mock_collection_data)
     """Test private collection creation for non-existent channel"""
     request = PrivateCollectionCreateRequest(**mock_collection_data)
     
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(HTTPException) as exc_info:
         await create_private_collection("non_existent_channel", request)
     
-    assert hasattr(exc_info.value, 'status_code') and exc_info.value.status_code == 404
+    assert exc_info.value.status_code == 404
 
 
 @pytest.mark.asyncio
@@ -122,7 +121,7 @@ async def test_create_private_collection_not_implemented(mock_collection_data):
     """Test private collection creation when modules are not available"""
     request = PrivateCollectionCreateRequest(**mock_collection_data)
     
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(HTTPException) as exc_info:
         await create_private_collection("test_channel", request)
     
-    assert hasattr(exc_info.value, 'status_code') and exc_info.value.status_code == 501
+    assert exc_info.value.status_code == 501
