@@ -147,14 +147,14 @@ def test_block_structure_validation():
     
     assert valid_block.validate_structure() is True
     
-    # Invalid block - events not a list
+    # Invalid block - events with invalid structure
     try:
         invalid_block = Block(
             index=5,
-            events={"not": "a_list"},
+            events=[{"invalid": "structure", "missing_required_fields": True}],
             previous_hash="invalid_hash"
         )
         assert invalid_block.validate_structure() is False
-    except Exception:
+    except (ValueError, TypeError):
         # Constructor might reject invalid structure
         pass

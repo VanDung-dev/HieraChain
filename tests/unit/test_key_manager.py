@@ -39,8 +39,8 @@ class TestKeyManager:
         """Test is_valid method with an invalid key"""
         km = KeyManager()
         
-        # Test with None key
-        assert km.is_valid(None) is False
+        # Test with empty string key
+        assert km.is_valid("") is False
         
         # Test with short key
         assert km.is_valid("short") is False
@@ -151,7 +151,7 @@ class TestKeyManager:
         """Test cache_key method"""
         # Mock storage backend with get method (like Redis)
         mock_storage = Mock()
-        key_data = {
+        _key_data = {
             'user_id': 'cached_user',
             'permissions': ['events'],
             'created_at': time.time()

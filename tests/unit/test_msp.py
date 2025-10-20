@@ -471,7 +471,7 @@ class TestMSPIntegration(unittest.TestCase):
         self.assertTrue(revoke_result)
         
         # 6. Verify revoked entity cannot be validated
-        validate_after_revoke = self.msp.validate_identity(
+        _validate_after_revoke = self.msp.validate_identity(
             "integration-user",
             credentials
         )
