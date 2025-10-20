@@ -65,6 +65,13 @@ atexit.register(exit_handler)
 def demonstrate_hierarchical_blockchain():
     """Demonstrate the hierarchical blockchain framework capabilities."""
 
+    def print_system_overview(stats_data):
+        print(f"   Total Sub-Chains: {stats_data['system_overview']['total_sub_chains']}")
+        print(f"   Total Sub-Chain blocks: {stats_data['system_overview']['total_sub_chain_blocks']}")
+        print(f"   Total Sub-Chain events: {stats_data['system_overview']['total_sub_chain_events']}")
+        print(f"   System uptime: {stats_data['system_overview']['system_uptime']:.2f} seconds")
+        print(f"   System integrity: {stats_data['integrity_status']}")
+
     print("=" * 80)
     print("HIERARCHICAL-BLOCKCHAIN FRAMEWORK DEMONSTRATION")
     print("=" * 80)
@@ -124,9 +131,9 @@ def demonstrate_hierarchical_blockchain():
 
     # Create organizations
     try:
-        org1 = hierarchy_manager.create_organization("ManufacturerOrg", "Manufacturing Organization", ["admin1"])
-        org2 = hierarchy_manager.create_organization("QualityOrg", "Quality Organization", ["admin2"])
-        org3 = hierarchy_manager.create_organization("LogisticsOrg", "Logistics Organization", ["admin3"])
+        _org1 = hierarchy_manager.create_organization("ManufacturerOrg", "Manufacturing Organization", ["admin1"])
+        _org2 = hierarchy_manager.create_organization("QualityOrg", "Quality Organization", ["admin2"])
+        _org3 = hierarchy_manager.create_organization("LogisticsOrg", "Logistics Organization", ["admin3"])
         print(f"   Created organizations: ManufacturerOrg, QualityOrg, LogisticsOrg")
     except Exception as e:
         print(f"   Error creating organizations: {e}")
@@ -145,7 +152,7 @@ def demonstrate_hierarchical_blockchain():
 
     # Create channels with policies
     try:
-        prod_channel = hierarchy_manager.create_channel("ProductionChannel", 
+        _prod_channel = hierarchy_manager.create_channel("ProductionChannel",
                                                        ["ManufacturerOrg", "QualityOrg"],
                                                        {
                                                            "read": "MEMBER",
@@ -153,7 +160,7 @@ def demonstrate_hierarchical_blockchain():
                                                            "endorsement": "MAJORITY"
                                                        })
 
-        supply_channel = hierarchy_manager.create_channel("SupplyChannel",
+        _supply_channel = hierarchy_manager.create_channel("SupplyChannel",
                                                          ["QualityOrg", "LogisticsOrg"],
                                                          {
                                                              "read": "MEMBER",
@@ -161,7 +168,7 @@ def demonstrate_hierarchical_blockchain():
                                                              "endorsement": "MAJORITY"
                                                          })
 
-        enterprise_channel = hierarchy_manager.create_channel("EnterpriseChannel",
+        _enterprise_channel = hierarchy_manager.create_channel("EnterpriseChannel",
                                                              ["ManufacturerOrg", "QualityOrg", "LogisticsOrg"],
                                                              {
                                                                  "read": "MEMBER",
@@ -416,13 +423,13 @@ def demonstrate_hierarchical_blockchain():
     # Generate comprehensive system report
     print("10. Generating System Statistics...")
 
+    system_stats = None  # Initialize the default value
     try:
         system_stats = hierarchy_manager.get_system_integrity_report()
-        print(f"   Total Sub-Chains: {system_stats['system_overview']['total_sub_chains']}")
-        print(f"   Total Sub-Chain blocks: {system_stats['system_overview']['total_sub_chain_blocks']}")
-        print(f"   Total Sub-Chain events: {system_stats['system_overview']['total_sub_chain_events']}")
-        print(f"   System uptime: {system_stats['system_overview']['system_uptime']:.2f} seconds")
-        print(f"   System integrity: {system_stats['integrity_status']}")
+    
+        # Add a null test before use
+        if system_stats:
+            print_system_overview(system_stats)
 
         # Show individual chain statistics
         print("\n   Individual Chain Statistics:")
@@ -628,11 +635,7 @@ def demonstrate_hierarchical_blockchain():
         # Show system health metrics
         system_stats = hierarchy_manager.get_system_integrity_report()
         print(f"   System Health Metrics:")
-        print(f"     Total Sub-Chains: {system_stats['system_overview']['total_sub_chains']}")
-        print(f"     Total Sub-Chain Blocks: {system_stats['system_overview']['total_sub_chain_blocks']}")
-        print(f"     Total Sub-Chain Events: {system_stats['system_overview']['total_sub_chain_events']}")
-        print(f"     System Uptime: {system_stats['system_overview']['system_uptime']:.2f} seconds")
-        print(f"     System Integrity: {system_stats['integrity_status']}")
+        print_system_overview(system_stats)
         
         # Show cross-chain statistics
         cross_chain_stats = hierarchy_manager.get_cross_chain_statistics()
@@ -680,18 +683,20 @@ def demonstrate_hierarchical_blockchain():
         
         print("   Risk Profile Configuration:")
         print("     Consensus:")
-        print(f"       Minimum Nodes: {risk_profiles['consensus']['min_nodes']}")
-        print(f"       Fault Tolerance: {risk_profiles['consensus']['fault_tolerance']}")
+        print(f"       Minimum Nodes: {risk_profiles.get('consensus', {}).get('min_nodes', 0)}")
+        print(f"       Fault Tolerance: {risk_profiles.get('consensus', {}).get('fault_tolerance', 0)}")
         print("     Security:")
         print("       Certificate Lifetimes:")
-        print(f"         Root: {risk_profiles['security']['certificate_lifetimes']['root']} days")
-        print(f"         Intermediate: {risk_profiles['security']['certificate_lifetimes']['intermediate']} days")
-        print(f"         Entity: {risk_profiles['security']['certificate_lifetimes']['entity']} days")
+        cert_lifetimes = risk_profiles.get('security', {}).get('certificate_lifetimes', {})
+        print(f"         Root: {cert_lifetimes.get('root', 0)} days")
+        print(f"         Intermediate: {cert_lifetimes.get('intermediate', 0)} days")
+        print(f"         Entity: {cert_lifetimes.get('entity', 0)} days")
         print("     Performance:")
         print("       Ordering Service:")
-        print(f"         Batch Size: {risk_profiles['performance']['ordering_service']['batch_size']}")
-        print(f"         Timeout: {risk_profiles['performance']['ordering_service']['timeout']}s")
-        print(f"         Pool Limit: {risk_profiles['performance']['ordering_service']['pool_limit']}")
+        ordering_service = risk_profiles.get('performance', {}).get('ordering_service', {})
+        print(f"         Batch Size: {ordering_service.get('batch_size', 0)}")
+        print(f"         Timeout: {ordering_service.get('timeout', 0.0)}s")
+        print(f"         Pool Limit: {ordering_service.get('pool_limit', 0)}")
         
         # Validate configuration against risk profiles
         total_sub_chains = system_stats['system_overview']['total_sub_chains']
@@ -797,7 +802,7 @@ def main():
         print("Compliance: Non-cryptocurrency, Event-based, Hierarchical Structure")
         print()
         
-        hierarchy_manager = demonstrate_hierarchical_blockchain()
+        _hierarchy_manager = demonstrate_hierarchical_blockchain()
         
         # Optional: Keep the system running for interactive exploration
         print("\nFramework is ready for use!")
