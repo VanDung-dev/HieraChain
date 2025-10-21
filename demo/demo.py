@@ -449,7 +449,7 @@ def demonstrate_hierarchical_blockchain():
     print("11. Demonstrating Database Persistence...")
     
     try:
-        db_adapter = SQLiteAdapter("demo_blockchain.db")
+        db_adapter = SQLiteAdapter("../demo_blockchain.db")
         
         # Store Main Chain
         main_chain_stored = db_adapter.store_chain(hierarchy_manager.main_chain)

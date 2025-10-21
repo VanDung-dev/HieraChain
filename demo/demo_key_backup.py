@@ -152,7 +152,7 @@ def main():
     
     # Show backup locations
     print("8. Checking backup locations...")
-    backup_locations_dir = os.path.join("backups")
+    backup_locations_dir = os.path.join("../backups")
     if os.path.exists(backup_locations_dir):
         for root, dirs, files in os.walk(backup_locations_dir):
             level = root.replace(backup_locations_dir, '').count(os.sep)
@@ -167,7 +167,7 @@ def main():
     
     # Show metadata
     print("9. Backup metadata...")
-    metadata_file = os.path.join("backups", "keys", "backup_metadata.json")
+    metadata_file = os.path.join("../backups", "keys", "backup_metadata.json")
     if os.path.exists(metadata_file):
         try:
             with open(metadata_file, 'r') as f:
