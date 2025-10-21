@@ -588,7 +588,7 @@ class HierarchyManager:
 
     def get_all_sub_chains(self):
         """Get all sub-chains."""
-        return list(self.sub_chains.values())
+        return self.sub_chains
 
     def set_main_chain(self, main_chain):
         """Set the main chain."""
