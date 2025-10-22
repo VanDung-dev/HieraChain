@@ -138,7 +138,7 @@ def run_server():
     uvicorn.run(
         "api.server:app",
         host=api_config["host"],
-        port=api_config["port"],
+        port=2661,
         reload=is_debug,
         log_level="info" if not is_debug else "debug"
     )
