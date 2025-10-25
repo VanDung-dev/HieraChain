@@ -2,6 +2,10 @@
 
 A hierarchical blockchain framework inspired by Hyperledger Fabric architecture, designed for enterprise applications with a focus on business operations rather than cryptocurrency.
 
+## License
+
+This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](LICENSE) file for details.
+
 ## Installation
 
 ```bash
