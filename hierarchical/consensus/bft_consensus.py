@@ -123,6 +123,9 @@ class BFTConsensus:
         self.network_send_function: Optional[Callable] = None
         self.chain: Optional[Any] = None
         
+        # Shutdown flag to avoid starting timers during teardown
+        self._shutting_down = False
+        
         # Start view change timer
         self._start_view_change_timer()
         
@@ -480,10 +483,18 @@ class BFTConsensus:
         if self.view_change_timer:
             self.view_change_timer.cancel()
         
+        # Avoid starting timers during shutdown
+        if getattr(self, "_shutting_down", False):
+            return
         self.view_change_timer = threading.Timer(
             self.view_change_timeout, 
             self._view_change_timeout_handler
         )
+        # Ensure timer won't keep process alive at exit
+        try:
+            self.view_change_timer.daemon = True  # type: ignore[attr-defined]
+        except Exception:
+            pass
         self.view_change_timer.start()
         self.last_heartbeat = time.time()
     
@@ -557,8 +568,12 @@ class BFTConsensus:
     def shutdown(self):
         """Shutdown consensus mechanism"""
         with self.lock:
+            self._shutting_down = True
             if self.view_change_timer:
-                self.view_change_timer.cancel()
+                try:
+                    self.view_change_timer.cancel()
+                finally:
+                    self.view_change_timer = None
     
     def _init_error_mitigation(self):
         """Initialize error mitigation components"""
