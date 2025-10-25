@@ -261,7 +261,9 @@ class HierarchyManager:
                 "total_sub_chain_blocks": total_sub_chain_blocks,
                 "total_sub_chain_events": total_sub_chain_events,
                 "system_uptime": self.system_stats["system_uptime"],
-                "auto_proof_submission": self.auto_proof_submission
+                "auto_proof_submission": self.auto_proof_submission,
+                "total_proofs_submitted": self.system_stats["total_proofs"],
+                "all_chains_valid": self._check_system_integrity()
             },
             "main_chain_report": main_chain_report,
             "sub_chain_details": sub_chain_details,
