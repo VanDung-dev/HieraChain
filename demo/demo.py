@@ -599,12 +599,12 @@ def demonstrate_hierarchical_blockchain():
         # Show ordering service information
         ordering_service_info = {
             "batch_size": 250,
-            "max_inflight_transactions": 10000,
+            "max_inflight_events": 10000,
             "consensus_type": "RAFT"
         }
         print(f"   Ordering Service Configuration:")
         print(f"     Batch Size: {ordering_service_info['batch_size']}")
-        print(f"     Max Inflight Transactions: {ordering_service_info['max_inflight_transactions']}")
+        print(f"     Max Inflight Events: {ordering_service_info['max_inflight_events']}")
         print(f"     Consensus Type: {ordering_service_info['consensus_type']}")
         
         # Demonstrate policy information (simulated)
