@@ -1,0 +1,14 @@
+"""
+Core module for Hierarchical-Blockchain Framework.
+
+This module contains the fundamental blockchain components:
+- Block: Block structure with multiple events
+- Blockchain: Base blockchain class
+- Consensus mechanisms: PoA and other consensus algorithms
+- Utilities: Helper functions for blockchain operations
+"""
+
+from hierarchical_blockchain.core.block import Block
+from hierarchical_blockchain.core.blockchain import Blockchain
+
+__all__ = ['Block', 'Blockchain']
