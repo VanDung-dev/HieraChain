@@ -12,14 +12,15 @@ provides validation mechanisms to ensure system integrity.
 
 import os
 from typing import Dict, Any, List
-from hierarchical_blockchain import __version__
+from hierarchical_blockchain.units.version import get_version, VERSION
+
 
 
 class Settings:
     """Framework configuration settings"""
     
     # Framework version
-    VERSION = __version__
+    VERSION = get_version(VERSION)
     FRAMEWORK_NAME = "hierarchical-blockchain"
 
     # Blockchain settings

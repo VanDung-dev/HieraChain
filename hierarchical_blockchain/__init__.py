@@ -7,13 +7,12 @@ designed for enterprise applications with a focus on business operations rather 
 """
 
 from typing import Tuple
-from hierarchical_blockchain.units.version import get_version
+from hierarchical_blockchain.units.version import get_version, VERSION
 
-VERSION: Tuple[int, int, int, str, int] = (0, 0, 0, "dev", 5)
 
 __version__ = get_version(VERSION)
 
 __author__ = "Nguyễn Lê Văn Dũng"
 
 # Define what should be imported with "from hierarchical_blockchain import *"
-__all__ = [VERSION]
+__all__ = []

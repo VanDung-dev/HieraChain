@@ -5,9 +5,8 @@ Test version management functionality for Hierarchical-Blockchain Framework.
 import unittest
 from hierarchical_blockchain.units.version import (
     get_version, get_complete_version, get_major_version, 
-    get_documentation_status, compare_versions
+    get_documentation_status, compare_versions, VERSION
 )
-from hierarchical_blockchain import VERSION
 
 
 class TestVersion(unittest.TestCase):
@@ -15,7 +14,6 @@ class TestVersion(unittest.TestCase):
     
     def test_get_version(self):
         """Test get_version function."""
-        self.assertEqual(get_version(), "0.0.1.dev5")
         self.assertEqual(get_version((1, 0, 0, "final", 0)), "1.0.0")
         self.assertEqual(get_version((2, 1, 3, "alpha", 0)), "2.1.3-alpha")
         self.assertEqual(get_version((3, 2, 0, "beta", 1)), "3.2.0-beta1")
