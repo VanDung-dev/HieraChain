@@ -54,7 +54,6 @@ class KeyManager:
             
         # Check expiration
         if key_data.get('expires_at') and time.time() > key_data['expires_at']:
-            logger.warning(f"API key expired: {api_key[:8]}...")
             return False
             
         return True
@@ -165,7 +164,6 @@ class KeyManager:
         }
         
         self._store_key_data(api_key, key_data)
-        logger.info(f"Created new API key for user: {user_id}")
         
         return api_key
     
@@ -180,8 +178,6 @@ class KeyManager:
         # Remove from cache
         if api_key in self.key_cache:
             del self.key_cache[api_key]
-        
-        logger.info(f"Revoked API key: {api_key[:8]}...")
     
     def _get_key_data(self, api_key: str) -> Optional[Dict]:
         """
@@ -261,10 +257,3 @@ def initialize_default_keys():
         "admin_key": admin_key,
         "key_manager": key_manager
     }
-
-
-if __name__ == "__main__":
-    # Example usage
-    keys = initialize_default_keys()
-    print("Demo API Key:", keys["demo_key"])
-    print("Admin API Key:", keys["admin_key"])
