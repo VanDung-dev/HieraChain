@@ -20,10 +20,10 @@ import datetime
 import atexit
 
 # Import framework components
-from hierarchical.hierarchy_manager import HierarchyManager
-from domains.generic.utils.entity_tracer import EntityTracer
-from domains.generic.utils.cross_chain_validator import CrossChainValidator
-from adapters.database.sqlite_adapter import SQLiteAdapter
+from hierarchical_blockchain.hierarchical.hierarchy_manager import HierarchyManager
+from hierarchical_blockchain.domains.generic.utils.entity_tracer import EntityTracer
+from hierarchical_blockchain.domains.generic.utils.cross_chain_validator import CrossChainValidator
+from hierarchical_blockchain.adapters.database.sqlite_adapter import SQLiteAdapter
 
 # Custom logger to capture all output
 class Logger:

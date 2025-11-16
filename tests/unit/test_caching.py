@@ -7,7 +7,7 @@ including cache operations, eviction policies, and TTL handling.
 
 import time
 
-from core.caching import AdvancedCache
+from hierarchical_blockchain.core.caching import AdvancedCache
 
 
 def test_cache_basic_operations():

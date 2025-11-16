@@ -7,7 +7,7 @@ role-based access control, and hierarchical identity management for enterprise a
 
 import unittest
 
-from security.msp import HierarchicalMSP, CertificateAuthority, OrganizationPolicies
+from hierarchical_blockchain.security.msp import HierarchicalMSP, CertificateAuthority, OrganizationPolicies
 
 
 class TestHierarchicalMSP(unittest.TestCase):

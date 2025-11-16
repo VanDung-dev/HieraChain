@@ -8,12 +8,12 @@ under stress conditions, fault tolerance, data consistency and security scenario
 import time
 import threading
 
-from hierarchical.main_chain import MainChain
-from hierarchical.hierarchy_manager import HierarchyManager
+from hierarchical_blockchain.hierarchical.main_chain import MainChain
+from hierarchical_blockchain.hierarchical.hierarchy_manager import HierarchyManager
 
-from domains.generic.chains.domain_chain import DomainChain
-from domains.generic.utils.entity_tracer import EntityTracer
-from domains.generic.utils.cross_chain_validator import CrossChainValidator
+from hierarchical_blockchain.domains.generic.chains.domain_chain import DomainChain
+from hierarchical_blockchain.domains.generic.utils.entity_tracer import EntityTracer
+from hierarchical_blockchain.domains.generic.utils.cross_chain_validator import CrossChainValidator
 
 
 def test_performance_under_load():

@@ -9,8 +9,8 @@ integrity and follows the project's architectural principles.
 
 import time
 
-from core.blockchain import Blockchain
-from core.block import Block
+from hierarchical_blockchain.core.blockchain import Blockchain
+from hierarchical_blockchain.core.block import Block
 
 
 def test_blockchain_creation():

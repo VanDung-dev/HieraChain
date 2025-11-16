@@ -14,15 +14,15 @@ import logging
 from typing import Dict, List, Any, Tuple
 import tempfile
 
-from risk_management.risk_analyzer import (
+from hierarchical_blockchain.risk_management.risk_analyzer import (
     RiskAnalyzer, RiskAssessment, RiskCategory, RiskSeverity
 )
-from risk_management.mitigation_strategies import (
+from hierarchical_blockchain.risk_management.mitigation_strategies import (
     MitigationManager, MitigationStatus, ConsensusMitigationStrategies,
     SecurityMitigationStrategies, PerformanceMitigationStrategies,
     StorageMitigationStrategies
 )
-from risk_management.audit_logger import (
+from hierarchical_blockchain.risk_management.audit_logger import (
     AuditLogger, AuditEventType, AuditSeverity,
     FileAuditStorage, AuditFilter
 )

@@ -11,11 +11,11 @@ import pytest
 import time
 from unittest.mock import Mock, patch
 
-from error_mitigation.validator import ConsensusValidator
-from error_mitigation.recovery_engine import NetworkRecoveryEngine
-from security.key_backup_manager import KeyBackupManager
-from security.key_manager import KeyManager
-from api.v3.verify import VerifyAPIKey
+from hierarchical_blockchain.error_mitigation.validator import ConsensusValidator
+from hierarchical_blockchain.error_mitigation.recovery_engine import NetworkRecoveryEngine
+from hierarchical_blockchain.security.key_backup_manager import KeyBackupManager
+from hierarchical_blockchain.security.key_manager import KeyManager
+from hierarchical_blockchain.api.v3.verify import VerifyAPIKey
 
 
 class RecoveryTestError(Exception):

@@ -6,8 +6,8 @@ including operation events, entity status updates, main chain connections,
 proof generation, entity history tracking, and domain statistics.
 """
 
-from hierarchical.sub_chain import SubChain
-from hierarchical.main_chain import MainChain
+from hierarchical_blockchain.hierarchical.sub_chain import SubChain
+from hierarchical_blockchain.hierarchical.main_chain import MainChain
 
 
 def test_sub_chain_creation():

@@ -4,7 +4,7 @@ Unit tests for the Ordering Service
 
 import time
 
-from hierarchical.ordering.ordering_service import OrderingService
+from hierarchical_blockchain.hierarchical.ordering.ordering_service import OrderingService
 
 
 class TestOrderingService:

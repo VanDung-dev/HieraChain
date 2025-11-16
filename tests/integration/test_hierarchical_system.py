@@ -5,8 +5,8 @@ This module contains integration tests that validate the complete flow of the hi
 including Main Chain and Sub-Chain interactions, proof submission and verification, and cross-chain entity tracing.
 """
 
-from hierarchical.main_chain import MainChain
-from hierarchical.sub_chain import SubChain
+from hierarchical_blockchain.hierarchical.main_chain import MainChain
+from hierarchical_blockchain.hierarchical.sub_chain import SubChain
 
 
 def test_full_hierarchical_flow():

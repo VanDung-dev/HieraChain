@@ -8,7 +8,7 @@ import json
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from security.key_backup_manager import KeyBackupManager, BackupError, RestoreError
+from hierarchical_blockchain.security.key_backup_manager import KeyBackupManager, BackupError, RestoreError
 
 
 def generate_sample_keys():

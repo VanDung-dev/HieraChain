@@ -17,7 +17,7 @@ import httpx
 # Add the project root to the path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from security.key_manager import KeyManager
+from hierarchical_blockchain.security.key_manager import KeyManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

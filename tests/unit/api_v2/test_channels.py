@@ -9,8 +9,8 @@ import pytest
 from unittest.mock import patch
 from fastapi import HTTPException
 
-from api.v2.endpoints import create_channel, get_channel, create_private_collection
-from api.v2.schemas import ChannelCreateRequest, PrivateCollectionCreateRequest
+from hierarchical_blockchain.api.v2.endpoints import create_channel, get_channel, create_private_collection
+from hierarchical_blockchain.api.v2.schemas import ChannelCreateRequest, PrivateCollectionCreateRequest
 
 
 @pytest.fixture

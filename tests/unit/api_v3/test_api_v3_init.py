@@ -5,7 +5,7 @@ This module contains unit tests for the API v3 package exports,
 ensuring all expected classes and functions are properly exported.
 """
 
-from api.v3 import VerifyAPIKey, ResourcePermissionChecker, create_verify_api_key
+from hierarchical_blockchain.api.v3 import VerifyAPIKey, ResourcePermissionChecker, create_verify_api_key
 
 
 def test_verify_api_key_export():
@@ -31,7 +31,6 @@ def test_create_verify_api_key_export():
 
 def test_all_exports():
     """Test that __all__ contains all expected exports"""
-    import api.v3
     __all__ = api.v3.__all__
     
     expected_exports = [

@@ -7,8 +7,8 @@ including block creation, hashing, event operations, and validation.
 
 import time
 
-from core.block import Block
-from core.blockchain import Blockchain
+from hierarchical_blockchain.core.block import Block
+from hierarchical_blockchain.core.blockchain import Blockchain
 
 
 def test_block_with_multiple_events():

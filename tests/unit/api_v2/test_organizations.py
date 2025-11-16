@@ -9,8 +9,8 @@ import pytest
 from unittest.mock import patch
 from fastapi import HTTPException
 
-from api.v2.endpoints import register_organization
-from api.v2.schemas import OrganizationRequest
+from hierarchical_blockchain.api.v2.endpoints import register_organization
+from hierarchical_blockchain.api.v2.schemas import OrganizationRequest
 
 
 @pytest.fixture

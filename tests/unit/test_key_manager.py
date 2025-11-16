@@ -9,7 +9,7 @@ import time
 import pytest
 from unittest.mock import Mock
 
-from security.key_manager import KeyManager, initialize_default_keys
+from hierarchical_blockchain.security.key_manager import KeyManager, initialize_default_keys
 
 
 class TestKeyManager:

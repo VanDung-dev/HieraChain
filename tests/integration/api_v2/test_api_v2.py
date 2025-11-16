@@ -9,7 +9,7 @@ private data handling, contract operations, and organization registration.
 import pytest
 from fastapi.testclient import TestClient
 
-from api.server import app
+from hierarchical_blockchain.api.server import app
 
 
 @pytest.fixture

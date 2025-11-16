@@ -9,8 +9,8 @@ import pytest
 from unittest.mock import patch
 from fastapi import HTTPException
 
-from api.v2.endpoints import create_contract, execute_contract
-from api.v2.schemas import ContractCreateRequest, ContractExecuteRequest
+from hierarchical_blockchain.api.v2.endpoints import create_contract, execute_contract
+from hierarchical_blockchain.api.v2.schemas import ContractCreateRequest, ContractExecuteRequest
 
 
 @pytest.fixture

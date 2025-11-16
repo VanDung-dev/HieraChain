@@ -10,7 +10,7 @@ import pytest
 from unittest.mock import Mock, patch
 from fastapi import HTTPException
 
-from api.v3.verify import VerifyAPIKey, ResourcePermissionChecker, create_verify_api_key
+from hierarchical_blockchain.api.v3.verify import VerifyAPIKey, ResourcePermissionChecker, create_verify_api_key
 
 
 @pytest.fixture

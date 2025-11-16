@@ -9,8 +9,8 @@ import pytest
 from unittest.mock import patch
 from fastapi import HTTPException
 
-from api.v2.endpoints import add_private_data
-from api.v2.schemas import PrivateDataRequest
+from hierarchical_blockchain.api.v2.endpoints import add_private_data
+from hierarchical_blockchain.api.v2.schemas import PrivateDataRequest
 
 
 @pytest.fixture

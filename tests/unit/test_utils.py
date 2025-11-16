@@ -7,7 +7,7 @@ including hash generation, entity ID generation, and proof hash generation.
 
 import time
 
-from core.utils import generate_hash, generate_entity_id, generate_proof_hash, validate_proof_metadata
+from hierarchical_blockchain.core.utils import generate_hash, generate_entity_id, generate_proof_hash, validate_proof_metadata
 
 
 def test_generate_hash():
