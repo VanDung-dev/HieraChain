@@ -8,7 +8,6 @@ Ensures only authorized clients with valid, non-revoked API keys can access prot
 from fastapi import Depends, HTTPException, Security
 from fastapi.security import APIKeyHeader, APIKeyQuery
 from typing import Dict, Optional
-import logging
 import time
 import sys
 import os
@@ -16,8 +15,6 @@ import os
 # Add the project root to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from hierarchical_blockchain.security.key_manager import KeyManager
-
-logger = logging.getLogger(__name__)
 
 # Different API key placement options
 api_key_header = APIKeyHeader(name="x-api-key", auto_error=False)
@@ -192,7 +189,6 @@ class VerifyAPIKey:
             "source": "VerifyAPIKey",
             "framework": "hierarchical_blockchain"
         }
-        logger.info(f"Security Event: {event_type}", extra=log_entry)
 
 
 class ResourcePermissionChecker:
