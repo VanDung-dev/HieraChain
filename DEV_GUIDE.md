@@ -56,7 +56,7 @@ from hierarchical_blockchain.core.blockchain import Blockchain
     python demo/demo_key_backup.py
     ```
 
--Run the API demo:
+-   Run the API demo:
     ```bash
     python demo/demo_api.py
     ```
