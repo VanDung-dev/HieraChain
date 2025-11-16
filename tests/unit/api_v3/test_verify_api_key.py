@@ -16,7 +16,7 @@ from hierarchical_blockchain.api.v3.verify import VerifyAPIKey, ResourcePermissi
 @pytest.fixture
 def mock_key_manager():
     """Mock KeyManager for testing"""
-    with patch('api.v3.verify.KeyManager') as mock_km:
+    with patch('hierarchical_blockchain.api.v3.verify.KeyManager') as mock_km:
         mock_instance = Mock()
         mock_instance.is_valid.return_value = True
         mock_instance.is_revoked.return_value = False
@@ -208,7 +208,7 @@ async def test_create_verify_api_key_factory(default_config):
 @pytest.mark.asyncio
 async def test_log_security_event(mock_key_manager, default_config):
     """Test that security events are logged"""
-    with patch('api.v3.verify.logger') as mock_logger:
+    with patch('hierarchical_blockchain.api.v3.verify.logger') as mock_logger:
         verify_key = VerifyAPIKey(default_config)
         verify_key.key_manager = mock_key_manager
         

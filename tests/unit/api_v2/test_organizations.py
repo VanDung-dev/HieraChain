@@ -33,8 +33,8 @@ def mock_org_data():
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('api.v2.endpoints._organizations', {})
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierarchical_blockchain.api.v2.endpoints._organizations', {})
 async def test_register_organization_success(mock_org_data):
     """Test successful organization registration"""
     request = OrganizationRequest(**mock_org_data)
@@ -45,7 +45,7 @@ async def test_register_organization_success(mock_org_data):
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', False)
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', False)
 async def test_register_organization_not_implemented(mock_org_data):
     """Test organization registration when modules are not available"""
     request = OrganizationRequest(**mock_org_data)

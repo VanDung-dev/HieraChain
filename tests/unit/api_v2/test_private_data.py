@@ -32,8 +32,8 @@ def mock_private_data():
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('api.v2.endpoints._private_collections', {"test_collection": {}})
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
 async def test_add_private_data_success(mock_private_data):
     """Test successful addition of private data"""
     request = PrivateDataRequest(**mock_private_data)
@@ -44,8 +44,8 @@ async def test_add_private_data_success(mock_private_data):
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('api.v2.endpoints._private_collections', {})
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {})
 async def test_add_private_data_collection_not_found(mock_private_data):
     """Test adding private data to non-existent collection"""
     request = PrivateDataRequest(**mock_private_data)
@@ -58,7 +58,7 @@ async def test_add_private_data_collection_not_found(mock_private_data):
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', False)
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', False)
 async def test_add_private_data_not_implemented(mock_private_data):
     """Test adding private data when modules are not available"""
     request = PrivateDataRequest(**mock_private_data)

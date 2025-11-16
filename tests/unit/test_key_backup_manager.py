@@ -65,7 +65,7 @@ class TestKeyBackupManager:
         
         assert backup_id == ""
 
-    @patch('security.key_backup_manager.Fernet')
+    @patch('hierarchical_blockchain.security.key_backup_manager.Fernet')
     def test_backup_keys_success(self, mock_fernet):
         """Test successful key backup"""
         config = {"enabled": True}
@@ -91,7 +91,7 @@ class TestKeyBackupManager:
         # Check metadata was updated
         assert os.path.exists(self.metadata_file)
 
-    @patch('security.key_backup_manager.Fernet')
+    @patch('hierarchical_blockchain.security.key_backup_manager.Fernet')
     def test_backup_keys_encryption(self, mock_fernet):
         """Test that backup data is encrypted"""
         config = {"enabled": True}
@@ -111,7 +111,7 @@ class TestKeyBackupManager:
         assert mock_fernet.called
         assert mock_fernet_instance.encrypt.called
 
-    @patch('security.key_backup_manager.Fernet')
+    @patch('hierarchical_blockchain.security.key_backup_manager.Fernet')
     def test_restore_keys_success(self, mock_fernet):
         """Test successful key restoration"""
         config = {"enabled": True}
@@ -146,7 +146,7 @@ class TestKeyBackupManager:
         km = KeyBackupManager(config)
         
         # Mock encryption
-        with patch('security.key_backup_manager.Fernet') as mock_fernet:
+        with patch('hierarchical_blockchain.security.key_backup_manager.Fernet') as mock_fernet:
             mock_fernet_instance = Mock()
             mock_fernet_instance.encrypt.return_value = b"encrypted_data"
             mock_fernet.return_value = mock_fernet_instance
@@ -165,7 +165,7 @@ class TestKeyBackupManager:
             assert len(type1_backups) == 1
             assert type1_backups[0]["key_type"] == "type1"
 
-    @patch('security.key_backup_manager.Fernet')
+    @patch('hierarchical_blockchain.security.key_backup_manager.Fernet')
     def test_verify_backup_integrity_valid(self, mock_fernet):
         """Test backup integrity verification with valid backup"""
         config = {"enabled": True}

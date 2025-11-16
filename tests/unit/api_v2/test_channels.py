@@ -41,8 +41,8 @@ def mock_collection_data():
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('api.v2.endpoints._channels', {})
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierarchical_blockchain.api.v2.endpoints._channels', {})
 async def test_create_channel_success(mock_channel_data):
     """Test successful channel creation"""
     request = ChannelCreateRequest(**mock_channel_data)
@@ -53,7 +53,7 @@ async def test_create_channel_success(mock_channel_data):
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', False)
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', False)
 async def test_create_channel_not_implemented():
     """Test channel creation when modules are not available"""
     request = ChannelCreateRequest(
@@ -69,8 +69,8 @@ async def test_create_channel_not_implemented():
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('api.v2.endpoints._channels', {"existing_channel": {}})
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierarchical_blockchain.api.v2.endpoints._channels', {"existing_channel": {}})
 async def test_get_channel_success():
     """Test successful channel retrieval"""
     response = await get_channel("existing_channel")
@@ -80,8 +80,8 @@ async def test_get_channel_success():
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('api.v2.endpoints._channels', {})
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierarchical_blockchain.api.v2.endpoints._channels', {})
 async def test_get_channel_not_found():
     """Test channel retrieval for non-existent channel"""
     with pytest.raises(HTTPException) as exc_info:
@@ -91,9 +91,9 @@ async def test_get_channel_not_found():
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('api.v2.endpoints._channels', {"test_channel": {}})
-@patch('api.v2.endpoints._private_collections', {})
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierarchical_blockchain.api.v2.endpoints._channels', {"test_channel": {}})
+@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {})
 async def test_create_private_collection_success(mock_collection_data):
     """Test successful private collection creation"""
     request = PrivateCollectionCreateRequest(**mock_collection_data)
@@ -103,8 +103,8 @@ async def test_create_private_collection_success(mock_collection_data):
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('api.v2.endpoints._channels', {})
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierarchical_blockchain.api.v2.endpoints._channels', {})
 async def test_create_private_collection_channel_not_found(mock_collection_data):
     """Test private collection creation for non-existent channel"""
     request = PrivateCollectionCreateRequest(**mock_collection_data)
@@ -116,7 +116,7 @@ async def test_create_private_collection_channel_not_found(mock_collection_data)
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', False)
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', False)
 async def test_create_private_collection_not_implemented(mock_collection_data):
     """Test private collection creation when modules are not available"""
     request = PrivateCollectionCreateRequest(**mock_collection_data)

@@ -49,8 +49,8 @@ def mock_execution_data():
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('api.v2.endpoints._contracts', {})
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {})
 async def test_create_contract_success(mock_contract_data):
     """Test successful contract creation"""
     request = ContractCreateRequest(**mock_contract_data)
@@ -61,7 +61,7 @@ async def test_create_contract_success(mock_contract_data):
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', False)
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', False)
 async def test_create_contract_not_implemented(mock_contract_data):
     """Test contract creation when modules are not available"""
     request = ContractCreateRequest(**mock_contract_data)
@@ -74,8 +74,8 @@ async def test_create_contract_not_implemented(mock_contract_data):
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('api.v2.endpoints._contracts', {"test_contract": {}})
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {"test_contract": {}})
 async def test_execute_contract_success(mock_execution_data):
     """Test successful contract execution"""
     request = ContractExecuteRequest(**mock_execution_data)
@@ -87,8 +87,8 @@ async def test_execute_contract_success(mock_execution_data):
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('api.v2.endpoints._contracts', {})
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {})
 async def test_execute_contract_not_found(mock_execution_data):
     """Test contract execution for non-existent contract"""
     request = ContractExecuteRequest(**mock_execution_data)
@@ -101,7 +101,7 @@ async def test_execute_contract_not_found(mock_execution_data):
 
 
 @pytest.mark.asyncio
-@patch('api.v2.endpoints.HAS_NEW_MODULES', False)
+@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', False)
 async def test_execute_contract_not_implemented(mock_execution_data):
     """Test contract execution when modules are not available"""
     request = ContractExecuteRequest(**mock_execution_data)
