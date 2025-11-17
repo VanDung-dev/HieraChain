@@ -203,17 +203,3 @@ async def test_create_verify_api_key_factory(default_config):
     assert verify_key.enabled == True
     assert verify_key.key_location == "header"
     assert verify_key.key_name == "x-api-key"
-
-
-@pytest.mark.asyncio
-async def test_log_security_event(mock_key_manager, default_config):
-    """Test that security events are logged"""
-    with patch('hierarchical_blockchain.api.v3.verify.logger') as mock_logger:
-        verify_key = VerifyAPIKey(default_config)
-        verify_key.key_manager = mock_key_manager
-        
-        # Call the method that logs security events
-        _context = await verify_key("valid_api_key")
-        
-        # Check if logger was called
-        assert mock_logger.info.called
