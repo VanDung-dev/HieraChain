@@ -816,28 +816,3 @@ def create_recovery_engine(engine_type: str, config: Dict[str, Any]):
         raise ValueError(f"Unknown recovery engine type: {engine_type}")
 
     return engines[engine_type](config)
-
-
-if __name__ == "__main__":
-    # Example usage and testing
-    print("Error Mitigation Recovery Engine Module")
-    print("=====================================")
-
-    # Test network recovery engine
-    network_config = {"timeout_multiplier": 2.0, "redundancy_factor": 2}
-    network_engine = NetworkRecoveryEngine(network_config)
-
-    # Test timeout adjustment
-    latency_history = [100, 150, 200]  # ms
-    adjusted_timeout = network_engine.adjust_timeout(latency_history)
-    print(f"✓ Adjusted timeout: {adjusted_timeout:.2f}s")
-
-    # Test auto scaler
-    scaler_config = {"auto_scale": True, "min_nodes": 4, "max_nodes": 16}
-    auto_scaler = AutoScaler(scaler_config)
-
-    # Test scaling decision
-    scale_result = auto_scaler.scale_up("nodes", 0.85)
-    print(f"✓ Scale up decision: {scale_result}")
-
-    print("Recovery engines initialized successfully")

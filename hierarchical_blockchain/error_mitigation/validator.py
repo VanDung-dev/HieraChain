@@ -521,38 +521,3 @@ def create_validator(validator_type: str, config: Dict[str, Any]):
         raise ValueError(f"Unknown validator type: {validator_type}")
     
     return validators[validator_type](config)
-
-
-if __name__ == "__main__":
-    # Example usage and testing
-    print("Error Mitigation Validator Module")
-    print("=================================")
-    
-    # Test consensus validator
-    test_consensus_config = {"f": 1, "auto_scale_threshold": 0.8}
-    consensus_validator = ConsensusValidator(test_consensus_config)
-    
-    # Mock nodes for testing
-    class MockNode:
-        def __init__(self, node_id, health_status="active"):
-            self.node_id = node_id
-            self.health_status = health_status
-            self.last_heartbeat = time.time()
-    
-    test_nodes = [MockNode(f"node{i}") for i in range(4)]
-    
-    try:
-        consensus_validator.validate_node_count(test_nodes)
-        print("✓ Consensus validation passed")
-    except ValidationError as e:
-        print(f"✗ Consensus validation failed: {e}")
-    
-    # Test encryption validator
-    test_encryption_config = {"algorithm": "AES-256-GCM", "key_rotation_interval": 2592000}
-    encryption_validator = EncryptionValidator(test_encryption_config)
-    
-    try:
-        encryption_validator.validate_config()
-        print("✓ Encryption validation passed")
-    except SecurityError as e:
-        print(f"✗ Encryption validation failed: {e}")
