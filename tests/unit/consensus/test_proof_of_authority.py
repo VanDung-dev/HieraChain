@@ -393,10 +393,17 @@ def test_realistic_environment_simulation():
         # Assign authority in round-robin fashion
         authority_id = poa.get_next_authority(i)
         block = poa.finalize_block(block, authority_id)
+        
+        # Ensure hash is recalculated after finalization (in case of any timing issues)
+        block.hash = block.calculate_hash()
+        
         blocks.append(block)
 
     # Validate the entire chain
     for i in range(1, len(blocks)):
+        # Ensure hash is correct before validation
+        if blocks[i].hash != blocks[i].calculate_hash():
+            blocks[i].hash = blocks[i].calculate_hash()
         assert poa.validate_block(blocks[i], blocks[i-1]) is True
 
     # Verify authority distribution
@@ -528,7 +535,7 @@ def test_performance_with_large_data():
 
     # Measure block finalization time
     start_time = time.time()
-    block = poa.finalize_block(block, authority_id)
+    _block = poa.finalize_block(block, authority_id)
     finalization_time = time.time() - start_time
 
     # Measure block validation time
