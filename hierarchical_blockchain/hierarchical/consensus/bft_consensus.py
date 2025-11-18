@@ -84,7 +84,7 @@ class BFTConsensus:
         # Validate BFT requirements (n >= 3f + 1)
         if self.n < 3 * self.f + 1:
             raise ConsensusError(
-                f"BFT requires at least {3*f+1} nodes to tolerate {f} faults, "
+                f"BFT requires at least {3 * f + 1} nodes to tolerate {f} faults, "
                 f"but only {self.n} nodes provided"
             )
         
@@ -101,7 +101,12 @@ class BFTConsensus:
         self.committed_sequence = -1
         self.pending_requests: List[Dict[str, Any]] = []
         self.message_log: List[BFTMessage] = []
-        
+
+        # Node monitoring
+        self.node_response_times: Dict[str, List[float]] = {}
+        self.node_failure_counts: Dict[str, int] = {}
+        self.max_failure_count = 3
+
         # View change state
         self.view_change_timer: Optional[threading.Timer] = None
         self.view_change_timeout = 30.0  # seconds
@@ -299,11 +304,15 @@ class BFTConsensus:
                 
             # Verify signature and digest
             if not self._verify_signature(message):
+                # Log potential malicious behavior
+                self._log_node_behavior(message.sender_id, "invalid_signature")
                 return False
             
             # Verify digest matches pre-prepare
             pre_prepare = self.pre_prepare_messages.get(seq)
             if pre_prepare and pre_prepare.data.get("digest") != message.data.get("digest"):
+                # Log potential malicious behavior
+                self._log_node_behavior(message.sender_id, "digest_mismatch")
                 return False
                 
             # Store message
@@ -350,6 +359,8 @@ class BFTConsensus:
                 
             # Verify signature
             if not self._verify_signature(message):
+                # Log potential malicious behavior
+                self._log_node_behavior(message.sender_id, "invalid_signature")
                 return False
                 
             # Store message
@@ -419,17 +430,29 @@ class BFTConsensus:
                 
         except Exception as e:
             print(f"Error executing operation: {e}")
-    
+
     def _broadcast(self, message: BFTMessage):
-        """Broadcast message to all other nodes"""
+        """Broadcast message to all other nodes with error handling"""
         if self.network_send_function:
+            successful_sends = 0
+            failed_sends = 0
+
             for node_id in self.all_nodes:
                 if node_id != self.node_id:
                     try:
                         self.network_send_function(node_id, message.to_dict())
+                        successful_sends += 1
                     except Exception as e:
                         print(f"Error sending to {node_id}: {e}")
-    
+                        failed_sends += 1
+                        # Log the network issue
+                        self._log_node_behavior(node_id, "network_send_failure")
+
+            # If too many sends failed, consider initiating recovery
+            if failed_sends > self.f and self.auto_recovery_enabled:
+                print(f"Too many network failures ({failed_sends}), initiating recovery")
+                self._initiate_view_change(self.view + 1)
+
     def _forward_to_primary(self, operation: Dict[str, Any]):
         """Forward request to primary node"""
         if self.network_send_function:
@@ -442,9 +465,39 @@ class BFTConsensus:
                     })
                 except Exception as e:
                     print(f"Error forwarding to primary {primary}: {e}")
-    
+
+    def _log_node_behavior(self, node_id: str, issue: str):
+        """Log node behavior issues for error classification"""
+        if not self.error_classifier:
+            return
+
+        error_data = {
+            "error_type": f"node_{issue}",
+            "message": f"Node {node_id} exhibited {issue}",
+            "metadata": {
+                "node_id": node_id,
+                "issue": issue,
+                "timestamp": time.time(),
+                "view": self.view,
+                "sequence": self.sequence_number
+            }
+        }
+
+        # Classify the error
+        error_info = self.error_classifier.classify_error(error_data)
+
+        # Update node tracking
+        if node_id not in self.node_failure_counts:
+            self.node_failure_counts[node_id] = 0
+
+        self.node_failure_counts[node_id] += 1
+
+        # If node repeatedly has issues, consider initiating view change
+        if self.node_failure_counts[node_id] >= self.max_failure_count and self.auto_recovery_enabled:
+            self._initiate_view_change(self.view + 1)
+
     def _validate_message(self, message: BFTMessage) -> bool:
-        """Validate incoming message"""
+        """Validate incoming message with enhanced checks"""
         # Basic validation
         if message.sender_id not in self.all_nodes:
             return False
@@ -453,8 +506,22 @@ class BFTConsensus:
             return False
         
         # Signature validation
-        return self._verify_signature(message)
-    
+        if not self._verify_signature(message):
+            # Use verification_strictness setting to determine action
+            if self.verification_strictness == "high":
+                return False
+            # With lower strictness, we might just log the issue
+            self._log_node_behavior(message.sender_id, "signature_verification_failed")
+
+        # Check for message timeouts
+        current_time = time.time()
+        if (current_time - message.timestamp) > self.view_change_timeout:
+            self._log_node_behavior(message.sender_id, "slow_message")
+            # With slow messages, we might still process if within reason
+            # but this could contribute to node reputation issues
+
+        return True
+
     def _sign_message(self, data: str) -> str:
         """Sign message data (simplified implementation)"""
         # In a real implementation, this would use proper cryptographic signing
