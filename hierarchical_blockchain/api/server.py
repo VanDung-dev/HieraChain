@@ -1,9 +1,9 @@
 """
 FastAPI server for Hierarchical Blockchain Framework
 
-This module implements the REST API server for the Hierarchical Blockchain Framework,
-which is inspired by Hyperledger Fabric architecture. The framework implements a
-hierarchical structure where the Main Chain only stores proofs from Sub-Chains.
+This module implements the REST API server for the Hierarchical Blockchain Framework.
+The framework implements a hierarchical structure where the Main Chain only stores 
+proofs from Sub-Chains.
 
 The server uses FastAPI for high performance and includes proper error handling,
 CORS support, and comprehensive logging.

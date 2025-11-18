@@ -1,9 +1,9 @@
 """
 World State Management Module
 
-This module implements a simplified world state mechanism based on Hyperledger Fabric's architecture,
-adapted for the hierarchical blockchain structure. The world state represents the current values
-of all ledger states, enabling efficient read/write operations without traversing the entire blockchain.
+This module implements a simplified world state mechanism adapted for the hierarchical 
+blockchain structure. The world state represents the current values of all ledger states, 
+enabling efficient read/write operations without traversing the entire blockchain.
 
 The world state is updated through events processed from blocks, maintaining entity states
 with efficient indexing for common query patterns.
@@ -14,7 +14,7 @@ from hierarchical_blockchain.storage.memory_storage import MemoryStorage
 
 
 class WorldState:
-    """Simplified World State mechanism based on Fabric"""
+    """Simplified World State mechanism for hierarchical blockchain"""
     def __init__(self, chain_name: str, storage_backend=None):
         """
         chain_name: Chain name

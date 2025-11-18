@@ -2,9 +2,8 @@
 Multi-Organization Architecture for Hierarchical Blockchain Framework
 
 This module implements the multi-organization architecture with MSP integration,
-inspired by Hyperledger Fabric but simplified for enterprise applications.
-Provides support for multiple organizations, affiliation hierarchies, and
-channel management across organizational boundaries.
+designed for enterprise applications. Provides support for multiple organizations, 
+affiliation hierarchies, and channel management across organizational boundaries.
 """
 
 import time

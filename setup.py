@@ -17,7 +17,7 @@ setup(
     name="hierarchical-blockchain",
     version=get_version(VERSION),
     author="Nguyễn Lê Văn Dũng",
-    description="A hierarchical blockchain framework inspired by Hyperledger Fabric",
+    description="A hierarchical blockchain framework for enterprise applications",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(include=['hierarchical_blockchain', 'hierarchical_blockchain.*'], exclude=['tests*', 'testing*']),

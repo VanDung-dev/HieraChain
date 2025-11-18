@@ -1,10 +1,9 @@
 """
 Configuration settings for hierarchical blockchain framework.
 
-This module provides the configuration management for the hierarchical blockchain system
-inspired by Hyperledger Fabric architecture. It defines settings for various components
-including blockchain parameters, consensus mechanisms, storage backends, security features,
-and integration capabilities.
+This module provides the configuration management for the hierarchical blockchain system.
+It defines settings for various components including blockchain parameters, consensus 
+mechanisms, storage backends, security features, and integration capabilities.
 
 The configuration supports multiple environments (development, production, testing) and
 provides validation mechanisms to ensure system integrity.

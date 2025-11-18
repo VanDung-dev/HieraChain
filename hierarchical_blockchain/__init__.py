@@ -2,8 +2,8 @@
 Hierarchical Blockchain Framework
 =================================
 
-A hierarchical blockchain framework inspired by Hyperledger Fabric architecture,
-designed for enterprise applications with a focus on business operations rather than cryptocurrency.
+A hierarchical blockchain framework designed for enterprise applications 
+with a focus on business operations rather than cryptocurrency.
 """
 
 from hierarchical_blockchain.units.version import get_version, VERSION
