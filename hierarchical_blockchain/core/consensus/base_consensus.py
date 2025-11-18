@@ -99,11 +99,33 @@ class BaseConsensus(ABC):
             return False
         
         # Should not contain cryptocurrency terms
+        # Check only in relevant fields, not in hash/signature fields
         forbidden_terms = ["transaction", "mining", "coin", "token", "wallet", "fee"]
-        event_str = str(event).lower()
+        
+        # Check event type field
+        event_type = str(event.get("event", "")).lower()
         for term in forbidden_terms:
-            if term in event_str:
+            if term in event_type:
                 return False
+        
+        # Check details field (but exclude hash/signature fields)
+        if "details" in event and isinstance(event["details"], dict):
+            details = event["details"]
+            # Check only non-hash/signature fields
+            for key, value in details.items():
+                if key not in ["authority_signature", "signature", "hash", "proof_hash"]:
+                    value_str = str(value).lower()
+                    for term in forbidden_terms:
+                        if term in value_str:
+                            return False
+        
+        # Check other top-level fields (excluding hash/signature fields)
+        for key, value in event.items():
+            if key not in ["authority_signature", "signature", "hash", "proof_hash", "details", "event", "timestamp"]:
+                value_str = str(value).lower()
+                for term in forbidden_terms:
+                    if term in value_str:
+                        return False
         
         return True
     
