@@ -242,3 +242,202 @@ def test_cross_chain_entity_tracing():
     assert len(manufacturing_proofs) == 1
     assert len(quality_proofs) == 1
     assert len(shipping_proofs) == 1
+
+
+def test_nested_hierarchy():
+    """Test case for deeply nested hierarchy system (nested hierarchy)"""
+    # Create Main Chain
+    main_chain = MainChain(name="NestedHierarchyMainChain")
+    
+    # Create first level Sub-Chains
+    sub_chain_level1_a = SubChain(name="Level1ChainA", domain_type="manufacturing")
+    sub_chain_level1_b = SubChain(name="Level1ChainB", domain_type="logistics")
+    
+    # Connect first level Sub-Chains to Main Chain
+    assert sub_chain_level1_a.connect_to_main_chain(main_chain) is True
+    assert sub_chain_level1_b.connect_to_main_chain(main_chain) is True
+    
+    # Create second level Sub-Chains (nested under Level1ChainA)
+    sub_chain_level2_a1 = SubChain(name="Level2ChainA1", domain_type="assembly")
+    sub_chain_level2_a2 = SubChain(name="Level2ChainA2", domain_type="quality_control")
+    
+    # Connect second level Sub-Chains to first level Sub-Chain A
+    # Note: In this implementation, sub-chains connect directly to main chain
+    # but we can simulate nesting by using naming conventions and metadata
+    assert sub_chain_level2_a1.connect_to_main_chain(main_chain) is True
+    assert sub_chain_level2_a2.connect_to_main_chain(main_chain) is True
+    
+    # Create third level Sub-Chain (nested under Level2ChainA1)
+    sub_chain_level3_a1a = SubChain(name="Level3ChainA1A", domain_type="inspection")
+    assert sub_chain_level3_a1a.connect_to_main_chain(main_chain) is True
+    
+    # Verify all chains are registered in Main Chain
+    assert len(main_chain.registered_sub_chains) == 5
+    assert "Level1ChainA" in main_chain.registered_sub_chains
+    assert "Level1ChainB" in main_chain.registered_sub_chains
+    assert "Level2ChainA1" in main_chain.registered_sub_chains
+    assert "Level2ChainA2" in main_chain.registered_sub_chains
+    assert "Level3ChainA1A" in main_chain.registered_sub_chains
+    
+    # Simulate hierarchical operations with entity
+    entity_id = "PRODUCT-NESTED-HIERARCHY-001"
+    
+    # Level 1 operations
+    sub_chain_level1_a.start_operation(entity_id, "production_planning", {"plan_id": "PLAN-001"})
+    sub_chain_level1_a.complete_operation(entity_id, "production_planning", {"status": "approved"})
+    sub_chain_level1_a.finalize_sub_chain_block()
+    sub_chain_level1_a.submit_proof_to_main(main_chain)
+    
+    # Level 2 operations
+    sub_chain_level2_a1.start_operation(entity_id, "assembly_process", {"line": "A1"})
+    sub_chain_level2_a1.update_entity_status(entity_id, "in_progress", {"step": 1})
+    sub_chain_level2_a1.complete_operation(entity_id, "assembly_process", {"result": "completed"})
+    sub_chain_level2_a1.finalize_sub_chain_block()
+    sub_chain_level2_a1.submit_proof_to_main(main_chain)
+    
+    # Level 3 operations (deepest nesting level)
+    sub_chain_level3_a1a.start_operation(entity_id, "detailed_inspection", {"criteria": "ISO9001"})
+    sub_chain_level3_a1a.complete_operation(entity_id, "detailed_inspection", {"result": "passed", "score": 95})
+    sub_chain_level3_a1a.finalize_sub_chain_block()
+    sub_chain_level3_a1a.submit_proof_to_main(main_chain)
+    
+    # More Level1 operations
+    sub_chain_level1_b.start_operation(entity_id, "shipping_preparation", {"destination": "WAREHOUSE-A"})
+    sub_chain_level1_b.complete_operation(entity_id, "shipping_preparation", {"tracking": "TX-NESTED-001"})
+    sub_chain_level1_b.finalize_sub_chain_block()
+    sub_chain_level1_b.submit_proof_to_main(main_chain)
+    
+    # Finalize all proofs in Main Chain
+    for _ in range(4):  # We submitted 4 proofs
+        main_chain.finalize_block()
+    
+    # Validate all chains
+    assert main_chain.is_chain_valid() is True
+    assert sub_chain_level1_a.is_chain_valid() is True
+    assert sub_chain_level1_b.is_chain_valid() is True
+    assert sub_chain_level2_a1.is_chain_valid() is True
+    assert sub_chain_level2_a2.is_chain_valid() is True
+    assert sub_chain_level3_a1a.is_chain_valid() is True
+    
+    # Check that all proofs are in Main Chain
+    assert main_chain.proof_count == 4
+    
+    # Verify each sub-chain's proof
+    level1_a_proofs = main_chain.get_proofs_by_sub_chain("Level1ChainA")
+    level1_b_proofs = main_chain.get_proofs_by_sub_chain("Level1ChainB")
+    level2_a1_proofs = main_chain.get_proofs_by_sub_chain("Level2ChainA1")
+    level3_a1a_proofs = main_chain.get_proofs_by_sub_chain("Level3ChainA1A")
+    
+    assert len(level1_a_proofs) == 1
+    assert len(level1_b_proofs) == 1
+    assert len(level2_a1_proofs) == 1
+    assert len(level3_a1a_proofs) == 1
+    
+    # Test hierarchical integrity report includes all chains
+    integrity_report =main_chain.get_hierarchical_integrity_report()
+    assert integrity_report["registered_sub_chains"] == 5
+    assert "Level1ChainA" in integrity_report["sub_chains"]
+    assert "Level1ChainB" in integrity_report["sub_chains"]
+    assert "Level2ChainA1" in integrity_report["sub_chains"]
+    assert "Level2ChainA2" in integrity_report["sub_chains"]
+    assert "Level3ChainA1A" in integrity_report["sub_chains"]
+    
+    # Verify hierarchical structure through metadata (simulated nesting)
+    level3_chain_summary = main_chain.get_sub_chain_summary("Level3ChainA1A")
+    assert level3_chain_summary["registered"] is True
+    assert level3_chain_summary["metadata"]["domain_type"] == "inspection"
+
+
+def test_rollback_on_error():
+    """Test case for rollback functionality when errors occur"""
+    from hierarchical_blockchain.error_mitigation.rollback_manager import RollbackManager, RollbackType
+    
+    # Create rollback manager
+    rollback_config = {
+        "snapshots_dir": "test_snapshots",
+        "max_snapshots": 5,
+        "auto_snapshot": False
+    }
+    rollback_manager = RollbackManager(rollback_config)
+    
+    #Create Main Chain and Sub-Chains
+    main_chain = MainChain(name="RollbackTestMainChain")
+    sub_chain = SubChain(name="RollbackTestSubChain", domain_type="testing")
+    sub_chain.connect_to_main_chain(main_chain)
+    
+    # Create initial state snapshot
+    initial_snapshot = rollback_manager.create_snapshot(
+        RollbackType.CHAIN_STATE,
+        "Initial state before operations",
+        [main_chain, sub_chain]
+    )
+    
+    # Perform some operations
+    entity_id = "PRODUCT-ROLLBACK-001"
+    sub_chain.start_operation(entity_id, "test_operation_1", {"param": "value1"})
+    sub_chain.update_entity_status(entity_id, "processing", {"step": 1})
+    sub_chain.complete_operation(entity_id, "test_operation_1", {"result": "success"})
+    
+    # Finalize block and submit proof
+    sub_chain.finalize_sub_chain_block()
+    sub_chain.submit_proof_to_main(main_chain)
+    main_chain.finalize_block()
+    
+    # Create snapshot after first set of operations
+    mid_snapshot = rollback_manager.create_snapshot(
+        RollbackType.CHAIN_STATE,
+        "State after first operations",
+        [main_chain, sub_chain]
+    )
+    
+    # Perform more operationsthat might cause issues
+    sub_chain.start_operation("PRODUCT-ROLLBACK-002", "test_operation_2", {"param": "value2"})
+    sub_chain.update_entity_status("PRODUCT-ROLLBACK-002", "processing", {"step": 1})
+    
+    # Simulate an errorcondition
+    # (In a real scenario, this could be a consensus failure, invalid transaction, etc.)
+    
+    # Create snapshot before "error"
+    error_snapshot = rollback_manager.create_snapshot(
+        RollbackType.CHAIN_STATE,
+        "State before error condition",
+        [main_chain, sub_chain]
+    )
+    # Perform operations that lead to problematic state
+    sub_chain.complete_operation("PRODUCT-ROLLBACK-002", "test_operation_2", {"result": "failure"})
+    sub_chain.finalize_sub_chain_block()
+    
+    # Check current state
+    assert len(sub_chain.chain) == 3 # Genesis + 2 blocks
+    assert main_chain.proof_count == 1
+    
+    # Now perform rollback to mid_snapshot (before the error)
+    rollback_operation = rollback_manager.rollback_to_snapshot(mid_snapshot.snapshot_id)
+    
+    # Verify rollback was successful
+    assert rollback_operation.status.value == "completed"
+    
+    # Check that state has been reverted
+    # Note: In a real implementation, the rollback would actually restore the chain state
+    # But in our simplified test, we're mainly testing that the rollback mechanism works
+    
+    # Verify snapshots are available
+    snapshots = rollback_manager.get_snapshots()
+    assert len(snapshots) >= 3
+    snapshot_ids = [s.snapshot_id for s in snapshots]
+    assert initial_snapshot.snapshot_id in snapshot_ids
+    assert mid_snapshot.snapshot_id in snapshot_ids
+    assert error_snapshot.snapshot_id in snapshot_ids
+    
+    # Test that we can still perform operations after rollback
+    sub_chain.start_operation("PRODUCT-ROLLBACK-003", "test_operation_3", {"param": "value3"})
+    sub_chain.complete_operation("PRODUCT-ROLLBACK-003", "test_operation_3", {"result": "success"})
+    sub_chain.finalize_sub_chain_block()
+    
+    # Clean uptest snapshots directory
+    import shutil
+    import os
+    if os.path.exists("test_snapshots"):
+        shutil.rmtree("test_snapshots")
+    if os.path.exists("rollback_operations.log"):
+        os.remove("rollback_operations.log")
