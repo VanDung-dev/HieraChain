@@ -158,3 +158,84 @@ def test_block_structure_validation():
     except (ValueError, TypeError):
         # Constructor might reject invalid structure
         pass
+
+
+def test_block_with_zero_events():
+    """Test block creation with zero events"""
+    block = Block(
+        index=1,
+        events=[],  # Empty events list
+        previous_hash="0000000000000000000000000000000000000000000000000000000000000000"
+    )
+    
+    # Check block properties
+    assert block.index == 1
+    assert len(block.events) == 0
+    assert block.previous_hash == "0000000000000000000000000000000000000000000000000000000000000000"
+    assert isinstance(block.hash, str)
+    assert len(block.hash) == 64  # SHA-256 hash length
+    
+    # Block with zero events should be valid
+    assert block.validate_structure() is True
+
+
+def test_block_performance_with_large_number_of_events():
+    """Test block performance with large number of events"""
+    # Create a large number of events
+    large_event_set = []
+    for i in range(1000):  # 1000 events
+        large_event_set.append({
+            "entity_id": f"LARGE-EVENT-{i}",
+            "event": "bulk_operation",
+            "timestamp": time.time(),
+            "details": {"data": f"value_{i}"}
+        })
+    
+    # Measure time to create block
+    start_time = time.time()
+    block = Block(
+        index=1,
+        events=large_event_set,
+        previous_hash="0000000000000000000000000000000000000000000000000000000000000000"
+        )
+    end_time = time.time()
+    
+    # Check block was created successfully
+    assert block.index == 1
+    assert len(block.events) == 1000
+    assert isinstance(block.hash, str)
+    assert len(block.hash) == 64  # SHA-256 hash length
+    
+    # Performance assertion - should complete within reasonable time (less than 2 seconds)
+    assert (end_time - start_time) < 2.0
+
+
+def test_block_invalid_hash():
+    """Test block with invalid hash scenarios"""
+    events = [
+        {
+            "entity_id": "HASH-TEST-001",
+            "event": "hash_test_event",
+            "timestamp": time.time(),
+            "details": {"data": "test"}
+        }
+    ]
+    
+    block = Block(
+        index=1,
+        events=events,
+        previous_hash="0000000000000000000000000000000000000000000000000000000000000000"
+    )
+    
+    # Valid hash initially
+    assert isinstance(block.hash, str)
+    assert len(block.hash) == 64
+    
+    # Test with manipulated hash
+    original_hash = block.hash
+    block.hash = "invalid_hash_value"  # Manipulate the hash
+    
+    # Recalculate should give us the correct hash again
+    recalculated_hash = block.calculate_hash()
+    assert recalculated_hash == original_hash
+    assert recalculated_hash != block.hash  # manipulated hash should be different
