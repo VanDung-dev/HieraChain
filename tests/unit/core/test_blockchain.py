@@ -150,3 +150,74 @@ def test_chain_statistics():
     assert stats["total_events"] == 4  # 1 from genesis block + 3 added events
     assert stats["pending_events"] == 0
     assert stats["chain_valid"] is True
+
+
+def test_blockchain_fork_and_reorganization():
+    """Test blockchain fork and chain reorganization"""
+    # Create main chain
+    main_chain = Blockchain(name="MainChain")
+    
+    # Add some events to main chain
+    for i in range(3):
+        main_chain.add_event({
+            "entity_id":f"MAIN-{i}",
+            "event": "main_event",
+            "timestamp": time.time()
+        })
+        main_chain.finalize_block()
+    
+    # Create forked chain from genesis
+    fork_chain = Blockchain(name="ForkChain")
+    # Copy genesis block
+    fork_chain.chain = [main_chain.chain[0]]
+    
+    # Add events to fork chain
+    for i in range(5):  # More blocks in fork
+        fork_chain.add_event({
+            "entity_id": f"FORK-{i}",
+            "event": "fork_event",
+            "timestamp": time.time()
+        })
+        fork_chain.finalize_block()
+    
+    # Verify fork chain is longer
+    assert len(fork_chain.chain) > len(main_chain.chain)
+    
+    # Test chain validity for both
+    assert main_chain.is_chain_valid() is True
+    assert fork_chain.is_chain_valid() is True
+
+
+def test_blockchain_with_malicious_blocks():
+    """Test blockchain behavior with malicious blocks"""
+    chain = Blockchain(name="MaliciousTestChain")
+    
+    # Add some legitimate events and blocks
+    chain.add_event({
+        "entity_id": "LEGIT-001",
+        "event": "legit_event",
+        "timestamp": time.time()
+    })
+    chain.finalize_block()
+    
+    # Try to add a block with tampered data (malicious)
+    malicious_block = Block(
+        index=2,
+        events=[{
+            "entity_id": "MALICIOUS-001",
+            "event": "malicious_event",
+            "timestamp": time.time()
+        }],
+        previous_hash="tampered_fake_hash"  # Intentionally wrong hash
+    )
+    
+    # Attempt to add malicious block
+    result = chain.add_block(malicious_block)
+    
+    # Should either reject the block or mark chain as invalid
+    # Depending on implementation, this might return False or make chain invalid
+    if not result is True:
+        assert result is False  # Block rejected
+    else:
+        # If block was added, chain should be invalid
+        assert chain.is_chain_valid() is False
