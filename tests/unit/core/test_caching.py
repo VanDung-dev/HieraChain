@@ -107,3 +107,89 @@ def test_cache_ttl_expiration():
     
     assert cache.get("permanent_key") == "permanent_value"  # Should still be there
     assert cache.get("long_key") is None                    # Should be expired now
+
+
+def test_cache_multithreading_race_conditions():
+    """Test cache behavior under multithreading race conditions"""
+    import threading
+    
+    cache = AdvancedCache(max_size=100, eviction_policy="lru")
+    
+    def worker(thread_id):
+        for a in range(50):
+            cache.set(f"key-{thread_id}-{a}", f"value-{thread_id}-{a}")
+            # Random get operations
+            if a % 5 == 0:
+                cache.get(f"key-{thread_id}-{a - 1}")
+    
+    # Create multiple threads
+    threads = []
+    for i in range(5):  #5 threads
+        t = threading.Thread(target=worker, args=(i,))
+        threads.append(t)
+        t.start()
+    
+    # Wait for all threads to complete
+    for t in threads:
+        t.join()
+    
+    # Verify cache integrity
+    assert len(cache.cache) <= 100 # Should not exceed max size
+    
+    # Verify that all keys are consistent
+    total_keys = 0
+    for i in range(5):
+        for j in range(50):
+            val = cache.get(f"key-{i}-{j}")
+            if val is not None:
+                assert val == f"value-{i}-{j}"
+                total_keys += 1
+    
+    # At least some keys should exist
+    assert total_keys > 0
+
+
+def test_cache_large_memory_usage():
+    """Test cache behavior with large memory usage"""
+    cache = AdvancedCache(max_size=1000, eviction_policy="lru")
+    
+    # Add a lot of items to test memory usage
+    large_data = {}
+    for i in range(500):
+        # Create large data items
+        large_item = {f"field_{j}": f"value_{j}_{i}" for j in range(100)}
+        cache.set(f"large_key_{i}", large_item)
+        large_data[f"large_key_{i}"] = large_item
+    
+    # Verify cache size
+    assert len(cache.cache) == 500
+    
+    # Verify data integrity for sampled items
+    for i in [0, 100, 250, 499]:  # Sample checks
+        key = f"large_key_{i}"
+        cached_value = cache.get(key)
+        assert cached_value is not None
+        assert cached_value == large_data[key]
+
+
+def test_cache_edge_cases_ttl():
+    """Test edge cases for TTL functionality"""
+    cache = AdvancedCache(max_size=100, eviction_policy="ttl")
+    
+    # Test with zero TTL (should expire immediately)
+    cache.set("zero_ttl_key", "zero_ttl_value", ttl=0)
+    # Give a small delay for expiration
+    time.sleep(0.01)
+    assert cache.get("zero_ttl_key") is None
+    
+    # Test with negative TTL (should behave as no TTL or expire immediately)
+    cache.set("negative_ttl_key", "negative_ttl_value", ttl=-1)
+    # Behavior depends on implementation - either stored permanently or expires immediately
+    # We'll checkit doesn't crash and behaves consistently
+    value = cache.get("negative_ttl_key")
+    # Either None or the value is acceptable
+    assert value is None or value == "negative_ttl_value"
+    
+    # Test with very large TTL
+    cache.set("large_ttl_key", "large_ttl_value", ttl=1000000)  # ~11 days
+    assert cache.get("large_ttl_key") == "large_ttl_value"
