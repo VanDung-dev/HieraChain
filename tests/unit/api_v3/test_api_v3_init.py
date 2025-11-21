@@ -6,7 +6,9 @@ ensuring all expected classes and functions are properly exported.
 """
 
 import pytest
+import inspect
 from hierarchical_blockchain import api
+from hierarchical_blockchain.api.v3 import verify
 
 
 def test_verify_api_key_export():
@@ -75,3 +77,19 @@ def test_function_signatures():
     # Check create_verify_api_key function signature
     create_func_signature = inspect.signature(api.v3.create_verify_api_key)
     assert 'config' in create_func_signature.parameters
+
+
+def test_private_methods_exist_using_inspect():
+    """Test that private methods exist using inspect module"""
+    # Check VerifyAPIKey private methods
+    verify_api_key_members = inspect.getmembers(verify.VerifyAPIKey, predicate=inspect.isfunction)
+    private_methods = [name for name, _ in verify_api_key_members if name.startswith('_') and not name.startswith('__')]
+    assert '_log_security_event' in private_methods
+    
+    # Check ResourcePermissionChecker private methods
+    resource_checker_members = inspect.getmembers(verify.ResourcePermissionChecker, predicate=inspect.isfunction)
+    private_methods = [name for name, _ in resource_checker_members if name.startswith('_') and not name.startswith('__')]
+    assert '_has_permission' in private_methods
+    assert '_has_event_permission' in private_methods
+    assert '_has_chain_permission' in private_methods
+    assert '_has_proof_permission' in private_methods
