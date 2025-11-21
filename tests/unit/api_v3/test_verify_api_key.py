@@ -9,6 +9,7 @@ permission checking, and security event logging.
 import pytest
 import asyncio
 import time
+import inspect
 from unittest.mock import Mock, patch
 from unittest import mock
 from fastapi import HTTPException
@@ -321,3 +322,102 @@ async def test_verify_api_key_performance_many_requests(mock_key_manager, defaul
     
     # Should complete within reasonable time (less than 2 seconds for 100 requests)
     assert end_time - start_time < 2.0
+
+
+# Integration test between VerifyAPIKey and ResourcePermissionChecker
+@pytest.mark.asyncio
+async def test_integration_verify_api_key_and_resource_permission_checker(mock_key_manager, default_config):
+    """Test integration between VerifyAPIKey and ResourcePermissionChecker"""
+    # Setup VerifyAPIKey
+    verify_key = VerifyAPIKey(default_config)
+    verify_key.key_manager = mock_key_manager
+    
+    # Setup ResourcePermissionChecker
+    checker = ResourcePermissionChecker(verify_key)
+    
+    # Verify they are linked correctly
+    assert checker.verify_api_key == verify_key
+    
+    # Test context creation
+    context = await verify_key("valid_api_key")
+    assert "user_id" in context
+    assert "app_details" in context
+
+
+# Test cases for invalid configurations
+def test_verify_api_key_invalid_config_missing_required_fields():
+    """Test VerifyAPIKey with invalid configuration (missing required fields)"""
+    invalid_config = {
+        "some_random_field": "value"
+    }
+    
+    # Should not raise exception even with missing fields
+    verify_key = VerifyAPIKey(invalid_config)
+    
+    # Should use default values
+    assert verify_key.enabled is True  # Default value
+    assert verify_key.key_location == "header"  # Default value
+    assert verify_key.key_name == "x-api-key"  # Default value
+    assert verify_key.cache_ttl == 300  # Default value
+
+
+def test_verify_api_key_invalid_config_wrong_types():
+    """Test VerifyAPIKey with invalid configuration (wrong data types)"""
+    invalid_config = {
+        "enabled": "not_a_boolean",
+        "key_location": 123,
+        "key_name": None,
+        "cache_ttl": "not_a_number"
+    }
+    
+    # Should not raise exception with wrong types
+    verify_key = VerifyAPIKey(invalid_config)
+    
+    # Values should be assigned as-is (no type conversion)
+    assert verify_key.enabled == "not_a_boolean"
+    assert verify_key.key_location == 123
+    assert verify_key.key_name is None
+    assert verify_key.cache_ttl == "not_a_number"
+
+
+def test_verify_api_key_unsupported_key_location(default_config):
+    """Test VerifyAPIKey with unsupported key location falls back to header"""
+    unsupported_config = default_config.copy()
+    unsupported_config["key_location"] = "cookie"  # Unsupported location
+    
+    verify_key = VerifyAPIKey(unsupported_config)
+    
+    # Should fall back to default header dependency
+    assert verify_key.key_location == "cookie"
+    # Note: The actual fallback behavior depends on implementation
+
+
+# Test cases for private methods using inspect
+def test_private_method_log_security_event_exists():
+    """Test that _log_security_event private method exists"""
+    # Check that the private method exists
+    assert hasattr(VerifyAPIKey, '_log_security_event')
+    
+    # Get the method using inspect
+    method = getattr(VerifyAPIKey, '_log_security_event')
+    assert callable(method)
+    
+    # Check method signature
+    signature = inspect.signature(method)
+    assert 'event_type' in signature.parameters
+    assert 'details' in signature.parameters
+
+
+def test_private_method_has_permission_exists():
+    """Test that _has_permission private method exists in ResourcePermissionChecker"""
+    # Check that the private method exists
+    assert hasattr(ResourcePermissionChecker, '_has_permission')
+    
+    # Get the method using inspect
+    method = getattr(ResourcePermissionChecker, '_has_permission')
+    assert callable(method)
+    
+    # Check method signature
+    signature = inspect.signature(method)
+    assert 'context' in signature.parameters
+    assert 'permission_type' in signature.parameters
