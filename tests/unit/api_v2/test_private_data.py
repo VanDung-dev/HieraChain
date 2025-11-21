@@ -74,7 +74,6 @@ async def test_add_private_data_not_implemented(mock_private_data):
 
 
 # Test cases for invalid data
-@pytest.mark.asyncio
 @patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
 @patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
 def test_add_private_data_null_collection():
@@ -92,7 +91,6 @@ def test_add_private_data_null_collection():
         )
 
 
-@pytest.mark.asyncio
 @patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
 @patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
 def test_add_private_data_invalid_value_format():
