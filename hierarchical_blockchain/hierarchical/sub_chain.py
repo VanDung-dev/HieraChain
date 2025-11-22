@@ -76,7 +76,7 @@ class SubChain(Blockchain):
                     "event": "main_chain_connection",
                     "timestamp": time.time(),
                     "details": {
-                        "main_chain_name": main_chain.name,
+                        "main_chain_name": getattr(main_chain, 'name', str(main_chain)),
                         "connected_at": time.time(),
                         "status": "connected"
                     }
@@ -217,7 +217,7 @@ class SubChain(Blockchain):
                 "event": "proof_submitted",
                 "timestamp": time.time(),
                 "details": {
-                    "main_chain_name": main_chain.name,
+                    "main_chain_name": getattr(main_chain, 'name', str(main_chain)),
                     "proof_hash": latest_block.hash,
                     "block_index": latest_block.index,
                     "submitted_at": time.time()
