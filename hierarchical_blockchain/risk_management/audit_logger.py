@@ -144,7 +144,7 @@ class AuditStorage:
 class FileAuditStorage(AuditStorage):
     """File-based audit storage implementation"""
     
-    def __init__(self, audit_directory: str = "audit_logs"):
+    def __init__(self, audit_directory: str = "log/risk_management/audit_logs"):
         """
         Initialize file audit storage.
         
@@ -152,7 +152,7 @@ class FileAuditStorage(AuditStorage):
             audit_directory: Directory to store audit log files
         """
         self.audit_directory = Path(audit_directory)
-        self.audit_directory.mkdir(exist_ok=True)
+        self.audit_directory.mkdir(parents=True, exist_ok=True)
         self.current_file = None
         self.current_date = None
         self._lock = threading.Lock()
@@ -247,7 +247,7 @@ class FileAuditStorage(AuditStorage):
 class RotatingAuditStorage(FileAuditStorage):
     """File audit storage with rotation and compression"""
     
-    def __init__(self, audit_directory: str = "audit_logs", 
+    def __init__(self, audit_directory: str = "log/risk_management/audit_logs", 
                  max_file_size: int = 100 * 1024 * 1024,  # 100MB
                  retention_days: int = 90):
         """
@@ -309,7 +309,7 @@ class AuditLogger:
             storage: Audit storage backend
             enable_real_time_alerts: Enable real-time alert processing
         """
-        self.storage = storage or FileAuditStorage()
+        self.storage = storage or FileAuditStorage("log/risk_management/audit_logs")
         self.enable_real_time_alerts = enable_real_time_alerts
         self.logger = logging.getLogger(__name__)
         self.alert_handlers: List[Callable[[AuditEvent], None]] = []

@@ -8,6 +8,7 @@ Focuses on consensus, security, performance, and storage risks.
 
 import time
 import logging
+import os
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
@@ -61,6 +62,12 @@ class RiskAnalyzer:
         """
         self.config = config or {}
         self.logger = logging.getLogger(__name__)
+        # Ensure log directory exists
+        os.makedirs('log/risk_management', exist_ok=True)
+        handler = logging.FileHandler('log/risk_management/risk_analyzer.log')
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
         self.risk_history: List[RiskAssessment] = []
         self.active_risks: Dict[str, RiskAssessment] = {}
         

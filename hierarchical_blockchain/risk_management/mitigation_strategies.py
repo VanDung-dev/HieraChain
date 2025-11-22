@@ -8,6 +8,7 @@ technical and operational risks in consensus, security, performance, and storage
 
 import time
 import logging
+import os
 import threading
 from typing import Dict, List, Any, Optional, Callable, Tuple
 from enum import Enum
@@ -462,6 +463,12 @@ class MitigationManager:
         """
         self.config = config or {}
         self.logger = logging.getLogger(__name__)
+        # Ensure log directory exists
+        os.makedirs('log/risk_management', exist_ok=True)
+        handler = logging.FileHandler('log/risk_management/mitigation_strategies.log')
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
         self.mitigation_actions = self._initialize_actions()
         self.execution_history: List[MitigationResult] = []
         self.active_mitigations: Dict[str, threading.Thread] = {}
