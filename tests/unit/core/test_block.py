@@ -6,6 +6,7 @@ including block creation, hashing, event operations, and validation.
 """
 
 import time
+from hypothesis import given, strategies as st
 
 from hierarchical_blockchain.core.block import Block
 from hierarchical_blockchain.core.blockchain import Blockchain
@@ -239,3 +240,84 @@ def test_block_invalid_hash():
     recalculated_hash = block.calculate_hash()
     assert recalculated_hash == original_hash
     assert recalculated_hash != block.hash  # manipulated hash should be different
+
+
+# Property-based testing with Hypothesis
+@given(st.integers(min_value=0, max_value=1000),
+       st.lists(st.dictionaries(st.text(), st.text(), min_size=1), min_size=0, max_size=100),
+       st.text(min_size=64, max_size=64))
+def test_block_hash_property(index, events, previous_hash):
+    """Property-based test for block hash generation consistency"""
+    # Ensure previous_hash is 64 characters (SHA-256)
+    previous_hash = previous_hash[:64]
+    
+    block = Block(index=index, events=events, previous_hash=previous_hash)
+    
+    # Hash should always be 64 characters (SHA-256)
+    assert len(block.hash) == 64
+    assert isinstance(block.hash, str)
+    
+    # Hash should be consistent
+    assert block.hash == block.calculate_hash()
+
+
+@given(st.lists(st.dictionaries(st.text(min_size=1), st.text(min_size=1)), min_size=1, max_size=50))
+def test_block_event_operations_property(events):
+    """Property-based test for block event operations"""
+    block = Block(index=1, events=events, previous_hash="0" * 64)
+    
+    # All events should be retrievable by their event type
+    for event in events:
+        if "event" in event:
+            found_events = block.get_events_by_type(event["event"])
+            assert len(found_events) >= 1
+            assert event in found_events
+
+
+# Fuzz testing
+def test_block_with_fuzzed_data():
+    """Fuzz testing with randomized inputs"""
+    import random
+    import string
+    
+    # Generate random events with various data types
+    events = []
+    for i in range(20):
+        # Random entity_id
+        entity_id = ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(5, 20)))
+        
+        # Random event type
+        event_type = ''.join(random.choices(string.ascii_letters, k=random.randint(3, 15)))
+        
+        # Random details with various data
+        details = {
+            "random_str": ''.join(random.choices(string.printable, k=random.randint(1, 100))),
+            "random_int": random.randint(-1000000, 1000000),
+            "random_float": random.uniform(-1000.0, 1000.0),
+            "random_bool": random.choice([True, False])
+        }
+        
+        events.append({
+            "entity_id": entity_id,
+            "event": event_type,
+            "timestamp": time.time() + random.uniform(-1000000, 1000000),
+            "details": details
+        })
+    
+    # Create block with fuzzed data
+    block = Block(
+        index=random.randint(0, 10000),
+        events=events,
+        previous_hash=''.join(random.choices('0123456789abcdef', k=64))
+    )
+    
+    # Block should still be valid
+    assert isinstance(block.hash, str)
+    assert len(block.hash) == 64
+    assert block.validate_structure() is True
+    
+    # Events should be retrievable
+    for event in events:
+        if "entity_id" in event:
+            entity_events = block.get_events_by_entity(event["entity_id"])
+            assert len(entity_events) >= 1
