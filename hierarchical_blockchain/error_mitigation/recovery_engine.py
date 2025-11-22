@@ -236,7 +236,8 @@ class NetworkRecoveryEngine:
 
         # Write to alert log
         try:
-            with open("network_alerts.log", "a") as f:
+            os.makedirs("log/error_mitigation", exist_ok=True)
+            with open("log/error_mitigation/network_alerts.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {json.dumps(alert)}\n")
         except Exception as e:
             logger.error(f"Failed to write network alert: {e}")
@@ -441,7 +442,8 @@ class AutoScaler:
             event: Scaling event details
         """
         try:
-            with open("scaling_events.log", "a") as f:
+            os.makedirs("log/error_mitigation", exist_ok=True)
+            with open("log/error_mitigation/scaling_events.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {json.dumps(event)}\n")
         except Exception as e:
             logger.error(f"Failed to log scaling event: {e}")
@@ -685,7 +687,8 @@ class ConsensusRecoveryEngine:
 
         # Log view change
         try:
-            with open("view_changes.log", "a") as f:
+            os.makedirs("log/error_mitigation", exist_ok=True)
+            with open("log/error_mitigation/view_changes.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {json.dumps(view_change_event)}\n")
         except Exception as e:
             logger.error(f"Failed to log view change: {e}")
@@ -866,7 +869,8 @@ class BackupRecoveryEngine:
             logger.info(f"Data restoration completed: {json.dumps(restoration_event)}")
 
             # Log restoration event
-            with open("restoration_events.log", "a") as f:
+            os.makedirs("log/error_mitigation", exist_ok=True)
+            with open("log/error_mitigation/restoration_events.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {json.dumps(restoration_event)}\n")
 
             return True

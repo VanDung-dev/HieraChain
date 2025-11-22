@@ -175,7 +175,8 @@ class ConsensusValidator:
             logger.info(f"Scaling event logged: {log_entry}")
             
             # Write to audit log file
-            with open("consensus_scaling.log", "a") as f:
+            os.makedirs("log/error_mitigation", exist_ok=True)
+            with open("log/error_mitigation/consensus_scaling.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {log_entry}\n")
         except Exception as ex:
             logger.error(f"Failed to log scaling event: {ex}")
@@ -390,7 +391,8 @@ class ResourceValidator:
         logger.info(f"Resource scaling triggered: {json.dumps(scaling_event)}")
         
         # Log scaling event
-        with open("resource_scaling.log", "a") as f:
+        os.makedirs("log/error_mitigation", exist_ok=True)
+        with open("log/error_mitigation/resource_scaling.log", "a") as f:
             f.write(f"{datetime.now().isoformat()}: {json.dumps(scaling_event)}\n")
 
 
@@ -477,7 +479,8 @@ class APIValidator:
         logger.info(f"API call audited: {endpoint}")
         
         try:
-            with open("api_audit.log", "a") as f:
+            os.makedirs("log/error_mitigation", exist_ok=True)
+            with open("log/error_mitigation/api_audit.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {json.dumps(audit_entry)}\n")
         except Exception as ex:
             logger.error(f"Failed to write audit log: {ex}")

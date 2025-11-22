@@ -6,6 +6,7 @@ errors by priority level, impact, and recovery strategy to enable targeted
 mitigation approaches.
 """
 
+import os
 import time
 import json
 import logging
@@ -451,7 +452,8 @@ class ErrorClassifier:
         }
         
         try:
-            with open("error_classifications.log", "a") as f:
+            os.makedirs("log/error_mitigation", exist_ok=True)
+            with open("log/error_mitigation/error_classifications.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {json.dumps(log_entry)}\n")
         except Exception as e:
             logger.error(f"Failed to log error classification: {e}")

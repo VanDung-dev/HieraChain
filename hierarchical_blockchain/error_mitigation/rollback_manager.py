@@ -736,7 +736,8 @@ class RollbackManager:
                 "timestamp": time.time()
             }
             
-            with open("rollback_operations.log", "a") as f:
+            os.makedirs("log/error_mitigation", exist_ok=True)
+            with open("log/error_mitigation/rollback_operations.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {json.dumps(log_entry)}\n")
         except Exception as e:
             logger.error(f"Failed to log rollback operation: {e}")
