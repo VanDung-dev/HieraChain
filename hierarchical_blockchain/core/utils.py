@@ -115,12 +115,26 @@ def validate_proof_metadata(metadata: Dict[str, Any]) -> bool:
     # Should contain summary information, not detailed domain data
     forbidden_detailed_fields = [
         "full_details", "raw_data", "complete_record",
-        "internal_data", "complete_log"
+        "internal_data", "complete_log", "detailed_data"
     ]
     for field in forbidden_detailed_fields:
         if field in metadata:
             return False
     
+    # Check for nested detailed data that shouldn't be in Main Chain
+    for key, value in metadata.items():
+        if isinstance(value, dict):
+            # If any value is a dict, it's considered detailed data
+            # unless it's a small summary object
+            if len(value) > 5:  # More than 5 keys is considered detailed
+                return False
+            # Recursively check nested dictionaries
+            if not validate_proof_metadata(value):
+                return False
+        elif isinstance(value, list) and len(value) > 10:
+            # Large lists are considered detailed data
+            return False
+            
     return True
 
 
