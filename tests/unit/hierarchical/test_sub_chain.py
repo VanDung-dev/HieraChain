@@ -234,18 +234,12 @@ def test_sub_chain_performance(benchmark):
         
         return sub_chain
     
-    if 'benchmark' in globals():
-        benchmark(run_performance_test)
-    else:
-        # Simple timing if benchmark fixture not available
-        start_time = time.time()
-        chain = run_performance_test()
-        end_time = time.time()
-        
-        # Basic assertions to ensure it worked
-        assert chain.completed_operations == 500
-        assert len(chain.chain) > 1
-        assert end_time - start_time < 5.0  # Should complete within 5 seconds
+    # Run benchmark
+    chain = benchmark(run_performance_test)
+    
+    # Basic assertions to ensure it worked
+    assert chain.completed_operations == 500
+    assert len(chain.chain) > 1
 
 
 # Mock dependency tests
