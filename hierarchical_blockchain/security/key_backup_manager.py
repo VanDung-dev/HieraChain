@@ -101,7 +101,12 @@ class KeyBackupManager:
         
         try:
             timestamp = datetime.now().isoformat()
-            backup_id = f"{key_type}_{timestamp.replace(':', '-')}"
+            
+            # Sanitize key_type to prevent injection attacks
+            sanitized_key_type = "".join(c for c in key_type if c.isalnum() or c in (' ', '-', '_')).rstrip()
+            sanitized_key_type = sanitized_key_type.replace(' ', '_')
+            
+            backup_id = f"{sanitized_key_type}_{timestamp.replace(':', '-')}"
             
             # Prepare backup data
             backup_data = {
