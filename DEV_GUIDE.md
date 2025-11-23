@@ -106,22 +106,38 @@ from hierarchical_blockchain.core.blockchain import Blockchain
 
 - To run automated risk management tests:
     ```bash
-    python -m hierarchical_blockchain.testing.automated_tests
+    python -m testing.automated_tests
     ```
 
   - To run with verbose output:
       ```bash
-      python -mhierarchical_blockchain.testing.automated_tests -v
+      python -m testing.automated_tests -v
       ```
 
 - To run automated recovery tests:
     ```bash
-    python -m hierarchical_blockchain.testing.recovery_tests
+    python -m testing.recovery_tests
     ```
 
 - To run priority-based validation tests:
     ```bash
-    python -m hierarchical_blockchain.testing.validation_suites
+    python -m testing.validation_suites
     ```
+
+- To run static analysis:
+    ```bash
+    python -m testing.static_analysis
+    ```
+
+  - To run static analysis with text output:
+      ```bash
+      python -m testing.static_analysis --format text
+      ```
+
+  - To run static analysis and save results to a file:
+      ```bash
+      python -m testing.static_analysis --output analysis_report.json
+      python -m testing.static_analysis --format text --output analysis_report.txt
+      ```
 
 ---
