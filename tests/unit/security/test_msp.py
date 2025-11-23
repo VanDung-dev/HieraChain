@@ -5,6 +5,7 @@ Tests the advanced MSP implementation including certificate management,
 role-based access control, and hierarchical identity management for enterprise applications.
 """
 
+import time
 from hierarchical_blockchain.security.msp import HierarchicalMSP, CertificateAuthority, OrganizationPolicies
 
 
@@ -425,6 +426,74 @@ def test_check_permission_nonexistent_role():
     assert not result
 
 
+def test_register_entity_with_special_characters():
+    """Test entity registration with special characters"""
+    msp, test_credentials, _ = setup_msp()
+    
+    # Test with special characters in entity_id
+    result = msp.register_entity(
+        "test-user@domain.com",
+        test_credentials,
+        "admin"
+    )
+    assert result
+    assert "test-user@domain.com" in msp.entities
+
+
+def test_register_entity_with_invalid_role():
+    """Test entity registration with invalid role"""
+    msp, test_credentials, _ = setup_msp()
+    
+    # Test with invalid role
+    result = msp.register_entity(
+        "test-invalid-role-user",
+        test_credentials,
+        "nonexistent_role"
+    )
+    assert not result
+    assert "test-invalid-role-user" not in msp.entities
+
+
+def test_validate_identity_with_invalid_inputs():
+    """Test identity validation with invalid inputs"""
+    msp, test_credentials, _ = setup_msp()
+    
+    # Register a valid entityfirst
+    msp.register_entity("test-validate-user", test_credentials, "operator")
+    
+    # Test with None entity_id
+    result = msp.validate_identity(None, test_credentials)
+    assert not result
+    
+    # Test with empty entity_id
+    result = msp.validate_identity("",test_credentials)
+    assert not result
+    
+    # Test with None credentials
+    result = msp.validate_identity("test-validate-user", None)
+    assert not result
+
+
+def test_authorize_action_edge_cases():
+    """Test authorization with edge cases"""
+    msp, test_credentials, _ = setup_msp()
+    
+    # Register entity
+    msp.register_entity("test-auth-user", test_credentials, "operator")
+    
+    # Test with empty action
+    result = msp.authorize_action("test-auth-user", "")
+    assert not result
+    
+    # Test with None action
+    result = msp.authorize_action("test-auth-user", None)
+    assert not result
+    
+    # Test with non-existent user
+    result = msp.authorize_action("nonexistent_user", "view_data")
+    assert not result
+
+
 def setup_integration_msp():
     """Set up integration test fixtures"""
     ca_config = {
@@ -515,3 +584,184 @@ def test_role_based_access_control():
     
     assert not viewer_manage
     assert viewer_view
+
+
+def test_msp_registration_performance():
+    """Test performance of entity registration"""
+    msp, test_credentials, test_attributes = setup_msp()
+    
+
+    start_time = time.perf_counter()
+    
+    # Register 100 entities
+    for i in range(100):
+        result = msp.register_entity(
+            f"perf-test-user-{i}",
+        test_credentials,
+            "operator",
+            test_attributes
+        )
+        assert result
+    
+    end_time = time.perf_counter()
+    
+    # Registration of 100 entities should take less than 2 seconds
+    assert (end_time - start_time) <2.0
+
+
+def test_msp_validation_performance():
+    """Test performance of identity validation"""
+    msp, test_credentials, _ = setup_msp()
+    
+    # Register test entities
+    for i in range(100):
+        msp.register_entity(
+            f"val-perf-user-{i}",
+            test_credentials,
+            "operator"
+        )
+
+    start_time = time.perf_counter()
+    
+    # Validate 100 entities
+    for i in range(100):
+        result = msp.validate_identity(
+            f"val-perf-user-{i}",
+            test_credentials
+        )
+        assert result
+    
+    end_time= time.perf_counter()
+    
+    # Validation of 100 entities should take less than 2 seconds
+    assert (end_time - start_time) < 2.0
+
+
+def test_msp_authorization_performance():
+    """Test performance of action authorization"""
+    msp, test_credentials, _ = setup_msp()
+    
+    # Register test entities with admin role
+    for i in range(100):
+        msp.register_entity(
+            f"auth-perf-user-{i}",
+            test_credentials,
+            "admin"
+        )
+
+    start_time = time.perf_counter()
+    
+    #Authorize 100 entities for various actions
+    for i in range(100):
+        result1 = msp.authorize_action(f"auth-perf-user-{i}", "manage_entities")
+        result2 = msp.authorize_action(f"auth-perf-user-{i}", "view_data")
+    assert result1
+    assert result2
+    
+    end_time = time.perf_counter()
+    
+    # Authorization of 100 entities for 2 actions each should take less than 2 seconds
+    assert (end_time - start_time) < 2.0
+
+
+def test_msp_security_injection_attacks():
+    """Test MSP resistance to injection attacks"""
+    ca_config = {
+        "root_cert": "security-test-root",
+        "intermediate_certs": ["security-test-intermediate"],
+        "policy": {"default_validity": 365}
+    }
+    
+    msp = HierarchicalMSP("security-test-org", ca_config)
+    credentials = {
+        "public_key": "security-public-key",
+        "private_key": "security-private-key"
+    }
+    
+    # Test SQL injection attempts in entity_id
+    sql_injection_attempts = [
+        "'; DROP TABLE certificates; --",
+        "1'; WAITFORDELAY '00:00:05'--",
+        "admin'--",
+        "' OR '1'='1"
+    ]
+    
+    for attempt in sql_injection_attempts:
+        # These should be treated as regular entity_ids
+        result = msp.register_entity(attempt, credentials, "operator")
+        assert result is True  # Registration should succeed
+        
+        # Validation should work normally
+        is_valid = msp.validate_identity(attempt, credentials)
+        assert is_valid is True
+        
+        # Entity info should be retrievable
+        entity_info = msp.get_entity_info(attempt)
+        assert entity_info is not None
+        assert entity_info["entity_id"] == attempt
+
+
+def test_msp_security_xss_attacks():
+    """Test MSP resistance to XSS attacks"""
+    ca_config = {
+        "root_cert": "xss-test-root",
+        "intermediate_certs": ["xss-test-intermediate"],
+        "policy": {"default_validity": 365}
+    }
+    
+    msp = HierarchicalMSP("xss-test-org", ca_config)
+    
+    # Test XSS attempts in attributes
+    xss_attempts = [
+        {"name": "<script>alert('XSS')</script>", "department": "engineering"},
+        {"description": "javascript:alert('XSS')", "role": "user"},
+        {"bio": "<img src=x onerror=alert(1)>", "level": "1"}
+    ]
+    
+    credentials = {
+        "public_key": "xss-public-key",
+        "private_key": "xss-private-key"
+    }
+    
+    for i, attributes in enumerate(xss_attempts):
+        entity_id = f"xss-test-entity-{i}"
+        result = msp.register_entity(entity_id, credentials, "viewer", attributes)
+        assert result is True
+        
+        # Entity info should be retrievable withattributes preserved
+        entity_info = msp.get_entity_info(entity_id)
+        assert entity_info is not None
+        assert entity_info["attributes"] == attributes
+
+
+def test_msp_directory_traversal_attacks():
+    """Test MSP resistance to directory traversal attacks"""
+    ca_config = {
+        "root_cert": "traversal-test-root",
+        "intermediate_certs": ["traversal-test-intermediate"],
+        "policy": {"default_validity": 365}
+    }
+    
+    msp = HierarchicalMSP("traversal-test-org", ca_config)
+    credentials = {
+        "public_key": "traversal-public-key",
+        "private_key": "traversal-private-key"
+    }
+    
+    # Test directory traversal attempts in entity_id
+    traversal_attempts = [
+        "../../../etc/passwd",
+        "..\\..\\..\\windows\\system32\\cmd.exe",
+        "/etc/passwd",
+        "../../config/database.yml"
+]
+    
+    for attempt in traversal_attempts:
+        # These should be treated as regular entity_ids
+        result = msp.register_entity(attempt, credentials, "operator")
+        assert result is True
+        
+        # Validation should work normally
+        is_valid = msp.validate_identity(attempt, credentials)
+        assert is_valid is True
+
