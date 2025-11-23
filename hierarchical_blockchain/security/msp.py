@@ -268,11 +268,11 @@ class HierarchicalMSP:
                 "error": str(e)
             })
             return False
-    
+
     def validate_identity(self, entity_id: str, credentials: Dict[str, Any]) -> bool:
         """
         Validate entity identity and credentials.
-        
+
         Args:
             entity_id: Entity identifier to validate
             credentials: Credentials to verify
@@ -282,21 +282,24 @@ class HierarchicalMSP:
         """
         if entity_id not in self.entities:
             return False
-            
+
+        if credentials is None:
+            return False
+
         entity = self.entities[entity_id]
-        
+
         # Check certificate validity
         certificate = entity["certificate"]
         if not self.ca.verify_certificate(certificate.cert_id):
             return False
-        
+
         # Verify credentials
         if entity["credentials"]["public_key"] != credentials.get("public_key"):
             return False
-        
+
         # Update last activity
         entity["last_activity"] = time.time()
-        
+
         self._log_event("identity_validated", {"entity_id": entity_id})
         return True
     
