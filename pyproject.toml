@@ -77,6 +77,13 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "-v"
+markers = [
+    "critical: Critical risk validation tests",
+    "high: High risk validation tests",
+    "medium: Medium risk validation tests",
+    "low: Low risk validation tests",
+    "integration: Integration tests"
+]
 
 [tool.black]
 line-length = 88
