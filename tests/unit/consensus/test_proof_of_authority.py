@@ -12,342 +12,293 @@ from hierarchical_blockchain.core.consensus.proof_of_authority import ProofOfAut
 from hierarchical_blockchain.core.block import Block
 
 
-def test_poa_authority_management(benchmark=None):
+def test_poa_authority_management():
     """Test adding and removing authorities in PoA consensus"""
+    poa = ProofOfAuthority(name="TestPoA")
 
-    def execute():
-        poa = ProofOfAuthority(name="TestPoA")
+    # Test adding authorities
+    assert poa.add_authority("authority_1") is True
+    assert poa.add_authority("authority_2", {"role": "validator"}) is True
+    assert len(poa.authorities) == 2
+    assert "authority_1" in poa.authorities
+    assert "authority_2" in poa.authorities
+    assert poa.authority_metadata["authority_2"]["role"] == "validator"
 
-        # Test adding authorities
-        assert poa.add_authority("authority_1") is True
-        assert poa.add_authority("authority_2", {"role": "validator"}) is True
-        assert len(poa.authorities) == 2
-        assert "authority_1" in poa.authorities
-        assert "authority_2" in poa.authorities
-        assert poa.authority_metadata["authority_2"]["role"] == "validator"
+    # Test adding too many authorities
+    for i in range(98):
+        poa.add_authority(f"authority_{i + 10}")
 
-        # Test adding too many authorities
-        for i in range(98):
-            poa.add_authority(f"authority_{i + 10}")
+    # Should fail when trying to add more than max (100)
+    assert poa.add_authority("overflow_authority") is False
 
-        # Should fail when trying to add more than max (100)
-        assert poa.add_authority("overflow_authority") is False
+    # Test removing authorities
+    assert poa.remove_authority("authority_1") is True
+    assert "authority_1" not in poa.authorities
+    assert len(poa.authorities) == 99  # 1 removed, 98 added (2 initial - 1 removed)
 
-        # Test removing authorities
-        assert poa.remove_authority("authority_1") is True
-        assert "authority_1" not in poa.authorities
-        assert len(poa.authorities) == 99  # 1 removed, 98 added (2 initial - 1 removed)
-
-        # Test removing non-existent authority
-        assert poa.remove_authority("non_existent") is False
-        return poa
-
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    # Test removing non-existent authority
+    assert poa.remove_authority("non_existent") is False
 
 
-def test_poa_block_validation(benchmark=None):
+def test_poa_block_validation():
     """Test PoA block validation"""
+    poa = ProofOfAuthority(name="TestPoA")
+    authority_id = "test_authority"
+    poa.add_authority(authority_id)
 
-    def execute():
-        poa = ProofOfAuthority(name="TestPoA")
-        authority_id = "test_authority"
-        poa.add_authority(authority_id)
-
-        # Create a valid previous block
-        previous_block = Block(
-            index=0,
-            events=[{
-                "entity_id": "GENESIS-001",
-                "event": "genesis",
-                "timestamp": time.time()
-            }],
-            previous_hash="0" * 64
-        )
-
-        # Create a valid block
-        events = [{
-            "entity_id": "TEST-001",
-            "event": "test_event",
+    # Create a valid previous block
+    previous_block = Block(
+        index=0,
+        events=[{
+            "entity_id": "GENESIS-001",
+            "event": "genesis",
             "timestamp": time.time()
-        }]
+        }],
+        previous_hash="0" * 64
+    )
 
-        block = Block(
-            index=1,
-            events=events,
-            previous_hash=previous_block.hash
-        )
+    # Create a valid block
+    events = [{
+        "entity_id": "TEST-001",
+        "event": "test_event",
+        "timestamp": time.time()
+    }]
 
-        # Finalize the block with authority signature
-        block = poa.finalize_block(block, authority_id)
+    block = Block(
+        index=1,
+        events=events,
+        previous_hash=previous_block.hash
+    )
 
-        # Manually update timestamp to satisfy timing constraint
-        block.timestamp = previous_block.timestamp + poa.config["block_interval"] + 1  # Adding extra time
-        previous_block.timestamp = block.timestamp - poa.config[
-            "block_interval"] - 1  # Make sure previous is consistent
+    # Finalize the block with authority signature
+    block = poa.finalize_block(block, authority_id)
 
-        # Test valid block
-        assert poa.validate_block(block, previous_block) is True
+    # Manually update timestamp to satisfy timing constraint
+    block.timestamp = previous_block.timestamp + poa.config["block_interval"] + 1  # Adding extra time
+    previous_block.timestamp = block.timestamp - poa.config[
+        "block_interval"] - 1  # Make sure previous is consistent
 
-        # Test block with invalid timing
-        fast_block = Block(
-            index=2,
-            events=events,
-            previous_hash=block.hash
-        )
-        # Finalize with authority
-        fast_block = poa.finalize_block(fast_block, authority_id)
-        # Set timestamp too close to previous
-        fast_block.timestamp = block.timestamp + (poa.config["block_interval"] / 4)
+    # Test valid block
+    assert poa.validate_block(block, previous_block) is True
 
-        # Should be False because it's too fast
-        assert poa.validate_block(fast_block, block) is False
-        return poa, block, previous_block, fast_block
+    # Test block with invalid timing
+    fast_block = Block(
+        index=2,
+        events=events,
+        previous_hash=block.hash
+    )
+    # Finalize with authority
+    fast_block = poa.finalize_block(fast_block, authority_id)
+    # Set timestamp too close to previous
+    fast_block.timestamp = block.timestamp + (poa.config["block_interval"] / 4)
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    # Should be False because it's too fast
+    assert poa.validate_block(fast_block, block) is False
 
 
-def test_poa_event_validation(benchmark=None):
+def test_poa_event_validation():
     """Test PoA event validation"""
+    poa = ProofOfAuthority(name="TestPoA")
 
-    def execute():
-        poa = ProofOfAuthority(name="TestPoA")
+    # Valid event
+    valid_event = {
+        "entity_id": "VALID-001",
+        "event": "operation_start",
+        "timestamp": time.time(),
+        "details": {"process": "assembly"}
+    }
+    assert poa.validate_event_for_consensus(valid_event) is True
 
-        # Valid event
-        valid_event = {
-            "entity_id": "VALID-001",
-            "event": "operation_start",
-            "timestamp": time.time(),
-            "details": {"process": "assembly"}
-        }
-        assert poa.validate_event_for_consensus(valid_event) is True
+    # Invalid event with cryptocurrency terms
+    invalid_event = {
+        "entity_id": "INVALID-001",
+        "event": "transaction",
+        "timestamp": time.time(),
+        "details": {"amount": 100}
+    }
+    assert poa.validate_event_for_consensus(invalid_event) is False
 
-        # Invalid event with cryptocurrency terms
-        invalid_event = {
-            "entity_id": "INVALID-001",
-            "event": "transaction",
-            "timestamp": time.time(),
-            "details": {"amount": 100}
-        }
-        assert poa.validate_event_for_consensus(invalid_event) is False
+    # Invalid event with mining term
+    invalid_event2 = {
+        "entity_id": "INVALID-002",
+        "event": "mining_start",
+        "timestamp": time.time()
+    }
+    assert poa.validate_event_for_consensus(invalid_event2) is False
 
-        # Invalid event with mining term
-        invalid_event2 = {
-            "entity_id": "INVALID-002",
-            "event": "mining_start",
-            "timestamp": time.time()
-        }
-        assert poa.validate_event_for_consensus(invalid_event2) is False
-
-        # Valid custom event
-        valid_custom_event = {
-            "entity_id": "CUSTOM-001",
-            "event": "quality_inspection",
-            "timestamp": time.time(),
-            "details": {"result": "pass"}
-        }
-        assert poa.validate_event_for_consensus(valid_custom_event) is True
-        return poa
-
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    # Valid custom event
+    valid_custom_event = {
+        "entity_id": "CUSTOM-001",
+        "event": "quality_inspection",
+        "timestamp": time.time(),
+        "details": {"result": "pass"}
+    }
+    assert poa.validate_event_for_consensus(valid_custom_event) is True
 
 
-def test_multiple_authorities_concurrent_operations(benchmark=None):
+def test_multiple_authorities_concurrent_operations():
     """Test handling multiple authorities operating concurrently"""
+    poa = ProofOfAuthority(name="ConcurrentPoA")
+    poa.config["block_interval"] = 0.1  # Reduce interval for testing
 
-    def execute():
-        poa = ProofOfAuthority(name="ConcurrentPoA")
-        poa.config["block_interval"] = 0.1  # Reduce interval for testing
-
-        # Create genesis block with current time
-        genesis_block = Block(
-            index=0,
-            events=[{
-                "entity_id": "GENESIS-001",
-                "event": "genesis",
-                "timestamp": time.time()
-            }],
-            previous_hash="0" * 64
-        )
-
-        # Create multiple blocks with proper timing
-        blocks = []
-        for i in range(5):
-            events = [{
-                "entity_id": f"ENTITY-{i}",
-                "event": "data_entry",
-                "timestamp": time.time() + (i * 0.2)  # Stagger timestamps
-            }]
-
-            block = Block(
-                index=i + 1,
-                events=events,
-                previous_hash=genesis_block.hash if i == 0 else blocks[i - 1].hash,
-                timestamp=time.time() + (i * 0.2)  # Ensure proper timing
-            )
-            blocks.append(block)
-        return poa, genesis_block, blocks
-
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
-
-
-def test_network_unstable_conditions(benchmark=None):
-    """Test behavior under unstable network conditions"""
-
-    def execute():
-        poa = ProofOfAuthority(name="UnstableNetworkPoA")
-        poa.config["block_interval"] = 1.0  # Reduce interval for faster testing
-
-        authority_id = "network_test_auth"
-        poa.add_authority(authority_id)
-
-        # Create initial blocks
-        genesis_block = Block(
-            index=0,
-            events=[{
-                "entity_id": "GENESIS-001",
-                "event": "genesis",
-                "timestamp": time.time()
-            }],
-            previous_hash="0" * 64
-        )
-
-        # Simulate network delays by creating blocks with irregular timestamps
-        events = [{
-            "entity_id": "NETWORK-TEST-001",
-            "event": "data_operation",
+    # Create genesis block with current time
+    genesis_block = Block(
+        index=0,
+        events=[{
+            "entity_id": "GENESIS-001",
+            "event": "genesis",
             "timestamp": time.time()
-        }]
+        }],
+        previous_hash="0" * 64
+    )
 
-        # Create a normal block
-        block1 = Block(
-            index=1,
-            events=events,
-            previous_hash=genesis_block.hash,
-            timestamp=genesis_block.timestamp + 2.0  # Normal delay
-        )
-        block1 = poa.finalize_block(block1, authority_id)
-        assert poa.validate_block(block1, genesis_block) is True
-
-        # Create a block with minimal delay (edge case)
-        block2 = Block(
-            index=2,
-            events=events,
-            previous_hash=block1.hash,
-            timestamp=block1.timestamp + 0.6  # Just above minimum threshold
-        )
-        block2 = poa.finalize_block(block2, authority_id)
-        assert poa.validate_block(block2, block1) is True
-
-        # Create a block with too short delay (should fail)
-        block3 = Block(
-            index=3,
-            events=events,
-            previous_hash=block2.hash,
-            timestamp=block2.timestamp + 0.3  # Below minimum threshold
-        )
-        block3 = poa.finalize_block(block3, authority_id)
-        assert poa.validate_block(block3, block2) is False
-        return poa, block1, block2, block3
-
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
-
-
-def test_spoofed_authority_attack(benchmark=None):
-    """Test resistance against spoofed authority attacks"""
-
-    def execute():
-        poa = ProofOfAuthority(name="SecurityPoA")
-
-        # Add legitimate authority
-        legit_authority = "legitimate_authority"
-        poa.add_authority(legit_authority)
-
-        # Try to create block with unauthorized authority
-        unauthorized_authority = "spoofed_authority"
-
+    # Create multiple blocks with proper timing
+    blocks = []
+    for i in range(5):
         events = [{
-            "entity_id": "SECURITY-TEST-001",
-            "event": "sensitive_operation",
-            "timestamp": time.time()
+            "entity_id": f"ENTITY-{i}",
+            "event": "data_entry",
+            "timestamp": time.time() + (i * 0.2)  # Stagger timestamps
         }]
 
         block = Block(
-            index=1,
+            index=i + 1,
             events=events,
-            previous_hash="0" * 64
+            previous_hash=genesis_block.hash if i == 0 else blocks[i - 1].hash,
+            timestamp=time.time() + (i * 0.2)  # Ensure proper timing
         )
+        blocks.append(block)
 
-        # Try to finalize with unauthorized authority
-        block = poa.finalize_block(block, unauthorized_authority)
 
-        # Check that the block doesn't have valid authority signature
-        has_valid_signature = False
-        for event in block.events:
-            if (event.get("event") == "consensus_finalization" and
-                    "details" in event and
-                    poa.is_authority(event["details"].get("authority_id", ""))):
-                has_valid_signature = True
-                break
+def test_network_unstable_conditions():
+    """Test behavior under unstable network conditions"""
+    poa = ProofOfAuthority(name="UnstableNetworkPoA")
+    poa.config["block_interval"] = 1.0  # Reduce interval for faster testing
 
-        # Block should not have valid authority signature
-        assert has_valid_signature is False
+    authority_id = "network_test_auth"
+    poa.add_authority(authority_id)
 
-        # Create a fake consensus event to try to bypass validation
-        fake_consensus_event = {
-            "event": "consensus_finalization",
-            "timestamp": time.time(),
-            "details": {
-                "consensus_type": "proof_of_authority",
-                "authority_id": unauthorized_authority,  # Fake authority
-                "authority_signature": hashlib.sha256(b"fake_signature").hexdigest(),
-                "finalized_at": time.time()
-            }
+    # Create initial blocks
+    genesis_block = Block(
+        index=0,
+        events=[{
+            "entity_id": "GENESIS-001",
+            "event": "genesis",
+            "timestamp": time.time()
+        }],
+        previous_hash="0" * 64
+    )
+
+    # Simulate network delays by creating blocks with irregular timestamps
+    events = [{
+        "entity_id": "NETWORK-TEST-001",
+        "event": "data_operation",
+        "timestamp": time.time()
+    }]
+
+    # Create a normal block
+    block1 = Block(
+        index=1,
+        events=events,
+        previous_hash=genesis_block.hash,
+        timestamp=genesis_block.timestamp + 2.0  # Normal delay
+    )
+    block1 = poa.finalize_block(block1, authority_id)
+    assert poa.validate_block(block1, genesis_block) is True
+
+    # Create a block with minimal delay (edge case)
+    block2 = Block(
+        index=2,
+        events=events,
+        previous_hash=block1.hash,
+        timestamp=block1.timestamp + 0.6  # Just above minimum threshold
+    )
+    block2 = poa.finalize_block(block2, authority_id)
+    assert poa.validate_block(block2, block1) is True
+
+    # Create a block with too short delay (should fail)
+    block3 = Block(
+        index=3,
+        events=events,
+        previous_hash=block2.hash,
+        timestamp=block2.timestamp + 0.3  # Below minimum threshold
+    )
+    block3 = poa.finalize_block(block3, authority_id)
+    assert poa.validate_block(block3, block2) is False
+
+
+def test_spoofed_authority_attack():
+    """Test resistance against spoofed authority attacks"""
+    poa = ProofOfAuthority(name="SecurityPoA")
+
+    # Add legitimate authority
+    legit_authority = "legitimate_authority"
+    poa.add_authority(legit_authority)
+
+    # Try to create block with unauthorized authority
+    unauthorized_authority = "spoofed_authority"
+
+    events = [{
+        "entity_id": "SECURITY-TEST-001",
+        "event": "sensitive_operation",
+        "timestamp": time.time()
+    }]
+
+    block = Block(
+        index=1,
+        events=events,
+        previous_hash="0" * 64
+    )
+
+    # Try to finalize with unauthorized authority
+    block = poa.finalize_block(block, unauthorized_authority)
+
+    # Check that the block doesn't have valid authority signature
+    has_valid_signature = False
+    for event in block.events:
+        if (event.get("event") == "consensus_finalization" and
+                "details" in event and
+                poa.is_authority(event["details"].get("authority_id", ""))):
+            has_valid_signature = True
+            break
+
+    # Block should not have valid authority signature
+    assert has_valid_signature is False
+
+    # Create a fake consensus event to try to bypass validation
+    fake_consensus_event = {
+        "event": "consensus_finalization",
+        "timestamp": time.time(),
+        "details": {
+            "consensus_type": "proof_of_authority",
+            "authority_id": unauthorized_authority,  # Fake authority
+            "authority_signature": hashlib.sha256(b"fake_signature").hexdigest(),
+            "finalized_at": time.time()
         }
+    }
 
-        malicious_block = Block(
-            index=1,
-            events=events + [fake_consensus_event],
-            previous_hash="0" * 64
-        )
+    malicious_block = Block(
+        index=1,
+        events=events + [fake_consensus_event],
+        previous_hash="0" * 64
+    )
 
-        # Validation should still fail because the authority is not registered
-        genesis_block = Block(
-            index=0,
-            events=[{
-                "entity_id": "GENESIS-001",
-                "event": "genesis",
-                "timestamp": time.time()
-            }],
-            previous_hash="0" * 64
-        )
+    # Validation should still fail because the authority is not registered
+    genesis_block = Block(
+        index=0,
+        events=[{
+            "entity_id": "GENESIS-001",
+            "event": "genesis",
+            "timestamp": time.time()
+        }],
+        previous_hash="0" * 64
+    )
 
-        assert poa.validate_block(malicious_block, genesis_block) is False
-        return poa, block, malicious_block
-
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    assert poa.validate_block(malicious_block, genesis_block) is False
 
 
 def test_performance_with_many_authorities(benchmark=None):
     """Test performance with a large number of authorities"""
-
     def execute():
         poa = ProofOfAuthority(name="PerformancePoA")
 
@@ -389,7 +340,6 @@ def test_performance_with_many_authorities(benchmark=None):
 
 def test_realistic_environment_simulation(benchmark=None):
     """Test with more realistic environment simulation"""
-
     def execute():
         poa = ProofOfAuthority(name="RealisticPoA")
         poa.config["block_interval"] = 5.0  # 5 seconds between blocks
@@ -482,96 +432,87 @@ def test_realistic_environment_simulation(benchmark=None):
         execute()
 
 
-def test_security_and_fault_tolerance(benchmark=None):
+def test_security_and_fault_tolerance():
     """Test security features and fault tolerance"""
+    poa = ProofOfAuthority(name="SecureFaultTolerantPoA")
 
-    def execute():
-        poa = ProofOfAuthority(name="SecureFaultTolerantPoA")
+    # Add authorities with different roles
+    poa.add_authority("primary_auth", {"role": "primary", "trust_level": "high"})
+    poa.add_authority("secondary_auth", {"role": "secondary", "trust_level": "medium"})
+    poa.add_authority("monitor_auth", {"role": "monitor", "trust_level": "high"})
 
-        # Add authorities with different roles
-        poa.add_authority("primary_auth", {"role": "primary", "trust_level": "high"})
-        poa.add_authority("secondary_auth", {"role": "secondary", "trust_level": "medium"})
-        poa.add_authority("monitor_auth", {"role": "monitor", "trust_level": "high"})
+    # Test tampering detection
+    events = [{
+        "entity_id": "SECURITY-001",
+        "event": "secure_operation",
+        "timestamp": time.time()
+    }]
 
-        # Test tampering detection
-        events = [{
-            "entity_id": "SECURITY-001",
-            "event": "secure_operation",
+    # Create and finalize a legitimate block
+    block = Block(
+        index=1,
+        events=events,
+        previous_hash="0" * 64
+    )
+    block = poa.finalize_block(block, "primary_auth")
+
+    # Tamper with block data after finalization
+    _original_hash = block.hash
+    block.events.append({
+        "entity_id": "TAMPER-001",
+        "event": "unauthorized_addition",
+        "timestamp": time.time()
+    })
+    block.hash = block.calculate_hash()  # Recalculate hash after tampering
+
+    # Create a genesis block for comparison
+    genesis_block = Block(
+        index=0,
+        events=[{
+            "entity_id": "GENESIS-001",
+            "event": "genesis",
             "timestamp": time.time()
-        }]
+        }],
+        previous_hash="0" * 64
+    )
 
-        # Create and finalize a legitimate block
-        block = Block(
-            index=1,
-            events=events,
-            previous_hash="0" * 64
-        )
-        block = poa.finalize_block(block, "primary_auth")
+    # Validation should fail due to structural inconsistency
+    assert poa.validate_block(block, genesis_block) is False
 
-        # Tamper with block data after finalization
-        _original_hash = block.hash
-        block.events.append({
-            "entity_id": "TAMPER-001",
-            "event": "unauthorized_addition",
-            "timestamp": time.time()
-        })
-        block.hash = block.calculate_hash()  # Recalculate hash after tampering
+    # Test with corrupted event data
+    corrupted_events = events.copy()
+    corrupted_events[0]["event"] = "transaction"  # Forbidden term
+    corrupted_block = Block(
+        index=1,
+        events=corrupted_events,
+        previous_hash=genesis_block.hash
+    )
+    corrupted_block = poa.finalize_block(corrupted_block, "primary_auth")
 
-        # Create a genesis block for comparison
-        genesis_block = Block(
-            index=0,
-            events=[{
-                "entity_id": "GENESIS-001",
-                "event": "genesis",
-                "timestamp": time.time()
-            }],
-            previous_hash="0" * 64
-        )
+    # Should fail validation due to forbidden event type
+    assert poa.validate_block(corrupted_block, genesis_block) is False
 
-        # Validation should fail due to structural inconsistency
-        assert poa.validate_block(block, genesis_block) is False
+    # Test fault recovery by creating a valid block after faulty ones
+    recovery_events = [{
+        "entity_id": "RECOVERY-001",
+        "event": "recovery_operation",
+        "timestamp": time.time()
+    }]
 
-        # Test with corrupted event data
-        corrupted_events = events.copy()
-        corrupted_events[0]["event"] = "transaction"  # Forbidden term
-        corrupted_block = Block(
-            index=1,
-            events=corrupted_events,
-            previous_hash=genesis_block.hash
-        )
-        corrupted_block = poa.finalize_block(corrupted_block, "primary_auth")
+    recovery_block = Block(
+        index=1,
+        events=recovery_events,
+        previous_hash=genesis_block.hash,
+        timestamp=genesis_block.timestamp + poa.config["block_interval"] + 1
+    )
+    recovery_block = poa.finalize_block(recovery_block, "primary_auth")
 
-        # Should fail validation due to forbidden event type
-        assert poa.validate_block(corrupted_block, genesis_block) is False
-
-        # Test fault recovery by creating a valid block after faulty ones
-        recovery_events = [{
-            "entity_id": "RECOVERY-001",
-            "event": "recovery_operation",
-            "timestamp": time.time()
-        }]
-
-        recovery_block = Block(
-            index=1,
-            events=recovery_events,
-            previous_hash=genesis_block.hash,
-            timestamp=genesis_block.timestamp + poa.config["block_interval"] + 1
-        )
-        recovery_block = poa.finalize_block(recovery_block, "primary_auth")
-
-        # Should pass validation
-        assert poa.validate_block(recovery_block, genesis_block) is True
-        return poa, block, corrupted_block, recovery_block
-
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    # Should pass validation
+    assert poa.validate_block(recovery_block, genesis_block) is True
 
 
 def test_performance_with_large_data(benchmark=None):
     """Test performance with large amounts of data in blocks"""
-
     def execute():
         poa = ProofOfAuthority(name="LargeDataPoA")
         authority_id = "large_data_auth"
