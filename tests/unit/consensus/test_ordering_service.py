@@ -106,7 +106,7 @@ def test_block_creation(benchmark=None):
 
 
 def test_invalid_event_handling():
-    """"""
+    """Test invalid event handling functionality"""
     service = OrderingService(nodes=[node], config={})
 
     # Event missing required fields
@@ -121,7 +121,7 @@ def test_invalid_event_handling():
 
 
 def test_timeout_block_creation():
-    """"""
+    """Test timeout-based block creation functionality"""
     config = {"block_size": 10, "batch_timeout": 0.1}
     service = OrderingService(nodes=[node], config=config)
 
@@ -143,7 +143,7 @@ def test_timeout_block_creation():
 
 
 def test_service_status():
-    """"""
+    """Test service status functionality"""
     service = OrderingService(nodes=[node], config={})
 
     status = service.get_service_status()
@@ -152,7 +152,7 @@ def test_service_status():
 
 
 def test_custom_validation_rule():
-    """"""
+    """Test custom validation rule functionality"""
     service = OrderingService(nodes=[node], config={})
 
     # Add custom rules
