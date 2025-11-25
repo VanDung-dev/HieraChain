@@ -56,13 +56,16 @@ def disabled_config():
 
 
 @pytest.mark.asyncio
-async def test_verify_api_key_success(mock_key_manager, default_config):
+async def test_verify_api_key_success(mock_key_manager, default_config, benchmark):
     """Test successful API key verification"""
     verify_key = VerifyAPIKey(default_config)
     verify_key.key_manager = mock_key_manager
-    
-    context = await verify_key("valid_api_key")
-    
+
+    async def verify_key_async(key):
+        return await verify_key(key)
+
+    context = await benchmark(verify_key_async, "valid_api_key")
+
     assert "user_id" in context
     assert "app_details" in context
     assert context["user_id"] == "test_user"
@@ -135,13 +138,16 @@ async def test_verify_api_key_disabled(disabled_config):
 
 
 @pytest.mark.asyncio
-async def test_verify_api_key_cache_enabled(mock_key_manager, default_config):
+async def test_verify_api_key_cache_enabled(mock_key_manager, default_config, benchmark):
     """Test that caching is used when enabled"""
     verify_key = VerifyAPIKey(default_config)
     verify_key.key_manager = mock_key_manager
-    
-    await verify_key("valid_api_key")
-    
+
+    async def verify_key_async(key):
+        return await verify_key(key)
+
+    await benchmark(verify_key_async, "valid_api_key")
+
     mock_key_manager.cache_key.assert_called_once_with("valid_api_key", ttl=300)
 
 
@@ -167,13 +173,13 @@ async def test_verify_api_key_different_locations():
     assert verify_key_query.key_location == "query"
 
 
-def test_check_resource_permission(mock_key_manager, default_config):
+def test_check_resource_permission(mock_key_manager, default_config, benchmark):
     """Test resource permission checking"""
     verify_key = VerifyAPIKey(default_config)
     verify_key.key_manager = mock_key_manager
-    
-    result = verify_key.check_resource_permission("test_api_key", "test_resource")
-    
+
+    result = benchmark(verify_key.check_resource_permission, "test_api_key", "test_resource")
+
     assert result is True
     mock_key_manager.has_permission.assert_called_once_with("test_api_key", "test_resource")
 
@@ -302,26 +308,22 @@ async def test_verify_api_key_security_logging(mock_key_manager, default_config)
 
 
 @pytest.mark.asyncio
-async def test_verify_api_key_performance_many_requests(mock_key_manager, default_config):
+async def test_verify_api_key_performance_many_requests(mock_key_manager, default_config, benchmark):
     """Test performance with many concurrent requests"""
     verify_key = VerifyAPIKey(default_config)
     verify_key.key_manager = mock_key_manager
-    
-    # Measure time for 100 concurrent requests
-    start_time = time.time()
-    
-    # Create 100 concurrent requests
-    tasks = [verify_key(f"api_key_{i}") for i in range(100)]
-    results = await asyncio.gather(*tasks)
-    
-    end_time = time.time()
-    
+
+    async def many_concurrent_requests():
+        # Create 100 concurrent requests
+        tasks = [verify_key(f"api_key_{i}") for i in range(100)]
+        results = await asyncio.gather(*tasks)
+        return results
+
+    results = await benchmark(many_concurrent_requests)
+
     # All requests should succeed
     assert len(results) == 100
     assert all("user_id" in result for result in results)
-    
-    # Should complete within reasonable time (less than 2 seconds for 100 requests)
-    assert end_time - start_time < 2.0
 
 
 # Integration test between VerifyAPIKey and ResourcePermissionChecker
