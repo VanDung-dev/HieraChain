@@ -226,7 +226,7 @@ def test_blockchain_with_malicious_blocks():
 
 
 # Performance/load testing
-def test_blockchain_performance_with_large_number_of_events(benchmark=None):
+def test_blockchain_performance_with_large_number_of_events(benchmark):
     """Test blockchain performance with large number of events"""
 
     def create_and_process_events():
@@ -257,10 +257,7 @@ def test_blockchain_performance_with_large_number_of_events(benchmark=None):
         return chain, blocks_created
 
     # Benchmark the whole process
-    if benchmark:
-        chain, blocks_created = benchmark(create_and_process_events)
-    else:
-        chain, blocks_created = create_and_process_events()
+    chain, blocks_created = benchmark(create_and_process_events)
 
     # Verify chain integrity
     assert chain.is_chain_valid() is True

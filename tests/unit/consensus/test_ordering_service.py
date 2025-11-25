@@ -73,7 +73,7 @@ def test_receive_valid_event():
 
 
 
-def test_block_creation(benchmark=None):
+def test_block_creation(benchmark):
     """Test block creation when batch size is reached"""
     def execute():
         config = {"block_size": 3, "batch_timeout": 0.1}
@@ -99,10 +99,7 @@ def test_block_creation(benchmark=None):
         assert block["event_count"] == 3
         return service, block
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    benchmark(execute)
 
 
 def test_invalid_event_handling():
@@ -176,7 +173,7 @@ def test_custom_validation_rule():
 
 
 
-def test_concurrent_event_processing(benchmark=None):
+def test_concurrent_event_processing(benchmark):
     """Test concurrent event processing"""
     def execute():
         service = OrderingService(nodes=[node], config={"worker_threads": 4})
@@ -205,13 +202,10 @@ def test_concurrent_event_processing(benchmark=None):
         assert certified_count == 10
         return service, certified_count
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    benchmark(execute)
 
 
-def test_unhealthy_node(benchmark=None):
+def test_unhealthy_node(benchmark):
     """Test handling of unhealthy nodes"""
     def execute():
         # Create an unhealthy node (last heartbeat is old)
@@ -242,10 +236,7 @@ def test_unhealthy_node(benchmark=None):
         assert status["nodes"]["healthy"] == 1  # Only one node should be healthy
         return service, status
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    benchmark(execute)
 
 
 def test_service_start_stop():
@@ -306,7 +297,7 @@ def test_system_error_handling():
 
 
 
-def test_large_volume_performance(benchmark=None):
+def test_large_volume_performance(benchmark):
     """Test performance with large volume of events"""
     def execute():
         config = {"block_size": 100, "batch_timeout": 0.5}
@@ -354,10 +345,7 @@ def test_large_volume_performance(benchmark=None):
         assert len(blocks) > 0
         return service, certified_count, blocks
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    benchmark(execute)
 
 
 def test_malformed_event_data():

@@ -198,7 +198,7 @@ def test_cache_edge_cases_ttl():
 
 
 # Performance/load testing
-def test_cache_performance_under_load(benchmark=None):
+def test_cache_performance_under_load(benchmark):
     """Test cache performance under high load"""
     def execute():
         cache = AdvancedCache(max_size=5000, eviction_policy="lru")
@@ -233,10 +233,8 @@ def test_cache_performance_under_load(benchmark=None):
 
         return cache, test_data, insert_time, retrieve_time
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    benchmark(execute)
+
 
 
 # Property-based testing with Hypothesis

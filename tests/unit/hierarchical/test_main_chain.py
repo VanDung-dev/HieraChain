@@ -221,7 +221,7 @@ def test_verify_proof_with_invalid_inputs():
 
 
 # Performance benchmark test
-def test_main_chain_performance(benchmark=None):
+def test_main_chain_performance(benchmark):
     """Benchmark MainChain performance with multiple operations"""
     def run_performance_test():
         main_chain = MainChain(name="PerformanceTestMainChain")
@@ -241,10 +241,7 @@ def test_main_chain_performance(benchmark=None):
         
         return main_chain
 
-    if benchmark:
-        chain = benchmark(run_performance_test)
-    else:
-        chain = run_performance_test()
+    chain = benchmark(run_performance_test)
     
     # Basic assertions to ensure it worked
     assert len(chain.registered_sub_chains) == 100

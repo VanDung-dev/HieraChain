@@ -348,7 +348,7 @@ def test_revoke_key_nonexistent():
     assert km.is_revoked("nonexistent_key") is True
 
 
-def test_key_creation_performance(benchmark=None):
+def test_key_creation_performance(benchmark):
     """Test performance of key creation operations"""
     km = KeyManager()
     def test_multiple_keys():
@@ -366,13 +366,10 @@ def test_key_creation_performance(benchmark=None):
         assert (end_time - start_time) < 2.0
         assert len(keys) == 100
 
-    if benchmark:
-        benchmark(test_multiple_keys)
-    else:
-        test_multiple_keys()
+    benchmark(test_multiple_keys)
 
 
-def test_key_validation_performance(benchmark=None):
+def test_key_validation_performance(benchmark):
     """Test performance of key validation operations"""
     km = KeyManager()
 
@@ -394,13 +391,10 @@ def test_key_validation_performance(benchmark=None):
         # Validating 100 keys should take less than 1 second
         assert (end_time - start_time) < 1.0
 
-    if benchmark:
-        benchmark(create_keys)
-    else:
-        create_keys()
+    benchmark(create_keys)
 
 
-def test_permission_check_performance(benchmark=None):
+def test_permission_check_performance(benchmark):
     """Test performance of permission checking operations"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
@@ -422,10 +416,7 @@ def test_permission_check_performance(benchmark=None):
         # Checking permissions 1000 times should take less than 1 second
         assert (end_time - start_time) < 1.0
 
-    if benchmark:
-        benchmark(test_multiple_permissions)
-    else:
-        test_multiple_permissions()
+    benchmark(test_multiple_permissions)
 
 
 def test_security_injection_attacks():

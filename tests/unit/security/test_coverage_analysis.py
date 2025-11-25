@@ -143,7 +143,7 @@ def test_key_backup_manager_edge_cases():
 
     assert restore_missing() is True
 
-def test_key_backup_manager_restore(benchmark=None):
+def test_key_backup_manager_restore(benchmark):
     """Test KeyBackupManager restore with missing backup file   using benchmark"""
     config = {"enabled": True}
     km = KeyBackupManager(config)
@@ -156,11 +156,7 @@ def test_key_backup_manager_restore(benchmark=None):
         except RestoreError:
             return True
 
-    if benchmark:
-        result = benchmark(restore_missing)
-    else:
-        result = restore_missing()
-
+    result = benchmark(restore_missing)
     assert result is True
 
 
@@ -360,7 +356,7 @@ def test_msp_role_registration():
     assert result is True  # Should now succeed
 
 
-def test_msp_audit_logging_comprehensive(benchmark=None):
+def test_msp_audit_logging_comprehensive(benchmark):
     """Comprehensive test of MSP audit logging"""
     ca_config = {
         "root_cert": "audit-test-root",
@@ -385,11 +381,7 @@ def test_msp_audit_logging_comprehensive(benchmark=None):
     def get_audit_log():
         return msp.get_audit_log()
 
-    if benchmark:
-        result = benchmark(get_audit_log)
-    else:
-        result = get_audit_log()
-
+    result = benchmark(get_audit_log)
     assert len(result) >= 5  # At least our 5 operations
 
     # Check log content

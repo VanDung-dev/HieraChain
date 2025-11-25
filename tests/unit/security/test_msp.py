@@ -735,7 +735,7 @@ def test_role_based_access_control():
     assert viewer_view
 
 
-def test_msp_registration_performance(benchmark=None):
+def test_msp_registration_performance(benchmark):
     """Test performance of entity registration"""
     msp, test_credentials, test_attributes = setup_msp()
     
@@ -752,13 +752,10 @@ def test_msp_registration_performance(benchmark=None):
             assert result
 
     # Benchmark the registration of 100 entities
-    if benchmark:
-        benchmark(register_entities)
-    else:
-        register_entities()
+    benchmark(register_entities)
 
 
-def test_msp_validation_performance(benchmark=None):
+def test_msp_validation_performance(benchmark):
     """Test performance of identity validation"""
     msp, test_credentials, _ = setup_msp()
     
@@ -780,13 +777,10 @@ def test_msp_validation_performance(benchmark=None):
             assert result
 
     # Benchmark the validation of 100 entities
-    if benchmark:
-        benchmark(validate_entities)
-    else:
-        validate_entities()
+    benchmark(validate_entities)
 
 
-def test_msp_authorization_performance(benchmark=None):
+def test_msp_authorization_performance(benchmark):
     """Test performance of action authorization"""
     msp, test_credentials, _ = setup_msp()
     
@@ -807,10 +801,7 @@ def test_msp_authorization_performance(benchmark=None):
             assert result2
 
     # Benchmark the authorization of 100 entities for 2 actions each
-    if benchmark:
-        benchmark(authorize_entities)
-    else:
-        authorize_entities()
+    benchmark(authorize_entities)
 
 
 def test_msp_security_injection_attacks():

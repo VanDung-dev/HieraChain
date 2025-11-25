@@ -214,7 +214,7 @@ def test_proof_submission_with_invalid_inputs():
 
 
 # Performance benchmark test
-def test_sub_chain_performance(benchmark=None):
+def test_sub_chain_performance(benchmark):
     """Benchmark SubChain performance with multiple operations"""
     def run_performance_test():
         sub_chain = SubChain(name="PerformanceTestChain", domain_type="testing")
@@ -233,10 +233,7 @@ def test_sub_chain_performance(benchmark=None):
         
         return sub_chain
 
-    if benchmark:
-        chain = benchmark(run_performance_test)
-    else:
-        chain = run_performance_test()
+    chain = benchmark(run_performance_test)
     
     # Basic assertions to ensure it worked
     assert chain.completed_operations == 500

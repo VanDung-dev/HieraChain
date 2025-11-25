@@ -183,7 +183,7 @@ def test_block_with_zero_events():
 
 
 
-def test_block_performance_with_large_number_of_events(benchmark=None):
+def test_block_performance_with_large_number_of_events(benchmark):
     """Test block performance with large number of events"""
     def execute():
         # Create a large number of events
@@ -216,10 +216,7 @@ def test_block_performance_with_large_number_of_events(benchmark=None):
 
         return block
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    benchmark(execute)
 
 
 def test_block_invalid_hash():

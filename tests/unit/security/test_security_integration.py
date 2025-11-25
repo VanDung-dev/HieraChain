@@ -13,7 +13,7 @@ from hierarchical_blockchain.security.key_backup_manager import KeyBackupManager
 from hierarchical_blockchain.security.msp import HierarchicalMSP
 
 
-def test_end_to_end_key_lifecycle(benchmark=None):
+def test_end_to_end_key_lifecycle(benchmark):
     """Test end-to-end key lifecycle from creation to backup to MSP registration"""
     def run_test():
         # Step 1: Create API key using KeyManager
@@ -88,15 +88,11 @@ def test_end_to_end_key_lifecycle(benchmark=None):
 
         return True
 
-    if benchmark:
-        result = benchmark(run_test)
-    else:
-        result = run_test()
-
+    result = benchmark(run_test)
     assert result is True
 
 
-def test_key_revocation_propagation(benchmark=None):
+def test_key_revocation_propagation(benchmark):
     """Test that key revocation propagates through the system"""
     def run_test():
         # Create key
@@ -149,15 +145,11 @@ def test_key_revocation_propagation(benchmark=None):
 
         return True
 
-    if benchmark:
-        result = benchmark(run_test)
-    else:
-        result = run_test()
-
+    result = benchmark(run_test)
     assert result is True
 
 
-def test_multiple_module_interaction_under_load(benchmark=None):
+def test_multiple_module_interaction_under_load(benchmark):
     """Test multiple security modules interacting under load"""
     def run_test():
         # Create multiple keys
@@ -221,15 +213,11 @@ def test_multiple_module_interaction_under_load(benchmark=None):
 
         return True
 
-    if benchmark:
-        result = benchmark(run_test)
-    else:
-        result = run_test()
-
+    result = benchmark(run_test)
     assert result is True
 
 
-def test_security_modules_interoperability(benchmark=None):
+def test_security_modules_interoperability(benchmark):
     """Test interoperability between different security modules"""
     def run_test():
         # Create a key with KeyManager
@@ -294,9 +282,5 @@ def test_security_modules_interoperability(benchmark=None):
 
         return True
 
-    if benchmark:
-        result = benchmark(run_test)
-    else:
-        result = run_test()
-
+    result = benchmark(run_test)
     assert result is True

@@ -297,7 +297,7 @@ def test_spoofed_authority_attack():
     assert poa.validate_block(malicious_block, genesis_block) is False
 
 
-def test_performance_with_many_authorities(benchmark=None):
+def test_performance_with_many_authorities(benchmark):
     """Test performance with a large number of authorities"""
     def execute():
         poa = ProofOfAuthority(name="PerformancePoA")
@@ -331,13 +331,10 @@ def test_performance_with_many_authorities(benchmark=None):
         assert (end_time - start_time) < 1.0
         return poa
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    benchmark(execute)
 
 
-def test_realistic_environment_simulation(benchmark=None):
+def test_realistic_environment_simulation(benchmark):
     """Test with more realistic environment simulation"""
     def execute():
         poa = ProofOfAuthority(name="RealisticPoA")
@@ -425,10 +422,7 @@ def test_realistic_environment_simulation(benchmark=None):
         # No authority should be used significantly more than others
         return poa, blocks
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    benchmark(execute)
 
 
 def test_security_and_fault_tolerance():
@@ -510,7 +504,7 @@ def test_security_and_fault_tolerance():
     assert poa.validate_block(recovery_block, genesis_block) is True
 
 
-def test_performance_with_large_data(benchmark=None):
+def test_performance_with_large_data(benchmark):
     """Test performance with large amounts of data in blocks"""
     def execute():
         poa = ProofOfAuthority(name="LargeDataPoA")
@@ -585,7 +579,4 @@ def test_performance_with_large_data(benchmark=None):
         assert block.validate_structure() is True  # Structure should be valid
         return poa, block, block_creation_time, finalization_time, validation_time
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    benchmark(execute)

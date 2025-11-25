@@ -123,7 +123,7 @@ def test_generate_hash_edge_cases():
     assert generate_hash("") == generate_hash("")
 
 
-def test_generate_hash_performance(benchmark=None):
+def test_generate_hash_performance(benchmark):
     """Test hash generation performance with large input"""
     def execute():
         # Create large data structure
@@ -143,10 +143,7 @@ def test_generate_hash_performance(benchmark=None):
 
         return hash_result, (end_time - start_time)
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    benchmark(execute)
 
 
 def test_generate_proof_hash_edge_cases():
@@ -257,7 +254,7 @@ def test_entity_id_uniqueness_property(prefix):
 
 
 # Performance/load testing
-def test_utils_performance_under_load(benchmark=None):
+def test_utils_performance_under_load(benchmark):
     """Test utility functions performance under load"""
     def execute():
         # Test generate_hash with many iterations
@@ -291,10 +288,7 @@ def test_utils_performance_under_load(benchmark=None):
 
         return hash_time, entity_id_time, proof_hash_time
 
-    if benchmark:
-        benchmark(execute)
-    else:
-        execute()
+    benchmark(execute)
 
 
 # Fuzz testing

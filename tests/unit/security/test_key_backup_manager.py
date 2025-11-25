@@ -80,7 +80,7 @@ def test_backup_keys_when_disabled():
 
 
 @patch('hierarchical_blockchain.security.key_backup_manager.Fernet')
-def test_backup_keys_success(mock_fernet, benchmark=None):
+def test_backup_keys_success(mock_fernet, benchmark):
     """Test successful key backup"""
     config = {"enabled": True}
     km = KeyBackupManager(config)
@@ -105,11 +105,7 @@ def test_backup_keys_success(mock_fernet, benchmark=None):
     # Check metadata was updated
     assert os.path.exists(metadata_file)
 
-    if benchmark:
-        result = benchmark(km.backup_keys, public_key, private_key, "consensus")
-    else:
-        result = km.backup_keys(public_key, private_key, "consensus")
-
+    result = benchmark(km.backup_keys, public_key, private_key, "consensus")
     assert result.startswith("consensus_")
 
 
@@ -299,7 +295,7 @@ def test_verify_backup_integrity_with_invalid_inputs():
     assert result is False
 
 
-def test_backup_keys_performance(benchmark=None):
+def test_backup_keys_performance(benchmark):
     """Test performance of key backup operations"""
     config = {"enabled": True}
     km = KeyBackupManager(config)
@@ -323,13 +319,10 @@ def test_backup_keys_performance(benchmark=None):
             # Each backup operation should take less than 0.1 seconds
             assert (end_time - start_time) < 1.0  # 1 second for 10 operations
 
-        if benchmark:
-            benchmark(backup_keys)
-        else:
-            backup_keys()
+        benchmark(backup_keys)
 
 
-def test_restore_keys_performance(benchmark=None):
+def test_restore_keys_performance(benchmark):
     """Test performance of key restore operations"""
     config = {"enabled": True}
     km = KeyBackupManager(config)
@@ -362,10 +355,7 @@ def test_restore_keys_performance(benchmark=None):
             # Each restore operation should take less than 0.1 seconds
             assert (end_time - start_time) < 1.0  # 1 second for 10 operations
 
-        if benchmark:
-            benchmark(restore_keys)
-        else:
-            restore_keys()
+        benchmark(restore_keys)
 
 
 def test_backup_security_injection_attacks():
