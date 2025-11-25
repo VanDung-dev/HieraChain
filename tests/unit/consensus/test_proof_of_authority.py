@@ -311,7 +311,6 @@ def test_performance_with_many_authorities(benchmark=None):
         assert poa.get_authority_stats()["total_authorities"] == num_authorities
 
         # Test round-robin authority selection performance
-        import time
         start_time = time.time()
         for i in range(1000):
             authority = poa.get_next_authority(i)
