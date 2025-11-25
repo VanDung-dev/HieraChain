@@ -172,7 +172,6 @@ def test_custom_validation_rule():
     assert status["status"] == "rejected"
 
 
-
 def test_concurrent_event_processing(benchmark):
     """Test concurrent event processing"""
     def execute():
@@ -180,7 +179,7 @@ def test_concurrent_event_processing(benchmark):
 
         # Submit multiple events concurrently
         event_ids = []
-        for i in range(10):
+        for i in range(100):
             event = {
                 "entity_id": f"TEST-{i:03d}",
                 "event": f"test_event_{i}",
@@ -190,7 +189,7 @@ def test_concurrent_event_processing(benchmark):
             event_ids.append(event_id)
 
         # Wait for processing
-        time.sleep(0.5)
+        time.sleep(0.05)
 
         # Check that all events were processed
         certified_count = 0
@@ -199,7 +198,7 @@ def test_concurrent_event_processing(benchmark):
             if status and status["status"] == "certified":
                 certified_count += 1
 
-        assert certified_count == 10
+        assert certified_count == 100
         return service, certified_count
 
     benchmark(execute)
@@ -307,7 +306,7 @@ def test_large_volume_performance(benchmark):
         start_time = time.time()
 
         # Submit large number of events
-        event_count = 500
+        event_count = 1000
         event_ids = []
         for i in range(event_count):
             event = {
@@ -319,7 +318,7 @@ def test_large_volume_performance(benchmark):
             event_ids.append(event_id)
 
         # Wait for all events to be processed
-        time.sleep(2.0)
+        time.sleep(0.05)
 
         # Check performance
         end_time = time.time()
