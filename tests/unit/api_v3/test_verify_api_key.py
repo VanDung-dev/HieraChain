@@ -8,7 +8,6 @@ permission checking, and security event logging.
 
 import pytest
 import asyncio
-import time
 import inspect
 from unittest.mock import Mock, patch
 from unittest import mock
@@ -64,7 +63,7 @@ async def test_verify_api_key_success(mock_key_manager, default_config, benchmar
     async def verify_key_async(key):
         return await verify_key(key)
 
-    context = await benchmark(verify_key_async, "valid_api_key")
+    context = await benchmark.pedantic(verify_key_async, args=("valid_api_key",), kwargs={}, iterations=1, rounds=1)
 
     assert "user_id" in context
     assert "app_details" in context
@@ -146,7 +145,7 @@ async def test_verify_api_key_cache_enabled(mock_key_manager, default_config, be
     async def verify_key_async(key):
         return await verify_key(key)
 
-    await benchmark(verify_key_async, "valid_api_key")
+    await benchmark.pedantic(verify_key_async, args=("valid_api_key",), kwargs={}, iterations=1, rounds=1)
 
     mock_key_manager.cache_key.assert_called_once_with("valid_api_key", ttl=300)
 
@@ -320,7 +319,8 @@ async def test_verify_api_key_performance_many_requests(mock_key_manager, defaul
         results = await asyncio.gather(*tasks)
         return results
 
-    results = await benchmark(many_concurrent_requests)
+    # Use pedantic mode to properly benchmark the coroutine
+    results = await benchmark.pedantic(many_concurrent_requests, iterations=1, rounds=1)
 
     # All requests should succeed
     assert len(results) == 100
