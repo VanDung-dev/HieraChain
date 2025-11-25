@@ -177,7 +177,7 @@ class TestingSettings(Settings):
 # Get settings based on environment
 def get_settings() -> Settings:
     """Get settings based on environment variable"""
-    env = os.getenv("HBC_ENV", "dev").lower()
+    env = os.getenv("HRC_ENV", "dev").lower()
     
     if env == "product":
         return ProductionSettings()

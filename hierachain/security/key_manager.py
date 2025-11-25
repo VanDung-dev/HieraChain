@@ -153,7 +153,7 @@ class KeyManager:
         random_suffix = hashlib.sha256(f"{timestamp}{user_id}".encode()).hexdigest()[:16]
         # Add random component to ensure keys are always different
         random_bytes = binascii.hexlify(os.urandom(8)).decode()[:8]
-        api_key = f"hbc_{user_hash}_{random_suffix}_{random_bytes}"
+        api_key = f"hrc_{user_hash}_{random_suffix}_{random_bytes}"
         
         key_data = {
             'user_id': user_id,

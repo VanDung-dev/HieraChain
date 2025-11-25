@@ -2,7 +2,7 @@
 requires = [
     "setuptools>=80.9.0",
     "setuptools_scm[toml]>=9.2.2",
-    "wheel>=0.45.1"
+    "wheel>=0.45.1",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -41,7 +41,7 @@ dependencies = [
     "httpx>=0.28.1",
     "click>=8.3.1",
     "psutil>=7.1.3",
-    "requests>=2.32.5"
+    "requests>=2.32.5",
 ]
 dynamic = ["version"]
 
@@ -49,7 +49,7 @@ dynamic = ["version"]
 dev = ["tox>=4.32.0", "black>=25.11.0", "flake8>=7.3.0", "mypy>=1.18.2"]
 
 [project.scripts]
-hbc = "hierachain.cli.__init__:hbc"
+hrc = "hierachain.cli.__init__:hrc"
 
 [project.urls]
 "Homepage" = "https://github.com/VanDung-dev/HieraChain"

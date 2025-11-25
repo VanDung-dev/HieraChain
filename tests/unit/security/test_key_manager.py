@@ -222,7 +222,7 @@ def test_create_key():
 
     # Check that key was created
     assert new_key is not None
-    assert new_key.startswith("hbc_")
+    assert new_key.startswith("hrc_")
     assert len(new_key) > 16
     
     # Check that key data is stored
@@ -287,7 +287,7 @@ def test_is_valid_with_edge_cases():
     assert all(result is False for result in results[:3])
 
     # Test with very long key (should be valid if properly formatted)
-    long_key = "hbc_" + "a" * 100
+    long_key = "hrc_" + "a" * 100
     # Add the key to storage first
     km.storage[long_key] = {
         'user_id': 'test_user',
@@ -336,7 +336,7 @@ def test_create_key_with_various_inputs():
     keys = create_multiple_keys()
 
     for key in keys:
-        assert key.startswith("hbc_")
+        assert key.startswith("hrc_")
         assert len(key) > 16
 
 

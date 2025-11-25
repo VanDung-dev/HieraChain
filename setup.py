@@ -24,7 +24,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "hbc=hierachain.cli.__init__:hbc",
+            "hrc=hierachain.cli.__init__:hrc",
         ],
     },
     python_requires=">=3.10",

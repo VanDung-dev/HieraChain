@@ -1,5 +1,5 @@
 """
-HieraChain CLI Tool
+HieraChain CLI Tool (hrc)
 
 This module provides a command-line interface for managing HieraChain networks.
 It allows creating chains, adding events, submitting proofs, and viewing chain information.
@@ -82,7 +82,7 @@ def save_chains_to_file(filepath: str) -> bool:
 @click.group()
 @click.option('--config', default='chains.json', help='Configuration file path')
 @click.pass_context
-def hbc(ctx, config):
+def hrc(ctx, config):
     """HieraChain CLI - Simple management tool"""
     ctx.ensure_object(dict)
     ctx.obj['config_file'] = config
@@ -91,7 +91,7 @@ def hbc(ctx, config):
     load_chains_from_file(config)
 
 
-@hbc.command()
+@hrc.command()
 @click.argument('chain_type', type=click.Choice(['supply_chain', 'healthcare', 'finance', 'manufacturing']))
 @click.option('--name', required=True, help='Chain name')
 @click.option('--parent', default='main', help='Parent chain')
@@ -134,7 +134,7 @@ def create_chain(ctx, chain_type, name, parent):
         click.echo(f"Error creating chain: {e}")
 
 
-@hbc.command()
+@hrc.command()
 @click.argument('chain_name')
 @click.argument('event_type', type=click.Choice(['start_operation', 'complete_operation', 'quality_check', 'status_change']))
 @click.option('--entity-id', required=True, help='Entity ID')
@@ -214,7 +214,7 @@ def add_event(ctx, chain_name, event_type, entity_id, details):
         click.echo(f"Error adding event: {e}")
 
 
-@hbc.command()
+@hrc.command()
 @click.argument('chain_name')
 def submit_proof(chain_name):
     """Submit proof from sub-chain to main chain"""
@@ -243,7 +243,7 @@ def submit_proof(chain_name):
         click.echo(f"Error submitting proof: {e}")
 
 
-@hbc.command()
+@hrc.command()
 def list_chains():
     """List all chains"""
     try:
@@ -261,7 +261,7 @@ def list_chains():
         click.echo(f"Error listing chains: {e}")
 
 
-@hbc.command()
+@hrc.command()
 @click.argument('chain_name')
 @click.option('--entity-id', help='Filter by entity ID')
 def show_events(chain_name, entity_id):
@@ -292,4 +292,4 @@ def show_events(chain_name, entity_id):
 
 
 if __name__ == '__main__':
-    hbc()
+    hrc()
