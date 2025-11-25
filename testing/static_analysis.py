@@ -1,5 +1,5 @@
 """
-Static Analysis Module for Hierarchical Blockchain Framework
+Static Analysis Module for HieraChain Framework
 
 This module provides static code analysis capabilities for vulnerability detection,
 code quality assessment, and compliance checking. Integrates with tools like

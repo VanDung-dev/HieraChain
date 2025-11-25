@@ -7,8 +7,8 @@ ensuring all expected classes and functions are properly exported.
 
 import pytest
 import inspect
-from hierarchical_blockchain import api
-from hierarchical_blockchain.api.v3 import verify
+from hierachain import api
+from hierachain.api.v3 import verify
 
 
 def test_verify_api_key_export():
@@ -54,12 +54,12 @@ def test_import_exception_handling(monkeypatch):
     # Mock the verify module to raise ImportError
     with pytest.raises(ImportError):
         monkeypatch.setattr('sys.modules', {
-            'hierarchical_blockchain.api.v3.verify': None
+            'hierachain.api.v3.verify': None
         })
         # Re-import the module to trigger the import error
         from importlib import reload
-        import hierarchical_blockchain.api.v3
-        reload(hierarchical_blockchain.api.v3)
+        import hierachain.api.v3
+        reload(hierachain.api.v3)
 
 
 def test_function_signatures():

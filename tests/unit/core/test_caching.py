@@ -11,7 +11,7 @@ import threading
 import random
 import string
 
-from hierarchical_blockchain.core.caching import AdvancedCache
+from hierachain.core.caching import AdvancedCache
 
 
 def test_cache_basic_operations():

@@ -13,13 +13,13 @@ from unittest.mock import Mock, patch
 from unittest import mock
 from fastapi import HTTPException
 
-from hierarchical_blockchain.api.v3.verify import VerifyAPIKey, ResourcePermissionChecker, create_verify_api_key
+from hierachain.api.v3.verify import VerifyAPIKey, ResourcePermissionChecker, create_verify_api_key
 
 
 @pytest.fixture
 def mock_key_manager():
     """Mock KeyManager for testing"""
-    with patch('hierarchical_blockchain.api.v3.verify.KeyManager') as mock_km:
+    with patch('hierachain.api.v3.verify.KeyManager') as mock_km:
         mock_instance = Mock()
         mock_instance.is_valid.return_value = True
         mock_instance.is_revoked.return_value = False

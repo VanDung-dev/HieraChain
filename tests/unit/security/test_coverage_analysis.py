@@ -9,13 +9,13 @@ import json
 import time
 from unittest.mock import Mock, patch
 
-from hierarchical_blockchain.security.key_manager import KeyManager
-from hierarchical_blockchain.security.key_backup_manager import (
+from hierachain.security.key_manager import KeyManager
+from hierachain.security.key_backup_manager import (
     KeyBackupManager,
     RestoreError,
     BackupError
 )
-from hierarchical_blockchain.security.msp import (
+from hierachain.security.msp import (
     HierarchicalMSP,
     CertificateAuthority,
     OrganizationPolicies
@@ -120,7 +120,7 @@ def test_key_backup_manager_edge_cases():
     km = KeyBackupManager(config)
     
     # Test backup with filesystem errors
-    with patch('hierarchical_blockchain.security.key_backup_manager.open') as mock_open:
+    with patch('hierachain.security.key_backup_manager.open') as mock_open:
         mock_open.side_effect = IOError("Permission denied")
 
         def backup_with_error():
@@ -169,7 +169,7 @@ def test_key_backup_manager_retention_policies():
     km = KeyBackupManager(config)
     
     # Mock encryption
-    with (patch('hierarchical_blockchain.security.key_backup_manager.Fernet') as mock_fernet):
+    with (patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet):
         mock_fernet_instance = Mock()
         mock_fernet_instance.encrypt.return_value = b"encrypted_data"
         mock_fernet.return_value = mock_fernet_instance

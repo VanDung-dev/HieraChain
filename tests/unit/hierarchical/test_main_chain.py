@@ -1,13 +1,13 @@
 """
 Test suite for Main Chain functionality
 
-The tests validate the core functionality of the hierarchical blockchain architecture
+The tests validate the core functionality of the HieraChain architecture
 where the main chain stores proofs from registered sub-chains.
 """
 
 from unittest.mock import Mock
 
-from hierarchical_blockchain.hierarchical.main_chain import MainChain
+from hierachain.hierarchical.main_chain import MainChain
 
 
 def test_main_chain_creation():
@@ -60,7 +60,7 @@ def test_proof_adding():
     assert "TestSubChain" in main_chain.registered_sub_chains
     
     # Check metadata validation
-    from hierarchical_blockchain.core.utils import validate_proof_metadata
+    from hierachain.core.utils import validate_proof_metadata
     assert validate_proof_metadata(metadata) is True
     
     result = main_chain.add_proof("TestSubChain", proof_hash, metadata)

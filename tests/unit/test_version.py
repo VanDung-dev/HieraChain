@@ -1,8 +1,8 @@
 """
-Test version management functionality for Hierarchical-Blockchain Framework.
+Test version management functionality for HieraChain Framework.
 """
 
-from hierarchical_blockchain.units.version import (
+from hierachain.units.version import (
     get_version, get_complete_version, get_major_version, 
     get_documentation_status, compare_versions, VERSION
 )

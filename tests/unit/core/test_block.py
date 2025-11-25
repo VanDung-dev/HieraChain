@@ -10,8 +10,8 @@ import random
 import string
 from hypothesis import given, strategies as st
 
-from hierarchical_blockchain.core.block import Block
-from hierarchical_blockchain.core.blockchain import Blockchain
+from hierachain.core.block import Block
+from hierachain.core.blockchain import Blockchain
 
 
 def test_block_with_multiple_events():

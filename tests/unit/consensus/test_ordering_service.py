@@ -5,13 +5,13 @@ Unit tests for the Ordering Service
 import time
 import os
 import tempfile
-from hierarchical_blockchain.consensus import OrderingService, OrderingNode, OrderingStatus
-from hierarchical_blockchain.error_mitigation.error_classifier import (
+from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
+from hierachain.error_mitigation.error_classifier import (
     ErrorClassifier,
     PriorityLevel,
     ErrorCategory,
 )
-from hierarchical_blockchain.error_mitigation.validator import (
+from hierachain.error_mitigation.validator import (
     ConsensusValidator,
     EncryptionValidator,
     ResourceValidator,
@@ -19,7 +19,7 @@ from hierarchical_blockchain.error_mitigation.validator import (
     ValidationError,
     SecurityError
 )
-from hierarchical_blockchain.error_mitigation.recovery_engine import (
+from hierachain.error_mitigation.recovery_engine import (
     NetworkRecoveryEngine,
     AutoScaler,
     ConsensusRecoveryEngine,

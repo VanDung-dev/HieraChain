@@ -5,8 +5,8 @@ This module contains integration tests for cross-chain validation functionality,
 including proof consistency checks and hierarchical integrity verification.
 """
 
-from hierarchical_blockchain.hierarchical.hierarchy_manager import HierarchyManager
-from hierarchical_blockchain.domains.generic.utils.cross_chain_validator import CrossChainValidator
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
+from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
 
 
 def test_cross_chain_validation():

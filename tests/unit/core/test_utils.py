@@ -10,7 +10,7 @@ import random
 import string
 from hypothesis import given, strategies as st
 
-from hierarchical_blockchain.core.utils import (
+from hierachain.core.utils import (
     generate_hash,
     generate_entity_id,
     generate_proof_hash,

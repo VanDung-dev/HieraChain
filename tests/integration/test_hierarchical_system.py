@@ -1,12 +1,12 @@
 """
-Test suite for hierarchical blockchain system
+Test suite for HieraChain system
 
-This module contains integration tests that validate the complete flow of the hierarchical blockchain system,
+This module contains integration tests that validate the complete flow of the HieraChain system,
 including Main Chain and Sub-Chain interactions, proof submission and verification, and cross-chain entity tracing.
 """
 
-from hierarchical_blockchain.hierarchical.main_chain import MainChain
-from hierarchical_blockchain.hierarchical.sub_chain import SubChain
+from hierachain.hierarchical.main_chain import MainChain
+from hierachain.hierarchical.sub_chain import SubChain
 
 
 def test_full_hierarchical_flow():
@@ -350,7 +350,7 @@ def test_nested_hierarchy():
 
 def test_rollback_on_error():
     """Test case for rollback functionality when errors occur"""
-    from hierarchical_blockchain.error_mitigation.rollback_manager import RollbackManager, RollbackType
+    from hierachain.error_mitigation.rollback_manager import RollbackManager, RollbackType
     
     # Create rollback manager
     rollback_config = {

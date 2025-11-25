@@ -1,10 +1,10 @@
-# Hierarchical Blockchain Security Policy
+# HieraChain Security Policy
 
 ## Reporting a Security Bug
 
-If you think you have discovered a security issue in the hierarchical-blockchain project, I'd love to hear from you. I will take all security bugs seriously and if confirmed upon investigation I will patch it within a reasonable amount of time and release a public security bulletin discussing the impact and credit the discoverer.
+If you think you have discovered a security issue in the HieraChain project, I'd love to hear from you. I will take all security bugs seriously and if confirmed upon investigation I will patch it within a reasonable amount of time and release a public security bulletin discussing the impact and credit the discoverer.
 
-To report a security bug, file a confidential security bug in the repository's [security advisories page](https://github.com/VanDung-dev/hierarchical-blockchain/security). Guidance can be found in the GitHub documentation on [privately reporting a security vulnerability](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability).
+To report a security bug, file a confidential security bug in the repository's [security advisories page](https://github.com/VanDung-dev/HieraChain/security). Guidance can be found in the GitHub documentation on [privately reporting a security vulnerability](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability).
 
 The process by which security bugs are handled is documented further in the Defect Response process.
 

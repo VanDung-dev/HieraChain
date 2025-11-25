@@ -9,8 +9,8 @@ import pytest
 from unittest.mock import patch
 from fastapi import HTTPException
 
-from hierarchical_blockchain.api.v2.endpoints import register_organization
-from hierarchical_blockchain.api.v2.schemas import OrganizationRequest
+from hierachain.api.v2.endpoints import register_organization
+from hierachain.api.v2.schemas import OrganizationRequest
 
 
 @pytest.fixture
@@ -33,8 +33,8 @@ def mock_org_data():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._organizations', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._organizations', {})
 async def test_register_organization_success(mock_org_data):
     """Test successful organization registration"""
     request = OrganizationRequest(**mock_org_data)
@@ -45,8 +45,8 @@ async def test_register_organization_success(mock_org_data):
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._organizations', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._organizations', {})
 async def test_register_organization_missing_required_fields():
     """Test organization registration with missing required fields"""
     # Missing org_id
@@ -69,8 +69,8 @@ async def test_register_organization_missing_required_fields():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._organizations', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._organizations', {})
 async def test_register_organization_empty_values():
     """Test organization registration with empty values"""
     invalid_org_data = {
@@ -86,8 +86,8 @@ async def test_register_organization_empty_values():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._organizations', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._organizations', {})
 async def test_register_organization_invalid_ca_config():
     """Test organization registration with invalid CA config"""
     invalid_org_data = {
@@ -107,8 +107,8 @@ async def test_register_organization_invalid_ca_config():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._organizations', {"existing_org": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._organizations', {"existing_org": {}})
 async def test_register_organization_already_exists(mock_org_data):
     """Test organization registration when organization already exists"""
     request = OrganizationRequest(**mock_org_data)
@@ -122,8 +122,8 @@ async def test_register_organization_already_exists(mock_org_data):
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._organizations', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._organizations', {})
 async def test_register_organization_invalid_certificate_policy():
     """Test organization registration with invalid certificate policy"""
     invalid_org_data = {
@@ -149,8 +149,8 @@ async def test_register_organization_invalid_certificate_policy():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._organizations', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._organizations', {})
 async def test_register_organization_security_edge_cases():
     """Test organization registration with security edge cases"""
     edge_case_org_data = {
@@ -175,7 +175,7 @@ async def test_register_organization_security_edge_cases():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', False)
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', False)
 async def test_register_organization_not_implemented(mock_org_data):
     """Test organization registration when modules are not available"""
     request = OrganizationRequest(**mock_org_data)

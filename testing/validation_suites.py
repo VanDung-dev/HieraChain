@@ -1,5 +1,5 @@
 """
-Validation Suites for Hierarchical Blockchain Framework
+Validation Suites for HieraChain Framework
 Priority-based risk validation tests covering all identified risks
 
 This module implements comprehensive validation tests for error mitigation and validation
@@ -10,17 +10,17 @@ import pytest
 import time
 from unittest.mock import Mock, patch, MagicMock
 
-from hierarchical_blockchain.error_mitigation.validator import (
+from hierachain.error_mitigation.validator import (
     ConsensusValidator,
     SecurityError,
     ValidationError,
     validate_certificate
 )
-from hierarchical_blockchain.security.certificate import CertificateValidator
-from hierarchical_blockchain.error_mitigation.recovery_engine import NetworkRecoveryEngine
-from hierarchical_blockchain.security.key_backup_manager import KeyBackupManager
-from hierarchical_blockchain.security.key_manager import KeyManager
-from hierarchical_blockchain.api.v3.verify import VerifyAPIKey
+from hierachain.security.certificate import CertificateValidator
+from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
+from hierachain.security.key_backup_manager import KeyBackupManager
+from hierachain.security.key_manager import KeyManager
+from hierachain.api.v3.verify import VerifyAPIKey
 
 
 class TestPriorityLevel1Critical:
@@ -443,7 +443,7 @@ class TestComprehensiveValidation:
         
         # Test non-cryptocurrency compliance
         forbidden_terms = ["transaction", "mining", "coin", "token", "wallet"]
-        test_description = "hierarchical blockchain framework with events and proofs"
+        test_description = "HieraChain framework with events and proofs"
         
         for term in forbidden_terms:
             assert term not in test_description.lower()

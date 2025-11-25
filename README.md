@@ -1,9 +1,9 @@
-# Hierarchical Blockchain Framework (Hiera)
+# HieraChain Framework
 
 ![Python Versions](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
-A general-purpose hierarchical blockchain framework designed for enterprise applications without any cryptocurrency concepts.
+A general-purpose HieraChain framework designed for enterprise applications without any cryptocurrency concepts.
 
 ---
 

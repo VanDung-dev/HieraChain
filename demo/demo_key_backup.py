@@ -1,6 +1,6 @@
 """
 Demo script for showcasing key backup and recovery functionality 
-in the hierarchical blockchain framework.
+in the HieraChain framework.
 """
 
 import os
@@ -8,7 +8,7 @@ import json
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from hierarchical_blockchain.security.key_backup_manager import KeyBackupManager, BackupError, RestoreError
+from hierachain.security.key_backup_manager import KeyBackupManager, BackupError, RestoreError
 
 
 def generate_sample_keys():
@@ -53,7 +53,7 @@ def load_config():
 
 def main():
     """Main demo function"""
-    print("=== Hierarchical Blockchain Key Backup Demo ===\n")
+    print("=== HieraChain Key Backup Demo ===\n")
     
     # Load configuration
     config = load_config()

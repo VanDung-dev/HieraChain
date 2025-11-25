@@ -8,8 +8,8 @@ including authority management, block validation, and event validation.
 import time
 import hashlib
 
-from hierarchical_blockchain.core.consensus.proof_of_authority import ProofOfAuthority
-from hierarchical_blockchain.core.block import Block
+from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
+from hierachain.core.block import Block
 
 
 def test_poa_authority_management():

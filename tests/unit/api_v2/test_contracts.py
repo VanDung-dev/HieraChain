@@ -9,8 +9,8 @@ import pytest
 from unittest.mock import patch
 from fastapi import HTTPException
 
-from hierarchical_blockchain.api.v2.endpoints import create_contract, execute_contract
-from hierarchical_blockchain.api.v2.schemas import ContractCreateRequest, ContractExecuteRequest
+from hierachain.api.v2.endpoints import create_contract, execute_contract
+from hierachain.api.v2.schemas import ContractCreateRequest, ContractExecuteRequest
 
 
 @pytest.fixture
@@ -49,8 +49,8 @@ def mock_execution_data():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {})
 async def test_create_contract_success(mock_contract_data):
     """Test successful contract creation"""
     request = ContractCreateRequest(**mock_contract_data)
@@ -61,8 +61,8 @@ async def test_create_contract_success(mock_contract_data):
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {})
 async def test_create_contract_missing_required_fields():
     """Test contract creation with missing required fields"""
     # Missing contract_id
@@ -80,8 +80,8 @@ async def test_create_contract_missing_required_fields():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {"": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {"": {}})
 async def test_create_contract_empty_values():
     """Test contract creation with empty values"""
     invalid_contract_data = {
@@ -99,8 +99,8 @@ async def test_create_contract_empty_values():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {})
 async def test_create_contract_invalid_implementation():
     """Test contract creation with invalid implementation"""
     invalid_contract_data = {
@@ -122,7 +122,7 @@ async def test_create_contract_invalid_implementation():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', False)
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', False)
 async def test_create_contract_not_implemented(mock_contract_data):
     """Test contract creation when modules are not available"""
     request = ContractCreateRequest(**mock_contract_data)
@@ -135,8 +135,8 @@ async def test_create_contract_not_implemented(mock_contract_data):
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {"test_contract": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {"test_contract": {}})
 async def test_execute_contract_success(mock_execution_data):
     """Test successful contract execution"""
     request = ContractExecuteRequest(**mock_execution_data)
@@ -148,8 +148,8 @@ async def test_execute_contract_success(mock_execution_data):
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {"test_contract": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {"test_contract": {}})
 async def test_execute_contract_missing_required_fields():
     """Test contract execution with missing required fields"""
     # Missing contract_id
@@ -168,8 +168,8 @@ async def test_execute_contract_missing_required_fields():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {"": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {"": {}})
 async def test_execute_contract_empty_values():
     """Test contract execution with empty values"""
     invalid_execution_data = {
@@ -186,8 +186,8 @@ async def test_execute_contract_empty_values():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {"test_contract": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {"test_contract": {}})
 async def test_execute_contract_invalid_event_data():
     """Test contract execution with invalid event data"""
     invalid_execution_data = {
@@ -204,8 +204,8 @@ async def test_execute_contract_invalid_event_data():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {})
 async def test_execute_contract_not_found(mock_execution_data):
     """Test contract execution for non-existent contract"""
     request = ContractExecuteRequest(**mock_execution_data)
@@ -218,8 +218,8 @@ async def test_execute_contract_not_found(mock_execution_data):
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {"test_contract": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {"test_contract": {}})
 async def test_execute_contract_incompatible_version():
     """Test contract execution with incompatible version"""
     incompatible_execution_data = {
@@ -247,8 +247,8 @@ async def test_execute_contract_incompatible_version():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {})
 async def test_create_contract_invalid_endorsement_policy():
     """Test contract creation with invalid endorsement policy"""
     invalid_contract_data = {
@@ -270,8 +270,8 @@ async def test_create_contract_invalid_endorsement_policy():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {})
 async def test_create_contract_edge_cases():
     """Test contract creation with edge cases"""
     edge_case_contract_data = {
@@ -291,8 +291,8 @@ async def test_create_contract_edge_cases():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._contracts', {"test_contract": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._contracts', {"test_contract": {}})
 async def test_execute_contract_security_edge_cases(mock_execution_data):
     """Test contract execution with security edge cases"""
     edge_case_execution_data = {
@@ -318,7 +318,7 @@ async def test_execute_contract_security_edge_cases(mock_execution_data):
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', False)
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', False)
 async def test_execute_contract_not_implemented(mock_execution_data):
     """Test contract execution when modules are not available"""
     request = ContractExecuteRequest(**mock_execution_data)

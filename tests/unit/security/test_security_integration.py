@@ -8,9 +8,9 @@ security components including KeyManager, KeyBackupManager, and MSP.
 import json
 from unittest.mock import Mock, patch
 
-from hierarchical_blockchain.security.key_manager import KeyManager
-from hierarchical_blockchain.security.key_backup_manager import KeyBackupManager
-from hierarchical_blockchain.security.msp import HierarchicalMSP
+from hierachain.security.key_manager import KeyManager
+from hierachain.security.key_backup_manager import KeyBackupManager
+from hierachain.security.msp import HierarchicalMSP
 
 
 def test_end_to_end_key_lifecycle(benchmark):
@@ -35,7 +35,7 @@ def test_end_to_end_key_lifecycle(benchmark):
         kb = KeyBackupManager(config)
 
         # Mock encryption for predictable testing
-        with patch('hierarchical_blockchain.security.key_backup_manager.Fernet') as mock_fernet:
+        with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
             mock_fernet_instance = Mock()
             mock_fernet_instance.encrypt.return_value = b"encrypted_data"
             mock_fernet.return_value = mock_fernet_instance
@@ -106,7 +106,7 @@ def test_key_revocation_propagation(benchmark):
         config = {"enabled": True}
         kb = KeyBackupManager(config)
 
-        with patch('hierarchical_blockchain.security.key_backup_manager.Fernet') as mock_fernet:
+        with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
             mock_fernet_instance = Mock()
             mock_fernet_instance.encrypt.return_value = b"encrypted_data"
             mock_fernet.return_value = mock_fernet_instance
@@ -163,7 +163,7 @@ def test_multiple_module_interaction_under_load(benchmark):
         config = {"enabled": True}
         kb = KeyBackupManager(config)
 
-        with patch('hierarchical_blockchain.security.key_backup_manager.Fernet') as mock_fernet:
+        with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
             mock_fernet_instance = Mock()
             mock_fernet_instance.encrypt.return_value = b"encrypted_data"
             mock_fernet.return_value = mock_fernet_instance
@@ -235,7 +235,7 @@ def test_security_modules_interoperability(benchmark):
         config = {"enabled": True}
         kb = KeyBackupManager(config)
 
-        with patch('hierarchical_blockchain.security.key_backup_manager.Fernet') as mock_fernet:
+        with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
             mock_fernet_instance = Mock()
             mock_fernet_instance.encrypt.return_value = b"encrypted_data"
             # Fix: Mock decrypt to return proper JSON string that matches real behavior

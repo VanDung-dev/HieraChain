@@ -12,8 +12,8 @@ from unittest.mock import patch
 from fastapi import HTTPException
 from pydantic import ValidationError
 
-from hierarchical_blockchain.api.v2.endpoints import add_private_data
-from hierarchical_blockchain.api.v2.schemas import PrivateDataRequest
+from hierachain.api.v2.endpoints import add_private_data
+from hierachain.api.v2.schemas import PrivateDataRequest
 
 
 @pytest.fixture
@@ -35,8 +35,8 @@ def mock_private_data():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._private_collections', {"test_collection": {}})
 async def test_add_private_data_success(mock_private_data):
     """Test successful addition of private data"""
     request = PrivateDataRequest(**mock_private_data)
@@ -47,8 +47,8 @@ async def test_add_private_data_success(mock_private_data):
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._private_collections', {})
 async def test_add_private_data_collection_not_found(mock_private_data):
     """Test adding private data to non-existent collection"""
     request = PrivateDataRequest(**mock_private_data)
@@ -61,7 +61,7 @@ async def test_add_private_data_collection_not_found(mock_private_data):
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', False)
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', False)
 async def test_add_private_data_not_implemented(mock_private_data):
     """Test adding private data when modules are not available"""
     request = PrivateDataRequest(**mock_private_data)
@@ -74,8 +74,8 @@ async def test_add_private_data_not_implemented(mock_private_data):
 
 
 # Test cases for invalid data
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._private_collections', {"test_collection": {}})
 def test_add_private_data_null_collection():
     """Test adding private data with null collection name"""
     with pytest.raises(ValidationError):
@@ -91,8 +91,8 @@ def test_add_private_data_null_collection():
         )
 
 
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._private_collections', {"test_collection": {}})
 def test_add_private_data_invalid_value_format():
     """Test adding private data with invalid value format"""
     with pytest.raises(ValidationError):
@@ -110,8 +110,8 @@ def test_add_private_data_invalid_value_format():
 
 # Test cases for edge cases
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._private_collections', {"test_collection": {}})
 async def test_add_private_data_empty_strings():
     """Test adding private data with empty strings for collection and key"""
     # Empty strings are valid according to the schema, so we test the endpoint behavior
@@ -134,8 +134,8 @@ async def test_add_private_data_empty_strings():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._private_collections', {"test_collection": {}})
 async def test_add_private_data_special_characters_key():
     """Test adding private data with special characters in key"""
     request = PrivateDataRequest(
@@ -155,8 +155,8 @@ async def test_add_private_data_special_characters_key():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._private_collections', {"test_collection": {}})
 async def test_add_private_data_duplicate_key():
     """Test adding private data with duplicate key"""
     # First addition
@@ -192,8 +192,8 @@ async def test_add_private_data_duplicate_key():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._private_collections', {"test_collection": {}})
 async def test_add_private_data_large_payload():
     """Test adding private data with large payload"""
     large_value = {f"field_{i}": f"value_{i}" for i in range(10000)}
@@ -216,8 +216,8 @@ async def test_add_private_data_large_payload():
 
 # Performance tests
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._private_collections', {"test_collection": {}})
 async def test_add_private_data_response_time():
     """Test response time for adding private data"""
     request_data = {
@@ -242,8 +242,8 @@ async def test_add_private_data_response_time():
 
 
 @pytest.mark.asyncio
-@patch('hierarchical_blockchain.api.v2.endpoints.HAS_NEW_MODULES', True)
-@patch('hierarchical_blockchain.api.v2.endpoints._private_collections', {"test_collection": {}})
+@patch('hierachain.api.v2.endpoints.HAS_NEW_MODULES', True)
+@patch('hierachain.api.v2.endpoints._private_collections', {"test_collection": {}})
 async def test_add_private_data_concurrent_requests():
     """Test concurrent requests for adding private data"""
     async def make_request(key_suffix):

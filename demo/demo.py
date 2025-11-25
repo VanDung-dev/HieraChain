@@ -1,7 +1,7 @@
 """
-Main demonstration script for Hierarchical-Blockchain Framework.
+Main demonstration script for HieraChain Framework.
 
-This script demonstrates the key features of the hierarchical blockchain framework:
+This script demonstrates the key features of the HieraChain framework:
 - Main Chain and Sub-Chain creation and management
 - Entity registration and lifecycle management
 - Business operations (resource allocation, quality checks, approvals)
@@ -21,10 +21,10 @@ import atexit
 import os
 
 # Import framework components
-from hierarchical_blockchain.hierarchical.hierarchy_manager import HierarchyManager
-from hierarchical_blockchain.domains.generic.utils.entity_tracer import EntityTracer
-from hierarchical_blockchain.domains.generic.utils.cross_chain_validator import CrossChainValidator
-from hierarchical_blockchain.adapters.database.sqlite_adapter import SQLiteAdapter
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
+from hierachain.domains.generic.utils.entity_tracer import EntityTracer
+from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
+from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 
 # Custom logger to capture all output
 class Logger:
@@ -64,8 +64,8 @@ def exit_handler():
 
 atexit.register(exit_handler)
 
-def demonstrate_hierarchical_blockchain():
-    """Demonstrate the hierarchical blockchain framework capabilities."""
+def demonstrate_hierachain():
+    """Demonstrate the HieraChain framework capabilities."""
 
     def print_system_overview(stats_data):
         print(f"   Total Sub-Chains: {stats_data['system_overview']['total_sub_chains']}")
@@ -75,7 +75,7 @@ def demonstrate_hierarchical_blockchain():
         print(f"   System integrity: {stats_data['integrity_status']}")
 
     print("=" * 80)
-    print("HIERARCHICAL-BLOCKCHAIN FRAMEWORK DEMONSTRATION")
+    print("HieraChain FRAMEWORK DEMONSTRATION")
     print("=" * 80)
     print()
     
@@ -789,7 +789,7 @@ def demonstrate_hierarchical_blockchain():
     print()
     print("=" * 80)
     print("DEMONSTRATION COMPLETED SUCCESSFULLY!")
-    print("The Hierarchical-Blockchain Framework is working correctly.")
+    print("The HieraChain Framework is working correctly.")
     print("=" * 80)
     
     return hierarchy_manager
@@ -798,16 +798,16 @@ def demonstrate_hierarchical_blockchain():
 def main():
     """Main entry point for the demonstration."""
     try:
-        from hierarchical_blockchain.units.version import get_version, VERSION
+        from hierachain.units.version import get_version, VERSION
 
 
         # Add framework version information
         print(f"Framework Version: {get_version(VERSION)}")
-        print("Architecture: Hierarchical Blockchain with Main Chain/Sub-Chains")
+        print("Architecture: HieraChain with Main Chain/Sub-Chains")
         print("Compliance: Non-cryptocurrency, Event-based, Hierarchical Structure")
         print()
         
-        _hierarchy_manager = demonstrate_hierarchical_blockchain()
+        _hierarchy_manager = demonstrate_hierachain()
         
         # Optional: Keep the system running for interactive exploration
         print("\nFramework is ready for use!")

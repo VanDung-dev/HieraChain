@@ -1,0 +1,456 @@
+# Security Profiles Configuration for HieraChain Framework
+#
+# This file defines predefined security configurations for enterprise deployments
+# including MSP, channels, private data collections, ordering service, and contracts.
+# These profiles provide enterprise-grade security templates that can be customized
+# for specific organizational requirements.
+
+# Framework Information
+framework:
+  description: "Enterprise-grade security profiles configuration for MSP, channels, private data collections, ordering service, and contracts"
+  security_level: "enterprise"
+  compliance_standards:
+    - "SOC2"
+    - "ISO27001"
+    - "GDPR"
+    - "HIPAA"
+
+# Membership Service Provider (MSP) Security Configuration
+security:
+  msp:
+    # Certificate Authority Settings
+    certificate_authority:
+      # Certificate lifetimes in days
+      certificate_lifetimes:
+        root: 3650          # 10 years for root CA
+        intermediate: 1825  # 5 years for intermediate CA
+        entity: 365         # 1 year for entity certificates
+        tls_server: 365     # 1 year for TLS server certificates
+        tls_client: 180     # 6 months for TLS client certificates
+      
+      # Certificate validation settings
+      revocation_check_interval: 86400  # 24 hours in seconds
+      crl_update_frequency: 43200       # 12 hours in seconds
+      certificate_renewal_threshold: 30 # Days before expiry to renew
+      
+      # Key management
+      key_sizes:
+        rsa_minimum: 2048
+        rsa_recommended: 4096
+        ecdsa_curve: "P-256"
+      
+      # Certificate templates
+      templates:
+        root_ca:
+          key_usage: ["keyCertSign", "cRLSign"]
+          basic_constraints: "CA:TRUE"
+          path_length: null
+        
+        intermediate_ca:
+          key_usage: ["keyCertSign", "cRLSign"] 
+          basic_constraints: "CA:TRUE, pathlen:0"
+          path_length: 0
+        
+        end_entity:
+          key_usage: ["digitalSignature", "keyEncipherment"]
+          basic_constraints: "CA:FALSE"
+          extended_key_usage: ["clientAuth"]
+        
+        tls_server:
+          key_usage: ["digitalSignature", "keyEncipherment"]
+          basic_constraints: "CA:FALSE"
+          extended_key_usage: ["serverAuth"]
+    
+    # Organization and Role Management
+    organization_management:
+      # Default roles with permissions
+      default_roles:
+        admin:
+          permissions:
+            - "manage_entities"
+            - "view_audit_log"
+            - "define_policies"
+            - "create_channels"
+            - "manage_certificates"
+            - "manage_private_collections"
+            - "execute_contracts"
+          certificate_validity_days: 365
+          max_concurrent_sessions: 10
+        
+        operator:
+          permissions:
+            - "submit_events"
+            - "view_channels"
+            - "query_data"
+            - "execute_contracts"
+          certificate_validity_days: 180
+          max_concurrent_sessions: 5
+        
+        viewer:
+          permissions:
+            - "view_data"
+            - "query_data"
+          certificate_validity_days: 90
+          max_concurrent_sessions: 3
+      
+      # Organization policies
+      organization_policies:
+        admin_threshold: 1  # Minimum admins required per organization
+        max_members_per_org: 1000
+        require_multi_factor_auth: true
+        password_policy:
+          min_length: 12
+          require_uppercase: true
+          require_lowercase: true
+          require_numbers: true
+          require_special_chars: true
+          max_age_days: 90
+
+  # Key Backup and Recovery Configuration (v0.dev5)
+  key_backup:
+    enabled: true
+    frequency: "daily"
+    encryption_algorithm: "AES-256-GCM"
+    locations: ["primary_vault", "secondary_cloud", "tertiary_offsite"]
+    integrity_check: "sha512"
+    retention_period: 365  # Days to keep old backups
+    auto_restore_threshold: 1  # Attempts before alerting admin
+    
+    # Backup triggers
+    triggers:
+      on_key_generation: true
+      on_key_rotation: true
+      scheduled: true
+      manual: true
+    
+    # Storage configuration
+    storage:
+      primary_vault:
+        type: "local_encrypted"
+        path: "backups/keys/primary"
+        encryption: "AES-256-GCM"
+      secondary_cloud:
+        type: "cloud_hsm"
+        provider: "aws_cloudhsm"
+        region: "us-east-1"
+      tertiary_offsite:
+        type: "offline_vault"
+        location: "secure_facility"
+    
+    # Access control for backups
+    access_control:
+      multi_factor_required: true
+      minimum_approvers: 2
+      admin_approval_required: true
+      audit_all_access: true
+    
+    # Recovery procedures
+    recovery:
+      automatic_detection: true
+      integrity_validation: "strict"
+      rollback_on_failure: true
+      post_restore_validation: true
+
+  # Channel Security Configuration
+  channels:
+    # Default channel policies
+    default_policy:
+      # Access policies using policy expression language
+      read: "ADMIN || MEMBER"            # Admins or members can read
+      write: "ADMIN"                     # Only admins can write
+      endorsement: "MAJORITY"            # Majority endorsement required
+      admin: "UNANIMOUS"                 # Unanimous admin approval for changes
+      lifecycle_endorsement: "MAJORITY"  # Contract lifecycle changes
+    
+    # Channel creation and management
+    channel_management:
+      max_organizations_per_channel: 20
+      channel_creation_policy: "majority"  # majority, unanimous, admin_only
+      allow_dynamic_membership: true
+      membership_change_requires_endorsement: true
+    
+    # Channel security settings
+    channel_security:
+      encryption_at_rest: true
+      encryption_in_transit: true
+      message_integrity_check: true
+      replay_attack_protection: true
+      max_message_size: 1048576  # 1MB
+      
+    # Pre-defined channel templates
+    templates:
+      # High security channel for sensitive data
+      high_security:
+        policy:
+          read: "ADMIN"
+          write: "ADMIN" 
+          endorsement: "UNANIMOUS"
+          admin: "UNANIMOUS"
+        encryption_required: true
+        audit_all_access: true
+        data_retention_days: 2555  # 7 years
+        
+      # Standard business channel
+      standard:
+        policy:
+          read: "ADMIN || MEMBER"
+          write: "ADMIN || OPERATOR"
+          endorsement: "MAJORITY"
+          admin: "MAJORITY"
+        encryption_required: true
+        audit_all_access: false
+        data_retention_days: 1095  # 3 years
+        
+      # Public information channel
+      public:
+        policy:
+          read: "ANY"
+          write: "ADMIN"
+          endorsement: "MAJORITY" 
+          admin: "UNANIMOUS"
+        encryption_required: false
+        audit_all_access: false
+        data_retention_days: 365   # 1 year
+
+  # Private Data Collections Security
+  private_collections:
+    # Default configuration
+    default_config:
+      block_to_purge: 1000           # Blocks after which to purge private data
+      max_block_to_purge: 5000       # Maximum blocks to retain
+      min_endorsements: 2            # Minimum endorsements required
+      endorsement_policy: "MAJORITY" # MAJORITY, UNANIMOUS, ANY, SPECIFIC_COUNT
+      
+    # Encryption settings
+    encryption:
+      algorithm: "AES-256-GCM"
+      key_rotation_frequency: 2592000  # 30 days in seconds
+      key_derivation: "PBKDF2"
+      key_derivation_iterations: 100000
+      
+    # Access control
+    access_control:
+      member_only_read: true
+      member_only_write: true
+      require_endorsement_for_queries: false
+      audit_all_access: true
+      
+    # Pre-defined collection templates
+    templates:
+      # Highly sensitive data (e.g., financial records)
+      highly_sensitive:
+        block_to_purge: 100         # Quick purging for sensitive data
+        endorsement_policy: "UNANIMOUS"
+        min_endorsements: 3
+        encryption_required: true
+        audit_all_access: true
+        
+      # Standard confidential data
+      standard_confidential:
+        block_to_purge: 1000
+        endorsement_policy: "MAJORITY"
+        min_endorsements: 2
+        encryption_required: true
+        audit_all_access: false
+        
+      # Internal communications
+      internal_comms:
+        block_to_purge: 5000
+        endorsement_policy: "ANY"
+        min_endorsements: 1
+        encryption_required: true
+        audit_all_access: false
+
+  # Ordering Service Security Configuration
+  ordering_service:
+    # Service configuration
+    service_config:
+      batch_size: 250                    # Events per batch
+      batch_timeout: 2.0                 # Seconds to wait before creating batch
+      max_inflight_transactions: 10000   # Maximum pending transactions
+      
+    # Consensus configuration for ordering nodes
+    consensus:
+      type: "RAFT"                       # Consensus algorithm for ordering nodes
+      heartbeat_interval: 500            # Milliseconds
+      election_timeout: 10000            # Milliseconds  
+      leader_timeout: 30000              # Milliseconds
+      max_inflight_messages: 256
+      
+    # Security settings
+    security:
+      tls_enabled: true
+      mutual_tls: true
+      certificate_validation: "strict"
+      encrypt_communication: true
+      
+    # Node management
+    node_management:
+      min_nodes: 3                       # Minimum nodes for HA
+      max_nodes: 7                       # Maximum nodes (odd number recommended)
+      node_health_check_interval: 10     # Seconds
+      unhealthy_node_timeout: 60         # Seconds before marking node unhealthy
+      
+    # Performance profiles
+    profiles:
+      high_throughput:
+        batch_size: 500
+        batch_timeout: 1.0
+        max_worker_threads: 8
+        
+      low_latency:
+        batch_size: 50
+        batch_timeout: 0.5
+        max_worker_threads: 4
+        
+      balanced:
+        batch_size: 250
+        batch_timeout: 2.0
+        max_worker_threads: 6
+
+  # Domain Contract Security
+  contracts:
+    # Version management
+    version_management:
+      max_version_history: 10            # Maximum versions to keep
+      deprecation_warning_days: 90       # Days before contract deprecation
+      automatic_cleanup_expired: false   # Don't auto-delete expired contracts
+      
+    # Execution security
+    execution_security:
+      timeout_seconds: 30                # Maximum execution time
+      memory_limit_mb: 128               # Memory limit per execution
+      max_iterations: 10000              # Prevention against infinite loops
+      sandbox_enabled: true              # Run contracts in sandbox
+      
+    # Storage security
+    storage:
+      encryption: "AES-256-GCM"
+      key_management: "HSM"              # Hardware Security Module
+      backup_frequency: 86400            # Daily backups in seconds
+      transaction_log_retention: 2592000 # 30 days
+      
+    # Access control
+    access_control:
+      require_signature_verification: true
+      allow_cross_contract_calls: false
+      audit_all_executions: true
+      rate_limiting:
+        max_executions_per_minute: 60
+        max_executions_per_hour: 1000
+        
+    # Governance
+    governance:
+      deployment_requires_approval: true
+      upgrade_requires_approval: true
+      deprecation_requires_approval: true
+      approval_threshold: "MAJORITY"
+
+# Compliance and Audit Configuration
+compliance:
+  # Audit logging
+  audit_logging:
+    enabled: true
+    log_level: "INFO"                    # DEBUG, INFO, WARN, ERROR
+    retention_days: 2555                 # 7 years
+    log_all_access: true
+    log_policy_decisions: true
+    log_certificate_operations: true
+    log_channel_operations: true
+    
+    # Log destinations
+    destinations:
+      - type: "file"
+        path: "logs/audit.log"
+        rotation: "daily"
+        max_size: "100MB"
+        
+      - type: "syslog"
+        facility: "local0"
+        severity: "info"
+        
+      - type: "elasticsearch"
+        endpoint: "https://elasticsearch.example.com:9200"
+        index: "blockchain-audit"
+  
+  # Data retention policies
+  data_retention:
+    default_retention_days: 1095         # 3 years default
+    min_retention_days: 365              # 1 year minimum
+    max_retention_days: 3650             # 10 years maximum
+    
+    # Retention by data type
+    by_type:
+      audit_logs: 2555                   # 7 years
+      certificate_operations: 1825       # 5 years
+      policy_decisions: 1095             # 3 years
+      channel_events: 1095               # 3 years
+      contract_executions: 730           # 2 years
+  
+  # Privacy protection
+  privacy:
+    anonymize_personal_data: true
+    gdpr_compliance: true
+    data_minimization: true
+    purpose_limitation: true
+    right_to_erasure: true               # Support for GDPR right to be forgotten
+
+# Monitoring and Alerting
+monitoring:
+  # Health checks
+  health_checks:
+    interval_seconds: 30
+    timeout_seconds: 10
+    
+    # Components to monitor
+    components:
+      - "msp_service"
+      - "ordering_service" 
+      - "channel_service"
+      - "private_data_service"
+      - "contract_service"
+  
+  # Performance metrics
+  metrics:
+    collection_interval: 60              # Seconds
+    retention_days: 90
+    
+    # Key performance indicators
+    kpis:
+      - "events_per_second"
+      - "block_creation_time"
+      - "certificate_validation_time"
+      - "policy_evaluation_time"
+      - "storage_utilization"
+  
+  # Alerting thresholds
+  alerts:
+    certificate_expiry_warning_days: 30
+    high_cpu_usage_percent: 80
+    high_memory_usage_percent: 85
+    disk_space_warning_percent: 80
+    failed_authentication_threshold: 10  # Per hour
+    
+# Disaster Recovery
+disaster_recovery:
+  # Backup configuration  
+  backup:
+    enabled: true
+    frequency: "daily"
+    retention_days: 365
+    encryption: "AES-256"
+    
+    # Components to backup
+    components:
+      - "certificates"
+      - "policies"
+      - "channel_configurations"
+      - "contract_storage"
+      - "audit_logs"
+  
+  # Recovery procedures
+  recovery:
+    rto_hours: 4                         # Recovery Time Objective
+    rpo_hours: 24                        # Recovery Point Objective
+    automated_failover: false
+    manual_approval_required: true

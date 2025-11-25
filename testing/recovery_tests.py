@@ -1,5 +1,5 @@
 """
-Recovery Tests for Hierarchical Blockchain Framework
+Recovery Tests for HieraChain Framework
 Automated recovery scenario tests covering error detection, mitigation, and system restoration
 
 This module implements comprehensive recovery testing scenarios to validate the error
@@ -11,11 +11,11 @@ import pytest
 import time
 from unittest.mock import Mock, patch
 
-from hierarchical_blockchain.error_mitigation.validator import ConsensusValidator
-from hierarchical_blockchain.error_mitigation.recovery_engine import NetworkRecoveryEngine
-from hierarchical_blockchain.security.key_backup_manager import KeyBackupManager
-from hierarchical_blockchain.security.key_manager import KeyManager
-from hierarchical_blockchain.api.v3.verify import VerifyAPIKey
+from hierachain.error_mitigation.validator import ConsensusValidator
+from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
+from hierachain.security.key_backup_manager import KeyBackupManager
+from hierachain.security.key_manager import KeyManager
+from hierachain.api.v3.verify import VerifyAPIKey
 
 
 class RecoveryTestError(Exception):

@@ -8,16 +8,16 @@ including message handling, consensus phases, and node communication.
 import time
 import hashlib
 
-from hierarchical_blockchain.hierarchical.consensus.bft_consensus import (
+from hierachain.hierarchical.consensus.bft_consensus import (
     BFTConsensus,
     create_bft_network,
     ConsensusError,
     BFTMessage,
     MessageType
 )
-from hierarchical_blockchain.error_mitigation.validator import ConsensusValidator
-from hierarchical_blockchain.error_mitigation.error_classifier import ErrorClassifier
-from hierarchical_blockchain.error_mitigation.recovery_engine import (
+from hierachain.error_mitigation.validator import ConsensusValidator
+from hierachain.error_mitigation.error_classifier import ErrorClassifier
+from hierachain.error_mitigation.recovery_engine import (
     ConsensusRecoveryEngine,
     NetworkRecoveryEngine
 )

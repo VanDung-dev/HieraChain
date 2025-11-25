@@ -8,7 +8,7 @@ including key validation, revocation checks, permissions, and key creation.
 import time
 from unittest.mock import Mock
 
-from hierarchical_blockchain.security.key_manager import KeyManager, initialize_default_keys
+from hierachain.security.key_manager import KeyManager, initialize_default_keys
 
 
 def test_key_manager_initialization():

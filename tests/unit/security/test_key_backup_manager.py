@@ -12,7 +12,7 @@ import shutil
 import pytest
 from unittest.mock import Mock, patch
 
-from hierarchical_blockchain.security.key_backup_manager import (
+from hierachain.security.key_backup_manager import (
     KeyBackupManager,
     create_key_backup_manager,
     RestoreError
@@ -79,7 +79,7 @@ def test_backup_keys_when_disabled():
     assert result == ""
 
 
-@patch('hierarchical_blockchain.security.key_backup_manager.Fernet')
+@patch('hierachain.security.key_backup_manager.Fernet')
 def test_backup_keys_success(mock_fernet, benchmark):
     """Test successful key backup"""
     config = {"enabled": True}
@@ -109,7 +109,7 @@ def test_backup_keys_success(mock_fernet, benchmark):
     assert result.startswith("consensus_")
 
 
-@patch('hierarchical_blockchain.security.key_backup_manager.Fernet')
+@patch('hierachain.security.key_backup_manager.Fernet')
 def test_backup_keys_encryption(mock_fernet):
     """Test that backup data is encrypted"""
     config = {"enabled": True}
@@ -132,7 +132,7 @@ def test_backup_keys_encryption(mock_fernet):
     km.backup_keys(public_key, private_key, "test")
 
 
-@patch('hierarchical_blockchain.security.key_backup_manager.Fernet')
+@patch('hierachain.security.key_backup_manager.Fernet')
 def test_restore_keys_success(mock_fernet):
     """Test successful key restoration"""
     config = {"enabled": True}
@@ -171,7 +171,7 @@ def test_list_backups():
     km = KeyBackupManager(config)
     
     # Mock encryption
-    with patch('hierarchical_blockchain.security.key_backup_manager.Fernet') as mock_fernet:
+    with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
         mock_fernet_instance = Mock()
         mock_fernet_instance.encrypt.return_value = b"encrypted_data"
         mock_fernet.return_value = mock_fernet_instance
@@ -194,7 +194,7 @@ def test_list_backups():
         assert len(result) >= 2
 
 
-@patch('hierarchical_blockchain.security.key_backup_manager.Fernet')
+@patch('hierachain.security.key_backup_manager.Fernet')
 def test_verify_backup_integrity_valid(mock_fernet):
     """Test backup integrity verification with valid backup"""
     config = {"enabled": True}
@@ -301,7 +301,7 @@ def test_backup_keys_performance(benchmark):
     km = KeyBackupManager(config)
 
     # Mock en cryption to avoid performance overhead of actual encryption
-    with patch('hierarchical_blockchain.security.key_backup_manager.Fernet') as mock_fernet:
+    with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
         mock_fernet_instance = Mock()
         mock_fernet_instance.encrypt.return_value = b"encrypted_data"
         mock_fernet.return_value = mock_fernet_instance
@@ -328,7 +328,7 @@ def test_restore_keys_performance(benchmark):
     km = KeyBackupManager(config)
 
     # Mock encryption/decryption
-    with patch('hierarchical_blockchain.security.key_backup_manager.Fernet') as mock_fernet:
+    with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
         mock_fernet_instance = Mock()
         mock_fernet_instance.encrypt.return_value = b"encrypted_data"
         mock_fernet_instance.decrypt.return_value = json.dumps({
@@ -364,7 +364,7 @@ def test_backup_security_injection_attacks():
     km = KeyBackupManager(config)
 
     # Mock encryption
-    with patch('hierarchical_blockchain.security.key_backup_manager.Fernet') as mock_fernet:
+    with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
         mock_fernet_instance = Mock()
         mock_fernet_instance.encrypt.return_value = b"encrypted_data"
         mock_fernet.return_value = mock_fernet_instance
@@ -400,7 +400,7 @@ def test_backup_security_xss_attacks():
     km = KeyBackupManager(config)
 
     # Mock encryption
-    with patch('hierarchical_blockchain.security.key_backup_manager.Fernet') as mock_fernet:
+    with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
         mock_fernet_instance = Mock()
         mock_fernet_instance.encrypt.return_value = b"encrypted_data"
         mock_fernet.return_value = mock_fernet_instance

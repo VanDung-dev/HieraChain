@@ -2,15 +2,16 @@
 requires = [
     "setuptools>=80.9.0",
     "setuptools_scm[toml]>=9.2.2",
-    "wheel>=0.45.1"]
+    "wheel>=0.45.1"
+]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hierarchical-blockchain"
-description = "A hierarchical blockchain framework for enterprise applications"
+name = "HieraChain"
+description = "A HieraChain framework for enterprise applications"
 readme = "README.md"
-authors = [{name = "Nguyễn Lê Văn Dũng", email = "dungnguyen2661@gmail.com"}]
-license = {text = "Apache-2.0"}
+authors = [{ name = "Nguyễn Lê Văn Dũng", email = "dungnguyen2661@gmail.com" }]
+license = { text = "Apache-2.0" }
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -45,23 +46,18 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = [
-    "tox>=4.32.0",
-    "black>=25.11.0",
-    "flake8>=7.3.0",
-    "mypy>=1.18.2",
-]
+dev = ["tox>=4.32.0", "black>=25.11.0", "flake8>=7.3.0", "mypy>=1.18.2"]
 
 [project.scripts]
-hbc = "hierarchical_blockchain.cli.__init__:hbc"
+hbc = "hierachain.cli.__init__:hbc"
 
 [project.urls]
-"Homepage" = "https://github.com/VanDung-dev/hierarchical-blockchain"
-"Bug Reports" = "https://github.com/VanDung-dev/hierarchical-blockchain/issues"
-"Source" = "https://github.com/VanDung-dev/hierarchical-blockchain"
-"Documentation" = "https://github.com/VanDung-dev/hierarchical-blockchain/blob/main/README.md"
-"License" = "https://github.com/VanDung-dev/hierarchical-blockchain/blob/main/LICENSE"
-"Security Policy" = "https://github.com/VanDung-dev/hierarchical-blockchain/blob/main/SECURITY.md"
+"Homepage" = "https://github.com/VanDung-dev/HieraChain"
+"Bug Reports" = "https://github.com/VanDung-dev/HieraChain/issues"
+"Source" = "https://github.com/VanDung-dev/HieraChain"
+"Documentation" = "https://github.com/VanDung-dev/HieraChain/blob/main/README.md"
+"License" = "https://github.com/VanDung-dev/HieraChain/blob/main/LICENSE"
+"Security Policy" = "https://github.com/VanDung-dev/HieraChain/blob/main/SECURITY.md"
 
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"
@@ -69,10 +65,7 @@ local_scheme = "dirty-tag"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-testpaths = [
-    "tests/unit",
-    "tests/integration"
-]
+testpaths = ["tests/unit", "tests/integration"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
@@ -82,7 +75,7 @@ markers = [
     "high: High risk validation tests",
     "medium: Medium risk validation tests",
     "low: Low risk validation tests",
-    "integration: Integration tests"
+    "integration: Integration tests",
 ]
 
 [tool.black]

@@ -1,0 +1,236 @@
+# Chain configuration for HieraChain framework
+
+# Framework Information
+framework:
+  description: "Main chain and sub-chain configuration for the HieraChain framework including consensus, storage, and integration settings"
+
+# Main Chain Configuration
+main_chain:
+  name: "MainChain"
+  consensus:
+    type: "hierarchical_poa"
+    validators:
+      - "validator_1"
+      - "validator_2"
+      - "validator_3"
+    leader_timeout: 30
+  storage:
+    backend: "memory"
+    world_state_enabled: true
+    cache_size: 1000
+  proof_validation:
+    enabled: true
+    signature_required: true
+
+# Sub-Chain Templates
+sub_chain_templates:
+  supply_chain:
+    name_pattern: "SupplyChain_{name}"
+    consensus:
+      type: "hierarchical_poa"
+      validators:
+        - "supply_validator_1"
+        - "supply_validator_2"
+    events:
+      - "material_receipt"
+      - "production_start"
+      - "production_complete"
+      - "quality_check"
+      - "shipment_start"
+      - "delivery_complete"
+    proof_submission:
+      interval: 300 # 5 minutes
+      batch_size: 100
+
+  healthcare:
+    name_pattern: "HealthcareChain_{name}"
+    consensus:
+      type: "hierarchical_poa"
+      validators:
+        - "health_validator_1"
+        - "health_validator_2"
+    events:
+      - "patient_admission"
+      - "treatment_start"
+      - "medication_administered"
+      - "test_result"
+      - "patient_discharge"
+    proof_submission:
+      interval: 180 # 3 minutes (more frequent for healthcare)
+      batch_size: 50
+
+  finance:
+    name_pattern: "FinanceChain_{name}"
+    consensus:
+      type: "hierarchical_poa"
+      validators:
+        - "finance_validator_1"
+        - "finance_validator_2"
+        - "finance_validator_3"
+    events:
+      - "record_initiated"
+      - "approval_received"
+      - "payment_processed"
+      - "reconciliation_complete"
+    proof_submission:
+      interval: 120 # 2 minutes (frequent for financial data)
+      batch_size: 200
+
+  manufacturing:
+    name_pattern: "ManufacturingChain_{name}"
+    consensus:
+      type: "hierarchical_poa"
+      validators:
+        - "mfg_validator_1"
+        - "mfg_validator_2"
+    events:
+      - "order_received"
+      - "material_allocated"
+      - "production_scheduled"
+      - "machine_assigned"
+      - "quality_inspection"
+      - "packaging_complete"
+    proof_submission:
+      interval: 240 # 4 minutes
+      batch_size: 150
+
+# Identity Management
+identity:
+  enabled: true
+  organizations:
+    - id: "org1"
+      name: "Organization One"
+      roles:
+        - "admin"
+        - "operator"
+        - "viewer"
+    - id: "org2"
+      name: "Organization Two"
+      roles:
+        - "manager"
+        - "operator"
+        - "auditor"
+  default_roles:
+    - "viewer"
+  require_organization_validation: true
+
+# Storage Configuration
+storage:
+  backends:
+    memory:
+      enabled: true
+      cache_size: 1000
+    redis:
+      enabled: true
+      host: "localhost"
+      port: 6379
+      db: 0
+      password: null
+    sqlite:
+      enabled: true
+      database_path: "hierachain.db"
+      connection_pool_size: 10
+  world_state:
+    enabled: true
+    indexes:
+      - "entity_id"
+      - "timestamp"
+      - "event_type"
+    cache_ttl: 3600 # 1 hour
+
+# Integration Settings
+integration:
+  erp_systems:
+    sap:
+      enabled: true
+      default_mapping:
+        entity_id: "material.document_number"
+        event: "material.event_type"
+        details.material_id: "material.id"
+        details.quantity: "material.quantity"
+    oracle:
+      enabled: true
+      default_mapping:
+        entity_id: "record.id"
+        event: "record.type"
+        details.total_value: "record.total_value"
+        details.vendor: "record.vendor"
+    microsoft_dynamics:
+      enabled: true
+      default_mapping:
+        entity_id: "sales.order_id"
+        event: "sales.event_type"
+        details.customer: "sales.customer"
+        details.total: "sales.total"
+  batch_processing:
+    enabled: true
+    batch_size: 100
+    retry_attempts: 3
+    retry_delay: 5 # seconds
+
+# API Configuration
+api:
+  version: "v1"
+  host: "localhost"
+  port: 8000
+  cors:
+    enabled: true
+    origins:
+      - "http://localhost:3000"
+      - "http://localhost:8080"
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 100
+  authentication:
+    enabled: true
+    session_expiry: 3600 # 1 hour
+
+# CLI Configuration
+cli:
+  config_file: "chains.json"
+  log_level: "INFO"
+  supported_chain_types:
+    - "supply_chain"
+    - "healthcare"
+    - "finance"
+    - "manufacturing"
+  supported_event_types:
+    - "start_operation"
+    - "complete_operation"
+    - "quality_check"
+    - "status_change"
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_logging:
+    enabled: true
+    file_path: "hierachain.log"
+    max_size: "10MB"
+    backup_count: 5
+  console_logging:
+    enabled: true
+    colored: true
+
+# Performance Settings
+performance:
+  block_size_limit: 1000
+  proof_submission_interval: 300
+  validator_timeout: 30
+  connection_timeout: 10
+  request_timeout: 30
+  max_concurrent_requests: 100
+
+# Security Settings
+security:
+  encryption:
+    enabled: true
+    algorithm: "AES-256"
+  signature_verification:
+    enabled: true
+    algorithm: "RSA-2048"
+  access_control:
+    enabled: true
+    default_permissions: ["read"]
+    admin_permissions: ["read", "write", "admin"]

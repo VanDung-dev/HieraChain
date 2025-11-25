@@ -2,7 +2,7 @@ include README.md
 include LICENSE
 include SECURITY.md
 include requirements.txt
-recursive-include hierarchical_blockchain *.py
+recursive-include hierachain *.py
 recursive-exclude tests *
 recursive-exclude testing *
 recursive-exclude demo *

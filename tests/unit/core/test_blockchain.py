@@ -3,7 +3,7 @@ Test suite for Blockchain core module
 
 This module contains comprehensive tests for the Blockchain core functionality,
 including block creation, event management, chain validation, and entity-based
-event retrieval. The tests ensure the hierarchical blockchain maintains data
+event retrieval. The tests ensure the HieraChain maintains data
 integrity and follows the project's architectural principles.
 """
 
@@ -12,8 +12,8 @@ import pytest
 import random
 import string
 
-from hierarchical_blockchain.core.blockchain import Blockchain
-from hierarchical_blockchain.core.block import Block
+from hierachain.core.blockchain import Blockchain
+from hierachain.core.block import Block
 
 
 def test_blockchain_creation():

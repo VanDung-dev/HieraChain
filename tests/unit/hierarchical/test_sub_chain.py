@@ -8,8 +8,8 @@ proof generation, entity history tracking, and domain statistics.
 
 from unittest.mock import Mock, patch
 
-from hierarchical_blockchain.hierarchical.sub_chain import SubChain
-from hierarchical_blockchain.hierarchical.main_chain import MainChain
+from hierachain.hierarchical.sub_chain import SubChain
+from hierachain.hierarchical.main_chain import MainChain
 
 
 def test_sub_chain_creation():
@@ -268,7 +268,7 @@ def test_sub_chain_with_mock_main_chain():
     mock_main_chain.add_proof.assert_called_once()
 
 
-@patch('hierarchical_blockchain.hierarchical.sub_chain.time')
+@patch('hierachain.hierarchical.sub_chain.time')
 def test_auto_proof_submission_with_mock_time(mock_time):
     """Test automatic proof submission with mocked time"""
     # Setup mock time

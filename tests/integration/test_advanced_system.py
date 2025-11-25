@@ -1,5 +1,5 @@
 """
-Advanced system tests for hierarchical blockchain framework
+Advanced system tests for HieraChain framework
 
 This module contains advanced integration tests that validate system behavior
 under stress conditions, fault tolerance, data consistency and security scenarios.
@@ -8,12 +8,12 @@ under stress conditions, fault tolerance, data consistency and security scenario
 import time
 import threading
 
-from hierarchical_blockchain.hierarchical.main_chain import MainChain
-from hierarchical_blockchain.hierarchical.hierarchy_manager import HierarchyManager
+from hierachain.hierarchical.main_chain import MainChain
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 
-from hierarchical_blockchain.domains.generic.chains.domain_chain import DomainChain
-from hierarchical_blockchain.domains.generic.utils.entity_tracer import EntityTracer
-from hierarchical_blockchain.domains.generic.utils.cross_chain_validator import CrossChainValidator
+from hierachain.domains.generic.chains.domain_chain import DomainChain
+from hierachain.domains.generic.utils.entity_tracer import EntityTracer
+from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
 
 
 def test_performance_under_load():

@@ -1,6 +1,6 @@
 # Developer Guide
 
-This guide contains all the information developers need to work with the Hierarchical Blockchain framework.
+This guide contains all the information developers need to work with the HieraChain framework.
 
 ---
 
@@ -13,11 +13,13 @@ This guide contains all the information developers need to work with the Hierarc
 ### Quick Start
 
 - Install the required dependencies:
+
     ```bash
     pip install -r requirements.txt
     ```
 
 - Install the package:
+
     ```bash
     pip install -e .  # Development mode
     pip install .     # Production mode
@@ -28,7 +30,7 @@ This will set up your environment to work with the framework.
 ## Running server
 
 ```bash
-python -m hierarchical_blockchain.api.server
+python -m hierachain.api.server
 ```
 
 ---
@@ -38,8 +40,8 @@ python -m hierarchical_blockchain.api.server
 After installation, you can import components from the package:
 
 ```python
-from hierarchical_blockchain.core.block import Block
-from hierarchical_blockchain.core.blockchain import Blockchain
+from hierachain.core.block import Block
+from hierachain.core.blockchain import Blockchain
 ```
 
 ---
@@ -47,16 +49,19 @@ from hierarchical_blockchain.core.blockchain import Blockchain
 ## Running Demos
 
 - Run the main framework demonstration:
+
     ```bash
     python demo/demo.py
     ```
 
 - Run the key backup and recovery demonstration:
+
     ```bash
     python demo/demo_key_backup.py
     ```
 
--   Run the API demo:
+- Run the API demo:
+
     ```bash
     python demo/demo_api.py
     ```
@@ -66,25 +71,29 @@ from hierarchical_blockchain.core.blockchain import Blockchain
 ## Running Tests
 
 - To run all unit tests:
+
     ```bash
     python -m pytest tests/unit -v
     ```
 
 - To run all integration tests:
+
     ```bash
     python -m pytest tests/integration -v
     ```
 
 - To run only benchmark tests:
+
     ```bash
     python -m pytest tests --benchmark-only -v
     ```
 
 - To run all tests:
+
     ```bash
     python -m pytest tests -v
     ```
-    
+
     > **WARNING**: Running all tests (over 370 tests) simultaneously may cause failures due to resource constraints. I recommend to run tests by separate project directories to ensure accurate results.
 
 ---
@@ -92,19 +101,22 @@ from hierarchical_blockchain.core.blockchain import Blockchain
 ## Static Analysis
 
 - To run static code analysis:
+
     ```bash
-    python -m hierarchical_blockchain.testing.static_analysis
+    python -m hierachain.testing.static_analysis
     ```
 
-- To run static codeanalysis with text output:
+- To run static code analysis with text output:
+
     ```bash
-    python -m hierarchical_blockchain.testing.static_analysis --format text
+    python -m hierachain.testing.static_analysis --format text
     ```
 
 - To run static code analysis and save results to a file:
+
     ```bash
-    python -m hierarchical_blockchain.testing.static_analysis --output analysis_report.json
-    python -m hierarchical_blockchain.testing.static_analysis --format text --output analysis_report.txt
+    python -m hierachain.testing.static_analysis --output analysis_report.json
+    python -m hierachain.testing.static_analysis --format text --output analysis_report.txt
     ```
 
 ---
@@ -112,36 +124,43 @@ from hierarchical_blockchain.core.blockchain import Blockchain
 ## Automated Tests
 
 - To run automated risk management tests:
+
     ```bash
     python -m testing.automated_tests
     ```
 
   - To run with verbose output:
+
       ```bash
       python -m testing.automated_tests -v
       ```
 
 - To run automated recovery tests:
+
     ```bash
     python -m testing.recovery_tests
     ```
 
 - To run priority-based validation tests:
+
     ```bash
     python -m testing.validation_suites
     ```
 
 - To run static analysis:
+
     ```bash
     python -m testing.static_analysis
     ```
 
   - To run static analysis with text output:
+
       ```bash
       python -m testing.static_analysis --format text
       ```
 
   - To run static analysis and save results to a file:
+
       ```bash
       python -m testing.static_analysis --output analysis_report.json
       python -m testing.static_analysis --format text --output analysis_report.txt

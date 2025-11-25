@@ -1,8 +1,8 @@
 """
-Demo script for Hierarchical Blockchain API.
+Demo script for HieraChain API.
 
 This script demonstrates how to use the various API endpoints provided by the
-hierarchical blockchain framework, showcasing functionality from all three API versions.
+HieraChain framework, showcasing functionality from all three API versions.
 """
 
 import asyncio
@@ -17,7 +17,7 @@ import httpx
 # Add the project root to the path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from hierarchical_blockchain.security.key_manager import KeyManager
+from hierachain.security.key_manager import KeyManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

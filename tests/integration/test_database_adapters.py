@@ -6,9 +6,9 @@ import os
 import tempfile
 import time
 
-from hierarchical_blockchain.core.blockchain import Blockchain
-from hierarchical_blockchain.core.block import Block
-from hierarchical_blockchain.adapters.database.sqlite_adapter import SQLiteAdapter
+from hierachain.core.blockchain import Blockchain
+from hierachain.core.block import Block
+from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 
 
 def _setup_test_chain():

@@ -1,5 +1,5 @@
 """
-Automated Testing Module for Hierarchical Blockchain Framework
+Automated Testing Module for HieraChain Framework
 
 This module provides comprehensive automated testing capabilities for
 risk management, mitigation strategies, and system validation.
@@ -14,15 +14,15 @@ import logging
 from typing import Dict, List, Any, Tuple
 import tempfile
 
-from hierarchical_blockchain.risk_management.risk_analyzer import (
+from hierachain.risk_management.risk_analyzer import (
     RiskAnalyzer, RiskAssessment, RiskCategory, RiskSeverity
 )
-from hierarchical_blockchain.risk_management.mitigation_strategies import (
+from hierachain.risk_management.mitigation_strategies import (
     MitigationManager, MitigationStatus, ConsensusMitigationStrategies,
     SecurityMitigationStrategies, PerformanceMitigationStrategies,
     StorageMitigationStrategies
 )
-from hierarchical_blockchain.risk_management.audit_logger import (
+from hierachain.risk_management.audit_logger import (
     AuditLogger, AuditEventType, AuditSeverity,
     FileAuditStorage, AuditFilter
 )
