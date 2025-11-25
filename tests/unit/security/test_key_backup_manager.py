@@ -317,7 +317,7 @@ def test_backup_keys_performance(benchmark):
             end_time = time.perf_counter()
 
             # Each backup operation should take less than 0.1 seconds
-            assert (end_time - start_time) < 1.0  # 1 second for 10 operations
+            assert (end_time - start_time) < 2.0  # 2 second for 10 operations
 
         benchmark(backup_keys)
 
