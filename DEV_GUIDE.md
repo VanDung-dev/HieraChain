@@ -75,19 +75,17 @@ from hierarchical_blockchain.core.blockchain import Blockchain
     python -m pytest tests/integration -v
     ```
 
+- To run only benchmark tests:
+    ```bash
+    python -m pytest tests --benchmark-only -v
+    ```
+
 - To run all tests:
     ```bash
     python -m pytest tests -v
     ```
-
-- To run only benchmark tests:
-    > **WARNING**: Running tests with benchmark can consume significant CPU and RAM resources, potentially causing system instability. It is recommended to run individual benchmark tests rather than the entire suite.
     
-    > **NOTE**: If you decide to run this command, the results will be considered invalid due to resource constraints affecting test outcomes. Therefore, it is still recommended to test individually.
-
-    ```bash
-    python -m pytest tests --benchmark-only -v
-    ```
+    > **WARNING**: Running all tests (over 370 tests) simultaneously may cause failures due to resource constraints. I recommend to run tests by separate project directories to ensure accurate results.
 
 ---
 
