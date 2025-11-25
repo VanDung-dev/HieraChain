@@ -22,7 +22,7 @@ from hierarchical_blockchain.security.msp import (
 )
 
 
-def test_key_manager_storage_backends(benchmark=None):
+def test_key_manager_storage_backends():
     """Test KeyManager with different storage backends"""
     # Test with dict-based storage (default)
     km_dict = KeyManager()
@@ -51,16 +51,12 @@ def test_key_manager_storage_backends(benchmark=None):
     def validate_key():
         return km_redis.is_valid(key2)
 
-    if benchmark:
-        result = benchmark(validate_key)
-    else:
-        result = validate_key()
-
+    result = validate_key()
     assert result is True
     mock_redis.get.assert_called()
 
 
-def test_key_manager_cache_mechanisms(benchmark=None):
+def test_key_manager_cache_mechanisms():
     """Test KeyManager caching mechanisms"""
     km = KeyManager()
     key = km.create_key("cache_test_user", ["read", "write"])
@@ -83,15 +79,11 @@ def test_key_manager_cache_mechanisms(benchmark=None):
     def get_key_data():
         return km._get_key_data(key)
 
-    if benchmark:
-        result = benchmark(get_key_data)
-
-    else:
-        result = get_key_data()
+    result = get_key_data()
     assert result is not None
 
 
-def test_key_backup_manager_configurations(benchmark=None):
+def test_key_backup_manager_configurations():
     """Test KeyBackupManager with different configurations"""
     # Test with minimal configuration
     minimal_config = {"enabled": True}
@@ -112,10 +104,7 @@ def test_key_backup_manager_configurations(benchmark=None):
     def create_backup_manager():
         return KeyBackupManager(full_config)
 
-    if benchmark:
-        km_full = benchmark(create_backup_manager)
-    else:
-        km_full=create_backup_manager()
+    km_full=create_backup_manager()
 
     assert km_full.enabled is False
     assert km_full.frequency == "hourly"
@@ -125,7 +114,7 @@ def test_key_backup_manager_configurations(benchmark=None):
     assert km_full.retention_period == 180
 
 
-def test_key_backup_manager_edge_cases(benchmark=None):
+def test_key_backup_manager_edge_cases():
     """Test KeyBackupManager edge cases and error conditions"""
     config = {"enabled": True}
     km = KeyBackupManager(config)
@@ -141,10 +130,7 @@ def test_key_backup_manager_edge_cases(benchmark=None):
             except (IOError, BackupError):
                 return True
 
-        if benchmark:
-            result = benchmark(backup_with_error)
-        else:
-            result = backup_with_error()
+        result = backup_with_error()
         assert result is True
 
     # Test restore with missing backup file (without benchmark)
@@ -178,7 +164,7 @@ def test_key_backup_manager_restore(benchmark=None):
     assert result is True
 
 
-def test_key_backup_manager_retention_policies(benchmark=None):
+def test_key_backup_manager_retention_policies():
     """Test KeyBackupManager retention policy enforcement"""
     config = {
         "enabled": True,
@@ -201,15 +187,11 @@ def test_key_backup_manager_retention_policies(benchmark=None):
         def list_backups_func():
             return km.list_backups()
 
-        if benchmark:
-            result = benchmark(list_backups_func)
-        else:
-            result = list_backups_func()
-
+        result = list_backups_func()
         assert len(result) == 0  # Changed from >= 1 to == 0
 
 
-def test_certificate_authority_edge_cases(benchmark=None):
+def test_certificate_authority_edge_cases():
     """Test CertificateAuthority edge cases"""
     ca = CertificateAuthority(
         root_cert="test-root",
@@ -231,15 +213,11 @@ def test_certificate_authority_edge_cases(benchmark=None):
     def verify_expired_cert():
         return ca.verify_certificate(cert.cert_id)
 
-    if benchmark:
-        result = benchmark(verify_expired_cert)
-    else:
-        result = verify_expired_cert()
-
+    result = verify_expired_cert()
     assert result is False
 
 
-def test_certificate_authority_revoke_nonexistent(benchmark=None):
+def test_certificate_authority_revoke_nonexistent():
     """Test revoking non-existent certificate in CertificateAuthority"""
     ca = CertificateAuthority(
         root_cert="test-root",
@@ -251,15 +229,11 @@ def test_certificate_authority_revoke_nonexistent(benchmark=None):
     def revoke_nonexistent_cert():
         return ca.revoke_certificate("non-existent-cert")
 
-    if benchmark:
-        result = benchmark(revoke_nonexistent_cert)
-    else:
-        result = revoke_nonexistent_cert()
-
+    result = revoke_nonexistent_cert()
     assert result is False
 
 
-def test_organization_policies_edge_cases(benchmark=None):
+def test_organization_policies_edge_cases():
     """Test OrganizationPolicies edge cases"""
     policies = OrganizationPolicies()
     
@@ -267,15 +241,11 @@ def test_organization_policies_edge_cases(benchmark=None):
     def evaluate_nonexistent_policy():
         return policies.evaluate_policy("non-existent", {})
 
-    if benchmark:
-        result = benchmark(evaluate_nonexistent_policy)
-    else:
-        result = evaluate_nonexistent_policy()
-
+    result = evaluate_nonexistent_policy()
     assert result is False
 
 
-def test_organization_policies_check_nonexistent_role(benchmark=None):
+def test_organization_policies_check_nonexistent_role():
     """Test checking permission for non-existent role in OrganizationPolicies"""
     policies = OrganizationPolicies()
 
@@ -283,11 +253,7 @@ def test_organization_policies_check_nonexistent_role(benchmark=None):
     def check_nonexistent_role():
         return policies.check_permission("non-existent-role", "read")
 
-    if benchmark:
-        result = benchmark(check_nonexistent_role)
-    else:
-        result = check_nonexistent_role()
-
+    result = check_nonexistent_role()
     assert result is False
 
 
@@ -309,7 +275,7 @@ def test_organization_policies_define_complex_policy():
     assert "complex_policy" in policies.policies
 
 
-def test_msp_edge_cases(benchmark=None):
+def test_msp_edge_cases():
     """Test HierarchicalMSP edge cases"""
     ca_config = {
         "root_cert": "edge-test-root",
@@ -323,15 +289,11 @@ def test_msp_edge_cases(benchmark=None):
     def get_nonexistent_entity():
         return msp.get_entity_info("non-existent")
 
-    if benchmark:
-        result = benchmark(get_nonexistent_entity)
-    else:
-        result = get_nonexistent_entity()
-
+    result = get_nonexistent_entity()
     assert result is None
 
 
-def test_msp_audit_log_zero_limit(benchmark=None):
+def test_msp_audit_log_zero_limit():
     """Test HierarchicalMSP audit log with zero limit"""
     ca_config = {
         "root_cert": "edge-test-root",
@@ -345,15 +307,11 @@ def test_msp_audit_log_zero_limit(benchmark=None):
     def get_audit_log_zero():
         return msp.get_audit_log(0)
 
-    if benchmark:
-        result = benchmark(get_audit_log_zero)
-    else:
-        result = get_audit_log_zero()
-
+    result = get_audit_log_zero()
     assert isinstance(result, list)
 
 
-def test_msp_audit_log_negative_limit(benchmark=None):
+def test_msp_audit_log_negative_limit():
     """Test HierarchicalMSP audit log with negative limit"""
     ca_config = {
         "root_cert": "edge-test-root",
@@ -366,11 +324,7 @@ def test_msp_audit_log_negative_limit(benchmark=None):
     def get_audit_log_negative():
         return msp.get_audit_log(-1)
 
-    if benchmark:
-        result = benchmark(get_audit_log_negative)
-    else:
-        result = get_audit_log_negative()
-
+    result = get_audit_log_negative()
     assert isinstance(result, list)
 
 
@@ -446,7 +400,7 @@ def test_msp_audit_logging_comprehensive(benchmark=None):
     assert "entity_revoked" in event_types
 
 
-def test_key_validation_none_key(benchmark=None):
+def test_key_validation_none_key():
     """Test key validation with None key"""
     km = KeyManager()
     
@@ -454,15 +408,11 @@ def test_key_validation_none_key(benchmark=None):
     def validate_none_key():
         return km.is_valid(None)
 
-    if benchmark:
-        result = benchmark(validate_none_key)
-    else:
-        result = validate_none_key()
-
+    result = validate_none_key()
     assert result is False
 
 
-def test_key_validation_empty_key(benchmark=None):
+def test_key_validation_empty_key():
     """Test key validation with empty key"""
     km = KeyManager()
 
@@ -470,15 +420,11 @@ def test_key_validation_empty_key(benchmark=None):
     def validate_empty_key():
         return km.is_valid("")
 
-    if benchmark:
-        result = benchmark(validate_empty_key)
-    else:
-        result = validate_empty_key()
-
+    result = validate_empty_key()
     assert result is False
 
 
-def test_key_validation_short_key(benchmark=None):
+def test_key_validation_short_key():
     """Test key validation with short key"""
     km = KeyManager()
 
@@ -486,15 +432,11 @@ def test_key_validation_short_key(benchmark=None):
     def validate_short_key():
         return km.is_valid("short")
 
-    if benchmark:
-        result = benchmark(validate_short_key)
-    else:
-        result = validate_short_key()
-
+    result = validate_short_key()
     assert result is False
 
 
-def test_key_validation_nonexistent_key(benchmark=None):
+def test_key_validation_nonexistent_key():
     """Test key validation with nonexistent key"""
     km = KeyManager()
 
@@ -502,15 +444,11 @@ def test_key_validation_nonexistent_key(benchmark=None):
     def validate_nonexistent_key():
         return km.is_valid("nonexistentkeywithsufficientlength1234567890")
 
-    if benchmark:
-        result = benchmark(validate_nonexistent_key)
-    else:
-        result = validate_nonexistent_key()
-
+    result = validate_nonexistent_key()
     assert result is False
 
 
-def test_key_validation_expired_key(benchmark=None):
+def test_key_validation_expired_key():
     """Test key validation with expired key"""
     km = KeyManager()
 
@@ -526,15 +464,11 @@ def test_key_validation_expired_key(benchmark=None):
     def validate_expired_key():
         return km.is_valid(expired_key)
 
-    if benchmark:
-        result = benchmark(validate_expired_key)
-    else:
-        result = validate_expired_key()
-
+    result = validate_expired_key()
     assert result is False
 
 
-def test_key_validation_valid_key(benchmark=None):
+def test_key_validation_valid_key():
     """Test key validation with valid key"""
     km = KeyManager()
 
@@ -550,9 +484,5 @@ def test_key_validation_valid_key(benchmark=None):
     def validate_valid_key():
         return km.is_valid(valid_key)
 
-    if benchmark:
-        result = benchmark(validate_valid_key)
-    else:
-        result = validate_valid_key()
-
+    result = validate_valid_key()
     assert result is True

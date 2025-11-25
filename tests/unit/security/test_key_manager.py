@@ -11,16 +11,13 @@ from unittest.mock import Mock
 from hierarchical_blockchain.security.key_manager import KeyManager, initialize_default_keys
 
 
-def test_key_manager_initialization(benchmark=None):
+def test_key_manager_initialization():
     """Test KeyManager initialization"""
 
     def init_key_manager():
         return KeyManager()
 
-    if benchmark:
-        km = benchmark(init_key_manager)
-    else:
-        km = init_key_manager()
+    km = init_key_manager()
 
     assert km is not None
     assert isinstance(km.storage, dict)
@@ -29,7 +26,7 @@ def test_key_manager_initialization(benchmark=None):
     assert km.cache_ttl == 300
 
 
-def test_is_valid_with_valid_key(benchmark=None):
+def test_is_valid_with_valid_key():
     """Test is_valid method with a valid key"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
@@ -37,18 +34,14 @@ def test_is_valid_with_valid_key(benchmark=None):
     km = KeyManager(storage_backend=mock_storage)
     valid_key = "valid_key_123456789012345"
 
-    if benchmark:
-        result = benchmark(km.is_valid, valid_key)
-    else:
-        result = km.is_valid(valid_key)
-
+    result = km.is_valid(valid_key)
     assert result is True
     # Because benchmark runs the function many times, we can't assert specific call count
     # But we can check if it was called at least once with the expected argument
     mock_storage.get.assert_any_call(f"api_key:{valid_key}")
 
 
-def test_is_valid_with_invalid_key(benchmark=None):
+def test_is_valid_with_invalid_key():
     """Test is_valid method with an invalid key"""
     km = KeyManager()
 
@@ -62,15 +55,11 @@ def test_is_valid_with_invalid_key(benchmark=None):
         results.append(km.is_valid("non_existent_key"))
         return results
 
-    if benchmark:
-        results = benchmark(test_multiple_invalid_keys)
-    else:
-        results = test_multiple_invalid_keys()
-
+    results = test_multiple_invalid_keys()
     assert all(result is False for result in results)
 
 
-def test_is_valid_with_expired_key(benchmark=None):
+def test_is_valid_with_expired_key():
     """Test is_valid method with an expired key"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
@@ -78,41 +67,30 @@ def test_is_valid_with_expired_key(benchmark=None):
     km = KeyManager(storage_backend=mock_storage)
     expired_key = "expired_key_123456789012345"
 
-    if benchmark:
-        result = benchmark(km.is_valid, expired_key)
-    else:
-        result = km.is_valid(expired_key)
-
+    result = km.is_valid(expired_key)
     assert result is False
 
 
-def test_is_revoked_with_revoked_key(benchmark=None):
+def test_is_revoked_with_revoked_key():
     """Test is_revoked method with a revoked key"""
     km = KeyManager()
     revoked_key = "revoked_key_123456789012345"
     km.revoked_keys.add(revoked_key)
 
-    if benchmark:
-        result = benchmark(km.is_revoked, revoked_key)
-    else:
-        result = km.is_revoked(revoked_key)
-
+    result = km.is_revoked(revoked_key)
     assert result is True
 
 
-def test_is_revoked_with_non_revoked_key(benchmark=None):
+def test_is_revoked_with_non_revoked_key():
     """Test is_revoked method with a non-revoked key"""
     km = KeyManager()
     non_revoked_key = "non_revoked_key_123456789012345"
 
-    if benchmark:
-        result = benchmark(km.is_revoked, non_revoked_key)
-    else:
-        result = km.is_revoked(non_revoked_key)
+    result = km.is_revoked(non_revoked_key)
     assert result is False
 
 
-def test_has_permission_with_valid_permission(benchmark=None):
+def test_has_permission_with_valid_permission():
     """Test has_permission method with valid permission"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
@@ -126,15 +104,11 @@ def test_has_permission_with_valid_permission(benchmark=None):
             km.has_permission(test_key, 'chains')
         ]
 
-    if benchmark:
-        results = benchmark(test_multiple_permissions)
-    else:
-        results = test_multiple_permissions()
-
+    results = test_multiple_permissions()
     assert all(results)
 
 
-def test_has_permission_with_wildcard_permission(benchmark=None):
+def test_has_permission_with_wildcard_permission():
     """Test has_permission method with wildcard 'all' permission"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
@@ -149,15 +123,11 @@ def test_has_permission_with_wildcard_permission(benchmark=None):
             km.has_permission(test_key, 'any_resource')
         ]
 
-    if benchmark:
-        results = benchmark(test_multiple_permissions)
-    else:
-        results = test_multiple_permissions()
-
+    results = test_multiple_permissions()
     assert all(results)
 
 
-def test_has_permission_without_permission(benchmark=None):
+def test_has_permission_without_permission():
     """Test has_permission method without required permission"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
@@ -165,14 +135,11 @@ def test_has_permission_without_permission(benchmark=None):
     km = KeyManager(storage_backend=mock_storage)
     test_key = "limited_key_123456789012345"
 
-    if benchmark:
-        result = benchmark(km.has_permission, test_key, 'chains')
-    else:
-        result = km.has_permission(test_key, 'chains')
+    result = km.has_permission(test_key, 'chains')
     assert result is False
 
 
-def test_get_user_with_valid_key(benchmark=None):
+def test_get_user_with_valid_key():
     """Test get_user method with a valid key"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
@@ -180,28 +147,20 @@ def test_get_user_with_valid_key(benchmark=None):
     km = KeyManager(storage_backend=mock_storage)
     test_key = "user_key_123456789012345"
 
-    if benchmark:
-        result = benchmark(km.get_user, test_key)
-    else:
-        result = km.get_user(test_key)
-
+    result = km.get_user(test_key)
     assert result == 'specific_user'
 
 
-def test_get_user_with_invalid_key(benchmark=None):
+def test_get_user_with_invalid_key():
     """Test get_user method with an invalid key"""
     km = KeyManager()
     invalid_key = "invalid_key_123456789012345"
 
-    if benchmark:
-        result = benchmark(km.get_user, invalid_key)
-    else:
-        result = km.get_user(invalid_key)
-
+    result = km.get_user(invalid_key)
     assert result is None
 
 
-def test_get_app_details_with_valid_key(benchmark=None):
+def test_get_app_details_with_valid_key():
     """Test get_app_details method with a valid key"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
@@ -213,15 +172,11 @@ def test_get_app_details_with_valid_key(benchmark=None):
     km = KeyManager(storage_backend=mock_storage)
     test_key = "app_key_123456789012345"
 
-    if  benchmark:
-        result = benchmark(km.get_app_details, test_key)
-    else:
-        result = km.get_app_details(test_key)
-
+    result = km.get_app_details(test_key)
     assert result == app_details
 
 
-def test_get_app_details_with_invalid_key(benchmark=None):
+def test_get_app_details_with_invalid_key():
     """Test get_app_details method with an invalid key"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
@@ -229,15 +184,11 @@ def test_get_app_details_with_invalid_key(benchmark=None):
     km = KeyManager(storage_backend=mock_storage)
     invalid_key = "invalid_key_123456789012345"
 
-    if  benchmark:
-        result = benchmark(km.get_app_details, invalid_key)
-    else:
-        result = km.get_app_details(invalid_key)
-
+    result = km.get_app_details(invalid_key)
     assert result is None
 
 
-def test_cache_key(benchmark=None):
+def test_cache_key():
     """Test cache_key method"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
@@ -251,10 +202,7 @@ def test_cache_key(benchmark=None):
     test_key = "cache_key_123456789012345"
 
     # Cache the key
-    if benchmark:
-        benchmark(km.cache_key, test_key, ttl=60)
-    else:
-        km.cache_key(test_key, ttl=60)
+    km.cache_key(test_key, ttl=60)
 
     # Check if it's in cache
     assert test_key in km.key_cache
@@ -262,7 +210,7 @@ def test_cache_key(benchmark=None):
     assert km.key_cache[test_key]['ttl'] == 60
 
 
-def test_create_key(benchmark=None):
+def test_create_key():
     """Test create_key method"""
     km = KeyManager()
     user_id = "new_user"
@@ -270,10 +218,7 @@ def test_create_key(benchmark=None):
     app_details = {"name": "New App", "version": "1.0"}
     
     # Create a new key
-    if benchmark:
-        new_key = benchmark(km.create_key, user_id, permissions, app_details)
-    else:
-        new_key = km.create_key(user_id, permissions, app_details)
+    new_key = km.create_key(user_id, permissions, app_details)
 
     # Check that key was created
     assert new_key is not None
@@ -288,7 +233,7 @@ def test_create_key(benchmark=None):
     assert stored_data['app_details'] == app_details
 
 
-def test_revoke_key(benchmark=None):
+def test_revoke_key():
     """Test revoke_key method"""
     km = KeyManager()
     test_key = "revoke_key_123456789012345"
@@ -301,10 +246,7 @@ def test_revoke_key(benchmark=None):
     }
     
     # Revoke the key
-    if  benchmark:
-        benchmark(km.revoke_key, test_key)
-    else:
-        km.revoke_key(test_key)
+    km.revoke_key(test_key)
 
     # Check that key is revoked
     assert km.is_revoked(test_key) is True
@@ -315,12 +257,9 @@ def test_revoke_key(benchmark=None):
     assert test_key not in km.key_cache
 
 
-def test_initialize_default_keys(benchmark=None):
+def test_initialize_default_keys():
     """Test initialize_default_keys function"""
-    if benchmark:
-        result = benchmark(initialize_default_keys)
-    else:
-        result = initialize_default_keys()
+    result = initialize_default_keys()
 
     assert "demo_key" in result
     assert "admin_key" in result
@@ -330,7 +269,7 @@ def test_initialize_default_keys(benchmark=None):
     assert len(result["admin_key"]) > 16
 
 
-def test_is_valid_with_edge_cases(benchmark=None):
+def test_is_valid_with_edge_cases():
     """Test is_valid method with edge cases"""
     km = KeyManager()
 
@@ -344,11 +283,7 @@ def test_is_valid_with_edge_cases(benchmark=None):
         results.append(km.is_valid("abc"))
         return results
 
-    if benchmark:
-        results = benchmark(test_multiple_edge_cases)
-    else:
-        results = test_multiple_edge_cases()
-
+    results = test_multiple_edge_cases()
     assert all(result is False for result in results[:3])
 
     # Test with very long key (should be valid if properly formatted)
@@ -362,7 +297,7 @@ def test_is_valid_with_edge_cases(benchmark=None):
     assert km.is_valid(long_key) is True
 
 
-def test_has_permission_with_special_characters(benchmark=None):
+def test_has_permission_with_special_characters():
     """Test has_permission with special characters in resource names"""
     # Mock storage backend
     mock_storage = Mock()
@@ -378,16 +313,13 @@ def test_has_permission_with_special_characters(benchmark=None):
             km.has_permission(test_key, 'nonexistent_perm')
         ]
 
-    if benchmark:
-        results = benchmark(test_multiple_permissions)
-    else:
-        results = test_multiple_permissions()
+    results = test_multiple_permissions()
 
     assert all(results[:3])  # First three should be True
     assert not results[3]  # Last one should be False
 
 
-def test_create_key_with_various_inputs(benchmark=None):
+def test_create_key_with_various_inputs():
     """Test create_key with various inputs including edge cases"""
     km = KeyManager()
 
@@ -401,70 +333,74 @@ def test_create_key_with_various_inputs(benchmark=None):
         keys.append(km.create_key("user_no_perms", []))
         return keys
 
-    if benchmark:
-        keys = benchmark(create_multiple_keys)
-    else:
-        keys = create_multiple_keys()
+    keys = create_multiple_keys()
 
     for key in keys:
         assert key.startswith("hbc_")
         assert len(key) > 16
 
 
-def test_revoke_key_nonexistent(benchmark=None):
+def test_revoke_key_nonexistent():
     """Test revoke_key with nonexistent key"""
     km = KeyManager()
     # Should not throw exception
-    if benchmark:
-        benchmark(km.revoke_key, "nonexistent_key")
-    else:
-        km.revoke_key("nonexistent_key")
-
+    km.revoke_key("nonexistent_key")
     assert km.is_revoked("nonexistent_key") is True
 
 
-def test_key_creation_performance():
+def test_key_creation_performance(benchmark=None):
     """Test performance of key creation operations"""
     km = KeyManager()
+    def test_multiple_keys():
+        start_time = time.perf_counter()
 
-    start_time = time.perf_counter()
-    
-    # Create 100keys to test performance
-    keys = []
-    for i in range(100):
-        key = km.create_key(f"user_{i}", ["read", "write"], {"name": f"App {i}"})
-        keys.append(key)
-    
-    end_time = time.perf_counter()
-    
-    # Creating100 keys should take less than 2 seconds
-    assert (end_time - start_time) < 2.0
-    assert len(keys) == 100
+        # Create 100keys to test performance
+        keys = []
+        for i in range(100):
+            key = km.create_key(f"user_{i}", ["read", "write"], {"name": f"App {i}"})
+            keys.append(key)
+
+        end_time = time.perf_counter()
+
+        # Creating100 keys should take less than 2 seconds
+        assert (end_time - start_time) < 2.0
+        assert len(keys) == 100
+
+    if benchmark:
+        benchmark(test_multiple_keys)
+    else:
+        test_multiple_keys()
 
 
-def test_key_validation_performance():
+def test_key_validation_performance(benchmark=None):
     """Test performance of key validation operations"""
     km = KeyManager()
-    
-    # Create testkeys
-    keys = []
-    for i in range(100):
-        key = km.create_key(f"user_{i}", ["read", "write"], {"name": f"App {i}"})
-        keys.append(key)
 
-    start_time = time.perf_counter()
-    
-    #Validate 100 keys
-    for key in keys:
-        assert km.is_valid(key) is True
-    
-    end_time = time.perf_counter()
-    
-    # Validating 100 keys should take less than 1 second
-    assert (end_time - start_time) < 1.0
+    def create_keys():
+        # Create testkeys
+        keys = []
+        for i in range(100):
+            key = km.create_key(f"user_{i}", ["read", "write"], {"name": f"App {i}"})
+            keys.append(key)
+
+        start_time = time.perf_counter()
+
+        #Validate 100 keys
+        for key in keys:
+            assert km.is_valid(key) is True
+
+        end_time = time.perf_counter()
+
+        # Validating 100 keys should take less than 1 second
+        assert (end_time - start_time) < 1.0
+
+    if benchmark:
+        benchmark(create_keys)
+    else:
+        create_keys()
 
 
-def test_permission_check_performance():
+def test_permission_check_performance(benchmark=None):
     """Test performance of permission checking operations"""
     # Mock storage backend with get method (like Redis)
     mock_storage = Mock()
@@ -472,22 +408,27 @@ def test_permission_check_performance():
     km = KeyManager(storage_backend=mock_storage)
     test_key = "perf_test_key_123456789012345"
     
-    import time
-    start_time =time.perf_counter()
-    
-    # Check permissions 1000 times
-    for _ in range(1000):
-        assert km.has_permission(test_key, 'events') is True
-        assert km.has_permission(test_key, 'chains') is True
-        assert km.has_permission(test_key, 'admin_panel') is True
-    
-    end_time = time.perf_counter()
-    
-    # Checking permissions 1000 times should take less than 1 second
-    assert (end_time - start_time) < 1.0
+    def test_multiple_permissions():
+        start_time =time.perf_counter()
+
+        # Check permissions 1000 times
+        for _ in range(1000):
+            assert km.has_permission(test_key, 'events') is True
+            assert km.has_permission(test_key, 'chains') is True
+            assert km.has_permission(test_key, 'admin_panel') is True
+
+        end_time = time.perf_counter()
+
+        # Checking permissions 1000 times should take less than 1 second
+        assert (end_time - start_time) < 1.0
+
+    if benchmark:
+        benchmark(test_multiple_permissions)
+    else:
+        test_multiple_permissions()
 
 
-def test_security_injection_attacks(benchmark=None):
+def test_security_injection_attacks():
     """Test resistance to injection attacks"""
     km = KeyManager()
     
@@ -509,10 +450,7 @@ def test_security_injection_attacks(benchmark=None):
             keys.append(key)
         return keys
 
-    if benchmark:
-        keys = benchmark(create_keys_with_injection_attempts)
-    else:
-        keys = create_keys_with_injection_attempts()
+    keys = create_keys_with_injection_attempts()
 
     for key in keys:
         assert key is not None
@@ -521,7 +459,7 @@ def test_security_injection_attacks(benchmark=None):
         assert "'" not in key or "\"" not in key  # Our key generation should not include these
 
 
-def test_security_xss_attacks(benchmark=None):
+def test_security_xss_attacks():
     """Testresistance to XSS attacks in app details"""
     km = KeyManager()
     
@@ -542,10 +480,7 @@ def test_security_xss_attacks(benchmark=None):
             results.append((key, km.is_valid(key)))
         return results
 
-    if benchmark:
-        results = benchmark(test_xss_attempts)
-    else:
-        results = test_xss_attempts()
+    results = test_xss_attempts()
 
     # When we retrieve app details, they should be preserved as-is
     for key, is_valid in results:
@@ -554,7 +489,7 @@ def test_security_xss_attacks(benchmark=None):
         assert details is not None
 
 
-def test_security_directory_traversal(benchmark=None):
+def test_security_directory_traversal():
     """Test resistance to directory traversal attacks"""
     km = KeyManager()
     
@@ -576,10 +511,7 @@ def test_security_directory_traversal(benchmark=None):
             results.append((key, km.is_valid(key)))
         return results
 
-    if benchmark:
-        results = benchmark(test_traversal_attempts)
-    else:
-        results = test_traversal_attempts()
+    results = test_traversal_attempts()
 
     for key, is_valid in results:
         assert is_valid is True
