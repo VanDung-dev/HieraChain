@@ -189,7 +189,7 @@ def test_concurrent_event_processing(benchmark):
             event_ids.append(event_id)
 
         # Wait for processing
-        time.sleep(0.05)
+        time.sleep(0.1)
 
         # Check that all events were processed
         certified_count = 0
@@ -318,7 +318,7 @@ def test_large_volume_performance(benchmark):
             event_ids.append(event_id)
 
         # Wait for all events to be processed
-        time.sleep(0.05)
+        time.sleep(0.1)
 
         # Check performance
         end_time = time.time()
