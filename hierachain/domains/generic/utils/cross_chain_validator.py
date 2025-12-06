@@ -444,7 +444,7 @@ class CrossChainValidator:
                     })
                 
                 # Check entity_id usage
-                if "entity_id" in event:
+                if event.get("entity_id") is not None:
                     if not self.validation_rules["entity_id_metadata_usage"](event):
                         violations.append({
                             "type": "entity_id_misuse",
