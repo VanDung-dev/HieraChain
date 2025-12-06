@@ -240,13 +240,24 @@ async def get_chain_blocks(chain_name: str, limit: int = 10, offset: int = 0):
         
         block_data = []
         for block in blocks:
+            # Serialize events safely
+            events_data = []
+            if hasattr(block, 'to_event_list'):
+                events_data = block.to_event_list()
+            elif hasattr(block, 'events'):
+                events_data = block.events
+                # Handle direct Arrow Table if to_event_list is missing (safety fallback)
+                if hasattr(events_data, 'to_pylist'):
+                     # This is a suboptimal fallback as it doesn't parse JSON details, but prevents crash
+                     events_data = events_data.to_pylist()
+            
             block_data.append({
                 "index": getattr(block, 'index', None),
                 "hash": getattr(block, 'hash', None),
                 "previous_hash": getattr(block, 'previous_hash', None),
                 "timestamp": getattr(block, 'timestamp', None),
-                "events_count": len(getattr(block, 'events', [])),
-                "events": getattr(block, 'events', [])
+                "events_count": len(events_data) if isinstance(events_data, list) else 0,
+                "events": events_data
             })
         
         return {
