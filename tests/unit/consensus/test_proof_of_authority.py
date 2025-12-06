@@ -255,7 +255,7 @@ def test_spoofed_authority_attack():
 
     # Check that the block doesn't have valid authority signature
     has_valid_signature = False
-    for event in block.events:
+    for event in block.to_event_list():
         if (event.get("event") == "consensus_finalization" and
                 "details" in event and
                 poa.is_authority(event["details"].get("authority_id", ""))):
@@ -412,7 +412,7 @@ def test_realistic_environment_simulation(benchmark):
         # Verify authority distribution
         authority_usage = {}
         for block in blocks[1:]:  # Skip genesis block
-            for event in block.events:
+            for event in block.to_event_list():
                 if event.get("event") == "consensus_finalization":
                     authority_id = event["details"].get("authority_id")
                     authority_usage[authority_id] = authority_usage.get(authority_id, 0) + 1
@@ -451,7 +451,7 @@ def test_security_and_fault_tolerance():
 
     # Tamper with block data after finalization
     _original_hash = block.hash
-    block.events.append({
+    block.add_event({
         "entity_id": "TAMPER-001",
         "event": "unauthorized_addition",
         "timestamp": time.time()
@@ -563,6 +563,7 @@ def test_performance_with_large_data(benchmark):
             previous_hash=genesis_block.hash,
             timestamp=genesis_block.timestamp + poa.config["block_interval"] + 1
         )
+        block = poa.finalize_block(block, authority_id)
 
         start_time = time.time()
         is_valid = poa.validate_block(block, genesis_block)
