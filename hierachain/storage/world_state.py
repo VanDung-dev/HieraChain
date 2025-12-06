@@ -32,7 +32,16 @@ class WorldState:
     
     def update_from_block(self, block):
         """Update world state from new block"""
-        for event in block.events:
+        # Handle both Arrow-based Blocks and legacy/dict inputs
+        if hasattr(block, 'to_event_list'):
+            events = block.to_event_list()
+        elif hasattr(block, 'events'):
+            events = block.events
+        else:
+            # Fallback for dict representation
+             events = block.get('events', [])
+
+        for event in events:
             if "entity_id" in event:
                 entity_key = f"{self.chain_name}:{event['entity_id']}"
                 current_state = self.storage.get(entity_key) or {}
