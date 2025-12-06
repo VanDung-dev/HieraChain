@@ -240,7 +240,11 @@ class Blockchain:
         """
         events = []
         for block in self.chain:
-            for event in block.events:
+            # block.events is an Arrow Table, need to convert to list of dicts for python filter
+            # Using private helper via to_dict() or we needs a public iterator.
+            # to_dict()['events'] is the safest public API currently.
+            block_events = block.to_dict()['events']
+            for event in block_events:
                 if filter_func(event):
                     events.append(event)
         return events
