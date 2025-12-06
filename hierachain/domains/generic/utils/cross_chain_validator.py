@@ -423,16 +423,38 @@ class CrossChainValidator:
         # Check all blocks in the chain
         for block in chain.chain:
             # Validate block structure
-            if not isinstance(block.events, list):
+            if not isinstance(block.events, list) and not hasattr(block.events, "to_pylist"):
                 violations.append({
                     "type": "invalid_block_structure",
                     "chain_name": chain_name,
                     "block_index": block.index,
-                    "issue": "Block events should be a list, not a single event"
+                    "issue": "Block events should be a list or PyArrow object"
                 })
             
             # Check each event in the block
             for event in block.events:
+                # Handle PyArrow objects if necessary
+                if hasattr(event, "as_py"):
+                    event = event.as_py()
+                elif hasattr(event, "to_pylist"):
+                    pass
+
+                # If event is still not a dict (e.g. arrow scalar struct), try forcing conversion
+                if not isinstance(event, dict) and hasattr(event, "as_py"):
+                    event = event.as_py()
+                
+                events_list = []
+                if hasattr(block.events, "to_pylist"):
+                    events_list = block.events.to_pylist()
+                elif isinstance(block.events, list):
+                    events_list = block.events
+                else:
+                    try:
+                        events_list = block.events.to_pylist()
+                    except AttributeError:
+                        events_list = list(block.events)
+
+            for event in events_list:
                 # Check for cryptocurrency terms
                 if not self.validation_rules["no_cryptocurrency_terms"](event):
                     violations.append({
