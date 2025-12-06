@@ -110,7 +110,7 @@ def test_block_from_dict_reconstruction():
     assert len(reconstructed_block.events) == len(block.events)
     
     # Check events match
-    for orig_event, recon_event in zip(block.events, reconstructed_block.events):
+    for orig_event, recon_event in zip(block.to_event_list(), reconstructed_block.to_event_list()):
         assert recon_event["entity_id"] == orig_event["entity_id"]
         assert recon_event["event"] == orig_event["event"]
 
