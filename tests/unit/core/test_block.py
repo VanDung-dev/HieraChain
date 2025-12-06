@@ -159,11 +159,7 @@ def test_block_structure_validation():
         )
         # If it doesn't fail init, it should fail structure validation
         if invalid_block.validate_structure():
-             # If it claims valid, check if it just ignored the invalid fields?
-             # With Arrow schema, missing fields default to null.
-             # We need to ensure validate_structure checks for validity of data.
-             # For now, let's assume it should return False or init failure.
-             pass 
+            pass
     except (ValueError, TypeError, KeyError, Exception):
         # Constructor might reject invalid structure
         pass
