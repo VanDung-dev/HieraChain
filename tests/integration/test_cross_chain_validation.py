@@ -273,10 +273,37 @@ def test_cross_chain_validation_with_timestamp_inconsistency():
 
     # Manually modify the main chain event timestamp to create inconsistency
     # Find the proof submission event and modify its timestamp to be earlier than block timestamp
-    proof_events = main_chain.get_events_by_type("proof_submission")
-    if proof_events:
-        # Modify the timestamp to be before the sub-chain block timestamp (invalid scenario)
-        proof_events[0]["timestamp"] = 0  # Set to epoch time to ensure it's before block timestamp
+    # Manually modify the main chain event timestamp to create inconsistency
+    found_proof = False
+    for block in main_chain.chain:
+        # Handle both list and PyArrow objects
+        events_list = None
+        is_pyarrow = False
+        
+        if isinstance(block.events, list):
+            events_list = block.events
+        elif hasattr(block.events, "to_pylist"):
+            events_list = block.events.to_pylist()
+            is_pyarrow = True
+            
+        if events_list:
+            modified = False
+            for event in events_list:
+                if event.get("event") == "proof_submission":
+                    event["timestamp"] = 0
+                    found_proof = True
+                    modified = True
+                    break
+            
+            if modified:
+                from hierachain.core.block import Block
+                block._events = Block._convert_events_to_arrow(events_list)
+                
+        if found_proof:
+            break
+
+    if not found_proof:
+        pass
 
     # Create validator and run validation
     validator = CrossChainValidator(hierarchy_manager)
