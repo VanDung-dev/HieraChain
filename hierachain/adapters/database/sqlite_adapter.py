@@ -182,7 +182,10 @@ class SQLiteAdapter:
         block_id = cursor.lastrowid
         
         # Store events
-        for event in block.events:
+        # Store events
+        # Use to_event_list() if available to handle Arrow Tables
+        events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
+        for event in events:
             cursor.execute("""
                 INSERT OR REPLACE INTO events 
                 (chain_name, block_id, block_index, entity_id, event_type, timestamp, details, created_at)

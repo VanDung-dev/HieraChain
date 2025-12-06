@@ -150,7 +150,9 @@ class MainChain(Blockchain):
         """
         # Search for proof in all blocks
         for block in self.chain:
-            for event in block.events:
+            # Use to_event_list() if available to handle Arrow Tables
+            events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
+            for event in events:
                 if (event.get("event") == "proof_submission" and
                     event.get("details", {}).get("proof_hash") == proof_hash and
                     event.get("details", {}).get("sub_chain_name") == sub_chain_name):
@@ -177,7 +179,9 @@ class MainChain(Blockchain):
         """
         proofs = []
         for block in self.chain:
-            for event in block.events:
+            # Use to_event_list() if available to handle Arrow Tables
+            events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
+            for event in events:
                 if (event.get("event") == "proof_submission" and
                     event.get("details", {}).get("sub_chain_name") == sub_chain_name):
                     proofs.append(event)

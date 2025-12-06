@@ -386,7 +386,9 @@ class DomainChain(BaseChain):
         # Get compliance events for this entity
         compliance_events = []
         for block in self.chain:
-            for event in block.events:
+            # Use to_event_list() if available to handle Arrow Tables
+            events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
+            for event in events:
                 if (event.get("entity_id") == entity_id and 
                     event.get("event") == "compliance_check"):
                     compliance_events.append(event)

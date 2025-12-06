@@ -125,7 +125,9 @@ class ProofOfAuthority(BaseConsensus):
             return False
         
         # Validate all events in the block
-        for event in block.events:
+        # Use to_event_list() if available to handle Arrow Tables
+        events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
+        for event in events:
             if not self.validate_event_for_consensus(event):
                 return False
         
@@ -202,7 +204,9 @@ class ProofOfAuthority(BaseConsensus):
             True if block has valid authority signature, False otherwise
         """
         # Look for consensus finalization event
-        for event in block.events:
+        # Use to_event_list() if available to handle Arrow Tables
+        events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
+        for event in events:
             if (event.get("event") == "consensus_finalization" and 
                 "details" in event and 
                 "authority_id" in event["details"] and
@@ -261,7 +265,7 @@ class ProofOfAuthority(BaseConsensus):
         
         # Additional PoA-specific validation
         # Ensure event has proper structure for business applications
-        if "entity_id" in event:
+        if event.get("entity_id") is not None:
             # entity_id should be used as metadata, not as identifier
             if not isinstance(event["entity_id"], str):
                 return False

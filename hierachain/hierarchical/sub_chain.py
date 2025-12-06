@@ -242,7 +242,9 @@ class SubChain(Blockchain):
         # Count different event types in recent blocks
         recent_events = []
         for block in self.chain[-5:]:  # Last 5 blocks
-            recent_events.extend(block.events)
+            # Use to_event_list() if available to handle Arrow Tables
+            events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
+            recent_events.extend(events)
         
         event_counts = {}
         entity_count = set()
@@ -251,7 +253,7 @@ class SubChain(Blockchain):
             event_type = event.get("event", "unknown")
             event_counts[event_type] = event_counts.get(event_type, 0) + 1
             
-            if "entity_id" in event:
+            if event.get("entity_id") is not None:
                 entity_count.add(event["entity_id"])
         
         # Create summary metadata (following guidelines)
@@ -321,13 +323,15 @@ class SubChain(Blockchain):
         # Count entities and operations
         all_events = []
         for block in self.chain:
-            all_events.extend(block.events)
+            # Use to_event_list() if available to handle Arrow Tables
+            events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
+            all_events.extend(events)
         
         unique_entities = set()
         operation_types = {}
         
         for event in all_events:
-            if "entity_id" in event:
+            if event.get("entity_id") is not None:
                 unique_entities.add(event["entity_id"])
             
             event_type = event.get("event", "unknown")
