@@ -37,20 +37,20 @@ def get_event_schema() -> pa.Schema:
 
 def get_block_schema() -> pa.Schema:
     """Return the Arrow schema for a full Block (header + events)."""
-    # Note: Blocks might naturally store events as a RecordBatch or Table
-    # separate from header fields if using Flatbuffers, but here we define
-    # the schema for the structural components.
     return pa.schema([
-        ('index', pa.int64()),
-        ('timestamp', pa.float64()),
-        ('previous_hash', pa.string()),
-        ('nonce', pa.int64()),
-        ('hash', pa.string()),
-        ('events', pa.list_(pa.struct([
-            ('entity_id', pa.string()),
-            ('event', pa.string()),  # Renamed from event_type to match EVENT_SCHEMA
-            ('timestamp', pa.float64()),
-            ('details', pa.string()) # JSON stringified details
+        ('index', pa.int64()),               # Block index
+        ('timestamp', pa.float64()),         # Block timestamp
+        ('previous_hash', pa.string()),      # Hash of the previous block
+        ('nonce', pa.int64()),               # Nonce for mining
+        ('timestamp', pa.float64()),         # Block timestamp
+        ('previous_hash', pa.string()),      # Hash of the previous block
+        ('nonce', pa.int64()),               # Nonce for mining
+        ('hash', pa.string()),               # Hash of the block
+        ('events', pa.list_(pa.struct([      # List of events:
+            ('entity_id', pa.string()),         # Renamed from entity_id to match EVENT_SCHEMA
+            ('event', pa.string()),             # Renamed from event_type to match EVENT_SCHEMA
+            ('timestamp', pa.float64()),        # Renamed from timestamp to match EVENT_SCHEMA
+            ('details', pa.string())            # Renamed from details to match EVENT_SCHEMA
         ])))
     ])
 
