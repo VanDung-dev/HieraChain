@@ -10,48 +10,81 @@ This module implements the Block class following the framework guidelines:
 import hashlib
 import json
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
+import pyarrow as pa
+import pyarrow.compute as pc
+
+from hierachain.core import schemas
 
 
 class Block:
     """
-    Block class that contains multiple events for multiple entities.
+    Block class using Apache Arrow for high-performance event storage.
     
-    This follows the HieraChain framework guidelines where:
-    - A block contains multiple events (not one event per block)
-    - Events contain domain-specific data with required metadata
-    - Blocks are identified by index, not by entity_id
+    Data Consistency:
+    - Events are stored internally as a `pyarrow.Table`.
+    - `self.events` property exposes this Table.
+    - Hashing still uses strict JSON canonicalization for backward compatibility.
     """
     
-    def __init__(self, index: int, events: List[Dict[str, Any]], timestamp: Optional[float] = None, 
-                 previous_hash: str = "", nonce: int = 0):
+    def __init__(self, index: int, events: Union[List[Dict[str, Any]], pa.Table], 
+                 timestamp: Optional[float] = None, previous_hash: str = "", nonce: int = 0):
         """
         Initialize a new block.
         
         Args:
             index: Block index in the chain
-            events: List of events (multiple events per block)
+            events: List of event dicts OR an existing Arrow Table
             timestamp: Block creation timestamp (defaults to current time)
             previous_hash: Hash of the previous block
-            nonce: Nonce value for proof-of-work (if needed)
+            nonce: Nonce value
         """
         self.index = index
-        self.events = events  # List of events - critical guideline requirement
         self.timestamp = timestamp or time.time()
         self.previous_hash = previous_hash
         self.nonce = nonce
+        
+        # Initialize Arrow Table
+        if isinstance(events, pa.Table):
+            self._events = events
+        else:
+            self._events = self._convert_events_to_arrow(events)
+            
         self.hash = self.calculate_hash()
     
+    @property
+    def events(self) -> pa.Table:
+        """Access events as an Arrow Table."""
+        return self._events
+
+    @staticmethod
+    def _convert_events_to_arrow(events_list: List[Dict[str, Any]]) -> pa.Table:
+        """Helper to convert list of dicts to Arrow Table with schema."""
+        if not events_list:
+            # Create empty table with correct schema
+            return pa.Table.from_pylist([], schema=schemas.get_event_schema())
+        
+        # Pre-process details to JSON strings if they are dicts
+        processed_events = []
+        for e in events_list:
+            ev = e.copy()
+            if isinstance(ev.get('details'), (dict, list)):
+                ev['details'] = json.dumps(ev['details'])
+            processed_events.append(ev)
+            
+        s = schemas.get_event_schema()
+        return pa.Table.from_pylist(processed_events, schema=s)
+
     def calculate_hash(self) -> str:
         """
         Calculate the hash of the block.
-        
-        Returns:
-            SHA-256 hash of the block data
+        Converts Arrow data back to standard JSON structure for hashing.
         """
+        events_list = self._table_to_list_of_dicts(self._events)
+        
         block_data = {
             "index": self.index,
-            "events": self.events,
+            "events": events_list,
             "timestamp": self.timestamp,
             "previous_hash": self.previous_hash,
             "nonce": self.nonce
@@ -64,59 +97,65 @@ class Block:
     def add_event(self, event: Dict[str, Any]) -> None:
         """
         Add an event to the block and recalculate hash.
-        
-        Args:
-            event: Event dictionary with required metadata
+        Performance warning: Creates new Arrow Table.
         """
-        self.events.append(event)
+        # Create a small table for the new event
+        new_table = self._convert_events_to_arrow([event])
+        if len(self._events) == 0:
+            self._events = new_table
+        else:
+            self._events = pa.concat_tables([self._events, new_table])
         self.hash = self.calculate_hash()
     
     def get_events_by_entity(self, entity_id: str) -> List[Dict[str, Any]]:
         """
-        Get all events for a specific entity from this block.
-        
-        Args:
-            entity_id: The entity identifier to search for
-            
-        Returns:
-            List of events for the specified entity
+        Get all events for a specific entity.
+        Uses Arrow filtering.
         """
-        return [event for event in self.events if event.get("entity_id") == entity_id]
-    
+        filtered_table = self._events.filter(pc.equal(self._events['entity_id'], entity_id))
+        return self._table_to_list_of_dicts(filtered_table)
+
     def get_events_by_type(self, event_type: str) -> List[Dict[str, Any]]:
-        """
-        Get all events of a specific type from this block.
-        
-        Args:
-            event_type: The event type to search for
-            
-        Returns:
-            List of events of the specified type
-        """
-        return [event for event in self.events if event.get("event") == event_type]
+        """Get all events of a specific type."""
+        filtered_table = self._events.filter(pc.equal(self._events['event'], event_type))
+        return self._table_to_list_of_dicts(filtered_table)
     
+    def to_event_list(self) -> List[Dict[str, Any]]:
+        """
+        Convert internal Arrow events to a list of dictionaries.
+        This provides a standard Python interface for consumers.
+        """
+        return self._table_to_list_of_dicts(self._events)
+
+    @staticmethod
+    def _table_to_list_of_dicts(table: pa.Table) -> List[Dict[str, Any]]:
+        """Convert Arrow Table to list of dicts with parsed details."""
+        events = []
+        for row in table.to_pylist():
+            if row.get('details'):
+                try:
+                    row['details'] = json.loads(row['details'])
+                except (TypeError, json.JSONDecodeError):
+                    pass
+            events.append(row)
+        return events
+
     def validate_structure(self) -> bool:
         """
-        Validate the block structure according to framework guidelines.
-        
+        Validate the block structure.
+
         Returns:
-            True if block structure is valid, False otherwise
+            Checks if the internal event table conforms to the schema.
         """
-        # Check if events is a list (not a single event)
-        if not isinstance(self.events, list):
+        if not isinstance(self._events, pa.Table):
             return False
+            
+        # Verify schema matches expected Event Schema
+        required = ['entity_id', 'event', 'timestamp']
         
-        # Check if each event has required metadata structure
-        for event in self.events:
-            if not isinstance(event, dict):
-                return False
-            
-            # Events should have entity_id as metadata (not as block identifier)
-            if "entity_id" in event and not isinstance(event["entity_id"], str):
-                return False
-            
-            # Events should have event type
-            if "event" not in event:
+        names = self._events.column_names
+        for r in required:
+            if r not in names:
                 return False
         
         return True
@@ -130,7 +169,7 @@ class Block:
         """
         return {
             "index": self.index,
-            "events": self.events,
+            "events": self._table_to_list_of_dicts(self._events),
             "timestamp": self.timestamp,
             "previous_hash": self.previous_hash,
             "nonce": self.nonce,
@@ -155,13 +194,13 @@ class Block:
             previous_hash=data["previous_hash"],
             nonce=data.get("nonce", 0)
         )
-        return block
-    
+        return block # Hash is recalculated in init
+
     def __str__(self) -> str:
         """String representation of the block."""
-        return f"Block(index={self.index}, events_count={len(self.events)}, hash={self.hash[:10]}...)"
+        return f"Block(index={self.index}, events_count={len(self._events)}, hash={self.hash[:10]}...)"
     
     def __repr__(self) -> str:
         """Detailed string representation of the block."""
-        return (f"Block(index={self.index}, events={len(self.events)}, "
+        return (f"Block(index={self.index}, events={len(self._events)}, "
                 f"timestamp={self.timestamp}, hash={self.hash})")
