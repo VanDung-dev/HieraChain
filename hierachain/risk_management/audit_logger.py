@@ -65,6 +65,22 @@ class AuditEvent:
         data = asdict(self)
         data['event_type'] = self.event_type.value
         data['severity'] = self.severity.value
+        # Sanitize details and other fields for Arrow objects
+        data['details'] = self._sanitize_data(data['details'])
+        if data.get('affected_entities'):
+            data['affected_entities'] = self._sanitize_data(data['affected_entities'])
+        return data
+
+    @staticmethod
+    def _sanitize_data(data: Any) -> Any:
+        """Sanitize data to ensure it's serializable, handling Arrow objects."""
+        if hasattr(data, "schema") or hasattr(data, "to_pylist"):
+            # Handle PyArrow objects (Table, RecordBatch, Array)
+            return str(data)
+        if isinstance(data, dict):
+            return {k: AuditEvent._sanitize_data(v) for k, v in data.items()}
+        if isinstance(data, list):
+            return [AuditEvent._sanitize_data(v) for v in data]
         return data
     
     def to_json(self) -> str:
