@@ -216,7 +216,7 @@ class ErrorClassifier:
             description=error_message,
             mitigation_strategy=mitigation_strategy,
             timestamp=time.time(),
-            metadata=error_data.get("metadata", {})
+            metadata=self._sanitize_metadata(error_data.get("metadata", {}))
         )
         
         # Log classification
@@ -228,6 +228,17 @@ class ErrorClassifier:
         logger.info(f"Error classified: {error_id} -> {category.value} ({priority.name})")
         return error_info
     
+    @staticmethod
+    def _sanitize_metadata(data: Any) -> Any:
+        """Recursively sanitize metadata for serialization, handling Arrow objects"""
+        if hasattr(data, "to_pylist"):
+            return data.to_pylist()
+        if isinstance(data, dict):
+            return {k: ErrorClassifier._sanitize_metadata(v) for k, v in data.items()}
+        if isinstance(data, list):
+            return [ErrorClassifier._sanitize_metadata(v) for v in data]
+        return data
+
     def get_priority_errors(self, priority: PriorityLevel) -> List[ErrorInfo]:
         """
         Get all errors of a specific priority level
