@@ -2,6 +2,7 @@
 Unit tests for the Ordering Service
 """
 
+from typing import Any
 import time
 import os
 import tempfile
@@ -73,9 +74,9 @@ def test_receive_valid_event():
 
 
 
-def test_block_creation(benchmark):
+def test_block_creation(benchmark: Any) -> None:
     """Test block creation when batch size is reached"""
-    def execute():
+    def execute() -> tuple[OrderingService, dict[str, Any]]:
         config = {"block_size": 3, "batch_timeout": 0.1}
         service = OrderingService(nodes=[node], config=config)
 
@@ -96,7 +97,7 @@ def test_block_creation(benchmark):
         # Should have created a block and added to commit queue
         block = service.get_next_block()
         assert block is not None
-        assert block["event_count"] == 3
+        assert len(block.events) == 3
         return service, block
 
     benchmark(execute)
@@ -114,6 +115,7 @@ def test_invalid_event_handling():
     time.sleep(0.1)
 
     status = service.get_event_status(event_id)
+    assert status is not None
     assert status["status"] == "rejected"
 
 
@@ -136,7 +138,7 @@ def test_timeout_block_creation():
     service._check_timeout_block_creation()
     block = service.get_next_block()
     assert block is not None
-    assert block["event_count"] == 1
+    assert len(block.events) == 1
 
 
 def test_service_status():
@@ -169,12 +171,13 @@ def test_custom_validation_rule():
     # Wait for processing
     time.sleep(0.1)
     status = service.get_event_status(event_id)
+    assert status is not None
     assert status["status"] == "rejected"
 
 
-def test_concurrent_event_processing(benchmark):
+def test_concurrent_event_processing(benchmark: Any) -> None:
     """Test concurrent event processing"""
-    def execute():
+    def execute() -> tuple[OrderingService, int]:
         service = OrderingService(nodes=[node], config={"worker_threads": 4})
 
         # Submit multiple events concurrently
@@ -292,6 +295,7 @@ def test_system_error_handling():
 
     # Check that faulty event was rejected
     faulty_status = service.get_event_status(faulty_event_id)
+    assert faulty_status is not None
     assert faulty_status["status"] == "rejected"
 
 
@@ -355,6 +359,7 @@ def test_malformed_event_data():
     event_id = service.receive_event("not a dict!!!", "test-channel", "test-org")
     time.sleep(0.1)
     status = service.get_event_status(event_id)
+    assert status is not None
     assert status["status"] == "rejected"
 
     # Test with wrong timestamp type
@@ -366,6 +371,7 @@ def test_malformed_event_data():
     event_id = service.receive_event(invalid_event, "test-channel", "test-org")
     time.sleep(0.1)
     status = service.get_event_status(event_id)
+    assert status is not None
     assert status["status"] == "rejected"
 
     # Test with future timestamp
@@ -377,6 +383,7 @@ def test_malformed_event_data():
     event_id = service.receive_event(future_event, "test-channel", "test-org")
     time.sleep(0.1)
     status = service.get_event_status(event_id)
+    assert status is not None
     assert status["status"] == "rejected"
 
 
@@ -633,7 +640,7 @@ def test_complex_event_data():
 
 def test_error_classification_with_complex_data():
     """Test error classification with complex data structures"""
-    config = {}
+    config: dict[str, Any] = {}
     classifier = ErrorClassifier(config)
 
     # Test with binary error data
@@ -808,7 +815,7 @@ def test_binary_data_handling():
     # Check that we can retrieve the event
     block = service.get_next_block()
     if block:
-        assert block["event_count"] >= 1
+        assert len(block.events) >= 1
 
 
 def test_large_payload_handling():
@@ -851,9 +858,10 @@ def test_very_small_block_size():
     # With block_size=1, should have created a block immediately
     block = service.get_next_block()
     assert block is not None
-    assert block["event_count"] == 1
+    assert len(block.events) == 1
 
     status = service.get_event_status(event_id)
+    assert status is not None
     assert status["status"] == "certified"
 
 
@@ -878,6 +886,7 @@ def test_very_large_block_size():
     # With such a large block size, events should be certified but no block created yet
     for event_id in event_ids:
         status = service.get_event_status(event_id)
+        assert status is not None
         assert status["status"] == "certified"
 
     # Should not have created a block yet (only 5 events, block_size=10000)
