@@ -15,6 +15,10 @@ from typing import Dict, Any, List, Optional, Callable
 from dataclasses import dataclass
 from enum import Enum
 import concurrent.futures
+import pyarrow as pa
+
+from hierachain.core.block import Block
+from hierachain.core import schemas
 
 
 class OrderingStatus(Enum):
@@ -130,8 +134,12 @@ class EventCertifier:
         return certification
     
     @staticmethod
-    def _validate_structure(event_data: Dict[str, Any]) -> bool:
+    def _validate_structure(event_data: Any) -> bool:
         """Validate basic event structure"""
+        # Support for Arrow objects
+        if isinstance(event_data, (pa.Table, pa.RecordBatch)):
+             return event_data.schema.equals(schemas.get_event_schema())
+
         if not isinstance(event_data, dict):
             return False
             
@@ -163,8 +171,8 @@ class BlockBuilder:
         self.batch_timeout = config.get("batch_timeout", 2.0)  # seconds
         self.current_batch: List[PendingEvent] = []
         self.batch_start_time = time.time()
-        
-    def add_event(self, event: PendingEvent) -> Optional[Dict[str, Any]]:
+
+    def add_event(self, event: PendingEvent) -> Optional[Block]:
         """
         Add event to current batch.
         
@@ -181,8 +189,8 @@ class BlockBuilder:
             return self._create_block()
         
         return None
-    
-    def force_create_block(self) -> Optional[Dict[str, Any]]:
+
+    def force_create_block(self) -> Optional[Block]:
         """Force creation of block from current batch"""
         if not self.current_batch:
             return None
@@ -200,41 +208,59 @@ class BlockBuilder:
             return True
             
         return False
-    
-    def _create_block(self) -> Optional[Dict[str, Any]]:
+
+    def _create_block(self) -> Optional[Block]:
         """Create block from current batch"""
         if not self.current_batch:
             return None
-            
-        # Convert events to block format
-        block_events: List[Dict[str, Any]] = []
-        for pending_event in self.current_batch:
-            block_events.append({
-                **pending_event.event_data,
-                "ordering_metadata": {
-                    "event_id": pending_event.event_id,
-                    "ordered_at": time.time(),
-                    "channel_id": pending_event.channel_id,
-                    "submitter_org": pending_event.submitter_org
-                }
-            })
-        
-        # Create block
-        block: Dict[str, Any] = {
-            "events": block_events,
-            "event_count": len(block_events),
-            "created_at": time.time(),
-            "batch_info": {
-                "batch_start": self.batch_start_time,
-                "batch_duration": time.time() - self.batch_start_time,
-                "events_processed": len(self.current_batch)
-            }
+
+        # Extract event data for batch creation
+        # Ensure we match EVENT_SCHEMA: entity_id, event, timestamp, details
+        arrow_data: Dict[str, List[Any]] = {
+            'entity_id': [],
+            'event': [],
+            'timestamp': [],
+            'details': []
         }
-        
-        # Calculate block hash
-        block_data = json.dumps(block_events, sort_keys=True, separators=(',', ':'))
-        block["hash"] = hashlib.sha256(block_data.encode()).hexdigest()
-        
+
+        # Track metadata for creating events
+        event_metadata = []
+
+        for pending in self.current_batch:
+            evt = pending.event_data
+            arrow_data['entity_id'].append(evt.get('entity_id', ''))
+            arrow_data['event'].append(evt.get('event', ''))
+            arrow_data['timestamp'].append(float(evt.get('timestamp', time.time())))
+
+            # handle details
+            details = evt.get('details', '{}')
+            if isinstance(details, dict):
+                details = json.dumps(details, sort_keys=True)
+            arrow_data['details'].append(str(details))
+
+            event_metadata.append({
+                "event_id": pending.event_id,
+                "ordered_at": time.time(),
+                "channel_id": pending.channel_id,
+                "submitter_org": pending.submitter_org
+            })
+
+        # Create Arrow Table efficiently
+        try:
+            table = pa.Table.from_pydict(arrow_data, schema=schemas.get_event_schema())
+        except Exception as e:
+            # Fallback or error logging
+            print(f"Failed to create Arrow table: {e}")
+            return None
+
+        # Create block using core.Block
+        block = Block(
+            index=0, # Will be set by OrderingService
+            events=table,
+            previous_hash="0", # Will be set by OrderingService
+            timestamp=time.time()
+        )
+
         # Reset batch
         self.current_batch.clear()
         self.batch_start_time = time.time()
@@ -296,9 +322,13 @@ class OrderingService:
         
         # Start processing
         self.start()
-    
-    def receive_event(self, event_data: Dict[str, Any], channel_id: str, 
-                     submitter_org: str) -> str:
+
+    def receive_event(
+        self,
+        event_data: Dict[str, Any],
+        channel_id: str,
+        submitter_org: str
+    ) -> str:
         """
         Receive event from client or application channel.
         
@@ -365,8 +395,8 @@ class OrderingService:
             }
         
         return None
-    
-    def get_next_block(self) -> Optional[Dict[str, Any]]:
+
+    def get_next_block(self) -> Optional[Block]:
         """
         Get next completed block from the commit queue.
         
@@ -388,7 +418,10 @@ class OrderingService:
             "nodes": {
                 "total": len(self.nodes),
                 "healthy": len(healthy_nodes),
-                "leader": next((n.node_id for n in self.nodes.values() if n.is_leader), None)
+                "leader": next(
+                    (n.node_id for n in self.nodes.values() if n.is_leader),
+                    None
+                )
             },
             "queues": {
                 "pending_events": self.event_pool.qsize(),
@@ -484,25 +517,27 @@ class OrderingService:
         block = self.block_builder.force_create_block()
         if block:
             self._commit_block(block)
-    
-    def _commit_block(self, block: Dict[str, Any]) -> None:
+
+    def _commit_block(self, block: Block) -> None:
         """Commit a completed block to the commit queue"""
-        # Add block metadata
-        block["block_number"] = self.blocks_created
-        block["ordering_service_id"] = list(self.nodes.keys())[0]  # Use first node ID
-        block["committed_at"] = time.time()
-        
+        # Add block metadata - Update Block object attributes
+        block.index = self.blocks_created
+        block.calculate_hash()
+
         # Put in commit queue
         self.commit_queue.put(block)
         
         # Update statistics
         self.blocks_created += 1
         self.statistics["blocks_created"] = self.blocks_created
-        self.statistics["average_batch_size"] = (
-            (self.statistics["average_batch_size"] * (self.blocks_created - 1) + 
-             block["event_count"]) / self.blocks_created
-        )
-    
+
+        # Update average batch size
+        event_count = len(block.events)
+
+        prev_avg = self.statistics["average_batch_size"]
+        total_events = prev_avg * (self.blocks_created - 1) + event_count
+        self.statistics["average_batch_size"] = total_events / self.blocks_created
+
     @staticmethod
     def _generate_event_id(event_data: Dict[str, Any], channel_id: str) -> str:
         """Generate unique event ID"""
