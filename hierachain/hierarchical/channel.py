@@ -7,11 +7,14 @@ completely isolated data space with its own governance policies and access contr
 """
 
 import time
-import hashlib
 import json
+import pyarrow as pa
 from typing import Dict, Any, List, Optional, Set, TYPE_CHECKING
 from dataclasses import dataclass
 from enum import Enum
+
+from hierachain.core.block import Block
+from hierachain.core import schemas
 
 if TYPE_CHECKING:
     from hierachain.hierarchical.private_data import PrivateCollection
@@ -100,8 +103,8 @@ class ChannelLedger:
     """Channel-specific ledger for storing channel events"""
     
     def __init__(self):
-        self.blocks = []
-        self.current_block_events = []
+        self.blocks: List[Block] = []
+        self.current_block_events: List[Dict[str, Any]] = []
         self.height = 0
         self.last_block_hash = "0"
         
@@ -111,22 +114,41 @@ class ChannelLedger:
         event["channel_event"] = True
         self.current_block_events.append(event)
     
-    def finalize_block(self) -> Dict[str, Any] | None:
+    def finalize_block(self) -> Optional[Block]:
         """Finalize current block and add to ledger"""
         if not self.current_block_events:
             return None
-            
-        block = {
-            "height": self.height,
-            "events": self.current_block_events.copy(),
+
+        # Prepare arrays for Arrow Table
+        schema_names = schemas.get_event_schema().names
+        arrays = {name: [] for name in schema_names}
+
+        for event in self.current_block_events:
+            for name in schema_names:
+                val = event.get(name)
+                # Handle details field which might be dict
+                if name == "details" and isinstance(val, dict):
+                    val = json.dumps(val)
+                elif name == "details" and val is None:
+                    val = "{}"
+                arrays[name].append(val)
+
+        table = pa.Table.from_pydict(arrays, schema=schemas.get_event_schema())
+
+        # Create Block
+        header = {
+            "index": self.height,
             "timestamp": time.time(),
             "previous_hash": self.last_block_hash,
-            "hash": self._calculate_block_hash(self.current_block_events)
+            "validator": "channel_authority" # Placeholder
         }
-        
+
+        block = Block(header=header, events=table)
+        block.calculate_hash() # Ensure hash is computed
+
         self.blocks.append(block)
         self.height += 1
-        self.last_block_hash = block["hash"]
+        self.last_block_hash = block.hash
         self.current_block_events.clear()
         
         return block
@@ -135,14 +157,17 @@ class ChannelLedger:
         """Get events matching filter criteria"""
         events = []
         for block in self.blocks:
-            events.extend([event for event in block["events"] if filter_func(event)])
+            # Handle Arrow-backed blocks
+            block_events = []
+            if hasattr(block, "to_list_of_dicts"):
+                block_events = block.to_list_of_dicts()
+            elif hasattr(block.events, "to_pylist"):
+                block_events = block.events.to_pylist()
+            else:
+                block_events = list(block.events)
+                
+            events.extend([event for event in block_events if filter_func(event)])
         return events
-    
-    @staticmethod
-    def _calculate_block_hash(events: List[Dict[str, Any]]) -> str:
-        """Calculate hash for block"""
-        block_data = json.dumps(events, sort_keys=True, separators=(',', ':'))
-        return hashlib.sha256(block_data.encode()).hexdigest()
 
 
 class Channel:
@@ -153,8 +178,7 @@ class Channel:
     access controls, and private data collections for secure enterprise collaboration.
     """
     
-    def __init__(self, channel_id: str, organizations: List[Organization], 
-                 policy_config: Dict[str, Any]):
+    def __init__(self, channel_id: str, organizations: List[Organization], policy_config: Dict[str, Any]):
         """
         Initialize a new channel.
         
@@ -384,7 +408,7 @@ class Channel:
         limit = query_params.get("limit", len(events))
         return events[:limit]
     
-    def finalize_block(self) -> Optional[Dict[str, Any]]:
+    def finalize_block(self) -> Optional[Any]:
         """Finalize current block in the channel ledger"""
         return self.ledger.finalize_block()
     
