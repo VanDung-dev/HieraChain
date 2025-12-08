@@ -109,15 +109,35 @@ class PolicyCondition:
     
     @staticmethod
     def _get_attribute_value(context: Dict[str, Any], attribute_path: str) -> Any:
-        """Get attribute value from context using dot notation"""
+        """Get attribute value from context using dot notation, supporting Dict and Arrow objects"""
         current = context
         
         for part in attribute_path.split('.'):
-            if isinstance(current, dict) and part in current:
-                current = current[part]
+            # Case 1: Standard Dictionary
+            if isinstance(current, dict):
+                if part in current:
+                    current = current[part]
+                else:
+                    return None
+
+            # Case 2: PyArrow Objects (Table, RecordBatch, StructScalar, etc.)
+            elif hasattr(current, "__getitem__"):
+                try:
+                    # Try accessing by key/column name
+                    # specific check to avoid index errors on lists/tuples if part is not int
+                    if isinstance(current, (list, tuple)) and not part.isdigit():
+                        return None
+
+                    current = current[part]
+                except (KeyError, IndexError, TypeError):
+                    return None
             else:
                 return None
-                
+        
+        # Convert Arrow scalars to Python objects for comparison
+        if hasattr(current, "as_py"):
+            return current.as_py()
+
         return current
     
     def to_dict(self) -> Dict[str, Any]:
@@ -320,7 +340,13 @@ class Policy:
     def _hash_context(context: Dict[str, Any]) -> str:
         """Generate hash of context for caching"""
         import hashlib
-        context_str = json.dumps(context, sort_keys=True, separators=(',', ':'))
+        
+        def _default_serializer(obj):
+            if hasattr(obj, "schema") or hasattr(obj, "to_pylist"):
+                return str(obj)
+            return str(obj)
+            
+        context_str = json.dumps(context, sort_keys=True, separators=(',', ':'), default=_default_serializer)
         return hashlib.md5(context_str.encode()).hexdigest()[:8]
     
     def to_dict(self) -> Dict[str, Any]:
@@ -608,7 +634,13 @@ class PolicyEngine:
     def _hash_context(context: Dict[str, Any]) -> str:
         """Generate hash of context"""
         import hashlib
-        context_str = json.dumps(context, sort_keys=True, separators=(',', ':'))
+        
+        def _default_serializer(obj):
+            if hasattr(obj, "schema") or hasattr(obj, "to_pylist"):
+                return str(obj)
+            return str(obj)
+
+        context_str = json.dumps(context, sort_keys=True, separators=(',', ':'), default=_default_serializer)
         return hashlib.md5(context_str.encode()).hexdigest()[:8]
     
     @staticmethod
