@@ -447,23 +447,23 @@ class APIValidator:
             elif pa.types.is_map(type_):
                 try:
                     if hasattr(data, "keys") and hasattr(data, "items"):
-                         self._validate_arrow_recursive(data.keys, f"{field_name}.keys")
-                         self._validate_arrow_recursive(data.items, f"{field_name}.values")
+                        self._validate_arrow_recursive(data.keys, f"{field_name}.keys")
+                        self._validate_arrow_recursive(data.items, f"{field_name}.values")
                     else:
-                         # Fallback cast
-                         struct_type = pa.struct([
-                             pa.field("key", type_.key_type, nullable=False),
-                             pa.field("value", type_.item_type, nullable=True) # Value nullable
-                         ])
-                         list_type = pa.list_(struct_type)
-                         as_list = data.cast(list_type)
-                         flattened = as_list.flatten()
-                         self._validate_arrow_recursive(flattened, f"{field_name}.entry")
+                        # Fallback cast
+                        struct_type = pa.struct([
+                            pa.field("key", type_.key_type, nullable=False),
+                            pa.field("value", type_.item_type, nullable=True) # Value nullable
+                        ])
+                        list_type = pa.list_(struct_type)
+                        as_list = data.cast(list_type)
+                        flattened = as_list.flatten()
+                        self._validate_arrow_recursive(flattened, f"{field_name}.entry")
                 except ValidationError:
-                     raise
+                    raise
                 except Exception:
-                     pylist = data.to_pylist()
-                     pass
+                    pylist = data.to_pylist()
+                    pass
                 
             # List types: Flatten and recurse
             elif pa.types.is_list(type_) or pa.types.is_large_list(type_):
