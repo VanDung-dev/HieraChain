@@ -76,7 +76,9 @@ markers = [
     "medium: Medium risk validation tests",
     "low: Low risk validation tests",
     "integration: Integration tests",
+    "recovery: Recovery testing",
 ]
+filterwarnings = ["ignore::pytest.PytestAssertRewriteWarning"]
 
 [tool.black]
 line-length = 88
