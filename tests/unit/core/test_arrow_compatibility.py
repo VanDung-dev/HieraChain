@@ -37,7 +37,7 @@ def test_arrow_conversion():
     
     # Verify schema
     schema = block.events.schema
-    assert schema.field('details').type == pa.string()
+    assert schema.field('details').type == pa.map_(pa.string(), pa.string())
     
     # Verify data integrity via to_dict (which converts back)
     block_dict = block.to_dict()
@@ -45,12 +45,12 @@ def test_arrow_conversion():
     
     assert len(events_out) == 3
     assert events_out[0]['details'] == {'key': 'value1'}
-    assert events_out[1]['details'] == {'nums': [1, 2, 3]}
+    assert events_out[1]['details'] == {'nums': str([1, 2, 3])}
     # Details None might come back as None or empty dict depending on impl, let's check
     # In current impl, if details is None, we store None/null in Arrow.
     # JSON string for None is 'null' or actual null in Arrow.
     # _convert_events_to_arrow handles this.
-    assert events_out[2].get('details') is None
+    assert events_out[2].get('details') == {}
 
 # Test adding events to a block
 def test_add_event():
@@ -68,7 +68,7 @@ def test_add_event():
     assert isinstance(block.events, pa.Table)
     
     out = block.to_dict()['events'][0]
-    assert out['details'] == {'a': 1}
+    assert out['details'] == {'a': '1'}
 
 # Test filtering events by entity or type
 def test_filtering():

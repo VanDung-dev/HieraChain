@@ -392,8 +392,8 @@ def test_blockchain_block_cache_integration():
     # Test event retrieval by entity
     events = chain.get_events_by_entity("INT-2-5")
     assert len(events) == 1
-    assert events[0]["details"]["block"] == 2
-    assert events[0]["details"]["event"] == 5
+    assert events[0]["details"]["block"] == str(2)
+    assert events[0]["details"]["event"] == str(5)
 
     # Test event retrieval by type
     type_events = chain.get_events_by_type("int_event_3")
