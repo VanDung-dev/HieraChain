@@ -7,8 +7,8 @@ completely isolated data space with its own governance policies and access contr
 """
 
 import time
-import json
 import pyarrow as pa
+import pyarrow.compute as pc
 from typing import Dict, Any, List, Optional, Set, TYPE_CHECKING
 from dataclasses import dataclass
 from enum import Enum
@@ -127,23 +127,23 @@ class ChannelLedger:
             for name in schema_names:
                 val = event.get(name)
                 # Handle details field which might be dict
-                if name == "details" and isinstance(val, dict):
-                    val = json.dumps(val)
-                elif name == "details" and val is None:
-                    val = "{}"
+                if name == "details":
+                    if isinstance(val, dict):
+                         # Convert values to strings for Map<String, String> schema
+                        val = {str(k): str(v) for k, v in val.items()}
+                    elif val is None:
+                        val = {}
                 arrays[name].append(val)
 
         table = pa.Table.from_pydict(arrays, schema=schemas.get_event_schema())
 
         # Create Block
-        header = {
-            "index": self.height,
-            "timestamp": time.time(),
-            "previous_hash": self.last_block_hash,
-            "validator": "channel_authority" # Placeholder
-        }
-
-        block = Block(header=header, events=table)
+        block = Block(
+            index=self.height,
+            events=table,
+            timestamp=time.time(),
+            previous_hash=self.last_block_hash
+        )
         block.calculate_hash() # Ensure hash is computed
 
         self.blocks.append(block)
@@ -153,18 +153,33 @@ class ChannelLedger:
         
         return block
     
-    def get_events_by_filter(self, filter_func) -> List[Dict[str, Any]]:
-        """Get events matching filter criteria"""
+    def get_events_by_filter(self, filter_func, filter_expr: Optional[Any] = None) -> List[Dict[str, Any]]:
+        """
+        Get events matching filter criteria.
+        
+        Args:
+            filter_func: Fallback python filter function
+            filter_expr: PyArrow compute expression for zero-copy filtering
+        """
         events = []
         for block in self.blocks:
-            # Handle Arrow-backed blocks
+            # Use Arrow Compute Filter if expression is provided
+            if filter_expr is not None:
+                try:
+                    arrow_table = block.events
+                    filtered_table = arrow_table.filter(filter_expr)
+                    filtered_events = Block._table_to_list_of_dicts(filtered_table)
+                    events.extend([e for e in filtered_events if filter_func(e)])
+                    continue
+                except Exception as e:
+                    pass
+            
+            # LEGACY / FALLBACK PATH
             block_events = []
-            if hasattr(block, "to_list_of_dicts"):
-                block_events = block.to_list_of_dicts()
-            elif hasattr(block.events, "to_pylist"):
-                block_events = block.events.to_pylist()
+            if hasattr(block, "to_event_list"):
+                block_events = block.to_event_list()
             else:
-                block_events = list(block.events)
+                block_events = Block._table_to_list_of_dicts(block.events)
                 
             events.extend([event for event in block_events if filter_func(event)])
         return events
@@ -380,29 +395,65 @@ class Channel:
         if not self.policy.evaluate_read_access(requester_org):
             return None
         
-        # Build filter function from query parameters
-        def event_filter(event):
-            # Apply filters based on query parameters
+        # Build Arrow Compute Expression for high-performance filtering
+        filter_expr = None
+        
+        try:
+            filters = []
             if "event_type" in query_params:
-                if event.get("event") != query_params["event_type"]:
-                    return False
+                filters.append(pc.field("event") == query_params["event_type"])
             
             if "entity_id" in query_params:
-                if event.get("entity_id") != query_params["entity_id"]:
-                    return False
+                filters.append(pc.field("entity_id") == query_params["entity_id"])
             
             if "start_time" in query_params:
-                if event.get("timestamp", 0) < query_params["start_time"]:
-                    return False
-                    
+                filters.append(pc.field("timestamp") >= query_params["start_time"])
+                
             if "end_time" in query_params:
-                if event.get("timestamp", 0) > query_params["end_time"]:
-                    return False
+                filters.append(pc.field("timestamp") <= query_params["end_time"])
+
+            if filters:
+                filter_expr = filters[0]
+                for f in filters[1:]:
+                    filter_expr = filter_expr & f
+                    
+        except Exception:
+            filter_expr = None
+
+        # Python Filter (Fallback for complex logic like Map lookups if Arrow fails)
+        def event_filter(event):
+            for key, value in query_params.items():
+                if key == "event_type":
+                    if event.get("event") != value: return False
+                elif key == "entity_id":
+                    if event.get("entity_id") != value: return False
+                elif key == "start_time":
+                    if event.get("timestamp", 0) < value: return False
+                elif key == "end_time":
+                    if event.get("timestamp", 0) > value: return False
+                elif key == "limit":
+                    continue
+
+                elif key.startswith("details."):
+                    detail_key = key.split(".", 1)[1]
+                    details = event.get("details", {})
+                    
+                    actual_val = details.get(detail_key)
+                    
+                    if isinstance(value, dict):
+                        # Operator definitions
+                        if "gt" in value and not (float(actual_val) > value["gt"] if actual_val is not None else False): return False
+                        if "lt" in value and not (float(actual_val) < value["lt"] if actual_val is not None else False): return False
+                        if "gte" in value and not (float(actual_val) >= value["gte"] if actual_val is not None else False): return False
+                        if "lte" in value and not (float(actual_val) <= value["lte"] if actual_val is not None else False): return False
+                    else:
+                        # Exact match
+                        if actual_val != str(value): return False
             
             return True
         
         # Get matching events
-        events = self.ledger.get_events_by_filter(event_filter)
+        events = self.ledger.get_events_by_filter(event_filter, filter_expr=filter_expr)
         
         # Apply limit if specified
         limit = query_params.get("limit", len(events))
