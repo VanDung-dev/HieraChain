@@ -103,20 +103,20 @@ from hierachain.core.blockchain import Blockchain
 - To run static code analysis:
 
     ```bash
-    python -m hierachain.testing.static_analysis
+    python -m testing.static_analysis
     ```
 
 - To run static code analysis with text output:
 
     ```bash
-    python -m hierachain.testing.static_analysis --format text
+    python -m testing.static_analysis --format text
     ```
 
 - To run static code analysis and save results to a file:
 
     ```bash
-    python -m hierachain.testing.static_analysis --output analysis_report.json
-    python -m hierachain.testing.static_analysis --format text --output analysis_report.txt
+    python -m testing.static_analysis --output analysis_report.json
+    python -m testing.static_analysis --format text --output analysis_report.txt
     ```
 
 ---
