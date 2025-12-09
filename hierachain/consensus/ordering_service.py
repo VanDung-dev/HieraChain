@@ -233,10 +233,13 @@ class BlockBuilder:
             arrow_data['timestamp'].append(float(evt.get('timestamp', time.time())))
 
             # handle details
-            details = evt.get('details', '{}')
+            details = evt.get('details', {})
             if isinstance(details, dict):
-                details = json.dumps(details, sort_keys=True)
-            arrow_data['details'].append(str(details))
+                # Convert to list of tuples for PyArrow Map
+                map_val = [(k, str(v)) for k, v in details.items()]
+                arrow_data['details'].append(map_val)
+            else:
+                arrow_data['details'].append([])
 
             event_metadata.append({
                 "event_id": pending.event_id,
