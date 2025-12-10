@@ -61,7 +61,7 @@ def test_world_state_update():
     # Verify state was actually updated
     state = ws.get_entity_state("test_entity_1")
     assert state is not None
-    assert state.get("status") == "active"  # from creation event
+    assert state.get("status") == "updated"
     # Note: update event handling depends on WorldState logic, checking simple existence first
 
 def test_json_serialization():
