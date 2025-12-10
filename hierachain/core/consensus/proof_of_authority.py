@@ -127,11 +127,7 @@ class ProofOfAuthority(BaseConsensus):
         time_diff = block.timestamp - previous_block.timestamp
         if time_diff < self.config["block_interval"] / 2:  # Allow some flexibility
             return False
-        
-        # Validate all events in the block
-        # Handle Arrow Table events gracefully
-        # Validate all events in the block
-        # Handle Arrow Table events gracefully
+
         events = block.to_event_list()
         for event in events:
             if not self.validate_event_for_consensus(event):
@@ -172,7 +168,17 @@ class ProofOfAuthority(BaseConsensus):
             }
             
             # Add consensus event to the block
-            block.add_event(consensus_event)
+            current_events = block.to_event_list()
+            current_events.append(consensus_event)
+            
+            # Create new block preserving other properties
+            block = Block(
+                index=block.index,
+                events=current_events,
+                previous_hash=block.previous_hash,
+                timestamp=block.timestamp,
+                nonce=block.nonce
+            )
         
         return block
     
