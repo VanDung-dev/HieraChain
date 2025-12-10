@@ -15,8 +15,6 @@ sys.path.append(os.getcwd())
 import pyarrow as pa
 from hierachain.core.block import Block
 
-# Test case for Arrow compatibility of Block class
-# This test verifies that Block can properly convert events to and from Arrow tables
 def test_arrow_conversion():
     """
     Test Arrow conversion functionality
@@ -46,31 +44,25 @@ def test_arrow_conversion():
     assert len(events_out) == 3
     assert events_out[0]['details'] == {'key': 'value1'}
     assert events_out[1]['details'] == {'nums': str([1, 2, 3])}
-    # Details None might come back as None or empty dict depending on impl, let's check
-    # In current impl, if details is None, we store None/null in Arrow.
-    # JSON string for None is 'null' or actual null in Arrow.
-    # _convert_events_to_arrow handles this.
     assert events_out[2].get('details') == {}
 
-# Test adding events to a block
-def test_add_event():
+def test_immutability():
     """
-    Test adding events to a block
-    Verifies that events can be added to an existing block and are properly stored
+    Test block immutability
+    Verifies that blocks are immutable and do not support adding events after creation
     """
     block = Block(1, [], timestamp=100.0)
     assert len(block.events) == 0
     
     new_event = {'entity_id': 'e1', 'event': 't1', 'timestamp': 1.0, 'details': {'a': 1}}
-    block.add_event(new_event)
     
-    assert len(block.events) == 1
-    assert isinstance(block.events, pa.Table)
-    
-    out = block.to_dict()['events'][0]
-    assert out['details'] == {'a': '1'}
+    # Verify that add_event is no longer supported
+    try:
+        block.add_event(new_event)
+        assert False, "Block should be immutable, add_event should not exist"
+    except AttributeError:
+        pass  # Expected behavior
 
-# Test filtering events by entity or type
 def test_filtering():
     """
     Test event filtering functionality
@@ -92,7 +84,6 @@ def test_filtering():
     t1_events = block.get_events_by_type('type1')
     assert len(t1_events) == 2
 
-# Performance benchmark test
 def test_performance_bench():
     """
     Performance benchmark test
