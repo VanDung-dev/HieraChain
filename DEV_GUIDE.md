@@ -85,7 +85,8 @@ from hierachain.core.blockchain import Blockchain
 - To run only benchmark tests:
 
     ```bash
-    python -m pytest tests --benchmark-only -v
+    python -m pytest tests --benchmark-only -v --benchmark-save=benchmark_report
+    python -m pytest tests --benchmark-only -v --benchmark-histogram=benchmark_report
     ```
 
 - To run all tests:
