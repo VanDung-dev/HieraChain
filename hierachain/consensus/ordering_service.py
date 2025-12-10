@@ -215,51 +215,12 @@ class BlockBuilder:
             return None
 
         # Extract event data for batch creation
-        # Ensure we match EVENT_SCHEMA: entity_id, event, timestamp, details
-        arrow_data: Dict[str, List[Any]] = {
-            'entity_id': [],
-            'event': [],
-            'timestamp': [],
-            'details': []
-        }
-
-        # Track metadata for creating events
-        event_metadata = []
-
-        for pending in self.current_batch:
-            evt = pending.event_data
-            arrow_data['entity_id'].append(evt.get('entity_id', ''))
-            arrow_data['event'].append(evt.get('event', ''))
-            arrow_data['timestamp'].append(float(evt.get('timestamp', time.time())))
-
-            # handle details
-            details = evt.get('details', {})
-            if isinstance(details, dict):
-                # Convert to list of tuples for PyArrow Map
-                map_val = [(k, str(v)) for k, v in details.items()]
-                arrow_data['details'].append(map_val)
-            else:
-                arrow_data['details'].append([])
-
-            event_metadata.append({
-                "event_id": pending.event_id,
-                "ordered_at": time.time(),
-                "channel_id": pending.channel_id,
-                "submitter_org": pending.submitter_org
-            })
-
-        # Create Arrow Table efficiently
-        try:
-            table = pa.Table.from_pydict(arrow_data, schema=schemas.get_event_schema())
-        except Exception as e:
-            # Fallback or error logging
-            print(f"Failed to create Arrow table: {e}")
-            return None
+        events_list = [pending.event_data for pending in self.current_batch]
 
         # Create block using core.Block
         block = Block(
             index=0, # Will be set by OrderingService
-            events=table,
+            events=events_list,
             previous_hash="0", # Will be set by OrderingService
             timestamp=time.time()
         )
