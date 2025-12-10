@@ -45,16 +45,20 @@ class Block:
         self.previous_hash = previous_hash
         self.nonce = nonce
         
-        # Initialize Arrow Table
+        # Handle events based on input type
         if isinstance(events, pa.Table):
             self._events = events
+            if merkle_root is None:
+                events_list = self._table_to_list_of_dicts(self._events)
+                self.merkle_root = self.calculate_merkle_from_list(events_list)
+            else:
+                self.merkle_root = merkle_root
         else:
-            self._events = self._convert_events_to_arrow(events)
+            # 1. Calculate Merkle Root directly from List (avoiding Arrow conversion overhead)
+            self.merkle_root = merkle_root or self.calculate_merkle_from_list(events)
             
-        # Calculate Merkle Root if not provided
-        self.merkle_root = merkle_root
-        if self.merkle_root is None:
-            self.merkle_root = self.calculate_merkle_root()
+            # 2. Convert to Arrow Table ONCE for efficient storage
+            self._events = self._convert_events_to_arrow(events)
             
         self.hash = self.calculate_hash()
     
@@ -84,18 +88,23 @@ class Block:
         s = schemas.get_event_schema()
         return pa.Table.from_pylist(processed_events, schema=s)
 
+    @staticmethod
+    def calculate_merkle_from_list(events_list: List[Dict[str, Any]]) -> str:
+        """
+        Calculate Merkle Root from a list of event dictionaries.
+        Static method to allow calculation before Block instantiation.
+        """
+        if not events_list:
+            return MerkleTree([]).get_root()
+        tree = MerkleTree(events_list)
+        return tree.get_root()
+
     def calculate_merkle_root(self) -> str:
         """
         Calculate the Merkle Root of the block's events.
         """
-        if len(self._events) == 0:
-            return MerkleTree([]).get_root()
-            
-        # Convert events to list of dicts for hashing
-        # Optimization: We could hash Arrow rows directly in future
         events_list = self._table_to_list_of_dicts(self._events)
-        tree = MerkleTree(events_list)
-        return tree.get_root()
+        return self.calculate_merkle_from_list(events_list)
 
     def calculate_hash(self) -> str:
         """
@@ -111,22 +120,6 @@ class Block:
         }
         
         return generate_hash(block_header)
-    
-    def add_event(self, event: Dict[str, Any]) -> None:
-        """
-        Add an event to the block and recalculate hash.
-        Performance warning: Creates new Arrow Table.
-        """
-        # Create a small table for the new event
-        new_table = self._convert_events_to_arrow([event])
-        if len(self._events) == 0:
-            self._events = new_table
-        else:
-            self._events = pa.concat_tables([self._events, new_table])
-            
-        # Update Merkle Root and Block Hash
-        self.merkle_root = self.calculate_merkle_root()
-        self.hash = self.calculate_hash()
     
     def get_events_by_entity(self, entity_id: str) -> List[Dict[str, Any]]:
         """
