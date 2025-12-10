@@ -450,13 +450,18 @@ def test_security_and_fault_tolerance():
     block = poa.finalize_block(block, "primary_auth")
 
     # Tamper with block data after finalization
-    _original_hash = block.hash
-    block.add_event({
+    tampered_events = block.to_event_list()
+    tampered_events.append({
         "entity_id": "TAMPER-001",
         "event": "unauthorized_addition",
         "timestamp": time.time()
     })
-    block.hash = block.calculate_hash()  # Recalculate hash after tampering
+    block = Block(
+        index=block.index,
+        events=tampered_events,
+        previous_hash=block.previous_hash,
+        timestamp=block.timestamp
+    )
 
     # Create a genesis block for comparison
     genesis_block = Block(
