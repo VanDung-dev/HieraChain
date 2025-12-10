@@ -8,6 +8,7 @@ This module implements the Block class following the framework guidelines:
 """
 
 import time
+import json
 from typing import List, Dict, Any, Optional, Union
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -82,7 +83,11 @@ class Block:
             if isinstance(details, dict):
                 ev['details'] = [(k, str(v)) for k, v in details.items()]
             elif details is None:
-                ev['details'] = {}
+                ev['details'] = []
+
+            # Populate 'data' field (Full Payload - Binary JSON)
+            ev['data'] = json.dumps(e).encode('utf-8')
+
             processed_events.append(ev)
             
         s = schemas.get_event_schema()
@@ -145,13 +150,30 @@ class Block:
     def _table_to_list_of_dicts(table: pa.Table) -> List[Dict[str, Any]]:
         """Convert Arrow Table to list of dicts with parsed details."""
         events = []
+        has_data_col = 'data' in table.column_names
+
         for row in table.to_pylist():
+            # 1. Try to recover full object from 'data' payload
+            if has_data_col and row.get('data'):
+                try:
+                    event_data = json.loads(row['data'])
+                    events.append(event_data)
+                    continue
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            
+            # 2. Fallback: Reconstruct from flat schema
             if row.get('details'):
                 # Convert list of tuples back to dict
                 if isinstance(row['details'], list):
                     row['details'] = dict(row['details'])
             else:
                  row['details'] = {}
+            
+            # Remove 'data' field from the reconstructed dict if it exists but failed
+            if 'data' in row:
+                del row['data']
+                
             events.append(row)
         return events
 
