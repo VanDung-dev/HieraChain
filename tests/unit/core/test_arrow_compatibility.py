@@ -44,7 +44,7 @@ def test_arrow_conversion():
     assert len(events_out) == 3
     assert events_out[0]['details'] == {'key': 'value1'}
     assert events_out[1]['details'] == {'nums': [1, 2, 3]}
-    assert events_out[2].get('details') == {}
+    assert events_out[2].get('details') is None  # None is preserved from original
 
 def test_immutability():
     """
