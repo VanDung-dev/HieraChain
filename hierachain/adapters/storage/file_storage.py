@@ -128,9 +128,16 @@ class FileStorageAdapter:
             # Create a new table with updated metadata
             table_with_meta = table.replace_schema_metadata(combined_meta)
             
-            # Store block file as Parquet
+            # Store block file as Parquet with optimized compression
             block_file = self._get_block_file(chain_name, block.index)
-            pq.write_table(table_with_meta, block_file)
+            pq.write_table(
+                table_with_meta,
+                block_file,
+                compression='zstd',
+                compression_level=3,
+                use_dictionary=True,
+                write_statistics=True
+            )
 
             self._update_events_index(chain_name, block.to_dict())
             
@@ -183,7 +190,14 @@ class FileStorageAdapter:
             # Use block index to ensure unique filenames and easy ordering
             file_path = events_dir / f"events_{block_data['index']:09d}.parquet"
             
-            pq.write_table(table, file_path)
+            pq.write_table(
+                table,
+                file_path,
+                compression='zstd',
+                compression_level=3,
+                use_dictionary=True,
+                write_statistics=True
+            )
                  
         except Exception as e:
             logger.error(f"Failed to update events index: {e}")
@@ -449,3 +463,156 @@ class FileStorageAdapter:
         except Exception as e:
             logger.error(f"Failed to get storage info: {e}")
             return {}
+
+    def get_entity_events_optimized(self, entity_id: str, chain_name: str = None, columns: List[str] = None) -> List[Dict]:
+        """
+        Get events with column pruning for better performance.
+        
+        Args:
+            entity_id: Entity to query
+            chain_name: Optional chain filter
+            columns: Columns to return (None = all). 
+                     Common columns: ['entity_id', 'event_type', 'timestamp', 'block_index']
+                     
+        Returns:
+            List of event records with only requested columns
+        """
+        try:
+            events = []
+            
+            # Determine which chains to search
+            chains_to_search = []
+            if chain_name:
+                chains_to_search = [chain_name]
+            else:
+                chains_to_search = [
+                    p.name for p in self.events_path.iterdir() if p.is_dir()
+                ]
+            
+            for search_chain in chains_to_search:
+                events_dir = self._get_events_dir(search_chain)
+                
+                try:
+                    dataset = ds.dataset(events_dir, format="parquet")
+                    
+                    # Apply column pruning - only read required columns
+                    projection = columns if columns else None
+                    
+                    # Filter and project in one operation
+                    filtered_table = dataset.to_table(
+                        filter=pc.field("entity_id") == entity_id,
+                        columns=projection
+                    )
+                    
+                    # Sort by timestamp
+                    sorted_table = filtered_table.sort_by([("timestamp", "ascending")])
+                    
+                    for record in sorted_table.to_pylist():
+                        record["chain_name"] = search_chain
+                        events.append(record)
+                        
+                except Exception:
+                    continue
+            
+            # Final sort across chains
+            events.sort(key=lambda x: x.get("timestamp", 0))
+            return events
+            
+        except Exception as e:
+            logger.error(f"Failed to get optimized events for entity {entity_id}: {e}")
+            return []
+
+
+class BatchBlockWriter:
+    """
+    Optimized batch writer for multiple blocks.
+    
+    Uses buffering for better I/O performance when writing
+    multiple blocks in sequence.
+    
+    Usage:
+        with BatchBlockWriter(storage, 'my_chain', batch_size=50) as writer:
+            for block in blocks:
+                writer.add(block)
+    """
+    
+    def __init__(
+        self,
+        storage: FileStorageAdapter,
+        chain_name: str,
+        batch_size: int = 100
+    ):
+        """
+        Initialize batch writer.
+        
+        Args:
+            storage: FileStorageAdapter instance
+            chain_name: Name of chain to write to
+            batch_size: Number of blocks to buffer before flush
+        """
+        self.storage = storage
+        self.chain_name = chain_name
+        self.batch_size = batch_size
+        self._buffer: List[Block] = []
+        self._stats = {
+            "blocks_written": 0,
+            "events_written": 0,
+            "flush_count": 0,
+            "total_time_ms": 0.0
+        }
+    
+    def add(self, block: Block) -> None:
+        """
+        Add block to buffer.
+        
+        Args:
+            block: Block to add
+        """
+        self._buffer.append(block)
+        if len(self._buffer) >= self.batch_size:
+            self.flush()
+    
+    def flush(self) -> None:
+        """Write all buffered blocks to storage."""
+        if not self._buffer:
+            return
+        
+        start_time = time.time()
+        
+        for block in self._buffer:
+            self.storage.store_block(self.chain_name, block)
+            self._stats["blocks_written"] += 1
+            self._stats["events_written"] += len(block.events)
+        
+        elapsed_ms = (time.time() - start_time) * 1000
+        self._stats["flush_count"] += 1
+        self._stats["total_time_ms"] += elapsed_ms
+        
+        logger.debug(
+            f"Flushed {len(self._buffer)} blocks in {elapsed_ms:.2f}ms"
+        )
+        
+        self._buffer.clear()
+    
+    def get_stats(self) -> Dict:
+        """
+        Get write statistics.
+        
+        Returns:
+            Dictionary with blocks_written, events_written, 
+            flush_count, total_time_ms, avg_time_per_block_ms
+        """
+        stats = self._stats.copy()
+        if stats["blocks_written"] > 0:
+            stats["avg_time_per_block_ms"] = (
+                stats["total_time_ms"] / stats["blocks_written"]
+            )
+        else:
+            stats["avg_time_per_block_ms"] = 0.0
+        return stats
+    
+    def __enter__(self) -> 'BatchBlockWriter':
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.flush()
