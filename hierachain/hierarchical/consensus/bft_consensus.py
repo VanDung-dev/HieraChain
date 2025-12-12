@@ -15,6 +15,8 @@ from enum import Enum
 
 from hierachain.error_mitigation.validator import ConsensusValidator
 from hierachain.error_mitigation.error_classifier import ErrorClassifier
+from hierachain.security.security_utils import KeyPair, verify_signature
+from hierachain.network.zmq_transport import ZmqNode
 
 
 class ConsensusState(Enum):
@@ -58,6 +60,20 @@ class BFTMessage:
         }
 
 
+    def get_signable_payload(self) -> bytes:
+        """Get the payload bytes to be signed."""
+        # Include critical fields in the signature
+        digest = self.data.get("digest") if self.data else None
+        
+        # Base payload: Type:View:Seq
+        payload = f"{self.message_type.value}:{self.view}:{self.sequence_number}"
+        
+        # Add digest if relevant for the message type
+        if digest:
+            payload += f":{digest}"
+            
+        return payload.encode('utf-8')
+
 class ConsensusError(Exception):
     """Exception raised for consensus-related errors"""
     pass
@@ -66,7 +82,11 @@ class ConsensusError(Exception):
 class BFTConsensus:
     """Byzantine Fault Tolerance consensus implementation"""
     
-    def __init__(self, node_id: str, all_nodes: List[str], f: int = 1, error_config: Optional[Dict[str, Any]] = None):
+    def __init__(self, node_id: str, all_nodes: List[str], f: int = 1, 
+                 error_config: Optional[Dict[str, Any]] = None,
+                 keypair: Optional[KeyPair] = None,
+                 node_public_keys: Optional[Dict[str, str]] = None,
+                 zmq_node: Optional[ZmqNode] = None):
         """
         Initialize BFT consensus
         
@@ -75,11 +95,29 @@ class BFTConsensus:
             all_nodes: All validator nodes in the network
             f: Maximum number of Byzantine faults tolerated
             error_config: Optional error mitigation configuration
+            keypair: Ed25519 KeyPair for this node (required for signing)
+            node_public_keys: Map of node_id -> public_key_hex (required for verification)
+            zmq_node: Optional ZeroMQ node for network communication
         """
         self.node_id = node_id
         self.all_nodes = all_nodes
         self.f = f  # Max faulty nodes tolerated
         self.n = len(all_nodes)  # Total nodes
+        
+        self.keypair = keypair
+        self.node_public_keys = node_public_keys or {}
+        self.zmq_node = zmq_node
+        
+        # Network and chain references (initialize before use)
+        self.network_send_function: Optional[Callable] = None
+        self.chain: Optional[Any] = None
+        
+        if zmq_node:
+            # Verify zmq_node matches our node_id
+            if zmq_node.node_id != node_id:
+                print(f"Warning: ZmqNode ID {zmq_node.node_id} does not match Consensus ID {node_id}")
+            # Set up send function wrapper
+            self.network_send_function = self._send_via_zmq
         
         # Validate BFT requirements (n >= 3f + 1)
         if self.n < 3 * self.f + 1:
@@ -123,10 +161,6 @@ class BFTConsensus:
             MessageType.VIEW_CHANGE: lambda msg: self._handle_view_change(msg),
             MessageType.NEW_VIEW: lambda msg: self._handle_new_view(msg)
         }
-        
-        # Network and chain references
-        self.network_send_function: Optional[Callable] = None
-        self.chain: Optional[Any] = None
         
         # Shutdown flag to avoid starting timers during teardown
         self._shutting_down = False
@@ -177,19 +211,26 @@ class BFTConsensus:
                 "timestamp": time.time()
             }
             
-            # Create pre-prepare message
+            # Prepare data and digest
+            digest = self._hash_request(self.current_request)
+            data = {
+                "request": self.current_request,
+                "digest": digest
+            }
+            
+            # Create pre-prepare message (without signature first)
             pre_prepare_msg = BFTMessage(
                 message_type=MessageType.PRE_PREPARE,
                 view=self.view,
                 sequence_number=self.sequence_number,
                 sender_id=self.node_id,
                 timestamp=time.time(),
-                signature=self._sign_message(f"PRE_PREPARE:{self.view}:{self.sequence_number}"),
-                data={
-                    "request": self.current_request,
-                    "digest": self._hash_request(self.current_request)
-                }
+                signature="",
+                data=data
             )
+            
+            # Sign it
+            pre_prepare_msg.signature = self._sign_message(pre_prepare_msg.get_signable_payload())
             
             # Store and broadcast
             self.pre_prepare_messages[self.sequence_number] = pre_prepare_msg
@@ -278,11 +319,12 @@ class BFTConsensus:
                 sequence_number=message.sequence_number,
                 sender_id=self.node_id,
                 timestamp=time.time(),
-                signature=self._sign_message(f"PREPARE:{self.view}:{message.sequence_number}"),
+                signature="",
                 data={
                     "digest": message.data.get("digest")
                 }
             )
+            prepare_msg.signature = self._sign_message(prepare_msg.get_signable_payload())
             
             self._broadcast(prepare_msg)
             self.message_log.append(prepare_msg)
@@ -335,11 +377,12 @@ class BFTConsensus:
                     sequence_number=seq,
                     sender_id=self.node_id,
                     timestamp=time.time(),
-                    signature=self._sign_message(f"COMMIT:{self.view}:{seq}"),
+                    signature="",
                     data={
                         "digest": message.data.get("digest")
                     }
                 )
+                commit_msg.signature = self._sign_message(commit_msg.get_signable_payload())
                 
                 self._broadcast(commit_msg)
                 self.message_log.append(commit_msg)
@@ -431,8 +474,42 @@ class BFTConsensus:
         except Exception as e:
             print(f"Error executing operation: {e}")
 
+    def _send_via_zmq(self, target_id: str, message: Dict[str, Any]):
+        """Send message using ZeroMQ transport (sync wrapper for async)."""
+        import asyncio
+        if self.zmq_node:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If event loop is running, create task
+                    asyncio.create_task(self.zmq_node.send_direct(target_id, message))
+                else:
+                    loop.run_until_complete(self.zmq_node.send_direct(target_id, message))
+            except RuntimeError:
+                # No event loop, create one
+                asyncio.run(self.zmq_node.send_direct(target_id, message))
+        else:
+            print("Warning: No ZMQ node configured for broadcast")
+
     def _broadcast(self, message: BFTMessage):
         """Broadcast message to all other nodes with error handling"""
+        import asyncio
+        # If we have ZMQ, use its efficient broadcast
+        if self.zmq_node:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(self.zmq_node.broadcast(message.to_dict()))
+                else:
+                    loop.run_until_complete(self.zmq_node.broadcast(message.to_dict()))
+                return
+            except RuntimeError:
+                asyncio.run(self.zmq_node.broadcast(message.to_dict()))
+                return
+            except Exception as e:
+                print(f"ZMQ Broadcast error: {e}")
+                # Fallthrough to manual loop if ZMQ broadcast fails
+        
         if self.network_send_function:
             successful_sends = 0
             failed_sends = 0
@@ -517,23 +594,48 @@ class BFTConsensus:
         current_time = time.time()
         if (current_time - message.timestamp) > self.view_change_timeout:
             self._log_node_behavior(message.sender_id, "slow_message")
-            # With slow messages, we might still process if within reason
-            # but this could contribute to node reputation issues
 
         return True
 
-    def _sign_message(self, data: str) -> str:
-        """Sign message data (simplified implementation)"""
-        # In a real implementation, this would use proper cryptographic signing
-        combined = f"{self.node_id}:{data}:{time.time()}"
-        return hashlib.sha256(combined.encode()).hexdigest()
+    def _sign_message(self, data: bytes) -> str:
+        """
+        Sign message data using Ed25519.
+        
+        Args:
+            data: Bytes to sign
+            
+        Returns:
+            Hex encoded signature
+        """
+        if not self.keypair:
+            # Fallback for testing without keys (unsafe for prod)
+            combined = f"{self.node_id}:{data}:{time.time()}"
+            return hashlib.sha256(combined.encode()).hexdigest()
+
+        return self.keypair.sign(data)
     
-    @staticmethod
-    def _verify_signature(message: BFTMessage) -> bool:
-        """Verify message signature (simplified implementation)"""
-        # In a real implementation, this would verify cryptographic signatures
-        # For now, just check if signature is present and reasonable
-        return len(message.signature) == 64  # SHA256 hex length
+    def _verify_signature(self, message: BFTMessage) -> bool:
+        """
+        Verify message signature using Ed25519.
+        """
+        if not message.signature:
+            return False
+
+        # Fallback to length check if no keys configured (legacy mode)
+        if not self.node_public_keys:
+            return len(message.signature) == 64
+
+        public_key = self.node_public_keys.get(message.sender_id)
+        if not public_key:
+            # Unknown sender
+            return False
+            
+        try:
+            payload = message.get_signable_payload()
+            return verify_signature(public_key, payload, message.signature)
+        except Exception as e:
+            print(f"Signature verification error: {e}")
+            return False
     
     @staticmethod
     def _hash_request(request: Dict[str, Any]) -> str:
@@ -583,11 +685,12 @@ class BFTConsensus:
             sequence_number=self.committed_sequence,
             sender_id=self.node_id,
             timestamp=time.time(),
-            signature=self._sign_message(f"VIEW_CHANGE:{new_view}"),
+            signature="",
             data={
                 "last_committed": self.committed_sequence
             }
         )
+        view_change_msg.signature = self._sign_message(view_change_msg.get_signable_payload())
         
         self._broadcast(view_change_msg)
         self._reset_view_change_timer()
@@ -696,10 +799,21 @@ def create_bft_network(node_configs: List[Dict[str, Any]], fault_tolerance: int 
             f"BFT requires at least {3*fault_tolerance+1} nodes to tolerate {fault_tolerance} faults"
         )
     
+    # Create keypairs for each node (for testing/demo purposes)
+    # In production, keys would be loaded from secure storage
+    keypairs = {nid: KeyPair() for nid in all_node_ids}
+    public_keys = {nid: kp.public_key for nid, kp in keypairs.items()}
+    
     # Create consensus instances
     for config in node_configs:
         node_id = config["node_id"]
-        consensus = BFTConsensus(node_id, all_node_ids, fault_tolerance)
+        consensus = BFTConsensus(
+            node_id=node_id, 
+            all_nodes=all_node_ids, 
+            f=fault_tolerance,
+            keypair=keypairs[node_id],
+            node_public_keys=public_keys
+        )
         consensus_nodes[node_id] = consensus
     
     return consensus_nodes
