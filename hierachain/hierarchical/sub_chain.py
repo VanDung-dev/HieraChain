@@ -7,11 +7,13 @@ framework guidelines for HieraChain structure.
 """
 
 import time
+import threading
 from typing import Dict, Any, List, Optional, Callable
 
 from hierachain.core.blockchain import Blockchain
 from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.core.utils import sanitize_metadata_for_main_chain, create_event
+from hierachain.consensus.ordering_service import OrderingService, OrderingNode, OrderingStatus
 
 
 class SubChain(Blockchain):
@@ -25,16 +27,18 @@ class SubChain(Blockchain):
     - Use entity_id as metadata field within events (not as block identifier)
     """
     
-    def __init__(self, name: str, domain_type: str = "generic"):
+    def __init__(self, name: str, domain_type: str = "generic", config: Optional[Dict[str, Any]] = None):
         """
         Initialize a Sub-Chain.
         
         Args:
             name: Name identifier for the Sub-Chain
             domain_type: Type of domain this Sub-Chain handles
+            config: Optional configuration override for underlying services
         """
         super().__init__(name)
         self.domain_type = domain_type
+        self.custom_config = config
         self.consensus = ProofOfAuthority(f"{name}_PoA")
         self.main_chain_connection: Optional[Any] = None
         self.proof_submission_interval: float = 60.0  # Submit proofs every 60 seconds
@@ -48,6 +52,79 @@ class SubChain(Blockchain):
             "permissions": ["domain_operations", "event_creation"],
             "created_at": time.time()
         })
+        
+        # Initialize Ordering Service
+        self._init_ordering_service()
+
+        # Chain Synchronization (Rehydration)
+        self.sync_chain()
+
+        # Start Block Consumer Thread
+        self.running = True
+        self.consumer_thread = threading.Thread(target=self._block_consumer_loop, daemon=True)
+        self.consumer_thread.start()
+
+    def stop(self):
+        """Stop the background block consumer."""
+        self.running = False
+        if self.consumer_thread:
+            self.consumer_thread.join(timeout=2.0)
+        
+        # Also stop ordering service
+        if hasattr(self, 'ordering_service'):
+            self.ordering_service.shutdown()
+
+    def _init_ordering_service(self):
+        """Initialize the local Ordering Service for this Sub-Chain."""
+        # Create a single local node for the ordering service
+        local_node = OrderingNode(
+            node_id=f"{self.name}_orderer",
+            endpoint="localhost",
+            is_leader=True,
+            weight=1.0,
+            status=OrderingStatus.ACTIVE,
+            last_heartbeat=time.time()
+        )
+        
+        # Service configuration
+        default_config = {
+            "storage_dir": f"data/{self.name}/journal",
+            "block_size": 50, # Smaller batches for lower latency in demo
+            "batch_timeout": 1.0,
+            "worker_threads": 2
+        }
+
+        # Merge defaults with custom config if provided
+        config = default_config.copy()
+        if hasattr(self, 'custom_config') and self.custom_config:
+            config.update(self.custom_config)
+        
+        self.ordering_service = OrderingService(nodes=[local_node], config=config)
+    
+    def add_event(self, event: Dict[str, Any]) -> None:
+        """
+        Add an event to the chain via Ordering Service.
+        
+        Args:
+            event: Event dictionary
+        """
+        # Validate and add default fields (inherited from Blockchain.add_event logic)
+        if not isinstance(event, dict):
+            raise ValueError("Event must be a dictionary")
+        
+        if "timestamp" not in event:
+            event["timestamp"] = time.time()
+            
+        # Delegate to Ordering Service (Durability + Ordering)
+        # This writes to Journal (Arrow) immediately
+        try:
+            self.ordering_service.receive_event(
+                event_data=event,
+                channel_id=self.name,
+                submitter_org=self.name
+            )
+        except Exception as e:
+            raise RuntimeError(f"Failed to submit event to ordering service: {e}")
     
     def connect_to_main_chain(self, main_chain: Any) -> bool:
         """
@@ -350,35 +427,84 @@ class SubChain(Blockchain):
     
     def finalize_sub_chain_block(self) -> Optional[Dict[str, Any]]:
         """
-        Finalize a block on the Sub-Chain using PoA consensus.
+        Finalize new blocks from the Ordering Service.
+        Replaces manual block creation.
         
         Returns:
-            Information about the finalized block, or None if no pending events
+            Information about the last finalized block, or None
         """
-        if not self.pending_events:
-            return None
-        
-        # Create block with pending events
-        new_block = self.create_block()
-        
-        # Finalize block using PoA consensus
-        finalized_block = self.consensus.finalize_block(new_block, self.name)
-        
-        # Add finalized block to chain
-        if self.add_block(finalized_block):
-            # Auto-submit proof if needed
-            self.auto_submit_proof_if_needed()
+        # 1. Pull completed blocks from Ordering Service
+        new_blocks = []
+        while True:
+            block = self.ordering_service.get_next_block()
+            if not block:
+                break
             
-            return {
-                "block_index": finalized_block.index,
-                "block_hash": finalized_block.hash,
-                "events_count": len(finalized_block.events),
-                "finalized_at": time.time(),
-                "domain_type": self.domain_type
-            }
+            # 2. Stitch block into local chain
+            latest_block = self.get_latest_block()
+            
+            # Re-index to match local chain
+            block.index = latest_block.index + 1
+            block.previous_hash = latest_block.hash
+            
+            # Recalculate hash with new metadata
+            block.hash = block.calculate_hash()
+            
+            # 3. Add to chain
+            if self.add_block(block):
+                new_blocks.append(block)
+                # Auto-submit proof if needed
+                self.auto_submit_proof_if_needed()
+            else:
+                 print(f"Failed to add ordered block {block.index}")
+                 
+        if not new_blocks:
+            return None
+            
+        last_block = new_blocks[-1]
         
-        return None
+        return {
+            "block_index": last_block.index,
+            "block_hash": last_block.hash,
+            "events_count": len(last_block.events),
+            "finalized_at": time.time(),
+            "domain_type": self.domain_type
+        }
     
+    def _block_consumer_loop(self):
+        """Background thread to continuously pull blocks."""
+        while self.running:
+            try:
+                # Attempt to finalize blocks
+                result = self.finalize_sub_chain_block()
+                if not result:
+                    # If no blocks, sleep a bit to avoid busy waiting
+                    time.sleep(0.5)
+            except Exception as e:
+                print(f"Error in block consumer loop: {e}")
+                time.sleep(1.0)
+
+    def sync_chain(self):
+        """
+        Synchronize local chain with Ordering Service (Rehydration).
+        Fetch missing blocks from history.
+        """
+        try:
+            latest_index = self.get_latest_block().index
+            missing_blocks = self.ordering_service.get_blocks(start_index=latest_index)
+            
+            # Using simple iteration
+            count = 0
+            for block in missing_blocks:
+                if self.add_block(block):
+                    count += 1
+                
+            if count > 0:
+                print(f"[SubChain] Synced/Rehydrated {count} blocks from Ordering Service.")
+                
+        except Exception as e:
+            print(f"[SubChain] Sync failed: {e}")
+
     def __str__(self) -> str:
         """String representation of the Sub-Chain."""
         return f"SubChain(name={self.name}, domain={self.domain_type}, blocks={len(self.chain)}, operations={self.completed_operations})"
