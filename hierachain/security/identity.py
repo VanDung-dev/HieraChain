@@ -8,6 +8,11 @@ identity validation for enterprise applications.
 
 import time
 from typing import Dict, List, Optional, Any
+import logging
+from hierachain.security.security_utils import verify_signature
+from nacl.encoding import HexEncoder
+
+logger = logging.getLogger(__name__)
 
 
 class IdentityError(Exception):
@@ -33,10 +38,20 @@ class IdentityManager:
         return org_id
     
     def register_user(self, user_id: str, org_id: str, role: str, public_key: Optional[str] = None) -> str:
-        """Register new user"""
+        """Register new user with Ed25519 public key validation."""
         if org_id not in self.organizations:
             raise IdentityError(f"Organization {org_id} does not exist")
             
+        # Validate Public Key
+        if public_key:
+            if len(public_key) != 64:
+                raise IdentityError("Public key must be a 64-character hex string (Ed25519)")
+            try:
+                # Try decoding to ensure it's valid hex
+                HexEncoder.decode(public_key.encode('utf-8'))
+            except Exception:
+                raise IdentityError("Invalid public key hex format")
+
         self.users[user_id] = {
             "org_id": org_id,
             "role": role,
@@ -52,6 +67,7 @@ class IdentityManager:
             self.roles[role] = []
         self.roles[role].append(user_id)
         
+        logger.info(f"Registered user {user_id} with role {role}")
         return user_id
     
     def validate_identity(self, user_id: str, required_role: Optional[str] = None) -> bool:
@@ -63,6 +79,25 @@ class IdentityManager:
             return False
             
         return True
+
+    def verify_user_signature(self, user_id: str, message: bytes, signature: str) -> bool:
+        """
+        Verify that a message was signed by the specific user.
+        
+        Args:
+            user_id: The ID of the user claiming to sign.
+            message: The message bytes.
+            signature: The hex signature.
+            
+        Returns:
+            bool: True if signature is valid, False otherwise.
+        """
+        user = self.users.get(user_id)
+        if not user or not user.get("public_key"):
+            logger.warning(f"Cannot verify signature: User {user_id} not found or has no public key")
+            return False
+            
+        return verify_signature(user["public_key"], message, signature)
     
     def get_user_info(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get user information"""
