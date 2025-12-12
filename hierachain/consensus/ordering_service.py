@@ -254,7 +254,7 @@ class OrderingService:
         """
         self.nodes = {node.node_id: node for node in nodes}
         self.config = config
-        self.status = OrderingStatus.ACTIVE
+        self.status = OrderingStatus.MAINTENANCE
         
         # Event processing components
         self.event_pool: Queue = Queue()
@@ -317,6 +317,11 @@ class OrderingService:
             try:
                 # Sanitize event data (Arrow/Journal might return bytes or non-JSON types)
                 event_data = self._make_serializable(event_data)
+
+                # Check for Block Cut event
+                if event_data.get("event") == "$SYSTEM_BLOCK_CUT":
+                    self._check_timeout_block_creation()
+                    continue
 
                 # Reconstruct PendingEvent
                 channel_id = "recovery"
@@ -497,7 +502,9 @@ class OrderingService:
             self.processing_thread = threading.Thread(target=self._process_events)
             self.processing_thread.daemon = True
             self.processing_thread.start()
-            self.status = OrderingStatus.ACTIVE
+        
+        # Enable ACTIVE mode
+        self.status = OrderingStatus.ACTIVE
     
     
     def lockdown(self) -> None:
@@ -585,6 +592,19 @@ class OrderingService:
         # Add block metadata - Update Block object attributes
         block.index = self.blocks_created
         block.calculate_hash()
+
+        # Log Block Cut event to Journal for deterministic recovery (only if ACTIVE)
+        if self.status == OrderingStatus.ACTIVE:
+            try:
+                system_event = {
+                    "event": "$SYSTEM_BLOCK_CUT",
+                    "entity_id": "SYSTEM",
+                    "timestamp": time.time(),
+                    "details": {"block_index": block.index, "block_hash": block.hash}
+                }
+                self.journal.log_event(system_event)
+            except Exception as e:
+                logger.error(f"Failed to log block cut event: {e}")
 
         # Put in commit queue
         self.commit_queue.put(block)
