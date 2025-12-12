@@ -456,8 +456,8 @@ class SubChain(Blockchain):
                 # Auto-submit proof if needed
                 self.auto_submit_proof_if_needed()
             else:
-                 print(f"Failed to add ordered block {block.index}")
-                 
+                print(f"Failed to add ordered block {block.index}")
+                
         if not new_blocks:
             return None
             
@@ -470,6 +470,29 @@ class SubChain(Blockchain):
             "finalized_at": time.time(),
             "domain_type": self.domain_type
         }
+
+    def flush_pending_and_finalize(self, timeout: float = 3.0) -> Optional[Dict[str, Any]]:
+        """
+        Synchronously wait for pending events to be processed and finalize blocks.
+        
+        This method is useful for tests where immediate block creation is needed
+        instead of waiting for batch timeout.
+        
+        Args:
+            timeout: Maximum time to wait for event processing (seconds)
+            
+        Returns:
+            Information about the last finalized block, or None
+        """
+        start_time = time.time()
+
+        while not self.ordering_service.event_pool.empty():
+            if time.time() - start_time > timeout:
+                break
+
+        self.ordering_service._check_timeout_block_creation()
+
+        return self.finalize_sub_chain_block()
     
     def _block_consumer_loop(self):
         """Background thread to continuously pull blocks."""
