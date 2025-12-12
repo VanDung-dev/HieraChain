@@ -694,4 +694,5 @@ cython_debug/
 *.db
 *.key
 backups/
+.benchmarks/
 docs/
