@@ -1,6 +1,5 @@
 """
 Integration module for HieraChain framework.
-Provides enterprise system integration capabilities.
 """
 
 from hierachain.integration.enterprise import (

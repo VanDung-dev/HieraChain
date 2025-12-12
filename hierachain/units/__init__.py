@@ -1,3 +1,7 @@
+"""
+Version module for HieraChain.
+"""
+
 from .version import (
     get_version, 
     get_complete_version, 

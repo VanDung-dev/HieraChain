@@ -1,9 +1,5 @@
 """
 Consensus mechanisms for HieraChain Framework.
-
-This module provides consensus algorithms suitable for enterprise applications:
-- ProofOfAuthority: Authority-based consensus for business use
-- BaseConsensus: Base class for consensus mechanisms
 """
 
 from hierachain.core.consensus.base_consensus import BaseConsensus

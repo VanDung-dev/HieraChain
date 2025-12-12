@@ -1,9 +1,5 @@
 """
 Generic utilities for domain operations.
-
-This module provides utility classes for domain-specific operations:
-- EntityTracer: Trace entity lifecycle across chains
-- CrossChainValidator: Validate data consistency across chains
 """
 
 from hierachain.domains.generic.utils.entity_tracer import EntityTracer
