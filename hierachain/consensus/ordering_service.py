@@ -10,6 +10,7 @@ import time
 import hashlib
 import json
 import threading
+import logging
 from queue import Queue, Empty
 from typing import Dict, Any, List, Optional, Callable
 from dataclasses import dataclass
@@ -19,13 +20,16 @@ import pyarrow as pa
 
 from hierachain.core.block import Block
 from hierachain.core import schemas
+from hierachain.error_mitigation.journal import TransactionJournal
 
+logger = logging.getLogger(__name__)
 
 class OrderingStatus(Enum):
     """Ordering service status enumeration"""
     ACTIVE = "active"
     MAINTENANCE = "maintenance"
-    STOPPED = "stopped"
+    LOCKDOWN = "lockdown"
+    SHUTDOWN = "shutdown"
     ERROR = "error"
 
 
@@ -138,7 +142,7 @@ class EventCertifier:
         """Validate basic event structure"""
         # Support for Arrow objects
         if isinstance(event_data, (pa.Table, pa.RecordBatch)):
-             return event_data.schema.equals(schemas.get_event_schema())
+            return event_data.schema.equals(schemas.get_event_schema())
 
         if not isinstance(event_data, dict):
             return False
@@ -258,9 +262,16 @@ class OrderingService:
         self.commit_queue: Queue = Queue()
         self.certifier = EventCertifier()
         
+        # Durability Layer (Transaction Journal)
+        self.journal = TransactionJournal(
+            storage_dir=config.get("storage_dir", "data/journal"),
+            active_log_name=f"node_{self._get_node_id()}_journal.log"
+        )
+        
         # Processing state
         self.pending_events: Dict[str, PendingEvent] = {}
         self.processed_events: Dict[str, PendingEvent] = {}
+        self.block_history: List[Block] = []
         self.blocks_created = 0
         self.events_processed = 0
         
@@ -285,14 +296,76 @@ class OrderingService:
         self._setup_default_validation_rules()
         
         # Start processing
+        self._recover_state()
         self.start()
 
-    def receive_event(
-        self,
-        event_data: Dict[str, Any],
-        channel_id: str,
-        submitter_org: str
-    ) -> str:
+    def _get_node_id(self) -> str:
+        """Get current node ID or default"""
+        # Simple heuristic to find local node ID
+        for node in self.nodes.values():
+            if node.endpoint in ["localhost", "127.0.0.1"]: # Simplified check
+                return node.node_id
+        return "unknown_node"
+
+    def _recover_state(self):
+        """Recover state from transaction journal"""
+        print("Recovering state from Transaction Journal...")
+        count = 0
+        
+        # Replay events from journal
+        for event_data in self.journal.replay():
+            try:
+                # Sanitize event data (Arrow/Journal might return bytes or non-JSON types)
+                event_data = self._make_serializable(event_data)
+
+                # Reconstruct PendingEvent
+                channel_id = "recovery"
+                submitter = "recovery"
+                
+                event_id = self._generate_event_id(event_data, channel_id)
+                
+                pending_event = PendingEvent(
+                    event_id=event_id,
+                    event_data=event_data,
+                    channel_id=channel_id,
+                    submitter_org=submitter,
+                    received_at=time.time(),
+                    status=EventStatus.PENDING
+                )
+                
+                # Process directly
+                self._process_single_event(pending_event)
+                count += 1
+                
+            except Exception as e:
+                logger.error(f"Failed to recover event: {e}")
+                
+        # Force block creation for any remaining events
+        self._check_timeout_block_creation()
+        print(f"Journal recovery check complete. Found {count} entries.")
+        
+        print(f"Journal recovery complete. Restored {count} events and {self.blocks_created} blocks.")
+
+    def get_blocks(self, start_index: int = 0) -> List[Block]:
+        """
+        Get list of blocks starting from a specific index.
+        Used for synchronization/rehydration.
+        
+        Args:
+            start_index: Block index to start from
+
+        Returns:
+            List of blocks
+        """
+        if start_index < 0:
+            start_index = 0
+            
+        if start_index >= len(self.block_history):
+            return []
+            
+        return self.block_history[start_index:]
+
+    def receive_event(self, event_data: Dict[str, Any], channel_id: str, submitter_org: str) -> str:
         """
         Receive event from client or application channel.
         
@@ -304,8 +377,21 @@ class OrderingService:
         Returns:
             Event ID for tracking
         """
+        # Enforce status check
+        if self.status == OrderingStatus.LOCKDOWN:
+            raise PermissionError("Service is in LOCKDOWN mode. Write operations are suspended.")
+        if self.status != OrderingStatus.ACTIVE:
+            raise RuntimeError(f"Service is not ACTIVE (current status: {self.status.value})")
+
+        # Sanitize event data to ensure JSON compatibility (e.g. bytes -> hex)
+        event_data = self._make_serializable(event_data)
+
         # Generate unique event ID
         event_id = self._generate_event_id(event_data, channel_id)
+
+        # Transaction Journal
+        if not self.journal.log_event(event_data):
+            raise RuntimeError("Failed to persist event to Transaction Journal")
         
         # Create pending event
         pending_event = PendingEvent(
@@ -413,13 +499,25 @@ class OrderingService:
             self.processing_thread.start()
             self.status = OrderingStatus.ACTIVE
     
-    def stop(self) -> None:
-        """Stop the ordering service"""
+    
+    def lockdown(self) -> None:
+        """Enter LOCKDOWN mode"""
+        self.status = OrderingStatus.LOCKDOWN
+
+    def resume(self) -> None:
+        """Resume ACTIVE mode from LOCKDOWN or other states."""
+        self.status = OrderingStatus.ACTIVE
+
+    def shutdown(self) -> None:
+        """Shutdown the ordering service"""
         self.should_stop.set()
         if self.processing_thread:
             self.processing_thread.join(timeout=5.0)
         self.executor.shutdown(wait=True)
-        self.status = OrderingStatus.STOPPED
+        # Close the journal to flush any pending data
+        if self.journal:
+            self.journal.close()
+        self.status = OrderingStatus.SHUTDOWN
     
     def _process_events(self) -> None:
         """Main event processing loop"""
@@ -491,6 +589,9 @@ class OrderingService:
         # Put in commit queue
         self.commit_queue.put(block)
         
+        # Add to history
+        self.block_history.append(block)
+        
         # Update statistics
         self.blocks_created += 1
         self.statistics["blocks_created"] = self.blocks_created
@@ -503,9 +604,25 @@ class OrderingService:
         self.statistics["average_batch_size"] = total_events / self.blocks_created
 
     @staticmethod
+    def _make_serializable(obj: Any) -> Any:
+        """Recursively make object JSON serializable"""
+        if isinstance(obj, bytes):
+            return obj.hex()
+        if isinstance(obj, dict):
+            return {k: OrderingService._make_serializable(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [OrderingService._make_serializable(v) for v in obj]
+        # Basic JSON types
+        if obj is None or isinstance(obj, (str, int, float, bool)):
+            return obj
+        # Fallback
+        return str(obj)
+
+    @staticmethod
     def _generate_event_id(event_data: Dict[str, Any], channel_id: str) -> str:
         """Generate unique event ID"""
-        data = f"{channel_id}:{json.dumps(event_data, sort_keys=True)}:{time.time()}"
+        clean_data = OrderingService._make_serializable(event_data)
+        data = f"{channel_id}:{json.dumps(clean_data, sort_keys=True)}:{time.time()}"
         return hashlib.sha256(data.encode()).hexdigest()[:16]
     
     def _setup_default_validation_rules(self) -> None:
