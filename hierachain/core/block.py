@@ -34,7 +34,9 @@ class Block:
         timestamp: Optional[float] = None,
         previous_hash: str = "",
         nonce: int = 0,
-        merkle_root: Optional[str] = None
+        merkle_root: Optional[str] = None,
+        creator_id: Optional[str] = None,
+        signature: Optional[str] = None
     ):
         """
         Initialize a new block.
@@ -51,6 +53,8 @@ class Block:
         self.timestamp = timestamp or time.time()
         self.previous_hash = previous_hash
         self.nonce = nonce
+        self.creator_id = creator_id
+        self.signature = signature
         
         # Handle events based on input type
         if isinstance(events, pa.Table):
@@ -138,7 +142,8 @@ class Block:
             "timestamp": self.timestamp,
             "previous_hash": self.previous_hash,
             "nonce": self.nonce,
-            "merkle_root": self.merkle_root
+            "merkle_root": self.merkle_root,
+            "creator_id": self.creator_id
         }
         
         return generate_hash(block_header)
@@ -225,7 +230,9 @@ class Block:
             "previous_hash": self.previous_hash,
             "nonce": self.nonce,
             "merkle_root": self.merkle_root,
-            "hash": self.hash
+            "hash": self.hash,
+            "creator_id": self.creator_id,
+            "signature": self.signature
         }
     
     @classmethod
@@ -245,7 +252,9 @@ class Block:
             timestamp=data["timestamp"],
             previous_hash=data["previous_hash"],
             nonce=data.get("nonce", 0),
-            merkle_root=data.get("merkle_root")
+            merkle_root=data.get("merkle_root"),
+            creator_id=data.get("creator_id"),
+            signature=data.get("signature")
         )
 
     def __str__(self) -> str:
