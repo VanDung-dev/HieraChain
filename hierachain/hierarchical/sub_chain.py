@@ -357,8 +357,12 @@ class SubChain(Blockchain):
         current_time = time.time()
         time_since_last = current_time - self.last_proof_submission
         
-        return (time_since_last >= self.proof_submission_interval and 
-                len(self.pending_events) > 0)
+        # Check ordering service for pending events
+        has_pending = False
+        if hasattr(self, 'ordering_service'):
+            has_pending = len(self.ordering_service.pending_events) > 0
+            
+        return (time_since_last >= self.proof_submission_interval and has_pending)
     
     def auto_submit_proof_if_needed(self) -> bool:
         """
