@@ -31,12 +31,18 @@ class ZmqNode:
         peers (Dict[str, str]): Mapping of peer_id -> address (e.g., "tcp://127.0.0.1:5001").
     """
     
-    def __init__(self, node_id: str, port: int, host: str = "127.0.0.1"):
+
+    def __init__(self, node_id: str, port: int, host: str = "127.0.0.1", 
+                 server_secret_key: bytes = None, server_public_key: bytes = None):
         self.node_id = node_id
         self.host = host
         self.port = port
         self.address = f"tcp://{host}:{port}"
-        self.peers: Dict[str, str] = {}  # peer_id -> address
+        self.peers: Dict[str, Dict[str, Any]] = {}  # peer_id -> {address, public_key}
+        
+        # CurveZMQ keys (Curve25519)
+        self.server_secret = server_secret_key
+        self.server_public = server_public_key
         
         self.ctx = zmq.asyncio.Context()
         self._stop_event = asyncio.Event()
@@ -51,6 +57,13 @@ class ZmqNode:
         try:
             self.router = self.ctx.socket(zmq.ROUTER)
             self.router.setsockopt(zmq.IDENTITY, self.node_id.encode('utf-8'))
+            
+            # Enable CurveZMQ for Server (ROUTER)
+            if self.server_secret:
+                self.router.setsockopt(zmq.CURVE_SERVER, 1)
+                self.router.setsockopt(zmq.CURVE_SECRETKEY, self.server_secret)
+                logger.info(f"Node {self.node_id}: Security Enabled (CurveZMQ Server)")
+            
             self.router.bind(self.address)
             logger.info(f"Node {self.node_id} listening on {self.address}")
             
@@ -72,9 +85,12 @@ class ZmqNode:
         self.ctx.term()
         logger.info(f"Node {self.node_id} stopped")
 
-    def register_peer(self, peer_id: str, address: str):
-        """Register a known peer."""
-        self.peers[peer_id] = address
+    def register_peer(self, peer_id: str, address: str, public_key: bytes = None):
+        """Register a known peer with optional public key."""
+        self.peers[peer_id] = {
+            "address": address,
+            "public_key": public_key
+        }
 
     def set_handler(self, handler: Callable[[Dict[str, Any], str], Any]):
         """Set the callback function for processing received messages."""
@@ -95,9 +111,6 @@ class ZmqNode:
         try:
             socket = await self._get_or_create_dealer(target_peer_id)
             encoded_msg = json.dumps(message).encode('utf-8')
-            # Multipart: [empty (delimiter), message] for Dealer-Router pattern compatibility if needed,
-            # but standard Dealer-Router usually handles framing.
-            # Here we just send the message payload. Identity is handled by connect.
             await socket.send(encoded_msg)
             return True
         except Exception as e:
@@ -116,10 +129,20 @@ class ZmqNode:
         if peer_id in self.dealer_pool:
             return self.dealer_pool[peer_id]
             
-        address = self.peers[peer_id]
+        peer_info = self.peers[peer_id]
+        address = peer_info["address"]
+        peer_public_key = peer_info.get("public_key")
+        
         socket = self.ctx.socket(zmq.DEALER)
-        # Set our identity so receiver knows who we are
         socket.setsockopt(zmq.IDENTITY, self.node_id.encode('utf-8'))
+        
+        # Enable CurveZMQ for Client (DEALER)
+        if self.server_secret and peer_public_key:
+            socket.setsockopt(zmq.CURVE_SERVERKEY, peer_public_key)
+            socket.setsockopt(zmq.CURVE_PUBLICKEY, self.server_public)
+            socket.setsockopt(zmq.CURVE_SECRETKEY, self.server_secret)
+            # logger.debug(f"Connecting to {peer_id} with CurveZMQ")
+        
         socket.connect(address)
         
         self.dealer_pool[peer_id] = socket
@@ -130,7 +153,6 @@ class ZmqNode:
         while not self._stop_event.is_set():
             try:
                 # ROUTER receives multipart: [sender_id, empty, message] or [sender_id, message]
-                # depending on peer type. With DEALER peer, it's usually [sender_id, message]
                 msg_parts = await self.router.recv_multipart()
                 
                 if len(msg_parts) < 2:
