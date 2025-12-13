@@ -10,6 +10,7 @@ import ast
 import re
 import json
 import logging
+import argparse
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -60,8 +61,6 @@ class AnalysisFinding:
     code_snippet: str
     remediation: str
     confidence: float  # 0.0 to 1.0
-
-
 
 
 class SecurityAnalyzer:
@@ -298,7 +297,6 @@ class CodeQualityAnalyzer:
 
 class ComplianceChecker:
     """Compliance checker for framework guidelines"""
-    
     def __init__(self):
         """Initialize compliance checker"""
         self.compliance_rules = [
@@ -493,7 +491,6 @@ class DependencyAnalyzer:
 
 class StaticAnalyzer:
     """Main static analyzer orchestrating all analysis types"""
-    
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize static analyzer with configuration"""
         self.config = config or {}
@@ -584,8 +581,7 @@ class StaticAnalyzer:
         return python_files
     
     @staticmethod
-    def generate_report(findings: Dict[str, List[AnalysisFinding]],
-                        output_format: str = "json") -> str:
+    def generate_report(findings: Dict[str, List[AnalysisFinding]], output_format: str = "json") -> str:
         """Generate analysis report"""
         if output_format.lower() == "json":
             # Convert findings to serializable format
@@ -695,8 +691,6 @@ def run_static_analysis(project_path: str = ".", output_file: Optional[str] = No
 
 
 if __name__ == "__main__":
-    import argparse
-    
     parser = argparse.ArgumentParser(description="Run static analysis")
     parser.add_argument("project_path", nargs="?", default=".", help="Project root path")
     parser.add_argument("-o", "--output", help="Output file path")
