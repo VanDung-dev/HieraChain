@@ -24,7 +24,7 @@ import os
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.generic.utils.entity_tracer import EntityTracer
 from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
-from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
+
 
 # Custom logger to capture all output
 class Logger:
@@ -444,48 +444,6 @@ def demonstrate_hierachain():
             print(f"       Operations: {details['operations']}")
     except Exception as e:
         print(f"Error generating system statistics: {e}")
-
-    print()
-    
-    # Demonstrate database persistence (optional)
-    print("11. Demonstrating Database Persistence...")
-    
-    try:
-        db_adapter = SQLiteAdapter("../demo_blockchain.db")
-        
-        # Store Main Chain
-        main_chain_stored = db_adapter.store_chain(hierarchy_manager.main_chain)
-        print(f"   Main Chain stored in database: {main_chain_stored}")
-        
-        # Store Sub-Chains
-        for sub_chain_name, sub_chain in hierarchy_manager.sub_chains.items():
-            try:
-                stored = db_adapter.store_chain(sub_chain)
-                print(f"   {sub_chain_name} stored in database: {stored}")
-            except Exception as e:
-                print(f"Error storing {sub_chain_name}: {e}")
-                continue
-                
-        # Get statistics from database
-        for chain_name in ["CorporateMainChain", "ManufacturingChain", "QualityChain", "LogisticsChain"]:
-            try:
-                stats = db_adapter.get_chain_statistics(chain_name)
-                if stats:
-                    print(f"   {chain_name} DB stats: {stats['total_blocks']} blocks, {stats['total_events']} events")
-            except Exception as e:
-                print(f"Error getting stats for {chain_name}: {e}")
-                continue
-                
-        # Test entity querying from database
-        test_entity = entities[0]
-        try:
-            entity_events = db_adapter.get_entity_events(test_entity)
-            print(f"   Entity {test_entity} has {len(entity_events)} events in database")
-        except Exception as e:
-            print(f"Error querying entity {test_entity}: {e}")
-            
-    except Exception as e:
-        print(f"   Database demonstration skipped: {e}")
 
     print()
     
