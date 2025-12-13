@@ -388,6 +388,9 @@ class OrderingService:
         if self.status != OrderingStatus.ACTIVE:
             raise RuntimeError(f"Service is not ACTIVE (current status: {self.status.value})")
 
+        if not isinstance(event_data, dict):
+            raise ValueError("Event data must be a dictionary")
+
         # Sanitize event data to ensure JSON compatibility (e.g. bytes -> hex)
         event_data = self._make_serializable(event_data)
 
