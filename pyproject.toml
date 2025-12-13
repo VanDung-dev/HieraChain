@@ -65,7 +65,7 @@ local_scheme = "dirty-tag"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-testpaths = ["tests/unit", "tests/integration"]
+testpaths = ["tests/unit", "tests/integration", "tests/scenarios"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
