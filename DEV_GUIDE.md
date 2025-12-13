@@ -95,7 +95,7 @@ from hierachain.core.blockchain import Blockchain
     python -m pytest tests -v
     ```
 
-    > **WARNING**: Running all tests (over 380 tests) simultaneously may cause failures due to resource constraints. I recommend to run tests by separate project directories to ensure accurate results.
+    > **WARNING**: Running all tests (nearly 290 tests) simultaneously may cause failures due to resource constraints. I recommend to run tests by separate project directories to ensure accurate results.
 
 ---
 
