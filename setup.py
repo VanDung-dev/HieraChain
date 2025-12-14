@@ -1,3 +1,11 @@
+"""
+HieraChain Framework: A blockChain framework for enterprise applications
+
+HieraChain is a framework for building enterprise applications that leverage the power of blockchain technology.
+It provides a set of tools and libraries that enable developers to create secure, decentralized, and scalable
+applications.
+"""
+
 from setuptools import setup, find_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
