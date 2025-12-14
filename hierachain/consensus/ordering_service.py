@@ -12,16 +12,25 @@ import json
 import threading
 import logging
 from queue import Queue, Empty
-from typing import Dict, Any, List, Optional, Callable
+from typing import Any, Callable
 from dataclasses import dataclass
 from enum import Enum
 import concurrent.futures
 import pyarrow as pa
+import asyncio
 
 from hierachain.core.block import Block
 from hierachain.core import schemas
 from hierachain.error_mitigation.journal import TransactionJournal
 from hierachain.storage.sql_backend import SqlStorageBackend
+from hierachain.core.performance import process_pool
+from hierachain.config.settings import Settings
+from hierachain.core.utils import (
+    compute_leaves_from_events_standalone,
+    MerkleTree
+)
+from hierachain.security.security_utils import verify_batch_signatures
+
 
 logger = logging.getLogger(__name__)
 
@@ -62,14 +71,14 @@ class OrderingNode:
 class PendingEvent:
     """Event waiting to be ordered"""
     event_id: str
-    event_data: Dict[str, Any]
+    event_data: dict[str, Any]
     channel_id: str
     submitter_org: str
     received_at: float
     status: EventStatus
-    certification_result: Optional[Dict[str, Any]] = None
+    certification_result: dict[str, Any] | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "event_id": self.event_id,
@@ -86,14 +95,14 @@ class EventCertifier:
     """Event certification and validation"""
     
     def __init__(self):
-        self.validation_rules: List[Callable] = []
-        self.certified_events: Dict[str, Dict[str, Any]] = {}
+        self.validation_rules: list[Callable] = []
+        self.certified_events: dict[str, dict[str, Any]] = {}
         
-    def add_validation_rule(self, rule: Callable[[Dict[str, Any]], bool]) -> None:
+    def add_validation_rule(self, rule: Callable[[dict[str, Any]], bool]) -> None:
         """Add a validation rule for events"""
         self.validation_rules.append(rule)
         
-    def validate(self, event: PendingEvent) -> Dict[str, Any]:
+    def validate(self, event: PendingEvent) -> dict[str, Any]:
         """
         Validate and certify an event.
         
@@ -103,7 +112,7 @@ class EventCertifier:
         Returns:
             Certification result with validation details
         """
-        certification = {
+        certification: dict[str, Any] = {
             "event_id": event.event_id,
             "certified_at": time.time(),
             "valid": True,
@@ -116,7 +125,9 @@ class EventCertifier:
             try:
                 if not rule(event.event_data):
                     certification["valid"] = False
-                    certification["validation_errors"].append(f"Validation rule failed: {rule.__name__}")
+                    certification["validation_errors"].append(
+                        f"Validation rule failed: {rule.__name__}"
+                    )
             except Exception as e:
                 certification["valid"] = False
                 certification["validation_errors"].append(f"Validation error: {str(e)}")
@@ -156,7 +167,7 @@ class EventCertifier:
             
         return True
     
-    def get_certification(self, event_id: str) -> Optional[Dict[str, Any]]:
+    def get_certification(self, event_id: str) -> dict[str, Any] | None:
         """Get certification result for an event"""
         return self.certified_events.get(event_id)
 
@@ -164,7 +175,7 @@ class EventCertifier:
 class BlockBuilder:
     """Builds blocks from ordered events"""
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize block builder.
         
@@ -174,10 +185,10 @@ class BlockBuilder:
         self.config = config
         self.block_size = config.get("block_size", 500)
         self.batch_timeout = config.get("batch_timeout", 2.0)  # seconds
-        self.current_batch: List[PendingEvent] = []
+        self.current_batch: list[PendingEvent] = []
         self.batch_start_time = time.time()
 
-    def add_event(self, event: PendingEvent) -> Optional[Block]:
+    def add_event(self, event: PendingEvent) -> list[dict[str, Any]] | None:
         """
         Add event to current batch.
         
@@ -185,24 +196,24 @@ class BlockBuilder:
             event: Certified event to add
             
         Returns:
-            Complete block if batch is ready, None otherwise
+            List of event data if batch is ready, None otherwise
         """
         self.current_batch.append(event)
         
         # Check if batch is ready
-        if self._is_batch_ready():
-            return self._create_block()
+        if self.is_batch_ready():
+            return self._finalize_batch()
         
         return None
 
-    def force_create_block(self) -> Optional[Block]:
+    def force_create_block(self) -> list[dict[str, Any]] | None:
         """Force creation of block from current batch"""
         if not self.current_batch:
             return None
             
-        return self._create_block()
+        return self._finalize_batch()
     
-    def _is_batch_ready(self) -> bool:
+    def is_batch_ready(self) -> bool:
         """Check if current batch is ready for block creation"""
         # Check batch size
         if len(self.current_batch) >= self.block_size:
@@ -214,27 +225,19 @@ class BlockBuilder:
             
         return False
 
-    def _create_block(self) -> Optional[Block]:
-        """Create block from current batch"""
+    def _finalize_batch(self) -> list[dict[str, Any]] | None:
+        """Return current batch event data and reset"""
         if not self.current_batch:
             return None
 
         # Extract event data for batch creation
         events_list = [pending.event_data for pending in self.current_batch]
 
-        # Create block using core.Block
-        block = Block(
-            index=0, # Will be set by OrderingService
-            events=events_list,
-            previous_hash="0", # Will be set by OrderingService
-            timestamp=time.time()
-        )
-
         # Reset batch
         self.current_batch.clear()
         self.batch_start_time = time.time()
         
-        return block
+        return events_list
 
 
 class OrderingService:
@@ -245,7 +248,7 @@ class OrderingService:
     higher throughput and reduced latency for enterprise-scale operations.
     """
     
-    def __init__(self, nodes: List[OrderingNode], config: Dict[str, Any]):
+    def __init__(self, nodes: list[OrderingNode], config: dict[str, Any]):
         """
         Initialize ordering service.
         
@@ -270,21 +273,30 @@ class OrderingService:
         )
         
         # Processing state
-        self.pending_events: Dict[str, PendingEvent] = {}
+        self.pending_events: dict[str, PendingEvent] = {}
 
         # Replaced in-memory list with SQL Backend
-        self.processed_events: Dict[str, PendingEvent] = {} # Keep as cache only if needed, or remove.
+        # Replaced in-memory list with SQL Backend
+        # Keep as cache only if needed, or remove.
+        self.processed_events: dict[str, PendingEvent] = {}
         self.storage = SqlStorageBackend()
         
-        self.block_history: List[Block] = []
+        self.block_history: list[Block] = []
         self.blocks_created = 0
         self.events_processed = 0
         
         # Threading for concurrent processing
         self.processing_thread = None
         self.should_stop = threading.Event()
+        self.loop = None # Asyncio loop for processing thread
+        
+        # Initialize Process Pool
+        # Default to 50% CPU unless specified
+        max_workers = config.get("max_workers", Settings.MAX_WORKERS) 
+        process_pool.initialize(max_workers=max_workers)
+        
         self.executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=config.get("worker_threads", 4)
+            max_workers=max_workers or 4
         )
         
         # Statistics
@@ -294,14 +306,16 @@ class OrderingService:
             "events_rejected": 0,
             "blocks_created": 0,
             "average_batch_size": 0,
-            "average_processing_time": 0
+            "average_processing_time": 0,
+            "total_latency": 0,
+            "events_committed": 0
         }
         
         # Initialize validation rules
         self._setup_default_validation_rules()
         
         # Start processing
-        self._recover_state()
+        # State recovery is now performed asynchronously in the processing thread
         self.start()
 
     def _get_node_id(self) -> str:
@@ -312,7 +326,7 @@ class OrderingService:
                 return node.node_id
         return "unknown_node"
 
-    def _recover_state(self):
+    async def _recover_state_async(self):
         """Recover state from transaction journal"""
         print("Recovering state from Transaction Journal...")
         count = 0
@@ -325,7 +339,7 @@ class OrderingService:
 
                 # Check for Block Cut event
                 if event_data.get("event") == "$SYSTEM_BLOCK_CUT":
-                    self._check_timeout_block_creation()
+                    await self._check_timeout_block_creation()
                     continue
 
                 # Reconstruct PendingEvent
@@ -344,19 +358,19 @@ class OrderingService:
                 )
                 
                 # Process directly
-                self._process_single_event(pending_event)
+                await self._process_single_event(pending_event)
                 count += 1
                 
             except Exception as e:
                 logger.error(f"Failed to recover event: {e}")
                 
         # Force block creation for any remaining events
-        self._check_timeout_block_creation()
+        await self._check_timeout_block_creation()
         print(f"Journal recovery check complete. Found {count} entries.")
         
         print(f"Journal recovery complete. Restored {count} events and {self.blocks_created} blocks.")
 
-    def get_blocks(self, start_index: int = 0) -> List[Block]:
+    def get_blocks(self, start_index: int = 0) -> list[Block]:
         """
         Get list of blocks starting from a specific index.
         Used for synchronization/rehydration.
@@ -375,7 +389,7 @@ class OrderingService:
             
         return self.block_history[start_index:]
 
-    def receive_event(self, event_data: Dict[str, Any], channel_id: str, submitter_org: str) -> str:
+    def receive_event(self, event_data: dict[str, Any], channel_id: str, submitter_org: str) -> str:
         """
         Receive event from client or application channel.
         
@@ -425,7 +439,7 @@ class OrderingService:
         
         return event_id
     
-    def get_event_status(self, event_id: str) -> Optional[Dict[str, Any]]:
+    def get_event_status(self, event_id: str) -> dict[str, Any] | None:
         """
         Get status of a specific event.
         
@@ -459,7 +473,7 @@ class OrderingService:
         
         return None
 
-    def get_next_block(self) -> Optional[Block]:
+    def get_next_block(self) -> Block | None:
         """
         Get next completed block from the commit queue.
         
@@ -472,7 +486,7 @@ class OrderingService:
         except Empty:
             return None
     
-    def get_service_status(self) -> Dict[str, Any]:
+    def get_service_status(self) -> dict[str, Any]:
         """Get comprehensive service status"""
         healthy_nodes = [n for n in self.nodes.values() if n.is_healthy()]
         
@@ -499,7 +513,7 @@ class OrderingService:
             }
         }
     
-    def add_validation_rule(self, rule: Callable[[Dict[str, Any]], bool]) -> None:
+    def add_validation_rule(self, rule: Callable[[dict[str, Any]], bool]) -> None:
         """Add custom validation rule for events"""
         self.certifier.add_validation_rule(rule)
     
@@ -534,26 +548,141 @@ class OrderingService:
             self.journal.close()
         self.status = OrderingStatus.SHUTDOWN
     
-    def _process_events(self) -> None:
-        """Main event processing loop"""
+    async def _process_events_async(self):
+        """Async event processing loop"""
+        # Recover state before processing new events
+        await self._recover_state_async()
+
+        batch = []
+        last_batch_time = time.time()
+        batch_size = 100 # Configurable batch size for multiprocessing
+        
         while not self.should_stop.is_set():
             try:
-                # Get event from queue with timeout
+                # 1. Collect Batch
                 try:
-                    pending_event = self.event_pool.get(timeout=1.0)
+                    # Non-blocking get for loop
+                    pending_event = self.event_pool.get_nowait()
+                    batch.append(pending_event)
                 except Empty:
-                    # Check for timeout-based block creation
-                    self._check_timeout_block_creation()
-                    continue
+                    await asyncio.sleep(0.01) # Yield to event loop
                 
-                # Process event
-                self._process_single_event(pending_event)
+                # 2. Process Batch if full or timeout
+                is_full = len(batch) >= batch_size
+                is_timeout = (time.time() - last_batch_time) > 0.1 # 100ms latency target
                 
+                if (batch and (is_full or is_timeout)) or (not batch and self._is_block_timeout()):
+                    
+                    if batch:
+                        # Offload certification to ProcessPool
+                        await self._process_batch(batch)
+                        batch = []
+                        last_batch_time = time.time()
+                    
+                    # Always check for block timeout
+                    await self._check_timeout_block_creation()
+                    
             except Exception as e:
-                print(f"Error in event processing: {str(e)}")
-                # Continue processing other events
-    
-    def _process_single_event(self, pending_event: PendingEvent) -> None:
+                logger.error(f"Error in async event loop: {e}")
+                
+    def _process_events(self) -> None:
+        """Main event processing loop (entry point for thread)"""
+        # Create new event loop for this thread
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        
+        try:
+            self.loop.run_until_complete(self._process_events_async())
+        finally:
+            self.loop.close()
+
+    async def _create_and_commit_block_async(self, events: list[dict[str, Any]]) -> None:
+        """
+        Create a block asynchronously by offloading Merkle tree calculation.
+        """
+        if not events:
+            return
+
+        try:
+            # Offload Merkle leaf calculation (serialization + hashing)
+            merkle_leaves = await process_pool.run_task(
+                compute_leaves_from_events_standalone, events
+            )
+
+            # Build Merkle Tree from leaves (MAIN THREAD - fast)
+            merkle_tree = MerkleTree(leaves=merkle_leaves)
+            merkle_root = merkle_tree.root
+
+            # Create Block (MAIN THREAD)
+            previous_hash = self.block_history[-1].hash if self.block_history else "0"
+            
+            block = Block(
+                index=self.blocks_created, 
+                events=events,
+                previous_hash=previous_hash,
+                merkle_root=merkle_root
+            )
+
+            # Commit Block
+            self._commit_block(block)
+        except Exception as e:
+            logger.error(f"Error creating block asynchronously: {e}")
+
+    async def _process_batch(self, batch: list[PendingEvent]):
+        """Process a batch of events with parallel signature verification"""
+        # Batch signature verification
+        verification_items = []
+        events_to_verify = []
+
+        for event in batch:
+            data = event.event_data
+            # Check for signature and sender
+            if "signature" in data and "sender" in data:
+                # Extract payload from details if available (matching benchmark)
+                msg = None
+                if "details" in data and isinstance(data["details"], dict):
+                    msg = data["details"].get("payload")
+                
+                if msg:
+                    verification_items.append({
+                        "public_key": data["sender"],
+                        "message": msg,
+                        "signature": data["signature"]
+                    })
+                    events_to_verify.append(event)
+        
+        # Run batch verification if needed
+        if verification_items:
+            try:
+                results = await process_pool.run_task(verify_batch_signatures, verification_items)
+                
+                for event, is_valid in zip(events_to_verify, results):
+                    if not is_valid:
+                        event.status = EventStatus.REJECTED
+                        self.statistics["events_rejected"] += 1
+                        logger.warning(
+                            f"Event {event.event_id} rejected due to invalid signature"
+                        )
+            except Exception as e:
+                logger.error(f"Batch verification failed: {e}")
+
+        for event in batch:
+            if event.status == EventStatus.REJECTED:
+                if event.event_id in self.pending_events:
+                    del self.pending_events[event.event_id]
+                continue
+                
+            await self._process_single_event(event)
+
+    async def _check_timeout_block_creation(self) -> None:
+        """Check if block needs to be created due to timeout"""
+        if self._is_block_timeout():
+            logger.debug("Block timeout reached, forcing creation")
+            raw_block_data = self.block_builder.force_create_block()
+            if raw_block_data:
+                await self._create_and_commit_block_async(raw_block_data)
+
+    async def _process_single_event(self, pending_event: PendingEvent) -> None:
         """Process a single event through certification and ordering"""
         try:
             # Update status
@@ -568,9 +697,9 @@ class OrderingService:
                 self.statistics["events_certified"] += 1
                 
                 # Add to block builder
-                block = self.block_builder.add_event(pending_event)
-                if block:
-                    self._commit_block(block)
+                raw_block_data = self.block_builder.add_event(pending_event)
+                if raw_block_data:
+                    await self._create_and_commit_block_async(raw_block_data)
                     
                 # Move to processed events
                 self.processed_events[pending_event.event_id] = pending_event
@@ -589,11 +718,9 @@ class OrderingService:
             }
             self.statistics["events_rejected"] += 1
     
-    def _check_timeout_block_creation(self) -> None:
-        """Check if a block should be created due to timeout"""
-        block = self.block_builder.force_create_block()
-        if block:
-            self._commit_block(block)
+    def _is_block_timeout(self) -> bool:
+        """Check if block timeout occurred"""
+        return self.block_builder.is_batch_ready()
 
     def _commit_block(self, block: Block) -> None:
         """Commit a completed block to the commit queue"""
@@ -608,10 +735,28 @@ class OrderingService:
                 "hash": block.hash,
                 "previous_hash": block.previous_hash,
                 "timestamp": block.timestamp,
-                "events": block.events,
+                "events": block.to_event_list(),
                 "metadata": {}
             }
             self.storage.save_block(block_data)
+            
+            # Calculate Latency
+            current_time = time.time()
+            block_latency = 0.0
+            block_event_count = 0
+            
+            for event in self.processed_events.values():
+                block_latency += (current_time - event.received_at)
+                block_event_count += 1
+            
+            # Update Statistics
+            self.statistics["total_latency"] += block_latency
+            self.statistics["events_committed"] += block_event_count
+            
+            if self.statistics["events_committed"] > 0:
+                self.statistics["average_processing_time"] = (
+                    self.statistics["total_latency"] / self.statistics["events_committed"]
+                )
             
             # Clear in-memory processed events cache
             self.processed_events.clear()
@@ -665,23 +810,23 @@ class OrderingService:
         return str(obj)
 
     @staticmethod
-    def _generate_event_id(event_data: Dict[str, Any], channel_id: str) -> str:
+    def _generate_event_id(event_data: dict[str, Any], channel_id: str) -> str:
         """Generate unique event ID"""
         clean_data = OrderingService._make_serializable(event_data)
-        data = f"{channel_id}:{json.dumps(clean_data, sort_keys=True)}:{time.time()}"
+        data = f"{channel_id}:{json.dumps(clean_data, sort_keys=True, separators=(',', ':'))}:{time.time()}"
         return hashlib.sha256(data.encode()).hexdigest()[:16]
     
     def _setup_default_validation_rules(self) -> None:
         """Setup default validation rules"""
-        def validate_non_empty_entity_id(event_data: Dict[str, Any]) -> bool:
+        def validate_non_empty_entity_id(event_data: dict[str, Any]) -> bool:
             entity_id = event_data.get("entity_id", "")
             return isinstance(entity_id, str) and len(entity_id.strip()) > 0
         
-        def validate_event_type(event_data: Dict[str, Any]) -> bool:
+        def validate_event_type(event_data: dict[str, Any]) -> bool:
             event_type = event_data.get("event", "")
             return isinstance(event_type, str) and len(event_type.strip()) > 0
         
-        def validate_timestamp_format(event_data: Dict[str, Any]) -> bool:
+        def validate_timestamp_format(event_data: dict[str, Any]) -> bool:
             timestamp = event_data.get("timestamp")
             return isinstance(timestamp, (int, float)) and timestamp > 0
         
