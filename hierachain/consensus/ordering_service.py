@@ -693,10 +693,19 @@ class OrderingService:
                 
             await self._process_single_event(event)
 
-    async def _check_timeout_block_creation(self) -> None:
-        """Check if block needs to be created due to timeout"""
-        if self._is_block_timeout():
-            logger.debug("Block timeout reached, forcing creation")
+    async def _check_timeout_block_creation(self, force: bool = False) -> None:
+        """
+        Check if block needs to be created due to timeout.
+        
+        Args:
+            force: If True, force creation regardless of timeout
+        """
+        if force or self._is_block_timeout():
+            if force:
+                logger.debug("Forcing block creation")
+            else:
+                logger.debug("Block timeout reached, forcing creation")
+                
             raw_block_data = self.block_builder.force_create_block()
             if raw_block_data:
                 await self._create_and_commit_block_async(raw_block_data)
@@ -714,6 +723,7 @@ class OrderingService:
             if certification_result["valid"]:
                 pending_event.status = EventStatus.CERTIFIED
                 self.statistics["events_certified"] += 1
+                logger.error(f"Event {pending_event.event_id} CERTIFIED. Adding to block builder.")
                 
                 # Add to block builder
                 raw_block_data = self.block_builder.add_event(pending_event)
@@ -728,8 +738,10 @@ class OrderingService:
             else:
                 pending_event.status = EventStatus.REJECTED
                 self.statistics["events_rejected"] += 1
+                logger.error(f"Event {pending_event.event_id} REJECTED: {certification_result['validation_errors']}")
                 
         except Exception as e:
+            logger.error(f"Exception processing event {pending_event.event_id}: {e}")
             pending_event.status = EventStatus.REJECTED
             pending_event.certification_result = {
                 "valid": False,
@@ -797,7 +809,9 @@ class OrderingService:
                 logger.error(f"Failed to log block cut event: {e}")
 
         # Put in commit queue
+        logger.error(f"DEBUG: Committing block {block.index} to queue {id(self.commit_queue)}. Queue size before: {self.commit_queue.qsize()}")
         self.commit_queue.put(block)
+        logger.error(f"DEBUG: Block {block.index} committed. Queue {id(self.commit_queue)} size after: {self.commit_queue.qsize()}")
         
         # Add to history
         self.block_history.append(block)
