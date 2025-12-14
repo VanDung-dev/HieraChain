@@ -13,6 +13,32 @@ from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
 
 
+def compute_hash_standalone(data_string: str) -> str:
+    """
+    Pure function to compute SHA-256 hash. 
+    This is top-level to be picklable for multiprocessing.
+    """
+    return hashlib.sha256(data_string.encode()).hexdigest()
+
+def compute_merkle_leaves_standalone(data_list_strings: List[str]) -> List[str]:
+    """
+    Pure function to compute multiple SHA-256 hashes in a batch.
+    Designed for running in a worker process to amortize IPC cost.
+    """
+    return [hashlib.sha256(s.encode()).hexdigest() for s in data_list_strings]
+
+def compute_leaves_from_events_standalone(events: List[Dict[str, Any]]) -> List[str]:
+    """
+    Pure function to compute Merkle leaves from event dicts.
+    Performs JSON serialization and hashing in the worker process.
+    """
+    leaves = []
+    for event in events:
+        # Replicate generate_hash logic for dicts
+        data_string = json.dumps(event, sort_keys=True, separators=(',', ':'))
+        leaves.append(hashlib.sha256(data_string.encode()).hexdigest())
+    return leaves
+
 def generate_hash(data: Union[str, Dict[str, Any]]) -> str:
     """
     Generate SHA-256 hash for given data.
@@ -29,7 +55,7 @@ def generate_hash(data: Union[str, Dict[str, Any]]) -> str:
     else:
         data_string = str(data)
     
-    return hashlib.sha256(data_string.encode()).hexdigest()
+    return compute_hash_standalone(data_string)
 
 
 def generate_entity_id(prefix: str = "ENTITY") -> str:
@@ -359,14 +385,21 @@ class MerkleTree:
     Merkle Tree implementation for efficient data verification and hashing.
     """
     
-    def __init__(self, data_list: List[Union[str, Dict[str, Any]]]):
+    def __init__(self, data_list: List[Union[str, Dict[str, Any]]] = None, leaves: List[str] = None):
         """
-        Initialize Merkle Tree from a list of data items.
+        Initialize Merkle Tree.
         
         Args:
-            data_list: List of data items (strings or dicts) to include in the tree
+            data_list: List of data items (strings or dicts) to include in the tree (will be hashed)
+            leaves: List of pre-calculated hashes (hex strings). If provided, data_list is ignored.
         """
-        self.leaves = [generate_hash(data) for data in data_list]
+        if leaves is not None:
+            self.leaves = leaves
+        elif data_list is not None:
+            self.leaves = [generate_hash(data) for data in data_list]
+        else:
+            self.leaves = []
+            
         self.root = self._build_tree(self.leaves)
 
     def _build_tree(self, nodes: List[str]) -> str:
