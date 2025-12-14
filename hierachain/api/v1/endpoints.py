@@ -9,6 +9,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 import time
+import re
 
 from hierachain.api.v1.schemas import (
     EventRequest, EventResponse, ChainInfoResponse, 
@@ -25,6 +26,18 @@ router = APIRouter(prefix="/api/v1", tags=["HieraChain"])
 # Global instances (in production, use dependency injection)
 hierarchy_manager = HierarchyManager()
 entity_tracer = EntityTracer(hierarchy_manager)
+
+def validate_chain_identifier(name: str) -> str:
+    """
+    Validate chain identifier against strict security rules.
+    Allowed: alphanumeric, underscore, hyphen.
+    """
+    if not re.match(r'^[a-zA-Z0-9_\-]+$', name):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid chain identifier '{name}'. Only alphanumeric, underscore, and hyphen are allowed."
+        )
+    return name
 
 @router.get("/health")
 async def health_check():
@@ -200,6 +213,7 @@ async def get_chain_stats(chain_name: str):
 @router.post("/chains/{chain_name}/create")
 async def create_sub_chain(chain_name: str, chain_type: str = "generic"):
     """Create a new sub-chain"""
+    validate_chain_identifier(chain_name)
     try:
         main_chain = hierarchy_manager.get_main_chain()
         if not main_chain:
