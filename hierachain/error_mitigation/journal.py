@@ -36,8 +36,9 @@ class TransactionJournal:
             storage_dir: Directory to store journal files.
             active_log_name: Name of the active journal file.
         """
-        self.storage_path = Path(storage_dir)
-        self.active_log_file = self.storage_path / active_log_name
+        safe_log_name = os.path.basename(active_log_name)
+        self.storage_path = Path(storage_dir).resolve()
+        self.active_log_file = self.storage_path / safe_log_name
         self._file_handle = None
         self._schema = schemas.get_event_schema()
         
