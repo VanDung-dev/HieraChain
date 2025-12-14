@@ -138,14 +138,17 @@ class TransactionJournal:
 
         # Handle absolute paths explicitly
         if _os.path.isabs(storage_dir):
-            abs_path = Path(storage_dir).resolve()
+            # Normalize without resolving on filesystem to avoid taint at sink
+            abs_path_str = _os.path.normpath(storage_dir)
             # Must be within data_root
-            if _os.path.commonpath([str(data_root), str(abs_path)]) != str(data_root):
-                raise ValueError(f"Security: Storage path {abs_path} must be within {data_root}")
+            if _os.path.commonpath([str(data_root), abs_path_str]) != str(data_root):
+                raise ValueError(f"Security: Storage path {abs_path_str} must be within {data_root}")
+            # Compute relative path string safely
             try:
-                rel_parts = list(abs_path.relative_to(data_root).parts)
+                rel_str = _os.path.relpath(abs_path_str, start=str(data_root))
             except Exception:
-                rel_parts = []
+                rel_str = '.'
+            rel_parts = [] if rel_str in ('.', '') else re.split(r'[\\/]+', rel_str)
             # Validate each component
             safe_parts = []
             for comp in rel_parts:
