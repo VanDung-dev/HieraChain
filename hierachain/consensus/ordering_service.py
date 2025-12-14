@@ -21,6 +21,7 @@ import pyarrow as pa
 from hierachain.core.block import Block
 from hierachain.core import schemas
 from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.storage.sql_backend import SqlStorageBackend
 
 logger = logging.getLogger(__name__)
 
@@ -270,7 +271,11 @@ class OrderingService:
         
         # Processing state
         self.pending_events: Dict[str, PendingEvent] = {}
-        self.processed_events: Dict[str, PendingEvent] = {}
+
+        # Replaced in-memory list with SQL Backend
+        self.processed_events: Dict[str, PendingEvent] = {} # Keep as cache only if needed, or remove.
+        self.storage = SqlStorageBackend()
+        
         self.block_history: List[Block] = []
         self.blocks_created = 0
         self.events_processed = 0
@@ -595,6 +600,24 @@ class OrderingService:
         # Add block metadata - Update Block object attributes
         block.index = self.blocks_created
         block.calculate_hash()
+
+        # Save to Persistent Storage
+        try:
+            block_data = {
+                "index": block.index,
+                "hash": block.hash,
+                "previous_hash": block.previous_hash,
+                "timestamp": block.timestamp,
+                "events": block.events,
+                "metadata": {}
+            }
+            self.storage.save_block(block_data)
+            
+            # Clear in-memory processed events cache
+            self.processed_events.clear()
+            
+        except Exception as e:
+            logger.error(f"Failed to save block to DB: {e}")
 
         # Log Block Cut event to Journal for deterministic recovery (only if ACTIVE)
         if self.status == OrderingStatus.ACTIVE:
