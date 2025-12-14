@@ -48,9 +48,8 @@ class TransactionJournal:
             storage_dir: Directory to store journal files.
             active_log_name: Name of the active journal file.
         """
-        # Explicit check for traversal in storage input before Path processing
-        if ".." in storage_dir:
-            raise ValueError("Security: Path traversal sequence ('..') not allowed in storage_dir.")
+        # Strictly validate storage_dir string BEFORE any filesystem resolution (CodeQL: py/path-injection)
+        self._validate_storage_dir_input(storage_dir)
 
         self.storage_path = Path(storage_dir).resolve()
 
@@ -76,6 +75,40 @@ class TransactionJournal:
         
         # Open the active log file
         self._open_journal()
+
+    @staticmethod
+    def _validate_storage_dir_input(storage_dir: str) -> None:
+        """
+        Validate the provided storage_dir string strictly before using it in any Path operations.
+        - Disallow traversal tokens ('..')
+        - Allow only alphanumeric, underscore, hyphen in each path component
+        - Allow directory separators ('/' or '\\') between components
+        """
+        if not isinstance(storage_dir, str) or not storage_dir.strip():
+            raise ValueError("Security: storage_dir must be a non-empty string")
+
+        # Preserve the original error message expected by tests for traversal detection
+        if ".." in storage_dir:
+            raise ValueError("Security: Path traversal sequence ('..') not allowed in storage_dir.")
+
+        # Allow only safe characters overall (components and separators)
+        # Allow optional Windows drive prefix like "C:\\" or "D:/" at the beginning
+        overall_pattern = r'^(?:[a-zA-Z]:[\\/])?[a-zA-Z0-9_\-/\\]+$'
+        if not re.match(overall_pattern, storage_dir):
+            raise ValueError("Security: storage_dir contains invalid characters. Allowed: [a-zA-Z0-9_-] and path separators")
+
+        # Validate each component is safe and not empty / dot components
+        # Strip Windows drive prefix from component validation if present
+        _s = storage_dir
+        m = re.match(r'^([a-zA-Z]:[\\/])(.*)$', _s)
+        if m:
+            _s = m.group(2)
+        components = re.split(r'[\\/]+', _s)
+        for comp in components:
+            if comp in ('', '.', '..'):
+                raise ValueError("Security: storage_dir contains invalid path components")
+            if not re.match(r'^[a-zA-Z0-9_\-]+$', comp):
+                raise ValueError("Security: storage_dir contains invalid path components")
         
     def _open_journal(self):
         """Open the journal file for appending (binary mode)."""
