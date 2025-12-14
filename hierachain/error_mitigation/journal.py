@@ -54,6 +54,10 @@ class TransactionJournal:
 
         self.storage_path = Path(storage_dir).resolve()
 
+        data_root = Path("data").resolve()
+        if not str(self.storage_path).startswith(str(data_root)):
+            raise ValueError(f"Security: Storage path {self.storage_path} must be within {data_root}")
+
         safe_log_name = os.path.basename(active_log_name)
         self._validate_filename(safe_log_name)
         
