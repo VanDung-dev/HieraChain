@@ -1,6 +1,5 @@
 """
 ERP adapters for various enterprise systems.
-This module contains specific adapters for different ERP systems.
 """
 
 # This module can be extended with specific ERP adapter implementations
