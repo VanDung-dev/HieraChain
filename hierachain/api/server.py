@@ -49,7 +49,7 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
         lifespan=lifespan
     )
-    
+
     # Add CORS middleware
     fast_app.add_middleware(
         CORSMiddleware,
@@ -58,6 +58,16 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Add Security Headers Middleware
+    @fast_app.middleware("http")
+    async def security_headers_middleware(request, call_next):
+        response = await call_next(request)
+        # Prevent MIME-sniffing
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        # Prevent Clickjacking (protects Swagger UI)
+        response.headers["X-Frame-Options"] = "DENY"
+        return response
     
     # Try to include v1 router
     try:
