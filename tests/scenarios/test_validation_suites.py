@@ -21,6 +21,7 @@ from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
 from hierachain.security.key_backup_manager import KeyBackupManager
 from hierachain.security.key_manager import KeyManager
 from hierachain.api.v3.verify import VerifyAPIKey
+from hierachain.units.version import get_version, VERSION
 
 
 # Priority Level 1: Critical Risk Validation Tests
@@ -408,7 +409,7 @@ def test_full_error_mitigation_workflow():
 @pytest.mark.integration  
 def test_post_upgrade_validation():
     """
-    Test post-upgrade validation for v0.dev5 compliance.
+    Test post-upgrade validation.
     Validates that all new components work together correctly.
     """
     components_status = {
@@ -423,8 +424,8 @@ def test_post_upgrade_validation():
     assert all(components_status.values())
     
     # Test framework version compliance
-    framework_version = "0.dev5"
-    assert framework_version == "0.dev5"
+    framework_version = get_version(VERSION)
+    assert framework_version == get_version(VERSION)
     
     # Test non-cryptocurrency compliance
     forbidden_terms = ["transaction", "mining", "coin", "token", "wallet"]
