@@ -11,7 +11,9 @@ from typing import Dict, Any, List, Optional, Set
 
 from hierachain.core.blockchain import Blockchain
 from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
+from hierachain.core.consensus.proof_of_federation import ProofOfFederation
 from hierachain.core.utils import sanitize_metadata_for_main_chain, validate_proof_metadata
+from hierachain.config.settings import settings
 
 
 class MainChain(Blockchain):
@@ -33,17 +35,27 @@ class MainChain(Blockchain):
             name: Name identifier for the Main Chain
         """
         super().__init__(name)
-        self.consensus = ProofOfAuthority("MainChain_PoA")
+        
+        # Dynamic Consensus Loading
+        if settings.CONSENSUS_TYPE == "proof_of_federation":
+            self.consensus = ProofOfFederation("MainChain_PoF")
+            # Default self as first validator in PoF mode
+            if hasattr(self.consensus, 'add_validator'):
+                self.consensus.add_validator("main_chain", {"role": "boot_node"})
+        else:
+            # Default back to PoA
+            self.consensus = ProofOfAuthority("MainChain_PoA")
+            
         self.registered_sub_chains: Set[str] = set()
         self.sub_chain_metadata: Dict[str, Dict[str, Any]] = {}
         self.proof_count: int = 0
-        
-        # Register Main Chain as the primary authority
-        self.consensus.add_authority("main_chain", {
-            "role": "root_authority",
-            "permissions": ["proof_validation", "sub_chain_registration"],
-            "created_at": time.time()
-        })
+
+        if isinstance(self.consensus, ProofOfAuthority):
+            self.consensus.add_authority("main_chain", {
+                "role": "root_authority",
+                "permissions": ["proof_validation", "sub_chain_registration"],
+                "created_at": time.time()
+            })
     
     def register_sub_chain(self, sub_chain_name: str, metadata: Optional[Dict[str, Any]] = None) -> bool:
         """
