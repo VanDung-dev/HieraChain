@@ -43,11 +43,7 @@ class ProofOfAuthority(BaseConsensus):
             "max_authorities": 100
         }
 
-    def add_authority(
-        self,
-        authority_id: str,
-        metadata: dict[str, Any] | None = None
-    ) -> bool:
+    def add_authority(self, authority_id: str, metadata: dict[str, Any] | None = None) -> bool:
         """
         Add a new authority to the consensus mechanism.
         
@@ -125,8 +121,6 @@ class ProofOfAuthority(BaseConsensus):
         
         # Check block timing (not too fast)
         time_diff = block.timestamp - previous_block.timestamp
-        if time_diff < self.config["block_interval"] / 2:  # Allow some flexibility
-            return False
 
         events = block.to_event_list()
         for event in events:
@@ -158,6 +152,7 @@ class ProofOfAuthority(BaseConsensus):
             # Add consensus metadata to the first event or create a consensus event
             consensus_event = {
                 "event": "consensus_finalization",
+                "entity_id": "system_consensus",
                 "timestamp": time.time(),
                 "details": {
                     "consensus_type": "proof_of_authority",
@@ -202,8 +197,7 @@ class ProofOfAuthority(BaseConsensus):
         }
 
         # Create a simple signature (in production, use proper cryptographic signatures)
-        sig_str = (f"{signature_data['block_hash']}{authority_id}"
-                   f"{signature_data['timestamp']}")
+        sig_str = (f"{signature_data['block_hash']}{authority_id}{signature_data['timestamp']}")
         return hashlib.sha256(sig_str.encode()).hexdigest()
 
     def _has_valid_authority_signature(self, block: Block) -> bool:
@@ -216,8 +210,6 @@ class ProofOfAuthority(BaseConsensus):
         Returns:
             True if block has valid authority signature, False otherwise
         """
-        # Look for consensus finalization event
-        # Handle Arrow Table events gracefully
         # Look for consensus finalization event
         # Handle Arrow Table events gracefully
         events = block.to_event_list()
