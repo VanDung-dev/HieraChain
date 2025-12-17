@@ -70,6 +70,8 @@ from hierachain.core.blockchain import Blockchain
 
 ## Running Tests
 
+> **WARNING**: Running all tests (nearly 360 tests) simultaneously may cause failures due to resource constraints. It is recommended to run tests per test file instead of grouping them by directories to ensure more accurate and reliable results.
+
 - To run all unit tests:
 
     ```bash
@@ -99,8 +101,6 @@ from hierachain.core.blockchain import Blockchain
     ```bash
     python -m pytest tests -v
     ```
-
-    > **WARNING**: Running all tests (over 340 tests) simultaneously may cause failures due to resource constraints. I recommend to run tests by separate project directories to ensure accurate results.
 
 ---
 
