@@ -28,7 +28,7 @@ class Settings:
     
     # Consensus settings
     # Options: "proof_of_authority" (Static/Centralized) or "proof_of_federation" (Dynamic/Consortium)
-    CONSENSUS_TYPE = "proof_of_authority" 
+    CONSENSUS_TYPE = os.getenv("HRC_CONSENSUS_TYPE", "proof_of_authority") 
     CONSENSUS_FEDERATION_CONFIG: Dict[str, Any] = {
         "min_validators": 3,
         "block_interval": 5.0
