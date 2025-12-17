@@ -23,6 +23,8 @@ def test_end_to_end_flow():
         shutil.rmtree(data_dir)
         
     chain = SubChain(chain_name, "test_domain")
+    chain.consensus.config["block_interval"] = 0.01
+    time.sleep(0.05)
 
     try:
         print(f"\n[Test] Starting End-to-End Data Flow verification for {chain_name}")
