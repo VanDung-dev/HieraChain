@@ -349,7 +349,7 @@ class OrderingService:
 
                 # Check for Block Cut event
                 if event_data.get("event") == "$SYSTEM_BLOCK_CUT":
-                    await self._check_timeout_block_creation()
+                    await self._check_timeout_block_creation(force=True)
                     continue
 
                 # Reconstruct PendingEvent
