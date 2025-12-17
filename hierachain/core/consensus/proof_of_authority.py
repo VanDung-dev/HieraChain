@@ -121,6 +121,8 @@ class ProofOfAuthority(BaseConsensus):
         
         # Check block timing (not too fast)
         time_diff = block.timestamp - previous_block.timestamp
+        if time_diff < self.config["block_interval"] / 2:
+            return False
 
         events = block.to_event_list()
         for event in events:
