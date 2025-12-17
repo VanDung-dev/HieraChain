@@ -15,7 +15,7 @@ import os
 from hierachain.consensus.ordering_service import OrderingService, OrderingNode, OrderingStatus
 
 def test_determinism():
-    data_dir = "../../data/test_determinism"
+    data_dir = "data/test_determinism"
     if os.path.exists(data_dir):
         shutil.rmtree(data_dir)
     os.makedirs(data_dir)
@@ -35,12 +35,23 @@ def test_determinism():
     service = OrderingService([node], config)
     
     # Send 3 events with delays to force 3 separate blocks via timeout
+    # Send 3 events, waiting for block creation explicitly to ensure deterministic journal order
     ids = []
+    current_block_count = 0
     for i in range(3):
         event = {"event": "test", "entity_id": f"e{i}", "timestamp": time.time(), "val": i}
         service.receive_event(event, "ch1", "org1")
-        print(f"Sent event {i}, waiting for timeout...")
-        time.sleep(1.0) # Wait > batch_timeout (0.5s) to force block creation
+        print(f"Sent event {i}, waiting for block...")
+        
+        # Wait for block count to increase
+        start_wait = time.time()
+        while service.blocks_created == current_block_count:
+            time.sleep(0.1)
+            if time.time() - start_wait > 5.0:
+                raise TimeoutError(f"Block not created for event {i}")
+        
+        current_block_count = service.blocks_created
+        print(f"Block created (Total: {current_block_count})")
         
     # Wait for processing
     time.sleep(1.0)
@@ -72,10 +83,10 @@ def test_determinism():
     service2.shutdown()
 
     # Assertion
-    if len(blocks_phase1) != len(blocks_phase2):
-        print(f"\n[FAIL] Determinism check failed! Original: {len(blocks_phase1)} blocks, Recovered: {len(blocks_phase2)} blocks.")
-    else:
-        print(f"\n[PASS] Block counts match.")
+    assert len(blocks_phase1) == len(blocks_phase2), \
+        f"[FAIL] Determinism check failed! Original: {len(blocks_phase1)} blocks, Recovered: {len(blocks_phase2)} blocks."
+    
+    print(f"\n[PASS] Block counts match.")
 
 if __name__ == "__main__":
     test_determinism()
