@@ -45,6 +45,10 @@ class DomainChain(BaseChain):
             "approvals_rejected": 0,
             "compliance_violations": 0
         }
+        
+        # Store pending 2PC transactions
+        # Format: transaction_id -> payload
+        self._pending_transactions: Dict[str, Dict[str, Any]] = {}
     
     def _setup_default_business_rules(self) -> None:
         """Setup default business rules for the domain chain."""
@@ -190,17 +194,17 @@ class DomainChain(BaseChain):
         
         return success
     
-    def update_entity_status(self, entity_id: str, new_status: str, 
-                           reason: Optional[str] = None,
-                           details: Optional[Dict[str, Any]] = None) -> bool:
+    def update_entity_status(self, entity_id: str, status: str, 
+                           details: Optional[dict[str, Any]] = None,
+                           reason: Optional[str] = None) -> bool:
         """
         Update the status of an entity.
         
         Args:
             entity_id: Entity identifier (used as metadata)
-            new_status: New status for the entity
-            reason: Reason for the status change
+            status: New status for the entity
             details: Additional status details
+            reason: Reason for the status change
             
         Returns:
             True if status was updated successfully, False otherwise
@@ -216,7 +220,7 @@ class DomainChain(BaseChain):
         event = EventFactory.create_status_update(
             entity_id=entity_id,
             old_status=old_status,
-            new_status=new_status,
+            new_status=status,
             domain_type=self.domain_type,
             reason=reason,
             details=details
@@ -339,7 +343,7 @@ class DomainChain(BaseChain):
         # Default validation for other operations
         return True
     
-    def get_domain_statistics(self) -> Dict[str, Any]:
+    def get_domain_statistics(self) -> dict[str, Any]:
         """
         Get domain-specific statistics.
         
@@ -369,7 +373,7 @@ class DomainChain(BaseChain):
         
         return base_stats
     
-    def get_entity_compliance_report(self, entity_id: str) -> Dict[str, Any]:
+    def get_entity_compliance_report(self, entity_id: str) -> dict[str, Any]:
         """
         Get a compliance report for a specific entity.
         
@@ -384,7 +388,7 @@ class DomainChain(BaseChain):
             return {}
         
         # Get compliance events for this entity
-        compliance_events = []
+        compliance_events: list[dict[str, Any]] = []
         for block in self.chain:
             # Use to_event_list() if available to handle Arrow Tables
             events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
@@ -394,7 +398,7 @@ class DomainChain(BaseChain):
                     compliance_events.append(event)
         
         # Analyze compliance status
-        compliance_types = {}
+        compliance_types: dict[str, dict[str, Any]] = {}
         for event in compliance_events:
             details = event.get("details", {})
             comp_type = details.get("compliance_type")
@@ -422,7 +426,7 @@ class DomainChain(BaseChain):
             )
         }
     
-    def get_entity_performance_metrics(self, entity_id: str) -> Dict[str, Any]:
+    def get_entity_performance_metrics(self, entity_id: str) -> dict[str, Any]:
         """
         Get performance metrics for a specific entity.
         
@@ -472,6 +476,98 @@ class DomainChain(BaseChain):
             "total_events": len(entity_events)
         }
     
+    
+    # --- 2PC Transaction Methods ---
+
+    def prepare_transaction(self, transaction_id: str, payload: dict[str, Any], is_source: bool = True) -> bool:
+        """
+        Phase 1: Prepare for a cross-chain transaction.
+        
+        Args:
+            transaction_id: Unique transaction Identifier.
+            payload: Transaction details.
+            is_source: True if this is the source chain, False if destination.
+            
+        Returns:
+            True if prepared successfully (resources locked/validated), False otherwise.
+        """
+        if transaction_id in self._pending_transactions:
+            # Already prepared
+            return True
+            
+        # Extract entity_id and operation details from payload
+        entity_id = payload.get("entity_id")
+        if not entity_id:
+            return False
+            
+        operation_type = payload.get("operation_type")
+        details = payload.get("details", {})
+        
+        # 1. Validate domain rules
+        validation_op = f"prepare_{operation_type}"
+        if not self.validate_domain_rules(entity_id, validation_op):
+            return False
+            
+        if not self.validate_domain_operation(entity_id, operation_type, details):
+            return False
+            
+        # 2. Lock resources / Store pending state
+        self._pending_transactions[transaction_id] = {
+            "payload": payload,
+            "is_source": is_source,
+            "timestamp": float(0)  # Using 0 as placeholder or time.time() if imported
+        }
+        
+        return True
+
+    def commit_transaction(self, transaction_id: str) -> bool:
+        """
+        Phase 2: Commit the transaction.
+        
+        Args:
+            transaction_id: Transaction ID to commit.
+            
+        Returns:
+            True if committed successfully.
+        """
+        if transaction_id not in self._pending_transactions:
+            return False
+            
+        pending_data = self._pending_transactions[transaction_id]
+        payload = pending_data["payload"]
+        
+        entity_id = payload.get("entity_id")
+        operation_type = payload.get("operation_type")
+        details = payload.get("details", {})
+        
+        try:
+            # Record the operation on-chain
+            success = self.start_domain_operation(entity_id, operation_type, details)
+            if success:
+                self.complete_domain_operation(entity_id, operation_type, {"status": "committed", "tx_id": transaction_id})
+                
+                # Cleanup pending
+                del self._pending_transactions[transaction_id]
+                return True
+            return False
+        except Exception:
+            return False
+
+    def rollback_transaction(self, transaction_id: str) -> bool:
+        """
+        Phase 2 (Alternative): Rollback the transaction.
+        
+        Args:
+            transaction_id: Transaction ID to rollback.
+            
+        Returns:
+            True if rolled back successfully.
+        """
+        if transaction_id in self._pending_transactions:
+            del self._pending_transactions[transaction_id]
+            return True
+        return False
+
     def __str__(self) -> str:
         """String representation of the domain chain."""
         return f"DomainChain(name={self.name}, domain={self.domain_type}, entities={len(self.entity_registry)}, operations={self.operation_metrics['total_operations']})"
