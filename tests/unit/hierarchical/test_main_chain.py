@@ -6,6 +6,7 @@ where the main chain stores proofs from registered sub-chains.
 """
 
 from unittest.mock import Mock
+import time
 
 from hierachain.hierarchical.main_chain import MainChain
 
@@ -45,6 +46,7 @@ def test_sub_chain_registration():
 def test_proof_adding():
     """Test adding proofs from Sub-Chains"""
     main_chain = MainChain(name="ProofTestMainChain")
+    main_chain.consensus.config["block_interval"] = 0.01
     
     # Register a sub-chain first
     main_chain.register_sub_chain("TestSubChain", {"domain": "testing"})
@@ -69,6 +71,7 @@ def test_proof_adding():
     assert main_chain.proof_count == 1
     
     # Finalize the block to move events from pending to chain
+    time.sleep(0.02)
     main_chain.finalize_block()
     
     # Check that the proof event was added
@@ -95,6 +98,7 @@ def test_invalid_proof_adding():
 def test_proof_verification():
     """Test verifying proofs in MainChain"""
     main_chain = MainChain(name="VerificationTestMainChain")
+    main_chain.consensus.config["block_interval"] = 0.01
     
     # Register a sub-chain
     main_chain.register_sub_chain("VerificationSubChain", {"domain": "verification"})
@@ -107,6 +111,7 @@ def test_proof_verification():
     assert result is True, "Failed to add proof"
     
     # Finalize the block
+    time.sleep(0.02)
     main_chain.finalize_block()
     
     # Verify the proof
@@ -117,6 +122,7 @@ def test_proof_verification():
 def test_sub_chain_summary():
     """Test getting Sub-Chain summaries"""
     main_chain = MainChain(name="SummaryTestMainChain")
+    main_chain.consensus.config["block_interval"] = 0.01
     
     # Register a sub-chain
     metadata = {"domain_type": "summary_test", "version": "1.0"}
@@ -128,6 +134,7 @@ def test_sub_chain_summary():
     assert result is True, "Failed to add proof"
     
     # Finalize the block
+    time.sleep(0.02)
     main_chain.finalize_block()
     
     # Get summary
@@ -142,6 +149,7 @@ def test_sub_chain_summary():
 def test_main_chain_stats():
     """Test MainChain statistics"""
     main_chain = MainChain(name="StatsTestMainChain")
+    main_chain.consensus.config["block_interval"] = 0.01
     
     # Register a sub-chain and add proof
     main_chain.register_sub_chain("StatsSubChain", {"domain": "stats"})
@@ -150,6 +158,7 @@ def test_main_chain_stats():
     assert result is True, "Failed to add proof"
     
     # Finalize the block
+    time.sleep(0.02)
     main_chain.finalize_block()
     
     # Get stats
@@ -225,6 +234,7 @@ def test_main_chain_performance(benchmark):
     """Benchmark MainChain performance with multiple operations"""
     def run_performance_test():
         main_chain = MainChain(name="PerformanceTestMainChain")
+        main_chain.consensus.config["block_interval"] = 0.001
         
         # Register multiple sub-chains
         for i in range(100):
