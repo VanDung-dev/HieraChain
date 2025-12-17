@@ -23,7 +23,7 @@ def test_end_to_end_flow():
         shutil.rmtree(data_dir)
         
     chain = SubChain(chain_name, "test_domain")
-    chain.consensus.config["block_interval"] = 0.01
+    chain.consensus.config["block_interval"] = 0
     time.sleep(0.05)
 
     try:

@@ -30,7 +30,7 @@ def test_recovery_and_rehydration():
         }
         chain1 = SubChain(chain_name, "test_domain", config=config)
         # Set low block interval to allow fast block creation in test loop
-        chain1.consensus.config["block_interval"] = 0.01
+        chain1.consensus.config["block_interval"] = 0
         time.sleep(0.5) # Allow genesis block to age
         
         # Add 3 events to generate 3 blocks
@@ -68,7 +68,7 @@ def test_recovery_and_rehydration():
 
         # Re-initialize with SAME config to ensure same block formation rules
         chain2 = SubChain(chain_name, "test_domain", config=config)
-        chain2.consensus.config["block_interval"] = 0.01
+        chain2.consensus.config["block_interval"] = 0
         time.sleep(0.5) # Allow genesis block to age
         
         print("[Test]        # Verify Rehydration")

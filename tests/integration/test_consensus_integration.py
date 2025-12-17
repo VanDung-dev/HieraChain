@@ -20,7 +20,7 @@ def test_unfinalized_block_rejection():
     is rejected by is_valid_new_block.
     """
     chain = MainChain("TestChain_Consensus")
-    chain.consensus.config["block_interval"] = 0.01
+    chain.consensus.config["block_interval"] = 0
 
     latest_block = chain.get_latest_block()
     new_index = latest_block.index + 1
@@ -43,7 +43,7 @@ def test_sub_chain_consensus_flow():
     with consensus integration.
     """
     sub_chain = SubChain("TestSubChain_PoA", "testing")
-    sub_chain.consensus.config["block_interval"] = 0.01
+    sub_chain.consensus.config["block_interval"] = 0
 
     # Add some operations
     sub_chain.start_operation("ENTITY-1", "test_op")
@@ -75,7 +75,7 @@ def test_signature_tampering_detection():
     causes it to be rejected.
     """
     chain = SubChain("TamperTestChain", "testing")
-    chain.consensus.config["block_interval"] = 0.01
+    chain.consensus.config["block_interval"] = 0
 
     # Create a block
     chain.start_operation("ENTITY-X", "test_op")
@@ -132,7 +132,7 @@ def test_content_tampering_detection():
     Test that tampering with block content (hash) invalidates the signature verification.
     """
     chain = SubChain("ContentTamperChain", "testing")
-    chain.consensus.config["block_interval"] = 0.01
+    chain.consensus.config["block_interval"] = 0
     chain.start_operation("ENTITY-Y", "test_op")
 
     latest_block = chain.get_latest_block()
