@@ -46,51 +46,51 @@ def test_poa_block_validation():
     authority_id = "test_authority"
     poa.add_authority(authority_id)
 
+    # Set genesis time
+    genesis_time = time.time() - 20
+
     # Create a valid previous block
     previous_block = Block(
         index=0,
         events=[{
             "entity_id": "GENESIS-001",
             "event": "genesis",
-            "timestamp": time.time()
+            "timestamp": genesis_time
         }],
-        previous_hash="0" * 64
+        previous_hash="0" * 64,
+        timestamp=genesis_time
     )
 
-    # Create a valid block
+    # Create a valid block with sufficient time diff
     events = [{
         "entity_id": "TEST-001",
         "event": "test_event",
-        "timestamp": time.time()
+        "timestamp": genesis_time + 15
     }]
 
     block = Block(
         index=1,
         events=events,
-        previous_hash=previous_block.hash
+        previous_hash=previous_block.hash,
+        timestamp=genesis_time + 15
     )
 
     # Finalize the block with authority signature
     block = poa.finalize_block(block, authority_id)
 
-    # Manually update timestamp to satisfy timing constraint
-    block.timestamp = previous_block.timestamp + poa.config["block_interval"] + 1  # Adding extra time
-    previous_block.timestamp = block.timestamp - poa.config[
-        "block_interval"] - 1  # Make sure previous is consistent
-
     # Test valid block
     assert poa.validate_block(block, previous_block) is True
 
     # Test block with invalid timing
+    fast_block_timestamp = block.timestamp + (poa.config["block_interval"] / 4)
     fast_block = Block(
         index=2,
         events=events,
-        previous_hash=block.hash
+        previous_hash=block.hash,
+        timestamp=fast_block_timestamp
     )
     # Finalize with authority
     fast_block = poa.finalize_block(fast_block, authority_id)
-    # Set timestamp too close to previous
-    fast_block.timestamp = block.timestamp + (poa.config["block_interval"] / 4)
 
     # Should be False because it's too fast
     assert poa.validate_block(fast_block, block) is False
