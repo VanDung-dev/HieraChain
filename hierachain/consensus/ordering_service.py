@@ -289,7 +289,7 @@ class OrderingService:
         # Replaced in-memory list with SQL Backend
         # Keep as cache only if needed, or remove.
         self.processed_events: dict[str, PendingEvent] = {}
-        self.storage = SqlStorageBackend()
+        self.storage = SqlStorageBackend(connection_string=config.get("db_url"))
         
         self.block_history: list[Block] = []
         self.blocks_created = 0
@@ -430,6 +430,9 @@ class OrderingService:
         if not self.journal.log_event(event_data):
             raise RuntimeError("Failed to persist event to Transaction Journal")
         
+        # Inject event_id into event_data for persistence
+        event_data["event_id"] = event_id
+
         # Create pending event
         pending_event = PendingEvent(
             event_id=event_id,
@@ -481,6 +484,12 @@ class OrderingService:
                 "certification_result": event.certification_result
             }
         
+        # Check persistent storage
+        if self.storage:
+            stored_event = self.storage.get_event_by_id(event_id)
+            if stored_event:
+                return stored_event
+
         return None
 
     def get_next_block(self) -> Block | None:
@@ -563,6 +572,9 @@ class OrderingService:
         # Close the journal to flush any pending data
         if self.journal:
             self.journal.close()
+        # Close storage backend to release DB lock
+        if self.storage:
+            self.storage.close()
         self.status = OrderingStatus.SHUTDOWN
     
     async def _process_events_async(self):
