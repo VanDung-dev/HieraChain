@@ -20,6 +20,7 @@ def test_cross_chain_validation():
     # This automatically connects it to the main chain
     hierarchy_manager.create_sub_chain("ValidationSubChain", "generic")
     sub_chain = hierarchy_manager.get_sub_chain("ValidationSubChain")
+    assert sub_chain is not None
     
     # Explicitly disable auto-proof submission at the sub-chain level to prevent race conditions
     sub_chain.proof_submission_interval = float('inf')
@@ -58,6 +59,8 @@ def test_cross_chain_validation_with_multiple_sub_chains():
 
     sub_chain1 = hierarchy_manager.get_sub_chain("SubChain1")
     sub_chain2 = hierarchy_manager.get_sub_chain("SubChain2")
+    assert sub_chain1 is not None
+    assert sub_chain2 is not None
 
     sub_chain1.proof_submission_interval = float('inf')
     sub_chain2.proof_submission_interval = float('inf')
@@ -100,6 +103,7 @@ def test_cross_chain_validation_with_missing_sub_chain():
     # Create Sub-Chain and add operations
     hierarchy_manager.create_sub_chain("ExistingSubChain", "testing")
     sub_chain = hierarchy_manager.get_sub_chain("ExistingSubChain")
+    assert sub_chain is not None
     sub_chain.proof_submission_interval = float('inf')
 
     # Add operations and submit proof
@@ -139,6 +143,8 @@ def test_cross_chain_validation_with_entity_consistency():
 
     order_chain = hierarchy_manager.get_sub_chain("OrderChain")
     inventory_chain = hierarchy_manager.get_sub_chain("InventoryChain")
+    assert order_chain is not None
+    assert inventory_chain is not None
 
     order_chain.proof_submission_interval = float('inf')
     inventory_chain.proof_submission_interval = float('inf')
@@ -187,6 +193,8 @@ def test_cross_chain_validation_system_integrity():
 
     sub_chain1 = hierarchy_manager.get_sub_chain("TestSubChain1")
     sub_chain2 = hierarchy_manager.get_sub_chain("TestSubChain2")
+    assert sub_chain1 is not None
+    assert sub_chain2 is not None
 
     sub_chain1.proof_submission_interval = float('inf')
     sub_chain2.proof_submission_interval = float('inf')
@@ -229,6 +237,8 @@ def test_cross_chain_validation_fault_tolerance():
 
     sub_chain1 = hierarchy_manager.get_sub_chain("FaultToleranceSubChain1")
     sub_chain2 = hierarchy_manager.get_sub_chain("FaultToleranceSubChain2")
+    assert sub_chain1 is not None
+    assert sub_chain2 is not None
 
     sub_chain1.proof_submission_interval = float('inf')
     sub_chain2.proof_submission_interval = float('inf')
@@ -246,6 +256,28 @@ def test_cross_chain_validation_fault_tolerance():
 
     main_chain.finalize_block()
 
+    # Simulate a fault in Sub-Chain 1 by removing its blocks to simulate data loss
+    # This should cause a "missing_block" or "missing_sub_chain" inconsistency depending on implementation
+    # Here we simulate missing blocks by clearing the chain
+    sub_chain1.chain = []
+
+    # Create validator and run validation
+    validator = CrossChainValidator(hierarchy_manager)
+    validation_results = validator.validate_proof_consistency()
+
+    # Check validation results
+    # Should detect issues with Sub-Chain 1 but Sub-Chain 2 should be fine
+    assert validation_results["overall_consistent"] is False
+    assert validation_results["missing_blocks"] > 0
+    
+    # Verify we can identify which chain failed
+    inconsistencies = validation_results["inconsistencies"]
+    sub_chain1_issues = [i for i in inconsistencies if i.get("sub_chain_name") == "FaultToleranceSubChain1"]
+    sub_chain2_issues = [i for i in inconsistencies if i.get("sub_chain_name") == "FaultToleranceSubChain2"]
+    
+    assert len(sub_chain1_issues) > 0, "Should have detected issues with FaultToleranceSubChain1"
+    assert len(sub_chain2_issues) == 0, "FaultToleranceSubChain2 should remain valid"
+
 
 def test_cross_chain_validation_with_timestamp_inconsistency():
     """Test validation when there's a timestamp inconsistency"""
@@ -256,6 +288,7 @@ def test_cross_chain_validation_with_timestamp_inconsistency():
     # Create Sub-Chain and add operations
     hierarchy_manager.create_sub_chain("SubChainWithTimestampIssue", "testing")
     sub_chain = hierarchy_manager.get_sub_chain("SubChainWithTimestampIssue")
+    assert sub_chain is not None
     sub_chain.proof_submission_interval = float('inf')
 
 
@@ -308,7 +341,7 @@ def test_cross_chain_validation_with_timestamp_inconsistency():
             break
 
     if not found_proof:
-        pass
+        assert False, "Proof submission event not found in main chain"
 
     # Create validator and run validation
     validator = CrossChainValidator(hierarchy_manager)
@@ -355,6 +388,7 @@ def test_cross_chain_validation_with_corrupted_entity_data():
     # Create Sub-Chains
     hierarchy_manager.create_sub_chain("TestChain", "testing")
     test_chain = hierarchy_manager.get_sub_chain("TestChain")
+    assert test_chain is not None
 
 
     # Add operations with entity that has invalid data
@@ -386,12 +420,21 @@ def test_cross_chain_validation_with_logic_inconsistency():
     # Create Sub-Chains
     hierarchy_manager.create_sub_chain("LogicTestChain", "testing")
     test_chain = hierarchy_manager.get_sub_chain("LogicTestChain")
+    assert test_chain is not None
 
 
     # Create logically inconsistent events - complete operation without starting it
     test_chain.complete_operation("ENTITY-001", "test_operation", {"result": "success"})
     block = test_chain.flush_pending_and_finalize()
     assert block is not None, "Failed to finalize block in test_chain"
+    
+    # Explicitly check if the event was committed to the chain
+    latest_block = test_chain.get_latest_block()
+    committed_events = latest_block.get_events_by_entity("ENTITY-001")
+    assert len(committed_events) > 0, (
+        f"Event for ENTITY-001 not found. Events: {latest_block.to_event_list()}"
+    )
+
     test_chain.submit_proof_to_main(main_chain)
     main_chain.finalize_block()
 
@@ -418,6 +461,7 @@ def test_cross_chain_validation_with_large_number_of_sub_chains():
         chain_name = f"SubChain{i:03d}"
         hierarchy_manager.create_sub_chain(chain_name, f"domain_{i}")
         sub_chain = hierarchy_manager.get_sub_chain(chain_name)
+        assert sub_chain is not None
         sub_chain.proof_submission_interval = float('inf')
 
 
@@ -453,6 +497,7 @@ def test_cross_chain_validation_with_invalid_input_data():
     # Create Sub-Chain
     hierarchy_manager.create_sub_chain("InvalidDataSubChain", "testing")
     sub_chain = hierarchy_manager.get_sub_chain("InvalidDataSubChain")
+    assert sub_chain is not None
     sub_chain.proof_submission_interval = float('inf')
 
 
@@ -488,12 +533,12 @@ def test_cross_chain_validation_with_invalid_input_data():
     assert validation_results["overall_consistent"] in [True, False]  # Should not crash
 
     # Simulate a failure by corrupting one sub-chain's data
-    corrupted_chain_name = "FaultToleranceSubChain1"
+    corrupted_chain_name = "InvalidDataSubChain"
     if corrupted_chain_name in hierarchy_manager.sub_chains:
         # Corrupt the sub-chain data in some way
         corrupted_sub_chain = hierarchy_manager.sub_chains[corrupted_chain_name]
         # Clear the block data to simulate corruption
-        corrupted_sub_chain.blocks = []
+        corrupted_sub_chain.chain = []
 
     # Create validator and run validation - should handle faults gracefully
     validator = CrossChainValidator(hierarchy_manager)
