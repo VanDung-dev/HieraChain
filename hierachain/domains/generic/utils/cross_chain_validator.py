@@ -10,6 +10,7 @@ import time
 from typing import Dict, Any, List, Callable
 
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
+from hierachain.domains.generic.utils.entity_tracer import EntityTracer
 
 
 class CrossChainValidator:
@@ -49,8 +50,7 @@ class CrossChainValidator:
             block_hash = sub_chain_block.get("hash")
             return proof_hash == block_hash
         
-        def proof_timestamp_consistency(main_chain_event: Dict[str, Any], 
-                                      sub_chain_block: Dict[str, Any]) -> bool:
+        def proof_timestamp_consistency(main_chain_event: Dict[str, Any], sub_chain_block: Dict[str, Any]) -> bool:
             """Validate that proof timestamp is after Sub-Chain block timestamp."""
             proof_timestamp = main_chain_event.get("timestamp", 0)
             block_timestamp = sub_chain_block.get("timestamp", 0)
@@ -197,7 +197,9 @@ class CrossChainValidator:
         }
         
         # Get entity trace across all chains
-        entity_trace = self.hierarchy_manager.trace_entity_across_chains(entity_id)
+        # Use EntityTracer for this functionality
+        tracer = EntityTracer(self.hierarchy_manager)
+        entity_trace = tracer.trace_entity_across_chains(entity_id)
         
         if not entity_trace:
             return validation_results
