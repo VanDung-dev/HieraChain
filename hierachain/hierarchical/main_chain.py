@@ -54,6 +54,28 @@ class MainChain(Blockchain):
                 "permissions": ["proof_validation", "sub_chain_registration"],
                 "created_at": time.time()
             })
+
+    def is_valid_new_block(self, block) -> bool:
+        """
+        Validate a new block including consensus rules.
+        
+        Args:
+            block: Block to validate
+            
+        Returns:
+            True if block is valid, False otherwise
+        """
+        # 1. Base structural validation
+        if not super().is_valid_new_block(block):
+            return False
+            
+        # 2. Consensus validation
+        previous_block = self.get_latest_block()
+        
+        if not self.consensus.validate_block(block, previous_block):
+            return False
+            
+        return True
     
     def register_sub_chain(self, sub_chain_name: str, metadata: Optional[Dict[str, Any]] = None) -> bool:
         """
@@ -228,6 +250,29 @@ class MainChain(Blockchain):
             "registration_time": self.sub_chain_metadata.get(sub_chain_name, {}).get("registered_at")
         }
     
+    def finalize_block(self) -> Optional['Block']:
+        """
+        Finalize pending events into a new block using consensus.
+        Overridden from base Blockchain to ensure PoA/PoF compliance.
+        
+        Returns:
+            The newly created and added block, or None if no pending events
+        """
+        if not self.pending_events:
+            return None
+        
+        # Create block with pending events
+        new_block = self.create_block()
+        
+        # Finalize block using PoA consensus
+        finalized_block = self.consensus.finalize_block(new_block, "main_chain")
+        
+        # Add finalized block to chain
+        if self.add_block(finalized_block):
+            return finalized_block
+        
+        return None
+
     def get_main_chain_stats(self) -> Dict[str, Any]:
         """
         Get comprehensive statistics about the Main Chain.
