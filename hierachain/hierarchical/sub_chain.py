@@ -310,7 +310,7 @@ class SubChain(Blockchain):
         logger.warning(f"DEBUG: SubChain {self.name} submitting proof. Chain length: {len(self.chain)}. Latest block index: {latest_block.index}")
 
         if not self.chain or len(self.chain) <= 1:  # Only genesis block
-            print("DEBUG: SubChain has only genesis block. Aborting proof submission.")
+            logger.debug("SubChain has only genesis block. Aborting proof submission.")
             return False
         
         # Generate summary metadata (not detailed domain data)
@@ -325,7 +325,7 @@ class SubChain(Blockchain):
             proof_hash=latest_block.hash,
             metadata=metadata
         )
-        print(f"DEBUG: MainChain.add_proof returned: {success}")
+        logger.debug(f"MainChain.add_proof returned: {success}")
         
         if success:
             self.last_proof_submission = time.time()
@@ -503,7 +503,7 @@ class SubChain(Blockchain):
                 # Auto-submit proof if needed
                 self.auto_submit_proof_if_needed()
             else:
-                print(f"Failed to add ordered block {block.index}")
+                logger.error(f"Failed to add ordered block {block.index}")
                 
         if not new_blocks:
             return None
@@ -588,7 +588,7 @@ class SubChain(Blockchain):
                     # If no blocks, sleep a bit to avoid busy waiting
                     time.sleep(0.5)
             except Exception as e:
-                print(f"Error in block consumer loop: {e}")
+                logger.error(f"Error in block consumer loop: {e}")
                 time.sleep(1.0)
 
     def sync_chain(self):
@@ -607,10 +607,10 @@ class SubChain(Blockchain):
                     count += 1
                 
             if count > 0:
-                print(f"[SubChain] Synced/Rehydrated {count} blocks from Ordering Service.")
+                logger.info(f"Synced/Rehydrated {count} blocks from Ordering Service.")
                 
         except Exception as e:
-            print(f"[SubChain] Sync failed: {e}")
+            logger.error(f"Sync failed: {e}")
 
     def __str__(self) -> str:
         """String representation of the Sub-Chain."""

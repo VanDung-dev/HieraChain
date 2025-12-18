@@ -7,9 +7,12 @@ transactions across multiple chains in the HieraChain system.
 
 import uuid
 import time
+import logging
 from enum import Enum
 from typing import Optional, Any
 from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
 
 
 class TransactionState(str, Enum):
@@ -116,7 +119,7 @@ class CrossChainTransactionManager:
 
         except Exception as e:
             # If Phase 1 fails, we rollback
-            print(f"2PC Prepare Phase Failed: {e}")
+            logger.error(f"2PC Prepare Phase Failed: {e}")
             transaction.error_message = str(e)
             self._rollback(transaction, source_chain, dest_chain)
             return False
@@ -138,7 +141,7 @@ class CrossChainTransactionManager:
             return True
 
         except Exception as e:
-            print(f"2PC Commit Phase Failed: {e}")
+            logger.error(f"2PC Commit Phase Failed: {e}")
             transaction.error_message = str(e)
             transaction.state = TransactionState.FAILED
             transaction.updated_at = time.time()

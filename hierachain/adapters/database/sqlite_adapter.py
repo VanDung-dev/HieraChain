@@ -9,11 +9,14 @@ event-based model with hierarchical structure.
 import sqlite3
 import json
 import time
+import logging
 from typing import Dict, Any, List, Optional
 from contextlib import contextmanager
 
 from hierachain.core.block import Block
 from hierachain.core.blockchain import Blockchain
+
+logger = logging.getLogger(__name__)
 
 
 class SQLiteAdapter:
@@ -169,7 +172,7 @@ class SQLiteAdapter:
                 return True
                 
         except Exception as e:
-            print(f"Error storing chain {chain.name}: {e}")
+            logger.error(f"Error storing chain {chain.name}: {e}")
             return False
     
     @staticmethod
@@ -276,7 +279,7 @@ class SQLiteAdapter:
                 }
                 
         except Exception as e:
-            print(f"Error loading chain {chain_name}: {e}")
+            logger.error(f"Error loading chain {chain_name}: {e}")
             return None
     
     def store_proof(self, main_chain_name: str, sub_chain_name: str, 
@@ -309,7 +312,7 @@ class SQLiteAdapter:
                 return True
                 
         except Exception as e:
-            print(f"Error storing proof: {e}")
+            logger.error(f"Error storing proof: {e}")
             return False
     
     def get_entity_events(self, entity_id: str, chain_name: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -349,7 +352,7 @@ class SQLiteAdapter:
                 return events
                 
         except Exception as e:
-            print(f"Error getting entity events: {e}")
+            logger.error(f"Error getting entity events: {e}")
             return []
     
     def get_events_by_type(self, event_type: str, chain_name: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -389,7 +392,7 @@ class SQLiteAdapter:
                 return events
                 
         except Exception as e:
-            print(f"Error getting events by type: {e}")
+            logger.error(f"Error getting events by type: {e}")
             return []
     
     def get_chain_statistics(self, chain_name: str) -> Dict[str, Any]:
@@ -449,7 +452,7 @@ class SQLiteAdapter:
                 }
                 
         except Exception as e:
-            print(f"Error getting chain statistics: {e}")
+            logger.error(f"Error getting chain statistics: {e}")
             return {}
     
     def get_proof_history(self, sub_chain_name: str) -> List[Dict[str, Any]]:
@@ -490,7 +493,7 @@ class SQLiteAdapter:
                 return proofs
                 
         except Exception as e:
-            print(f"Error getting proof history: {e}")
+            logger.error(f"Error getting proof history: {e}")
             return []
     
     def cleanup_old_data(self, days_to_keep: int = 30) -> bool:
@@ -527,11 +530,11 @@ class SQLiteAdapter:
                 
                 conn.commit()
                 
-                print(f"Cleanup completed: {events_deleted} events, {blocks_deleted} blocks, {proofs_deleted} proofs deleted")
+                logger.info(f"Cleanup completed: {events_deleted} events, {blocks_deleted} blocks, {proofs_deleted} proofs deleted")
                 return True
                 
         except Exception as e:
-            print(f"Error during cleanup: {e}")
+            logger.error(f"Error during cleanup: {e}")
             return False
     
     def __str__(self) -> str:

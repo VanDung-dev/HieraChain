@@ -7,7 +7,10 @@ blockchain-compatible events while maintaining the hierarchical structure where 
 events are later summarized on the main chain.
 """
 import time
+import logging
 from typing import Dict, Any, List
+
+logger = logging.getLogger(__name__)
 
 
 class IntegrationError(Exception):
@@ -241,7 +244,7 @@ class EnterpriseIntegration:
                 blockchain_events.append(bc_event)
             except Exception as e:
                 # Log error but continue processing other events
-                print(f"Error converting event: {e}")
+                logger.error(f"Error converting event: {e}")
                 continue
         
         return blockchain_events

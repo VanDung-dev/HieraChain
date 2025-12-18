@@ -338,7 +338,7 @@ class OrderingService:
 
     async def _recover_state_async(self):
         """Recover state from transaction journal"""
-        print("Recovering state from Transaction Journal...")
+        logger.info("Recovering state from Transaction Journal...")
         count = 0
         
         # Replay events from journal
@@ -376,9 +376,9 @@ class OrderingService:
                 
         # Force block creation for any remaining events
         await self._check_timeout_block_creation()
-        print(f"Journal recovery check complete. Found {count} entries.")
+        logger.info(f"Journal recovery check complete. Found {count} entries.")
         
-        print(f"Journal recovery complete. Restored {count} events and {self.blocks_created} blocks.")
+        logger.info(f"Journal recovery complete. Restored {count} events and {self.blocks_created} blocks.")
 
     def get_blocks(self, start_index: int = 0) -> list[Block]:
         """

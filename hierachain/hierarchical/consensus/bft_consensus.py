@@ -18,6 +18,10 @@ from hierachain.error_mitigation.error_classifier import ErrorClassifier
 from hierachain.security.security_utils import KeyPair, verify_signature
 from hierachain.network.zmq_transport import ZmqNode
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class ConsensusState(Enum):
     """Consensus node states"""
@@ -115,7 +119,7 @@ class BFTConsensus:
         if zmq_node:
             # Verify zmq_node matches our node_id
             if zmq_node.node_id != node_id:
-                print(f"Warning: ZmqNode ID {zmq_node.node_id} does not match Consensus ID {node_id}")
+                logger.warning(f"ZmqNode ID {zmq_node.node_id} does not match Consensus ID {node_id}")
             # Set up send function wrapper
             self.network_send_function = self._send_via_zmq
         
@@ -275,7 +279,7 @@ class BFTConsensus:
             return False
             
         except Exception as e:
-            print(f"Error handling message: {e}")
+            logger.error(f"Error handling message: {e}")
             return False
     
     def _primary(self) -> str:
@@ -472,7 +476,7 @@ class BFTConsensus:
                 self.chain.add_event(event)
                 
         except Exception as e:
-            print(f"Error executing operation: {e}")
+            logger.error(f"Error executing operation: {e}")
 
     def _send_via_zmq(self, target_id: str, message: Dict[str, Any]):
         """Send message using ZeroMQ transport (sync wrapper for async)."""
@@ -489,7 +493,7 @@ class BFTConsensus:
                 # No event loop, create one
                 asyncio.run(self.zmq_node.send_direct(target_id, message))
         else:
-            print("Warning: No ZMQ node configured for broadcast")
+            logger.warning("No ZMQ node configured for broadcast")
 
     def _broadcast(self, message: BFTMessage):
         """Broadcast message to all other nodes with error handling"""
@@ -507,7 +511,7 @@ class BFTConsensus:
                 asyncio.run(self.zmq_node.broadcast(message.to_dict()))
                 return
             except Exception as e:
-                print(f"ZMQ Broadcast error: {e}")
+                logger.error(f"ZMQ Broadcast error: {e}")
                 # Fallthrough to manual loop if ZMQ broadcast fails
         
         if self.network_send_function:
@@ -520,14 +524,14 @@ class BFTConsensus:
                         self.network_send_function(node_id, message.to_dict())
                         successful_sends += 1
                     except Exception as e:
-                        print(f"Error sending to {node_id}: {e}")
+                        logger.error(f"Error sending to {node_id}: {e}")
                         failed_sends += 1
                         # Log the network issue
                         self._log_node_behavior(node_id, "network_send_failure")
 
             # If too many sends failed, consider initiating recovery
             if failed_sends > self.f and self.auto_recovery_enabled:
-                print(f"Too many network failures ({failed_sends}), initiating recovery")
+                logger.warning(f"Too many network failures ({failed_sends}), initiating recovery")
                 self._initiate_view_change(self.view + 1)
 
     def _forward_to_primary(self, operation: Dict[str, Any]):
@@ -541,7 +545,7 @@ class BFTConsensus:
                         "operation": operation
                     })
                 except Exception as e:
-                    print(f"Error forwarding to primary {primary}: {e}")
+                    logger.error(f"Error forwarding to primary {primary}: {e}")
 
     def _log_node_behavior(self, node_id: str, issue: str):
         """Log node behavior issues for error classification"""
@@ -634,7 +638,7 @@ class BFTConsensus:
             payload = message.get_signable_payload()
             return verify_signature(public_key, payload, message.signature)
         except Exception as e:
-            print(f"Signature verification error: {e}")
+            logger.error(f"Signature verification error: {e}")
             return False
     
     @staticmethod
@@ -766,7 +770,7 @@ class BFTConsensus:
             self.auto_recovery_enabled = self.error_config.get("recovery", {}).get("auto_recovery", {}).get("enabled", False)
             
         except Exception as e:
-            print(f"Warning: Error mitigation initialization failed: {e}")
+            logger.warning(f"Error mitigation initialization failed: {e}")
     
     def _validate_bft_requirements(self):
         """Validate BFT requirements using error mitigation"""
@@ -775,7 +779,7 @@ class BFTConsensus:
                 # Validate node count
                 self.consensus_validator.validate_node_count(self.all_nodes)
             except Exception as e:
-                print(f"Warning: BFT validation failed: {e}")
+                logger.warning(f"BFT validation failed: {e}")
 
 
 # Factory function for easy setup

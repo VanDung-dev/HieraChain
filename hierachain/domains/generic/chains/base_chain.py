@@ -7,11 +7,14 @@ with domain-specific functionality while maintaining framework guidelines.
 """
 
 import time
+import logging
 from typing import Dict, Any, Optional, Callable
 from abc import ABC, abstractmethod
 
 from hierachain.hierarchical.sub_chain import SubChain
 from hierachain.domains.generic.events.base_event import BaseEvent
+
+logger = logging.getLogger(__name__)
 
 
 class BaseChain(SubChain, ABC):
@@ -186,7 +189,7 @@ class BaseChain(SubChain, ABC):
                 self.event_handlers[event_type](event)
             except Exception as e:
                 # Log error but don't fail the event addition
-                print(f"Error processing event {event_type}: {e}")
+                logger.error(f"Error processing event {event_type}: {e}")
         
         return True
     
