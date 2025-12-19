@@ -407,7 +407,10 @@ def test_bft_with_split_brain_scenario():
 
     # Test view change initiation
     node._initiate_view_change(1)
-    assert node.view == 1
+    # View should not change immediately, state should be VIEW_CHANGE
+    assert node.state.value == "view_change"
+    assert node.view == 0  # Still in view 0 until quorum
+    assert len(node.view_change_votes[1]) == 1  # Should have our own vote
 
 
 def test_bft_with_temporary_network_partition():
