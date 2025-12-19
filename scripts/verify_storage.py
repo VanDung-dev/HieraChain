@@ -8,10 +8,10 @@ import sys
 import time
 import logging
 
+from hierachain.storage.sql_backend import SqlStorageBackend
+
 # Add project root to path
 sys.path.append(os.getcwd())
-
-from hierachain.storage.sql_backend import SqlStorageBackend
 
 # Setup logger
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')

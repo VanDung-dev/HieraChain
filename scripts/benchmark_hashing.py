@@ -10,6 +10,7 @@ This script benchmarks the performance of two hashing methods:
 import time
 import json
 import hashlib
+
 from hierachain.core.block import Block
 
 def simulate_old_calculate_hash(block: Block) -> str:
