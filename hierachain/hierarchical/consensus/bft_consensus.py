@@ -30,6 +30,7 @@ class ConsensusState(Enum):
     PRE_PREPARED = "pre_prepared"
     PREPARED = "prepared"
     COMMITTED = "committed"
+    VIEW_CHANGE = "view_change"
 
 
 class MessageType(Enum):
@@ -152,6 +153,7 @@ class BFTConsensus:
         self.pre_prepare_messages: dict[int, BFTMessage] = {}
         self.prepare_messages: dict[int, list[BFTMessage]] = {}
         self.commit_messages: dict[int, list[BFTMessage]] = {}
+        self.view_change_votes: dict[int, list[BFTMessage]] = {}  # {view_number: [messages]}
         self.committed_sequence = -1
         self.pending_requests: list[dict[str, Any]] = []
         self.message_log: list[BFTMessage] = []
@@ -450,22 +452,145 @@ class BFTConsensus:
             return False
     
     def _handle_view_change(self, message: BFTMessage) -> bool:
-        """Process view change message"""
-        # Simplified view change implementation
+        """
+        Process view change message.
+        Collect 2f+1 messages to establish quorum for view change.
+        """
         with self.lock:
-            if message.view > self.view:
-                self._initiate_view_change(message.view)
+            new_view = message.view
+            
+            # 1. Basic validation
+            if new_view <= self.view:
+                return False
+                
+            # 2. Verify signature
+            if not self._verify_signature(message):
+                self._log_node_behavior(message.sender_id, "invalid_signature")
+                return False
+            
+            # 3. Store vote
+            if new_view not in self.view_change_votes:
+                self.view_change_votes[new_view] = []
+                
+            # Check for duplicates
+            sender_exists = any(m.sender_id == message.sender_id for m in self.view_change_votes[new_view])
+            if not sender_exists:
+                self.view_change_votes[new_view].append(message)
+                
+            # 4. Check for Quorum (2f + 1)
+            if len(self.view_change_votes[new_view]) >= 2 * self.f + 1:
+                # We have enough votes to move to new_view
+                
+                # Check if we are the primary for the new view
+                new_primary = self.all_nodes[new_view % self.n]
+                
+                if self.node_id == new_primary and self.state == ConsensusState.VIEW_CHANGE:
+                    # We are the new primary! Broadcast NEW-VIEW
+                    logger.info(f"Quorum reached for View {new_view}. I am Primary. Broadcasting NEW-VIEW.")
+                    self._broadcast_new_view(new_view, self.view_change_votes[new_view])
+                    
             return True
     
     def _handle_new_view(self, message: BFTMessage) -> bool:
-        """Process new view message"""
-        # Simplified new view implementation
+        """
+        Process new view message.
+        Validate proof (quorum of view-change messages) before accepting.
+        """
         with self.lock:
-            if message.view > self.view:
-                self.view = message.view
-                self.state = ConsensusState.IDLE
-                self._reset_view_change_timer()
+            new_view = message.view
+            
+            # 1. Validation
+            if new_view <= self.view:
+                return False
+                
+            if not self._verify_signature(message):
+                self._log_node_behavior(message.sender_id, "invalid_signature")
+                return False
+                
+            # 2. Validate Proof (Check attached View-Change messages)
+            proof = message.data.get("proof", [])
+            if not self._validate_view_change_proof(new_view, proof):
+                logger.warning(f"Invalid NEW-VIEW proof from {message.sender_id}")
+                self._log_node_behavior(message.sender_id, "invalid_view_change_proof")
+                return False
+                
+            # 3. Enter New View
+            logger.info(f"Accepted NEW-VIEW {new_view} from {message.sender_id}")
+            self.view = new_view
+            self.state = ConsensusState.IDLE
+            self._reset_view_change_timer()
             return True
+
+    def _validate_view_change_proof(self, view: int, proof: list[dict[str, Any]]) -> bool:
+        """Validate that the proof contains 2f+1 valid signatures for the view"""
+        if len(proof) < 2 * self.f + 1:
+            return False
+            
+        valid_count = 0
+        senders = set()
+        
+        for msg_dict in proof:
+            try:
+                # Reconstruct BFTMessage from dict
+                msg_type = MessageType(msg_dict.get("message_type"))
+                if msg_type != MessageType.VIEW_CHANGE:
+                    continue
+
+                if msg_dict.get("view") != view:
+                    continue
+                    
+                sender = msg_dict.get("sender_id")
+                if sender in senders:
+                    continue
+
+                if sender not in self.node_public_keys:
+                    continue
+
+                signature = msg_dict.get("signature")
+                temp_msg = BFTMessage(
+                    message_type=msg_type,
+                    view=view,
+                    sequence_number=msg_dict.get("sequence_number"),
+                    sender_id=sender,
+                    timestamp=msg_dict.get("timestamp"),
+                    signature=signature,
+                    data=msg_dict.get("data", {})
+                )
+                
+                if self._verify_signature(temp_msg):
+                    valid_count += 1
+                    senders.add(sender)
+                    
+            except Exception as e:
+                logger.error(f"Error validating proof message: {e}")
+                continue
+                
+        return valid_count >= 2 * self.f + 1
+
+    def _broadcast_new_view(self, new_view: int, proof_messages: list[BFTMessage]):
+        """Broadcast NEW-VIEW message with proof"""
+        # Serialize proof
+        proof_data = [msg.to_dict() for msg in proof_messages]
+        
+        # Create NEW-VIEW message
+        new_view_msg = BFTMessage(
+            message_type=MessageType.NEW_VIEW,
+            view=new_view,
+            sequence_number=self.committed_sequence,
+            sender_id=self.node_id,
+            timestamp=time.time(),
+            signature="",
+            data={
+                "proof": proof_data
+            }
+        )
+        new_view_msg.signature = self._sign_message(new_view_msg.get_signable_payload())
+        
+        self.view = new_view
+        self.state = ConsensusState.IDLE
+        self._reset_view_change_timer()
+        
+        self._broadcast(new_view_msg)
     
     def _execute_operation(self, operation: dict[str, Any]):
         """Execute the business operation"""
@@ -690,8 +815,13 @@ class BFTConsensus:
     
     def _initiate_view_change(self, new_view: int):
         """Initiate view change to new view"""
-        self.view = new_view
-        self.state = ConsensusState.IDLE
+        logger.info(f"Initiating view change to View {new_view}")
+        
+        # Avoid initiating if already doing so for this or higher view
+        if self.state == ConsensusState.VIEW_CHANGE and self.view >= new_view:
+            return
+
+        self.state = ConsensusState.VIEW_CHANGE
         
         # Broadcast view change message
         view_change_msg = BFTMessage(
@@ -705,7 +835,13 @@ class BFTConsensus:
                 "last_committed": self.committed_sequence
             }
         )
+        # Sign the message
         view_change_msg.signature = self._sign_message(view_change_msg.get_signable_payload())
+        
+        # Record our own vote
+        if new_view not in self.view_change_votes:
+            self.view_change_votes[new_view] = []
+        self.view_change_votes[new_view].append(view_change_msg)
         
         self._broadcast(view_change_msg)
         self._reset_view_change_timer()
