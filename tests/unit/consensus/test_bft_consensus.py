@@ -15,6 +15,7 @@ from hierachain.hierarchical.consensus.bft_consensus import (
     BFTMessage,
     MessageType
 )
+from hierachain.security.security_utils import KeyPair
 from hierachain.error_mitigation.validator import ConsensusValidator
 from hierachain.error_mitigation.error_classifier import ErrorClassifier
 from hierachain.error_mitigation.recovery_engine import (
@@ -63,7 +64,16 @@ def test_bft_network_creation():
 def test_bft_consensus_initialization():
     """Test BFT consensus initialization"""
     node_ids = ["node_1", "node_2", "node_3", "node_4"]
-    bft = BFTConsensus("node_1", node_ids, f=1)
+    keypairs = {nid: KeyPair() for nid in node_ids}
+    public_keys = {nid: kp.public_key for nid, kp in keypairs.items()}
+    
+    bft = BFTConsensus(
+        node_id="node_1", 
+        all_nodes=node_ids, 
+        f=1,
+        keypair=keypairs["node_1"],
+        node_public_keys=public_keys
+    )
 
     assert bft.node_id == "node_1"
     assert bft.n == 4  # Total nodes
@@ -77,14 +87,29 @@ def test_bft_consensus_initialization():
 def test_bft_primary_determination():
     """Test primary node determination"""
     node_ids = ["node_1", "node_2", "node_3", "node_4"]
-    bft = BFTConsensus("node_1", node_ids, f=1)
+    keypairs = {nid: KeyPair() for nid in node_ids}
+    public_keys = {nid: kp.public_key for nid, kp in keypairs.items()}
+    
+    bft = BFTConsensus(
+        node_id="node_1", 
+        all_nodes=node_ids, 
+        f=1,
+        keypair=keypairs["node_1"],
+        node_public_keys=public_keys
+    )
 
     # In view 0, primary should be node_1 (first in sorted list)
     assert bft._primary() == "node_1"
     assert bft._is_primary() is True
 
     # Test with different node
-    bft2 = BFTConsensus("node_2", node_ids, f=1)
+    bft2 = BFTConsensus(
+        node_id="node_2", 
+        all_nodes=node_ids, 
+        f=1,
+        keypair=keypairs["node_2"],
+        node_public_keys=public_keys
+    )
     assert bft2._primary() == "node_1"  # Still node_1 in view 0
     assert bft2._is_primary() is False  # node_2 is not primary
 
