@@ -7,7 +7,7 @@ from Sub-Chains, never detailed domain data, following framework guidelines.
 """
 
 import time
-from typing import Any, Set
+from typing import Any
 
 from hierachain.core.blockchain import Blockchain
 from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
@@ -44,7 +44,7 @@ class MainChain(Blockchain):
             # Default back to PoA
             self.consensus = ProofOfAuthority("MainChain_PoA")
             
-        self.registered_sub_chains: Set[str] = set()
+        self.registered_sub_chains: set[str] = set()
         self.sub_chain_metadata: dict[str, dict[str, Any]] = {}
         self.proof_count: int = 0
 

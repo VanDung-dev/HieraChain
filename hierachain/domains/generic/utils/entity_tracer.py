@@ -7,7 +7,7 @@ across multiple Sub-Chains while maintaining framework guidelines.
 """
 
 import time
-from typing import Any, Set
+from typing import Any
 from collections import defaultdict
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 
@@ -33,7 +33,7 @@ class EntityTracer:
         """
         self.hierarchy_manager = hierarchy_manager
         self.entity_cache: dict[str, dict[str, Any]] = {}
-        self.relationship_cache: dict[str, Set[str]] = defaultdict(set)
+        self.relationship_cache: dict[str, set[str]] = defaultdict(set)
         self.last_cache_update = 0.0
         self.cache_ttl = 300.0  # 5 minutes cache TTL
     

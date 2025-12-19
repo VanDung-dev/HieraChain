@@ -11,7 +11,6 @@ import json
 import hashlib
 import binascii
 import logging
-from typing import Set
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ class KeyManager:
             storage_backend: Optional storage backend (Redis, database, etc.)
         """
         self.storage = storage_backend or {}  # In-memory fallback
-        self.revoked_keys: Set[str] = set()
+        self.revoked_keys: set[str] = set()
         self.key_cache: dict[str, dict] = {}
         self.cache_ttl = 300  # 5 minutes default TTL
         

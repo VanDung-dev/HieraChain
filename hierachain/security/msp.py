@@ -8,7 +8,7 @@ business applications.
 
 import time
 import hashlib
-from typing import Any, Set
+from typing import Any
 from dataclasses import dataclass
 from enum import Enum
 
@@ -62,7 +62,7 @@ class CertificateAuthority:
         self.intermediate_certs = intermediate_certs
         self.policy = policy
         self.issued_certificates: dict[str, Certificate] = {}
-        self.revoked_certificates: Set[str] = set()
+        self.revoked_certificates: set[str] = set()
         
     def issue_certificate(self, subject: str, public_key: str, 
                          attributes: dict[str, Any], valid_days: int = 365) -> Certificate:

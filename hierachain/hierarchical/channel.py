@@ -9,7 +9,7 @@ completely isolated data space with its own governance policies and access contr
 import time
 import pyarrow as pa
 import pyarrow.compute as pc
-from typing import Any, Set, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 from dataclasses import dataclass
 from enum import Enum
 
@@ -36,7 +36,7 @@ class Organization:
     msp_id: str
     endpoints: list[str]
     certificates: dict[str, Any]
-    roles: Set[str]
+    roles: set[str]
     
     def has_role(self, role: str) -> bool:
         """Check if organization has a specific role"""

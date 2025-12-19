@@ -8,7 +8,6 @@ health is critical, it rejects the request with a 503 Service Unavailable respon
 """
 
 import logging
-from typing import Set
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -34,7 +33,7 @@ class ResourceGuardMiddleware(BaseHTTPMiddleware):
         monitor: PerformanceMonitor | None = None,
         memory_threshold_percent: float = 80.0,
         cpu_threshold_percent: float = 80.0,
-        exempt_paths: Set[str] | None = None,
+        exempt_paths: set[str] | None = None,
     ):
         """
         Initialize the ResourceGuardMiddleware.
