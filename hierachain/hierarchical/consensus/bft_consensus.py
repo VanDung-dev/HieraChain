@@ -823,6 +823,12 @@ class BFTConsensus:
         if self.state == ConsensusState.VIEW_CHANGE and self.view >= new_view:
             return
 
+        if new_view in self.view_change_votes:
+            if any(m.sender_id == self.node_id for m in self.view_change_votes[new_view]):
+                # Ensure state is correct
+                self.state = ConsensusState.VIEW_CHANGE
+                return
+
         self.state = ConsensusState.VIEW_CHANGE
         
         # Broadcast view change message
