@@ -9,7 +9,7 @@ Provides Byzantine fault tolerance with configurable fault tolerance levels.
 import time
 import hashlib
 import threading
-from typing import Dict, List, Any, Optional, Callable
+from typing import Any, Optional, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -50,9 +50,9 @@ class BFTMessage:
     sender_id: str
     timestamp: float
     signature: str
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert message to dictionary for serialization"""
         return {
             "message_type": self.message_type.value,
@@ -87,10 +87,10 @@ class ConsensusError(Exception):
 class BFTConsensus:
     """Byzantine Fault Tolerance consensus implementation"""
     
-    def __init__(self, node_id: str, all_nodes: List[str], f: int = 1, 
-                 error_config: Optional[Dict[str, Any]] = None,
+    def __init__(self, node_id: str, all_nodes: list[str], f: int = 1, 
+                 error_config: Optional[dict[str, Any]] = None,
                  keypair: Optional[KeyPair] = None,
-                 node_public_keys: Optional[Dict[str, str]] = None,
+                 node_public_keys: Optional[dict[str, str]] = None,
                  zmq_node: Optional[ZmqNode] = None):
         """
         Initialize BFT consensus
@@ -146,19 +146,19 @@ class BFTConsensus:
         self.view = 0
         self.sequence_number = 0
         self.state = ConsensusState.IDLE
-        self.current_request: Optional[Dict[str, Any]] = None
+        self.current_request: Optional[dict[str, Any]] = None
         
         # Message storage
-        self.pre_prepare_messages: Dict[int, BFTMessage] = {}
-        self.prepare_messages: Dict[int, List[BFTMessage]] = {}
-        self.commit_messages: Dict[int, List[BFTMessage]] = {}
+        self.pre_prepare_messages: dict[int, BFTMessage] = {}
+        self.prepare_messages: dict[int, list[BFTMessage]] = {}
+        self.commit_messages: dict[int, list[BFTMessage]] = {}
         self.committed_sequence = -1
-        self.pending_requests: List[Dict[str, Any]] = []
-        self.message_log: List[BFTMessage] = []
+        self.pending_requests: list[dict[str, Any]] = []
+        self.message_log: list[BFTMessage] = []
 
         # Node monitoring
-        self.node_response_times: Dict[str, List[float]] = {}
-        self.node_failure_counts: Dict[str, int] = {}
+        self.node_response_times: dict[str, list[float]] = {}
+        self.node_failure_counts: dict[str, int] = {}
         self.max_failure_count = 3
 
         # View change state
@@ -203,7 +203,7 @@ class BFTConsensus:
         """Set reference to the blockchain"""
         self.chain = chain
     
-    def request(self, operation: Dict[str, Any]) -> bool:
+    def request(self, operation: dict[str, Any]) -> bool:
         """
         Client request to the consensus protocol
         
@@ -256,7 +256,7 @@ class BFTConsensus:
             
             return True
     
-    def handle_message(self, message: Dict[str, Any]) -> bool:
+    def handle_message(self, message: dict[str, Any]) -> bool:
         """
         Handle incoming consensus messages
         
@@ -467,7 +467,7 @@ class BFTConsensus:
                 self._reset_view_change_timer()
             return True
     
-    def _execute_operation(self, operation: Dict[str, Any]):
+    def _execute_operation(self, operation: dict[str, Any]):
         """Execute the business operation"""
         try:
             # In our framework, this translates to creating an event
@@ -490,7 +490,7 @@ class BFTConsensus:
         except Exception as e:
             logger.error(f"Error executing operation: {e}")
 
-    def _send_via_zmq(self, target_id: str, message: Dict[str, Any]):
+    def _send_via_zmq(self, target_id: str, message: dict[str, Any]):
         """Send message using ZeroMQ transport (sync wrapper for async)."""
         import asyncio
         if self.zmq_node:
@@ -546,7 +546,7 @@ class BFTConsensus:
                 logger.warning(f"Too many network failures ({failed_sends}), initiating recovery")
                 self._initiate_view_change(self.view + 1)
 
-    def _forward_to_primary(self, operation: Dict[str, Any]):
+    def _forward_to_primary(self, operation: dict[str, Any]):
         """Forward request to primary node"""
         if self.network_send_function:
             primary = self._primary()
@@ -653,7 +653,7 @@ class BFTConsensus:
             return False
     
     @staticmethod
-    def _hash_request(request: Dict[str, Any]) -> str:
+    def _hash_request(request: dict[str, Any]) -> str:
         """Create hash of request"""
         request_str = str(sorted(request.items()))
         return hashlib.sha256(request_str.encode()).hexdigest()
@@ -734,7 +734,7 @@ class BFTConsensus:
         if len(self.message_log) > 1000:
             self.message_log = self.message_log[-500:]
     
-    def get_consensus_status(self) -> Dict[str, Any]:
+    def get_consensus_status(self) -> dict[str, Any]:
         """Get current consensus status"""
         with self.lock:
             return {
@@ -794,7 +794,7 @@ class BFTConsensus:
 
 
 # Factory function for easy setup
-def create_bft_network(node_configs: List[Dict[str, Any]], fault_tolerance: int = 1) -> Dict[str, BFTConsensus]:
+def create_bft_network(node_configs: list[dict[str, Any]], fault_tolerance: int = 1) -> dict[str, BFTConsensus]:
     """
     Create a BFT consensus network
     

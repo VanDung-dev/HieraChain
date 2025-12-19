@@ -10,7 +10,7 @@ enterprise blockchain applications.
 import time
 import json
 import re
-from typing import Dict, Any, List, Optional, Union
+from typing import Any, Optional, Union
 from dataclasses import dataclass
 from enum import Enum
 
@@ -59,9 +59,9 @@ class PolicyCondition:
     """Individual policy condition"""
     attribute: str
     operator: ComparisonOperator
-    value: Union[str, int, float, List[Any]]
+    value: Union[str, int, float, list[Any]]
     
-    def evaluate(self, context: Dict[str, Any]) -> bool:
+    def evaluate(self, context: dict[str, Any]) -> bool:
         """
         Evaluate condition against context.
         
@@ -108,7 +108,7 @@ class PolicyCondition:
             return False
     
     @staticmethod
-    def _get_attribute_value(context: Dict[str, Any], attribute_path: str) -> Any:
+    def _get_attribute_value(context: dict[str, Any], attribute_path: str) -> Any:
         """Get attribute value from context using dot notation, supporting Dict and Arrow objects"""
         current = context
         
@@ -140,7 +140,7 @@ class PolicyCondition:
 
         return current
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "attribute": self.attribute,
@@ -149,7 +149,7 @@ class PolicyCondition:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'PolicyCondition':
+    def from_dict(cls, data: dict[str, Any]) -> 'PolicyCondition':
         """Create from dictionary"""
         return cls(
             attribute=data["attribute"],
@@ -162,13 +162,13 @@ class PolicyCondition:
 class PolicyRule:
     """Policy rule with conditions and effect"""
     rule_id: str
-    conditions: List[PolicyCondition]
+    conditions: list[PolicyCondition]
     logical_operator: LogicalOperator
     effect: PolicyEffect
     priority: int = 0
     description: str = ""
     
-    def evaluate(self, context: Dict[str, Any]) -> Optional[PolicyEffect]:
+    def evaluate(self, context: dict[str, Any]) -> Optional[PolicyEffect]:
         """
         Evaluate rule against context.
         
@@ -197,7 +197,7 @@ class PolicyRule:
         
         return self.effect if rule_applies else None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "rule_id": self.rule_id,
@@ -209,7 +209,7 @@ class PolicyRule:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'PolicyRule':
+    def from_dict(cls, data: dict[str, Any]) -> 'PolicyRule':
         """Create from dictionary"""
         return cls(
             rule_id=data["rule_id"],
@@ -230,7 +230,7 @@ class Policy:
     """
     
     def __init__(self, policy_id: str, policy_type: PolicyType, 
-                 rules: Optional[List[PolicyRule]] = None,
+                 rules: Optional[list[PolicyRule]] = None,
                  default_effect: PolicyEffect = PolicyEffect.DENY,
                  description: str = ""):
         """
@@ -280,7 +280,7 @@ class Policy:
                 return True
         return False
     
-    def evaluate(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate(self, context: dict[str, Any]) -> dict[str, Any]:
         """
         Evaluate policy against context.
         
@@ -337,7 +337,7 @@ class Policy:
         return evaluation_result
     
     @staticmethod
-    def _hash_context(context: Dict[str, Any]) -> str:
+    def _hash_context(context: dict[str, Any]) -> str:
         """Generate hash of context for caching"""
         import hashlib
         
@@ -349,7 +349,7 @@ class Policy:
         context_str = json.dumps(context, sort_keys=True, separators=(',', ':'), default=_default_serializer)
         return hashlib.md5(context_str.encode()).hexdigest()[:8]
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "policy_id": self.policy_id,
@@ -364,7 +364,7 @@ class Policy:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Policy':
+    def from_dict(cls, data: dict[str, Any]) -> 'Policy':
         """Create from dictionary"""
         policy = cls(
             policy_id=data["policy_id"],
@@ -391,10 +391,10 @@ class PolicyEngine:
     """
     
     def __init__(self):
-        self.policies: Dict[str, Policy] = {}
-        self.policy_sets: Dict[str, List[str]] = {}  # Named sets of policies
-        self.evaluation_cache: Dict[str, Dict[str, Any]] = {}
-        self.audit_log: List[Dict[str, Any]] = []
+        self.policies: dict[str, Policy] = {}
+        self.policy_sets: dict[str, list[str]] = {}  # Named sets of policies
+        self.evaluation_cache: dict[str, dict[str, Any]] = {}
+        self.audit_log: list[dict[str, Any]] = []
         
         # Configuration
         self.cache_enabled = True
@@ -442,7 +442,7 @@ class PolicyEngine:
             return True
         return False
     
-    def create_policy_set(self, set_name: str, policy_ids: List[str]) -> bool:
+    def create_policy_set(self, set_name: str, policy_ids: list[str]) -> bool:
         """Create named set of policies"""
         # Validate all policies exist
         for policy_id in policy_ids:
@@ -458,7 +458,7 @@ class PolicyEngine:
         
         return True
     
-    def evaluate_policy(self, policy_id: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate_policy(self, policy_id: str, context: dict[str, Any]) -> dict[str, Any]:
         """
         Evaluate single policy against context.
         
@@ -510,8 +510,8 @@ class PolicyEngine:
         
         return result
     
-    def evaluate_policy_set(self, set_name: str, context: Dict[str, Any],
-                          combination_logic: str = "all_allow") -> Dict[str, Any]:
+    def evaluate_policy_set(self, set_name: str, context: dict[str, Any],
+                          combination_logic: str = "all_allow") -> dict[str, Any]:
         """
         Evaluate set of policies against context.
         
@@ -567,8 +567,8 @@ class PolicyEngine:
         
         return combined_result
     
-    def get_applicable_policies(self, _context: Dict[str, Any],
-                              policy_type: Optional[PolicyType] = None) -> List[str]:
+    def get_applicable_policies(self, _context: dict[str, Any],
+                              policy_type: Optional[PolicyType] = None) -> list[str]:
         """Get list of policies that might apply to context"""
         applicable_policies = []
         
@@ -583,7 +583,7 @@ class PolicyEngine:
         
         return applicable_policies
     
-    def get_policy_info(self, policy_id: str) -> Optional[Dict[str, Any]]:
+    def get_policy_info(self, policy_id: str) -> Optional[dict[str, Any]]:
         """Get comprehensive policy information"""
         policy = self.policies.get(policy_id)
         if not policy:
@@ -591,7 +591,7 @@ class PolicyEngine:
             
         return policy.to_dict()
     
-    def get_engine_statistics(self) -> Dict[str, Any]:
+    def get_engine_statistics(self) -> dict[str, Any]:
         """Get engine statistics"""
         cache_stats = {
             "enabled": self.cache_enabled,
@@ -613,11 +613,11 @@ class PolicyEngine:
         """Clear evaluation cache"""
         self.evaluation_cache.clear()
     
-    def get_audit_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_audit_log(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get recent audit log entries"""
         return self.audit_log[-limit:] if limit > 0 else self.audit_log
     
-    def _cache_result(self, cache_key: str, result: Dict[str, Any]) -> None:
+    def _cache_result(self, cache_key: str, result: dict[str, Any]) -> None:
         """Cache evaluation result"""
         # Implement LRU eviction if cache is full
         if len(self.evaluation_cache) >= self.max_cache_entries:
@@ -631,7 +631,7 @@ class PolicyEngine:
         }
     
     @staticmethod
-    def _hash_context(context: Dict[str, Any]) -> str:
+    def _hash_context(context: dict[str, Any]) -> str:
         """Generate hash of context"""
         import hashlib
         
@@ -644,7 +644,7 @@ class PolicyEngine:
         return hashlib.md5(context_str.encode()).hexdigest()[:8]
     
     @staticmethod
-    def _summarize_context(context: Dict[str, Any]) -> Dict[str, Any]:
+    def _summarize_context(context: dict[str, Any]) -> dict[str, Any]:
         """Create summary of context for audit logging"""
         return {
             "entity_id": context.get("entity_id"),
@@ -654,7 +654,7 @@ class PolicyEngine:
             "organization": context.get("organization")
         }
     
-    def _log_audit_event(self, event_type: str, details: Dict[str, Any]) -> None:
+    def _log_audit_event(self, event_type: str, details: dict[str, Any]) -> None:
         """Log audit event"""
         if not self.audit_enabled:
             return

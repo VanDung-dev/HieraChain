@@ -11,7 +11,7 @@ import shutil
 import hashlib
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Optional
 from cryptography.fernet import Fernet
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class KeyBackupManager:
     cryptocurrency concepts, focusing on event-based security operations.
     """
     
-    def __init__(self, configuration: Dict):
+    def __init__(self, configuration: dict):
         """
         Initialize KeyBackupManager with configuration.
         
@@ -157,7 +157,7 @@ class KeyBackupManager:
             logger.error(f"Key backup failed: {str(e)}")
             raise BackupError(f"Failed to backup keys: {str(e)}")
     
-    def restore_keys(self, backup_id: str) -> Dict[str, bytes]:
+    def restore_keys(self, backup_id: str) -> dict[str, bytes]:
         """
         Restore keys from backup if damaged.
         
@@ -209,7 +209,7 @@ class KeyBackupManager:
             logger.error(f"Key restore failed for {backup_id}: {str(e)}")
             raise RestoreError(f"Failed to restore keys: {str(e)}")
     
-    def list_backups(self, key_type: Optional[str] = None) -> List[Dict]:
+    def list_backups(self, key_type: Optional[str] = None) -> list[dict]:
         """
         List available backups, optionally filtered by key type.
         
@@ -273,13 +273,13 @@ class KeyBackupManager:
             logger.info("Generated new master backup encryption key")
             return key
     
-    def _encrypt_backup_data(self, data: Dict) -> bytes:
+    def _encrypt_backup_data(self, data: dict) -> bytes:
         """Encrypt backup data using Fernet (AES-256-GCM)."""
         fernet = Fernet(self.encryption_key)
         json_data = json.dumps(data).encode('utf-8')
         return fernet.encrypt(json_data)
     
-    def _decrypt_backup_data(self, encrypted_data: bytes) -> Dict:
+    def _decrypt_backup_data(self, encrypted_data: bytes) -> dict:
         """Decrypt backup data."""
         fernet = Fernet(self.encryption_key)
         decrypted_data = fernet.decrypt(encrypted_data)
@@ -303,7 +303,7 @@ class KeyBackupManager:
         except (IOError, OSError, ValueError):
             return False
     
-    def _distribute_to_locations(self, file_path: str, backup_id: str) -> List[str]:
+    def _distribute_to_locations(self, file_path: str, backup_id: str) -> list[str]:
         """Distribute encrypted backup to secure locations."""
         distributed_locations = []
         filename = f"{backup_id}.enc"
@@ -433,7 +433,7 @@ class KeyBackupManager:
         metadata = self.metadata.get(backup_id, {})
         return metadata.get("hash", "")
     
-    def _load_metadata(self) -> Dict:
+    def _load_metadata(self) -> dict:
         """Load backup metadata from file."""
         if os.path.exists(self.metadata_file):
             try:
@@ -452,13 +452,13 @@ class KeyBackupManager:
         except Exception as e:
             logger.error(f"Failed to save backup metadata: {str(e)}")
     
-    def _update_metadata(self, backup_id: str, metadata: Dict):
+    def _update_metadata(self, backup_id: str, metadata: dict):
         """Update metadata for a backup."""
         self.metadata[backup_id] = metadata
         self._save_metadata()
     
     @staticmethod
-    def _log_backup_success(backup_id: str, hash_value: str, locations: List[str]):
+    def _log_backup_success(backup_id: str, hash_value: str, locations: list[str]):
         """Log successful backup operation."""
         log_entry = {
             "event_type": "key_backup_success",
@@ -472,7 +472,7 @@ class KeyBackupManager:
 
 
 # Factory function for creating configured KeyBackupManager
-def create_key_backup_manager(configuration: Dict) -> KeyBackupManager:
+def create_key_backup_manager(configuration: dict) -> KeyBackupManager:
     """
     Factory function to create configured KeyBackupManager instance.
     

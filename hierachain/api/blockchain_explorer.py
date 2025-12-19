@@ -6,7 +6,7 @@ capabilities for developer experience and data analysis.
 """
 
 import time
-from typing import Dict, List, Any, Optional
+from typing import Any, Optional
 from dataclasses import dataclass, field
 import logging
 
@@ -23,13 +23,13 @@ class ComponentConfig:
     enabled: bool = True
     refresh_interval: int = 5000
     max_items: int = 100
-    filters: Dict[str, Any] = field(default_factory=dict)
+    filters: dict[str, Any] = field(default_factory=dict)
 
 
 class BlockchainExplorer:
     """Integration with blockchain explorer for visualization and analysis"""
     
-    def __init__(self, chain: Any, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, chain: Any, config: Optional[dict[str, Any]] = None):
         """
         Initialize blockchain explorer
         
@@ -39,8 +39,8 @@ class BlockchainExplorer:
         """
         self.chain = chain
         self.config = config or {}
-        self.ui_components: Dict[str, Any] = {}
-        self.data_processors: Dict[str, Any] = {}
+        self.ui_components: dict[str, Any] = {}
+        self.data_processors: dict[str, Any] = {}
         self.logger = logging.getLogger(__name__)
         self.register_default_components()
     
@@ -71,7 +71,7 @@ class BlockchainExplorer:
         """Get a registered component"""
         return self.ui_components.get(component_id)
     
-    def render(self, component_id: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def render(self, component_id: Optional[str] = None, **kwargs) -> dict[str, Any]:
         """
         Render explorer UI
         
@@ -86,7 +86,7 @@ class BlockchainExplorer:
         # Render main dashboard
         return self._render_dashboard(**kwargs)
     
-    def _render_dashboard(self, **kwargs) -> Dict[str, Any]:
+    def _render_dashboard(self, **kwargs) -> dict[str, Any]:
         """Render the main explorer dashboard"""
         # Use kwargs to customize the title if provided
         title = kwargs.get('title', 'HieraChain Explorer')
@@ -129,7 +129,7 @@ class ChainOverviewComponent:
     def __init__(self, chain: Any):
         self.chain = chain
     
-    def render_summary(self) -> Dict[str, Any]:
+    def render_summary(self) -> dict[str, Any]:
         """Render chain summary"""
         try:
             summary = {
@@ -141,7 +141,7 @@ class ChainOverviewComponent:
         except Exception as e:
             return {"error": str(e)}
     
-    def _get_main_chain_stats(self) -> Dict[str, Any]:
+    def _get_main_chain_stats(self) -> dict[str, Any]:
         """Get main chain statistics"""
         if hasattr(self.chain, 'main_chain'):
             chain = self.chain.main_chain
@@ -152,7 +152,7 @@ class ChainOverviewComponent:
             }
         return {"error": "Main chain not found"}
     
-    def _get_sub_chain_stats(self) -> List[Dict[str, Any]]:
+    def _get_sub_chain_stats(self) -> list[dict[str, Any]]:
         """Get sub-chain statistics"""
         if hasattr(self.chain, 'sub_chains'):
             stats = []
@@ -165,7 +165,7 @@ class ChainOverviewComponent:
             return stats
         return []
     
-    def _get_recent_activity(self) -> List[Dict[str, Any]]:
+    def _get_recent_activity(self) -> list[dict[str, Any]]:
         """Get recent blockchain activity"""
         activities = []
         # Add recent block activities
@@ -189,7 +189,7 @@ class EntityTracerComponent:
         self.chain = chain
     
     @staticmethod
-    def render_input_form() -> Dict[str, Any]:
+    def render_input_form() -> dict[str, Any]:
         """Render entity input form"""
         return {
             "type": "form",
@@ -210,7 +210,7 @@ class EntityTracerComponent:
             "submit_endpoint": "/api/v1/trace_entity"
         }
     
-    def trace_entity(self, entity_id: str, chain_type: str = "all") -> Dict[str, Any]:
+    def trace_entity(self, entity_id: str, chain_type: str = "all") -> dict[str, Any]:
         """Trace entity across chains"""
         try:
             events = []
@@ -237,7 +237,7 @@ class EntityTracerComponent:
         except Exception as e:
             return {"error": str(e)}
     
-    def _search_main_chain(self, entity_id: str) -> List[Dict[str, Any]]:
+    def _search_main_chain(self, entity_id: str) -> list[dict[str, Any]]:
         """Search main chain for entity"""
         events = []
         for block in self.chain.main_chain.chain:
@@ -251,7 +251,7 @@ class EntityTracerComponent:
                     })
         return events
     
-    def _search_sub_chains(self, entity_id: str) -> List[Dict[str, Any]]:
+    def _search_sub_chains(self, entity_id: str) -> list[dict[str, Any]]:
         """Search sub-chains for entity"""
         events = []
         for chain_name, sub_chain in self.chain.sub_chains.items():
@@ -267,7 +267,7 @@ class EntityTracerComponent:
         return events
     
     @staticmethod
-    def _event_contains_entity(event: Dict[str, Any], entity_id: str) -> bool:
+    def _event_contains_entity(event: dict[str, Any], entity_id: str) -> bool:
         """Check if event contains entity"""
         return (event.get("entity_id") == entity_id or 
                 entity_id in str(event.get("details", {})))
@@ -279,7 +279,7 @@ class EventAnalyticsComponent:
     def __init__(self, chain: Any):
         self.chain = chain
     
-    def render_summary(self) -> Dict[str, Any]:
+    def render_summary(self) -> dict[str, Any]:
         """Render analytics summary"""
         try:
             return {
@@ -290,7 +290,7 @@ class EventAnalyticsComponent:
         except Exception as e:
             return {"error": str(e)}
     
-    def _get_event_type_stats(self) -> Dict[str, int]:
+    def _get_event_type_stats(self) -> dict[str, int]:
         """Get event type statistics"""
         stats = {}
         
@@ -311,7 +311,7 @@ class EventAnalyticsComponent:
         
         return stats
     
-    def _get_activity_timeline(self) -> List[Dict[str, Any]]:
+    def _get_activity_timeline(self) -> list[dict[str, Any]]:
         """Get activity timeline"""
         timeline = []
         current_time = time.time()
@@ -343,7 +343,7 @@ class EventAnalyticsComponent:
         
         return count
     
-    def _get_chain_distribution(self) -> Dict[str, int]:
+    def _get_chain_distribution(self) -> dict[str, int]:
         """Get event distribution by chain"""
         distribution = {}
         
@@ -365,7 +365,7 @@ class ProofVisualizerComponent:
     def __init__(self, chain: Any):
         self.chain = chain
     
-    def render_proof_flow(self) -> Dict[str, Any]:
+    def render_proof_flow(self) -> dict[str, Any]:
         """Render proof submission flow"""
         try:
             return {
@@ -376,7 +376,7 @@ class ProofVisualizerComponent:
         except Exception as e:
             return {"error": str(e)}
     
-    def _get_proof_submissions(self) -> List[Dict[str, Any]]:
+    def _get_proof_submissions(self) -> list[dict[str, Any]]:
         """Get recent proof submissions"""
         proofs = []
         
@@ -394,7 +394,7 @@ class ProofVisualizerComponent:
         
         return sorted(proofs, key=lambda x: x.get('timestamp', 0), reverse=True)
     
-    def _get_validation_status(self) -> Dict[str, Any]:
+    def _get_validation_status(self) -> dict[str, Any]:
         """Get validation status"""
         return {
             "total_proofs": self._count_total_proofs(),
@@ -412,7 +412,7 @@ class ProofVisualizerComponent:
                         count += 1
         return count
     
-    def _get_hierarchy_view(self) -> Dict[str, Any]:
+    def _get_hierarchy_view(self) -> dict[str, Any]:
         """Get hierarchical view of chains"""
         hierarchy = {
             "main_chain": {
@@ -433,7 +433,7 @@ class ProofVisualizerComponent:
         
         return hierarchy
     
-    def _get_latest_proof_for_chain(self, chain_name: str) -> Optional[Dict[str, Any]]:
+    def _get_latest_proof_for_chain(self, chain_name: str) -> Optional[dict[str, Any]]:
         """Get latest proof for specific chain"""
         if hasattr(self.chain, 'main_chain'):
             for block in reversed(self.chain.main_chain.chain):

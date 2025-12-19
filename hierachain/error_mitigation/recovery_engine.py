@@ -10,7 +10,7 @@ import time
 import json
 import logging
 import asyncio
-from typing import List, Dict, Any
+from typing import Any
 from datetime import datetime
 import os
 
@@ -32,7 +32,7 @@ class NetworkRecoveryEngine:
     and automatic recovery from network issues affecting consensus.
     """
 
-    def __init__(self, consensus_config: Dict[str, Any]):
+    def __init__(self, consensus_config: dict[str, Any]):
         """
         Initialize network recovery engine
 
@@ -50,7 +50,7 @@ class NetworkRecoveryEngine:
 
         logger.info(f"Initialized NetworkRecoveryEngine with redundancy_factor={self.redundancy_factor}")
 
-    def adjust_timeout(self, latency_history_input: List[float]) -> float:
+    def adjust_timeout(self, latency_history_input: list[float]) -> float:
         """
         Dynamically adjust timeouts based on network latency history
 
@@ -80,7 +80,7 @@ class NetworkRecoveryEngine:
         logger.info(f"Timeout adjusted to {calculated_timeout:.2f}s based on avg latency {avg_latency:.1f}ms")
         return calculated_timeout
 
-    async def send_with_redundancy(self, message: Dict[str, Any], target_nodes: List[str]) -> Dict[str, Any]:
+    async def send_with_redundancy(self, message: dict[str, Any], target_nodes: list[str]) -> dict[str, Any]:
         """
         Send message via multiple redundant paths
 
@@ -127,7 +127,7 @@ class NetworkRecoveryEngine:
             logger.error("Redundant sending timed out")
             raise RecoveryError("Network timeout on all paths")
 
-    async def _send_via_path(self, message: Dict[str, Any], target_node: str, path_id: int) -> Dict[str, Any]:
+    async def _send_via_path(self, message: dict[str, Any], target_node: str, path_id: int) -> dict[str, Any]:
         """
         Send message via specific path
 
@@ -172,7 +172,7 @@ class NetworkRecoveryEngine:
             logger.error(f"Path {path_id} to {target_node} failed: {e}")
             raise RecoveryError(f"Path {path_id} failed: {str(e)}")
 
-    def monitor_network_health(self) -> Dict[str, Any]:
+    def monitor_network_health(self) -> dict[str, Any]:
         """
         Monitor network health and detect partitions
 
@@ -251,7 +251,7 @@ class AutoScaler:
     with external orchestration systems like Kubernetes.
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize auto scaler
 
@@ -434,7 +434,7 @@ class AutoScaler:
         return 4  # Default for testing
 
     @staticmethod
-    def _log_scaling_event(event: Dict[str, Any]) -> None:
+    def _log_scaling_event(event: dict[str, Any]) -> None:
         """
         Log scaling events for audit
 
@@ -457,7 +457,7 @@ class ConsensusRecoveryEngine:
     ordering issues, and consensus state recovery.
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize consensus recovery engine
 
@@ -512,7 +512,7 @@ class ConsensusRecoveryEngine:
 
         return recovery_success
 
-    def handle_message_ordering_failure(self, failed_messages: List[Dict[str, Any]]) -> bool:
+    def handle_message_ordering_failure(self, failed_messages: list[dict[str, Any]]) -> bool:
         """
         Handle message ordering failures
 
@@ -541,7 +541,7 @@ class ConsensusRecoveryEngine:
             logger.error(f"Message ordering recovery failed: {e}")
             return False
 
-    def handle_node_performance_issues(self, node_metrics: Dict[str, Any]) -> Dict[str, Any]:
+    def handle_node_performance_issues(self, node_metrics: dict[str, Any]) -> dict[str, Any]:
         """
         Handle node performance issues based on metrics
 
@@ -585,7 +585,7 @@ class ConsensusRecoveryEngine:
         return actions
 
     @staticmethod
-    def adapt_consensus_parameters(network_conditions: Dict[str, Any]) -> Dict[str, Any]:
+    def adapt_consensus_parameters(network_conditions: dict[str, Any]) -> dict[str, Any]:
         """
         Adapt consensus parameters based on network conditions
 
@@ -622,7 +622,7 @@ class ConsensusRecoveryEngine:
         logger.info(f"Adapted consensus parameters: {adapted_params}")
         return adapted_params
 
-    def recover_consensus_state(self, last_known_state: Dict[str, Any]) -> bool:
+    def recover_consensus_state(self, last_known_state: dict[str, Any]) -> bool:
         """
         Recover consensus state from last known good state
 
@@ -696,7 +696,7 @@ class ConsensusRecoveryEngine:
         return True
 
     @staticmethod
-    def _reorder_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _reorder_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Reorder messages based on timestamp and sequence
 
@@ -713,7 +713,7 @@ class ConsensusRecoveryEngine:
         ))
 
     @staticmethod
-    def _process_message(message: Dict[str, Any]) -> bool:
+    def _process_message(message: dict[str, Any]) -> bool:
         """
         Process a single message
 
@@ -728,7 +728,7 @@ class ConsensusRecoveryEngine:
         return True
 
     @staticmethod
-    def _validate_state_integrity(state: Dict[str, Any]) -> bool:
+    def _validate_state_integrity(state: dict[str, Any]) -> bool:
         """
         Validate consensus state integrity
 
@@ -750,7 +750,7 @@ class BackupRecoveryEngine:
     recovery from backup data when needed.
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize backup recovery engine
 
@@ -881,7 +881,7 @@ class BackupRecoveryEngine:
 
 
 # Factory function for creating recovery engines
-def create_recovery_engine(engine_type: str, config: Dict[str, Any]):
+def create_recovery_engine(engine_type: str, config: dict[str, Any]):
     """
     Factory function to create appropriate recovery engine
 

@@ -10,7 +10,7 @@ import time
 import logging
 import os
 import threading
-from typing import Dict, List, Any, Optional, Callable, Tuple
+from typing import Any, Optional, Callable, Tuple
 from enum import Enum
 from dataclasses import dataclass
 
@@ -31,11 +31,11 @@ class MitigationAction:
     """Single mitigation action"""
     action_id: str
     description: str
-    execution_function: Callable[[Dict[str, Any]], bool]
+    execution_function: Callable[[dict[str, Any]], bool]
     priority: int  # 1 = highest priority
     estimated_duration: int  # seconds
     requires_downtime: bool = False
-    dependencies: List[str] = None  # List of action IDs that must complete first
+    dependencies: list[str] = None  # List of action IDs that must complete first
 
 
 @dataclass
@@ -46,14 +46,14 @@ class MitigationResult:
     start_time: float
     end_time: Optional[float]
     error_message: Optional[str]
-    output: Dict[str, Any]
+    output: dict[str, Any]
 
 
 class ConsensusMitigationStrategies:
     """Mitigation strategies for consensus-related risks"""
     
     @staticmethod
-    def add_validator_nodes(params: Dict[str, Any]) -> bool:
+    def add_validator_nodes(params: dict[str, Any]) -> bool:
         """
         Add validator nodes to meet BFT requirements.
         
@@ -94,7 +94,7 @@ class ConsensusMitigationStrategies:
             return False
     
     @staticmethod
-    def optimize_leader_timeout(params: Dict[str, Any]) -> bool:
+    def optimize_leader_timeout(params: dict[str, Any]) -> bool:
         """
         Optimize leader timeout settings for better performance.
         
@@ -126,7 +126,7 @@ class ConsensusMitigationStrategies:
             return False
     
     @staticmethod
-    def strengthen_message_verification(params: Dict[str, Any]) -> bool:
+    def strengthen_message_verification(params: dict[str, Any]) -> bool:
         """
         Strengthen message verification mechanisms.
         
@@ -158,7 +158,7 @@ class SecurityMitigationStrategies:
     """Mitigation strategies for security-related risks"""
     
     @staticmethod
-    def renew_certificates(params: Dict[str, Any]) -> bool:
+    def renew_certificates(params: dict[str, Any]) -> bool:
         """
         Renew expiring or expired certificates.
         
@@ -190,7 +190,7 @@ class SecurityMitigationStrategies:
             return False
     
     @staticmethod
-    def implement_rate_limiting(params: Dict[str, Any]) -> bool:
+    def implement_rate_limiting(params: dict[str, Any]) -> bool:
         """
         Implement rate limiting for authentication attempts.
         
@@ -219,7 +219,7 @@ class SecurityMitigationStrategies:
             return False
     
     @staticmethod
-    def upgrade_encryption(params: Dict[str, Any]) -> bool:
+    def upgrade_encryption(params: dict[str, Any]) -> bool:
         """
         Upgrade encryption configurations to stronger standards.
         
@@ -252,7 +252,7 @@ class PerformanceMitigationStrategies:
     """Mitigation strategies for performance-related risks"""
     
     @staticmethod
-    def scale_processing_capacity(params: Dict[str, Any]) -> bool:
+    def scale_processing_capacity(params: dict[str, Any]) -> bool:
         """
         Scale out processing capacity to handle increased load.
         
@@ -289,7 +289,7 @@ class PerformanceMitigationStrategies:
             return False
     
     @staticmethod
-    def optimize_memory_usage(params: Dict[str, Any]) -> bool:
+    def optimize_memory_usage(params: dict[str, Any]) -> bool:
         """
         Optimize memory usage to reduce consumption.
         
@@ -323,7 +323,7 @@ class PerformanceMitigationStrategies:
             return False
     
     @staticmethod
-    def optimize_event_processing(params: Dict[str, Any]) -> bool:
+    def optimize_event_processing(params: dict[str, Any]) -> bool:
         """
         Optimize event processing pipeline for better throughput.
         
@@ -356,7 +356,7 @@ class StorageMitigationStrategies:
     """Mitigation strategies for storage-related risks"""
     
     @staticmethod
-    def implement_state_pruning(params: Dict[str, Any]) -> bool:
+    def implement_state_pruning(params: dict[str, Any]) -> bool:
         """
         Implement world state pruning to reduce storage size.
         
@@ -385,7 +385,7 @@ class StorageMitigationStrategies:
             return False
     
     @staticmethod
-    def execute_backup(params: Dict[str, Any]) -> bool:
+    def execute_backup(params: dict[str, Any]) -> bool:
         """
         Execute immediate backup of critical data.
         
@@ -415,7 +415,7 @@ class StorageMitigationStrategies:
             return False
     
     @staticmethod
-    def optimize_storage_indices(params: Dict[str, Any]) -> bool:
+    def optimize_storage_indices(params: dict[str, Any]) -> bool:
         """
         Optimize storage indices for better query performance.
         
@@ -454,7 +454,7 @@ class MitigationManager:
     handles dependencies, and tracks execution status.
     """
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         """
         Initialize mitigation manager.
         
@@ -470,13 +470,13 @@ class MitigationManager:
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         self.mitigation_actions = self._initialize_actions()
-        self.execution_history: List[MitigationResult] = []
-        self.active_mitigations: Dict[str, threading.Thread] = {}
+        self.execution_history: list[MitigationResult] = []
+        self.active_mitigations: dict[str, threading.Thread] = {}
         
     @staticmethod
-    def _initialize_actions() -> Dict[str, MitigationAction]:
+    def _initialize_actions() -> dict[str, MitigationAction]:
         """Initialize available mitigation actions."""
-        actions: Dict[str, MitigationAction] = {
+        actions: dict[str, MitigationAction] = {
             # Consensus mitigation actions
             'add_validator_nodes': MitigationAction(
                 action_id='add_validator_nodes',
@@ -574,7 +574,7 @@ class MitigationManager:
         
         return actions
     
-    def create_mitigation_plan(self, risks: List[RiskAssessment]) -> List[Tuple[MitigationAction, Dict[str, Any]]]:
+    def create_mitigation_plan(self, risks: list[RiskAssessment]) -> list[Tuple[MitigationAction, dict[str, Any]]]:
         """
         Create mitigation plan based on identified risks.
         
@@ -660,8 +660,8 @@ class MitigationManager:
         
         return planned_actions
     
-    def execute_mitigation_plan(self, plan: List[Tuple[MitigationAction, Dict[str, Any]]], 
-                               async_execution: bool = False) -> List[MitigationResult]:
+    def execute_mitigation_plan(self, plan: list[Tuple[MitigationAction, dict[str, Any]]], 
+                               async_execution: bool = False) -> list[MitigationResult]:
         """
         Execute mitigation plan.
         
@@ -691,7 +691,7 @@ class MitigationManager:
         
         return results
     
-    def _execute_action(self, action: MitigationAction, params: Dict[str, Any]) -> MitigationResult:
+    def _execute_action(self, action: MitigationAction, params: dict[str, Any]) -> MitigationResult:
         """Execute single mitigation action."""
         start_time = time.time()
         
@@ -723,8 +723,8 @@ class MitigationManager:
                 output={"success": False, "duration": end_time - start_time}
             )
     
-    def _execute_action_async(self, action: MitigationAction, params: Dict[str, Any], 
-                             results: List[MitigationResult]) -> None:
+    def _execute_action_async(self, action: MitigationAction, params: dict[str, Any], 
+                             results: list[MitigationResult]) -> None:
         """Execute action asynchronously."""
         result = self._execute_action(action, params)
         results.append(result)
@@ -734,7 +734,7 @@ class MitigationManager:
         if action.action_id in self.active_mitigations:
             del self.active_mitigations[action.action_id]
     
-    def get_execution_status(self) -> Dict[str, Any]:
+    def get_execution_status(self) -> dict[str, Any]:
         """Get current execution status."""
         return {
             'active_mitigations': len(self.active_mitigations),

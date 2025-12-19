@@ -6,7 +6,7 @@ It connects the application logic (OrderingService) with the database models.
 """
 
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Any, Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
@@ -40,7 +40,7 @@ class SqlStorageBackend:
         
         logger.info(f"SqlStorageBackend initialized with {self.db_url}")
 
-    def save_block(self, block_data: Dict[str, Any]) -> bool:
+    def save_block(self, block_data: dict[str, Any]) -> bool:
         """
         Save a block and its events to the database in a single transaction.
         
@@ -89,7 +89,7 @@ class SqlStorageBackend:
         finally:
             session.close()
 
-    def get_event_by_id(self, event_id: str) -> Optional[Dict[str, Any]]:
+    def get_event_by_id(self, event_id: str) -> Optional[dict[str, Any]]:
         """
         Retrieve an event by its unique ID.
         
@@ -116,7 +116,7 @@ class SqlStorageBackend:
         finally:
             session.close()
 
-    def get_latest_block(self) -> Optional[Dict[str, Any]]:
+    def get_latest_block(self) -> Optional[dict[str, Any]]:
         """Retrieve the latest block from DB."""
         session = self.Session()
         try:
@@ -127,7 +127,7 @@ class SqlStorageBackend:
         finally:
             session.close()
 
-    def get_block_by_index(self, index: int) -> Optional[Dict[str, Any]]:
+    def get_block_by_index(self, index: int) -> Optional[dict[str, Any]]:
         """Retrieve block by index."""
         session = self.Session()
         try:
@@ -154,7 +154,7 @@ class SqlStorageBackend:
         finally:
             session.close()
 
-    def _to_block_dict(self, block_model: BlockModel) -> Dict[str, Any]:
+    def _to_block_dict(self, block_model: BlockModel) -> dict[str, Any]:
         """Convert ORM model to dictionary format expected by HieraChain."""
         events_list = [
             e.data for e in block_model.events

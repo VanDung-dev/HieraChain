@@ -12,7 +12,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class MetricSample:
     data_size_bytes: int = 0
     row_count: int = 0
     operation: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -64,7 +64,7 @@ class MetricAggregation:
         self.total_bytes += sample.data_size_bytes
         self.total_rows += sample.row_count
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "count": self.count,
@@ -112,8 +112,8 @@ class PerformanceMetrics:
         if self._initialized:
             return
         
-        self._metrics: Dict[str, MetricAggregation] = defaultdict(MetricAggregation)
-        self._samples: Dict[str, List[MetricSample]] = defaultdict(list)
+        self._metrics: dict[str, MetricAggregation] = defaultdict(MetricAggregation)
+        self._samples: dict[str, list[MetricSample]] = defaultdict(list)
         self._sample_limit = 1000  # Keep last N samples per operation
         self._data_lock = threading.Lock()
         self._enabled = True
@@ -144,7 +144,7 @@ class PerformanceMetrics:
         duration_ms: float,
         data_size_bytes: int = 0,
         row_count: int = 0,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[dict[str, Any]] = None
     ) -> None:
         """
         Record a metric sample.
@@ -183,7 +183,7 @@ class PerformanceMetrics:
         operation: str,
         data_size_bytes: int = 0,
         row_count: int = 0,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[dict[str, Any]] = None
     ):
         """
         Context manager to measure operation duration.
@@ -240,7 +240,7 @@ class PerformanceMetrics:
             return wrapper
         return decorator
     
-    def get_metrics(self, operation: Optional[str] = None) -> Dict[str, Any]:
+    def get_metrics(self, operation: Optional[str] = None) -> dict[str, Any]:
         """
         Get aggregated metrics.
         
@@ -248,7 +248,7 @@ class PerformanceMetrics:
             operation: Specific operation name, or None for all
             
         Returns:
-            Dictionary of metrics
+            dictionary of metrics
         """
         with self._data_lock:
             if operation:
@@ -265,7 +265,7 @@ class PerformanceMetrics:
         self,
         operation: str,
         limit: int = 100
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get recent samples for an operation.
         
@@ -289,7 +289,7 @@ class PerformanceMetrics:
                 for s in samples
             ]
     
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """
         Get a complete summary of all metrics.
         

@@ -7,7 +7,7 @@ It ensures proper event structure following framework guidelines.
 """
 
 import time
-from typing import Dict, Any, Optional
+from typing import Any, Optional
 from abc import ABC, abstractmethod
 
 from hierachain.core.utils import validate_event_structure, validate_no_cryptocurrency_terms
@@ -25,7 +25,7 @@ class BaseEvent(ABC):
     """
     
     def __init__(self, entity_id: str, event_type: str, 
-                 details: Optional[Dict[str, Any]] = None, 
+                 details: Optional[dict[str, Any]] = None, 
                  timestamp: Optional[float] = None):
         """
         Initialize a base event.
@@ -82,7 +82,7 @@ class BaseEvent(ABC):
         """
         raise NotImplementedError("Subclasses must implement validate_domain_specific()")
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert event to dictionary representation.
         
@@ -97,7 +97,7 @@ class BaseEvent(ABC):
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'BaseEvent':
+    def from_dict(cls, data: dict[str, Any]) -> 'BaseEvent':
         """
         Create an event instance from dictionary data.
         
@@ -137,7 +137,7 @@ class BaseEvent(ABC):
         """
         return self.details.get(key, default)
     
-    def update_details(self, new_details: Dict[str, Any]) -> None:
+    def update_details(self, new_details: dict[str, Any]) -> None:
         """
         Update event details.
         
@@ -159,7 +159,7 @@ class BaseEvent(ABC):
         except ValueError:
             return False
     
-    def get_event_summary(self) -> Dict[str, Any]:
+    def get_event_summary(self) -> dict[str, Any]:
         """
         Get a summary of the event (suitable for Main Chain metadata).
         
@@ -208,7 +208,7 @@ class GenericEvent(BaseEvent):
     """
     
     def __init__(self, entity_id: str, event_type: str, 
-                 details: Optional[Dict[str, Any]] = None, 
+                 details: Optional[dict[str, Any]] = None, 
                  timestamp: Optional[float] = None):
         """
         Initialize a generic event.
@@ -241,7 +241,7 @@ class OperationEvent(BaseEvent):
     
     def __init__(self, entity_id: str, operation_type: str, 
                  operation_status: str = "started",
-                 details: Optional[Dict[str, Any]] = None, 
+                 details: Optional[dict[str, Any]] = None, 
                  timestamp: Optional[float] = None):
         """
         Initialize an operation event.
@@ -286,7 +286,7 @@ class OperationEvent(BaseEvent):
         
         return True
     
-    def complete_operation(self, result: Optional[Dict[str, Any]] = None) -> 'OperationEvent':
+    def complete_operation(self, result: Optional[dict[str, Any]] = None) -> 'OperationEvent':
         """
         Create a completion event for this operation.
         

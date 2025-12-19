@@ -7,7 +7,7 @@ coordinating the interaction between the Main Chain and multiple Sub-Chains
 """
 
 import time
-from typing import Optional, Any, List, Dict
+from typing import Optional, Any
 
 from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.multi_org import create_organization, MultiOrgNetwork
@@ -286,7 +286,7 @@ class HierarchyManager:
         
         return validation_results
 
-    def create_organization(self, org_id: str, name: str, admin_users: List[str] = None) -> Any:
+    def create_organization(self, org_id: str, name: str, admin_users: list[str] = None) -> Any:
         """
         Create an organization with MSP configuration (0.dev3 feature).
         
@@ -326,7 +326,7 @@ class HierarchyManager:
         """
         return self.organizations.get(org_id)
     
-    def create_channel(self, channel_id: str, org_ids: List[str], policy_config: Dict[str, Any] = None) -> Channel:
+    def create_channel(self, channel_id: str, org_ids: list[str], policy_config: dict[str, Any] = None) -> Channel:
         """
         Create a channel for secure data isolation (0.dev3 feature).
         
@@ -385,7 +385,7 @@ class HierarchyManager:
         """
         return self.channels.get(channel_id)
     
-    def create_private_collection(self, name: str, org_ids: List[str], config: Dict[str, Any] = None) -> PrivateCollection:
+    def create_private_collection(self, name: str, org_ids: list[str], config: dict[str, Any] = None) -> PrivateCollection:
         """
         Create a private data collection (0.dev3 feature).
         

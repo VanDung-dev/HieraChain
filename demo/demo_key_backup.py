@@ -104,8 +104,8 @@ def main():
         print(f"   Unexpected error during backup: {e}")
         return
     
-    # List backups
-    print("5. Listing available backups...")
+    # list backups
+    print("5. listing available backups...")
     try:
         backups = backup_manager.list_backups()
         print(f"   Found {len(backups)} backup(s):")

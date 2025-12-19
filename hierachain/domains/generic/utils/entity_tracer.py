@@ -7,7 +7,7 @@ across multiple Sub-Chains while maintaining framework guidelines.
 """
 
 import time
-from typing import Dict, Any, List, Optional, Set
+from typing import Any, Optional, Set
 from collections import defaultdict
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 
@@ -32,12 +32,12 @@ class EntityTracer:
             hierarchy_manager: HierarchyManager instance to trace entities across
         """
         self.hierarchy_manager = hierarchy_manager
-        self.entity_cache: Dict[str, Dict[str, Any]] = {}
-        self.relationship_cache: Dict[str, Set[str]] = defaultdict(set)
+        self.entity_cache: dict[str, dict[str, Any]] = {}
+        self.relationship_cache: dict[str, Set[str]] = defaultdict(set)
         self.last_cache_update = 0.0
         self.cache_ttl = 300.0  # 5 minutes cache TTL
     
-    def trace_entity(self, entity_id: str, include_details: bool = True) -> Dict[str, Any]:
+    def trace_entity(self, entity_id: str, include_details: bool = True) -> dict[str, Any]:
         """
         Trace an entity across all Sub-Chains in the hierarchy.
         
@@ -98,7 +98,7 @@ class EntityTracer:
             "traced_at": time.time()
         }
     
-    def get_entity_lifecycle(self, entity_id: str) -> Dict[str, Any]:
+    def get_entity_lifecycle(self, entity_id: str) -> dict[str, Any]:
         """
         Get comprehensive lifecycle information for an entity.
         
@@ -145,7 +145,7 @@ class EntityTracer:
         }
     
     @staticmethod
-    def _identify_lifecycle_stages(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _identify_lifecycle_stages(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Identify lifecycle stages from events."""
         stages = []
         current_stage = None
@@ -192,7 +192,7 @@ class EntityTracer:
         return stages
     
     @staticmethod
-    def _analyze_status_transitions(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _analyze_status_transitions(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Analyze status transitions from events."""
         transitions = []
         
@@ -209,7 +209,7 @@ class EntityTracer:
         return transitions
     
     @staticmethod
-    def _analyze_cross_chain_interactions(chain_details: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    def _analyze_cross_chain_interactions(chain_details: dict[str, dict[str, Any]]) -> dict[str, Any]:
         """Analyze cross-chain interactions for an entity."""
         interactions = {
             "total_chains": len(chain_details),
@@ -253,7 +253,7 @@ class EntityTracer:
         return interactions
     
     @staticmethod
-    def _get_current_status(events: List[Dict[str, Any]]) -> Optional[str]:
+    def _get_current_status(events: list[dict[str, Any]]) -> Optional[str]:
         """Get the current status of an entity from its events."""
         # Find the most recent status update
         status_events = [e for e in events if e.get("event") == "status_update"]
@@ -268,7 +268,7 @@ class EntityTracer:
         
         return None
     
-    def find_related_entities(self, entity_id: str, relationship_types: Optional[List[str]] = None) -> Dict[str, List[str]]:
+    def find_related_entities(self, entity_id: str, relationship_types: Optional[list[str]] = None) -> dict[str, list[str]]:
         """
         Find entities related to the given entity.
         
@@ -329,7 +329,7 @@ class EntityTracer:
         
         return dict(related_entities)
     
-    def get_entity_performance_summary(self, entity_id: str) -> Dict[str, Any]:
+    def get_entity_performance_summary(self, entity_id: str) -> dict[str, Any]:
         """
         Get performance summary for an entity across all chains.
         
@@ -399,7 +399,7 @@ class EntityTracer:
             }
         }
     
-    def generate_entity_report(self, entity_id: str) -> Dict[str, Any]:
+    def generate_entity_report(self, entity_id: str) -> dict[str, Any]:
         """
         Generate a comprehensive report for an entity.
         
@@ -429,9 +429,9 @@ class EntityTracer:
         }
     
     @staticmethod
-    def _generate_recommendations(lifecycle: Dict[str, Any],
-                                  performance: Dict[str, Any],
-                                  relationships: Dict[str, Any]) -> List[str]:
+    def _generate_recommendations(lifecycle: dict[str, Any],
+                                  performance: dict[str, Any],
+                                  relationships: dict[str, Any]) -> list[str]:
         """Generate recommendations based on entity analysis."""
         recommendations = []
         
@@ -465,7 +465,7 @@ class EntityTracer:
         
         return recommendations
 
-    def trace_entity_in_chain(self, entity_id: str, sub_chain: str) -> Dict[str, Any]:
+    def trace_entity_in_chain(self, entity_id: str, sub_chain: str) -> dict[str, Any]:
         """
         Trace an entity through a specific sub-chain.
 
@@ -498,7 +498,7 @@ class EntityTracer:
             "total_events": len(events)
         }
 
-    def trace_entity_across_chains(self, entity_id: str) -> Dict[str, List[Dict[str, Any]]]:
+    def trace_entity_across_chains(self, entity_id: str) -> dict[str, list[dict[str, Any]]]:
         """
         Trace an entity across all sub-chains.
 

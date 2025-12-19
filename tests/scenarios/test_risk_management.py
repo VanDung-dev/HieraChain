@@ -11,7 +11,7 @@ import time
 import json
 import pytest
 import logging
-from typing import Dict, List, Any, Tuple
+from typing import Any, Tuple
 import tempfile
 import shutil
 
@@ -71,7 +71,7 @@ def test_validate_risk_profile_config():
         if os.path.exists(valid_path):
             os.unlink(valid_path)
 
-def validate_risk_profile_config_helper(config_path: str) -> Tuple[bool, List[str]]:
+def validate_risk_profile_config_helper(config_path: str) -> Tuple[bool, list[str]]:
     """Helper function containing the validation logic from the original test class."""
     errors = []
     try:
@@ -140,7 +140,7 @@ def validate_risk_profile_config_helper(config_path: str) -> Tuple[bool, List[st
         errors.append(f"Configuration validation error: {str(e)}")
         return False, errors
 
-def validate_consensus_configuration_helper(consensus_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
+def validate_consensus_configuration_helper(consensus_data: dict[str, Any]) -> Tuple[bool, list[str]]:
     """Validate consensus configuration specifically for BFT requirements."""
     errors = []
     

@@ -7,7 +7,7 @@ identity validation for enterprise applications.
 """
 
 import time
-from typing import Dict, List, Optional, Any
+from typing import Optional, Any
 import logging
 from hierachain.security.security_utils import verify_signature
 from nacl.encoding import HexEncoder
@@ -24,11 +24,11 @@ class IdentityManager:
     """Simple identity management for enterprise applications"""
     
     def __init__(self):
-        self.organizations: Dict[str, Dict[str, Any]] = {}
-        self.users: Dict[str, Dict[str, Any]] = {}
-        self.roles: Dict[str, List[str]] = {}
+        self.organizations: dict[str, dict[str, Any]] = {}
+        self.users: dict[str, dict[str, Any]] = {}
+        self.roles: dict[str, list[str]] = {}
     
-    def register_organization(self, org_id: str, name: str, participants: Optional[List[str]] = None) -> str:
+    def register_organization(self, org_id: str, name: str, participants: Optional[list[str]] = None) -> str:
         """Register new organization"""
         self.organizations[org_id] = {
             "name": name,
@@ -99,19 +99,19 @@ class IdentityManager:
             
         return verify_signature(user["public_key"], message, signature)
     
-    def get_user_info(self, user_id: str) -> Optional[Dict[str, Any]]:
+    def get_user_info(self, user_id: str) -> Optional[dict[str, Any]]:
         """Get user information"""
         return self.users.get(user_id)
     
-    def get_organization_info(self, org_id: str) -> Optional[Dict[str, Any]]:
+    def get_organization_info(self, org_id: str) -> Optional[dict[str, Any]]:
         """Get organization information"""
         return self.organizations.get(org_id)
     
-    def get_users_by_role(self, role: str) -> List[str]:
+    def get_users_by_role(self, role: str) -> list[str]:
         """Get all users with specific role"""
         return self.roles.get(role, [])
     
-    def get_users_by_organization(self, org_id: str) -> List[str]:
+    def get_users_by_organization(self, org_id: str) -> list[str]:
         """Get all users in organization"""
         if org_id not in self.organizations:
             return []
@@ -176,14 +176,14 @@ class IdentityManager:
         
         return True
     
-    def list_all_organizations(self) -> List[str]:
-        """List all organization IDs"""
+    def list_all_organizations(self) -> list[str]:
+        """list all organization IDs"""
         return list(self.organizations.keys())
     
-    def list_all_users(self) -> List[str]:
-        """List all user IDs"""
+    def list_all_users(self) -> list[str]:
+        """list all user IDs"""
         return list(self.users.keys())
     
-    def list_all_roles(self) -> List[str]:
-        """List all roles"""
+    def list_all_roles(self) -> list[str]:
+        """list all roles"""
         return list(self.roles.keys())

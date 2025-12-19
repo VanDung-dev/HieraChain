@@ -7,7 +7,7 @@ while maintaining framework guidelines.
 """
 
 import time
-from typing import Dict, Any, List, Callable
+from typing import Any, Callable
 
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.generic.utils.entity_tracer import EntityTracer
@@ -33,9 +33,9 @@ class CrossChainValidator:
             hierarchy_manager: HierarchyManager instance to validate across
         """
         self.hierarchy_manager = hierarchy_manager
-        self.validation_cache: Dict[str, Dict[str, Any]] = {}
+        self.validation_cache: dict[str, dict[str, Any]] = {}
         self.last_validation = 0.0
-        self.validation_rules: Dict[str, callable] = {}
+        self.validation_rules: dict[str, Callable] = {}
         
         # Setup default validation rules
         self._setup_default_validation_rules()
@@ -43,25 +43,25 @@ class CrossChainValidator:
     def _setup_default_validation_rules(self) -> None:
         """Setup default validation rules for cross-chain validation."""
         
-        def proof_hash_consistency(main_chain_event: Dict[str, Any], 
-                                 sub_chain_block: Dict[str, Any]) -> bool:
+        def proof_hash_consistency(main_chain_event: dict[str, Any], 
+                                 sub_chain_block: dict[str, Any]) -> bool:
             """Validate that proof hash matches Sub-Chain block hash."""
             proof_hash = main_chain_event.get("details", {}).get("proof_hash")
             block_hash = sub_chain_block.get("hash")
             return proof_hash == block_hash
         
-        def proof_timestamp_consistency(main_chain_event: Dict[str, Any], sub_chain_block: Dict[str, Any]) -> bool:
+        def proof_timestamp_consistency(main_chain_event: dict[str, Any], sub_chain_block: dict[str, Any]) -> bool:
             """Validate that proof timestamp is after Sub-Chain block timestamp."""
             proof_timestamp = main_chain_event.get("timestamp", 0)
             block_timestamp = sub_chain_block.get("timestamp", 0)
             return proof_timestamp >= block_timestamp
         
-        def entity_id_metadata_usage(event: Dict[str, Any]) -> bool:
+        def entity_id_metadata_usage(event: dict[str, Any]) -> bool:
             """Validate that entity_id is used as metadata, not as identifier."""
             # entity_id should be in the event data, not used as block/chain identifier
             return "entity_id" in event and isinstance(event["entity_id"], str)
         
-        def no_cryptocurrency_terms(data: Dict[str, Any]) -> bool:
+        def no_cryptocurrency_terms(data: dict[str, Any]) -> bool:
             """Validate that data doesn't contain cryptocurrency terminology."""
             forbidden_terms = [
                 "transaction", "mining", "coin", "token", "wallet", 
@@ -79,7 +79,7 @@ class CrossChainValidator:
             "no_cryptocurrency_terms": no_cryptocurrency_terms
         })
     
-    def validate_proof_consistency(self) -> Dict[str, Any]:
+    def validate_proof_consistency(self) -> dict[str, Any]:
         """
         Validate consistency between Main Chain proofs and Sub-Chain blocks.
         
@@ -174,7 +174,7 @@ class CrossChainValidator:
         
         return validation_results
     
-    def validate_entity_consistency(self, entity_id: str) -> Dict[str, Any]:
+    def validate_entity_consistency(self, entity_id: str) -> dict[str, Any]:
         """
         Validate consistency of an entity across all chains.
         
@@ -258,7 +258,7 @@ class CrossChainValidator:
         return validation_results
     
     @staticmethod
-    def _validate_event_structure(event: Dict[str, Any]) -> bool:
+    def _validate_event_structure(event: dict[str, Any]) -> bool:
         """Validate that event follows framework structure guidelines."""
         # Required fields
         required_fields = ["entity_id", "event", "timestamp"]
@@ -281,7 +281,7 @@ class CrossChainValidator:
         return True
     
     @staticmethod
-    def _check_logical_consistency(entity_trace: Dict[str, List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    def _check_logical_consistency(entity_trace: dict[str, list[dict[str, Any]]]) -> list[dict[str, Any]]:
         """Check for logical inconsistencies in entity events across chains."""
         inconsistencies = []
         
@@ -342,7 +342,7 @@ class CrossChainValidator:
         
         return inconsistencies
     
-    def validate_system_integrity(self) -> Dict[str, Any]:
+    def validate_system_integrity(self) -> dict[str, Any]:
         """
         Validate the integrity of the entire hierarchical system.
         
@@ -385,7 +385,7 @@ class CrossChainValidator:
         
         return validation_results
     
-    def _validate_framework_compliance(self) -> Dict[str, Any]:
+    def _validate_framework_compliance(self) -> dict[str, Any]:
         """Validate compliance with framework guidelines."""
         compliance_results = {
             "timestamp": time.time(),
@@ -418,7 +418,7 @@ class CrossChainValidator:
         
         return compliance_results
     
-    def _check_chain_compliance(self, chain: Any, chain_name: str) -> List[Dict[str, Any]]:
+    def _check_chain_compliance(self, chain: Any, chain_name: str) -> list[dict[str, Any]]:
         """Check a single chain for framework compliance."""
         violations = []
         
@@ -481,7 +481,7 @@ class CrossChainValidator:
         return violations
     
     @staticmethod
-    def _generate_system_recommendations(validation_results: Dict[str, Any]) -> List[str]:
+    def _generate_system_recommendations(validation_results: dict[str, Any]) -> list[str]:
         """Generate recommendations based on system validation results."""
         recommendations = []
         
@@ -518,7 +518,7 @@ class CrossChainValidator:
         
         return recommendations
     
-    def generate_validation_report(self) -> Dict[str, Any]:
+    def generate_validation_report(self) -> dict[str, Any]:
         """
         Generate a comprehensive validation report for the hierarchical system.
         

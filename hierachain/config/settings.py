@@ -10,7 +10,7 @@ provides validation mechanisms to ensure system integrity.
 """
 
 import os
-from typing import Dict, Any, List
+from typing import Any
 from hierachain.units.version import get_version, VERSION
 
 
@@ -29,7 +29,7 @@ class Settings:
     # Consensus settings
     # Options: "proof_of_authority" (Static/Centralized) or "proof_of_federation" (Dynamic/Consortium)
     CONSENSUS_TYPE = os.getenv("HRC_CONSENSUS_TYPE", "proof_of_authority") 
-    CONSENSUS_FEDERATION_CONFIG: Dict[str, Any] = {
+    CONSENSUS_FEDERATION_CONFIG: dict[str, Any] = {
         "min_validators": 3,
         "block_interval": 5.0
     }
@@ -94,7 +94,7 @@ class Settings:
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
     @classmethod
-    def get_storage_config(cls) -> Dict[str, Any]:
+    def get_storage_config(cls) -> dict[str, Any]:
         """Get storage configuration"""
         return {
             "backend": cls.DEFAULT_STORAGE_BACKEND,
@@ -108,7 +108,7 @@ class Settings:
         }
     
     @classmethod
-    def get_consensus_config(cls) -> Dict[str, Any]:
+    def get_consensus_config(cls) -> dict[str, Any]:
         """Get consensus configuration"""
         return {
             "type": cls.CONSENSUS_TYPE,
@@ -116,7 +116,7 @@ class Settings:
         }
     
     @classmethod
-    def get_api_config(cls) -> Dict[str, Any]:
+    def get_api_config(cls) -> dict[str, Any]:
         """Get API configuration"""
         return {
             "version": cls.API_VERSION,
@@ -125,7 +125,7 @@ class Settings:
         }
     
     @classmethod
-    def get_integration_config(cls) -> Dict[str, Any]:
+    def get_integration_config(cls) -> dict[str, Any]:
         """Get integration configuration"""
         return {
             "erp_enabled": cls.ERP_INTEGRATION_ENABLED,
@@ -133,7 +133,7 @@ class Settings:
         }
     
     @classmethod
-    def validate_config(cls) -> List[str]:
+    def validate_config(cls) -> list[str]:
         """Validate configuration and return list of errors"""
         errors = []
         

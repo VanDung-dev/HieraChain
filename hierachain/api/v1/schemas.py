@@ -7,7 +7,7 @@ Each schema corresponds to specific API endpoints and ensures data integrity
 and proper documentation.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -28,7 +28,7 @@ class EventRequest(BaseModel):
     
     entity_id: str = Field(..., description="Unique identifier for the entity")
     event_type: str = Field(..., description="Type of event (e.g., 'operation_start', 'status_change')")
-    details: Optional[Dict[str, Any]] = Field(None, description="Additional event details")
+    details: Optional[dict[str, Any]] = Field(None, description="Additional event details")
 
 
 class EventResponse(BaseModel):
@@ -84,7 +84,7 @@ class ProofSubmissionRequest(BaseModel):
     
     sub_chain_name: Optional[str] = Field(None, description="Name of the Sub-Chain submitting the proof")
     proof_hash: Optional[str] = Field(None, description="Cryptographic hash of the Sub-Chain's latest block")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Summary metadata about the Sub-Chain's operations")
+    metadata: Optional[dict[str, Any]] = Field(None, description="Summary metadata about the Sub-Chain's operations")
 
 
 class ProofSubmissionResponse(BaseModel):
@@ -128,8 +128,8 @@ class EntityTraceResponse(BaseModel):
     )
     
     entity_id: str = Field(..., description="Entity identifier being traced")
-    chains: List[str] = Field(..., description="List of chains where the entity has events")
-    events: List[Dict[str, Any]] = Field(..., description="List of events for the entity across chains")
+    chains: list[str] = Field(..., description="List of chains where the entity has events")
+    events: list[dict[str, Any]] = Field(..., description="List of events for the entity across chains")
 
 
 class ChainStatsResponse(BaseModel):
@@ -156,7 +156,7 @@ class ChainStatsResponse(BaseModel):
 class CreateChainRequest(BaseModel):
     """Request schema for creating a new chain"""
     chain_type: str = Field(..., description="Type of chain to create")
-    participants: Optional[List[str]] = Field(None, description="List of participants")
+    participants: Optional[list[str]] = Field(None, description="list of participants")
     
     model_config = ConfigDict(
         json_schema_extra = {

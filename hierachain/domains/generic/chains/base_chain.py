@@ -8,7 +8,7 @@ with domain-specific functionality while maintaining framework guidelines.
 
 import time
 import logging
-from typing import Dict, Any, Optional, Callable
+from typing import Any, Optional, Callable
 from abc import ABC, abstractmethod
 
 from hierachain.hierarchical.sub_chain import SubChain
@@ -37,9 +37,9 @@ class BaseChain(SubChain, ABC):
             domain_type: Type of domain this chain handles
         """
         super().__init__(name, domain_type)
-        self.entity_registry: Dict[str, Dict[str, Any]] = {}
-        self.domain_rules: Dict[str, Callable] = {}
-        self.event_handlers: Dict[str, Callable] = {}
+        self.entity_registry: dict[str, dict[str, Any]] = {}
+        self.domain_rules: dict[str, Callable] = {}
+        self.event_handlers: dict[str, Callable] = {}
         
         # Register default event handlers
         self._register_default_handlers()
@@ -56,7 +56,7 @@ class BaseChain(SubChain, ABC):
             "compliance_check": self._handle_compliance_check
         })
     
-    def register_entity(self, entity_id: str, entity_data: Dict[str, Any]) -> bool:
+    def register_entity(self, entity_id: str, entity_data: dict[str, Any]) -> bool:
         """
         Register a new entity in the domain chain.
         
@@ -95,7 +95,7 @@ class BaseChain(SubChain, ABC):
         self.add_event(registration_event)
         return True
     
-    def get_entity_info(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def get_entity_info(self, entity_id: str) -> Optional[dict[str, Any]]:
         """
         Get information about a registered entity.
         
@@ -107,7 +107,7 @@ class BaseChain(SubChain, ABC):
         """
         return self.entity_registry.get(entity_id)
     
-    def update_entity_info(self, entity_id: str, updates: Dict[str, Any]) -> bool:
+    def update_entity_info(self, entity_id: str, updates: dict[str, Any]) -> bool:
         """
         Update information for a registered entity.
         
@@ -318,7 +318,7 @@ class BaseChain(SubChain, ABC):
         
         return True
     
-    def get_entity_lifecycle_summary(self, entity_id: str) -> Dict[str, Any]:
+    def get_entity_lifecycle_summary(self, entity_id: str) -> dict[str, Any]:
         """
         Get a summary of an entity's lifecycle in this domain.
         
@@ -354,7 +354,7 @@ class BaseChain(SubChain, ABC):
     
     @abstractmethod
     def validate_domain_operation(self, entity_id: str, operation_type: str, 
-                                 operation_data: Dict[str, Any]) -> bool:
+                                 operation_data: dict[str, Any]) -> bool:
         """
         Validate a domain-specific operation.
         
@@ -372,7 +372,7 @@ class BaseChain(SubChain, ABC):
         raise NotImplementedError("Subclasses must implement validate_domain_operation()")
     
     @abstractmethod
-    def get_domain_statistics(self) -> Dict[str, Any]:
+    def get_domain_statistics(self) -> dict[str, Any]:
         """
         Get domain-specific statistics.
         
@@ -384,7 +384,7 @@ class BaseChain(SubChain, ABC):
         """
         raise NotImplementedError("Subclasses must implement get_domain_statistics()")
     
-    def get_base_domain_statistics(self) -> Dict[str, Any]:
+    def get_base_domain_statistics(self) -> dict[str, Any]:
         """
         Get base domain statistics common to all domain chains.
         

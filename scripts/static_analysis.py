@@ -11,7 +11,7 @@ import re
 import json
 import logging
 import argparse
-from typing import Dict, List, Any, Optional
+from typing import Any, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
 from pathlib import Path
@@ -111,7 +111,7 @@ class SecurityAnalyzer:
             )
         ]
     
-    def analyze_file(self, file_path: str) -> List[AnalysisFinding]:
+    def analyze_file(self, file_path: str) -> list[AnalysisFinding]:
         """Analyze file for security vulnerabilities"""
         findings = []
         
@@ -186,7 +186,7 @@ class CodeQualityAnalyzer:
         self.max_function_length = 50
         self.max_parameters = 5
     
-    def analyze_file(self, file_path: str) -> List[AnalysisFinding]:
+    def analyze_file(self, file_path: str) -> list[AnalysisFinding]:
         """Analyze file for code quality issues using AST"""
         findings = []
         
@@ -220,7 +220,7 @@ class CodeQualityAnalyzer:
         
         return findings
     
-    def _analyze_function(self, node: ast.FunctionDef, file_path: str, content: str) -> List[AnalysisFinding]:
+    def _analyze_function(self, node: ast.FunctionDef, file_path: str, content: str) -> list[AnalysisFinding]:
         """Analyze function for quality issues"""
         findings = []
         lines = content.splitlines()
@@ -273,7 +273,7 @@ class CodeQualityAnalyzer:
         return findings
     
     @staticmethod
-    def _analyze_class(node: ast.ClassDef, file_path: str, content: str) -> List[AnalysisFinding]:
+    def _analyze_class(node: ast.ClassDef, file_path: str, content: str) -> list[AnalysisFinding]:
         """Analyze class for quality issues"""
         findings = []
         lines = content.splitlines()
@@ -392,7 +392,7 @@ class ComplianceChecker:
         
         return False
     
-    def analyze_file(self, file_path: str) -> List[AnalysisFinding]:
+    def analyze_file(self, file_path: str) -> list[AnalysisFinding]:
         """Analyze file for compliance issues"""
         findings = []
         
@@ -435,7 +435,7 @@ class ComplianceChecker:
 class DependencyAnalyzer:
     """Dependency security and licensing analyzer"""
     
-    def analyze_requirements(self, requirements_file: str) -> List[AnalysisFinding]:
+    def analyze_requirements(self, requirements_file: str) -> list[AnalysisFinding]:
         """Analyze requirements file for security issues"""
         findings = []
         
@@ -491,7 +491,7 @@ class DependencyAnalyzer:
 
 class StaticAnalyzer:
     """Main static analyzer orchestrating all analysis types"""
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         """Initialize static analyzer with configuration"""
         self.config = config or {}
         self.logger = logging.getLogger(__name__)
@@ -512,7 +512,7 @@ class StaticAnalyzer:
             '__pycache__', '.git', '.venv', 'venv', 'node_modules'
         ])
     
-    def analyze_project(self, project_path: str) -> Dict[str, List[AnalysisFinding]]:
+    def analyze_project(self, project_path: str) -> dict[str, list[AnalysisFinding]]:
         """Analyze entire project"""
         all_findings = {
             'cryptocurrency': [],
@@ -551,7 +551,7 @@ class StaticAnalyzer:
         
         return all_findings
     
-    def analyze_file(self, file_path: str, analysis_types: Optional[List[str]] = None) -> List[AnalysisFinding]:
+    def analyze_file(self, file_path: str, analysis_types: Optional[list[str]] = None) -> list[AnalysisFinding]:
         """Analyze single file"""
         analysis_types = analysis_types or self.enabled_analyzers
         findings = []
@@ -567,7 +567,7 @@ class StaticAnalyzer:
         
         return findings
     
-    def _get_python_files(self, project_root: Path) -> List[Path]:
+    def _get_python_files(self, project_root: Path) -> list[Path]:
         """Get all Python files in project"""
         python_files = []
         
@@ -581,7 +581,7 @@ class StaticAnalyzer:
         return python_files
     
     @staticmethod
-    def generate_report(findings: Dict[str, List[AnalysisFinding]], output_format: str = "json") -> str:
+    def generate_report(findings: dict[str, list[AnalysisFinding]], output_format: str = "json") -> str:
         """Generate analysis report"""
         if output_format.lower() == "json":
             # Convert findings to serializable format
@@ -617,7 +617,7 @@ class StaticAnalyzer:
             raise ValueError(f"Unsupported output format: {output_format}")
     
     @staticmethod
-    def get_summary(findings: Dict[str, List[AnalysisFinding]]) -> Dict[str, Any]:
+    def get_summary(findings: dict[str, list[AnalysisFinding]]) -> dict[str, Any]:
         """Get analysis summary statistics"""
         summary = {
             'total_findings': 0,

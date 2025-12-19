@@ -7,7 +7,7 @@ from Sub-Chains, never detailed domain data, following framework guidelines.
 """
 
 import time
-from typing import Dict, Any, List, Optional, Set
+from typing import Any, Optional, Set
 
 from hierachain.core.blockchain import Blockchain
 from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
@@ -44,7 +44,7 @@ class MainChain(Blockchain):
             self.consensus = ProofOfAuthority("MainChain_PoA")
             
         self.registered_sub_chains: Set[str] = set()
-        self.sub_chain_metadata: Dict[str, Dict[str, Any]] = {}
+        self.sub_chain_metadata: dict[str, dict[str, Any]] = {}
         self.proof_count: int = 0
 
         # Register Main Chain as the primary authority/validator
@@ -77,7 +77,7 @@ class MainChain(Blockchain):
             
         return True
     
-    def register_sub_chain(self, sub_chain_name: str, metadata: Optional[Dict[str, Any]] = None) -> bool:
+    def register_sub_chain(self, sub_chain_name: str, metadata: Optional[dict[str, Any]] = None) -> bool:
         """
         Register a Sub-Chain with the Main Chain.
         
@@ -116,7 +116,7 @@ class MainChain(Blockchain):
         self.add_event(registration_event)
         return True
     
-    def add_proof(self, sub_chain_name: str, proof_hash: str, metadata: Dict[str, Any]) -> bool:
+    def add_proof(self, sub_chain_name: str, proof_hash: str, metadata: dict[str, Any]) -> bool:
         """
         Add a proof from a Sub-Chain to the Main Chain.
         
@@ -199,7 +199,7 @@ class MainChain(Blockchain):
         
         return False
     
-    def get_proofs_by_sub_chain(self, sub_chain_name: str) -> List[Dict[str, Any]]:
+    def get_proofs_by_sub_chain(self, sub_chain_name: str) -> list[dict[str, Any]]:
         """
         Get all proofs submitted by a specific Sub-Chain.
         
@@ -226,7 +226,7 @@ class MainChain(Blockchain):
         
         return proofs
     
-    def get_sub_chain_summary(self, sub_chain_name: str) -> Dict[str, Any]:
+    def get_sub_chain_summary(self, sub_chain_name: str) -> dict[str, Any]:
         """
         Get summary information about a Sub-Chain.
         
@@ -273,7 +273,7 @@ class MainChain(Blockchain):
         
         return None
 
-    def get_main_chain_stats(self) -> Dict[str, Any]:
+    def get_main_chain_stats(self) -> dict[str, Any]:
         """
         Get comprehensive statistics about the Main Chain.
         
@@ -295,7 +295,7 @@ class MainChain(Blockchain):
             "authorities": self.consensus.get_validator_count()
         }
     
-    def finalize_main_chain_block(self) -> Optional[Dict[str, Any]]:
+    def finalize_main_chain_block(self) -> Optional[dict[str, Any]]:
         """
         Finalize a block on the Main Chain using PoA consensus.
         
@@ -322,7 +322,7 @@ class MainChain(Blockchain):
         
         return None
     
-    def validate_sub_chain_proof_format(self, proof_data: Dict[str, Any]) -> bool:
+    def validate_sub_chain_proof_format(self, proof_data: dict[str, Any]) -> bool:
         """
         Validate the format of a Sub-Chain proof submission.
         
@@ -348,7 +348,7 @@ class MainChain(Blockchain):
         
         return True
     
-    def get_hierarchical_integrity_report(self) -> Dict[str, Any]:
+    def get_hierarchical_integrity_report(self) -> dict[str, Any]:
         """
         Generate an integrity report for the entire hierarchical system.
         

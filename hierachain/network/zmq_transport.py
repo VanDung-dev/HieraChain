@@ -13,7 +13,7 @@ import zmq.asyncio
 import json
 import asyncio
 import logging
-from typing import Dict, Any, Callable, Optional, List
+from typing import Any, Callable, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class ZmqNode:
         self.host = host
         self.port = port
         self.address = f"tcp://{host}:{port}"
-        self.peers: Dict[str, Dict[str, Any]] = {}  # peer_id -> {address, public_key}
+        self.peers: dict[str, dict[str, Any]] = {}  # peer_id -> {address, public_key}
         
         # CurveZMQ keys (Curve25519)
         self.server_secret = server_secret_key
@@ -46,11 +46,11 @@ class ZmqNode:
         
         self.ctx = zmq.asyncio.Context()
         self._stop_event = asyncio.Event()
-        self._message_handler: Optional[Callable[[Dict[str, Any], str], Any]] = None
+        self._message_handler: Optional[Callable[[dict[str, Any], str], Any]] = None
         
         # Sockets
         self.router = None  # For receiving (bind)
-        self.dealer_pool: Dict[str, zmq.asyncio.Socket] = {} # For sending (connect)
+        self.dealer_pool: dict[str, zmq.asyncio.Socket] = {} # For sending (connect)
 
     async def start(self):
         """Start the node: bind listener and start receiver loop."""
@@ -92,11 +92,11 @@ class ZmqNode:
             "public_key": public_key
         }
 
-    def set_handler(self, handler: Callable[[Dict[str, Any], str], Any]):
+    def set_handler(self, handler: Callable[[dict[str, Any], str], Any]):
         """Set the callback function for processing received messages."""
         self._message_handler = handler
 
-    async def send_direct(self, target_peer_id: str, message: Dict[str, Any]) -> bool:
+    async def send_direct(self, target_peer_id: str, message: dict[str, Any]) -> bool:
         """
         Send a message directly to a peer.
         
@@ -117,7 +117,7 @@ class ZmqNode:
             logger.error(f"Failed to send to {target_peer_id}: {e}")
             return False
 
-    async def broadcast(self, message: Dict[str, Any], exclude: List[str] = None):
+    async def broadcast(self, message: dict[str, Any], exclude: list[str] = None):
         """Broadcast message to all registered peers."""
         exclude = exclude or []
         for peer_id in self.peers:

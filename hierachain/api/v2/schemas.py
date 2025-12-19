@@ -6,7 +6,7 @@ API v2 requests and responses in the HieraChain system.
 These schemas support the new enterprise security and data isolation features.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -27,8 +27,8 @@ class ChannelCreateRequest(BaseModel):
     )
     
     channel_id: str = Field(..., description="Unique identifier for the channel")
-    organizations: List[str] = Field(..., description="List of organization IDs participating in the channel")
-    policy: Dict[str, Any] = Field(..., description="Channel access and endorsement policies")
+    organizations: list[str] = Field(..., description="List of organization IDs participating in the channel")
+    policy: dict[str, Any] = Field(..., description="Channel access and endorsement policies")
 
 
 class ChannelResponse(BaseModel):
@@ -64,8 +64,8 @@ class PrivateCollectionCreateRequest(BaseModel):
     )
     
     name: str = Field(..., description="Name of the private collection")
-    members: List[str] = Field(..., description="List of organization IDs that are members of this collection")
-    config: Dict[str, Any] = Field(..., description="Collection configuration parameters")
+    members: list[str] = Field(..., description="List of organization IDs that are members of this collection")
+    config: dict[str, Any] = Field(..., description="Collection configuration parameters")
 
 
 class PrivateDataRequest(BaseModel):
@@ -91,8 +91,8 @@ class PrivateDataRequest(BaseModel):
     
     collection: str = Field(..., description="Name of the private collection")
     key: str = Field(..., description="Key for the private data")
-    value: Dict[str, Any] = Field(..., description="Private data value")
-    event_metadata: Dict[str, Any] = Field(..., description="Event metadata for endorsement verification")
+    value: dict[str, Any] = Field(..., description="Private data value")
+    event_metadata: dict[str, Any] = Field(..., description="Event metadata for endorsement verification")
 
 
 class PrivateDataResponse(BaseModel):
@@ -132,7 +132,7 @@ class ContractCreateRequest(BaseModel):
     contract_id: str = Field(..., description="Unique identifier for the contract")
     version: str = Field(..., description="Semantic version of the contract")
     implementation: str = Field(..., description="Contract implementation code or reference")
-    metadata: Dict[str, Any] = Field(..., description="Contract governance and configuration metadata")
+    metadata: dict[str, Any] = Field(..., description="Contract governance and configuration metadata")
 
 
 class ContractExecuteRequest(BaseModel):
@@ -158,8 +158,8 @@ class ContractExecuteRequest(BaseModel):
     )
     
     contract_id: str = Field(..., description="Identifier of the contract to execute")
-    event: Dict[str, Any] = Field(..., description="Event to trigger contract execution")
-    context: Dict[str, Any] = Field(..., description="Execution context")
+    event: dict[str, Any] = Field(..., description="Event to trigger contract execution")
+    context: dict[str, Any] = Field(..., description="Execution context")
 
 
 class ContractResponse(BaseModel):
@@ -181,7 +181,7 @@ class ContractResponse(BaseModel):
     success: bool = Field(..., description="Whether the operation was successful")
     message: str = Field(..., description="Response message")
     contract_id: Optional[str] = Field(None, description="Contract identifier")
-    result: Optional[Dict[str, Any]] = Field(None, description="Result of contract execution")
+    result: Optional[dict[str, Any]] = Field(None, description="Result of contract execution")
 
 
 class OrganizationRequest(BaseModel):
@@ -206,7 +206,7 @@ class OrganizationRequest(BaseModel):
     )
     
     org_id: str = Field(..., description="Unique organization identifier")
-    ca_config: Dict[str, Any] = Field(..., description="Certificate authority configuration")
+    ca_config: dict[str, Any] = Field(..., description="Certificate authority configuration")
 
 
 class OrganizationResponse(BaseModel):

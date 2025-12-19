@@ -5,26 +5,26 @@ This module provides an in-memory storage implementation for the HieraChain syst
 It supports key-value storage with indexing capabilities for efficient data retrieval.
 """
 
-from typing import Dict, Any, Optional, List
+from typing import   Any, Optional
 
 
 class MemoryStorage:
     """Simple in-memory storage backend for HieraChain"""
     
     def __init__(self):
-        self.data: Dict[str, Dict[str, Any]] = {}
-        self.indexes: Dict[str, Dict[Any, List[str]]] = {}
+        self.data: dict[str, dict[str, Any]] = {}
+        self.indexes: dict[str, dict[Any, list[str]]] = {}
     
     def create_index(self, field_name: str):
         """Create index for field"""
         if field_name not in self.indexes:
             self.indexes[field_name] = {}
     
-    def get(self, key: str) -> Optional[Dict[str, Any]]:
+    def get(self, key: str) -> Optional[dict[str, Any]]:
         """Get value by key"""
         return self.data.get(key)
     
-    def set(self, key: str, value: Dict[str, Any]):
+    def set(self, key: str, value: dict[str, Any]):
         """Set value by key"""
         self.data[key] = value
         
@@ -55,17 +55,17 @@ class MemoryStorage:
             return True
         return False
     
-    def query_by_index(self, index_name: str, value: Any) -> List[str]:
+    def query_by_index(self, index_name: str, value: Any) -> list[str]:
         """Query using index"""
         if index_name not in self.indexes:
             return []
         return self.indexes[index_name].get(value, [])
     
-    def get_all_keys(self) -> List[str]:
+    def get_all_keys(self) -> list[str]:
         """Get all keys in storage"""
         return list(self.data.keys())
     
-    def get_all_values(self) -> List[Dict[str, Any]]:
+    def get_all_values(self) -> list[dict[str, Any]]:
         """Get all values in storage"""
         return list(self.data.values())
     

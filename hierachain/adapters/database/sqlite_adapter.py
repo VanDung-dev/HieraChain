@@ -10,7 +10,7 @@ import sqlite3
 import json
 import time
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Any, Optional
 from contextlib import contextmanager
 
 from hierachain.core.block import Block
@@ -42,8 +42,8 @@ class SQLiteAdapter:
         
         # Security check for Path Traversal (CWE-22)
         if ".." in self.database_path:
-             raise ValueError(f"Security: Invalid database path '{self.database_path}'. Path traversal detected.")
-             
+            raise ValueError(f"Security: Invalid database path '{self.database_path}'. Path traversal detected.")
+
         self.connection_pool_size = 5
         self._initialize_database()
     
@@ -206,7 +206,7 @@ class SQLiteAdapter:
                   time.time()))
     
     @staticmethod
-    def _create_event_from_row(row: sqlite3.Row) -> Dict[str, Any]:
+    def _create_event_from_row(row: sqlite3.Row) -> dict[str, Any]:
         """Create event dictionary from database row."""
         return {
             "chain_name": row['chain_name'],
@@ -217,7 +217,7 @@ class SQLiteAdapter:
             "details": json.loads(row['details'] or '{}')
         }
 
-    def load_chain(self, chain_name: str) -> Optional[Dict[str, Any]]:
+    def load_chain(self, chain_name: str) -> Optional[dict[str, Any]]:
         """
         Load a blockchain from the database.
         
@@ -283,7 +283,7 @@ class SQLiteAdapter:
             return None
     
     def store_proof(self, main_chain_name: str, sub_chain_name: str, 
-                   proof_hash: str, block_index: int, metadata: Dict[str, Any]) -> bool:
+                   proof_hash: str, block_index: int, metadata: dict[str, Any]) -> bool:
         """
         Store a proof submission from Sub-Chain to Main Chain.
         
@@ -315,7 +315,7 @@ class SQLiteAdapter:
             logger.error(f"Error storing proof: {e}")
             return False
     
-    def get_entity_events(self, entity_id: str, chain_name: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_entity_events(self, entity_id: str, chain_name: Optional[str] = None) -> list[dict[str, Any]]:
         """
         Get all events for a specific entity.
         
@@ -355,7 +355,7 @@ class SQLiteAdapter:
             logger.error(f"Error getting entity events: {e}")
             return []
     
-    def get_events_by_type(self, event_type: str, chain_name: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_events_by_type(self, event_type: str, chain_name: Optional[str] = None) -> list[dict[str, Any]]:
         """
         Get all events of a specific type.
         
@@ -395,7 +395,7 @@ class SQLiteAdapter:
             logger.error(f"Error getting events by type: {e}")
             return []
     
-    def get_chain_statistics(self, chain_name: str) -> Dict[str, Any]:
+    def get_chain_statistics(self, chain_name: str) -> dict[str, Any]:
         """
         Get statistics for a specific chain.
         
@@ -455,7 +455,7 @@ class SQLiteAdapter:
             logger.error(f"Error getting chain statistics: {e}")
             return {}
     
-    def get_proof_history(self, sub_chain_name: str) -> List[Dict[str, Any]]:
+    def get_proof_history(self, sub_chain_name: str) -> list[dict[str, Any]]:
         """
         Get proof submission history for a Sub-Chain.
         

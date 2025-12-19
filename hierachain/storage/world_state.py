@@ -9,7 +9,7 @@ The world state is updated through events processed from blocks, maintaining ent
 with efficient indexing for common query patterns.
 """
 
-from typing import Dict, Any, Optional
+from typing import Any, Optional
 from hierachain.storage.memory_storage import MemoryStorage
 
 
@@ -61,7 +61,7 @@ class WorldState:
                 self.storage.set(entity_key, current_state)
                 self.state_cache[entity_key] = current_state
     
-    def get_entity_state(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def get_entity_state(self, entity_id: str) -> Optional[dict[str, Any]]:
         """Get current state of entity"""
         entity_key = f"{self.chain_name}:{entity_id}"
         if entity_key in self.state_cache:

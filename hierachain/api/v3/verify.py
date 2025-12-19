@@ -7,7 +7,7 @@ Ensures only authorized clients with valid, non-revoked API keys can access prot
 
 from fastapi import Depends, HTTPException, Security
 from fastapi.security import APIKeyHeader, APIKeyQuery
-from typing import Dict, Optional
+from typing import Optional
 import time
 import sys
 import os
@@ -37,7 +37,7 @@ class VerifyAPIKey:
     - Comprehensive error handling and auditing
     """
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: dict):
         """
         Initialize VerifyAPIKey with configuration.
         
@@ -64,7 +64,7 @@ class VerifyAPIKey:
         else:
             self.api_key_dependency = api_key_header  # Default to header
     
-    async def __call__(self, api_key: Optional[str] = Security(api_key_header)) -> Dict:
+    async def __call__(self, api_key: Optional[str] = Security(api_key_header)) -> dict:
         """
         Verify API key and return context variables.
         
@@ -160,7 +160,7 @@ class VerifyAPIKey:
         Returns:
             Decorator function that checks permissions
         """
-        def permission_dependency(context: Dict = Depends(self)) -> Dict:
+        def permission_dependency(context: dict = Depends(self)) -> dict:
             # Extract API key from context (would need to be passed differently in real implementation)
             api_key = getattr(context, '_api_key', None)
             
@@ -175,7 +175,7 @@ class VerifyAPIKey:
         return permission_dependency
     
     @staticmethod
-    def _log_security_event(event_type: str, details: Dict):
+    def _log_security_event(event_type: str, details: dict):
         """
         Log security events for auditing.
         
@@ -206,7 +206,7 @@ class ResourcePermissionChecker:
         """
         self.verify_api_key = verify_api_key
     
-    def require_event_access(self, context: Dict = Depends(VerifyAPIKey)) -> Dict:
+    def require_event_access(self, context: dict = Depends(VerifyAPIKey)) -> dict:
         """
         Require permission to access event-related endpoints.
         
@@ -228,7 +228,7 @@ class ResourcePermissionChecker:
             )
         return context
     
-    def require_chain_access(self, context: Dict = Depends(VerifyAPIKey)) -> Dict:
+    def require_chain_access(self, context: dict = Depends(VerifyAPIKey)) -> dict:
         """
         Require permission to access chain-related endpoints.
         
@@ -248,7 +248,7 @@ class ResourcePermissionChecker:
             )
         return context
     
-    def require_proof_access(self, context: Dict = Depends(VerifyAPIKey)) -> Dict:
+    def require_proof_access(self, context: dict = Depends(VerifyAPIKey)) -> dict:
         """
         Require permission to access proof submission endpoints.
         
@@ -269,7 +269,7 @@ class ResourcePermissionChecker:
         return context
     
     @staticmethod
-    def _has_permission(context: Dict, permission_type: str) -> bool:
+    def _has_permission(context: dict, permission_type: str) -> bool:
         """
         Check if context has specific permission.
 
@@ -286,23 +286,23 @@ class ResourcePermissionChecker:
     
     # Deprecated methods for backward compatibility
     @staticmethod
-    def _has_event_permission(context: Dict) -> bool:
+    def _has_event_permission(context: dict) -> bool:
         """Check if context has event permissions."""
         return ResourcePermissionChecker._has_permission(context, 'events')
     
     @staticmethod
-    def _has_chain_permission(context: Dict) -> bool:
+    def _has_chain_permission(context: dict) -> bool:
         """Check if context has chain permissions."""
         return ResourcePermissionChecker._has_permission(context, 'chains')
     
     @staticmethod
-    def _has_proof_permission(context: Dict) -> bool:
+    def _has_proof_permission(context: dict) -> bool:
         """Check if context has proof permissions."""
         return ResourcePermissionChecker._has_permission(context, 'proofs')
 
 
 #Factoryfunction for creating configured VerifyAPIKey instances
-def create_verify_api_key(config: Dict) -> VerifyAPIKey:
+def create_verify_api_key(config: dict) -> VerifyAPIKey:
     """
     Factory function to create configured VerifyAPIKey instance.
     

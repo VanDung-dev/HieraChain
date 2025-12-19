@@ -11,7 +11,7 @@ and the network transport (ZeroMQ). It handles:
 import zmq
 import zmq.auth
 import logging
-from typing import Dict, Any
+from typing import Any
 
 from hierachain.network.zmq_transport import ZmqNode
 from hierachain.security.msp import HierarchicalMSP
@@ -43,7 +43,7 @@ class SecureConnectionManager:
         )
         
         # 3. Validation Cache
-        self.authenticated_peers: Dict[str, bool] = {}
+        self.authenticated_peers: dict[str, bool] = {}
 
     async def start(self):
         """Start the secure transport."""
@@ -90,7 +90,7 @@ class SecureConnectionManager:
         if not success:
             logger.error(f"Failed to send handshake to {peer_id}")
 
-    async def _handle_message(self, message: Dict[str, Any], sender_id: str):
+    async def _handle_message(self, message: dict[str, Any], sender_id: str):
         """Intercept messages to handle Handshake vs Data."""
         msg_type = message.get("type")
         
@@ -106,7 +106,7 @@ class SecureConnectionManager:
             else:
                 logger.warning(f"Dropped Unauthenticated Message from {sender_id}")
 
-    async def _handle_handshake_request(self, message: Dict[str, Any], sender_id: str):
+    async def _handle_handshake_request(self, message: dict[str, Any], sender_id: str):
         """Processing incoming handshake: Verify MSP Certificate."""
         # 1. Dynamic Registration (if unknown)
         if sender_id not in self.transport.peers:
@@ -135,7 +135,7 @@ class SecureConnectionManager:
         else:
             logger.error(f"Handshake Rejected for {sender_id}")
 
-    async def _handle_handshake_ack(self, message: Dict[str, Any], sender_id: str):
+    async def _handle_handshake_ack(self, message: dict[str, Any], sender_id: str):
         """Handle Handshake Acknowledgement."""
         if message.get("status") == "OK":
             logger.info(f"Secure Connection Established with {sender_id} ✅")

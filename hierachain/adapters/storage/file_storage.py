@@ -9,7 +9,7 @@ types of data
 import json
 import os
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 from pathlib import Path
 import time
 import pyarrow as pa
@@ -82,7 +82,7 @@ class FileStorageAdapter:
         path.mkdir(parents=True, exist_ok=True)
         return path
     
-    def store_chain_metadata(self, chain_name: str, chain_type: str, parent_chain: str = None, metadata: Dict = None):
+    def store_chain_metadata(self, chain_name: str, chain_type: str, parent_chain: str = None, metadata: dict = None):
         """Store chain metadata"""
         try:
             chain_data = {
@@ -104,7 +104,7 @@ class FileStorageAdapter:
             logger.error(f"Failed to store chain metadata {chain_name}: {e}")
             raise
     
-    def store_block(self, chain_name: str, block_data: Union[Dict, Block]):
+    def store_block(self, chain_name: str, block_data: Union[dict, Block]):
         """
         Store block data using Parquet for high performance.
         
@@ -160,7 +160,7 @@ class FileStorageAdapter:
             logger.error(f"Failed to store block: {e}")
             raise
     
-    def _update_events_index(self, chain_name: str, block_data: Dict):
+    def _update_events_index(self, chain_name: str, block_data: dict):
         """
         Update events index using Arrow Dataset (Append-only).
         Writes a small parquet file for the block's events.
@@ -216,7 +216,7 @@ class FileStorageAdapter:
             logger.error(f"Failed to update events index: {e}")
             # Don't raise - this is not critical for block storage
     
-    def get_chain_metadata(self, chain_name: str) -> Optional[Dict]:
+    def get_chain_metadata(self, chain_name: str) -> Optional[dict]:
         """Get chain metadata"""
         try:
             chain_file = self._get_chain_file(chain_name)
@@ -230,7 +230,7 @@ class FileStorageAdapter:
             logger.error(f"Failed to get chain metadata {chain_name}: {e}")
             return None
     
-    def get_block(self, chain_name: str, block_index: int) -> Optional[Dict]:
+    def get_block(self, chain_name: str, block_index: int) -> Optional[dict]:
         """
         Get a specific block.
         Returns a Dictionary suitable for Block.from_dict(), with 'events' as a pyarrow.Table.
@@ -272,7 +272,7 @@ class FileStorageAdapter:
             logger.error(f"Failed to get block {block_index} for chain {chain_name}: {e}")
             return None
     
-    def get_chain_blocks(self, chain_name: str, limit: int = None, offset: int = 0) -> List[Dict]:
+    def get_chain_blocks(self, chain_name: str, limit: int = None, offset: int = 0) -> list[dict]:
         """Get blocks for a specific chain"""
         try:
             self._validate_filename(chain_name)
@@ -320,7 +320,7 @@ class FileStorageAdapter:
             logger.error(f"Failed to get blocks for chain {chain_name}: {e}")
             return []
     
-    def get_entity_events(self, entity_id: str, chain_name: str = None) -> List[Dict]:
+    def get_entity_events(self, entity_id: str, chain_name: str = None) -> list[dict]:
         """
         Get all events for a specific entity using Arrow Dataset.
         """
@@ -379,7 +379,7 @@ class FileStorageAdapter:
             logger.error(f"Failed to get events for entity {entity_id}: {e}")
             return []
     
-    def get_chain_stats(self, chain_name: str) -> Dict:
+    def get_chain_stats(self, chain_name: str) -> dict:
         """Get statistics for a specific chain using Arrow Datasets"""
         try:
             self._validate_filename(chain_name)
@@ -434,8 +434,8 @@ class FileStorageAdapter:
                 "unique_entities": 0
             }
     
-    def list_chains(self) -> List[str]:
-        """List all stored chains"""
+    def list_chains(self) -> list[str]:
+        """list all stored chains"""
         try:
             chain_files = self.chains_path.glob("*.json")
             return [f.stem for f in chain_files]
@@ -461,7 +461,7 @@ class FileStorageAdapter:
         except Exception as e:
             logger.error(f"Failed to cleanup old data: {e}")
     
-    def get_storage_info(self) -> Dict:
+    def get_storage_info(self) -> dict:
         """Get storage information"""
         try:
             total_size = 0
@@ -485,7 +485,7 @@ class FileStorageAdapter:
             logger.error(f"Failed to get storage info: {e}")
             return {}
 
-    def get_entity_events_optimized(self, entity_id: str, chain_name: str = None, columns: List[str] = None) -> List[Dict]:
+    def get_entity_events_optimized(self, entity_id: str, chain_name: str = None, columns: list[str] = None) -> list[dict]:
         """
         Get events with column pruning for better performance.
         
@@ -574,7 +574,7 @@ class BatchBlockWriter:
         self.storage = storage
         self.chain_name = chain_name
         self.batch_size = batch_size
-        self._buffer: List[Block] = []
+        self._buffer: list[Block] = []
         self._stats = {
             "blocks_written": 0,
             "events_written": 0,
@@ -615,7 +615,7 @@ class BatchBlockWriter:
         
         self._buffer.clear()
     
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """
         Get write statistics.
         

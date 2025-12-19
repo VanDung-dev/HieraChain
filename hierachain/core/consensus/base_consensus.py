@@ -8,7 +8,7 @@ the event-based model and hierarchical structure principles.
 
 import pyarrow as pa
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Any, Optional
 from hierachain.core.block import Block
 
 
@@ -29,7 +29,7 @@ class BaseConsensus(ABC):
             name: Name of the consensus mechanism
         """
         self.name = name
-        self.config: Dict[str, Any] = {}
+        self.config: dict[str, Any] = {}
 
     def get_validator_count(self) -> int:
         """
@@ -83,7 +83,7 @@ class BaseConsensus(ABC):
         """
         raise NotImplementedError("Subclasses must implement can_create_block()")
     
-    def validate_event_for_consensus(self, event: Dict[str, Any]) -> bool:
+    def validate_event_for_consensus(self, event: dict[str, Any]) -> bool:
         """
         Validate an event according to consensus-specific rules.
         
@@ -150,7 +150,7 @@ class BaseConsensus(ABC):
         
         return True
     
-    def get_consensus_info(self) -> Dict[str, Any]:
+    def get_consensus_info(self) -> dict[str, Any]:
         """
         Get information about the consensus mechanism.
         
@@ -163,7 +163,7 @@ class BaseConsensus(ABC):
             "config": self.config
         }
     
-    def update_config(self, config: Dict[str, Any]) -> None:
+    def update_config(self, config: dict[str, Any]) -> None:
         """
         Update consensus configuration.
         

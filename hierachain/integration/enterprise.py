@@ -8,7 +8,7 @@ events are later summarized on the main chain.
 """
 import time
 import logging
-from typing import Dict, Any, List
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class IntegrationError(Exception):
     pass
 
 
-def _get_nested_value(data: Dict[str, Any], path: str) -> Any:
+def _get_nested_value(data: dict[str, Any], path: str) -> Any:
     """Get nested value from dictionary using dot notation path"""
     keys = path.split('.')
     value = data
@@ -33,7 +33,7 @@ def _get_nested_value(data: Dict[str, Any], path: str) -> Any:
 class BaseERPIntegration:
     """Base class for ERP system integrations"""
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         self.config = config
         self.connected = False
     
@@ -45,7 +45,7 @@ class BaseERPIntegration:
         """Disconnect from ERP system"""
         self.connected = False
     
-    def get_events(self, last_hours: int = 24) -> List[Dict[str, Any]]:
+    def get_events(self, last_hours: int = 24) -> list[dict[str, Any]]:
         """Get events from ERP system"""
         raise NotImplementedError("Subclasses must implement get_events method")
     
@@ -72,7 +72,7 @@ class SAPIntegration(BaseERPIntegration):
         self.connected = True
         return True
     
-    def get_events(self, last_hours: int = 24) -> List[Dict[str, Any]]:
+    def get_events(self, last_hours: int = 24) -> list[dict[str, Any]]:
         """Get events from SAP system"""
         if not self.connected:
             raise IntegrationError("Not connected to SAP system")
@@ -108,7 +108,7 @@ class OracleIntegration(BaseERPIntegration):
         self.connected = True
         return True
     
-    def get_events(self, last_hours: int = 24) -> List[Dict[str, Any]]:
+    def get_events(self, last_hours: int = 24) -> list[dict[str, Any]]:
         """Get events from Oracle system"""
         if not self.connected:
             raise IntegrationError("Not connected to Oracle system")
@@ -143,7 +143,7 @@ class DynamicsIntegration(BaseERPIntegration):
         self.connected = True
         return True
     
-    def get_events(self, last_hours: int = 24) -> List[Dict[str, Any]]:
+    def get_events(self, last_hours: int = 24) -> list[dict[str, Any]]:
         """Get events from Dynamics system"""
         if not self.connected:
             raise IntegrationError("Not connected to Dynamics system")
@@ -166,7 +166,7 @@ class EnterpriseIntegration:
     """Support for integration with existing enterprise systems"""
     
     @staticmethod
-    def connect_to_erp(erp_system: str, config: Dict[str, Any]) -> BaseERPIntegration:
+    def connect_to_erp(erp_system: str, config: dict[str, Any]) -> BaseERPIntegration:
         """Connect to ERP system"""
         # Implementation based on ERP type
         if erp_system == "sap":
@@ -183,7 +183,7 @@ class EnterpriseIntegration:
         return integration
     
     @staticmethod
-    def erp_to_blockchain_event(erp_event: Dict[str, Any], mapping_rules: Dict[str, str]) -> Dict[str, Any]:
+    def erp_to_blockchain_event(erp_event: dict[str, Any], mapping_rules: dict[str, str]) -> dict[str, Any]:
         """Convert ERP event to blockchain event"""
         # Map fields according to rules
         blockchain_event = {}
@@ -197,7 +197,7 @@ class EnterpriseIntegration:
         return blockchain_event
     
     @staticmethod
-    def validate_mapping_rules(mapping_rules: Dict[str, str]) -> bool:
+    def validate_mapping_rules(mapping_rules: dict[str, str]) -> bool:
         """Validate mapping rules format"""
         required_fields = ["entity_id", "event"]
         
@@ -208,7 +208,7 @@ class EnterpriseIntegration:
         return True
     
     @staticmethod
-    def create_default_mapping(erp_system: str) -> Dict[str, str]:
+    def create_default_mapping(erp_system: str) -> dict[str, str]:
         """Create default mapping rules for ERP system"""
         if erp_system == "sap":
             return {
@@ -235,7 +235,7 @@ class EnterpriseIntegration:
             raise IntegrationError(f"No default mapping available for {erp_system}")
     
     @staticmethod
-    def batch_convert_events(erp_events: List[Dict[str, Any]], mapping_rules: Dict[str, str]) -> List[Dict[str, Any]]:
+    def batch_convert_events(erp_events: list[dict[str, Any]], mapping_rules: dict[str, str]) -> list[dict[str, Any]]:
         """Convert multiple ERP events to blockchain events"""
         blockchain_events = []
         for erp_event in erp_events:

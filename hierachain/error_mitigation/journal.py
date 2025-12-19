@@ -12,7 +12,7 @@ import re
 import logging
 import struct
 import json
-from typing import Dict, Any, Generator
+from typing import Any, Generator
 from pathlib import Path
 
 import pyarrow as pa
@@ -190,7 +190,7 @@ class TransactionJournal:
             logger.critical(f"Failed to open transaction journal: {e}")
             raise
             
-    def _dict_to_arrow_batch(self, event_data: Dict[str, Any]) -> pa.RecordBatch:
+    def _dict_to_arrow_batch(self, event_data: dict[str, Any]) -> pa.RecordBatch:
         """
         Convert a raw event dictionary to an Arrow RecordBatch.
         Handles packing of extra fields into 'data' binary column.
@@ -230,7 +230,7 @@ class TransactionJournal:
             logger.error(f"Schema conversion error for event {ev.get('event_id', 'unknown')}: {e}")
             raise
 
-    def log_event(self, event_data: Dict[str, Any]) -> bool:
+    def log_event(self, event_data: dict[str, Any]) -> bool:
         """
         Durably log an event to the journal using Arrow format.
         
@@ -269,7 +269,7 @@ class TransactionJournal:
             logger.critical(f"CRITICAL: Failed to write to transaction journal: {e}")
             return False
 
-    def replay(self) -> Generator[Dict[str, Any], None, None]:
+    def replay(self) -> Generator[dict[str, Any], None, None]:
         """
         Replay all events from the journal.
         Reads binary Arrow batches and yields them as Dictionaries.

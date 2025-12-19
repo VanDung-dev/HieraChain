@@ -12,7 +12,7 @@ import logging
 import shutil
 import os
 import hashlib
-from typing import Dict, Any, List, Optional
+from typing import Any, Optional
 from datetime import datetime
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -51,15 +51,15 @@ class StateSnapshot:
     description: str
     data_hash: str
     data_path: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     size_bytes: int
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert snapshot to dictionary"""
         return asdict(self)
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'StateSnapshot':
+    def from_dict(cls, data: dict[str, Any]) -> 'StateSnapshot':
         """Create snapshot from dictionary"""
         return cls(**data)
 
@@ -74,10 +74,10 @@ class RollbackOperation:
     start_time: float
     end_time: Optional[float]
     error_message: Optional[str]
-    rollback_steps: List[str]
-    affected_components: List[str]
+    rollback_steps: list[str]
+    affected_components: list[str]
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert operation to dictionary"""
         data = asdict(self)
         # Convert enums to strings for JSON serialization
@@ -95,7 +95,7 @@ class RollbackManager:
     and ensures data integrity during recovery procedures.
     """
     
-    def __init__(self, config_dict: Dict[str, Any]):
+    def __init__(self, config_dict: dict[str, Any]):
         """
         Initialize rollback manager
         
@@ -112,8 +112,8 @@ class RollbackManager:
         os.makedirs(self.snapshots_dir, exist_ok=True)
         
         # State tracking
-        self.snapshots: List[StateSnapshot] = []
-        self.active_operations: Dict[str, RollbackOperation] = {}
+        self.snapshots: list[StateSnapshot] = []
+        self.active_operations: dict[str, RollbackOperation] = {}
         self.rollback_lock = threading.Lock()
         
         # Load existing snapshots
@@ -126,7 +126,7 @@ class RollbackManager:
         logger.info(f"Initialized RollbackManager with {len(self.snapshots)} snapshots")
     
     def create_snapshot(self, snapshot_type: RollbackType, description: str, 
-                       components: List[Any] = None) -> StateSnapshot:
+                       components: list[Any] = None) -> StateSnapshot:
         """
         Create a system state snapshot
         
@@ -280,7 +280,7 @@ class RollbackManager:
         
         return rollback_op
     
-    def get_snapshots(self, snapshot_type: Optional[RollbackType] = None) -> List[StateSnapshot]:
+    def get_snapshots(self, snapshot_type: Optional[RollbackType] = None) -> list[StateSnapshot]:
         """
         Get list of available snapshots
         
@@ -325,7 +325,7 @@ class RollbackManager:
         logger.warning(f"Snapshot not found for deletion: {snapshot_id}")
         return False
     
-    def get_rollback_operations(self, status: Optional[RollbackStatus] = None) -> List[RollbackOperation]:
+    def get_rollback_operations(self, status: Optional[RollbackStatus] = None) -> list[RollbackOperation]:
         """
         Get rollback operations
         
@@ -393,7 +393,7 @@ class RollbackManager:
             return False
     
     @staticmethod
-    def _capture_configuration_state() -> Dict[str, Any]:
+    def _capture_configuration_state() -> dict[str, Any]:
         """Capture current configuration state"""
         config_state = {
             "timestamp": time.time(),
@@ -416,7 +416,7 @@ class RollbackManager:
         return config_state
     
     @staticmethod
-    def _capture_chain_state(components: List[Any] = None) -> Dict[str, Any]:
+    def _capture_chain_state(components: list[Any] = None) -> dict[str, Any]:
         """Capture current blockchain state"""
         chain_state = {
             "timestamp": time.time(),
@@ -439,7 +439,7 @@ class RollbackManager:
         return chain_state
     
     @staticmethod
-    def _capture_consensus_state(components: List[Any] = None) -> Dict[str, Any]:
+    def _capture_consensus_state(components: list[Any] = None) -> dict[str, Any]:
         """Capture current consensus state"""
         consensus_state = {
             "timestamp": time.time(),
@@ -463,7 +463,7 @@ class RollbackManager:
         return consensus_state
     
     @staticmethod
-    def _capture_storage_state(_components: List[Any] = None) -> Dict[str, Any]:
+    def _capture_storage_state(_components: list[Any] = None) -> dict[str, Any]:
         """Capture current storage state"""
         storage_state = {
             "timestamp": time.time(),
@@ -476,7 +476,7 @@ class RollbackManager:
         # Placeholder implementation
         return storage_state
     
-    def _capture_full_system_state(self, components: List[Any] = None) -> Dict[str, Any]:
+    def _capture_full_system_state(self, components: list[Any] = None) -> dict[str, Any]:
         """Capture complete system state"""
         full_state = {
             "timestamp": time.time(),
@@ -489,7 +489,7 @@ class RollbackManager:
         return full_state
     
     @staticmethod
-    def _rollback_configuration(snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
+    def _rollback_configuration(snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
         """Rollback configuration state"""
         try:
             config_files = snapshot_data.get("config_files", {})
@@ -515,7 +515,7 @@ class RollbackManager:
             return False
     
     @staticmethod
-    def _rollback_chain_state(snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
+    def _rollback_chain_state(snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
         """Rollback blockchain state"""
         try:
             # Placeholder implementation for chain state rollback
@@ -533,7 +533,7 @@ class RollbackManager:
             return False
     
     @staticmethod
-    def _rollback_consensus_state(snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
+    def _rollback_consensus_state(snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
         """Rollback consensus state"""
         try:
             view_number = snapshot_data.get("view_number", 0)
@@ -550,7 +550,7 @@ class RollbackManager:
             return False
     
     @staticmethod
-    def _rollback_storage_state(_snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
+    def _rollback_storage_state(_snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
         """Rollback storage state"""
         try:
             # Placeholder implementation
@@ -563,7 +563,7 @@ class RollbackManager:
             logger.error(f"Storage state rollback failed: {e}")
             return False
     
-    def _rollback_full_system(self, snapshot_data: Dict[str, Any], rollback_op: RollbackOperation) -> bool:
+    def _rollback_full_system(self, snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
         """Rollback complete system state"""
         try:
             # Rollback each component

@@ -8,7 +8,7 @@ affiliation hierarchies, and channel management across organizational boundaries
 
 import time
 import threading
-from typing import Dict, List, Any, Optional
+from typing import Any, Optional
 from dataclasses import dataclass, field
 
 
@@ -33,9 +33,9 @@ class HierarchicalMSP:
     org_id: str
     ca_cert: str
     tls_ca_cert: str
-    admin_certs: List[str] = field(default_factory=list)
+    admin_certs: list[str] = field(default_factory=list)
     
-    def validate_identity(self, identity: Dict[str, Any]) -> bool:
+    def validate_identity(self, identity: dict[str, Any]) -> bool:
         """Validate identity credentials"""
         # Simplified validation for enterprise use
         required_fields = ["user_id", "org_id", "role"]
@@ -59,7 +59,7 @@ class OrganizationPolicy:
     admin_threshold: int
     voting_policy: str = "majority"  # majority, unanimous, admin_only
     
-    def evaluate_proposal(self, votes: Dict[str, bool], voter_roles: Dict[str, str]) -> bool:
+    def evaluate_proposal(self, votes: dict[str, bool], voter_roles: dict[str, str]) -> bool:
         """Evaluate a proposal based on organization policy"""
         admin_votes = {user_id: vote for user_id, vote in votes.items() 
                       if voter_roles.get(user_id) == "admin"}
@@ -80,7 +80,7 @@ class OrganizationPolicy:
 class Organization:
     """Enterprise organization with MSP integration"""
     
-    def __init__(self, org_id: str, msp_config: Dict[str, Any]):
+    def __init__(self, org_id: str, msp_config: dict[str, Any]):
         """
         Initialize organization with MSP configuration
         
@@ -95,12 +95,12 @@ class Organization:
             tls_ca_cert=msp_config["tls_ca_cert"],
             admin_certs=msp_config.get("admin_certs", [])
         )
-        self.members: Dict[str, Dict[str, Any]] = {}
-        self.channels: Dict[str, Any] = {}
-        self.affiliations: Dict[str, Any] = {}
+        self.members: dict[str, dict[str, Any]] = {}
+        self.channels: dict[str, Any] = {}
+        self.affiliations: dict[str, Any] = {}
         self.lock = threading.Lock()
     
-    def register_member(self, member_id: str, identity: Dict[str, Any], role: str) -> str:
+    def register_member(self, member_id: str, identity: dict[str, Any], role: str) -> str:
         """Register a member with organization"""
         with self.lock:
             if not self.msp.validate_identity(identity):
@@ -168,7 +168,7 @@ class Organization:
             if part in current:
                 current = current[part]["sub_affiliations"]
     
-    def get_admins(self) -> List[str]:
+    def get_admins(self) -> list[str]:
         """Get list of admin members"""
         return [member_id for member_id, info in self.members.items() 
                 if info["role"] == "admin"]
@@ -181,12 +181,12 @@ class Organization:
             admin_threshold=max(1, admin_count // 2 + 1)
         )
     
-    def get_members_by_role(self, role: str) -> List[str]:
+    def get_members_by_role(self, role: str) -> list[str]:
         """Get members by role"""
         return [member_id for member_id, info in self.members.items() 
                 if info["role"] == role]
     
-    def get_affiliation_members(self, affiliation_path: str) -> List[str]:
+    def get_affiliation_members(self, affiliation_path: str) -> list[str]:
         """Get members in an affiliation"""
         parts = affiliation_path.split('.')
         current = self.affiliations
@@ -208,8 +208,8 @@ class Organization:
 class ApplicationChannel:
     """Application channel for multi-organization collaboration"""
     
-    def __init__(self, channel_id: str, organizations: List[Organization], 
-                 config: Dict[str, Any], system_channel=None):
+    def __init__(self, channel_id: str, organizations: list[Organization], 
+                 config: dict[str, Any], system_channel=None):
         """
         Initialize application channel
         
@@ -224,7 +224,7 @@ class ApplicationChannel:
         self.config = config
         self.system_channel = system_channel
         self.created_at = time.time()
-        self.blocks: List[Any] = []
+        self.blocks: list[Any] = []
         self.lock = threading.Lock()
     
     def add_organization(self, organization: Organization) -> bool:
@@ -253,7 +253,7 @@ class ApplicationChannel:
         org = self.organizations[org_id]
         return member_id in org.members
     
-    def get_channel_policy(self) -> Dict[str, Any]:
+    def get_channel_policy(self) -> dict[str, Any]:
         """Get channel policy configuration"""
         return {
             "channel_id": self.channel_id,
@@ -267,9 +267,9 @@ class MultiOrgNetwork:
     """Multi-organization network manager"""
     
     def __init__(self):
-        self.organizations: Dict[str, Organization] = {}
+        self.organizations: dict[str, Organization] = {}
         self.system_channel: Optional[ApplicationChannel] = None
-        self.application_channels: Dict[str, ApplicationChannel] = {}
+        self.application_channels: dict[str, ApplicationChannel] = {}
         self.lock = threading.Lock()
     
     def add_organization(self, organization: Organization):
@@ -290,7 +290,7 @@ class MultiOrgNetwork:
             del self.organizations[org_id]
             return True
     
-    def create_system_channel(self, config: Dict[str, Any]) -> ApplicationChannel:
+    def create_system_channel(self, config: dict[str, Any]) -> ApplicationChannel:
         """Create system channel for network management"""
         with self.lock:
             if self.system_channel:
@@ -305,8 +305,8 @@ class MultiOrgNetwork:
             )
             return self.system_channel
     
-    def create_application_channel(self, channel_id: str, participating_orgs: List[str], 
-                                 config: Dict[str, Any]) -> ApplicationChannel:
+    def create_application_channel(self, channel_id: str, participating_orgs: list[str], 
+                                 config: dict[str, Any]) -> ApplicationChannel:
         """
         Create application channel with participating organizations
         
@@ -346,7 +346,7 @@ class MultiOrgNetwork:
         """Get organization by ID"""
         return self.organizations.get(org_id)
     
-    def get_network_status(self) -> Dict[str, Any]:
+    def get_network_status(self) -> dict[str, Any]:
         """Get network status information"""
         return {
             "organizations": len(self.organizations),
@@ -355,7 +355,7 @@ class MultiOrgNetwork:
             "total_members": sum(len(org.members) for org in self.organizations.values())
         }
     
-    def validate_cross_org_operation(self, operation: Dict[str, Any], 
+    def validate_cross_org_operation(self, operation: dict[str, Any], 
                                      channel_id: str) -> bool:
         """Validate cross-organizational operation"""
         channel = self.get_channel(channel_id)
@@ -380,7 +380,7 @@ class MultiOrgNetwork:
 
 
 # Factory functions for easy setup
-def create_organization(org_id: str, _name: str, admin_users: List[str] = None) -> Organization:
+def create_organization(org_id: str, _name: str, admin_users: list[str] = None) -> Organization:
     """Factory function to create an organization with default MSP config"""
     msp_config = {
         "ca_cert": f"-----BEGIN CERTIFICATE-----\n{org_id}_ca_cert\n-----END CERTIFICATE-----",
@@ -402,7 +402,7 @@ def create_organization(org_id: str, _name: str, admin_users: List[str] = None) 
     return org
 
 
-def create_multi_org_network(organizations: List[Dict[str, Any]]) -> MultiOrgNetwork:
+def create_multi_org_network(organizations: list[dict[str, Any]]) -> MultiOrgNetwork:
     """Factory function to create a multi-organization network"""
     network = MultiOrgNetwork()
     

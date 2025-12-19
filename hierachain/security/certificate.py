@@ -9,7 +9,7 @@ blockchain deployments.
 
 import time
 import hashlib
-from typing import Dict, Any, List, Optional
+from typing import Any, Optional
 from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime, timezone
@@ -40,8 +40,8 @@ class CertificateInfo:
     public_key: str
     signature: str
     certificate_type: CertificateType
-    key_usage: List[str]
-    subject_alt_names: List[str]
+    key_usage: list[str]
+    subject_alt_names: list[str]
     
     def is_expired(self) -> bool:
         """Check if certificate is expired"""
@@ -59,7 +59,7 @@ class CertificateInfo:
         delta = self.valid_until - datetime.now(timezone.utc)
         return delta.days
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "serial_number": self.serial_number,
@@ -81,7 +81,7 @@ class CertificateRevocationList:
     """Certificate Revocation List management"""
     
     def __init__(self):
-        self.revoked_certificates: Dict[str, Dict[str, Any]] = {}
+        self.revoked_certificates: dict[str, dict[str, Any]] = {}
         self.last_updated = time.time()
         self.version = 1
         
@@ -109,11 +109,11 @@ class CertificateRevocationList:
         """Check if certificate is revoked"""
         return serial_number in self.revoked_certificates
     
-    def get_revocation_info(self, serial_number: str) -> Optional[Dict[str, Any]]:
+    def get_revocation_info(self, serial_number: str) -> Optional[dict[str, Any]]:
         """Get revocation information for a certificate"""
         return self.revoked_certificates.get(serial_number)
     
-    def get_crl_info(self) -> Dict[str, Any]:
+    def get_crl_info(self) -> dict[str, Any]:
         """Get CRL information"""
         return {
             "version": self.version,
@@ -127,7 +127,7 @@ class CertificateValidator:
     """Certificate validation utilities"""
     
     def __init__(self):
-        self.trusted_cas: Dict[str, CertificateInfo] = {}
+        self.trusted_cas: dict[str, CertificateInfo] = {}
         self.crl = CertificateRevocationList()
         
     def add_trusted_ca(self, ca_cert: CertificateInfo) -> None:
@@ -141,7 +141,7 @@ class CertificateValidator:
             return True
         return False
     
-    def validate_certificate(self, cert: CertificateInfo) -> Dict[str, Any]:
+    def validate_certificate(self, cert: CertificateInfo) -> dict[str, Any]:
         """
         Validate certificate against trusted CAs and policies.
         
@@ -192,7 +192,7 @@ class CertificateValidator:
         
         return validation_result
     
-    def validate_certificate_chain(self, cert: CertificateInfo) -> Dict[str, Any]:
+    def validate_certificate_chain(self, cert: CertificateInfo) -> dict[str, Any]:
         """
         Validate certificate chain to trusted root CA.
         
@@ -261,7 +261,7 @@ class CertificateValidator:
         return chain_result
     
     @staticmethod
-    def _validate_key_usage(cert: CertificateInfo) -> Dict[str, Any]:
+    def _validate_key_usage(cert: CertificateInfo) -> dict[str, Any]:
         """Validate certificate key usage"""
         result = {
             "valid": True,
@@ -302,9 +302,9 @@ class CertificateManager:
     """
     
     def __init__(self):
-        self.certificates: Dict[str, CertificateInfo] = {}
+        self.certificates: dict[str, CertificateInfo] = {}
         self.validator = CertificateValidator()
-        self.certificate_store: Dict[str, Dict[str, Any]] = {}
+        self.certificate_store: dict[str, dict[str, Any]] = {}
         
         # Certificate templates for different types
         self.certificate_templates = self._init_certificate_templates()
@@ -359,7 +359,7 @@ class CertificateManager:
             subject_alt_names=cert_info.get("SubjectAltNames", "").split(',')
         )
     
-    def store_certificate(self, cert: CertificateInfo, metadata: Optional[Dict[str, Any]] = None) -> str:
+    def store_certificate(self, cert: CertificateInfo, metadata: Optional[dict[str, Any]] = None) -> str:
         """
         Store certificate with metadata.
         
@@ -395,14 +395,14 @@ class CertificateManager:
             return entry["certificate"]
         return None
     
-    def validate_certificate_by_id(self, storage_id: str) -> Optional[Dict[str, Any]]:
+    def validate_certificate_by_id(self, storage_id: str) -> Optional[dict[str, Any]]:
         """Validate certificate by storage ID"""
         cert = self.get_certificate(storage_id)
         if cert:
             return self.validator.validate_certificate(cert)
         return None
     
-    def get_certificates_by_subject(self, subject: str) -> List[CertificateInfo]:
+    def get_certificates_by_subject(self, subject: str) -> list[CertificateInfo]:
         """Get all certificates for a subject"""
         matching_certs = []
         for storage_id, entry in self.certificate_store.items():
@@ -410,7 +410,7 @@ class CertificateManager:
                 matching_certs.append(entry["certificate"])
         return matching_certs
     
-    def get_expiring_certificates(self, days_threshold: int = 30) -> List[CertificateInfo]:
+    def get_expiring_certificates(self, days_threshold: int = 30) -> list[CertificateInfo]:
         """Get certificates expiring within threshold"""
         expiring_certs = []
         for entry in self.certificate_store.values():
@@ -452,12 +452,12 @@ class CertificateManager:
         self._update_statistics()
         return len(expired_ids)
     
-    def get_certificate_statistics(self) -> Dict[str, Any]:
+    def get_certificate_statistics(self) -> dict[str, Any]:
         """Get certificate management statistics"""
         self._update_statistics()
         return self.statistics.copy()
     
-    def export_certificate_info(self, storage_id: str) -> Optional[Dict[str, Any]]:
+    def export_certificate_info(self, storage_id: str) -> Optional[dict[str, Any]]:
         """Export comprehensive certificate information"""
         if storage_id not in self.certificate_store:
             return None
@@ -510,7 +510,7 @@ class CertificateManager:
             return datetime.now(timezone.utc)
     
     @staticmethod
-    def _init_certificate_templates() -> Dict[str, Dict[str, Any]]:
+    def _init_certificate_templates() -> dict[str, dict[str, Any]]:
         """Initialize certificate templates"""
         return {
             "root_ca": {

@@ -9,7 +9,7 @@ for both Main Chain and Sub-Chain implementations, following framework guideline
 """
 
 import time
-from typing import List, Dict, Any, Optional, Callable
+from typing import Any, Optional, Callable
 
 from hierachain.core.block import Block
 
@@ -32,8 +32,8 @@ class Blockchain:
             name: Name identifier for this blockchain
         """
         self.name = name
-        self.chain: List[Block] = []
-        self.pending_events: List[Dict[str, Any]] = []
+        self.chain: list[Block] = []
+        self.pending_events: list[dict[str, Any]] = []
         self.create_genesis_block()
     
     def create_genesis_block(self) -> None:
@@ -65,7 +65,7 @@ class Blockchain:
         """
         return self.chain[-1]
     
-    def add_event(self, event: Dict[str, Any]) -> None:
+    def add_event(self, event: dict[str, Any]) -> None:
         """
         Add an event to the pending events list.
         
@@ -82,7 +82,7 @@ class Blockchain:
         
         self.pending_events.append(event)
     
-    def create_block(self, events: Optional[List[Dict[str, Any]]] = None) -> Block:
+    def create_block(self, events: Optional[list[dict[str, Any]]] = None) -> Block:
         """
         Create a new block with the given events or pending events.
         
@@ -198,7 +198,7 @@ class Blockchain:
         
         return True
     
-    def get_events_by_entity(self, entity_id: str) -> List[Dict[str, Any]]:
+    def get_events_by_entity(self, entity_id: str) -> list[dict[str, Any]]:
         """
         Get all events for a specific entity across the entire chain.
         
@@ -213,7 +213,7 @@ class Blockchain:
             events.extend(block.get_events_by_entity(entity_id))
         return events
     
-    def get_events_by_type(self, event_type: str) -> List[Dict[str, Any]]:
+    def get_events_by_type(self, event_type: str) -> list[dict[str, Any]]:
         """
         Get all events of a specific type across the entire chain.
         
@@ -228,7 +228,7 @@ class Blockchain:
             events.extend(block.get_events_by_type(event_type))
         return events
     
-    def get_events_by_filter(self, filter_func: Callable[[Dict[str, Any]], bool]) -> List[Dict[str, Any]]:
+    def get_events_by_filter(self, filter_func: Callable[[dict[str, Any]], bool]) -> list[dict[str, Any]]:
         """
         Get all events that match a custom filter function.
         
@@ -246,7 +246,7 @@ class Blockchain:
                     events.append(event)
         return events
     
-    def get_chain_stats(self) -> Dict[str, Any]:
+    def get_chain_stats(self) -> dict[str, Any]:
         """
         Get statistics about the blockchain.
         
@@ -264,7 +264,7 @@ class Blockchain:
             "chain_valid": self.is_chain_valid()
         }
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert blockchain to dictionary representation.
         
@@ -278,7 +278,7 @@ class Blockchain:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Blockchain':
+    def from_dict(cls, data: dict[str, Any]) -> 'Blockchain':
         """
         Create a Blockchain instance from dictionary data.
         

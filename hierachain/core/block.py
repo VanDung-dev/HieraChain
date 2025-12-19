@@ -10,7 +10,7 @@ This module implements the Block class following the framework guidelines:
 import time
 import json
 import logging
-from typing import List, Dict, Any, Optional, Union
+from typing import Any, Optional, Union
 import pyarrow as pa
 import pyarrow.compute as pc
 
@@ -33,7 +33,7 @@ class Block:
     def __init__(
         self,
         index: int,
-        events: Union[List[Dict[str, Any]], pa.Table],
+        events: Union[list[dict[str, Any]], pa.Table],
         timestamp: Optional[float] = None,
         previous_hash: str = "",
         nonce: int = 0,
@@ -81,7 +81,7 @@ class Block:
         return self._events
 
     @staticmethod
-    def _convert_events_to_arrow(events_list: List[Dict[str, Any]]) -> pa.Table:
+    def _convert_events_to_arrow(events_list: list[dict[str, Any]]) -> pa.Table:
         """
         Convert list of dicts to Arrow Table.
         
@@ -126,7 +126,7 @@ class Block:
         return pa.Table.from_pylist(processed_events, schema=schemas.get_event_schema())
 
     @staticmethod
-    def calculate_merkle_from_list(events_list: List[Dict[str, Any]]) -> str:
+    def calculate_merkle_from_list(events_list: list[dict[str, Any]]) -> str:
         """Calculate Merkle Root from a list of event dictionaries."""
         if not events_list:
             return MerkleTree([]).get_root()
@@ -151,22 +151,22 @@ class Block:
         
         return generate_hash(block_header)
     
-    def get_events_by_entity(self, entity_id: str) -> List[Dict[str, Any]]:
+    def get_events_by_entity(self, entity_id: str) -> list[dict[str, Any]]:
         """Get all events for a specific entity using Arrow filtering."""
         filtered = self._events.filter(pc.equal(self._events['entity_id'], entity_id))
         return self._table_to_list_of_dicts(filtered)
 
-    def get_events_by_type(self, event_type: str) -> List[Dict[str, Any]]:
+    def get_events_by_type(self, event_type: str) -> list[dict[str, Any]]:
         """Get all events of a specific type."""
         filtered = self._events.filter(pc.equal(self._events['event'], event_type))
         return self._table_to_list_of_dicts(filtered)
     
-    def to_event_list(self) -> List[Dict[str, Any]]:
+    def to_event_list(self) -> list[dict[str, Any]]:
         """Convert internal Arrow events to a list of dictionaries."""
         return self._table_to_list_of_dicts(self._events)
 
     @staticmethod
-    def _table_to_list_of_dicts(table: pa.Table) -> List[Dict[str, Any]]:
+    def _table_to_list_of_dicts(table: pa.Table) -> list[dict[str, Any]]:
         """
         Convert Arrow Table to list of dicts with parsed details.
         
@@ -219,7 +219,7 @@ class Block:
         
         return True
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert block to dictionary representation.
         
@@ -239,7 +239,7 @@ class Block:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Block':
+    def from_dict(cls, data: dict[str, Any]) -> 'Block':
         """
         Create a Block instance from dictionary data.
 

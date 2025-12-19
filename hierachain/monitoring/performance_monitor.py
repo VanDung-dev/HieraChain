@@ -9,7 +9,7 @@ CPU, memory, throughput, and custom metrics.
 import time
 import threading
 import logging
-from typing import Dict, List, Any, Optional, Callable, Tuple
+from typing import Any, Optional, Callable, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
 from collections import deque, defaultdict
@@ -54,7 +54,7 @@ class MetricValue:
     timestamp: float
     value: float
     unit: MetricUnit
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 @dataclass
@@ -73,7 +73,7 @@ class PerformanceMetric:
         if self.values is None:
             self.values = deque(maxlen=self.history_size)
     
-    def add_value(self, value: float, metadata: Optional[Dict[str, Any]] = None):
+    def add_value(self, value: float, metadata: Optional[dict[str, Any]] = None):
         """Add new metric value"""
         metric_value = MetricValue(
             timestamp=time.time(),
@@ -138,7 +138,7 @@ class SystemMetricsCollector:
         if not PSUTIL_AVAILABLE:
             self.logger.warning("psutil not available - using fallback system metrics collection")
         
-    def collect_cpu_metrics(self) -> Dict[str, float]:
+    def collect_cpu_metrics(self) -> dict[str, float]:
         """Collect CPU usage metrics"""
         try:
             if PSUTIL_AVAILABLE:
@@ -173,7 +173,7 @@ class SystemMetricsCollector:
             self.logger.error(f"Error collecting CPU metrics: {str(e)}")
             return {}
     
-    def collect_memory_metrics(self) -> Dict[str, float]:
+    def collect_memory_metrics(self) -> dict[str, float]:
         """Collect memory usage metrics"""
         try:
             if PSUTIL_AVAILABLE:
@@ -225,7 +225,7 @@ class SystemMetricsCollector:
             self.logger.error(f"Error collecting memory metrics: {str(e)}")
             return {}
     
-    def collect_disk_metrics(self) -> Dict[str, float]:
+    def collect_disk_metrics(self) -> dict[str, float]:
         """Collect disk usage metrics"""
         try:
             if PSUTIL_AVAILABLE:
@@ -304,7 +304,7 @@ class SystemMetricsCollector:
             self.logger.error(f"Error collecting disk metrics: {str(e)}")
             return {}
     
-    def collect_network_metrics(self) -> Dict[str, float]:
+    def collect_network_metrics(self) -> dict[str, float]:
         """Collect network usage metrics"""
         try:
             if PSUTIL_AVAILABLE:
@@ -407,7 +407,7 @@ class BlockchainMetricsCollector:
         total_time = self.consensus_metrics['avg_time'] * (self.consensus_metrics['rounds'] - 1)
         self.consensus_metrics['avg_time'] = (total_time + duration) / self.consensus_metrics['rounds']
     
-    def collect_metrics(self) -> Dict[str, float]:
+    def collect_metrics(self) -> dict[str, float]:
         """Collect blockchain performance metrics"""
         try:
             current_time = time.time()
@@ -472,7 +472,7 @@ class PerformanceMonitor:
     for system and blockchain performance metrics.
     """
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         """
         Initialize performance monitor.
         
@@ -487,13 +487,13 @@ class PerformanceMonitor:
         self.blockchain_collector = BlockchainMetricsCollector()
         
         # Metrics registry
-        self.metrics: Dict[str, PerformanceMetric] = {}
+        self.metrics: dict[str, PerformanceMetric] = {}
         self._initialize_default_metrics()
         
         # Monitoring configuration
         self.collection_interval = self.config.get('collection_interval', 5.0)  # seconds
         self.enable_alerts = self.config.get('enable_alerts', True)
-        self.alert_handlers: List[Callable[[str, PerformanceMetric, float], None]] = []
+        self.alert_handlers: list[Callable[[str, PerformanceMetric, float], None]] = []
         
         # Monitoring control
         self.monitoring_active = False
@@ -501,7 +501,7 @@ class PerformanceMonitor:
         self.shutdown_event = threading.Event()
         
         # Custom metrics
-        self.custom_metrics_callbacks: Dict[str, Callable[[], Dict[str, float]]] = {}
+        self.custom_metrics_callbacks: dict[str, Callable[[], dict[str, float]]] = {}
     
     def _initialize_default_metrics(self):
         """Initialize default performance metrics"""
@@ -737,7 +737,7 @@ class PerformanceMonitor:
             except Exception as check_error:
                 self.logger.error(f"Error checking threshold for {metric_name}: {str(check_error)}")
     
-    def get_current_metrics(self) -> Dict[str, Dict[str, Any]]:
+    def get_current_metrics(self) -> dict[str, dict[str, Any]]:
         """Get current metric values and statistics"""
         result = {}
         
@@ -761,7 +761,7 @@ class PerformanceMonitor:
         return result
     
     def get_metric_history(self, metric_name: str, 
-                          duration_seconds: Optional[int] = None) -> List[Dict[str, Any]]:
+                          duration_seconds: Optional[int] = None) -> list[dict[str, Any]]:
         """Get metric value history"""
         if metric_name not in self.metrics:
             return []

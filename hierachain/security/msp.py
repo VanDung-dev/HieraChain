@@ -8,7 +8,7 @@ business applications.
 
 import time
 import hashlib
-from typing import Dict, Any, List, Optional, Set
+from typing import Any, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
 
@@ -31,7 +31,7 @@ class Certificate:
     valid_from: float
     valid_until: float
     status: CertificateStatus
-    attributes: Dict[str, Any]
+    attributes: dict[str, Any]
     signature: str
     
     def is_valid(self) -> bool:
@@ -49,7 +49,7 @@ class Certificate:
 class CertificateAuthority:
     """Hierarchical Certificate Authority for enterprise environments"""
     
-    def __init__(self, root_cert: str, intermediate_certs: List[str], policy: Dict[str, Any]):
+    def __init__(self, root_cert: str, intermediate_certs: list[str], policy: dict[str, Any]):
         """
         Initialize Certificate Authority.
         
@@ -61,11 +61,11 @@ class CertificateAuthority:
         self.root_cert = root_cert
         self.intermediate_certs = intermediate_certs
         self.policy = policy
-        self.issued_certificates: Dict[str, Certificate] = {}
+        self.issued_certificates: dict[str, Certificate] = {}
         self.revoked_certificates: Set[str] = set()
         
     def issue_certificate(self, subject: str, public_key: str, 
-                         attributes: Dict[str, Any], valid_days: int = 365) -> Certificate:
+                         attributes: dict[str, Any], valid_days: int = 365) -> Certificate:
         """
         Issue a new certificate for an entity.
         
@@ -150,10 +150,10 @@ class OrganizationPolicies:
     """Organization policy management"""
     
     def __init__(self):
-        self.policies: Dict[str, Dict[str, Any]] = {}
-        self.role_permissions: Dict[str, List[str]] = {}
+        self.policies: dict[str, dict[str, Any]] = {}
+        self.role_permissions: dict[str, list[str]] = {}
     
-    def define_policy(self, policy_id: str, policy_config: Dict[str, Any]) -> None:
+    def define_policy(self, policy_id: str, policy_config: dict[str, Any]) -> None:
         """Define a new organizational policy"""
         self.policies[policy_id] = {
             "config": policy_config,
@@ -161,7 +161,7 @@ class OrganizationPolicies:
             "version": "1.0"
         }
     
-    def evaluate_policy(self, policy_id: str, context: Dict[str, Any]) -> bool:
+    def evaluate_policy(self, policy_id: str, context: dict[str, Any]) -> bool:
         """Evaluate policy against given context"""
         if policy_id not in self.policies:
             return False
@@ -176,7 +176,7 @@ class OrganizationPolicies:
                 
         return True
     
-    def assign_role_permissions(self, role: str, permissions: List[str]) -> None:
+    def assign_role_permissions(self, role: str, permissions: list[str]) -> None:
         """Assign permissions to a role"""
         self.role_permissions[role] = permissions
     
@@ -193,7 +193,7 @@ class HierarchicalMSP:
     including certificate management, role-based access control, and audit logging.
     """
     
-    def __init__(self, organization_id: str, ca_config: Dict[str, Any]):
+    def __init__(self, organization_id: str, ca_config: dict[str, Any]):
         """
         Initialize Hierarchical MSP.
         
@@ -207,16 +207,16 @@ class HierarchicalMSP:
             intermediate_certs=ca_config.get("intermediate_certs", []),
             policy=ca_config.get("policy", {})
         )
-        self.roles: Dict[str, Dict[str, Any]] = {}
+        self.roles: dict[str, dict[str, Any]] = {}
         self.policies = OrganizationPolicies()
-        self.audit_log: List[Dict[str, Any]] = []
-        self.entities: Dict[str, Dict[str, Any]] = {}
+        self.audit_log: list[dict[str, Any]] = []
+        self.entities: dict[str, dict[str, Any]] = {}
         
         # Initialize default roles
         self._initialize_default_roles()
         
-    def register_entity(self, entity_id: str, credentials: Dict[str, Any], 
-                       role: str, attributes: Optional[Dict[str, Any]] = None) -> bool:
+    def register_entity(self, entity_id: str, credentials: dict[str, Any], 
+                       role: str, attributes: Optional[dict[str, Any]] = None) -> bool:
         """
         Register entity with role-based access control and attribute-based policies.
         
@@ -269,7 +269,7 @@ class HierarchicalMSP:
             })
             return False
 
-    def validate_identity(self, entity_id: str, credentials: Dict[str, Any]) -> bool:
+    def validate_identity(self, entity_id: str, credentials: dict[str, Any]) -> bool:
         """
         Validate entity identity and credentials.
 
@@ -379,8 +379,8 @@ class HierarchicalMSP:
         
         return True
     
-    def define_role(self, role_name: str, permissions: List[str], 
-                   policies: List[str] = None, cert_validity_days: int = 365) -> None:
+    def define_role(self, role_name: str, permissions: list[str], 
+                   policies: list[str] = None, cert_validity_days: int = 365) -> None:
         """
         Define a new organizational role.
         
@@ -405,7 +405,7 @@ class HierarchicalMSP:
             "permissions": permissions
         })
     
-    def get_entity_info(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def get_entity_info(self, entity_id: str) -> Optional[dict[str, Any]]:
         """Get detailed information about an entity"""
         if entity_id not in self.entities:
             return None
@@ -421,7 +421,7 @@ class HierarchicalMSP:
             "attributes": entity["attributes"]
         }
     
-    def get_audit_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_audit_log(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get recent audit log entries"""
         return self.audit_log[-limit:] if limit > 0 else self.audit_log
     
@@ -458,7 +458,7 @@ class HierarchicalMSP:
             }
             self.policies.assign_role_permissions(role_name, role_config["permissions"])
     
-    def _log_event(self, event_type: str, details: Dict[str, Any]) -> None:
+    def _log_event(self, event_type: str, details: dict[str, Any]) -> None:
         """Log an audit event"""
         self.audit_log.append({
             "timestamp": time.time(),

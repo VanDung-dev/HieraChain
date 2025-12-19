@@ -10,7 +10,7 @@ import time
 import json
 import hashlib
 import binascii
-from typing import Dict, Optional, Set
+from typing import Optional, Set
 import logging
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class KeyManager:
         """
         self.storage = storage_backend or {}  # In-memory fallback
         self.revoked_keys: Set[str] = set()
-        self.key_cache: Dict[str, Dict] = {}
+        self.key_cache: dict[str, dict] = {}
         self.cache_ttl = 300  # 5 minutes default TTL
         
     def is_valid(self, api_key: str) -> bool:
@@ -103,7 +103,7 @@ class KeyManager:
         key_data = self._get_key_data(api_key)
         return key_data.get('user_id') if key_data else None
     
-    def get_app_details(self, api_key: str) -> Optional[Dict]:
+    def get_app_details(self, api_key: str) -> Optional[dict]:
         """
         Get application details associated with API key.
         
@@ -134,7 +134,7 @@ class KeyManager:
                 'ttl': ttl
             }
     
-    def create_key(self, user_id: str, permissions: list, app_details: Dict = None, expires_in: int = None) -> str:
+    def create_key(self, user_id: str, permissions: list, app_details: dict = None, expires_in: int = None) -> str:
         """
         Create a new API key for a user.
         
@@ -179,7 +179,7 @@ class KeyManager:
         if api_key in self.key_cache:
             del self.key_cache[api_key]
     
-    def _get_key_data(self, api_key: str) -> Optional[Dict]:
+    def _get_key_data(self, api_key: str) -> Optional[dict]:
         """
         Get key data from cache or storage.
         
@@ -212,7 +212,7 @@ class KeyManager:
             # Dict-like storage (in-memory fallback)
             return self.storage.get(api_key)
     
-    def _store_key_data(self, api_key: str, data: Dict):
+    def _store_key_data(self, api_key: str, data: dict):
         """
         Store key data in storage.
         

@@ -10,7 +10,7 @@ import os
 import time
 import json
 import logging
-from typing import Dict, Any, List
+from typing import Any
 from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
@@ -70,7 +70,7 @@ class ErrorInfo:
     description: str
     mitigation_strategy: str
     timestamp: float
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class RiskPriorityMatrix:
@@ -161,7 +161,7 @@ class ErrorClassifier:
     priority matrix and predefined error patterns.
     """
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize error classifier
         
@@ -176,7 +176,7 @@ class ErrorClassifier:
         
         logger.info("Initialized ErrorClassifier")
     
-    def classify_error(self, error_data: Dict[str, Any]) -> ErrorInfo:
+    def classify_error(self, error_data: dict[str, Any]) -> ErrorInfo:
         """
         Classify an error and determine its priority and mitigation strategy
         
@@ -239,7 +239,7 @@ class ErrorClassifier:
             return [ErrorClassifier._sanitize_metadata(v) for v in data]
         return data
 
-    def get_priority_errors(self, priority: PriorityLevel) -> List[ErrorInfo]:
+    def get_priority_errors(self, priority: PriorityLevel) -> list[ErrorInfo]:
         """
         Get all errors of a specific priority level
         
@@ -251,7 +251,7 @@ class ErrorClassifier:
         """
         return [error for error in self.classification_history if error.priority == priority]
     
-    def get_category_errors(self, category: ErrorCategory) -> List[ErrorInfo]:
+    def get_category_errors(self, category: ErrorCategory) -> list[ErrorInfo]:
         """
         Get all errors of a specific category
         
@@ -263,7 +263,7 @@ class ErrorClassifier:
         """
         return [error for error in self.classification_history if error.category == category]
     
-    def get_classification_summary(self) -> Dict[str, Any]:
+    def get_classification_summary(self) -> dict[str, Any]:
         """
         Get summary of error classifications
         
@@ -329,7 +329,7 @@ class ErrorClassifier:
             return ErrorCategory.OPERATIONAL
     
     @staticmethod
-    def _assess_impact(error_data: Dict[str, Any], category: ErrorCategory) -> ImpactLevel:
+    def _assess_impact(error_data: dict[str, Any], category: ErrorCategory) -> ImpactLevel:
         """
         Assess impact level of an error
         
@@ -387,7 +387,7 @@ class ErrorClassifier:
             return ImpactLevel.MINOR
     
     @staticmethod
-    def _assess_likelihood(_error_data: Dict[str, Any], category: ErrorCategory) -> LikelihoodLevel:
+    def _assess_likelihood(_error_data: dict[str, Any], category: ErrorCategory) -> LikelihoodLevel:
         """
         Assess likelihood level of an error
         
@@ -429,7 +429,7 @@ class ErrorClassifier:
         return self.mitigation_strategies.get(strategy_key, "monitor_and_log")
     
     @staticmethod
-    def _generate_error_id(error_data: Dict[str, Any]) -> str:
+    def _generate_error_id(error_data: dict[str, Any]) -> str:
         """
         Generate unique error ID
         
@@ -470,7 +470,7 @@ class ErrorClassifier:
             logger.error(f"Failed to log error classification: {e}")
     
     @staticmethod
-    def _load_error_patterns() -> Dict[str, str]:
+    def _load_error_patterns() -> dict[str, str]:
         """
         Load error patterns for classification
         
@@ -507,7 +507,7 @@ class ErrorClassifier:
         return patterns
     
     @staticmethod
-    def _load_mitigation_strategies() -> Dict[str, str]:
+    def _load_mitigation_strategies() -> dict[str, str]:
         """
         Load mitigation strategies for different error types
         
@@ -561,7 +561,7 @@ class ErrorClassifier:
 
 
 # Utility functions for error classification
-def classify_error_quick(error_type: str, message: str, config: Dict[str, Any] = None) -> ErrorInfo:
+def classify_error_quick(error_type: str, message: str, config: dict[str, Any] = None) -> ErrorInfo:
     """
     Quick error classification utility function
     
@@ -586,7 +586,7 @@ def classify_error_quick(error_type: str, message: str, config: Dict[str, Any] =
     return classifier.classify_error(error_data)
 
 
-def get_priority_threshold(priority: PriorityLevel) -> Dict[str, Any]:
+def get_priority_threshold(priority: PriorityLevel) -> dict[str, Any]:
     """
     Get thresholds and timeframes for different priority levels
     

@@ -8,7 +8,7 @@ and security controls across enterprise processes.
 """
 
 import time
-from typing import Dict, Any, List, Optional, Callable, Union
+from typing import Any, Optional, Callable, Union
 from dataclasses import dataclass
 from enum import Enum
 
@@ -72,8 +72,8 @@ class ContractStorage:
     """Contract storage with persistence capabilities"""
     
     def __init__(self):
-        self.data: Dict[str, Any] = {}
-        self.event_log: List[Dict[str, Any]] = []
+        self.data: dict[str, Any] = {}
+        self.event_log: list[dict[str, Any]] = []
         
     def set(self, key: str, value: Any, contract_id: str = None) -> None:
         """Set a value in contract storage"""
@@ -110,11 +110,11 @@ class ContractStorage:
             return True
         return False
     
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         """Get all keys in storage"""
         return list(self.data.keys())
     
-    def get_event_log(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_event_log(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get recent event log entries"""
         return self.event_log[-limit:] if limit > 0 else self.event_log
     
@@ -133,12 +133,12 @@ class ContractLifecycle:
     
     def __init__(self):
         self.status = ContractStatus.DEVELOPMENT
-        self.status_history: List[Dict[str, Any]] = []
-        self.deployment_info: Optional[Dict[str, Any]] = None
-        self.deprecation_info: Optional[Dict[str, Any]] = None
+        self.status_history: list[dict[str, Any]] = []
+        self.deployment_info: Optional[dict[str, Any]] = None
+        self.deprecation_info: Optional[dict[str, Any]] = None
         
     def transition_to(self, new_status: ContractStatus, reason: str = "", 
-                     metadata: Dict[str, Any] = None) -> bool:
+                     metadata: dict[str, Any] = None) -> bool:
         """
         Transition contract to new status.
         
@@ -198,7 +198,7 @@ class ContractLifecycle:
         
         return to_status in valid_transitions.get(from_status, [])
     
-    def get_status_info(self) -> Dict[str, Any]:
+    def get_status_info(self) -> dict[str, Any]:
         """Get comprehensive status information"""
         return {
             "current_status": self.status.value,
@@ -219,7 +219,7 @@ class DomainContract:
     
     def __init__(self, contract_id: str, version: Union[str, ContractVersion], 
                  implementation: Optional[Callable] = None, 
-                 metadata: Optional[Dict[str, Any]] = None):
+                 metadata: Optional[dict[str, Any]] = None):
         """
         Initialize domain contract.
         
@@ -236,18 +236,18 @@ class DomainContract:
         
         # Core components
         self.lifecycle = ContractLifecycle()
-        self.event_handlers: Dict[str, List[Callable]] = {}
+        self.event_handlers: dict[str, list[Callable]] = {}
         self.storage = ContractStorage()
         
         # Execution tracking
         self.execution_count = 0
         self.last_execution = None
-        self.execution_history: List[Dict[str, Any]] = []
+        self.execution_history: list[dict[str, Any]] = []
         self.error_count = 0
         self.last_error = None
         
         # Version management
-        self.previous_versions: List['DomainContract'] = []
+        self.previous_versions: list['DomainContract'] = []
         self.deprecation_warning_days = metadata.get("deprecation_warning", 90)
         
         # Contract creation timestamp
@@ -294,7 +294,7 @@ class DomainContract:
                 pass
         return False
     
-    def execute(self, event: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def execute(self, event: dict[str, Any], context: Optional[dict[str, Any]] = None) -> dict[str, Any]:
         """
         Execute contract logic based on domain event.
         
@@ -315,7 +315,7 @@ class DomainContract:
             }
         
         execution_start = time.time()
-        execution_result: Dict[str, Any] = {
+        execution_result: dict[str, Any] = {
             "success": False,
             "contract_id": self.contract_id,
             "version": str(self.version),
@@ -395,7 +395,7 @@ class DomainContract:
     
     def upgrade_to_version(self, new_version: Union[str, ContractVersion], 
                           new_implementation: Optional[Callable] = None,
-                          metadata: Optional[Dict[str, Any]] = None) -> bool:
+                          metadata: Optional[dict[str, Any]] = None) -> bool:
         """
         Upgrade contract to new version.
         
@@ -504,7 +504,7 @@ class DomainContract:
         
         return success
     
-    def get_contract_info(self) -> Dict[str, Any]:
+    def get_contract_info(self) -> dict[str, Any]:
         """Get comprehensive contract information"""
         return {
             "contract_id": self.contract_id,
@@ -527,12 +527,12 @@ class DomainContract:
             "storage_keys": len(self.storage.keys())
         }
     
-    def get_execution_history(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_execution_history(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent execution history"""
         return self.execution_history[-limit:] if limit > 0 else self.execution_history
     
     @staticmethod
-    def _validate_event(event: Dict[str, Any]) -> bool:
+    def _validate_event(event: dict[str, Any]) -> bool:
         """Validate event structure"""
         required_fields = ["entity_id", "event", "timestamp"]
         for field in required_fields:
@@ -553,7 +553,7 @@ class DomainContract:
     
     def _setup_default_handlers(self) -> None:
         """Setup default event handlers"""
-        def default_logging_handler(event: Dict[str, Any], context: Dict[str, Any], storage: ContractStorage):
+        def default_logging_handler(event: dict[str, Any], context: dict[str, Any], storage: ContractStorage):
             """Default handler that logs all events"""
             log_entry = {
                 "timestamp": time.time(),
@@ -573,7 +573,7 @@ class DomainContract:
         # Register default handler for all event types if no specific handlers exist
         self.default_handler = default_logging_handler
     
-    def _log_contract_event(self, event_type: ContractEventType, details: Dict[str, Any]) -> None:
+    def _log_contract_event(self, event_type: ContractEventType, details: dict[str, Any]) -> None:
         """Log contract lifecycle events"""
         log_entry = {
             "timestamp": time.time(),

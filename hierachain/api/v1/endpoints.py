@@ -5,7 +5,7 @@ This module provides RESTful API endpoints for interacting with the HieraChain s
 The system follows a two-level architecture where sub-chains handle business events and the main chain
 stores cryptographic proofs from sub-chains.
 """
-from typing import List, Optional
+from typing import Optional
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 import time
@@ -34,7 +34,7 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": time.time()}
 
-@router.get("/chains", response_model=List[ChainInfoResponse])
+@router.get("/chains", response_model=list[ChainInfoResponse])
 async def list_chains():
     """List all chains in the hierarchy"""
     try:

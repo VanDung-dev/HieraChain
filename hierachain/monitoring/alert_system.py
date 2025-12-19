@@ -11,7 +11,7 @@ import logging
 import threading
 import smtplib
 import json
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
 from email.mime.text import MIMEText
@@ -65,9 +65,9 @@ class Alert:
     acknowledgment_time: Optional[float] = None
     resolved_time: Optional[float] = None
     escalation_level: int = 0
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert alert to dictionary"""
         data = asdict(self)
         data['severity'] = self.severity.value
@@ -111,7 +111,7 @@ class AnomalyDetector:
         """
         self.window_size = window_size
         self.sensitivity = sensitivity
-        self.metric_histories: Dict[str, deque] = defaultdict(lambda: deque(maxlen=window_size))
+        self.metric_histories: dict[str, deque] = defaultdict(lambda: deque(maxlen=window_size))
         
     def add_data_point(self, metric_name: str, value: float):
         """Add new data point for metric"""
@@ -153,7 +153,7 @@ class AnomalyDetector:
 class EmailNotifier:
     """Email notification handler"""
     
-    def __init__(self, smtp_config: Dict[str, Any]):
+    def __init__(self, smtp_config: dict[str, Any]):
         """
         Initialize email notifier.
         
@@ -168,7 +168,7 @@ class EmailNotifier:
         self.use_tls = smtp_config.get('use_tls', True)
         self.enabled = smtp_config.get('enabled', False)
         
-    def send_alert(self, alert: Alert, recipients: List[str]) -> bool:
+    def send_alert(self, alert: Alert, recipients: list[str]) -> bool:
         """Send alert via email"""
         if not self.enabled or not recipients:
             return False
@@ -254,7 +254,7 @@ class EmailNotifier:
 class WebhookNotifier:
     """Webhook notification handler"""
     
-    def __init__(self, webhook_config: Dict[str, Any]):
+    def __init__(self, webhook_config: dict[str, Any]):
         """Initialize webhook notifier"""
         self.webhook_url = webhook_config.get('url')
         self.headers = webhook_config.get('headers', {'Content-Type': 'application/json'})
@@ -291,7 +291,7 @@ class AlertManager:
     alert lifecycle (creation, acknowledgment, escalation, resolution).
     """
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         """
         Initialize alert manager.
         
@@ -302,12 +302,12 @@ class AlertManager:
         self.logger = logging.getLogger(__name__)
         
         # Alert storage
-        self.active_alerts: Dict[str, Alert] = {}
-        self.alert_history: List[Alert] = []
+        self.active_alerts: dict[str, Alert] = {}
+        self.alert_history: list[Alert] = []
         self.max_history_size = self.config.get('max_history_size', 10000)
         
         # Alert rules
-        self.alert_rules: Dict[str, AlertRule] = {}
+        self.alert_rules: dict[str, AlertRule] = {}
         self._initialize_default_rules()
         
         # Anomaly detection
@@ -317,12 +317,12 @@ class AlertManager:
         )
         
         # Notification handlers
-        self.notifiers: List[Any] = []
+        self.notifiers: list[Any] = []
         self._initialize_notifiers()
         
         # Alert suppression and rate limiting
-        self.last_alert_times: Dict[str, float] = {}
-        self.escalation_timers: Dict[str, threading.Timer] = {}
+        self.last_alert_times: dict[str, float] = {}
+        self.escalation_timers: dict[str, threading.Timer] = {}
         
         # Statistics
         self.stats = {
@@ -587,7 +587,7 @@ class AlertManager:
             self.logger.critical(f"Alert escalated: {alert_id} (level {alert.escalation_level})")
     
     def get_active_alerts(self, category: Optional[AlertCategory] = None,
-                         severity: Optional[AlertSeverity] = None) -> List[Alert]:
+                         severity: Optional[AlertSeverity] = None) -> list[Alert]:
         """Get active alerts with optional filtering"""
         alerts = list(self.active_alerts.values())
         
@@ -599,7 +599,7 @@ class AlertManager:
         
         return alerts
     
-    def get_alert_statistics(self) -> Dict[str, Any]:
+    def get_alert_statistics(self) -> dict[str, Any]:
         """Get alert system statistics"""
         return {
             **self.stats,

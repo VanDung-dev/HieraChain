@@ -9,7 +9,7 @@ ensuring fair participation and removing single points of failure.
 
 import time
 import hashlib
-from typing import Dict, Any, List, Optional
+from typing import Any, Optional
 
 from hierachain.core.consensus.base_consensus import BaseConsensus
 from hierachain.core.block import Block
@@ -38,8 +38,8 @@ class ProofOfFederation(BaseConsensus):
         super().__init__(name)
         
         # Internal state
-        self.validators: List[str] = []  # Ordered list of validator IDs
-        self.validator_metadata: Dict[str, Dict[str, Any]] = {}
+        self.validators: list[str] = []  # Ordered list of validator IDs
+        self.validator_metadata: dict[str, dict[str, Any]] = {}
         
         # Configuration defaults (can be updated via settings)
         self.config = {
@@ -52,7 +52,7 @@ class ProofOfFederation(BaseConsensus):
         """Get the number of active validators."""
         return len(self.validators)
 
-    def add_validator(self, validator_id: str, metadata: Optional[Dict[str, Any]] = None) -> bool:
+    def add_validator(self, validator_id: str, metadata: Optional[dict[str, Any]] = None) -> bool:
         """
         Add a validator to the federation.
         
@@ -89,7 +89,7 @@ class ProofOfFederation(BaseConsensus):
             return True
         return False
 
-    def add_authority(self, authority_id: str, metadata: Optional[Dict[str, Any]] = None) -> bool:
+    def add_authority(self, authority_id: str, metadata: Optional[dict[str, Any]] = None) -> bool:
         """Alias for add_validator for compatibility."""
         return self.add_validator(authority_id, metadata)
 
@@ -236,7 +236,7 @@ class ProofOfFederation(BaseConsensus):
                 return event.get("details", {}).get("leader_id")
         return None
 
-    def get_consensus_info(self) -> Dict[str, Any]:
+    def get_consensus_info(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "type": "ProofOfFederation",

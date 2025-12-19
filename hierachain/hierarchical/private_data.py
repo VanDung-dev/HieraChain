@@ -9,7 +9,7 @@ This significantly enhances data privacy in enterprise collaborations.
 import time
 import hashlib
 import json
-from typing import Dict, Any, List, Optional
+from typing import Any, Optional
 from dataclasses import dataclass
 from enum import Enum
 from cryptography.fernet import Fernet, InvalidToken
@@ -35,13 +35,13 @@ class PrivateDataEntry:
     """Private data entry with metadata"""
     key: str
     encrypted_value: bytes
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     timestamp: float
     block_height: int
-    endorsements: List[str]
+    endorsements: list[str]
     hash_value: str
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for storage"""
         return {
             "key": self.key,
@@ -54,7 +54,7 @@ class PrivateDataEntry:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'PrivateDataEntry':
+    def from_dict(cls, data: dict[str, Any]) -> 'PrivateDataEntry':
         """Create from dictionary"""
         return cls(
             key=data["key"],
@@ -76,7 +76,7 @@ class PrivateCollection:
     policies, and automatic data purging.
     """
     
-    def __init__(self, name: str, organizations: Dict[str, Any], config: Dict[str, Any]):
+    def __init__(self, name: str, organizations: dict[str, Any], config: dict[str, Any]):
         """
         Initialize private data collection.
         
@@ -91,7 +91,7 @@ class PrivateCollection:
         self.status = CollectionStatus.ACTIVE
         
         # Private data store
-        self.data_store: Dict[str, PrivateDataEntry] = {}
+        self.data_store: dict[str, PrivateDataEntry] = {}
         
         # Collection metadata
         self.created_at = time.time()
@@ -121,7 +121,7 @@ class PrivateCollection:
             "failed_endorsements": 0
         }
         
-    def add_data(self, key: str, value: Any, event_metadata: Dict[str, Any], 
+    def add_data(self, key: str, value: Any, event_metadata: dict[str, Any], 
                 submitter_org_id: str) -> bool:
         """
         Add private data with proper endorsement verification.
@@ -241,7 +241,7 @@ class PrivateCollection:
             
         return entry.hash_value
     
-    def get_metadata(self, key: str, requester_org_id: str) -> Optional[Dict[str, Any]]:
+    def get_metadata(self, key: str, requester_org_id: str) -> Optional[dict[str, Any]]:
         """
         Get metadata for private data entry.
         
@@ -279,7 +279,7 @@ class PrivateCollection:
         
         return filtered_metadata
     
-    def query_keys(self, query_params: Dict[str, Any], requester_org_id: str) -> List[str]:
+    def query_keys(self, query_params: dict[str, Any], requester_org_id: str) -> list[str]:
         """
         Query private data keys based on criteria.
         
@@ -372,7 +372,7 @@ class PrivateCollection:
         
         return True
     
-    def get_collection_info(self) -> Dict[str, Any]:
+    def get_collection_info(self) -> dict[str, Any]:
         """Get comprehensive collection information"""
         return {
             "name": self.name,
@@ -385,7 +385,7 @@ class PrivateCollection:
             "statistics": self.statistics
         }
     
-    def _verify_endorsements(self, endorsements: List[str]) -> bool:
+    def _verify_endorsements(self, endorsements: list[str]) -> bool:
         """
         Verify that endorsements meet the collection policy.
         

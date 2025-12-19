@@ -9,7 +9,7 @@ Supports SAP, Oracle, Microsoft Dynamics, and other enterprise systems.
 import time
 import threading
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Callable
+from typing import Any, Optional, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
@@ -40,7 +40,7 @@ class SyncResult:
     profile_name: str
     status: SyncStatus
     events_processed: int
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
     start_time: float = 0.0
     end_time: float = 0.0
     
@@ -54,7 +54,7 @@ class ERPIntegrationFramework:
     """Comprehensive ERP integration framework with mapping engine"""
     
     def __init__(self):
-        self.adapters: Dict[str, Any] = {}
+        self.adapters: dict[str, Any] = {}
         self.mapping_engine = MappingEngine()
         self.event_translator = EventTranslator()
         self.change_detector = ChangeDetector()
@@ -86,7 +86,7 @@ class ERPIntegrationFramework:
             self.logger.info(f"Registered adapter for {erp_system}")
     
     def create_mapping_profile(self, profile_name: str, erp_system: str, 
-                             mapping_rules: Dict[str, Any]) -> str:
+                             mapping_rules: dict[str, Any]) -> str:
         """Create mapping profile for ERP integration"""
         try:
             return self.mapping_engine.create_profile(
@@ -98,8 +98,8 @@ class ERPIntegrationFramework:
             self.logger.error(f"Failed to create mapping profile {profile_name}: {e}")
             raise IntegrationError(f"Profile creation failed: {e}")
     
-    def translate_erp_to_blockchain(self, erp_event: Dict[str, Any], 
-                                  profile_name: str) -> Dict[str, Any]:
+    def translate_erp_to_blockchain(self, erp_event: dict[str, Any], 
+                                  profile_name: str) -> dict[str, Any]:
         """Translate ERP event to blockchain event"""
         try:
             # Get mapping profile
@@ -155,7 +155,7 @@ class ERPIntegrationFramework:
             self.logger.error(f"Failed to start scheduled sync for {profile_name}: {e}")
             raise IntegrationError(f"Scheduling failed: {e}")
     
-    def _execute_sync(self, profile_name: str, _profile: Dict[str, Any],
+    def _execute_sync(self, profile_name: str, _profile: dict[str, Any],
                      adapter: Any, chain: Any) -> SyncResult:
         """Execute synchronization task"""
         result = SyncResult(
@@ -201,7 +201,7 @@ class ERPIntegrationFramework:
         
         return result
     
-    def get_sync_status(self, profile_name: str) -> Dict[str, Any]:
+    def get_sync_status(self, profile_name: str) -> dict[str, Any]:
         """Get synchronization status for a profile"""
         return self.sync_scheduler.get_status(profile_name)
     
@@ -210,7 +210,7 @@ class ERPIntegrationFramework:
         return self.sync_scheduler.stop_task(profile_name)
     
     # Built-in transformers
-    def _transform_date(self, value: Any, params: Optional[Dict[str, Any]] = None) -> str:
+    def _transform_date(self, value: Any, params: Optional[dict[str, Any]] = None) -> str:
         """Transform date values"""
         if params and "format" in params:
             try:
@@ -220,7 +220,7 @@ class ERPIntegrationFramework:
                 return str(value)
         return str(value)
     
-    def _transform_amount(self, value: Any, params: Optional[Dict[str, Any]] = None) -> float:
+    def _transform_amount(self, value: Any, params: Optional[dict[str, Any]] = None) -> float:
         """Transform amount values"""
         try:
             if params and "currency_conversion" in params:
@@ -232,21 +232,21 @@ class ERPIntegrationFramework:
             return 0.0
     
     @staticmethod
-    def _transform_id(value: Any, params: Optional[Dict[str, Any]] = None) -> str:
+    def _transform_id(value: Any, params: Optional[dict[str, Any]] = None) -> str:
         """Transform ID values"""
         if params and "prefix" in params:
             return f"{params['prefix']}{value}"
         return str(value)
     
     @staticmethod
-    def _transform_status(value: Any, params: Optional[Dict[str, Any]] = None) -> str:
+    def _transform_status(value: Any, params: Optional[dict[str, Any]] = None) -> str:
         """Transform status values"""
         if params and "mapping" in params:
             return params["mapping"].get(str(value), str(value))
         return str(value)
     
     @staticmethod
-    def _transform_currency(value: Any, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _transform_currency(value: Any, params: Optional[dict[str, Any]] = None) -> dict[str, Any]:
         """Transform currency values"""
         return {
             "amount": float(value),
@@ -254,7 +254,7 @@ class ERPIntegrationFramework:
         }
     
     @staticmethod
-    def _transform_boolean(value: Any, _params: Optional[Dict[str, Any]] = None) -> bool:
+    def _transform_boolean(value: Any, _params: Optional[dict[str, Any]] = None) -> bool:
         """Transform boolean values"""
         if isinstance(value, bool):
             return value
@@ -267,8 +267,8 @@ class MappingEngine:
     """Mapping rules engine for field transformation"""
     
     def __init__(self):
-        self.profiles: Dict[str, Dict[str, Any]] = {}
-        self.transformers: Dict[str, Callable] = {}
+        self.profiles: dict[str, dict[str, Any]] = {}
+        self.transformers: dict[str, Callable] = {}
         self.lock = threading.Lock()
     
     def register_transformer(self, name: str, transformer_func: Callable):
@@ -277,7 +277,7 @@ class MappingEngine:
             self.transformers[name] = transformer_func
     
     def create_profile(self, profile_name: str, erp_system: str, 
-                      mapping_rules: Dict[str, Any]) -> str:
+                      mapping_rules: dict[str, Any]) -> str:
         """Create a new mapping profile"""
         with self.lock:
             # Validate mapping rules
@@ -291,7 +291,7 @@ class MappingEngine:
             }
             return profile_name
     
-    def update_profile(self, profile_name: str, mapping_rules: Dict[str, Any]) -> bool:
+    def update_profile(self, profile_name: str, mapping_rules: dict[str, Any]) -> bool:
         """Update existing mapping profile"""
         with self.lock:
             if profile_name not in self.profiles:
@@ -302,7 +302,7 @@ class MappingEngine:
             self.profiles[profile_name]["last_updated"] = time.time()
             return True
     
-    def get_profile(self, profile_name: str) -> Optional[Dict[str, Any]]:
+    def get_profile(self, profile_name: str) -> Optional[dict[str, Any]]:
         """Get mapping profile"""
         with self.lock:
             return self.profiles.get(profile_name)
@@ -315,12 +315,12 @@ class MappingEngine:
                 return True
             return False
     
-    def list_profiles(self) -> List[str]:
-        """List all profile names"""
+    def list_profiles(self) -> list[str]:
+        """list all profile names"""
         with self.lock:
             return list(self.profiles.keys())
     
-    def _validate_mapping_rules(self, mapping_rules: Dict[str, Any]):
+    def _validate_mapping_rules(self, mapping_rules: dict[str, Any]):
         """Validate mapping rule structure"""
         for bc_field, rule in mapping_rules.items():
             if isinstance(rule, str):
@@ -342,7 +342,7 @@ class EventTranslator:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
     
-    def translate(self, erp_event: Dict[str, Any], mapping_rules: Dict[str, Any]) -> Dict[str, Any]:
+    def translate(self, erp_event: dict[str, Any], mapping_rules: dict[str, Any]) -> dict[str, Any]:
         """Translate ERP event using mapping rules"""
         blockchain_event = {}
         
@@ -376,7 +376,7 @@ class EventTranslator:
         return blockchain_event
     
     @staticmethod
-    def _get_nested_value(obj: Dict[str, Any], path: str) -> Any:
+    def _get_nested_value(obj: dict[str, Any], path: str) -> Any:
         """Get value from nested object using path notation"""
         if not path:
             return None
@@ -399,7 +399,7 @@ class EventTranslator:
         return current
     
     @staticmethod
-    def _set_nested_value(obj: Dict[str, Any], path: str, value: Any):
+    def _set_nested_value(obj: dict[str, Any], path: str, value: Any):
         """Set value in nested object using path notation"""
         if not path:
             return
@@ -426,12 +426,12 @@ class ChangeDetector:
     """Detects meaningful changes in ERP data"""
     
     def __init__(self):
-        self.previous_states: Dict[str, Dict[str, Any]] = {}
+        self.previous_states: dict[str, dict[str, Any]] = {}
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
     
-    def detect_changes(self, erp_event: Dict[str, Any], 
-                      profile: Dict[str, Any]) -> Dict[str, Any]:
+    def detect_changes(self, erp_event: dict[str, Any], 
+                      profile: dict[str, Any]) -> dict[str, Any]:
         """Detect changes in ERP event and add change metadata"""
         entity_key = self._get_entity_key(erp_event, profile)
         
@@ -455,8 +455,8 @@ class ChangeDetector:
         return erp_event
     
     @staticmethod
-    def _get_entity_key(erp_event: Dict[str, Any],
-                        profile: Dict[str, Any]) -> str:
+    def _get_entity_key(erp_event: dict[str, Any],
+                        profile: dict[str, Any]) -> str:
         """Generate unique key for entity"""
         key_fields = profile.get("key_fields", ["id"])
         key_values = []
@@ -468,8 +468,8 @@ class ChangeDetector:
         return ":".join(key_values)
     
     @staticmethod
-    def _compare_states(old_state: Dict[str, Any],
-                        new_state: Dict[str, Any]) -> Dict[str, Any]:
+    def _compare_states(old_state: dict[str, Any],
+                        new_state: dict[str, Any]) -> dict[str, Any]:
         """Compare two states and return differences"""
         changes = {}
         
@@ -504,7 +504,7 @@ class SyncScheduler:
     """Schedules and manages synchronization tasks"""
     
     def __init__(self):
-        self.tasks: Dict[str, Dict[str, Any]] = {}
+        self.tasks: dict[str, dict[str, Any]] = {}
         self.executor = ThreadPoolExecutor(max_workers=5)
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
@@ -617,7 +617,7 @@ class SyncScheduler:
                 task_info["next_sync"] = time.time() + delay
                 self.logger.info(f"Scheduling retry for {profile_name} in {delay} seconds")
     
-    def get_status(self, profile_name: str) -> Dict[str, Any]:
+    def get_status(self, profile_name: str) -> dict[str, Any]:
         """Get task status"""
         with self.lock:
             if profile_name not in self.tasks:
@@ -636,7 +636,7 @@ class SyncScheduler:
                 "created_at": task_info["created_at"]
             }
     
-    def get_all_tasks(self) -> List[Dict[str, Any]]:
+    def get_all_tasks(self) -> list[dict[str, Any]]:
         """Get status of all tasks"""
         with self.lock:
             return [self.get_status(profile_name) for profile_name in self.tasks.keys()]
@@ -657,7 +657,7 @@ def create_erp_integration() -> ERPIntegrationFramework:
     return ERPIntegrationFramework()
 
 
-def create_sap_integration_profile(profile_name: str, sap_config: Dict[str, Any]) -> Dict[str, Any]:
+def create_sap_integration_profile(profile_name: str, sap_config: dict[str, Any]) -> dict[str, Any]:
     """Create SAP integration profile template"""
     return {
         "profile_name": profile_name,

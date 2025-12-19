@@ -11,7 +11,7 @@ import json
 import logging
 import hashlib
 import threading
-from typing import Dict, List, Any, Optional, Callable
+from typing import Any, Optional, Callable
 from dataclasses import dataclass, asdict
 from enum import Enum
 from pathlib import Path
@@ -53,14 +53,14 @@ class AuditEvent:
     timestamp: float
     source_component: str
     description: str
-    details: Dict[str, Any]
+    details: dict[str, Any]
     user_id: Optional[str] = None
     session_id: Optional[str] = None
     ip_address: Optional[str] = None
-    affected_entities: Optional[List[str]] = None
+    affected_entities: Optional[list[str]] = None
     correlation_id: Optional[str] = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         data = asdict(self)
         data['event_type'] = self.event_type.value
@@ -97,11 +97,11 @@ class AuditFilter:
     """Filter for audit events"""
     
     def __init__(self, 
-                 event_types: Optional[List[AuditEventType]] = None,
-                 severity_levels: Optional[List[AuditSeverity]] = None,
-                 source_components: Optional[List[str]] = None,
+                 event_types: Optional[list[AuditEventType]] = None,
+                 severity_levels: Optional[list[AuditSeverity]] = None,
+                 source_components: Optional[list[str]] = None,
                  time_range: Optional[tuple] = None,
-                 user_ids: Optional[List[str]] = None):
+                 user_ids: Optional[list[str]] = None):
         """
         Initialize audit filter.
         
@@ -148,7 +148,7 @@ class AuditStorage:
         raise NotImplementedError
     
     def retrieve_events(self, filter_criteria: AuditFilter, 
-                       limit: Optional[int] = None) -> List[AuditEvent]:
+                       limit: Optional[int] = None) -> list[AuditEvent]:
         """Retrieve audit events matching filter criteria."""
         raise NotImplementedError
     
@@ -194,7 +194,7 @@ class FileAuditStorage(AuditStorage):
             return False
     
     def retrieve_events(self, filter_criteria: AuditFilter, 
-                       limit: Optional[int] = None) -> List[AuditEvent]:
+                       limit: Optional[int] = None) -> list[AuditEvent]:
         """Retrieve audit events from files."""
         events = []
         
@@ -328,8 +328,8 @@ class AuditLogger:
         self.storage = storage or FileAuditStorage("log/risk_management/audit_logs")
         self.enable_real_time_alerts = enable_real_time_alerts
         self.logger = logging.getLogger(__name__)
-        self.alert_handlers: List[Callable[[AuditEvent], None]] = []
-        self.event_processors: List[Callable[[AuditEvent], AuditEvent]] = []
+        self.alert_handlers: list[Callable[[AuditEvent], None]] = []
+        self.event_processors: list[Callable[[AuditEvent], AuditEvent]] = []
         self._stats = {
             'total_events': 0,
             'events_by_type': {},
@@ -346,8 +346,8 @@ class AuditLogger:
     
     def log_risk_detection(self, risk_id: str, risk_category: str, 
                           severity: str, description: str, 
-                          affected_components: List[str],
-                          details: Dict[str, Any], 
+                          affected_components: list[str],
+                          details: dict[str, Any], 
                           correlation_id: Optional[str] = None):
         """Log risk detection event."""
         event = AuditEvent(
@@ -369,7 +369,7 @@ class AuditLogger:
         self._log_event(event)
     
     def log_mitigation_action(self, action_id: str, status: str, 
-                             description: str, details: Dict[str, Any],
+                             description: str, details: dict[str, Any],
                              correlation_id: Optional[str] = None):
         """Log mitigation action event."""
         if status == "started":
@@ -403,7 +403,7 @@ class AuditLogger:
         self._log_event(event)
     
     def log_consensus_event(self, event_type: str, description: str, 
-                           details: Dict[str, Any],
+                           details: dict[str, Any],
                            severity: str = "info"):
         """Log consensus-related event."""
         event = AuditEvent(
@@ -422,7 +422,7 @@ class AuditLogger:
         self._log_event(event)
     
     def log_security_event(self, event_type: str, description: str,
-                          details: Dict[str, Any], user_id: Optional[str] = None,
+                          details: dict[str, Any], user_id: Optional[str] = None,
                           ip_address: Optional[str] = None,
                           severity: str = "warning"):
         """Log security-related event."""
@@ -445,7 +445,7 @@ class AuditLogger:
     
     def log_performance_event(self, metric_name: str, value: float,
                              threshold: float, description: str,
-                             details: Dict[str, Any],
+                             details: dict[str, Any],
                              severity: str = "warning"):
         """Log performance-related event."""
         event = AuditEvent(
@@ -466,7 +466,7 @@ class AuditLogger:
         self._log_event(event)
     
     def log_user_action(self, user_id: str, action: str, description: str,
-                       details: Dict[str, Any], session_id: Optional[str] = None,
+                       details: dict[str, Any], session_id: Optional[str] = None,
                        ip_address: Optional[str] = None):
         """Log user action event."""
         event = AuditEvent(
@@ -559,11 +559,11 @@ class AuditLogger:
                     self.logger.error(f"Alert handler failed: {str(e)}")
     
     def query_events(self, filter_criteria: AuditFilter,
-                     limit: Optional[int] = None) -> List[AuditEvent]:
+                     limit: Optional[int] = None) -> list[AuditEvent]:
         """Query audit events with filter criteria."""
         return self.storage.retrieve_events(filter_criteria, limit)
     
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get audit statistics."""
         return self._stats.copy()
     
@@ -587,7 +587,7 @@ class AuditLogger:
             raise ValueError(f"Unsupported output format: {output_format}")
     
     @staticmethod
-    def verify_integrity(events: List[AuditEvent]) -> bool:
+    def verify_integrity(events: list[AuditEvent]) -> bool:
         """Verify integrity of audit events using hash verification."""
         for event in events:
             expected_hash = event.calculate_hash()

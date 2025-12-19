@@ -9,7 +9,7 @@ completely isolated data space with its own governance policies and access contr
 import time
 import pyarrow as pa
 import pyarrow.compute as pc
-from typing import Dict, Any, List, Optional, Set, TYPE_CHECKING
+from typing import Any, Optional, Set, TYPE_CHECKING
 from dataclasses import dataclass
 from enum import Enum
 
@@ -34,8 +34,8 @@ class Organization:
     org_id: str
     name: str
     msp_id: str
-    endpoints: List[str]
-    certificates: Dict[str, Any]
+    endpoints: list[str]
+    certificates: dict[str, Any]
     roles: Set[str]
     
     def has_role(self, role: str) -> bool:
@@ -46,7 +46,7 @@ class Organization:
 class ChannelPolicy:
     """Channel access and endorsement policies"""
     
-    def __init__(self, policy_config: Dict[str, Any]):
+    def __init__(self, policy_config: dict[str, Any]):
         """
         Initialize channel policy.
         
@@ -70,7 +70,7 @@ class ChannelPolicy:
         """Evaluate if organization has write access"""
         return self._evaluate_policy(self.write_policy, organization)
     
-    def evaluate_endorsement(self, endorsements: List[str], total_orgs: int) -> bool:
+    def evaluate_endorsement(self, endorsements: list[str], total_orgs: int) -> bool:
         """Evaluate if endorsements meet the policy requirements"""
         if self.endorsement_policy == "MAJORITY":
             return len(endorsements) > total_orgs // 2
@@ -103,12 +103,12 @@ class ChannelLedger:
     """Channel-specific ledger for storing channel events"""
     
     def __init__(self):
-        self.blocks: List[Block] = []
-        self.current_block_events: List[Dict[str, Any]] = []
+        self.blocks: list[Block] = []
+        self.current_block_events: list[dict[str, Any]] = []
         self.height = 0
         self.last_block_hash = "0"
         
-    def add_event(self, event: Dict[str, Any]) -> None:
+    def add_event(self, event: dict[str, Any]) -> None:
         """Add event to current block"""
         event["timestamp"] = event.get("timestamp", time.time())
         event["channel_event"] = True
@@ -153,7 +153,7 @@ class ChannelLedger:
         
         return block
     
-    def get_events_by_filter(self, filter_func, filter_expr: Optional[Any] = None) -> List[Dict[str, Any]]:
+    def get_events_by_filter(self, filter_func, filter_expr: Optional[Any] = None) -> list[dict[str, Any]]:
         """
         Get events matching filter criteria.
         
@@ -193,7 +193,7 @@ class Channel:
     access controls, and private data collections for secure enterprise collaboration.
     """
     
-    def __init__(self, channel_id: str, organizations: List[Organization], policy_config: Dict[str, Any]):
+    def __init__(self, channel_id: str, organizations: list[Organization], policy_config: dict[str, Any]):
         """
         Initialize a new channel.
         
@@ -205,7 +205,7 @@ class Channel:
         self.channel_id = channel_id
         self.organizations = {org.org_id: org for org in organizations}
         self.policy = ChannelPolicy(policy_config)
-        self.private_collections: Dict[str, PrivateCollection] = {}
+        self.private_collections: dict[str, PrivateCollection] = {}
         self.ordering_service = None
         self.ledger = ChannelLedger()
         self.status = ChannelStatus.ACTIVE
@@ -226,7 +226,7 @@ class Channel:
             "events_by_org": {org_id: 0 for org_id in self.organizations.keys()}
         }
         
-    def add_organization(self, organization: Organization, endorsements: List[str]) -> bool:
+    def add_organization(self, organization: Organization, endorsements: list[str]) -> bool:
         """
         Add a new organization to the channel.
         
@@ -259,7 +259,7 @@ class Channel:
         
         return True
     
-    def remove_organization(self, org_id: str, endorsements: List[str]) -> bool:
+    def remove_organization(self, org_id: str, endorsements: list[str]) -> bool:
         """
         Remove an organization from the channel.
         
@@ -294,8 +294,8 @@ class Channel:
         
         return True
     
-    def create_private_collection(self, name: str, member_org_ids: List[str], 
-                                config: Dict[str, Any]) -> bool:
+    def create_private_collection(self, name: str, member_org_ids: list[str], 
+                                config: dict[str, Any]) -> bool:
         """
         Create a private data collection within the channel.
         
@@ -329,7 +329,7 @@ class Channel:
         
         return True
     
-    def submit_event(self, event: Dict[str, Any], submitter_org_id: str) -> bool:
+    def submit_event(self, event: dict[str, Any], submitter_org_id: str) -> bool:
         """
         Submit an event to the channel.
         
@@ -374,7 +374,7 @@ class Channel:
         
         return True
     
-    def query_events(self, query_params: Dict[str, Any], requester_org_id: str) -> Optional[List[Dict[str, Any]]]:
+    def query_events(self, query_params: dict[str, Any], requester_org_id: str) -> Optional[list[dict[str, Any]]]:
         """
         Query events from the channel.
         
@@ -463,7 +463,7 @@ class Channel:
         """Finalize current block in the channel ledger"""
         return self.ledger.finalize_block()
     
-    def get_channel_info(self) -> Dict[str, Any]:
+    def get_channel_info(self) -> dict[str, Any]:
         """Get comprehensive channel information"""
         return {
             "channel_id": self.channel_id,
@@ -477,7 +477,7 @@ class Channel:
             "statistics": self.event_statistics
         }
     
-    def get_organization_info(self, org_id: str) -> Optional[Dict[str, Any]]:
+    def get_organization_info(self, org_id: str) -> Optional[dict[str, Any]]:
         """Get information about a specific organization"""
         if org_id not in self.organizations:
             return None
@@ -491,8 +491,8 @@ class Channel:
             "events_submitted": self.event_statistics["events_by_org"].get(org_id, 0)
         }
     
-    def update_channel_policy(self, new_policy_config: Dict[str, Any], 
-                            endorsements: List[str]) -> bool:
+    def update_channel_policy(self, new_policy_config: dict[str, Any], 
+                            endorsements: list[str]) -> bool:
         """
         Update channel governance policy.
         
@@ -526,7 +526,7 @@ class Channel:
         
         return True
     
-    def suspend_channel(self, reason: str, endorsements: List[str]) -> bool:
+    def suspend_channel(self, reason: str, endorsements: list[str]) -> bool:
         """Suspend channel operations"""
         if not self.policy.evaluate_endorsement(endorsements, len(self.organizations)):
             return False
@@ -540,7 +540,7 @@ class Channel:
         
         return True
     
-    def resume_channel(self, endorsements: List[str]) -> bool:
+    def resume_channel(self, endorsements: list[str]) -> bool:
         """Resume channel operations"""
         if not self.policy.evaluate_endorsement(endorsements, len(self.organizations)):
             return False
@@ -553,7 +553,7 @@ class Channel:
         
         return True
     
-    def _log_channel_event(self, event_type: str, details: Dict[str, Any]) -> None:
+    def _log_channel_event(self, event_type: str, details: dict[str, Any]) -> None:
         """Log a channel management event"""
         channel_event = {
             "event": "channel_management",

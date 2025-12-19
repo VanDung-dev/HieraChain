@@ -9,7 +9,7 @@ import hashlib
 import json
 import time
 import uuid
-from typing import Dict, Any, List, Optional, Union
+from typing import Any, Optional, Union
 from datetime import datetime
 
 
@@ -20,14 +20,14 @@ def compute_hash_standalone(data_string: str) -> str:
     """
     return hashlib.sha256(data_string.encode()).hexdigest()
 
-def compute_merkle_leaves_standalone(data_list_strings: List[str]) -> List[str]:
+def compute_merkle_leaves_standalone(data_list_strings: list[str]) -> list[str]:
     """
     Pure function to compute multiple SHA-256 hashes in a batch.
     Designed for running in a worker process to amortize IPC cost.
     """
     return [hashlib.sha256(s.encode()).hexdigest() for s in data_list_strings]
 
-def compute_leaves_from_events_standalone(events: List[Dict[str, Any]]) -> List[str]:
+def compute_leaves_from_events_standalone(events: list[dict[str, Any]]) -> list[str]:
     """
     Pure function to compute Merkle leaves from event dicts.
     Performs JSON serialization and hashing in the worker process.
@@ -39,7 +39,7 @@ def compute_leaves_from_events_standalone(events: List[Dict[str, Any]]) -> List[
         leaves.append(hashlib.sha256(data_string.encode()).hexdigest())
     return leaves
 
-def generate_hash(data: Union[str, Dict[str, Any]]) -> str:
+def generate_hash(data: Union[str, dict[str, Any]]) -> str:
     """
     Generate SHA-256 hash for given data.
     
@@ -73,7 +73,7 @@ def generate_entity_id(prefix: str = "ENTITY") -> str:
     return f"{prefix}-{timestamp}-{unique_id}"
 
 
-def generate_proof_hash(block_hash: str, metadata: Dict[str, Any]) -> str:
+def generate_proof_hash(block_hash: str, metadata: dict[str, Any]) -> str:
     """
     Generate a proof hash for Main Chain submission.
     
@@ -91,7 +91,7 @@ def generate_proof_hash(block_hash: str, metadata: Dict[str, Any]) -> str:
     return generate_hash(proof_data)
 
 
-def validate_event_structure(event: Dict[str, Any]) -> bool:
+def validate_event_structure(event: dict[str, Any]) -> bool:
     """
     Validate event structure according to framework guidelines.
     
@@ -125,7 +125,7 @@ def validate_event_structure(event: Dict[str, Any]) -> bool:
     return True
 
 
-def validate_proof_metadata(metadata: Dict[str, Any]) -> bool:
+def validate_proof_metadata(metadata: dict[str, Any]) -> bool:
     """
     Validate proof metadata for Main Chain submission.
     
@@ -164,8 +164,8 @@ def validate_proof_metadata(metadata: Dict[str, Any]) -> bool:
     return True
 
 
-def create_event(entity_id: str, event_type: str, details: Optional[Dict[str, Any]] = None,
-                timestamp: Optional[float] = None) -> Dict[str, Any]:
+def create_event(entity_id: str, event_type: str, details: Optional[dict[str, Any]] = None,
+                timestamp: Optional[float] = None) -> dict[str, Any]:
     """
     Create a properly structured event following framework guidelines.
     
@@ -178,7 +178,7 @@ def create_event(entity_id: str, event_type: str, details: Optional[Dict[str, An
     Returns:
         Properly structured event dictionary
     """
-    event: Dict[str, Any] = {
+    event: dict[str, Any] = {
         "entity_id": entity_id,  # Metadata field, not block identifier
         "event": event_type,
         "timestamp": timestamp or time.time()
@@ -190,8 +190,8 @@ def create_event(entity_id: str, event_type: str, details: Optional[Dict[str, An
     return event
 
 
-def filter_events_by_timerange(events: List[Dict[str, Any]], 
-                              start_time: float, end_time: float) -> List[Dict[str, Any]]:
+def filter_events_by_timerange(events: list[dict[str, Any]], 
+                              start_time: float, end_time: float) -> list[dict[str, Any]]:
     """
     Filter events by timestamp range.
     
@@ -209,7 +209,7 @@ def filter_events_by_timerange(events: List[Dict[str, Any]],
     ]
 
 
-def group_events_by_entity(events: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+def group_events_by_entity(events: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
     """
     Group events by entity_id.
     
@@ -229,7 +229,7 @@ def group_events_by_entity(events: List[Dict[str, Any]]) -> Dict[str, List[Dict[
     return grouped
 
 
-def group_events_by_type(events: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+def group_events_by_type(events: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
     """
     Group events by event type.
     
@@ -249,7 +249,7 @@ def group_events_by_type(events: List[Dict[str, Any]]) -> Dict[str, List[Dict[st
     return grouped
 
 
-def calculate_chain_integrity_score(chain_data: List[Dict[str, Any]]) -> float:
+def calculate_chain_integrity_score(chain_data: list[dict[str, Any]]) -> float:
     """
     Calculate integrity score for a blockchain.
     
@@ -299,7 +299,7 @@ def format_timestamp(timestamp: float) -> str:
     return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
 
 
-def sanitize_metadata_for_main_chain(metadata: Dict[str, Any]) -> Dict[str, Any]:
+def sanitize_metadata_for_main_chain(metadata: dict[str, Any]) -> dict[str, Any]:
     """
     Sanitize metadata for Main Chain submission by removing detailed data.
     
@@ -329,7 +329,7 @@ def sanitize_metadata_for_main_chain(metadata: Dict[str, Any]) -> Dict[str, Any]
     return sanitized
 
 
-def create_domain_event_template(domain_type: str) -> Dict[str, Any]:
+def create_domain_event_template(domain_type: str) -> dict[str, Any]:
     """
     Create a template for domain-specific events.
     
@@ -350,7 +350,7 @@ def create_domain_event_template(domain_type: str) -> Dict[str, Any]:
     }
 
 
-def validate_no_cryptocurrency_terms(data: Union[str, Dict[str, Any]]) -> bool:
+def validate_no_cryptocurrency_terms(data: Union[str, dict[str, Any]]) -> bool:
     """
     Validate that data doesn't contain cryptocurrency terminology.
     
@@ -385,7 +385,7 @@ class MerkleTree:
     Merkle Tree implementation for efficient data verification and hashing.
     """
     
-    def __init__(self, data_list: List[Union[str, Dict[str, Any]]] = None, leaves: List[str] = None):
+    def __init__(self, data_list: list[Union[str, dict[str, Any]]] = None, leaves: list[str] = None):
         """
         Initialize Merkle Tree.
         
@@ -402,7 +402,7 @@ class MerkleTree:
             
         self.root = self._build_tree(self.leaves)
 
-    def _build_tree(self, nodes: List[str]) -> str:
+    def _build_tree(self, nodes: list[str]) -> str:
         """
         Recursively build the Merkle Tree.
         

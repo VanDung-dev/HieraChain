@@ -12,7 +12,7 @@ import logging
 import sys
 import os
 import asyncio
-from typing import List, Dict, Any
+from typing import Any
 
 from hierachain.consensus.ordering_service import OrderingService, OrderingNode, OrderingStatus
 from hierachain.security.security_utils import KeyPair
@@ -32,7 +32,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def generate_events(count: int) -> List[Dict[str, Any]]:
+def generate_events(count: int) -> list[dict[str, Any]]:
     events = []
     # Generate a keypair for signing
     kp = KeyPair.generate()

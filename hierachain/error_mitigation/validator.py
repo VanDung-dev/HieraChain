@@ -9,7 +9,7 @@ components.
 import time
 import json
 import logging
-from typing import List, Dict, Any, Optional, Union
+from typing import Any, Union, Optional
 from datetime import datetime
 import hashlib
 import os
@@ -55,7 +55,7 @@ class ConsensusValidator:
     requirements, including proper node count (n >= 3f + 1) and node health.
     """
     
-    def __init__(self, consensus_config: Dict[str, Any]):
+    def __init__(self, consensus_config: dict[str, Any]):
         """
         Initialize consensus validator
         
@@ -69,7 +69,7 @@ class ConsensusValidator:
         
         logger.info(f"Initialized ConsensusValidator with f={self.f}")
     
-    def validate_node_count(self, current_nodes: List[Any]) -> bool:
+    def validate_node_count(self, current_nodes: list[Any]) -> bool:
         """
         Check if node count meets BFT requirement: n >= 3f + 1
         
@@ -97,7 +97,7 @@ class ConsensusValidator:
         logger.info(f"Node count validation passed: {actual_nodes} >= {required_nodes}")
         return True
     
-    def monitor_and_scale(self, current_nodes: List[Any]) -> List[Any]:
+    def monitor_and_scale(self, current_nodes: list[Any]) -> list[Any]:
         """
         Monitor node health and trigger auto-scaling if needed
         
@@ -143,7 +143,7 @@ class ConsensusValidator:
             logger.error(f"Error checking node health: {ex}")
             return False
     
-    def _trigger_scaling(self, healthy_nodes: List[Any]) -> None:
+    def _trigger_scaling(self, healthy_nodes: list[Any]) -> None:
         """
         Trigger auto-scaling to add more nodes
         
@@ -165,7 +165,7 @@ class ConsensusValidator:
         self._log_scaling_event(scaling_event)
     
     @staticmethod
-    def _log_scaling_event(event: Dict[str, Any]) -> None:
+    def _log_scaling_event(event: dict[str, Any]) -> None:
         """
         Log scaling events for audit trail
         
@@ -192,7 +192,7 @@ class EncryptionValidator:
     validates key rotation policies according to dev5 requirements.
     """
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize encryption validator
         
@@ -235,7 +235,7 @@ class EncryptionValidator:
         logger.info("Encryption configuration validation passed")
         return True
     
-    def encrypt_data(self, data: str) -> Dict[str, Any]:
+    def encrypt_data(self, data: str) -> dict[str, Any]:
         """
         Encrypt data with validated algorithm
         
@@ -304,7 +304,7 @@ class ResourceValidator:
     scaling when thresholds are exceeded.
     """
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize resource validator
         
@@ -319,7 +319,7 @@ class ResourceValidator:
         
         logger.info("Initialized ResourceValidator")
     
-    def validate_resources(self) -> Dict[str, Any]:
+    def validate_resources(self) -> dict[str, Any]:
         """
         Validate current resource usage
         
@@ -406,7 +406,7 @@ class APIValidator:
     validates request/response formats according to HieraChain principles.
     """
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize API validator
         
@@ -614,7 +614,7 @@ def validate_certificate(certificate):
         raise SecurityError('Certificate validation failed: Certificate has expired')
 
 # Factory function for creating validators
-def create_validator(validator_type: str, config: Dict[str, Any]):
+def create_validator(validator_type: str, config: dict[str, Any]):
     """
     Factory function to create appropriate validator
     

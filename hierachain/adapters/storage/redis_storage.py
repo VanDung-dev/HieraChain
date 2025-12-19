@@ -8,7 +8,7 @@ and provides indexing capabilities for entities and events.
 
 import json
 import logging
-from typing import Dict, List, Optional
+from typing import Optional
 import time
 
 try:
@@ -88,7 +88,7 @@ class RedisStorageAdapter:
         """Get Redis key for chain statistics"""
         return f"{self.STATS_PREFIX}{chain_name}"
     
-    def store_chain_metadata(self, chain_name: str, chain_type: str, parent_chain: str = None, metadata: Dict = None):
+    def store_chain_metadata(self, chain_name: str, chain_type: str, parent_chain: str = None, metadata: dict = None):
         """Store chain metadata"""
         try:
             chain_data = {
@@ -115,7 +115,7 @@ class RedisStorageAdapter:
             logger.error(f"Failed to store chain metadata {chain_name}: {e}")
             raise
     
-    def store_block(self, chain_name: str, block_data: Dict):
+    def store_block(self, chain_name: str, block_data: dict):
         """Store block data"""
         try:
             block_index = block_data["index"]
@@ -146,7 +146,7 @@ class RedisStorageAdapter:
             logger.error(f"Failed to store block: {e}")
             raise
     
-    def _update_entity_index(self, chain_name: str, block_data: Dict):
+    def _update_entity_index(self, chain_name: str, block_data: dict):
         """Update entity events index"""
         try:
             for event in block_data.get("events", []):
@@ -170,7 +170,7 @@ class RedisStorageAdapter:
             logger.error(f"Failed to update entity index: {e}")
             # Don't raise - this is not critical for block storage
     
-    def _update_chain_stats(self, chain_name: str, block_data: Dict):
+    def _update_chain_stats(self, chain_name: str, block_data: dict):
         """Update chain statistics"""
         try:
             stats_key = self._get_stats_key(chain_name)
@@ -197,7 +197,7 @@ class RedisStorageAdapter:
             logger.error(f"Failed to update chain stats: {e}")
             # Don't raise - this is not critical for block storage
     
-    def get_chain_metadata(self, chain_name: str) -> Optional[Dict]:
+    def get_chain_metadata(self, chain_name: str) -> Optional[dict]:
         """Get chain metadata"""
         try:
             chain_key = self._get_chain_key(chain_name)
@@ -228,7 +228,7 @@ class RedisStorageAdapter:
             logger.error(f"Failed to get chain metadata {chain_name}: {e}")
             return None
     
-    def get_block(self, chain_name: str, block_index: int) -> Optional[Dict]:
+    def get_block(self, chain_name: str, block_index: int) -> Optional[dict]:
         """Get a specific block"""
         try:
             block_key = self._get_block_key(chain_name, block_index)
@@ -265,7 +265,7 @@ class RedisStorageAdapter:
             logger.error(f"Failed to get block {block_index} for chain {chain_name}: {e}")
             return None
     
-    def get_chain_blocks(self, chain_name: str, limit: int = None, offset: int = 0) -> List[Dict]:
+    def get_chain_blocks(self, chain_name: str, limit: int = None, offset: int = 0) -> list[dict]:
         """Get blocks for a specific chain"""
         try:
             chain_blocks_key = self._get_chain_blocks_key(chain_name)
@@ -290,7 +290,7 @@ class RedisStorageAdapter:
             logger.error(f"Failed to get blocks for chain {chain_name}: {e}")
             return []
     
-    def get_entity_events(self, entity_id: str, chain_name: str = None) -> List[Dict]:
+    def get_entity_events(self, entity_id: str, chain_name: str = None) -> list[dict]:
         """Get all events for a specific entity"""
         try:
             entity_key = self._get_entity_key(entity_id)
@@ -330,7 +330,7 @@ class RedisStorageAdapter:
             logger.error(f"Failed to get events for entity {entity_id}: {e}")
             return []
     
-    def get_chain_stats(self, chain_name: str) -> Dict:
+    def get_chain_stats(self, chain_name: str) -> dict:
         """Get statistics for a specific chain"""
         try:
             stats_key = self._get_stats_key(chain_name)
@@ -364,8 +364,8 @@ class RedisStorageAdapter:
                 "unique_entities": 0
             }
     
-    def list_chains(self) -> List[str]:
-        """List all stored chains"""
+    def list_chains(self) -> list[str]:
+        """list all stored chains"""
         try:
             return list(self.redis_client.smembers("chains"))
         except Exception as e:
@@ -398,7 +398,7 @@ class RedisStorageAdapter:
         except Exception as e:
             logger.error(f"Failed to cleanup old data: {e}")
     
-    def get_storage_info(self) -> Dict:
+    def get_storage_info(self) -> dict:
         """Get storage information"""
         try:
             info = self.redis_client.info()

@@ -9,7 +9,7 @@ Focuses on consensus, security, performance, and storage risks.
 import time
 import logging
 import os
-from typing import Dict, List, Any, Optional
+from typing import Any, Optional
 from dataclasses import dataclass
 from enum import Enum
 
@@ -40,9 +40,9 @@ class RiskAssessment:
     description: str
     impact: str
     likelihood: float  # 0.0 to 1.0
-    mitigation_recommendations: List[str]
+    mitigation_recommendations: list[str]
     detected_at: float
-    affected_components: List[str]
+    affected_components: list[str]
 
 
 class RiskAnalyzer:
@@ -53,7 +53,7 @@ class RiskAnalyzer:
     performance, storage, and operational domains.
     """
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         """
         Initialize risk analyzer with configuration.
         
@@ -68,8 +68,8 @@ class RiskAnalyzer:
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
-        self.risk_history: List[RiskAssessment] = []
-        self.active_risks: Dict[str, RiskAssessment] = {}
+        self.risk_history: list[RiskAssessment] = []
+        self.active_risks: dict[str, RiskAssessment] = {}
         
         # Risk thresholds from configuration
         self.thresholds = self.config.get('thresholds', {
@@ -96,7 +96,7 @@ class RiskAnalyzer:
             }
         })
     
-    def analyze_consensus_risks(self, consensus_data: Dict[str, Any]) -> List[RiskAssessment]:
+    def analyze_consensus_risks(self, consensus_data: dict[str, Any]) -> list[RiskAssessment]:
         """
         Analyze consensus mechanism risks.
         
@@ -173,7 +173,7 @@ class RiskAnalyzer:
         
         return risks
     
-    def analyze_security_risks(self, security_data: Dict[str, Any]) -> List[RiskAssessment]:
+    def analyze_security_risks(self, security_data: dict[str, Any]) -> list[RiskAssessment]:
         """
         Analyze security-related risks.
         
@@ -252,7 +252,7 @@ class RiskAnalyzer:
         
         return risks
     
-    def analyze_performance_risks(self, performance_data: Dict[str, Any]) -> List[RiskAssessment]:
+    def analyze_performance_risks(self, performance_data: dict[str, Any]) -> list[RiskAssessment]:
         """
         Analyze performance-related risks.
         
@@ -323,7 +323,7 @@ class RiskAnalyzer:
         
         return risks
     
-    def analyze_storage_risks(self, storage_data: Dict[str, Any]) -> List[RiskAssessment]:
+    def analyze_storage_risks(self, storage_data: dict[str, Any]) -> list[RiskAssessment]:
         """
         Analyze storage-related risks.
         
@@ -378,7 +378,7 @@ class RiskAnalyzer:
         
         return risks
     
-    def perform_comprehensive_analysis(self, system_data: Dict[str, Any]) -> Dict[str, List[RiskAssessment]]:
+    def perform_comprehensive_analysis(self, system_data: dict[str, Any]) -> dict[str, list[RiskAssessment]]:
         """
         Perform comprehensive risk analysis across all categories.
         
@@ -409,7 +409,7 @@ class RiskAnalyzer:
         
         return all_risks
     
-    def get_risk_summary(self) -> Dict[str, Any]:
+    def get_risk_summary(self) -> dict[str, Any]:
         """
         Get summary of current risk status.
         

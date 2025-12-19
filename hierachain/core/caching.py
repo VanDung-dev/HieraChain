@@ -7,7 +7,7 @@ TTL support, and specialized blockchain data caching. Delivers significant perfo
 
 import time
 import threading
-from typing import Dict, List, Any, Optional, Union
+from typing import Any, Optional, Union
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
@@ -57,8 +57,8 @@ class AdvancedCache:
         """
         self.max_size = max_size
         self.eviction_policy = EvictionPolicy(eviction_policy)
-        self.cache: Dict[str, CacheEntry] = {}
-        self.access_order: List[str] = []  # For LRU/FIFO
+        self.cache: dict[str, CacheEntry] = {}
+        self.access_order: list[str] = []  # For LRU/FIFO
         self.lock = threading.RLock()
         self.logger = logging.getLogger(__name__)
         
@@ -211,7 +211,7 @@ class AdvancedCache:
             for key in expired_keys:
                 self._remove_key(key)
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics"""
         with self.lock:
             total_requests = self.hits + self.misses
@@ -227,7 +227,7 @@ class AdvancedCache:
                 "eviction_policy": self.eviction_policy.value
             }
     
-    def get_keys(self) -> List[str]:
+    def get_keys(self) -> list[str]:
         """Get all cache keys"""
         with self.lock:
             return list(self.cache.keys())
@@ -241,7 +241,7 @@ class AdvancedCache:
 class BlockchainCacheManager:
     """Cache manager specifically for blockchain data"""
     
-    def __init__(self, chain: Any, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, chain: Any, config: Optional[dict[str, Any]] = None):
         """
         Initialize blockchain cache manager
         
@@ -319,7 +319,7 @@ class BlockchainCacheManager:
             
             return block
     
-    def get_events_for_block(self, chain_name: str, index: int) -> Optional[List[Any]]:
+    def get_events_for_block(self, chain_name: str, index: int) -> Optional[list[Any]]:
         """Get events for a block"""
         cache_key = f"events:{chain_name}:{index}"
         
@@ -339,7 +339,7 @@ class BlockchainCacheManager:
             
             return events
     
-    def get_entity_events(self, entity_id: str, chain_type: str = "all") -> List[Dict[str, Any]]:
+    def get_entity_events(self, entity_id: str, chain_type: str = "all") -> list[dict[str, Any]]:
         """
         Get all events for an entity (18.9x faster when cached)
         
@@ -370,7 +370,7 @@ class BlockchainCacheManager:
             
             return events
     
-    def _fetch_entity_events(self, entity_id: str, chain_type: str) -> List[Dict[str, Any]]:
+    def _fetch_entity_events(self, entity_id: str, chain_type: str) -> list[dict[str, Any]]:
         """Fetch entity events from the blockchain"""
         events = []
         
@@ -413,7 +413,7 @@ class BlockchainCacheManager:
         
         return events
     
-    def _event_contains_entity(self, event: Dict[str, Any], entity_id: str) -> bool:
+    def _event_contains_entity(self, event: dict[str, Any], entity_id: str) -> bool:
         """Check if event contains the entity"""
         # Direct entity_id match
         if event.get("entity_id") == entity_id:
@@ -435,7 +435,7 @@ class BlockchainCacheManager:
         
         return False
     
-    def _search_nested_for_entity(self, data: Union[Dict, List], entity_id: str) -> bool:
+    def _search_nested_for_entity(self, data: Union[dict, list], entity_id: str) -> bool:
         """Recursively search nested structures for entity"""
         if isinstance(data, dict):
             for key, value in data.items():
@@ -455,7 +455,7 @@ class BlockchainCacheManager:
         return False
     
     @staticmethod
-    def _entity_in_metadata(entity_id: str, metadata: Dict[str, Any]) -> bool:
+    def _entity_in_metadata(entity_id: str, metadata: dict[str, Any]) -> bool:
         """Check if entity is referenced in proof metadata"""
         # Direct reference
         if "entity_id" in metadata and metadata["entity_id"] == entity_id:
@@ -518,7 +518,7 @@ class BlockchainCacheManager:
                     if key.startswith(f"events:{chain_name}:"):
                         self.event_cache.delete(key)
     
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get comprehensive cache statistics"""
         with self.lock:
             total_requests = self.performance_stats["block_retrievals"] + self.performance_stats["cache_hits"]
@@ -544,7 +544,7 @@ class BlockchainCacheManager:
             
             self.logger.info("Cache optimization completed")
     
-    def warm_cache(self, entity_ids: List[str]):
+    def warm_cache(self, entity_ids: list[str]):
         """Warm up cache with frequently accessed entities"""
         self.logger.info(f"Warming cache for {len(entity_ids)} entities")
         
@@ -567,12 +567,12 @@ class BlockchainCacheManager:
 
 
 # Factory functions
-def create_blockchain_cache(chain: Any, config: Optional[Dict[str, Any]] = None) -> BlockchainCacheManager:
+def create_blockchain_cache(chain: Any, config: Optional[dict[str, Any]] = None) -> BlockchainCacheManager:
     """Create blockchain cache manager with default configuration"""
     return BlockchainCacheManager(chain, config)
 
 
-def create_performance_cache_config() -> Dict[str, Any]:
+def create_performance_cache_config() -> dict[str, Any]:
     """Create high-performance cache configuration"""
     return {
         "block_cache_size": 10000,

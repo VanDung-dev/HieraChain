@@ -8,7 +8,7 @@ ensuring data integrity and schema compliance.
 import json
 import logging
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
 from dataclasses import dataclass, field
 
 import pyarrow as pa
@@ -27,9 +27,9 @@ class ValidationLevel(Enum):
 class ValidationResult:
     """Result of a validation operation."""
     is_valid: bool
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    auto_fixed: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    auto_fixed: list[str] = field(default_factory=list)
     
     def add_error(self, message: str) -> None:
         """Add an error message."""
@@ -80,7 +80,7 @@ class DataValidator:
         self,
         level: ValidationLevel = ValidationLevel.RELAXED,
         auto_fix: bool = False,
-        custom_validators: Optional[Dict[str, Callable]] = None
+        custom_validators: Optional[dict[str, Callable]] = None
     ):
         """
         Initialize validator.
@@ -96,9 +96,9 @@ class DataValidator:
     
     def validate_event(
         self,
-        event: Dict[str, Any],
+        event: dict[str, Any],
         index: int = 0
-    ) -> Tuple[ValidationResult, Dict[str, Any]]:
+    ) -> Tuple[ValidationResult, dict[str, Any]]:
         """
         Validate a single event dict.
         
@@ -194,8 +194,8 @@ class DataValidator:
     
     def validate_events_batch(
         self,
-        events: List[Dict[str, Any]]
-    ) -> Tuple[ValidationResult, List[Dict[str, Any]]]:
+        events: list[dict[str, Any]]
+    ) -> Tuple[ValidationResult, list[dict[str, Any]]]:
         """
         Validate a batch of events.
         
@@ -251,7 +251,7 @@ class DataValidator:
     
     @staticmethod
     def validate_consistency(
-            events_list: List[Dict[str, Any]],
+            events_list: list[dict[str, Any]],
         table: pa.Table
     ) -> ValidationResult:
         """
@@ -287,8 +287,8 @@ def create_lenient_validator(auto_fix: bool = True) -> DataValidator:
 
 
 def validate_and_fix_events(
-    events: List[Dict[str, Any]]
-) -> Tuple[List[Dict[str, Any]], ValidationResult]:
+    events: list[dict[str, Any]]
+) -> Tuple[list[dict[str, Any]], ValidationResult]:
     """
     Convenience function to validate and auto-fix events.
     

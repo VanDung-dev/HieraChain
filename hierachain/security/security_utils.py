@@ -5,7 +5,7 @@ This module provides cryptographic primitives for the HieraChain framework,
 focusing on Ed25519 for digital signatures as required for enterprise-grade security.
 """
 
-from typing import Tuple, Optional, List, Dict, Any
+from typing import Tuple, Optional, Any
 import binascii
 from nacl.signing import SigningKey, VerifyKey
 from nacl.encoding import HexEncoder
@@ -124,7 +124,7 @@ def generate_key_pair_hex() -> Tuple[str, str]:
     kp = KeyPair.generate()
     return kp.public_key, kp.private_key
 
-def verify_batch_signatures(items: List[Dict[str, Any]]) -> List[bool]:
+def verify_batch_signatures(items: list[dict[str, Any]]) -> list[bool]:
     """
     Verify a batch of signatures, designed for multiprocessing.
     

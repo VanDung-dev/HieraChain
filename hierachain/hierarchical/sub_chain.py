@@ -10,7 +10,7 @@ import time
 import threading
 import logging
 import re
-from typing import Dict, Any, List, Optional, Callable
+from typing import Any, Optional, Callable
 
 from hierachain.core.blockchain import Blockchain
 from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
@@ -32,7 +32,7 @@ class SubChain(Blockchain):
     - Use entity_id as metadata field within events (not as block identifier)
     """
     
-    def __init__(self, name: str, domain_type: str = "generic", config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, domain_type: str = "generic", config: Optional[dict[str, Any]] = None):
         """
         Initialize a Sub-Chain.
         
@@ -142,7 +142,7 @@ class SubChain(Blockchain):
             # OrderingService uses blocks_created to determine next index
             self.ordering_service.blocks_created = latest.index + 1
 
-    def add_event(self, event: Dict[str, Any]) -> str:
+    def add_event(self, event: dict[str, Any]) -> str:
         """Add event to Sub-Chain."""
         # Add timestamp if missing
         if "timestamp" not in event:
@@ -203,7 +203,7 @@ class SubChain(Blockchain):
         
         return False
     
-    def start_operation(self, entity_id: str, operation_type: str, details: Optional[Dict[str, Any]] = None) -> bool:
+    def start_operation(self, entity_id: str, operation_type: str, details: Optional[dict[str, Any]] = None) -> bool:
         """
         Start a domain-specific operation for an entity.
         
@@ -234,7 +234,7 @@ class SubChain(Blockchain):
         self.add_event(event)
         return True
     
-    def complete_operation(self, entity_id: str, operation_type: str, result: Optional[Dict[str, Any]] = None) -> bool:
+    def complete_operation(self, entity_id: str, operation_type: str, result: Optional[dict[str, Any]] = None) -> bool:
         """
         Complete a domain-specific operation for an entity.
         
@@ -263,7 +263,7 @@ class SubChain(Blockchain):
         self.completed_operations += 1
         return True
     
-    def update_entity_status(self, entity_id: str, status: str, details: Optional[Dict[str, Any]] = None) -> bool:
+    def update_entity_status(self, entity_id: str, status: str, details: Optional[dict[str, Any]] = None) -> bool:
         """
         Update the status of an entity.
         
@@ -346,7 +346,7 @@ class SubChain(Blockchain):
         
         return success
     
-    def _generate_default_proof_metadata(self) -> Dict[str, Any]:
+    def _generate_default_proof_metadata(self) -> dict[str, Any]:
         """
         Generate default proof metadata for Main Chain submission.
         
@@ -416,7 +416,7 @@ class SubChain(Blockchain):
             return self.submit_proof_to_main(self.main_chain_connection)
         return False
     
-    def get_entity_history(self, entity_id: str) -> List[Dict[str, Any]]:
+    def get_entity_history(self, entity_id: str) -> list[dict[str, Any]]:
         """
         Get complete history of events for a specific entity.
         
@@ -433,7 +433,7 @@ class SubChain(Blockchain):
         
         return entity_events
     
-    def get_domain_statistics(self) -> Dict[str, Any]:
+    def get_domain_statistics(self) -> dict[str, Any]:
         """
         Get comprehensive statistics about this Sub-Chain's domain operations.
         
@@ -470,7 +470,7 @@ class SubChain(Blockchain):
             "proof_submission_interval": self.proof_submission_interval
         }
     
-    def finalize_sub_chain_block(self) -> Optional[Dict[str, Any]]:
+    def finalize_sub_chain_block(self) -> Optional[dict[str, Any]]:
         """
         Pull ordered blocks from Ordering Service and finalize them.
         """
@@ -518,7 +518,7 @@ class SubChain(Blockchain):
             "domain_type": self.domain_type
         }
 
-    def flush_pending_and_finalize(self, timeout: float = 3.0) -> Optional[Dict[str, Any]]:
+    def flush_pending_and_finalize(self, timeout: float = 3.0) -> Optional[dict[str, Any]]:
         """
         Flush pending events and finalize the block.
 
