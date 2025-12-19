@@ -9,6 +9,7 @@ Provides Byzantine fault tolerance with configurable fault tolerance levels.
 import time
 import hashlib
 import threading
+import uuid
 from typing import Any, Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -52,6 +53,7 @@ class BFTMessage:
     timestamp: float
     signature: str
     data: dict[str, Any] = field(default_factory=dict)
+    nonce: str = field(default_factory=lambda: str(uuid.uuid4()))
     
     def to_dict(self) -> dict[str, Any]:
         """Convert message to dictionary for serialization"""
@@ -62,7 +64,8 @@ class BFTMessage:
             "sender_id": self.sender_id,
             "timestamp": self.timestamp,
             "signature": self.signature,
-            "data": self.data
+            "data": self.data,
+            "nonce": self.nonce
         }
 
 
@@ -71,8 +74,8 @@ class BFTMessage:
         # Include critical fields in the signature
         digest = self.data.get("digest") if self.data else None
         
-        # Base payload: Type:View:Seq
-        payload = f"{self.message_type.value}:{self.view}:{self.sequence_number}"
+        # Base payload: Type:View:Seq:Nonce
+        payload = f"{self.message_type.value}:{self.view}:{self.sequence_number}:{self.nonce}"
         
         # Add digest if relevant for the message type
         if digest:
