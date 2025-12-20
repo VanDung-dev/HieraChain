@@ -15,7 +15,7 @@ from hierachain.error_mitigation.validator import ConsensusValidator
 from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
 from hierachain.security.key_backup_manager import KeyBackupManager
 from hierachain.security.key_manager import KeyManager
-from hierachain.api.v3.verify import VerifyAPIKey
+from hierachain.security.verify_api_key import VerifyAPIKey
 
 
 class RecoveryTestError(Exception):

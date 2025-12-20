@@ -20,7 +20,7 @@ from hierachain.security.certificate import CertificateValidator
 from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
 from hierachain.security.key_backup_manager import KeyBackupManager
 from hierachain.security.key_manager import KeyManager
-from hierachain.api.v3.verify import VerifyAPIKey
+from hierachain.security.verify_api_key import VerifyAPIKey
 from hierachain.units.version import get_version, VERSION
 
 
@@ -369,7 +369,7 @@ def test_cli_audit_logging():
 # Comprehensive validation tests covering integration scenarios.
 
 @pytest.mark.integration
-@patch('security.certificate.CertificateInfo')
+@patch('hierachain.security.certificate.CertificateInfo')
 def test_certificate_expiration_check(mock_cert):
     """Test certificate expiration validation"""
     mock_cert_instance = mock_cert()
