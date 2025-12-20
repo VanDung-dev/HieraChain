@@ -60,6 +60,9 @@ class Settings:
     # Security settings
     IDENTITY_MANAGER_ENABLED = True
     REQUIRE_ORGANIZATION_VALIDATION = True
+    AUTH_ENABLED = os.getenv("HRC_AUTH_ENABLED", "false").lower() == "true"
+    API_KEY_LOCATION = os.getenv("HRC_API_KEY_LOCATION", "header")
+    API_KEY_NAME = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
     
     # Multi-Organization settings
     MULTI_ORG_ENABLED = True
@@ -130,6 +133,15 @@ class Settings:
         return {
             "erp_enabled": cls.ERP_INTEGRATION_ENABLED,
             "supported_systems": cls.SUPPORTED_ERP_SYSTEMS
+        }
+    
+    @classmethod
+    def get_auth_config(cls) -> dict[str, Any]:
+        """Get authentication configuration"""
+        return {
+            "enabled": cls.AUTH_ENABLED,
+            "key_location": cls.API_KEY_LOCATION,
+            "key_name": cls.API_KEY_NAME
         }
     
     @classmethod
