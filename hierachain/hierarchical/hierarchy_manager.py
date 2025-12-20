@@ -283,7 +283,7 @@ class HierarchyManager:
 
     def create_organization(self, org_id: str, name: str, admin_users: list[str] = None) -> Any:
         """
-        Create an organization with MSP configuration (0.dev3 feature).
+        Create an organization with MSP configuration.
         
         Args:
             org_id: Unique organization identifier
@@ -311,7 +311,7 @@ class HierarchyManager:
     
     def get_organization(self, org_id: str) -> Any:
         """
-        Get organization by ID (0.dev3 feature).
+        Get organization by ID.
         
         Args:
             org_id: Organization ID
@@ -323,7 +323,7 @@ class HierarchyManager:
     
     def create_channel(self, channel_id: str, org_ids: list[str], policy_config: dict[str, Any] = None) -> Channel:
         """
-        Create a channel for secure data isolation (0.dev3 feature).
+        Create a channel for secure data isolation.
         
         Args:
             channel_id: Unique channel identifier
@@ -370,7 +370,7 @@ class HierarchyManager:
     
     def get_channel(self, channel_id: str) -> Channel | None:
         """
-        Get channel by ID (0.dev3 feature).
+        Get channel by ID.
         
         Args:
             channel_id: Channel ID
@@ -382,7 +382,7 @@ class HierarchyManager:
     
     def create_private_collection(self, name: str, org_ids: list[str], config: dict[str, Any] = None) -> PrivateCollection:
         """
-        Create a private data collection (0.dev3 feature).
+        Create a private data collection.
         
         Args:
             name: Collection name
@@ -429,7 +429,7 @@ class HierarchyManager:
     
     def get_private_collection(self, name: str) -> PrivateCollection | None:
         """
-        Get private data collection by name (0.dev3 feature).
+        Get private data collection by name.
         
         Args:
             name: Collection name
@@ -441,7 +441,7 @@ class HierarchyManager:
     
     def assign_organization_to_chain(self, org_id: str, chain_name: str) -> bool:
         """
-        Assign an organization to a chain (0.dev3 feature).
+        Assign an organization to a chain.
         
         Args:
             org_id: Organization ID
