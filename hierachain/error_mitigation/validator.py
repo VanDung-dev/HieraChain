@@ -189,7 +189,7 @@ class EncryptionValidator:
     Validates encryption configurations and algorithms
     
     Ensures only approved encryption algorithms are used and
-    validates key rotation policies according to dev5 requirements.
+    validates key rotation policies according to HieraChain security requirements.
     """
     
     def __init__(self, config: dict[str, Any]):

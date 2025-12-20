@@ -78,7 +78,7 @@ class RiskPriorityMatrix:
     Risk priority matrix for assessing error severity
     
     Uses impact vs likelihood matrix to determine priority levels
-    following dev5 risk assessment methodology.
+    following HieraChain risk assessment methodology.
     """
     
     def __init__(self):
