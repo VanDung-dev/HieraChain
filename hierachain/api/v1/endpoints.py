@@ -9,7 +9,7 @@ stores cryptographic proofs from sub-chains.
 import time
 import re
 import os
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 
 from hierachain.api.v1.schemas import (
@@ -24,9 +24,29 @@ from hierachain.domains.generic.utils.entity_tracer import EntityTracer
 
 router = APIRouter(prefix="/api/v1", tags=["HieraChain"])
 
-# Global instances (in production, use dependency injection)
-hierarchy_manager = HierarchyManager()
-entity_tracer = EntityTracer(hierarchy_manager)
+# Dependency Injection using Lazy Getter Pattern
+_hierarchy_manager: HierarchyManager | None = None
+_entity_tracer: EntityTracer | None = None
+
+def get_hierarchy_manager() -> HierarchyManager:
+    """Lazy getter for HierarchyManager singleton"""
+    global _hierarchy_manager
+    if _hierarchy_manager is None:
+        _hierarchy_manager = HierarchyManager()
+    return _hierarchy_manager
+
+def get_entity_tracer(manager: HierarchyManager = Depends(get_hierarchy_manager)) -> EntityTracer:
+    """Lazy getter for EntityTracer singleton"""
+    global _entity_tracer
+    if _entity_tracer is None:
+        _entity_tracer = EntityTracer(manager)
+    return _entity_tracer
+
+def reset_instances():
+    """Reset global instances (for testing purpose)"""
+    global _hierarchy_manager, _entity_tracer
+    _hierarchy_manager = None
+    _entity_tracer = None
 
 
 @router.get("/health")
@@ -35,13 +55,13 @@ async def health_check():
     return {"status": "healthy", "timestamp": time.time()}
 
 @router.get("/chains", response_model=list[ChainInfoResponse])
-async def list_chains():
+async def list_chains(manager: HierarchyManager = Depends(get_hierarchy_manager)):
     """List all chains in the hierarchy"""
     try:
         chains = []
         
         # Add main chain info
-        main_chain = hierarchy_manager.get_main_chain()
+        main_chain = manager.get_main_chain()
         if main_chain:
             chains.append(ChainInfoResponse(
                 name="main_chain",
@@ -51,7 +71,7 @@ async def list_chains():
             ))
         
         # Add sub-chains info
-        for sub_chain_name, sub_chain in hierarchy_manager.get_all_sub_chains().items():
+        for sub_chain_name, sub_chain in manager.get_all_sub_chains().items():
             chains.append(ChainInfoResponse(
                 name=sub_chain_name,
                 type="sub",
@@ -61,13 +81,17 @@ async def list_chains():
         
         return chains
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to list chains: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to list chains: {str(e)}") from e
 
 @router.post("/chains/{chain_name}/events", response_model=EventResponse)
-async def add_event(chain_name: str, event_request: EventRequest):
+async def add_event(
+    chain_name: str, 
+    event_request: EventRequest,
+    manager: HierarchyManager = Depends(get_hierarchy_manager)
+):
     """Add an event to a specific sub-chain"""
     try:
-        sub_chain = hierarchy_manager.get_sub_chain(chain_name)
+        sub_chain = manager.get_sub_chain(chain_name)
         if not sub_chain:
             raise HTTPException(status_code=404, detail=f"Sub-chain '{chain_name}' not found")
         
@@ -91,14 +115,14 @@ async def add_event(chain_name: str, event_request: EventRequest):
         raise HTTPException(status_code=500, detail=f"Failed to add event: {str(e)}")
 
 @router.post("/chains/{chain_name}/submit-proof", response_model=ProofSubmissionResponse)
-async def submit_proof(chain_name: str):
+async def submit_proof(chain_name: str,manager: HierarchyManager = Depends(get_hierarchy_manager)):
     """Submit proof from sub-chain to main chain"""
     try:
-        sub_chain = hierarchy_manager.get_sub_chain(chain_name)
+        sub_chain = manager.get_sub_chain(chain_name)
         if not sub_chain:
             raise HTTPException(status_code=404, detail=f"Sub-chain '{chain_name}' not found")
         
-        main_chain = hierarchy_manager.get_main_chain()
+        main_chain = manager.get_main_chain()
         if not main_chain:
             raise HTTPException(status_code=500, detail="Main chain not available")
         
@@ -124,20 +148,25 @@ async def submit_proof(chain_name: str):
         raise HTTPException(status_code=500, detail=f"Failed to submit proof: {str(e)}")
 
 @router.get("/entities/{entity_id}/trace", response_model=EntityTraceResponse)
-async def trace_entity(entity_id: str, chain_name: str | None = None):
+async def trace_entity(
+    entity_id: str, 
+    chain_name: str | None = None,
+    manager: HierarchyManager = Depends(get_hierarchy_manager),
+    tracer: EntityTracer = Depends(get_entity_tracer)
+):
     """Trace an entity across chains"""
     try:
         if chain_name:
             # Trace in specific chain
-            sub_chain = hierarchy_manager.get_sub_chain(chain_name)
+            sub_chain = manager.get_sub_chain(chain_name)
             if not sub_chain:
                 raise HTTPException(status_code=404, detail=f"Sub-chain '{chain_name}' not found")
             
-            trace_result = entity_tracer.trace_entity_in_chain(entity_id, chain_name)
+            trace_result = tracer.trace_entity_in_chain(entity_id, chain_name)
             events = trace_result.get("events", [])
         else:
             # Trace across all chains
-            trace_result = entity_tracer.trace_entity_across_chains(entity_id)
+            trace_result = tracer.trace_entity_across_chains(entity_id)
             # Flatten events from all chains
             events = []
             for chain_events in trace_result.values():
@@ -155,13 +184,13 @@ async def trace_entity(entity_id: str, chain_name: str | None = None):
         raise HTTPException(status_code=500, detail=f"Failed to trace entity: {str(e)}")
 
 @router.get("/chains/{chain_name}/stats", response_model=ChainStatsResponse)
-async def get_chain_stats(chain_name: str):
+async def get_chain_stats(chain_name: str,manager: HierarchyManager = Depends(get_hierarchy_manager)):
     """Get statistics for a specific chain"""
     try:
         if chain_name == "main_chain":
-            chain = hierarchy_manager.get_main_chain()
+            chain = manager.get_main_chain()
         else:
-            chain = hierarchy_manager.get_sub_chain(chain_name)
+            chain = manager.get_sub_chain(chain_name)
         
         if not chain:
             raise HTTPException(status_code=404, detail=f"Chain '{chain_name}' not found")
@@ -201,7 +230,11 @@ async def get_chain_stats(chain_name: str):
         raise HTTPException(status_code=500, detail=f"Failed to get chain stats: {str(e)}")
 
 @router.post("/chains/{chain_name}/create")
-async def create_sub_chain(chain_name: str, chain_type: str = "generic"):
+async def create_sub_chain(
+    chain_name: str, 
+    chain_type: str = "generic",
+    manager: HierarchyManager = Depends(get_hierarchy_manager)
+):
     """Create a new sub-chain"""
     if not re.match(r'^[a-zA-Z0-9_\-]+$', chain_name):
         raise HTTPException(
@@ -209,17 +242,17 @@ async def create_sub_chain(chain_name: str, chain_type: str = "generic"):
             detail=f"Invalid chain identifier '{chain_name}'. Only alphanumeric, underscore, and hyphen are allowed."
         )
     try:
-        main_chain = hierarchy_manager.get_main_chain()
+        main_chain = manager.get_main_chain()
         if not main_chain:
             # Create main chain if it doesn't exist
             main_chain = MainChain()
-            hierarchy_manager.set_main_chain(main_chain)
+            manager.set_main_chain(main_chain)
 
         safe_chain_name = os.path.basename(chain_name)
 
         # Create sub-chain
         sub_chain = SubChain(name=safe_chain_name, domain_type=chain_type)
-        hierarchy_manager.add_sub_chain(safe_chain_name, sub_chain)
+        manager.add_sub_chain(safe_chain_name, sub_chain)
         
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
@@ -233,13 +266,18 @@ async def create_sub_chain(chain_name: str, chain_type: str = "generic"):
         raise HTTPException(status_code=500, detail=f"Failed to create sub-chain: {str(e)}")
 
 @router.get("/chains/{chain_name}/blocks")
-async def get_chain_blocks(chain_name: str, limit: int = 10, offset: int = 0):
+async def get_chain_blocks(
+    chain_name: str, 
+    limit: int = 10, 
+    offset: int = 0,
+    manager: HierarchyManager = Depends(get_hierarchy_manager)
+):
     """Get blocks from a specific chain"""
     try:
         if chain_name == "main_chain":
-            chain = hierarchy_manager.get_main_chain()
+            chain = manager.get_main_chain()
         else:
-            chain = hierarchy_manager.get_sub_chain(chain_name)
+            chain = manager.get_sub_chain(chain_name)
         
         if not chain:
             raise HTTPException(status_code=404, detail=f"Chain '{chain_name}' not found")
@@ -258,8 +296,8 @@ async def get_chain_blocks(chain_name: str, limit: int = 10, offset: int = 0):
                 events_data = block.events
                 # Handle direct Arrow Table if to_event_list is missing (safety fallback)
                 if hasattr(events_data, 'to_pylist'):
-                     # This is a suboptimal fallback as it doesn't parse JSON details, but prevents crash
-                     events_data = events_data.to_pylist()
+                    # This is a suboptimal fallback as it doesn't parse JSON details, but prevents crash
+                    events_data = events_data.to_pylist()
             
             block_data.append({
                 "index": getattr(block, 'index', None),
