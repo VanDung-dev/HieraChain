@@ -3,6 +3,10 @@
 ![Python Versions](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
+![Version](https://img.shields.io/badge/version-0.0.0.dev5-orange)
+![Tests](https://img.shields.io/badge/tests-371%20passed-green)
+
+**English** | [Tiếng Việt](README_vi.md)
 
 ## Overview
 
@@ -40,82 +44,215 @@ Main Chain (Supervisor)
 - **Event-Based Model**: Business operations are represented as "events" rather than cryptocurrency transactions
 - **Proof Submission**: Sub-Chains submit cryptographic proofs to the Main Chain for verification
 - **Data Segregation**: Detailed domain data stays in Sub-Chains; only proofs reach the Main Chain
-- **Entity Identification**: Entities are identified through metadata fields, not as identifiers
+- **Entity Identification**: Entities are identified through metadata fields
 - **Scalability**: The hierarchical structure enables horizontal scaling across multiple domains
 
-## Core Components
+## Module Structure
 
-### Blockchain Core
+### Core (`hierachain/core/`)
 
-The foundation of HieraChain includes:
-- **[Blockchain](https://github.com/VanDung-dev/HieraChain/blob/main/hierachain/core/blockchain.py)**: Base blockchain class implementing fundamental operations
-- **[Block](https://github.com/VanDung-dev/HieraChain/blob/main/hierachain/core/block.py)**: Data structure representing individual blocks containing multiple events
-- **Consensus Mechanisms**: Implementation of Proof of Authority (PoA) consensus algorithm suitable for enterprise environments
+The foundation of HieraChain:
 
-### Hierarchical Management
+| Component | Description |
+|-----------|-------------|
+| `block.py` | Block structure with Apache Arrow storage |
+| `blockchain.py` | Base blockchain implementation |
+| `caching.py` | L1/L2 caching system (LRU, LFU, TTL policies) |
+| `parallel_engine.py` | Parallel processing engine |
+| `domain_contract.py` | Smart contract-like domain logic |
+| `consensus/` | Proof of Authority & Proof of Federation |
 
-The hierarchical structure is managed through:
-- **[MainChain](https://github.com/VanDung-dev/HieraChain/blob/main/hierachain/hierarchical/main_chain.py)**: Root authority implementation that stores proofs from Sub-Chains
-- **[SubChain](https://github.com/VanDung-dev/HieraChain/blob/main/hierachain/hierarchical/sub_chain.py)**: Domain-specific chain implementation handling detailed business operations
-- **[HierarchyManager](https://github.com/VanDung-dev/HieraChain/blob/main/hierachain/hierarchical/hierarchy_manager.py)**: Component coordinating interactions between Main Chain and Sub-Chains
+### Hierarchical (`hierachain/hierarchical/`)
 
-### Domain Layer
+Multi-chain management:
 
-HieraChain provides a flexible domain layer for modeling business operations:
-- **Generic Domain Implementation**: Ready-to-use domain chain for common business scenarios
-- **Event System**: Structured event creation and management ([EventFactory](https://github.com/VanDung-dev/HieraChain/blob/main/hierachain/domains/generic/events/domain_event.py))
-- **Business Rules Engine**: Framework for defining and validating domain-specific business rules
+| Component | Description |
+|-----------|-------------|
+| `main_chain.py` | Root authority storing proofs |
+| `sub_chain.py` | Domain-specific chains |
+| `hierarchy_manager.py` | Coordination between chains |
+| `channel.py` | Private channels for organizations |
+| `multi_org.py` | Multi-organization support |
+| `private_data.py` | Private data collections |
+| `consensus/bft_consensus.py` | Byzantine Fault Tolerant consensus |
 
-### Security Features
+### Security (`hierachain/security/`)
 
-Comprehensive security mechanisms include:
-- **[Key Management](https://github.com/VanDung-dev/HieraChain/blob/main/hierachain/security/key_manager.py)**: API key generation, validation, and revocation
-- **Identity Management**: User and application identity handling
-- **Access Control**: Permission-based resource access control
-- **Certificate Management**: Digital certificate handling for secure communications
+Enterprise-grade security:
 
-### API Layer
+| Component | Description |
+|-----------|-------------|
+| `msp.py` | Membership Service Provider |
+| `certificate.py` | X.509 certificate management |
+| `key_manager.py` | Ed25519 key management |
+| `key_provider.py` | Secure key storage (FileVault) |
+| `key_backup_manager.py` | Key backup & recovery |
+| `policy_engine.py` | Access control policies |
+| `verify_api_key.py` | API key authentication |
+| `identity.py` | Identity management |
 
-RESTful API interfaces for external integration:
-- **V1 API**: Core endpoints for chain management, event handling, and proof submission
-- **V2 API**: Enhanced endpoints with improved features and performance
-- **V3 API**: Latest API version with advanced verification capabilities
+### Consensus (`hierachain/consensus/`)
+
+Ordering and consensus:
+
+| Component | Description |
+|-----------|-------------|
+| `ordering_service.py` | Event ordering with hybrid cache |
+
+### API (`hierachain/api/`)
+
+RESTful interfaces:
+
+| Version | Description |
+|---------|-------------|
+| `v1/` | Core endpoints for chain management |
+| `v2/` | Enhanced endpoints with ordering service |
+| `blockchain_explorer.py` | Chain exploration API |
+
+### Error Mitigation (`hierachain/error_mitigation/`)
+
+Fault tolerance:
+
+| Component | Description |
+|-----------|-------------|
+| `recovery_engine.py` | Network, consensus, backup recovery |
+| `rollback_manager.py` | State rollback capabilities |
+| `journal.py` | Transaction journal (durable logging) |
+| `validator.py` | Data validation rules |
+| `error_classifier.py` | Error classification & priority |
+
+### Risk Management (`hierachain/risk_management/`)
+
+| Component | Description |
+|-----------|-------------|
+| `risk_analyzer.py` | Risk detection & scoring |
+| `mitigation_strategies.py` | Automated mitigation |
+| `audit_logger.py` | Comprehensive audit logging |
+
+### Monitoring (`hierachain/monitoring/`)
+
+| Component | Description |
+|-----------|-------------|
+| `performance_monitor.py` | System & blockchain metrics |
+
+### Storage (`hierachain/storage/`)
+
+| Component | Description |
+|-----------|-------------|
+| `sql_backend.py` | SQLite/PostgreSQL storage |
+| `memory_storage.py` | In-memory storage |
+| `world_state.py` | World state management |
+
+### Integration (`hierachain/integration/`)
+
+| Component | Description |
+|-----------|-------------|
+| `erp_framework.py` | ERP system integration |
+| `enterprise.py` | Enterprise connectors |
+
+### Adapters (`hierachain/adapters/`)
+
+| Component | Description |
+|-----------|-------------|
+| `storage/file_storage.py` | File-based storage adapter |
+| `storage/redis_storage.py` | Redis storage adapter |
+
+### Config (`hierachain/config/`)
+
+| Component | Description |
+|-----------|-------------|
+| `settings.py` | Python-based configuration |
 
 ## Key Features
 
-### Multi-Organization Support
-Secure collaboration between different organizations with isolated data storage and controlled access policies.
+### Consensus Mechanisms
 
-### Privacy Controls
-Private data collections with fine-grained access policies, ensuring sensitive information remains protected.
+- **Proof of Authority (PoA)**: Static validator-based consensus for centralized deployments
+- **Proof of Federation (PoF)**: Dynamic consortium-based consensus
+- **BFT Consensus**: Byzantine Fault Tolerant consensus with view change support
 
-### Enterprise Security
-Advanced identity management, certificate-based authentication, and robust access control mechanisms.
+### Security
 
-### Scalable Architecture
-Horizontal scaling through multiple Sub-Chains handling different business domains while maintaining centralized oversight through the Main Chain.
+- **Ed25519 Signatures**: Modern elliptic curve cryptography
+- **AES-256-GCM Encryption**: For private data and backups
+- **MSP (Membership Service Provider)**: Certificate-based authentication
+- **API Key Authentication**: With revocation support
 
-### Event-Based Operations
-All business activities are modeled as events, allowing for comprehensive audit trails and historical tracking.
+### Performance
 
-### Proof Verification
-Cryptographic proof submission and verification mechanism ensuring data integrity across the hierarchy.
+- **Apache Arrow**: Columnar storage for blocks
+- **Hybrid Cache**: L1 memory + L2 persistent cache
+- **Parallel Processing**: Multi-threaded event processing
+- **Bounded History**: Memory-efficient block history with DB fallback
 
-### Cross-Chain Tracing
-Entity tracing capabilities across multiple chains for comprehensive business process visibility.
+### Reliability
 
-### Domain-Specific Operations
-Support for various business operations including:
-- Resource allocation
-- Quality checks
-- Approval workflows
-- Compliance monitoring
-- Status updates
-- Operation tracking
+- **Transaction Journal**: Durable event logging
+- **Rollback Manager**: State restoration capabilities
+- **Recovery Engines**: Automated failure recovery
+- **371 Test Cases**: Comprehensive test coverage including fuzzing
+
+## Quick Start
+
+### Installation
+
+> **Note**: HieraChain is currently in development. PyPI release is planned for Q1 2026.
+
+#### Local Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/VanDung-dev/HieraChain.git
+cd HieraChain
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+# or
+venv\Scripts\activate  # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Install in development mode
+pip install -e .
+```
+
+### Basic Usage
+
+```python
+from hierachain.hierarchical import HierarchyManager
+
+# Create hierarchy manager
+manager = HierarchyManager()
+
+# Create a sub-chain
+manager.create_sub_chain("supply_chain")
+
+# Add an event
+event_id = manager.add_event("supply_chain", {
+    "entity_id": "PROD-001",
+    "event": "production_complete",
+    "timestamp": 1703088000.0,
+    "details": {"quantity": 100}
+})
+
+# Submit proof to main chain
+proof = manager.submit_proof("supply_chain")
+```
+
+### Running the API Server
+
+```bash
+python -m hierachain.api.server
+```
+
+API available at `http://localhost:2661/docs`
 
 ## Use Cases
 
 HieraChain is ideal for enterprise applications requiring:
+
 - Supply chain management
 - Regulatory compliance tracking
 - Audit trail maintenance
@@ -124,42 +261,37 @@ HieraChain is ideal for enterprise applications requiring:
 - Quality assurance processes
 - Asset tracking and management
 
-## Technical Capabilities
+## Technical Specifications
 
-### Data Management
-- Efficient event storage and retrieval
-- Entity-based querying across chains
-- Statistical analysis and reporting
-- Performance monitoring
+| Metric | Value |
+|--------|-------|
+| Source Files | 96 Python files |
+| Lines of Code | ~30,000 |
+| Test Cases | 371 |
+| Python Support | 3.10, 3.11, 3.12, 3.13 |
+| Consensus Types | PoA, PoF, BFT |
+| Signature Algorithm | Ed25519 |
+| Encryption | AES-256-GCM |
 
-### Integration Support
-- RESTful API interfaces
-- ERP system adapters
-- Database connectivity
-- Storage flexibility (file-based, Redis, SQLite)
+## Configuration
 
-### Monitoring and Maintenance
-- Performance monitoring tools
-- Alert systems for anomalies
-- Recovery mechanisms for error handling
-- Risk analysis and mitigation strategies
+Configuration is managed through `hierachain/config/settings.py`:
 
-### Development Features
-- Modular architecture for easy extension
-- Comprehensive testing suite
-- Configuration management
-- CLI tools for administration
+```python
+from hierachain.config import settings
 
-## Benefits
+# Access settings
+print(settings.API_PORT)  # 2661
+print(settings.CONSENSUS_TYPE)  # proof_of_authority
+print(settings.BFT_ENABLED)  # True
+```
 
-1. **Business-Focused**: Designed specifically for enterprise applications without cryptocurrency distractions
-2. **Scalable**: Hierarchical structure allows for horizontal scaling across business domains
-3. **Secure**: Robust security mechanisms including identity management and access controls
-4. **Flexible**: Domain-agnostic design allows customization for various business needs
-5. **Auditable**: Complete event tracking and proof verification ensure regulatory compliance
-6. **Maintainable**: Clean separation of concerns between Main Chain supervision and Sub-Chain operations
+Environment variables:
 
-HieraChain represents a new approach to blockchain technology in enterprise environments, focusing on business process management rather than financial transactions, providing a solid foundation for building secure, scalable, and compliant business applications.
+- `HRC_ENV`: Environment (dev/test/product)
+- `HRC_CONSENSUS_TYPE`: Consensus type
+- `HRC_AUTH_ENABLED`: Enable API authentication
+- `LOG_LEVEL`: Logging level
 
 ## License
 
