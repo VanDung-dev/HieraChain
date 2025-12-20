@@ -126,7 +126,25 @@ class FileVaultProvider(KeyProvider):
 
     def sign(self, data: bytes) -> str:
         """
-        Decrypt private key, sign, and then let GC handle the cleanup.
+        Decrypt private key, sign, and return signature.
+
+        Security Note:
+            This method uses ephemeral decryption where the private key is held
+            in memory briefly during signing. However, due to Python's memory
+            management, key material may remain in memory after this call returns.
+
+            For high-security production environments, consider using:
+            - Hardware Security Module (HSM)
+            - Cloud Key Management Service (AWS KMS, GCP KMS, Azure Key Vault)
+
+            FileVaultProvider is suitable for development, testing, and
+            moderate-security deployments where HSM is not available.
+
+        Args:
+            data: Bytes to sign.
+
+        Returns:
+            Hex-encoded signature string.
         """
         # 1. Load and Decrypt
         with open(self.vault_path, "rb") as f:
