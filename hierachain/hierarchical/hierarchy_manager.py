@@ -135,6 +135,26 @@ class HierarchyManager:
             return False
 
         return chain.start_domain_operation(entity_id, operation_type, details)
+    
+    def complete_operation(self, sub_chain_name: str, entity_id: str,
+                          operation_type: str, result: dict[str, Any] | None = None) -> bool:
+        """
+        Complete an operation on a specific sub-chain.
+        
+        Args:
+            sub_chain_name: Target sub-chain name
+            entity_id: Entity identifier
+            operation_type: Type of operation
+            result: Operation result
+            
+        Returns:
+            True if completed successfully
+        """
+        chain = self.get_sub_chain(sub_chain_name)
+        if not chain:
+            return False
+
+        return chain.complete_operation(entity_id, operation_type, result)
         
     def submit_proof_to_main_chain(self, sub_chain_name: str) -> bool:
         """
@@ -438,6 +458,20 @@ class HierarchyManager:
             Private collection object or None if not found
         """
         return self.private_collections.get(name)
+    
+    def create_private_data_collection(self, name: str, org_ids: list[str], config: dict[str, Any] = None) -> PrivateCollection:
+        """
+        Create a private data collection (alias for create_private_collection).
+        
+        Args:
+            name: Collection name
+            org_ids: List of organization IDs that are members of this collection
+            config: Collection configuration
+            
+        Returns:
+            Created private collection object
+        """
+        return self.create_private_collection(name, org_ids, config)
     
     def assign_organization_to_chain(self, org_id: str, chain_name: str) -> bool:
         """
