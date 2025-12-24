@@ -39,6 +39,7 @@ class Blockchain:
     def create_genesis_block(self) -> None:
         """Create the genesis (first) block of the blockchain."""
         genesis_events = [{
+            "entity_id": "SYSTEM",
             "event": "genesis",
             "timestamp": time.time(),
             "details": {
