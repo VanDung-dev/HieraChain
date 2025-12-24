@@ -14,6 +14,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = [line.strip() for line in fh.readlines() if line.strip() and not line.startswith("#")]
 
+with open("requirements_dev.txt", "r", encoding="utf-8") as fh:
+    dev_requirements = [line.strip() for line in fh.readlines() if line.strip() and not line.startswith("#")]
+
 # Get version from the package
 import sys
 import os
@@ -30,6 +33,7 @@ setup(
     long_description_content_type="text/markdown",
     packages=find_packages(include=['hierachain', 'hierachain.*'], exclude=['tests*', 'testing*']),
     install_requires=requirements,
+    extras_require={"dev": dev_requirements,},
     entry_points={
         "console_scripts": [
             "hrc=hierachain.cli.__init__:hrc",
