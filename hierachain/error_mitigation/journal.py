@@ -109,8 +109,9 @@ class TransactionJournal:
 
         # Allow only safe characters overall (components and separators)
         # Allow optional Windows drive prefix like "C:\\" or "D:/" at the beginning
+        # Allow Linux absolute paths starting with /
         # Added . for usernames/extensions and ~ for Windows short paths
-        overall_pattern = r'^(?:[a-zA-Z]:[\\/])?[a-zA-Z0-9_\-~./\\]+$'
+        overall_pattern = r'^(?:[a-zA-Z]:[\\/]|/)?[a-zA-Z0-9_\-~./\\]+$'
         if not re.match(overall_pattern, storage_dir):
             raise ValueError("Security: storage_dir contains invalid characters. Allowed: [a-zA-Z0-9_-], dot, tilde, and path separators")
 
@@ -120,6 +121,8 @@ class TransactionJournal:
         m = re.match(r'^([a-zA-Z]:[\\/])(.*)$', _s)
         if m:
             _s = m.group(2)
+        # Strip leading slash for Linux absolute paths (e.g., /mnt/c/... -> mnt/c/...)
+        _s = _s.lstrip('/')
         components = re.split(r'[\\/]+', _s)
         for comp in components:
             if comp in ('', '.', '..'):
@@ -134,7 +137,7 @@ class TransactionJournal:
         Build a safe storage path anchored strictly to data_root using sanitized components.
         - Absolute input must already be under data_root, otherwise reject.
         - Relative input is interpreted as components under data_root; if it starts with 'data', drop the prefix to avoid duplication.
-        - Only allow components matching [a-zA-Z0-9_-].
+        - Only allow components matching [a-zA-Z0-9_\-~.].
         """
         import os as _os
 
@@ -151,12 +154,15 @@ class TransactionJournal:
             except Exception:
                 rel_str = '.'
             rel_parts = [] if rel_str in ('.', '') else re.split(r'[\\/]+', rel_str)
+            # Filter out empty strings (can happen on Linux paths)
+            rel_parts = [p for p in rel_parts if p]
             # Validate each component
             safe_parts = []
             for comp in rel_parts:
-                if comp in ('', '.', '..'):
+                if comp in ('.', '..'):
                     raise ValueError("Security: storage_dir contains invalid path components")
-                if not re.match(r'^[a-zA-Z0-9_\-]+$', comp):
+                # Allow dots and tildes consistent with _validate_storage_dir_input
+                if not re.match(r'^[a-zA-Z0-9_\-~.]+$', comp):
                     raise ValueError("Security: storage_dir contains invalid path components")
                 safe_parts.append(comp)
             return data_root.joinpath(*safe_parts) if safe_parts else data_root
@@ -167,16 +173,21 @@ class TransactionJournal:
         m = re.match(r'^([a-zA-Z]:[\\/])(.*)$', _s)
         if m:
             _s = m.group(2)
+        # Strip leading slashes for Linux absolute paths
+        _s = _s.lstrip('/')
         # Split into components
         comps = re.split(r'[\\/]+', _s)
+        # Filter out empty strings
+        comps = [c for c in comps if c]
         # Drop leading 'data' to avoid data/data duplication
         if comps and comps[0].lower() == 'data':
             comps = comps[1:]
         safe_parts = []
         for comp in comps:
-            if comp in ('', '.', '..'):
+            if comp in ('.', '..'):
                 raise ValueError("Security: storage_dir contains invalid path components")
-            if not re.match(r'^[a-zA-Z0-9_\-]+$', comp):
+            # Allow dots and tildes consistent with _validate_storage_dir_input
+            if not re.match(r'^[a-zA-Z0-9_\-~.]+$', comp):
                 raise ValueError("Security: storage_dir contains invalid path components")
             safe_parts.append(comp)
         return data_root.joinpath(*safe_parts) if safe_parts else data_root
