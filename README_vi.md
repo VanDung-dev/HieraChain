@@ -214,6 +214,9 @@ venv\Scripts\activate  # Windows
 # Cài đặt dependencies
 pip install -r requirements.txt
 
+# Cài đặt dependencies cho phát triển
+pip install -r requirements_dev.txt
+
 # Cài đặt ở chế độ development
 pip install -e .
 ```

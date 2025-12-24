@@ -214,6 +214,9 @@ venv\Scripts\activate  # Windows
 # Install dependencies
 pip install -r requirements.txt
 
+# Install development dependencies
+pip install -r requirements_dev.txt
+
 # Install in development mode
 pip install -e .
 ```

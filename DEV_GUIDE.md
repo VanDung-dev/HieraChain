@@ -18,6 +18,12 @@ This guide contains all the information developers need to work with the HieraCh
     pip install -r requirements.txt
     ```
 
+- Install development dependencies
+
+    ```bash
+    pip install -r requirements_dev.txt
+    ```
+
 - Install the package:
 
     ```bash
