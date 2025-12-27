@@ -229,8 +229,20 @@ class TransactionJournal:
             if clean_event:
                 ev['data'] = json.dumps(clean_event).encode('utf-8')
         
+        # Ensure 'data' field is converted to bytes if it exists but is not bytes
+        if 'data' in ev and ev['data'] is not None and not isinstance(ev['data'], bytes):
+            try:
+                if isinstance(ev['data'], str):
+                    ev['data'] = ev['data'].encode('utf-8')
+                else:
+                    ev['data'] = json.dumps(ev['data']).encode('utf-8')
+            except Exception as e:
+                # Fallback to string representation if JSON dump fails
+                logger.warning(f"Could not JSON serialize 'data' field: {e}. Using str() conversion.")
+                ev['data'] = str(ev['data']).encode('utf-8')
+
         # Ensure 'data' is bytes if None
-        if 'data' not in ev:
+        if 'data' not in ev or ev['data'] is None:
             ev['data'] = b''
 
         # Create RecordBatch (size 1)
