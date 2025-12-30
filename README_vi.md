@@ -14,6 +14,18 @@ HieraChain là một framework blockchain doanh nghiệp tiên tiến được t
 
 Framework triển khai kiến trúc đa tầng trong đó Main Chain giám sát các Sub-Chain, cho phép quản lý quy trình kinh doanh có khả năng mở rộng và an toàn. Tất cả các hoạt động trong framework được gọi là "sự kiện" (events) thay vì "giao dịch" (transactions), nhấn mạnh sự tập trung vào các ứng dụng kinh doanh.
 
+## Hệ Sinh Thái Dự Án
+
+HieraChain là một phần của hệ sinh thái các công cụ blockchain lớn hơn:
+
+| Dự án | Ngôn ngữ | Mô tả |
+|-------|----------|-------|
+| **[HieraChain](https://github.com/VanDung-dev/HieraChain)** | Python | Framework blockchain phân cấp chính (repository này) |
+| [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) | Rust | **Official Core Consensus** - triển khai tối ưu hóa với Python/C bindings |
+| [HieraChain-Engine](https://github.com/VanDung-dev/HieraChain-Engine) | Go | Blockchain engine hiệu suất cao với mạng P2P |
+
+> **Lưu ý**: Trong khi repository này bao gồm triển khai đồng thuận bằng Python thuần, thư viện [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) được khuyến nghị cho các triển khai production yêu cầu hiệu suất cao.
+
 ## Kiến Trúc Cốt Lõi
 
 ### Cấu Trúc Phân Cấp

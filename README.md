@@ -14,6 +14,18 @@ HieraChain is an advanced enterprise blockchain framework designed specifically 
 
 The framework implements a multi-layer architecture where Main Chains supervise Sub-Chains, enabling scalable and secure business process management. All operations within the framework are referred to as "events" rather than "transactions," emphasizing its focus on business applications.
 
+## Project Ecosystem
+
+HieraChain is part of a larger ecosystem of blockchain tools:
+
+| Project | Language | Description |
+|---------|----------|-------------|
+| **[HieraChain](https://github.com/VanDung-dev/HieraChain)** | Python | Main hierarchical blockchain framework (this repository) |
+| [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) | Rust | **Official Core Consensus** - optimized implementation with Python/C bindings |
+| [HieraChain-Engine](https://github.com/VanDung-dev/HieraChain-Engine) | Go | High-performance blockchain engine with P2P networking |
+
+> **Note**: While this repository includes a pure Python consensus implementation, the [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) library is recommended for production deployments requiring high performance.
+
 ## Core Architecture
 
 ### Hierarchical Structure
