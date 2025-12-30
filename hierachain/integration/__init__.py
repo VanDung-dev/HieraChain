@@ -11,11 +11,32 @@ from hierachain.integration.enterprise import (
     IntegrationError
 )
 
+from hierachain.integration.go_client import (
+    GoEngineClient,
+    GoEngineClientSync,
+    GoEngineError,
+    GoEngineConnectionError,
+    GoEngineUnavailableError,
+    Transaction,
+    BatchResult,
+    TxStatus,
+    HealthResponse,
+)
+
 __all__ = [
     'EnterpriseIntegration',
     'BaseERPIntegration',
     'SAPIntegration',
     'OracleIntegration',
     'DynamicsIntegration',
-    'IntegrationError'
+    'IntegrationError',
+    'GoEngineClient',
+    'GoEngineClientSync',
+    'GoEngineError',
+    'GoEngineConnectionError',
+    'GoEngineUnavailableError',
+    'Transaction',
+    'BatchResult',
+    'TxStatus',
+    'HealthResponse',
 ]
