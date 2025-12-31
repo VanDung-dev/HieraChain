@@ -208,8 +208,6 @@ Chịu lỗi:
 
 ### Cài Đặt
 
-> **Lưu ý**: HieraChain hiện đang trong giai đoạn phát triển. Dự kiến phát hành trên PyPI vào Quý 1 năm 2026.
-
 #### Cài Đặt Local
 
 ```bash

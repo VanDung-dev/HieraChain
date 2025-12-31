@@ -208,8 +208,6 @@ Fault tolerance:
 
 ### Installation
 
-> **Note**: HieraChain is currently in development. PyPI release is planned for Q1 2026.
-
 #### Local Installation
 
 ```bash
