@@ -63,6 +63,18 @@ class Settings:
     AUTH_ENABLED = os.getenv("HRC_AUTH_ENABLED", "false").lower() == "true"
     API_KEY_LOCATION = os.getenv("HRC_API_KEY_LOCATION", "header")
     API_KEY_NAME = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
+
+    # CORS settings (defaults allow all for development)
+    CORS_ALLOW_ALL = os.getenv("HRC_CORS_ALLOW_ALL", "true").lower() == "true"
+    CORS_ORIGINS: list[str] = os.getenv("HRC_CORS_ORIGINS", "").split(",") if os.getenv("HRC_CORS_ORIGINS") else []
+
+    # HTTPS/HSTS settings (disabled by default, enabled in production)
+    HSTS_ENABLED = os.getenv("HRC_HSTS_ENABLED", "false").lower() == "true"
+    HSTS_MAX_AGE = int(os.getenv("HRC_HSTS_MAX_AGE", "31536000"))
+
+    # Rate Limiting (disabled by default)
+    RATE_LIMIT_ENABLED = os.getenv("HRC_RATE_LIMIT", "false").lower() == "true"
+    RATE_LIMIT_REQUESTS_PER_MINUTE = int(os.getenv("HRC_RATE_LIMIT_RPM", "100"))
     
     # Multi-Organization settings
     MULTI_ORG_ENABLED = True
@@ -199,12 +211,46 @@ class DevelopmentSettings(Settings):
 
 
 class ProductionSettings(Settings):
-    """Production environment settings"""
+    """Production environment settings - Security hardened by default"""
+    
+    # Logging - less verbose in production
     LOG_LEVEL = "WARNING"
+    
+    # API - bind to all interfaces for container/server deployment
     API_HOST = "0.0.0.0"
+    
+    # Storage - use persistent storage
     DEFAULT_STORAGE_BACKEND = "redis"
+    
+    # === SECURITY: Auto-enabled in production ===
+    # Authentication is MANDATORY in production
+    AUTH_ENABLED = True
+    
+    # Organization validation is required
     REQUIRE_ORGANIZATION_VALIDATION = True
-    GO_ENGINE_ENABLED = True  # Enabled in production for high performance
+    
+    # Identity management must be on
+    IDENTITY_MANAGER_ENABLED = True
+    
+    # MSP (Membership Service Provider) enabled
+    MSP_ENABLED = True
+    
+    # === PERFORMANCE: Production optimizations ===
+    # Go Engine for high performance (if available)
+    GO_ENGINE_ENABLED = True
+    
+    # === CORS: Restricted in production ===
+    # Override with env var HRC_CORS_ORIGINS for specific domains
+    CORS_ALLOW_ALL = False
+    CORS_ORIGINS: list[str] = []  # Must be set via env var in production
+    
+    # === HTTPS: Headers enabled ===
+    HSTS_ENABLED = True
+    HSTS_MAX_AGE = 31536000  # 1 year
+    
+    # === Rate Limiting: Recommended ===
+    RATE_LIMIT_ENABLED = True
+    RATE_LIMIT_REQUESTS_PER_MINUTE = 100
 
 
 class TestingSettings(Settings):
