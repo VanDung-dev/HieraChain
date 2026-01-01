@@ -31,6 +31,13 @@ async def lifespan(_app: FastAPI):
     """Application lifespan events"""
     # Startup
     logger.info("Starting HieraChain API server...")
+    
+    # Log authentication status on startup
+    settings = get_settings()
+    if settings.AUTH_ENABLED:
+        logger.info("Global API Authentication ENFORCED")
+    else:
+        logger.warning("Global API Authentication DISABLED")
     yield
     # Shutdown
     logger.info("Shutting down HieraChain API server...")
@@ -44,10 +51,8 @@ def create_app() -> FastAPI:
 
     # Initialize implementation with settings
     if settings.AUTH_ENABLED:
-        logger.info("Global API Authentication ENFORCED")
         auth_dependency = VerifyAPIKey(settings.get_auth_config())
     else:
-        logger.warning("Global API Authentication DISABLED")
         # No-op dependency
         auth_dependency = lambda: None
 
@@ -112,14 +117,14 @@ def create_app() -> FastAPI:
     # Try to include v1 router
     try:
         fast_app.include_router(v1_router)
-        logger.info("API v1 router included successfully")
+        logger.debug("API v1 router included successfully")
     except ImportError:
         logger.warning("API v1 router not available")
     
     # Try to include v2 router
     try:
         fast_app.include_router(v2_router)
-        logger.info("API v2 router included successfully")
+        logger.debug("API v2 router included successfully")
     except ImportError:
         logger.warning("API v2 router not available")
     
