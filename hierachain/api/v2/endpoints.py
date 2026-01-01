@@ -9,6 +9,16 @@ import time
 import logging
 from fastapi import APIRouter, HTTPException, status
 
+from hierachain.security.sanitization import (
+    sanitize_string,
+    sanitize_for_output,
+    sanitize_error_message
+)
+from hierachain.security.secure_logging import SecureLogger
+
+# Secure logger for API v2
+api_logger = SecureLogger("hierachain.api.v2")
+
 from hierachain.api.v2.schemas import (
     ChannelCreateRequest, ChannelResponse,
     PrivateCollectionCreateRequest, PrivateDataRequest, PrivateDataResponse,
@@ -64,16 +74,30 @@ async def create_channel(channel_request: ChannelCreateRequest):
             "policy": channel_request.policy,
             "created_at": time.time()
         }
-        
+
+        # Secure audit logging
+        api_logger.audit(
+            action="create",
+            resource="channel",
+            success=True,
+            channel_id=channel_id,
+            org_count=len(channel_request.organizations)
+        )
+
         return ChannelResponse(
             success=True,
             message=f"Channel '{channel_id}' created successfully",
             channel_id=channel_id
         )
     except Exception as e:
+        api_logger.error(
+            "Failed to create channel",
+            error=str(e),
+            channel_id=channel_request.channel_id
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create channel: {str(e)}"
+            detail=f"Failed to create channel: {sanitize_error_message(e)}"
         )
 
 @router.get("/channels/{channel_id}", response_model=ChannelResponse)
@@ -179,11 +203,20 @@ async def create_contract(contract_request: ContractCreateRequest):
     try:
         # In a real implementation, this would create an actual DomainContract object
         contract_id = contract_request.contract_id
+        
+        # Sanitize user input before storing to prevent stored injection
+        safe_implementation = sanitize_string(
+            contract_request.implementation, context="general"
+        )
+        safe_metadata = sanitize_for_output(
+            contract_request.metadata, context="general"
+        ) if contract_request.metadata else {}
+        
         _contracts[contract_id] = {
             "id": contract_id,
-            "version": contract_request.version,
-            "implementation": contract_request.implementation,
-            "metadata": contract_request.metadata,
+            "version": sanitize_string(contract_request.version),
+            "implementation": safe_implementation,
+            "metadata": safe_metadata,
             "created_at": time.time()
         }
         
@@ -230,12 +263,17 @@ async def execute_contract(execution_request: ContractExecuteRequest):
         _context = execution_request.context
         
         # In a real implementation, this would be more complex
+        # Sanitize all output to prevent stored XSS/template injection
+        safe_event = sanitize_string(str(event.get('event', 'unknown')))
+        safe_version = sanitize_string(str(contract.get("version", "unknown")))
+        safe_entity = sanitize_string(str(event.get("entity_id", "unknown")))
+        
         execution_result = {
             "status": "success",
-            "output": f"Contract {contract_id} executed with event {event.get('event', 'unknown')}",
+            "output": f"Contract {contract_id} executed with event {safe_event}",
             "details": {
-                "contract_version": contract.get("version", "unknown"),
-                "event_entity": event.get("entity_id", "unknown"),
+                "contract_version": safe_version,
+                "event_entity": safe_entity,
                 "execution_timestamp": time.time()
             }
         }
@@ -249,7 +287,7 @@ async def execute_contract(execution_request: ContractExecuteRequest):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to execute contract: {str(e)}"
+            detail=f"Failed to execute contract: {sanitize_error_message(e)}"
         )
 
 @router.post("/organizations", response_model=OrganizationResponse)
