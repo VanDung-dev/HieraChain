@@ -12,7 +12,6 @@ import logging
 import shutil
 import os
 import hashlib
-import pickle
 import threading
 from typing import Any
 from datetime import datetime
@@ -103,7 +102,7 @@ class RollbackManager:
             config_dict: Configuration dictionary with rollback parameters
         """
         self.config = config_dict
-        self.snapshots_dir = config_dict.get("snapshots_dir", "snapshots")
+        self.snapshots_dir: str = str(config_dict.get("snapshots_dir", "snapshots"))
         self.max_snapshots = config_dict.get("max_snapshots", 10)
         self.auto_snapshot = config_dict.get("auto_snapshot", True)
         self.snapshot_interval = config_dict.get("snapshot_interval", 3600)  # 1 hour
@@ -126,7 +125,7 @@ class RollbackManager:
         logger.info(f"Initialized RollbackManager with {len(self.snapshots)} snapshots")
     
     def create_snapshot(self, snapshot_type: RollbackType, description: str, 
-                       components: list[Any] = None) -> StateSnapshot:
+                       components: list[Any] | None = None) -> StateSnapshot:
         """
         Create a system state snapshot
         
@@ -160,8 +159,10 @@ class RollbackManager:
             
             # Save snapshot data
             data_path = os.path.join(self.snapshots_dir, f"{snapshot_id}.snapshot")
-            with open(data_path, 'wb') as f_out:
-                pickle.dump(data, f_out)  # type: ignore
+            # Save snapshot data
+            data_path = os.path.join(self.snapshots_dir, f"{snapshot_id}.snapshot")
+            with open(data_path, 'w', encoding='utf-8') as f_out:
+                json.dump(data, f_out, indent=4)
             
             # Calculate hash and size
             data_hash = self._calculate_file_hash(data_path)
@@ -192,7 +193,7 @@ class RollbackManager:
             return new_snapshot
             
         except Exception as e:
-            logger.error(f"Failed to create snapshot {snapshot_id}: {e}")
+            logger.error("Failed to create snapshot %s: %s", snapshot_id, e)
             raise
     
     def rollback_to_snapshot(self, snapshot_id: str, force: bool = False) -> RollbackOperation:
@@ -353,8 +354,9 @@ class RollbackManager:
         """
         try:
             # Load snapshot data
-            with open(target_snapshot.data_path, 'rb') as f:
-                snapshot_data = pickle.load(f)
+            # Load snapshot data
+            with open(target_snapshot.data_path, 'r', encoding='utf-8') as f:
+                snapshot_data = json.load(f)
             
             rollback_op.rollback_steps.append("snapshot_data_loaded")
             
@@ -416,7 +418,7 @@ class RollbackManager:
         return config_state
     
     @staticmethod
-    def _capture_chain_state(components: list[Any] = None) -> dict[str, Any]:
+    def _capture_chain_state(components: list[Any] | None = None) -> dict[str, Any]:
         """Capture current blockchain state"""
         chain_state = {
             "timestamp": time.time(),
@@ -439,7 +441,7 @@ class RollbackManager:
         return chain_state
     
     @staticmethod
-    def _capture_consensus_state(components: list[Any] = None) -> dict[str, Any]:
+    def _capture_consensus_state(components: list[Any] | None = None) -> dict[str, Any]:
         """Capture current consensus state"""
         consensus_state = {
             "timestamp": time.time(),
@@ -463,7 +465,7 @@ class RollbackManager:
         return consensus_state
     
     @staticmethod
-    def _capture_storage_state(_components: list[Any] = None) -> dict[str, Any]:
+    def _capture_storage_state(_components: list[Any] | None = None) -> dict[str, Any]:
         """Capture current storage state"""
         storage_state = {
             "timestamp": time.time(),
@@ -476,7 +478,7 @@ class RollbackManager:
         # Placeholder implementation
         return storage_state
     
-    def _capture_full_system_state(self, components: list[Any] = None) -> dict[str, Any]:
+    def _capture_full_system_state(self, components: list[Any] | None = None) -> dict[str, Any]:
         """Capture complete system state"""
         full_state = {
             "timestamp": time.time(),
@@ -604,7 +606,7 @@ class RollbackManager:
             
             current_hash = self._calculate_file_hash(target_snapshot.data_path)
             if current_hash != target_snapshot.data_hash:
-                logger.error(f"Snapshot integrity check failed: hash mismatch")
+                logger.error("Snapshot integrity check failed: hash mismatch")
                 return False
             
             return True
@@ -642,14 +644,14 @@ class RollbackManager:
     def _generate_snapshot_id() -> str:
         """Generate unique snapshot ID"""
         timestamp = str(int(time.time() * 1000))
-        hash_part = hashlib.md5(timestamp.encode()).hexdigest()[:8]
+        hash_part = hashlib.sha256(timestamp.encode()).hexdigest()[:8]
         return f"SNAP-{timestamp[-8:]}-{hash_part.upper()}"
     
     @staticmethod
     def _generate_operation_id() -> str:
         """Generate unique operation ID"""
         timestamp = str(int(time.time() * 1000))
-        hash_part = hashlib.md5(timestamp.encode()).hexdigest()[:8]
+        hash_part = hashlib.sha256(timestamp.encode()).hexdigest()[:8]
         return f"ROLLBACK-{timestamp[-8:]}-{hash_part.upper()}"
     
     @staticmethod

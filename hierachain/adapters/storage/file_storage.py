@@ -365,6 +365,7 @@ class FileStorageAdapter:
                                 })
                                 
                 except Exception as e:
+                    logger.warning(f"Failed to load user config: {e}")
                     pass
             
             # Final sort by timestamp across chains
@@ -411,7 +412,8 @@ class FileStorageAdapter:
                         .column('entity_id')
                         .unique()
                     )
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to load channel data: {e}")
                     pass
             
             return {
@@ -530,7 +532,8 @@ class FileStorageAdapter:
                         record["chain_name"] = search_chain
                         events.append(record)
                         
-                except Exception:
+                except Exception as e:
+                    logger.error(f"Failed to process block file: {e}")
                     continue
             
             # Final sort across chains

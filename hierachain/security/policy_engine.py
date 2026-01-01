@@ -347,7 +347,7 @@ class Policy:
             return str(obj)
             
         context_str = json.dumps(context, sort_keys=True, separators=(',', ':'), default=_default_serializer)
-        return hashlib.md5(context_str.encode()).hexdigest()[:8]
+        return hashlib.sha256(context_str.encode()).hexdigest()[:8]
     
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
@@ -639,7 +639,7 @@ class PolicyEngine:
             return str(obj)
 
         context_str = json.dumps(context, sort_keys=True, separators=(',', ':'), default=_default_serializer)
-        return hashlib.md5(context_str.encode()).hexdigest()[:8]
+        return hashlib.sha256(context_str.encode()).hexdigest()[:8]
     
     @staticmethod
     def _summarize_context(context: dict[str, Any]) -> dict[str, Any]:

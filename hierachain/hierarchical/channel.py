@@ -7,6 +7,7 @@ completely isolated data space with its own governance policies and access contr
 """
 
 import time
+import logging
 import pyarrow as pa
 import pyarrow.compute as pc
 from typing import Any, TYPE_CHECKING
@@ -18,6 +19,8 @@ from hierachain.core import schemas
 
 if TYPE_CHECKING:
     from hierachain.hierarchical.private_data import PrivateCollection
+
+logger = logging.getLogger(__name__)
 
 
 class ChannelStatus(Enum):
@@ -172,6 +175,7 @@ class ChannelLedger:
                     events.extend([e for e in filtered_events if filter_func(e)])
                     continue
                 except Exception as e:
+                    logger.error(f"Failed to load channel: {e}")
                     pass
             
             # LEGACY / FALLBACK PATH
@@ -374,7 +378,7 @@ class Channel:
         
         return True
     
-    def query_events(self, query_params: dict[str, Any], requester_org_id: str) -> list[dict[str, Any] | None]:
+    def query_events(self, query_params: dict[str, Any], requester_org_id: str) -> list[dict[str, Any]] | None:
         """
         Query events from the channel.
         

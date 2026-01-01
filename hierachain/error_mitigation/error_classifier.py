@@ -440,7 +440,7 @@ class ErrorClassifier:
             str: Unique error ID
         """
         content = f"{error_data.get('error_type', '')}{error_data.get('message', '')}{time.time()}"
-        hash_value = hashlib.md5(content.encode()).hexdigest()[:12]
+        hash_value = hashlib.sha256(content.encode()).hexdigest()[:12]
         return f"ERR-{hash_value.upper()}"
     
     @staticmethod

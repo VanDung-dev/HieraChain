@@ -813,7 +813,7 @@ class BackupRecoveryEngine:
         try:
             # Calculate hash of backup file
             import hashlib
-            hash_func = hashlib.sha256() if self.integrity_check == "sha256" else hashlib.md5()
+            hash_func = hashlib.sha256() if self.integrity_check == "sha256" else hashlib.sha256()
 
             with open(backup_path, "rb") as f:
                 for chunk in iter(lambda: f.read(4096), b""):

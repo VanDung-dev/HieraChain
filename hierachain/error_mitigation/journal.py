@@ -79,8 +79,8 @@ class TransactionJournal:
             exists_line = self.active_log_file.exists()  # codeql[py/path-injection]
             if exists_line and self.active_log_file.is_symlink():  # codeql[py/path-injection]
                 raise ValueError("Security: active log file cannot be a symlink")
-        except Exception:
-            # If FS checks fail (e.g., missing path), continue; mkdir below will create dir safely
+        except Exception as e:
+            logger.warning(f"Filesystem check failed, attempting to create directory anyway: {e}")
             pass
 
         self._file_handle = None
