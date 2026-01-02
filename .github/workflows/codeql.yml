@@ -30,6 +30,7 @@ jobs:
               - demo/**
               - tests/**
               - testing/**
+              - scripts/**
               - .github/**
 
       - name: Autobuild
