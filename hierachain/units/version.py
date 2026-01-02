@@ -7,7 +7,7 @@ This module provides functions for managing and retrieving version information.
 from typing import Tuple
 
 # Version information
-VERSION: Tuple[int, int, int, str, int] = (0, 0, 1, "dev", 3)
+VERSION: Tuple[int, int, int, str, int] = (0, 0, 1, "dev", 4)
 
 # Regular expression to match PEP 440 version format
 _VERSION_PATTERN = r"(?P<major>\d+)\.(?P<minor>\d+)(?:\.(?P<micro>\d+))?(?:\.(?P<releaselevel>[a-z]+)(?P<serial>\d+)?)?"

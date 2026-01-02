@@ -3,7 +3,7 @@
 ![Phiên bản Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)
 [![Giấy phép](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
 [![Giấy phép](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
-![Phiên bản](https://img.shields.io/badge/version-0.0.1.dev3-orange)
+![Phiên bản](https://img.shields.io/badge/version-0.0.1.dev4-orange)
 ![Tests](https://img.shields.io/badge/tests-371%20passed-green)
 
 [English](README.md) | **Tiếng Việt**
