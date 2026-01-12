@@ -1,57 +1,117 @@
-# HieraChainArchitecture
+# HieraChain Architecture
 
 ## 📋 Overview
 
 HieraChain is a **multi-language blockchain infrastructure** designed for high-performance enterprise applications. The architecture follows a **layered approach** combining the strengths of three programming languages:
 
-- **Python** (hierachain): Business logic, REST API, high-level abstractions
-- **Rust** (hierachain-consensus): High-performance consensus, cryptography
-- **Go** (hierachain-engine): High-concurrency networking, transaction processing
+| Component | Language | Purpose |
+|:----------|:---------|:--------|
+| **hierachain** | Python | Business logic, REST API, high-level abstractions |
+| **hierachain-consensus** | Rust | High-performance consensus, cryptography |
+| **hierachain-engine** | Go | High-concurrency networking, transaction processing |
+
+---
+
+## 📑 Table of Contents
+
+- [🏗️ High-Level Architecture](#️-high-level-architecture)
+- [📦 Project Structure](#-project-structure)
+- [🏛️ Hierarchical Chain Architecture](#️-hierarchical-chain-architecture)
+- [🔄 Data Flow Architecture](#-data-flow-architecture)
+- [🔗 Inter-Language Communication](#-inter-language-communication)
+- [⚙️ Consensus Mechanisms](#️-consensus-mechanisms)
+- [🛡️ Zero Knowledge Proof (ZKP) Verification Layer](#️-zero-knowledge-proof-zkp-verification-layer)
+- [🔐 Security Architecture](#-security-architecture)
+- [📊 Performance Architecture](#-performance-architecture)
+- [🌐 Network Architecture](#-network-architecture)
+- [📈 Monitoring & Observability](#-monitoring--observability)
+- [🎯 Environment Variables](#-environment-variables)
+- [📄 License](#-license)
 
 ---
 
 ## 🏗️ High-Level Architecture
 
+### System Overview
+
+```mermaid
+flowchart TB
+    CLIENT["🖥️ <b>Client Applications</b><br/>Web Apps · Mobile · CLI · External Services"]
+    
+    API["🌐 <b>API Gateway Layer</b><br/>Python FastAPI · Go gRPC · Arrow IPC"]
+    
+    CORE["⚙️ <b>Core Components</b><br/>hierachain · hierachain-engine · hierachain-consensus"]
+    
+    STORAGE["💾 <b>Data & Storage Layer</b><br/>SQL · In-Memory · World State · Arrow IPC"]
+
+    CLIENT --> API --> CORE --> STORAGE
 ```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                            Client Applications                                  │
-│                    (Web Apps, Mobile, CLI, External Services)                   │
-└─────────────────────────────────────────────────────────────────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                               API Gateway Layer                                 │
-│  ┌─────────────────────────────┐      ┌─────────────────────────────────────┐   │
-│  │     Python (FastAPI)        │      │          Go (gRPC)                  │   │
-│  │     REST API v1/v2          │◄────►│      Arrow IPC Server               │   │
-│  │     Blockchain Explorer     │      │      Metrics (Prometheus)           │   │
-│  └─────────────────────────────┘      └─────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────────┘
-                                      │
-             ┌────────────────────────┼──────────────────────────┐
-             ▼                        ▼                          ▼
-┌──────────────────────────┐ ┌──────────────────┐ ┌──────────────────────────────┐
-│   hierachain (Python)    │ │hierachain-engine │ │  hierachain-consensus (Rust) │
-│                          │ │      (Go)        │ │                              │
-│  • Core blockchain logic │ │  • Worker Pool   │ │  • Block creation            │
-│  • Domain contracts      │ │  • Mempool       │ │  • Hash calculation          │
-│  • Hierarchical chains   │ │  • Ordering      │ │  • Merkle tree               │
-│  • Security policies     │ │  • P2P Network   │ │  • Digital signatures        │
-│  • Storage backends      │ │  • ZMQ Transport │ │  • Consensus algorithms      │
-└──────────────────────────┘ └──────────────────┘ └──────────────────────────────┘
-            │                         │                         │
-            │         PyO3 FFI        │                         │
-            └─────────────────────────┼─────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                              Data & Storage Layer                               │
-│      ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐      │
-│      │   SQLite    │   │  In-Memory  │   │ World State │   │ Arrow IPC   │      │
-│      │   Backend   │   │   Storage   │   │   Cache     │   │   Files     │      │
-│      └─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘      │
-└─────────────────────────────────────────────────────────────────────────────────┘
+
+### API Gateway Detail
+
+```mermaid
+flowchart LR
+    subgraph PY["🐍 Python FastAPI"]
+        P1["REST API v1/v2"]
+        P2["Blockchain Explorer"]
+    end
+
+    subgraph GO["🔷 Go gRPC"]
+        G1["Arrow IPC Server"]
+        G2["Prometheus Metrics"]
+    end
+
+    PY <-->|"Communication"| GO
 ```
+
+### Core Components Detail
+
+```mermaid
+flowchart LR
+    subgraph HP["🐍 hierachain"]
+        direction TB
+        HP1["Core blockchain logic"]
+        HP2["Domain contracts"]
+        HP3["Hierarchical chains"]
+        HP4["Security policies"]
+        HP1~~~HP2~~~HP3~~~HP4
+    end
+
+    subgraph HE["🔷 hierachain-engine"]
+        direction TB
+        HE1["Worker Pool"]
+        HE2["Mempool & Ordering"]
+        HE3["P2P Network"]
+        HE4["ZMQ Transport"]
+        HE1~~~HE2~~~HE3~~~HE4
+    end
+
+    subgraph HC["🦀 hierachain-consensus"]
+        direction TB
+        HC1["Block creation"]
+        HC2["Hash & Merkle tree"]
+        HC3["Digital signatures"]
+        HC4["Consensus algorithms"]
+        HC1~~~HC2~~~HC3~~~HC4
+    end
+
+    HP <-->|"PyO3 FFI"| HC
+    HP <-->|"Arrow IPC"| HE
+```
+
+### Storage Layer Detail
+
+```mermaid
+flowchart LR
+    S1[("SQL<br/>Backend")]
+    S2[("In-Memory<br/>Storage")]
+    S3[("World State<br/>Cache")]
+    S4[("Arrow IPC<br/>Files")]
+
+    S1 --- S2 --- S3 --- S4
+```
+
+---
 
 ## 📦 Project Structure
 
@@ -155,130 +215,139 @@ HieraChain Ecosystem/
 
 ---
 
+## 🏛️ Hierarchical Chain Architecture
+
+```mermaid
+flowchart TB
+    %% Main Chain
+    MC["🔗 <b>MAIN CHAIN</b><br/>━━━━━━━━━━━━━━━━<br/>Global State & Anchoring<br/>• Global consensus<br/>• Cross-chain transactions<br/>• Anchor blocks from sub-chains"]
+
+    %% Sub Chains
+    SCA["📦 <b>SUB-CHAIN A</b><br/>Organization 1<br/>─────────────<br/>• Local consensus<br/>• Private data<br/>• Domain contracts"]
+    SCB["📦 <b>SUB-CHAIN B</b><br/>Organization 2<br/>─────────────<br/>• Local consensus<br/>• Private data<br/>• Domain contracts"]
+    SCC["📦 <b>SUB-CHAIN C</b><br/>Organization 3<br/>─────────────<br/>• Local consensus<br/>• Private data<br/>• Domain contracts"]
+
+    %% Channels
+    CHA["💬 Channel A<br/>(Private Comms)"]
+    CHB["💬 Channel B<br/>(Private Comms)"]
+    CHC["💬 Channel C<br/>(Private Comms)"]
+
+    %% Connections
+    MC --> SCA
+    MC --> SCB
+    MC --> SCC
+    SCA --> CHA
+    SCB --> CHB
+    SCC --> CHC
+```
+
+---
+
 ## 🔄 Data Flow Architecture
 
 ### Transaction Processing Flow
 
-```
-                             ┌─────────────────────┐
-                             │   Client Request    │
-                             │   (REST/gRPC/WS)    │
-                             └──────────┬──────────┘
-                                        │
-                   ┌────────────────────┼────────────────────┐
-                   ▼                    ▼                    ▼
-         ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-         │  Python FastAPI  │ │   Go gRPC/Arrow  │ │    WebSocket     │
-         │    (Validation)  │ │   (High-Speed)   │ │   (Real-time)    │
-         └────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘
-                  │                    │                    │
-                  └────────────────────┼────────────────────┘
-                                       ▼
-                          ┌─────────────────────────┐
-                          │      Go Mempool         │
-                          │ (Transaction Batching)  │
-                          └───────────┬─────────────┘
-                                      │
-                                      ▼
-                          ┌─────────────────────────┐
-                          │    Go Worker Pool       │
-                          │ (Parallel Processing)   │
-                          └───────────┬─────────────┘
-                                      │
-                   ┌──────────────────┴────────────────┐
-                   ▼                                   ▼
-         ┌─────────────────────┐           ┌─────────────────────┐
-         │   Rust Consensus    │           │   Python Business   │
-         │ (Block Creation)    │           │  (Domain Logic)     │
-         │ (Hash Calculation)  │           │  (Contracts)        │
-         │ (Merkle Root)       │           │  (Validation)       │
-         └─────────┬───────────┘           └──────────┬──────────┘
-                   │                                  │
-                   └─────────────────┬────────────────┘
-                                     ▼
-                         ┌─────────────────────────┐
-                         │    Block Finalization   │
-                         │    (Rust Core)          │
-                         └────────────┬────────────┘
-                                      │
-                  ┌───────────────────┼─────────────────────┐
-                  ▼                   ▼                     ▼
-         ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-         │  Network Layer   │ │  Storage Layer   │ │    Monitoring    │
-         │ (P2P Broadcast)  │ │   (Persist)      │ │   (Metrics)      │
-         └──────────────────┘ └──────────────────┘ └──────────────────┘
+```mermaid
+flowchart TB
+    CR["📨 <b>Client Request</b><br/>REST / gRPC / WebSocket"]
+    
+    EP["🚪 <b>Entry Points</b><br/>Python FastAPI · Go gRPC/Arrow · WebSocket"]
+    
+    MP["📋 <b>Go Mempool</b><br/>Transaction Batching"]
+    
+    WP["⚡ <b>Go Worker Pool</b><br/>Parallel Processing"]
+    
+    EX["🔄 <b>Parallel Execution</b><br/>Rust Consensus + Python Business Logic"]
+    
+    BF["✅ <b>Block Finalization</b><br/>Rust Core"]
+    
+    OUT["📤 <b>Output</b><br/>Network P2P · Storage · Monitoring"]
+
+    CR --> EP --> MP --> WP --> EX --> BF --> OUT
 ```
 
 ---
 
 ## 🔗 Inter-Language Communication
 
-### Python ↔ Rust (PyO3 FFI)
+### Unified Data Format: Apache Arrow
 
+All three languages communicate using **Apache Arrow** as the common data format, enabling zero-copy data sharing:
+
+```mermaid
+flowchart TB
+    subgraph ARROW["📦 Apache Arrow"]
+        direction LR
+        A1["Zero-Copy Memory"]
+        A2["Columnar Format"]
+        A3["Cross-Language"]
+        A1~~~A2~~~A3
+    end
+
+    subgraph PY["🐍 Python"]
+        PY1["PyArrow"]
+    end
+
+    subgraph RS["🦀 Rust"]
+        RS1["arrow-rs"]
+    end
+
+    subgraph GO["🔷 Go"]
+        GO1["Apache Arrow Go"]
+    end
+
+    PY <--> ARROW
+    RS <--> ARROW
+    GO <--> ARROW
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Python Layer                             │
-│   from hierachain_consensus import Block, calculate_merkle_root │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                           PyO3 FFI
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                         Rust Layer                              │
-│   #[pyclass] Block                                              │
-│   #[pyfunction] calculate_merkle_root                           │
-│   #[pymodule] hierachain_consensus                              │
-└─────────────────────────────────────────────────────────────────┘
+
+| Language | Arrow Library | Integration Method |
+|:---------|:--------------|:-------------------|
+| **Python** | `pyarrow` | Native Python bindings |
+| **Rust** | `arrow-rs` | PyO3 FFI + Arrow IPC |
+| **Go** | `apache-arrow/go` | Arrow IPC Server |
+
+### Python ↔ Rust (PyO3 FFI + Arrow)
+
+```mermaid
+flowchart TB
+    subgraph PythonLayer["🐍 Python Layer"]
+        PY1["PyArrow RecordBatch"]
+        PY2["hierachain_consensus bindings"]
+        PY1~~~PY2
+    end
+
+    FFI["PyO3 FFI<br/>(Arrow Memory Shared)"]
+
+    subgraph RustLayer["🦀 Rust Layer"]
+        R1["#[pyclass] Block"]
+        R2["arrow-rs RecordBatch"]
+        R3["#[pymodule] hierachain_consensus"]
+        R1~~~R2~~~R3
+    end
+
+    PythonLayer --> FFI --> RustLayer
 ```
 
 ### Python ↔ Go (Arrow IPC)
 
-```
-┌──────────────────────┐                    ┌──────────────────────┐
-│    Python Client     │                    │    Go Server         │
-│                      │                    │                      │
-│  ┌────────────────┐  │     Arrow IPC      │  ┌────────────────┐  │
-│  │  PyArrow       │  │ ←────────────────→ │  │ Apache Arrow   │  │
-│  │  Record Batch  │  │   (Zero-Copy)      │  │ Go Library     │  │
-│  └────────────────┘  │                    │  └────────────────┘  │
-│                      │                    │                      │
-│  Port: client        │                    │  Port: 50051         │
-└──────────────────────┘                    └──────────────────────┘
-```
+```mermaid
+flowchart TB
+    subgraph PY["🐍 Python Client"]
+        PC1["PyArrow"]
+        PC2["Record Batch"]
+        PC1~~~PC2
+    end
 
----
+    IPC["📦 Arrow IPC<br/>(Zero-Copy)"]
 
-## 🏛️ Hierarchical Chain Architecture
+    subgraph GO["🔷 Go Server"]
+        GS1["Apache Arrow Go"]
+        GS2["Port: 50051"]
+        GS1~~~GS2
+    end
 
-```
-                        ┌───────────────────────────────────┐
-                        │           MAIN CHAIN              │
-                        │    (Global State & Anchoring)     │
-                        │                                   │
-                        │  • Global consensus               │
-                        │  • Cross-chain transactions       │
-                        │  • Anchor blocks from sub-chains  │
-                        └────────────────┬──────────────────┘
-                                         │
-           ┌─────────────────────────────┼────────────────────────────┐
-           │                             │                            │
-           ▼                             ▼                            ▼
-┌──────────────────────┐     ┌──────────────────────┐     ┌──────────────────────┐
-│     SUB-CHAIN A      │     │     SUB-CHAIN B      │     │     SUB-CHAIN C      │
-│   (Organization 1)   │     │   (Organization 2)   │     │   (Organization 3)   │
-│                      │     │                      │     │                      │
-│ • Local consensus    │     │ • Local consensus    │     │ • Local consensus    │
-│ • Private data       │     │ • Private data       │     │ • Private data       │
-│ • Domain contracts   │     │ • Domain contracts   │     │ • Domain contracts   │
-└──────────────────────┘     └──────────────────────┘     └──────────────────────┘
-           │                             │                            │
-           │                             │                            │
-           ▼                             ▼                            ▼
-┌──────────────────────┐     ┌──────────────────────┐     ┌──────────────────────┐
-│      CHANNELS        │     │      CHANNELS        │     │      CHANNELS        │
-│   (Private Comms)    │     │   (Private Comms)    │     │   (Private Comms)    │
-└──────────────────────┘     └──────────────────────┘     └──────────────────────┘
+    PY --> IPC --> GO
 ```
 
 ---
@@ -294,205 +363,226 @@ HieraChain Ecosystem/
 | **BFT Consensus** | Rust/Python | Byzantine fault-tolerant ordering |
 | **Ordering Service** | Rust/Go | Transaction ordering & batching |
 
-### Algorithm Definitions
+### Algorithm Summary
 
-#### 🔐 Proof of Authority (PoA)
-
-**Proof of Authority** is a consensus mechanism where block validation rights are granted to a set of pre-approved, trusted validators (authorities). Unlike Proof of Work or Proof of Stake, PoA relies on the **reputation and identity** of validators rather than computational power or stake.
-
-**Key Characteristics:**
-
-- **Trusted Validators**: Only authorized nodes can create and validate blocks
-- **High Performance**: No mining competition, enabling fast block times
-- **Energy Efficient**: Minimal computational overhead
-- **Identity-Based**: Validators stake their reputation, not tokens
-- **Centralized Trust**: Suitable for private/consortium networks
-
-**Use Cases**: Enterprise blockchains, internal company ledgers, testing environments
+| Algorithm | Key Concept | Fault Tolerance |
+|:----------|:------------|:----------------|
+| **PoA** | Identity-based validation by trusted authorities | Relies on validator reputation |
+| **PoF** | Quorum-based consensus across organizations | Distributed trust, no single control |
+| **BFT** | Tolerates Byzantine faults (malicious nodes) | Up to `f` faulty nodes in `3f + 1` network |
 
 ---
 
-#### 🤝 Proof of Federation (PoF)
+## 🛡️ Zero Knowledge Proof (ZKP) Verification Layer
 
-**Proof of Federation** is a consensus mechanism designed for **multi-organization networks** where multiple independent entities must agree on the state of the blockchain. Each organization operates validator nodes, and consensus requires agreement across organizational boundaries.
+### Overview
 
-**Key Characteristics:**
+The ZKP layer enhances HieraChain's consensus mechanisms (PoA/PoF) from **Trust-Based** to a **Trustless** verification model:
 
-- **Multi-Organization**: Each participating organization runs validator nodes
-- **Distributed Trust**: No single organization controls the network
-- **Quorum-Based**: Requires a minimum number of organizations to agree
-- **Governance**: Organizations can vote on network changes
-- **Permissioned**: New organizations must be approved to join
+| Model | Consensus | Trust Basis | Verification | Security Level |
+|:------|:----------|:------------|:-------------|:---------------|
+| **PoA/PoF (Base)** | Authority/Federation | Identity & Reputation | Signature only | Medium |
+| **PoA/PoF + ZKP** | Authority/Federation | Cryptographic Proof | Mathematical verification | High |
 
-**Use Cases**: Supply chain networks, banking consortiums, cross-company collaborations
+> **Note**: Both **Proof of Authority (PoA)** and **Proof of Federation (PoF)** inherit from `BaseConsensus`, which provides the shared ZKP verification logic via `_verify_block_zk_proof()`.
 
----
+### Architecture
 
-#### 🛡️ Byzantine Fault Tolerance (BFT)
+```mermaid
+flowchart BT
+    subgraph SubChain["📦 SubChain"]
+          direction LR
+          ZKP["ZKProver"]
+          GP["generate_proof()"]
+          PB["[proof bytes]"]
+          ZKP --> GP --> PB
+    end
 
-**Byzantine Fault Tolerance** is a property of distributed systems that enables them to reach consensus even when some nodes fail or act maliciously (Byzantine faults). HieraChain implements **Practical BFT (PBFT)** variants for ordering transactions.
+    subgraph MainChain["🔗 MainChain"]
+          direction LR
+          ZKV["ZKVerifier"]
+          VP["verify_proof()"]
+          RES["[true/false]"]
+          ZKV --> VP --> RES
+    end
 
-**Key Characteristics:**
-
-- **Fault Tolerance**: Can tolerate up to `f` faulty nodes in a network of `3f + 1` nodes
-- **Finality**: Transactions are final once committed (no forks)
-- **Deterministic**: All honest nodes reach the same state
-- **Message Complexity**: Requires multiple rounds of communication (O(n²))
-- **Leader-Based**: Uses a rotating leader for proposal ordering
-
-**Phases (PBFT):**
-
-1. **Pre-Prepare**: Leader proposes a block
-2. **Prepare**: Nodes broadcast prepare messages
-3. **Commit**: Nodes broadcast commit messages after receiving 2f+1 prepares
-4. **Reply**: Block is committed after receiving 2f+1 commits
-
-**Use Cases**: Financial systems, critical infrastructure, high-security applications
-
----
-
-### Consensus Flow
-
+    SubChain -->|"🔐 ZK Proof + Metadata"| MainChain
 ```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Transaction │────►│   Ordering   │────►│   Consensus  │
-│   Proposal   │     │   Service    │     │   Protocol   │
-└──────────────┘     └──────────────┘     └──────────────┘
-                                                  │
-                                                  ▼
-                                          ┌──────────────┐
-                                          │    Block     │
-                                          │  Committed   │
-                                          └──────────────┘
+
+### ZK Components
+
+| Component | Location | Responsibility |
+|:----------|:---------|:---------------|
+| `ZKProver` | `hierachain/security/zk_prover.py` | Generate proofs for block state transitions |
+| `ZKVerifier` | `hierachain/security/zk_verifier.py` | Verify ZK proofs from SubChains |
+| `BaseConsensus._verify_block_zk_proof()` | `hierachain/core/consensus/base_consensus.py` | Shared ZK verification logic |
+
+### ZK State Transition Model
+
+```mermaid
+flowchart LR
+    SR["State Root<br/>(Previous)"]
+    TX["Transactions<br/>(Witness)"]
+    NSR["New State<br/>Root"]
+
+    PI["PUBLIC INPUT"]
+    PRI["PRIVATE INPUT"]
+    PO["PUBLIC OUTPUT"]
+
+    SR --> TX --> NSR
+    SR -.-> PI
+    TX -.-> PRI
+    NSR -.-> PO
+```
+
+### Public Inputs (Verifiable)
+
+| Field | Type | Purpose |
+|:------|:-----|:--------|
+| `old_state_root` | `bytes` | Merkle root of previous block |
+| `new_state_root` | `bytes` | Merkle root of new block |
+| `block_index` | `int` | Sequential block number (prevents replay) |
+
+### Consensus Integration
+
+ZK verification is integrated into all consensus mechanisms:
+
+- **ProofOfAuthority (PoA)**: Uses `_verify_block_zk_proof()` from `BaseConsensus`
+- **ProofOfFederation (PoF)**: Uses `_verify_block_zk_proof()` from `BaseConsensus`
+- **BFTConsensus**: Includes `_verify_operation_zk_proof()` in `_handle_pre_prepare`
+- **OrderingService**: `EventCertifier.validate()` includes `_verify_zk_proof()` method
+
+### Configuration
+
+| Setting | Default | Description |
+|:--------|:--------|:------------|
+| `ENABLE_ZK_PROOFS` | `False` | Enable/disable ZK verification |
+| `ZK_MODE` | `"mock"` | `"mock"` for development, `"production"` for real ZK |
+| `ZK_VERIFICATION_KEY_PATH` | `""` | Path to ZoKrates verification key |
+| `ZK_PROVING_KEY_PATH` | `""` | Path to ZoKrates proving key |
+
+### Modes
+
+- **Mock Mode**: Uses SHA-256 hashes to simulate ZK proofs (development)
+- **Production Mode**: Uses **ZoKrates** for real ZK-SNARKs circuits
+
+### Security Guarantees
+
+- ✅ **Soundness**: Cannot forge a valid proof for an invalid state transition
+- ✅ **Completeness**: Valid state transitions always produce valid proofs
+- ✅ **Zero-Knowledge**: Proof reveals nothing about private transaction data
+- ✅ **Non-Interactive**: No communication needed between prover and verifier
+- ✅ **Succinct**: Proof size is constant regardless of transaction count
+
+---
+
+## 🔐 Security Architecture
+
+```mermaid
+flowchart TB
+    subgraph Security["Security Layers"]
+        TS["🔒 <b>Transport</b><br/>───────────<br/>TLS 1.3<br/>mTLS<br/>ZMQ Curve"]
+        CR["🔑 <b>Crypto (Rust)</b><br/>───────────<br/>Ed25519<br/>SHA-256<br/>Merkle Tree"]
+        AC["👤 <b>Access Control</b><br/>───────────<br/>Role-based<br/>Organization<br/>Channel"]
+        TS ~~~ CR ~~~ AC
+    end
+
+    subgraph DataSecurity["Data & Connection Security"]
+        PD["📁 <b>Data Collections</b><br/>───────────<br/>Encryption<br/>Hash Only<br/>Access Rules"]
+        SC["🔗 <b>Connections</b><br/>───────────<br/>Peer Auth<br/>Node Verify<br/>Key Rotation"]
+        EM["🛡️ <b>Error Mitigation</b><br/>───────────<br/>Fault Tolerance<br/>Recovery"]
+        PD ~~~ SC ~~~ EM
+    end
+
+    Security --> DataSecurity
 ```
 
 ---
 
 ## 📊 Performance Architecture
 
-### Optimization Strategies
+```mermaid
+flowchart TB
+    subgraph Performance["Performance Optimization Strategies"]
+        L1["🔄 <b>Zero-Copy Transfer</b><br/>Arrow IPC<br/>───────────<br/>Eliminates serialization<br/>overhead Python ↔ Go"]
+        L2["🔀 <b>Parallel Processing</b><br/>Go Worker Pool<br/>───────────<br/>Concurrent execution<br/>Configurable workers"]
+        L3["🔐 <b>Native Crypto</b><br/>Rust<br/>───────────<br/>Ed25519 signatures<br/>SHA-256, Merkle trees"]
+        L1 ~~~ L2 ~~~ L3
+    end
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                          Performance Optimization Layers                        │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│  1. Zero-Copy Data Transfer (Arrow IPC)                                         │
-│     └── Eliminates serialization overhead between Python/Go                     │
-│                                                                                 │
-│  2. Parallel Transaction Processing (Go Worker Pool)                            │
-│     └── Concurrent execution with configurable worker count                     │
-│                                                                                 │
-│  3. Native Cryptography (Rust)                                                  │
-│     └── Ed25519 signatures, SHA-256 hashing, Merkle trees                       │
-│                                                                                 │
-│  4. Batch Operations (Rust)                                                     │
-│     └── batch_create_blocks, batch_calculate_hashes                             │
-│                                                                                 │
-│  5. Transaction Batching (Go Mempool)                                           │
-│     └── Groups transactions for efficient processing                            │
-│                                                                                 │
-│  6. Caching Layer (Python)                                                      │
-│     └── In-memory caching for frequently accessed data                          │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
+    subgraph Batching["Batching & Caching"]
+        L4["📦 <b>Batch Operations</b><br/>Rust<br/>───────────<br/>batch_create_blocks<br/>batch_calculate_hashes"]
+        L5["📋 <b>TX Batching</b><br/>Go Mempool<br/>───────────<br/>Groups transactions<br/>Efficient processing"]
+        L6["💾 <b>Cache Layer</b><br/>Python<br/>───────────<br/>In-memory caching<br/>Frequently accessed data"]
+        L4 ~~~ L5 ~~~ L6
+    end
 
----
-
-## 🔐 Security Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                              Security Layers                                    │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│         ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐         │
-│         │  Transport      │   │  Cryptography   │   │  Access         │         │
-│         │  Security       │   │  (Rust)         │   │  Control        │         │
-│         │                 │   │                 │   │                 │         │
-│         │  • TLS 1.3      │   │  • Ed25519      │   │  • Role-based   │         │
-│         │  • mTLS         │   │  • SHA-256      │   │  • Organization │         │
-│         │  • ZMQ Curve    │   │  • Merkle Tree  │   │  • Channel      │         │
-│         └─────────────────┘   └─────────────────┘   └─────────────────┘         │
-│                                                                                 │
-│         ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐         │
-│         │  Private Data   │   │  Secure         │   │  Error          │         │
-│         │  Collections    │   │  Connections    │   │  Mitigation     │         │
-│         │                 │   │                 │   │                 │         │
-│         │  • Encryption   │   │  • Peer Auth    │   │  • Fault        │         │
-│         │  • Hash Only    │   │  • Node Verify  │   │    Tolerance    │         │
-│         │  • Access Rules │   │  • Key Rotation │   │  • Recovery     │         │
-│         └─────────────────┘   └─────────────────┘   └─────────────────┘         │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
+    Performance --> Batching
 ```
 
 ---
 
 ## 🌐 Network Architecture
 
-```
-                              ┌─────────────────────────┐
-                              │    Bootstrap/Seed       │
-                              │        Nodes            │
-                              └───────────┬─────────────┘
-                                          │
-                    ┌─────────────────────┼─────────────────────┐
-                    │                     │                     │
-                    ▼                     ▼                     ▼
-           ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
-           │    Peer Node    │   │    Peer Node    │   │    Peer Node    │
-           │                 │◄─►│                 │◄─►│                 │
-           │  ┌───────────┐  │   │  ┌───────────┐  │   │  ┌───────────┐  │
-           │  │ Go Engine │  │   │  │ Go Engine │  │   │  │ Go Engine │  │
-           │  │ (P2P/ZMQ) │  │   │  │ (P2P/ZMQ) │  │   │  │ (P2P/ZMQ) │  │
-           │  └───────────┘  │   │  └───────────┘  │   │  └───────────┘  │
-           │                 │   │                 │   │                 │
-           │  ┌───────────┐  │   │  ┌───────────┐  │   │  ┌───────────┐  │
-           │  │Python API │  │   │  │Python API │  │   │  │Python API │  │
-           │  └───────────┘  │   │  └───────────┘  │   │  └───────────┘  │
-           │                 │   │                 │   │                 │
-           │  ┌───────────┐  │   │  ┌───────────┐  │   │  ┌───────────┐  │
-           │  │Rust Core  │  │   │  │Rust Core  │  │   │  │Rust Core  │  │
-           │  └───────────┘  │   │  └───────────┘  │   │  └───────────┘  │
-           └─────────────────┘   └─────────────────┘   └─────────────────┘
-                    │                     │                     │
-                    └─────────────────────┼─────────────────────┘
-                                          │
-                              ┌───────────┴───────────┐
-                              │   Message Protocols   │
-                              ├───────────────────────┤
-                              │ • ZeroMQ (Fast)       │
-                              │ • gRPC (Structured)   │
-                              │ • Arrow IPC (Bulk)    │
-                              └───────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Bootstrap["Bootstrap/Seed Nodes"]
+        BS["Seed Nodes"]
+    end
+
+    subgraph Peers["Peer Nodes"]
+        subgraph Peer1["Peer Node 1"]
+            P1E["Go Engine (P2P/ZMQ)"]
+            P1A["Python API"]
+            P1R["Rust Core"]
+            P1E ~~~ P1A ~~~ P1R
+        end
+        subgraph Peer2["Peer Node 2"]
+            P2E["Go Engine (P2P/ZMQ)"]
+            P2A["Python API"]
+            P2R["Rust Core"]
+            P2E ~~~ P2A ~~~ P2R
+        end
+        subgraph Peer3["Peer Node 3"]
+            P3E["Go Engine (P2P/ZMQ)"]
+            P3A["Python API"]
+            P3R["Rust Core"]
+            P3E ~~~ P3A ~~~ P3R
+        end
+    end
+
+    subgraph Protocols["Message Protocols"]
+        MP1["ZeroMQ (Fast)"]
+        MP2["gRPC (Structured)"]
+        MP3["Arrow IPC (Bulk)"]
+        MP1 ~~~ MP2 ~~~ MP3
+    end
+
+    Bootstrap --> Peers
+    Peers --> Protocols
+    Peer1 <--> Peer2 <--> Peer3
+    Peer1 <--> Peer3
 ```
 
 ---
 
 ## 📈 Monitoring & Observability
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           Observability Stack                                   │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│       ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐      │
-│       │    Prometheus    │    │     Grafana      │    │    Logging       │      │
-│       │    (Metrics)     │───►│  (Dashboards)    │    │   (Structured)   │      │
-│       │                  │    │                  │    │                  │      │
-│       │  • tx_count      │    │  • Performance   │    │  • JSON logs     │      │
-│       │  • block_time    │    │  • Health        │    │  • Trace IDs     │      │
-│       │  • queue_size    │    │  • Alerts        │    │  • Rotation      │      │
-│       └────────▲─────────┘    └──────────────────┘    └──────────────────┘      │
-│                │                                                                │
-│       ┌────────┴─────────────────────────────────────────────────────────┐      │
-│       │                    Go Engine (metrics.go)                        │      │
-│       │                    Port: 2112 (/metrics)                         │      │
-│       └──────────────────────────────────────────────────────────────────┘      │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph ObsStack["Observability Stack"]
+        direction TB
+        subgraph Tools["Monitoring Tools"]
+            direction LR
+            PROM["Prometheus (Metrics)<br/>tx_count<br/>block_time<br/>queue_size"]
+            GRAF["Grafana (Dashboards)<br/>Performance<br/>Health<br/>Alerts"]
+            LOG["Logging (Structured)<br/>JSON logs<br/>Trace IDs<br/>Rotation"]
+        end
+
+        ENGINE["Go Engine (metrics.go)<br/>Port: 2112 (/metrics)"]
+
+        ENGINE --> PROM --> GRAF
+    end
 ```
 
 ---
@@ -507,18 +597,10 @@ HieraChain Ecosystem/
 
 ---
 
-## 📚 Related Components
-
-- **hierachain**: Python framework for business logic
-- **hierachain-consensus**: Rust library for high-performance consensus
-- **hierachain-engine**: Go service for concurrency and networking
-
----
-
 ## 📄 License
 
 Dual licensed under [Apache-2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT).
 
 ---
 
-*Last updated: 2024-12-31*
+*Last updated: 2026-01-12*
