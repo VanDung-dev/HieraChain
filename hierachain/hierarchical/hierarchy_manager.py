@@ -7,6 +7,7 @@ coordinating the interaction between the Main Chain and multiple Sub-Chains
 """
 
 import time
+import logging
 from typing import Any
 
 from hierachain.hierarchical.main_chain import MainChain
@@ -16,6 +17,9 @@ from hierachain.hierarchical.private_data import PrivateCollection
 
 from hierachain.domains.generic.chains.domain_chain import DomainChain
 from hierachain.hierarchical.transaction_manager import CrossChainTransactionManager
+from hierachain.security.verify.block_verifier import get_block_verifier
+
+logger = logging.getLogger(__name__)
 
 
 class HierarchyManager:
@@ -59,8 +63,7 @@ class HierarchyManager:
         # Initialize Cross-Chain Transaction Manager
         self.transaction_manager: CrossChainTransactionManager = CrossChainTransactionManager(self)
     
-    def create_sub_chain(self, name: str, domain_type: str, 
-                        metadata: dict[str, Any] | None = None) -> bool:
+    def create_sub_chain(self, name: str, domain_type: str, metadata: dict[str, Any] | None = None) -> bool:
         """
         Create and register a new sub-chain (DomainChain).
         
@@ -272,24 +275,50 @@ class HierarchyManager:
         """
         Validate consistency across the entire hierarchical system.
         
+        Uses BlockVerifier for comprehensive validation including:
+        - Block hash verification
+        - Merkle root verification
+        - Chain link verification
+        
         Returns:
             Consistency validation results
         """
-        validation_results = {
+        verifier = get_block_verifier(strict_mode=False)
+        
+        validation_results: dict[str, Any] = {
             "timestamp": time.time(),
             "main_chain_valid": self.main_chain.is_chain_valid(),
             "sub_chain_validation": {},
+            "block_verification": {},
             "proof_consistency": {},
             "overall_consistent": True
         }
+        
+        # Validate Main Chain blocks with BlockVerifier
+        main_chain_result = verifier.verify_chain(self.main_chain.chain)
+        validation_results["block_verification"]["main_chain"] = {
+            "valid": main_chain_result.is_valid,
+            "message": main_chain_result.message
+        }
+        if not main_chain_result.is_valid:
+            validation_results["overall_consistent"] = False
+            logger.warning(f"Main chain verification failed: {main_chain_result.message}")
         
         # Validate each Sub-Chain
         for sub_chain_name, sub_chain in self.sub_chains.items():
             is_valid = sub_chain.is_chain_valid()
             validation_results["sub_chain_validation"][sub_chain_name] = is_valid
             
-            if not is_valid:
+            # Also verify with BlockVerifier
+            sub_result = verifier.verify_chain(sub_chain.chain)
+            validation_results["block_verification"][sub_chain_name] = {
+                "valid": sub_result.is_valid,
+                "message": sub_result.message
+            }
+            
+            if not is_valid or not sub_result.is_valid:
                 validation_results["overall_consistent"] = False
+                logger.warning(f"Sub-chain {sub_chain_name} verification failed")
         
         # Check proof consistency
         for sub_chain_name, sub_chain in self.sub_chains.items():
@@ -298,6 +327,10 @@ class HierarchyManager:
                 proof_exists = self.main_chain.verify_proof(
                     latest_block.hash, sub_chain_name)
                 validation_results["proof_consistency"][sub_chain_name] = proof_exists
+        
+        # Log verification stats
+        stats = verifier.get_stats()
+        logger.debug(f"Block verification stats: {stats}")
         
         return validation_results
 
