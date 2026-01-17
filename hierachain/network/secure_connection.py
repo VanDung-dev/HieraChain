@@ -14,6 +14,7 @@ import logging
 from typing import Any
 
 from hierachain.network.zmq_transport import ZmqNode
+from hierachain.network.peer_trust_manager import PeerTrustManager
 from hierachain.security.msp import HierarchicalMSP
 from hierachain.security.identity import IdentityManager
 
@@ -30,6 +31,9 @@ class SecureConnectionManager:
         self.node_id = node_id
         self.msp = msp
         self.identity_mgr = identity_mgr
+        
+        # Trust Manager
+        self.trust_manager = PeerTrustManager(identity_mgr)
         
         # 1. Generate Ephemeral keys for Transport Encryption
         self.transport_public, self.transport_secret = zmq.curve_keypair()
@@ -108,6 +112,11 @@ class SecureConnectionManager:
 
     async def _handle_handshake_request(self, message: dict[str, Any], sender_id: str):
         """Processing incoming handshake: Verify MSP Certificate."""
+        # 0. Trust Check
+        if not self.trust_manager.is_trusted(sender_id):
+            logger.warning(f"Handshake rejected: Peer {sender_id} is not trusted.")
+            return
+
         # 1. Dynamic Registration (if unknown)
         if sender_id not in self.transport.peers:
             return_addr = message.get("return_address")
