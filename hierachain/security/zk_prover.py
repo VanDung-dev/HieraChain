@@ -431,6 +431,19 @@ def get_zk_prover() -> ZKProver:
     return _default_prover
 
 
+def reset_zk_prover() -> None:
+    """
+    Reset the singleton ZKProver instance.
+    
+    This is primarily for testing purposes to ensure a clean state
+    between test runs.
+    """
+    global _default_prover
+    if _default_prover is not None:
+        _default_prover.reset_stats()
+    _default_prover = None
+
+
 def generate_zk_proof(
     old_state_root: str,
     new_state_root: str,

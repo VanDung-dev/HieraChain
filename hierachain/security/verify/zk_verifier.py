@@ -158,6 +158,10 @@ class ZKVerifier:
         This mode is for development and testing only.
         It verifies that the proof matches the expected hash of public inputs.
         
+        Supports two formats:
+        - Legacy: b"mock_proof" + sha256(public_inputs)
+        - V2: b"mock_zkp_v2\\x00" + version(4) + size(4) + sha256(public_inputs)
+        
         Args:
             proof: Proof bytes (expected to be a SHA-256 hash).
             public_inputs: Public inputs to verify against.
@@ -165,25 +169,32 @@ class ZKVerifier:
         Returns:
             True if proof matches expected hash.
         """
-        # Mock proof format: magic_bytes + sha256(public_inputs_json)
-        magic_bytes = b"mock_proof"
-        
-        # 1. Check Magic Bytes
-        if not proof.startswith(magic_bytes):
-            logger.warning("Mock proof missing magic bytes prefix")
-            return False
-            
-        # 2. Extract Hash
-        if len(proof) < len(magic_bytes) + 32:
-            logger.warning("Mock proof too short")
-            return False
-            
-        proof_hash = proof[len(magic_bytes):len(magic_bytes) + 32]
-        
-        # 3. Compute Expected Hash (from JSON bytes)
+        # Compute expected hash from public inputs
         expected_hash = hashlib.sha256(public_inputs.to_bytes()).digest()
         
-        return proof_hash == expected_hash
+        # V2 format: mock_zkp_v2\x00 (12 bytes) + version (4) + size (4) + hash (32)
+        magic_v2 = b"mock_zkp_v2\x00"
+        if proof.startswith(magic_v2):
+            if len(proof) < 52:  # 12 + 4 + 4 + 32
+                logger.warning("Mock proof v2 too short")
+                return False
+            
+            # Extract hash from position 20 (12+4+4)
+            proof_hash = proof[20:52]
+            return proof_hash == expected_hash
+        
+        # Legacy format: mock_proof (10 bytes) + hash (32)
+        magic_legacy = b"mock_proof"
+        if proof.startswith(magic_legacy):
+            if len(proof) < len(magic_legacy) + 32:
+                logger.warning("Mock proof legacy too short")
+                return False
+            
+            proof_hash = proof[len(magic_legacy):len(magic_legacy) + 32]
+            return proof_hash == expected_hash
+        
+        logger.warning("Mock proof missing magic bytes prefix")
+        return False
     
     def _verify_production(self, proof: bytes, public_inputs: ZKPublicInputs) -> bool:
         """
@@ -284,6 +295,19 @@ def get_zk_verifier() -> ZKVerifier:
     if _default_verifier is None:
         _default_verifier = ZKVerifier()
     return _default_verifier
+
+
+def reset_zk_verifier() -> None:
+    """
+    Reset the singleton ZKVerifier instance.
+    
+    This is primarily for testing purposes to ensure a clean state
+    between test runs.
+    """
+    global _default_verifier
+    if _default_verifier is not None:
+        _default_verifier.reset_stats()
+    _default_verifier = None
 
 
 def verify_zk_proof(proof: bytes, public_inputs: dict[str, Any]) -> bool:
