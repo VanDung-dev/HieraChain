@@ -75,6 +75,7 @@ The demo files are located in the `demo/` directory. Before running demos, ensur
     ```
 
 > **Note**: For demos that create data files, you may want to clean up old data before running:
+>
 > ```bash
 > rm -rf demo/data demo/hierachain.db 2>/dev/null
 > ```
@@ -98,6 +99,7 @@ The demo files are located in the `demo/` directory. Before running demos, ensur
     ```
 
 - To run all scenario tests:
+
     ```bash
     python -m pytest tests/scenarios -v
     ```
@@ -114,6 +116,30 @@ The demo files are located in the `demo/` directory. Before running demos, ensur
     ```bash
     python -m pytest tests -v
     ```
+
+### Docker Stress Testing
+
+Run stress tests in Docker containers with 4 HieraChain nodes:
+
+- Build and run stress tests with HTML report:
+
+    ```bash
+    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
+    ```
+
+- Run without HTML report:
+
+    ```bash
+    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester
+    ```
+
+- Stop and clean up containers:
+
+    ```bash
+    docker compose -f docker/docker-compose.test.yml down --remove-orphans
+    ```
+
+Reports are saved to `log/report/` directory.
 
 ---
 
