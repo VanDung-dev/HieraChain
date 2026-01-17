@@ -20,7 +20,7 @@ from contextlib import asynccontextmanager
 from hierachain.api.v1.endpoints import router as v1_router
 from hierachain.api.v2.endpoints import router as v2_router
 from hierachain.config.settings import get_settings
-from hierachain.security.verify_api_key import VerifyAPIKey
+from hierachain.security.verify.verify_api_key import VerifyAPIKey
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

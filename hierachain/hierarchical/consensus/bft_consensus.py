@@ -21,7 +21,7 @@ from hierachain.security.security_utils import KeyPair, verify_signature
 from hierachain.security.key_provider import LocalKeyProvider
 from hierachain.network.zmq_transport import ZmqNode
 from hierachain.config.settings import settings
-from hierachain.security.zk_verifier import ZKVerifier
+from hierachain.security.verify.zk_verifier import ZKVerifier
 
 logger = logging.getLogger(__name__)
 

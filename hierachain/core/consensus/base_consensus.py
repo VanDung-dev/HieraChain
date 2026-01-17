@@ -13,7 +13,7 @@ from typing import Any
 
 from hierachain.core.block import Block
 from hierachain.config.settings import settings
-from hierachain.security.zk_verifier import get_zk_verifier
+from hierachain.security.verify.zk_verifier import get_zk_verifier
 
 logger = logging.getLogger(__name__)
 

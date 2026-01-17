@@ -16,7 +16,7 @@ from hierachain.core.consensus.proof_of_federation import ProofOfFederation
 from hierachain.core.utils import sanitize_metadata_for_main_chain, validate_proof_metadata
 from hierachain.core.block import Block
 from hierachain.config.settings import settings
-from hierachain.security.zk_verifier import ZKVerifier, ZKVerificationError
+from hierachain.security.verify.zk_verifier import ZKVerifier, ZKVerificationError
 
 logger = logging.getLogger(__name__)
 

@@ -36,7 +36,7 @@ from hierachain.core.performance import process_pool
 from hierachain.config.settings import Settings, settings
 from hierachain.core.utils import compute_leaves_from_events_standalone, MerkleTree
 from hierachain.security.security_utils import verify_batch_signatures
-from hierachain.security.zk_verifier import ZKVerifier
+from hierachain.security.verify.zk_verifier import ZKVerifier
 
 logger = logging.getLogger(__name__)
 
