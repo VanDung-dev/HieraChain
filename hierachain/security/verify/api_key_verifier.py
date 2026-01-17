@@ -1,7 +1,7 @@
 """
 API Key Verification module for HieraChain framework.
 
-Implements VerifyAPIKey dependency inspired by Google's Apigee for securing API endpoints.
+Implements APIKeyVerifier dependency inspired by Google's Apigee for securing API endpoints.
 Ensures only authorized clients with valid, non-revoked API keys can access protected resources.
 """
 
@@ -21,9 +21,9 @@ api_key_header = APIKeyHeader(name="x-api-key", auto_error=False)
 api_key_query = APIKeyQuery(name="apikey", auto_error=False)
 
 
-class VerifyAPIKey:
+class APIKeyVerifier:
     """
-    Verify API key dependency inspired by Google's Apigee VerifyAPIKey policy.
+    Verify API key dependency inspired by Google's Apigee APIKeyVerifier policy.
     
     This class provides runtime API key verification for HieraChain
     framework endpoints, ensuring secure access control without cryptocurrency concepts.
@@ -39,7 +39,7 @@ class VerifyAPIKey:
     
     def __init__(self, config: dict):
         """
-        Initialize VerifyAPIKey with configuration.
+        Initialize APIKeyVerifier with configuration.
         
         Args:
             config: Configuration dictionary containing:
@@ -186,7 +186,7 @@ class VerifyAPIKey:
         log_entry = {
             "event_type": event_type,
             "details": details,
-            "source": "VerifyAPIKey",
+            "source": "APIKeyVerifier",
             "framework": "hierachain"
         }
 
@@ -194,24 +194,24 @@ class VerifyAPIKey:
 class ResourcePermissionChecker:
     """
     Helper class for checking resource-specific permissions.
-    Used with VerifyAPIKey for granular access control.
+    Used with APIKeyVerifier for granular access control.
     """
     
-    def __init__(self, verify_api_key: VerifyAPIKey):
+    def __init__(self, verify_api_key: APIKeyVerifier):
         """
-        Initialize with VerifyAPIKey instance.
+        Initialize with APIKeyVerifier instance.
         
         Args:
-            verify_api_key: VerifyAPIKey instance to use for permission checking
+            verify_api_key: APIKeyVerifier instance to use for permission checking
         """
         self.verify_api_key = verify_api_key
     
-    def require_event_access(self, context: dict = Depends(VerifyAPIKey)) -> dict:
+    def require_event_access(self, context: dict = Depends(APIKeyVerifier)) -> dict:
         """
         Require permission to access event-related endpoints.
         
         Args:
-            context: Context from VerifyAPIKey
+            context: Context from APIKeyVerifier
             
         Returns:
             Dict: Context if permission granted
@@ -220,7 +220,7 @@ class ResourcePermissionChecker:
             HTTPException: 403 if insufficient permissions
         """
         # This would need the original API key for permission checking
-        # In practice, you'd modify the VerifyAPIKey to store the key in context
+        # In practice, you'd modify the APIKeyVerifier to store the key in context
         if not self._has_permission(context, 'events'):
             raise HTTPException(
                 status_code=403,
@@ -228,12 +228,12 @@ class ResourcePermissionChecker:
             )
         return context
     
-    def require_chain_access(self, context: dict = Depends(VerifyAPIKey)) -> dict:
+    def require_chain_access(self, context: dict = Depends(APIKeyVerifier)) -> dict:
         """
         Require permission to access chain-related endpoints.
         
         Args:
-            context: Context from VerifyAPIKey
+            context: Context from APIKeyVerifier
             
         Returns:
             Dict: Context if permission granted
@@ -248,12 +248,12 @@ class ResourcePermissionChecker:
             )
         return context
     
-    def require_proof_access(self, context: dict = Depends(VerifyAPIKey)) -> dict:
+    def require_proof_access(self, context: dict = Depends(APIKeyVerifier)) -> dict:
         """
         Require permission to access proof submission endpoints.
         
         Args:
-            context: Context from VerifyAPIKey
+            context: Context from APIKeyVerifier
             
         Returns:
             Dict: Context if permission granted
@@ -301,8 +301,8 @@ class ResourcePermissionChecker:
         return ResourcePermissionChecker._has_permission(context, 'proofs')
 
 
-#Factoryfunction for creating configured VerifyAPIKey instances
-def create_verify_api_key(config: dict) -> VerifyAPIKey:
+#Factoryfunction for creating configured APIKeyVerifier instances
+def create_verify_api_key(config: dict) -> APIKeyVerifier:
     """
     Factory function to create configured VerifyAPIKey instance.
     
@@ -310,9 +310,9 @@ def create_verify_api_key(config: dict) -> VerifyAPIKey:
         config: Configuration dictionary
         
     Returns:
-        VerifyAPIKey: Configured instance
+        APIKeyVerifier: Configured instance
     """
-    return VerifyAPIKey(config)
+    return APIKeyVerifier(config)
 
 
 # Example configurations for different use cases
@@ -343,7 +343,7 @@ FORM_PARAM_CONFIG = {
 
 if __name__ == "__main__":
     # Example usage
-    verify_key = VerifyAPIKey(DEFAULT_CONFIG)
-    print("VerifyAPIKey instance created with default configuration")
+    verify_key = APIKeyVerifier(DEFAULT_CONFIG)
+    print("APIKeyVerifier instance created with default configuration")
     print("Key location:", verify_key.key_location)
     print("Key name:", verify_key.key_name)
