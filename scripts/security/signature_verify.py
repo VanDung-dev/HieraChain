@@ -94,7 +94,8 @@ def run_signature_audit(connection_string: str = None, limit: int = 0):
                 stats["blocks_no_sig"] += 1
                 
             # 2. Verify Event Signatures
-            for event in block.events:
+            events_list = block.events.to_pylist() if hasattr(block.events, 'to_pylist') else block.events
+            for event in events_list:
                 stats["events_checked"] += 1
                 sender_id = event.get('sender_id') or event.get('sender')
                 signature = event.get('signature')
