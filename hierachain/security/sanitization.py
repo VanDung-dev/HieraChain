@@ -229,3 +229,123 @@ def safe_format(template: str, **kwargs: Any) -> str:
         for key, value in kwargs.items()
     }
     return template.format(**safe_kwargs)
+
+
+class ValidationError(ValueError):
+    """Custom exception for validation failures."""
+    pass
+
+
+def validate_numeric_bounds(
+    value: int | float,
+    min_val: int | float | None = None,
+    max_val: int | float | None = None,
+    field_name: str = "value"
+) -> int | float:
+    """
+    Validate that a numeric value is within specified bounds.
+
+    Args:
+        value: The numeric value to validate.
+        min_val: Minimum allowed value (inclusive). None means no lower bound.
+        max_val: Maximum allowed value (inclusive). None means no upper bound.
+        field_name: Name of the field for error messages.
+
+    Returns:
+        The validated value if within bounds.
+
+    Raises:
+        ValidationError: If value is outside bounds or not a number.
+    """
+    if not isinstance(value, (int, float)):
+        raise ValidationError(f"{field_name} must be numeric, got {type(value).__name__}")
+
+    if min_val is not None and value < min_val:
+        raise ValidationError(f"{field_name} must be >= {min_val}, got {value}")
+
+    if max_val is not None and value > max_val:
+        raise ValidationError(f"{field_name} must be <= {max_val}, got {value}")
+
+    return value
+
+
+def validate_timestamp(timestamp: float,max_drift_seconds: float = 300.0) -> float:
+    """
+    Validate that a timestamp is within acceptable drift from current time.
+
+    Prevents replay attacks and clock-skew manipulation.
+
+    Args:
+        timestamp: Unix timestamp to validate.
+        max_drift_seconds: Maximum allowed drift from current time (default 5 min).
+
+    Returns:
+        The validated timestamp.
+
+    Raises:
+        ValidationError: If timestamp is too far from current time.
+    """
+    import time
+    current_time = time.time()
+
+    if timestamp < 0:
+        raise ValidationError(f"Timestamp must be positive, got {timestamp}")
+
+    drift = abs(current_time - timestamp)
+    if drift > max_drift_seconds:
+        raise ValidationError(f"Timestamp drift {drift:.1f}s exceeds max {max_drift_seconds}s")
+
+    return timestamp
+
+
+def validate_block_index(block_index: int, max_index: int | None = None) -> int:
+    """
+    Validate that a block index is valid.
+
+    Args:
+        block_index: Block index to validate.
+        max_index: Maximum allowed block index (optional, for chain-aware validation).
+
+    Returns:
+        The validated block index.
+
+    Raises:
+        ValidationError: If block index is invalid.
+    """
+    if not isinstance(block_index, int):
+        raise ValidationError(f"block_index must be int, got {type(block_index).__name__}")
+
+    if block_index < 0:
+        raise ValidationError(f"block_index must be >= 0, got {block_index}")
+
+    if max_index is not None and block_index > max_index:
+        raise ValidationError(f"block_index {block_index} exceeds max allowed {max_index}")
+
+    return block_index
+
+
+def validate_amount(
+    amount: int | float,
+    min_amount: float = 0.0,
+    max_amount: float | None = None
+) -> int | float:
+    """
+    Validate that an amount (e.g., token amount) is valid.
+
+    Args:
+        amount: The amount to validate.
+        min_amount: Minimum allowed amount (default 0, no negative amounts).
+        max_amount: Maximum allowed amount (optional, for overflow prevention).
+
+    Returns:
+        The validated amount.
+
+    Raises:
+        ValidationError: If amount is invalid.
+    """
+    return validate_numeric_bounds(
+        amount,
+        min_val=min_amount,
+        max_val=max_amount,
+        field_name="amount"
+    )
