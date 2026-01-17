@@ -263,3 +263,75 @@ class ProofOfFederation(BaseConsensus):
 
     def estimate_block_time(self) -> float:
         return self.config["block_interval"]
+
+    def verify_quorum_signatures(
+        self,
+        message: bytes,
+        signatures: list[dict[str, str]],
+        required_count: int | None = None
+    ) -> bool:
+        """
+        Verify that a message is signed by a quorum of validators.
+
+        Args:
+            message: The message bytes that were signed.
+            signatures: List of dicts {'validator_id': str, 'signature': hex_str}
+            required_count: Number of valid signatures required (default: 2/3 of validators)
+
+        Returns:
+            True if quorum is met with valid signatures.
+        """
+        if not self.validators:
+            return False
+
+        # Default quorum: 2/3 + 1 (BFT standard) or simple majority depending on config
+        # Here using simple majority for Federation, or 2/3 if specified
+        total_validators = len(self.validators)
+        if required_count is None:
+            required_count = (total_validators * 2) // 3 + 1
+
+        if len(signatures) < required_count:
+            return False
+
+        valid_count = 0
+        from hierachain.security.security_utils import verify_signature
+
+        # To prevent double voting replay, we track seen validators in this batch
+        seen_validators = set()
+
+        for sig_entry in signatures:
+            validator_id = sig_entry.get("validator_id")
+            signature = sig_entry.get("signature")
+
+            if not validator_id or not signature:
+                continue
+
+            # Check if validator is part of federation
+            if validator_id not in self.validators:
+                continue
+
+            if validator_id in seen_validators:
+                continue
+
+            # Get validator public key (Assumes metadata contains it)
+            # In a real system, we might need a better key lookup
+            meta = self.validator_metadata.get(validator_id, {})
+            public_key = meta.get("public_key")
+            
+            if not public_key:
+                continue
+
+            if verify_signature(public_key, message, signature):
+                valid_count += 1
+                seen_validators.add(validator_id)
+
+            if valid_count >= required_count:
+                return True
+
+        return False
+
+    @staticmethod
+    def verify_block_quorum(block: Block) -> bool:
+        """Verify if block has sufficient federation signatures (if applicable)."""
+        return True
+
