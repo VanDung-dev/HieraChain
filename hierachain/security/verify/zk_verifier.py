@@ -150,7 +150,8 @@ class ZKVerifier:
             logger.error(f"ZK Verification error: {e}")
             raise ZKVerificationError(f"Verification failed: {e}") from e
     
-    def _verify_mock(self, proof: bytes, public_inputs: ZKPublicInputs) -> bool:
+    @staticmethod
+    def _verify_mock(proof: bytes, public_inputs: ZKPublicInputs) -> bool:
         """
         Mock verification using SHA-256 hash comparison.
         
@@ -203,7 +204,8 @@ class ZKVerifier:
             "See ZK_PROOF_ARCHITECTURE.md Section 4.2 for implementation details."
         )
     
-    def _validate_public_inputs(self, inputs: ZKPublicInputs) -> bool:
+    @staticmethod
+    def _validate_public_inputs(inputs: ZKPublicInputs) -> bool:
         """
         Validate that public inputs are well-formed.
         
