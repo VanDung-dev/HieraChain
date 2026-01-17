@@ -8,6 +8,7 @@ for heavy CPU operations (hashing, signature verification).
 import os
 import logging
 import asyncio
+import pickle
 from concurrent.futures import ProcessPoolExecutor
 from typing import Callable, Any, Optional
 
@@ -73,3 +74,40 @@ class ProcessPoolManager:
 
 # Global instance
 process_pool = ProcessPoolManager()
+
+
+def serialize_for_pool(data: Any) -> bytes:
+    """
+    Serialize data to bytes before passing to ProcessPool.
+
+    Avoids implicit pickling overhead by pre-serializing data to binary format.
+    Pre-serialization allows better control over memory and timing.
+
+    Args:
+        data: Any data to serialize (dict, list, or any picklable object).
+
+    Returns:
+        Serialized bytes ready for inter-process transfer.
+
+    Note:
+        For PyArrow Tables/RecordBatches, use pyarrow.ipc.serialize_schema
+        and pyarrow.ipc methods directly for best performance.
+    """
+
+    return pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def deserialize_from_pool(data: bytes) -> Any:
+    """
+    Deserialize bytes received from ProcessPool.
+
+    Reverses serialize_for_pool operation.
+
+    Args:
+        data: Serialized bytes from ProcessPool.
+
+    Returns:
+        Deserialized Python object.
+    """
+
+    return pickle.loads(data)
