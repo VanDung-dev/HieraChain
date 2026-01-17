@@ -134,7 +134,16 @@ class BaseConsensus(ABC):
             if isinstance(details, dict):
                 # Check only non-hash/signature fields
                 for key, value in details.items():
-                    if key not in ["authority_signature", "signature", "hash", "proof_hash"]:
+                    if key not in [
+                        "authority_signature",
+                        "signature",
+                        "hash",
+                        "proof_hash",
+                        "zk_proof",
+                        "merkle_root",
+                        "previous_state",
+                        "current_state"
+                    ]:
                         value_str = str(value).lower()
                         for term in forbidden_terms:
                             if term in value_str:
