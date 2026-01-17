@@ -20,7 +20,7 @@ from contextlib import asynccontextmanager
 from hierachain.api.v1.endpoints import router as v1_router
 from hierachain.api.v2.endpoints import router as v2_router
 from hierachain.config.settings import get_settings
-from hierachain.security.verify.verify_api_key import VerifyAPIKey
+from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -51,7 +51,7 @@ def create_app() -> FastAPI:
 
     # Initialize implementation with settings
     if settings.AUTH_ENABLED:
-        auth_dependency = VerifyAPIKey(settings.get_auth_config())
+        auth_dependency = APIKeyVerifier(settings.get_auth_config())
     else:
         # No-op dependency
         auth_dependency = lambda: None
