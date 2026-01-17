@@ -1,0 +1,167 @@
+# Docker Compose for Stress Testing HieraChain
+# 4 nodes with resource limits (512MB RAM, 0.5 CPU)
+
+version: '3.8'
+
+services:
+  node1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hierachain-node1
+    hostname: node1
+    environment:
+      - NODE_ID=node1
+      - NODE_PORT=5001
+      - PEERS=node2:5002,node3:5003,node4:5004
+      - LOG_LEVEL=INFO
+    ports:
+      - "15001:5001"
+      - "18001:8000"  # API port
+    networks:
+      - hierachain-test
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 5001)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  node2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hierachain-node2
+    hostname: node2
+    environment:
+      - NODE_ID=node2
+      - NODE_PORT=5002
+      - PEERS=node1:5001,node3:5003,node4:5004
+      - LOG_LEVEL=INFO
+    ports:
+      - "15002:5002"
+      - "18002:8000"
+    networks:
+      - hierachain-test
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 5002)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    depends_on:
+      - node1
+
+  node3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hierachain-node3
+    hostname: node3
+    environment:
+      - NODE_ID=node3
+      - NODE_PORT=5003
+      - PEERS=node1:5001,node2:5002,node4:5004
+      - LOG_LEVEL=INFO
+    ports:
+      - "15003:5003"
+      - "18003:8000"
+    networks:
+      - hierachain-test
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 5003)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    depends_on:
+      - node1
+
+  node4:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hierachain-node4
+    hostname: node4
+    environment:
+      - NODE_ID=node4
+      - NODE_PORT=5004
+      - PEERS=node1:5001,node2:5002,node3:5003
+      - LOG_LEVEL=INFO
+    ports:
+      - "15004:5004"
+      - "18004:8000"
+    networks:
+      - hierachain-test
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 5004)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    depends_on:
+      - node1
+
+  # Test runner container
+  stress-tester:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hierachain-stress-tester
+    environment:
+      - TARGET_NODES=node1:5001,node2:5002,node3:5003,node4:5004
+      - TEST_DURATION=60
+    networks:
+      - hierachain-test
+    volumes:
+      - ../tests/stress:/app/tests/stress
+      - ../log:/app/log
+    depends_on:
+      - node1
+      - node2
+      - node3
+      - node4
+    profiles:
+      - stress-test
+
+networks:
+  hierachain-test:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  test-data:
