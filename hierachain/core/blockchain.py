@@ -9,9 +9,13 @@ for both Main Chain and Sub-Chain implementations, following framework guideline
 """
 
 import time
+import logging
 from typing import Any, Callable
 
 from hierachain.core.block import Block
+from hierachain.security.verify.block_verifier import get_block_verifier
+
+logger = logging.getLogger(__name__)
 
 
 class Blockchain:
@@ -144,6 +148,12 @@ class Blockchain:
         """
         Validate a new block before adding it to the chain.
         
+        Uses BlockVerifier for comprehensive validation including:
+        - Block hash verification
+        - Merkle root verification
+        - Chain link verification
+        - Block signature verification (if present)
+        
         Args:
             block: Block to validate
             
@@ -152,22 +162,24 @@ class Blockchain:
         """
         latest_block = self.get_latest_block()
         
-        # Check block index
-        if block.index != latest_block.index + 1:
+        # Use BlockVerifier for comprehensive validation
+        verifier = get_block_verifier(strict_mode=False)
+        result = verifier.verify_block(block, latest_block)
+        
+        if not result.is_valid:
+            logger.warning(
+                f"Block {block.index} validation failed: {result.message}"
+            )
+            if result.details:
+                logger.debug(f"Validation details: {result.details}")
             return False
         
-        # Check previous hash
-        if block.previous_hash != latest_block.hash:
+        # Additional structure validation
+        if hasattr(block, 'validate_structure') and not block.validate_structure():
+            logger.warning(f"Block {block.index} structure validation failed")
             return False
         
-        # Check block structure
-        if not block.validate_structure():
-            return False
-        
-        # Verify hash calculation
-        if block.hash != block.calculate_hash():
-            return False
-        
+        logger.debug(f"Block {block.index} validated successfully")
         return True
     
     def is_chain_valid(self) -> bool:
