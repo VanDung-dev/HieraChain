@@ -56,6 +56,8 @@ class Settings:
     PARALLEL_PROCESSING_ENABLED = True
     MAX_WORKERS = None  # Auto-detect based on CPU count (defaults to 50%)
     PROCESSING_CHUNK_SIZE = 100
+    EVENT_POOL_MAX_SIZE = int(os.getenv("HRC_EVENT_POOL_MAX_SIZE", "10000"))  # Hard limit for DoS protection
+    RAM_CRITICAL_THRESHOLD = float(os.getenv("HRC_RAM_CRITICAL_THRESHOLD", "95.0"))  # % RAM usage for emergency flush
     
     # Security settings
     IDENTITY_MANAGER_ENABLED = True
