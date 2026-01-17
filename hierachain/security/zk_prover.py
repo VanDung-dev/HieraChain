@@ -12,6 +12,9 @@ Supports two modes:
 import hashlib
 import json
 import time
+import os
+import asyncio
+import random
 import logging
 from typing import Any
 from dataclasses import dataclass
@@ -195,32 +198,107 @@ class ZKProver:
             ZKProvingError: If proof generation fails.
         """
         result = self.generate_proof(old_state_root, new_state_root, block_index, events)
-        
+
         if not result.success:
             raise ZKProvingError(f"Proof generation failed: {result.error}")
-        
+
         return result.proof
-    
-    def _generate_mock_proof(
+
+    async def generate_proof_async(
         self,
         old_state_root: str,
+        new_state_root: str,
+        block_index: int,
+        events: list[dict[str, Any]] | None = None,
+        sub_chain_name: str = ""
+    ) -> ZKProofResult:
+        """
+        Async version of generate_proof with realistic latency simulation.
+
+        In mock mode, adds 100-500ms delay to simulate real ZK-SNARK proving time.
+        This is essential for pressure testing and realistic performance evaluation.
+
+        Args:
+            old_state_root: Merkle root of previous state.
+            new_state_root: Merkle root of new state.
+            block_index: Block index.
+            events: List of events in the block.
+            sub_chain_name: Name of the SubChain.
+
+        Returns:
+            ZKProofResult containing the proof and metadata.
+        """
+
+        # Simulate ZK-SNARK proving latency (100-500ms)
+        if self.mode == "mock":
+            await asyncio.sleep(random.uniform(0.1, 0.5))
+
+        return self.generate_proof(
+            old_state_root, new_state_root, block_index, events, sub_chain_name
+        )
+
+    async def verify_proof_async(self, proof: bytes, _public_inputs: dict[str, Any]) -> bool:
+        """
+        Async proof verification with realistic latency simulation.
+
+        In mock mode, adds 50-200ms delay to simulate real verification time.
+        Verification is typically faster than proving.
+
+        Args:
+            proof: The proof bytes to verify.
+            _public_inputs: Dictionary containing old_state_root, new_state_root,
+                           block_index, and sub_chain_name.
+
+        Returns:
+            True if proof is valid, False otherwise.
+        """
+
+        # Simulate ZK-SNARK verification latency (50-200ms)
+        if self.mode == "mock":
+            await asyncio.sleep(random.uniform(0.05, 0.2))
+
+            # Verify mock proof structure
+            magic = b"mock_zkp_v2\x00"
+            if not proof.startswith(magic):
+                # Check for old format compatibility
+                if proof.startswith(b"mock_proof"):
+                    return True  # Legacy format
+                return False
+
+            # Verify proof size is reasonable (at least header size)
+            if len(proof) < 52:
+                return False
+
+            return True
+
+        # Production verification (not implemented)
+        raise NotImplementedError("Production verification not yet implemented")
+    
+    @staticmethod
+    def _generate_mock_proof(
+            old_state_root: str,
         new_state_root: str,
         block_index: int
     ) -> bytes:
         """
-        Generate mock proof using SHA-256 hash.
-        
-        This creates a deterministic "proof" that can be verified by
-        ZKVerifier in mock mode. Used for development and testing.
-        
+        Generate mock proof simulating Groth16/Plonk ZK-SNARK proofs.
+
+        Creates a 2KB-4KB proof that mimics real ZK-SNARK proof structure:
+        - Magic header for identification
+        - Deterministic commitment from public inputs
+        - Random padding to simulate real proof bytes
+
+        This is used for development, testing, and pressure testing.
+
         Args:
             old_state_root: Previous state root.
             new_state_root: New state root.
             block_index: Block index.
-        
+
         Returns:
-            SHA-256 hash as proof bytes.
+            Simulated ZK proof bytes (2KB-4KB).
         """
+
         # 1. Serialize public inputs to JSON
         public_inputs = {
             "old_state_root": old_state_root,
@@ -229,13 +307,26 @@ class ZKProver:
             "sub_chain_name": ""  # Default empty as per current schema
         }
         payload_bytes = json.dumps(public_inputs, sort_keys=True).encode('utf-8')
-        
-        # 2. Compute SHA-256 hash
-        proof_hash = hashlib.sha256(payload_bytes).digest()
-        
-        # 3. Prepend Magic Bytes (Rust requires this)
-        magic_bytes = b"mock_proof"
-        return magic_bytes + proof_hash
+
+        # 2. Compute deterministic commitment (SHA-256)
+        commitment = hashlib.sha256(payload_bytes).digest()
+
+        # 3. Generate realistic proof size (2KB - 4KB, simulating Groth16/Plonk)
+        # Groth16: ~192 bytes, but with padding and metadata: ~2KB
+        # Plonk: variable, typically 2KB-4KB
+        proof_size = random.randint(2048, 4096)
+
+        # 4. Build proof structure
+        magic_bytes = b"mock_zkp_v2\x00"  # 12 bytes header
+        version_bytes = b"\x01\x00\x00\x00"  # 4 bytes version (little-endian)
+        size_bytes = proof_size.to_bytes(4, 'little')  # 4 bytes size
+
+        # 5. Generate random proof body (simulating curve points and field elements)
+        # Keep deterministic header but random body for pressure testing
+        header = magic_bytes + version_bytes + size_bytes + commitment  # 12+4+4+32 = 52 bytes
+        random_body = os.urandom(proof_size - len(header))
+
+        return header + random_body
     
     def _generate_production_proof(
         self,
