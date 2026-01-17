@@ -101,6 +101,7 @@ markers = [
     "low: Low risk validation tests",
     "integration: Integration tests",
     "recovery: Recovery testing",
+    "stress: Stress and load testing",
 ]
 filterwarnings = ["ignore::pytest.PytestAssertRewriteWarning"]
 
