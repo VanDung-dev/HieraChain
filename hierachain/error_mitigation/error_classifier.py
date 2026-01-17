@@ -161,19 +161,30 @@ class ErrorClassifier:
     priority matrix and predefined error patterns.
     """
     
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any], lockdown_callback: Any | None = None):
         """
         Initialize error classifier
         
         Args:
             config: Configuration dictionary with classification parameters
+            lockdown_callback: Optional callback function to trigger lockdown mode.
+                               Called with ErrorInfo when security_critical or
+                               performance_critical errors are detected.
         """
         self.config = config
         self.risk_matrix = RiskPriorityMatrix()
         self.error_patterns = self._load_error_patterns()
         self.classification_history = []
         self.mitigation_strategies = self._load_mitigation_strategies()
-        
+
+        self.lockdown_callback = lockdown_callback
+
+        # Categories that trigger immediate lockdown when CRITICAL
+        self.lockdown_trigger_categories = {
+            ErrorCategory.SECURITY,
+            ErrorCategory.PERFORMANCE
+        }
+
         logger.info("Initialized ErrorClassifier")
     
     def classify_error(self, error_data: dict[str, Any]) -> ErrorInfo:
@@ -224,7 +235,22 @@ class ErrorClassifier:
         
         # Add to history
         self.classification_history.append(error_info)
-        
+
+        # Trigger lockdown for critical security/performance errors
+        if (
+            priority == PriorityLevel.CRITICAL
+            and category in self.lockdown_trigger_categories
+            and self.lockdown_callback is not None
+        ):
+            logger.warning(
+                f"CRITICAL {category.value} error detected. "
+                f"Triggering lockdown: {error_id}"
+            )
+            try:
+                self.lockdown_callback(error_info)
+            except Exception as e:
+                logger.error(f"Lockdown callback failed: {e}")
+
         logger.info(f"Error classified: {error_id} -> {category.value} ({priority.name})")
         return error_info
     
