@@ -22,8 +22,6 @@ from hierachain.api.v2.endpoints import router as v2_router
 from hierachain.config.settings import get_settings
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
