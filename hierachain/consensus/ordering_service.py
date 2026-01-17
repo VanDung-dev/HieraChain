@@ -12,7 +12,7 @@ import json
 import threading
 import logging
 import asyncio
-from queue import Queue, Empty
+from queue import Queue, Empty, Full
 from collections import deque
 from typing import Any, Callable
 from dataclasses import dataclass
@@ -546,8 +546,19 @@ class OrderingService:
             status=EventStatus.PENDING
         )
         
-        # Add to processing queue
-        self.event_pool.put(pending_event)
+        # Add to processing queue (with DoS protection)
+        try:
+            self.event_pool.put(pending_event, block=False)
+        except Full:
+            logger.warning(
+                f"Event pool full (max={self.event_pool.maxsize}). "
+                f"Rejecting event {event_id}"
+            )
+            # Remove from pending since we're rejecting
+            if event_id in self.pending_events:
+                del self.pending_events[event_id]
+            return None  # Caller should return 503
+
         self.pending_events[event_id] = pending_event
         
         # Update statistics
