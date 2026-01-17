@@ -12,7 +12,7 @@ from hierachain.core.block import Block
 from hierachain.core.consensus.proof_of_federation import ProofOfFederation
 from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.security.zk_prover import get_zk_prover, ZKProvingError
-from hierachain.security.zk_verifier import get_zk_verifier, ZKVerificationError
+from hierachain.security.verify.zk_verifier import get_zk_verifier, ZKVerificationError
 from hierachain.config.settings import settings
 
 

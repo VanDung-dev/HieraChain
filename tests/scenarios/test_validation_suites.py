@@ -20,7 +20,7 @@ from hierachain.security.certificate import CertificateValidator
 from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
 from hierachain.security.key_backup_manager import KeyBackupManager
 from hierachain.security.key_manager import KeyManager
-from hierachain.security.verify_api_key import VerifyAPIKey
+from hierachain.security.verify.verify_api_key import VerifyAPIKey
 from hierachain.units.version import get_version, VERSION
 
 
