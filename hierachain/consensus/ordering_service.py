@@ -18,7 +18,15 @@ from typing import Any, Callable
 from dataclasses import dataclass
 from enum import Enum
 import concurrent.futures
+import gc
+import os
 import pyarrow as pa
+
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
 
 from hierachain.core.block import Block
 from hierachain.core import schemas
@@ -332,7 +340,8 @@ class OrderingService:
         self.status = OrderingStatus.MAINTENANCE
         
         # Event processing components
-        self.event_pool: Queue = Queue()
+        max_pool_size = config.get("event_pool_max_size", Settings.EVENT_POOL_MAX_SIZE)
+        self.event_pool: Queue = Queue(maxsize=max_pool_size)
         self.block_builder = BlockBuilder(config)
         self.commit_queue: Queue = Queue()
         self.certifier = EventCertifier()
@@ -649,9 +658,101 @@ class OrderingService:
                     break
                 time.sleep(0.01)
 
+    def flush_pool(self, force: bool = False) -> dict[str, Any]:
+        """
+        Emergency flush of event pool to prevent OOM.
+
+        Clears pending events from memory and optionally dumps forensic data.
+        Should be called during lockdown or when RAM is critically low.
+
+        Args:
+            force: If True, skip RAM check and flush immediately.
+
+        Returns:
+            Dict with flush statistics.
+        """
+        result = {
+            "flushed_events": 0,
+            "flushed_pending": 0,
+            "forensic_dump": False,
+            "ram_before": 0.0,
+            "ram_after": 0.0
+        }
+
+        # Check current RAM usage
+        ram_percent = 0.0
+        if PSUTIL_AVAILABLE:
+            ram_percent = psutil.virtual_memory().percent
+            result["ram_before"] = ram_percent
+
+        # Forensic dump if RAM is not critically high
+        threshold = settings.RAM_CRITICAL_THRESHOLD
+        if ram_percent < threshold and not force:
+            self._dump_forensic_data()
+            result["forensic_dump"] = True
+
+        # Clear event pool (thread-safe)
+        flushed_count = 0
+        while not self.event_pool.empty():
+            try:
+                self.event_pool.get_nowait()
+                flushed_count += 1
+            except Empty:
+                break
+        result["flushed_events"] = flushed_count
+
+        # Clear pending and processed events
+        pending_count = len(self.pending_events)
+        self.pending_events.clear()
+        self.processed_events.clear()
+        result["flushed_pending"] = pending_count
+
+        # Force garbage collection
+        gc.collect()
+
+        # Log RAM after flush
+        if PSUTIL_AVAILABLE:
+            result["ram_after"] = psutil.virtual_memory().percent
+
+        logger.warning(
+            f"Emergency flush completed: {flushed_count} events, "
+            f"{pending_count} pending cleared. "
+            f"RAM: {result['ram_before']:.1f}% -> {result['ram_after']:.1f}%"
+        )
+
+        return result
+
+    def _dump_forensic_data(self) -> None:
+        """Dump event pool summary for forensic analysis."""
+        try:
+            os.makedirs("log", exist_ok=True)
+            dump_path = "log/quarantine_dump.json"
+
+            # Collect sample of pending events (max 100)
+            sample_ids = list(self.pending_events.keys())[:100]
+            dump_data = {
+                "timestamp": time.time(),
+                "total_pending": len(self.pending_events),
+                "event_pool_size": self.event_pool.qsize(),
+                "sample_event_ids": sample_ids
+            }
+
+            with open(dump_path, "w") as f:
+                json.dump(dump_data, f, indent=2)
+
+            logger.info(f"Forensic data dumped to {dump_path}")
+        except Exception as e:
+            logger.error(f"Failed to dump forensic data: {e}")
+
     def lockdown(self) -> None:
-        """Enter LOCKDOWN mode"""
+        """
+        Enter LOCKDOWN mode with emergency flush.
+
+        Stops accepting new events and clears pending queue to free RAM.
+        """
+        logger.warning("Entering LOCKDOWN mode - flushing event pool")
         self.status = OrderingStatus.LOCKDOWN
+        self.flush_pool(force=False)
 
     def resume(self) -> None:
         """Resume ACTIVE mode from LOCKDOWN or other states."""
