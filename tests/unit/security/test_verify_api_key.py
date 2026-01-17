@@ -1,7 +1,7 @@
 """
-Unit tests for VerifyAPIKey module
+Unit tests for APIKeyVerifier module
 
-This module contains unit tests for the VerifyAPIKey class, including API key
+This module contains unit tests for the APIKeyVerifier class, including API key
 verification, permission checking, and security event logging.
 """
 
@@ -11,8 +11,8 @@ import inspect
 from unittest.mock import Mock, patch, ANY
 from fastapi import HTTPException
 
-from hierachain.security.verify.verify_api_key import (
-    VerifyAPIKey, 
+from hierachain.security.verify.api_key_verifier import (
+    APIKeyVerifier,
     ResourcePermissionChecker,
     create_verify_api_key
 )
@@ -34,7 +34,7 @@ def mock_key_manager():
 
 @pytest.fixture
 def default_config():
-    """Default configuration for VerifyAPIKey"""
+    """Default configuration for APIKeyVerifier"""
     return {
         "enabled": True,
         "key_location": "header",
@@ -59,7 +59,7 @@ def disabled_config():
 @pytest.mark.asyncio
 async def test_verify_api_key_success(mock_key_manager, default_config, benchmark):
     """Test successful API key verification"""
-    verify_key = VerifyAPIKey(default_config)
+    verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
 
     async def verify_key_async(key):
@@ -84,7 +84,7 @@ async def test_verify_api_key_success(mock_key_manager, default_config, benchmar
 @pytest.mark.asyncio
 async def test_verify_api_key_missing_key(default_config):
     """Test verification with missing API key"""
-    verify_key = VerifyAPIKey(default_config)
+    verify_key = APIKeyVerifier(default_config)
     
     with pytest.raises(HTTPException) as exc_info:
         await verify_key(None)
@@ -97,7 +97,7 @@ async def test_verify_api_key_missing_key(default_config):
 async def test_verify_api_key_invalid_key(mock_key_manager, default_config):
     """Test verification with invalid API key"""
     mock_key_manager.is_valid.return_value = False
-    verify_key = VerifyAPIKey(default_config)
+    verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
     
     with pytest.raises(HTTPException) as exc_info:
@@ -114,7 +114,7 @@ async def test_verify_api_key_revoked_key(mock_key_manager, default_config):
     """Test verification with revoked API key"""
     mock_key_manager.is_valid.return_value = True
     mock_key_manager.is_revoked.return_value = True
-    verify_key = VerifyAPIKey(default_config)
+    verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
     
     with pytest.raises(HTTPException) as exc_info:
@@ -130,7 +130,7 @@ async def test_verify_api_key_revoked_key(mock_key_manager, default_config):
 @pytest.mark.asyncio
 async def test_verify_api_key_disabled(disabled_config):
     """Test verification when disabled"""
-    verify_key = VerifyAPIKey(disabled_config)
+    verify_key = APIKeyVerifier(disabled_config)
     
     context = await verify_key("any_key")
     
@@ -141,7 +141,7 @@ async def test_verify_api_key_disabled(disabled_config):
 @pytest.mark.asyncio
 async def test_verify_api_key_cache_enabled(mock_key_manager, default_config, benchmark):
     """Test that caching is used when enabled"""
-    verify_key = VerifyAPIKey(default_config)
+    verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
 
     async def verify_key_async(key):
@@ -154,14 +154,14 @@ async def test_verify_api_key_cache_enabled(mock_key_manager, default_config, be
 
 @pytest.mark.asyncio
 async def test_verify_api_key_different_locations():
-    """Test VerifyAPIKey with different key locations"""
+    """Test APIKeyVerifier with different key locations"""
     # Test header location
     header_config = {
         "enabled": True,
         "key_location": "header",
         "key_name": "x-api-key"
     }
-    verify_key_header = VerifyAPIKey(header_config)
+    verify_key_header = APIKeyVerifier(header_config)
     assert verify_key_header.key_location == "header"
     
     # Test query location
@@ -170,13 +170,13 @@ async def test_verify_api_key_different_locations():
         "key_location": "query",
         "key_name": "apikey"
     }
-    verify_key_query = VerifyAPIKey(query_config)
+    verify_key_query = APIKeyVerifier(query_config)
     assert verify_key_query.key_location == "query"
 
 
 def test_check_resource_permission(mock_key_manager, default_config, benchmark):
     """Test resource permission checking"""
-    verify_key = VerifyAPIKey(default_config)
+    verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
 
     result = benchmark(verify_key.check_resource_permission, "test_api_key", "test_resource")
@@ -188,7 +188,7 @@ def test_check_resource_permission(mock_key_manager, default_config, benchmark):
 
 def test_require_permission_decorator(mock_key_manager, default_config):
     """Test the permission requirement decorator"""
-    verify_key = VerifyAPIKey(default_config)
+    verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
     
     # Create the decorator
@@ -199,7 +199,7 @@ def test_require_permission_decorator(mock_key_manager, default_config):
 @pytest.mark.asyncio
 async def test_resource_permission_checker():
     """Test ResourcePermissionChecker functionality"""
-    # Create a mock VerifyAPIKey
+    # Create a mock APIKeyVerifier
     mock_verify_api_key = Mock()
     
     checker = ResourcePermissionChecker(mock_verify_api_key)
@@ -208,10 +208,10 @@ async def test_resource_permission_checker():
 
 @pytest.mark.asyncio
 async def test_create_verify_api_key_factory(default_config):
-    """Test the factory function for creating VerifyAPIKey instances"""
+    """Test the factory function for creating APIKeyVerifier instances"""
     verify_key = create_verify_api_key(default_config)
     
-    assert isinstance(verify_key, VerifyAPIKey)
+    assert isinstance(verify_key, APIKeyVerifier)
     assert verify_key.enabled == True
     assert verify_key.key_location == "header"
     assert verify_key.key_name == "x-api-key"
@@ -229,7 +229,7 @@ async def test_verify_api_key_cache_zero_ttl(mock_key_manager):
         "cache_ttl": 0,
         "revocation_check": "daily"
     }
-    verify_key = VerifyAPIKey(config)
+    verify_key = APIKeyVerifier(config)
     verify_key.key_manager = mock_key_manager
     
     await verify_key("valid_api_key")
@@ -248,7 +248,7 @@ async def test_verify_api_key_cache_disabled(mock_key_manager):
         "cache_ttl": -1,
         "revocation_check": "daily"
     }
-    verify_key = VerifyAPIKey(config)
+    verify_key = APIKeyVerifier(config)
     verify_key.key_manager = mock_key_manager
     
     await verify_key("valid_api_key")
@@ -261,7 +261,7 @@ async def test_verify_api_key_cache_disabled(mock_key_manager):
 async def test_verify_api_key_complex_permissions(mock_key_manager, default_config):
     """Test complex permission scenarios with multiple resources and nested permissions"""
     mock_key_manager.has_permission.side_effect = lambda key, resource: resource in ["read", "write", "admin"]
-    verify_key = VerifyAPIKey(default_config)
+    verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
     
     # Test multiple resource permissions
@@ -280,11 +280,11 @@ async def test_verify_api_key_complex_permissions(mock_key_manager, default_conf
 @pytest.mark.asyncio
 async def test_verify_api_key_security_logging(mock_key_manager, default_config):
     """Test security event logging"""
-    verify_key = VerifyAPIKey(default_config)
+    verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
     
     # Mock the _log_security_event method to track calls
-    with patch.object(VerifyAPIKey, '_log_security_event') as mock_log:
+    with patch.object(APIKeyVerifier, '_log_security_event') as mock_log:
         # Test successful verification logs
         await verify_key("valid_api_key")
         mock_log.assert_called_with("successful_verification", {
@@ -312,7 +312,7 @@ async def test_verify_api_key_security_logging(mock_key_manager, default_config)
 @pytest.mark.asyncio
 async def test_verify_api_key_performance_many_requests(mock_key_manager, default_config, benchmark):
     """Test performance with many concurrent requests"""
-    verify_key = VerifyAPIKey(default_config)
+    verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
 
     async def many_concurrent_requests():
@@ -329,12 +329,12 @@ async def test_verify_api_key_performance_many_requests(mock_key_manager, defaul
     assert all("user_id" in result for result in results)
 
 
-# Integration test between VerifyAPIKey and ResourcePermissionChecker
+# Integration test between APIKeyVerifier and ResourcePermissionChecker
 @pytest.mark.asyncio
 async def test_integration_verify_api_key_and_resource_permission_checker(mock_key_manager, default_config):
-    """Test integration between VerifyAPIKey and ResourcePermissionChecker"""
-    # Setup VerifyAPIKey
-    verify_key = VerifyAPIKey(default_config)
+    """Test integration between APIKeyVerifier and ResourcePermissionChecker"""
+    # Setup APIKeyVerifier
+    verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
     
     # Setup ResourcePermissionChecker
@@ -351,13 +351,13 @@ async def test_integration_verify_api_key_and_resource_permission_checker(mock_k
 
 # Test cases for invalid configurations
 def test_verify_api_key_invalid_config_missing_required_fields():
-    """Test VerifyAPIKey with invalid configuration (missing required fields)"""
+    """Test APIKeyVerifier with invalid configuration (missing required fields)"""
     invalid_config = {
         "some_random_field": "value"
     }
     
     # Should not raise exception even with missing fields
-    verify_key = VerifyAPIKey(invalid_config)
+    verify_key = APIKeyVerifier(invalid_config)
     
     # Should use default values
     assert verify_key.enabled is True  # Default value
@@ -367,7 +367,7 @@ def test_verify_api_key_invalid_config_missing_required_fields():
 
 
 def test_verify_api_key_invalid_config_wrong_types():
-    """Test VerifyAPIKey with invalid configuration (wrong data types)"""
+    """Test APIKeyVerifier with invalid configuration (wrong data types)"""
     invalid_config = {
         "enabled": "not_a_boolean",
         "key_location": 123,
@@ -376,7 +376,7 @@ def test_verify_api_key_invalid_config_wrong_types():
     }
     
     # Should not raise exception with wrong types
-    verify_key = VerifyAPIKey(invalid_config)
+    verify_key = APIKeyVerifier(invalid_config)
     
     # Values should be assigned as-is (no type conversion)
     assert verify_key.enabled == "not_a_boolean"
@@ -386,11 +386,11 @@ def test_verify_api_key_invalid_config_wrong_types():
 
 
 def test_verify_api_key_unsupported_key_location(default_config):
-    """Test VerifyAPIKey with unsupported key location falls back to header"""
+    """Test APIKeyVerifier with unsupported key location falls back to header"""
     unsupported_config = default_config.copy()
     unsupported_config["key_location"] = "cookie"  # Unsupported location
     
-    verify_key = VerifyAPIKey(unsupported_config)
+    verify_key = APIKeyVerifier(unsupported_config)
     
     # Should fall back to default header dependency
     assert verify_key.key_location == "cookie"
@@ -401,10 +401,10 @@ def test_verify_api_key_unsupported_key_location(default_config):
 def test_private_method_log_security_event_exists():
     """Test that _log_security_event private method exists"""
     # Check that the private method exists
-    assert hasattr(VerifyAPIKey, '_log_security_event')
+    assert hasattr(APIKeyVerifier, '_log_security_event')
     
     # Get the method using inspect
-    method = getattr(VerifyAPIKey, '_log_security_event')
+    method = getattr(APIKeyVerifier, '_log_security_event')
     assert callable(method)
     
     # Check method signature

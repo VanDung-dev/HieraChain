@@ -20,7 +20,7 @@ from hierachain.security.certificate import CertificateValidator
 from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
 from hierachain.security.key_backup_manager import KeyBackupManager
 from hierachain.security.key_manager import KeyManager
-from hierachain.security.verify.verify_api_key import VerifyAPIKey
+from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 from hierachain.units.version import get_version, VERSION
 
 
@@ -320,7 +320,7 @@ def test_api_key_verification():
 @pytest.mark.low  
 def test_verify_api_key_dependency():
     """
-    Test VerifyAPIKey FastAPI dependency.
+    Test APIKeyVerifier FastAPI dependency.
     Validates API endpoint protection.
     """
     config = {
@@ -330,7 +330,7 @@ def test_verify_api_key_dependency():
         "cache_ttl": 300
     }
     
-    verify_key = VerifyAPIKey(config)
+    verify_key = APIKeyVerifier(config)
     
     # Test configuration
     assert verify_key.enabled is True
@@ -403,7 +403,7 @@ def test_full_error_mitigation_workflow():
     
     # Test API security
     api_config = {"enabled": True, "key_location": "header"}
-    verify_api = VerifyAPIKey(api_config)
+    verify_api = APIKeyVerifier(api_config)
     assert verify_api.enabled is True
 
 @pytest.mark.integration  

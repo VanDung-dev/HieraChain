@@ -15,7 +15,7 @@ from hierachain.error_mitigation.validator import ConsensusValidator
 from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
 from hierachain.security.key_backup_manager import KeyBackupManager
 from hierachain.security.key_manager import KeyManager
-from hierachain.security.verify.verify_api_key import VerifyAPIKey
+from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
 
 class RecoveryTestError(Exception):
@@ -341,7 +341,7 @@ async def test_api_endpoint_recovery_with_fallback():
         "key_location": "header",
         "cache_ttl": 300
     }
-    _verify_key_enabled = VerifyAPIKey(enabled_config)
+    _verify_key_enabled = APIKeyVerifier(enabled_config)
     
     # Test with verification disabled (fallback mode)
     disabled_config = {
@@ -349,7 +349,7 @@ async def test_api_endpoint_recovery_with_fallback():
         "key_location": "header",
         "cache_ttl": 300
     }
-    verify_key_disabled = VerifyAPIKey(disabled_config)
+    verify_key_disabled = APIKeyVerifier(disabled_config)
     
     #Test fallback behavior
     with patch.object(verify_key_disabled, '__call__', return_value={"user_id": "system"}):
