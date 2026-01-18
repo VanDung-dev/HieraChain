@@ -1,0 +1,312 @@
+# HieraChain Node Deployments
+# Creates 4 node replicas with persistent storage and graceful shutdown
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hierachain-node1
+  namespace: hierachain
+  labels:
+    app: hierachain
+    component: node
+    node-id: node1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hierachain
+      node-id: node1
+  template:
+    metadata:
+      labels:
+        app: hierachain
+        component: node
+        node-id: node1
+    spec:
+      # Allow time for HieraChain "Last Breath" broadcast
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: hierachain
+          image: hierachain:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5001
+              name: node-port
+            - containerPort: 2661
+              name: api-port
+          env:
+            - name: NODE_ID
+              value: "node1"
+            - name: NODE_PORT
+              value: "5001"
+            - name: PEERS
+              value: "hierachain-node2:5002,hierachain-node3:5003,hierachain-node4:5004"
+          envFrom:
+            - configMapRef:
+                name: hierachain-config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Graceful shutdown - allows "Last Breath" broadcast
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: hierachain-node1-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hierachain-node2
+  namespace: hierachain
+  labels:
+    app: hierachain
+    component: node
+    node-id: node2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hierachain
+      node-id: node2
+  template:
+    metadata:
+      labels:
+        app: hierachain
+        component: node
+        node-id: node2
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: hierachain
+          image: hierachain:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5002
+              name: node-port
+            - containerPort: 2661
+              name: api-port
+          env:
+            - name: NODE_ID
+              value: "node2"
+            - name: NODE_PORT
+              value: "5002"
+            - name: PEERS
+              value: "hierachain-node1:5001,hierachain-node3:5003,hierachain-node4:5004"
+          envFrom:
+            - configMapRef:
+                name: hierachain-config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: hierachain-node2-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hierachain-node3
+  namespace: hierachain
+  labels:
+    app: hierachain
+    component: node
+    node-id: node3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hierachain
+      node-id: node3
+  template:
+    metadata:
+      labels:
+        app: hierachain
+        component: node
+        node-id: node3
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: hierachain
+          image: hierachain:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5003
+              name: node-port
+            - containerPort: 2661
+              name: api-port
+          env:
+            - name: NODE_ID
+              value: "node3"
+            - name: NODE_PORT
+              value: "5003"
+            - name: PEERS
+              value: "hierachain-node1:5001,hierachain-node2:5002,hierachain-node4:5004"
+          envFrom:
+            - configMapRef:
+                name: hierachain-config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: hierachain-node3-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hierachain-node4
+  namespace: hierachain
+  labels:
+    app: hierachain
+    component: node
+    node-id: node4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hierachain
+      node-id: node4
+  template:
+    metadata:
+      labels:
+        app: hierachain
+        component: node
+        node-id: node4
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: hierachain
+          image: hierachain:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5004
+              name: node-port
+            - containerPort: 2661
+              name: api-port
+          env:
+            - name: NODE_ID
+              value: "node4"
+            - name: NODE_PORT
+              value: "5004"
+            - name: PEERS
+              value: "hierachain-node1:5001,hierachain-node2:5002,hierachain-node3:5003"
+          envFrom:
+            - configMapRef:
+                name: hierachain-config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: hierachain-node4-data

@@ -1,0 +1,28 @@
+# Kustomize configuration for HieraChain K8s manifests
+# Usage: kubectl apply -k docker/k8s/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: hierachain
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - persistent-volumes.yaml
+  - node-deployment.yaml
+  - node-service.yaml
+
+# Optional: include stress-tester for testing
+# - stress-tester.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: hierachain
+      app.kubernetes.io/part-of: hierachain
+      app.kubernetes.io/managed-by: kustomize
+
+# Image configuration - override for different registries
+images:
+  - name: hierachain
+    newName: hierachain
+    newTag: latest

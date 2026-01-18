@@ -1,0 +1,10 @@
+# Kubernetes Manifests for HieraChain Dev/Test
+#
+# Namespace definition for isolating HieraChain resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hierachain
+  labels:
+    app: hierachain
+    environment: dev

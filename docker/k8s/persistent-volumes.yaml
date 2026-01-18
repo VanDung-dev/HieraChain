@@ -1,0 +1,64 @@
+# PersistentVolumeClaims for HieraChain data persistence
+# Ensures blockchain data survives pod restarts
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hierachain-node1-data
+  namespace: hierachain
+  labels:
+    app: hierachain
+    node-id: node1
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  # For Docker Desktop, use default storage class
+  # For production, specify appropriate storageClassName
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hierachain-node2-data
+  namespace: hierachain
+  labels:
+    app: hierachain
+    node-id: node2
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hierachain-node3-data
+  namespace: hierachain
+  labels:
+    app: hierachain
+    node-id: node3
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hierachain-node4-data
+  namespace: hierachain
+  labels:
+    app: hierachain
+    node-id: node4
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

@@ -1,0 +1,106 @@
+# HieraChain Node Services
+# Headless services for node-to-node communication
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hierachain-node1
+  namespace: hierachain
+  labels:
+    app: hierachain
+    node-id: node1
+spec:
+  selector:
+    app: hierachain
+    node-id: node1
+  ports:
+    - name: node-port
+      port: 5001
+      targetPort: 5001
+    - name: api-port
+      port: 2661
+      targetPort: 2661
+  clusterIP: None # Headless service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hierachain-node2
+  namespace: hierachain
+  labels:
+    app: hierachain
+    node-id: node2
+spec:
+  selector:
+    app: hierachain
+    node-id: node2
+  ports:
+    - name: node-port
+      port: 5002
+      targetPort: 5002
+    - name: api-port
+      port: 2661
+      targetPort: 2661
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hierachain-node3
+  namespace: hierachain
+  labels:
+    app: hierachain
+    node-id: node3
+spec:
+  selector:
+    app: hierachain
+    node-id: node3
+  ports:
+    - name: node-port
+      port: 5003
+      targetPort: 5003
+    - name: api-port
+      port: 2661
+      targetPort: 2661
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hierachain-node4
+  namespace: hierachain
+  labels:
+    app: hierachain
+    node-id: node4
+spec:
+  selector:
+    app: hierachain
+    node-id: node4
+  ports:
+    - name: node-port
+      port: 5004
+      targetPort: 5004
+    - name: api-port
+      port: 2661
+      targetPort: 2661
+  clusterIP: None
+---
+# LoadBalancer service to expose API externally (for local dev with NodePort)
+apiVersion: v1
+kind: Service
+metadata:
+  name: hierachain-api
+  namespace: hierachain
+  labels:
+    app: hierachain
+    component: api
+spec:
+  type: NodePort
+  selector:
+    app: hierachain
+    component: node
+  ports:
+    - name: api
+      port: 2661
+      targetPort: 2661
+      nodePort: 32661

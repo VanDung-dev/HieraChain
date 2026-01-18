@@ -1,0 +1,23 @@
+# ConfigMap for HieraChain shared configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hierachain-config
+  namespace: hierachain
+  labels:
+    app: hierachain
+data:
+  # Logging configuration
+  LOG_LEVEL: "INFO"
+
+  # API configuration
+  HRC_API_HOST: "0.0.0.0"
+  HRC_API_PORT: "2661"
+
+  # Storage configuration
+  DATABASE_PATH: "/app/data/hierachain.db"
+
+  # Stress test configuration
+  TEST_DURATION: "60"
+  REAL_REQUESTS: "true"
+  STRESS_CHAIN_NAME: "stress_test"
