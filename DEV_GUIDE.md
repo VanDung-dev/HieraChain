@@ -147,6 +147,32 @@ Run stress tests in Docker containers with 4 HieraChain nodes (1 CPU, 1GiB RAM e
 
 Reports are saved to `log/report/` directory.
 
+### Kubernetes Stress Testing
+
+Run stress tests in Kubernetes
+> **Recommendation:** Use Docker Compose for local dev. Use Kubernetes when you need a production-like environment.
+
+**Quick Start:**
+
+```bash
+# Build image & deploy
+docker build -t hierachain:latest -f docker/Dockerfile .
+kubectl apply -k docker/k8s/
+
+# Wait for pods to be ready
+kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout=120s
+
+# Test API
+curl http://localhost:32661/api/v1/health
+
+# Run stress test
+kubectl apply -f docker/k8s/stress-tester.yaml
+kubectl logs -f job/hierachain-stress-test -n hierachain
+
+# Cleanup
+kubectl delete -k docker/k8s/
+```
+
 ---
 
 ## Developer Scripts
