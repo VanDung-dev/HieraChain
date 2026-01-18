@@ -119,12 +119,18 @@ The demo files are located in the `demo/` directory. Before running demos, ensur
 
 ### Docker Stress Testing
 
-Run stress tests in Docker containers with 4 HieraChain nodes:
+Run stress tests in Docker containers with 4 HieraChain nodes (1 CPU, 1GiB RAM each):
 
 - Build and run stress tests with HTML report:
 
     ```bash
     docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
+    ```
+
+- Run real network stress tests (sends actual HTTP requests to nodes):
+
+    ```bash
+    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/test_real_network.py -v -s
     ```
 
 - Run without HTML report:
@@ -183,9 +189,9 @@ The `scripts/` directory contains additional utilities for development and bench
     ```
 
     Options:
-    - `--events`: Number of events to process (default: 1000)
-    - `--workers`: Number of worker threads (default: auto-detected)
-    - `--batch-size`: Events per block (default: 100)
+  - `--events`: Number of events to process (default: 1000)
+  - `--workers`: Number of worker threads (default: auto-detected)
+  - `--batch-size`: Events per block (default: 100)
 
 ### Storage Verification
 
