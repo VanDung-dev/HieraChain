@@ -202,8 +202,18 @@ class RealStressClient:
                 f"{status.url}/api/v1/chains/{chain_name}/create",
                 timeout=self.timeout,
             )
-            return response.status_code in (200, 201)
-        except requests.RequestException:
+            # 200/201 = Created, 409 = Already exists (treat as success)
+            if response.status_code in (200, 201, 409):
+                return True
+            
+            # Handle 500 error where chain already exists (server returns 500 instead of 409)
+            if response.status_code == 500 and "already exists" in response.text:
+                return True
+
+            logger.warning(f"Create chain failed on {node_id}: {response.status_code} {response.text}")
+            return False
+        except requests.RequestException as e:
+            logger.warning(f"Create chain connection error on {node_id}: {e}")
             return False
 
     def run_flood_test(
@@ -328,14 +338,27 @@ def run_real_stress_test(
     chain_created = False
     for node_id, node_status in client.node_status.items():
         if node_status.is_healthy:
-            if client.create_chain(node_id, DEFAULT_CHAIN_NAME):
-                logger.info("Chain created on %s", node_id)
-                chain_created = True
-            else:
-                logger.warning("Failed to create chain on %s", node_id)
+            # If we only have one node address (likely a Load Balancer), try multiple times
+            # to ensure the create command hits all backend replicas.
+            attempts = 1
+            if len(client.node_status) == 1:
+                attempts = 10
+                logger.info(f"detected single endpoint, attempting creation {attempts} times for LB coverage")
+            
+            for i in range(attempts):
+                if client.create_chain(node_id, DEFAULT_CHAIN_NAME):
+                    logger.info("Chain created on %s (attempt %d)", node_id, i+1)
+                    chain_created = True
+                else:
+                    logger.warning("Failed to create chain on %s (attempt %d)", node_id, i+1)
+                
+                if attempts > 1:
+                    time.sleep(0.5)
     
     if not chain_created:
-        logger.error("Could not create chain on any node!")
+        msg = "Could not create chain on any node! Aborting test to prevent false positives."
+        logger.error(msg)
+        raise RuntimeError(msg)
 
     # Run test
     results = client.run_flood_test(

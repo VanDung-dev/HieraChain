@@ -155,6 +155,12 @@ class TsunamiFloodTest:
             "elapsed_seconds": elapsed,
             "events_per_second": self.sent_count / elapsed if elapsed > 0 else 0,
             "batches_processed": len(results),
+            "node_metrics": {
+                "num_target_nodes": len(nodes),
+                "target_nodes": nodes,
+                "events_per_node": num_events // len(nodes) if nodes else 0,
+                "concurrent_senders": concurrent,
+            },
             "config": self.config,
         }
 
@@ -215,7 +221,29 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     test = TsunamiFloodTest()
     result = test.run_flood()
-    print("\n=== Tsunami Flood Test Results ===")
-    for key, value in result.items():
-        if key != "config":
-            print(f"{key}: {value}")
+    
+    print("\n" + "=" * 60)
+    print("  TSUNAMI FLOOD TEST RESULTS")
+    print("=" * 60)
+    
+    print(f"\n📊 TEST SUMMARY")
+    print(f"  Status:           {result['status']}")
+    print(f"  Duration:         {result['elapsed_seconds']:.2f}s")
+    print(f"  Events/Second:    {result['events_per_second']:.2f}")
+    
+    print(f"\n📝 EVENT STATISTICS")
+    print(f"  Total Events:     {result['total_events']}")
+    print(f"  Sent Success:     {result['sent_success']}")
+    print(f"  Sent Failed:      {result['sent_failed']}")
+    print(f"  Success Rate:     {result['success_rate']*100:.2f}%")
+    print(f"  Batches:          {result['batches_processed']}")
+
+    nm = result.get("node_metrics", {})
+    if nm:
+        print(f"\n🖧  NODE DISTRIBUTION (TODO #7 Metrics)")
+        print(f"  Target Nodes:     {nm.get('num_target_nodes', 0)}")
+        print(f"  Events/Node:      {nm.get('events_per_node', 0)}")
+        print(f"  Concurrent:       {nm.get('concurrent_senders', 0)}")
+        print(f"  Nodes: {nm.get('target_nodes', [])}")
+    
+    print("=" * 60)

@@ -220,6 +220,32 @@ class ChaosSyncTest:
         # Wait for any pending restarts
         time.sleep(2)
 
+        # RECOVERY PHASE: Explicitly trigger sync for all nodes to ensure eventual consistency
+        logger.info("Entering Recovery Phase (Heal Cluster)...")
+        recovery_start = time.time()
+        # Try to heal for up to 10 seconds
+        for _ in range(10): 
+            all_synced = True
+            alive_nodes = [n for n in self.nodes.values() if n.is_alive]
+            if not alive_nodes:
+                break
+                
+            # Get max block index
+            max_block = max(n.block_index for n in alive_nodes)
+            
+            # Trigger sync on all nodes
+            for node in alive_nodes:
+                self.simulate_sync(node.node_id)
+                if node.block_index < max_block:
+                    all_synced = False
+            
+            if all_synced:
+                logger.info("Cluster healed successfully.")
+                break
+            time.sleep(1)
+        
+        recovery_time = time.time() - recovery_start
+
         # Final integrity check
         integrity = self.verify_chain_integrity()
 
@@ -230,7 +256,10 @@ class ChaosSyncTest:
         return {
             "test_name": "chaos_sync",
             "status": "completed",
+            "test_name": "chaos_sync",
+            "status": "completed",
             "elapsed_seconds": elapsed,
+            "recovery_seconds": recovery_time,
             "events_sent": self.events_sent,
             "events_per_second": self.events_sent / elapsed if elapsed else 0,
             "total_node_kills": total_kills,
@@ -326,24 +355,23 @@ class TestChaosSync:
         result = test.run_test()
 
         assert result["status"] == "completed"
-        # In extreme chaos, temporary inconsistency is acceptable
-        # The important thing is that the system survives
-        assert result["total_node_restarts"] > 0  # Some chaos happened
+        # In extreme chaos, temporary inconsistency IS acceptable during the run,
+        # BUT eventual consistency IS REQUIRED after the recovery phase.
+        
+        assert result["total_node_restarts"] > 0  # ensure chaos actually happened
 
-        # Print summary for pytest output
-        print("\n=== Chaos Sync Test Results ===")
-        print(f"Status: {result['status']}")
-        print(f"Events: {result['events_sent']}")
-        print(f"Kills: {result['total_node_kills']}")
-        print(f"Restarts: {result['total_node_restarts']}")
-        print(f"Chain consistent: {result['chain_consistent']}")
-
-        # Log problematic info if inconsistent
+        # ABSOLUTE RELIABILITY CHECK:
+        # The chain MUST be consistent after recovery.
         if not result["chain_consistent"]:
-            logger.warning(
-                "Chain inconsistency: max_diff=%s",
-                result["integrity"]["max_difference"]
-            )
+            # If failed, print detailed debug info
+            print("\n!!! RELIABILITY FAILURE !!!")
+            print(f"Max Difference: {result['integrity']['max_difference']} blocks")
+            print(f"Block Indices: {result['integrity']['block_indices']}")
+        
+        assert result["chain_consistent"], "Chain passed validation but failed Eventual Consistency check!"
+        
+        # Log successful recovery
+        logger.info(f"Test passed with eventual consistency. Recovery took {result['recovery_seconds']:.2f}s")
 
 
 if __name__ == "__main__":
@@ -352,13 +380,40 @@ if __name__ == "__main__":
     test = ChaosSyncTest()
     result = test.run_test()
 
-    print("\n=== Chaos Sync Test Results ===")
-    for key, value in result.items():
-        if key not in ("final_node_states", "chaos_events"):
-            print(f"{key}: {value}")
-    print("\nNode States:")
+    print("\n" + "=" * 60)
+    print("  CHAOS SYNC TEST RESULTS")
+    print("=" * 60)
+    
+    print(f"\n📊 TEST SUMMARY")
+    print(f"  Status:              {result['status']}")
+    print(f"  Duration:            {result['elapsed_seconds']:.2f}s")
+    print(f"  Recovery Time:       {result['recovery_seconds']:.2f}s")
+    print(f"  Events/Second:       {result['events_per_second']:.2f}")
+    
+    print(f"\n🖧  NODE METRICS (TODO #7 - Hierarchical Resilience)")
+    print(f"  Number of Nodes:     {len(result['final_node_states'])}")
+    print(f"  Total Node Kills:    {result['total_node_kills']}")
+    print(f"  Total Restarts:      {result['total_node_restarts']}")
+    print(f"  Chaos Events:        {result['chaos_events']}")
+    
+    print(f"\n🔗 CHAIN INTEGRITY")
+    print(f"  Chain Consistent:    {'✅ Yes' if result['chain_consistent'] else '❌ No'}")
+    integrity = result.get("integrity", {})
+    if integrity:
+        print(f"  Alive Nodes:         {integrity.get('alive_nodes', 'N/A')}")
+        print(f"  Block Indices:       {integrity.get('block_indices', [])}")
+        print(f"  Max Difference:      {integrity.get('max_difference', 0)}")
+    
+    print(f"\n📝 EVENT STATISTICS")
+    print(f"  Events Sent:         {result['events_sent']}")
+    
+    print(f"\n🖥️  INDIVIDUAL NODE STATES")
     for node_id, state in result["final_node_states"].items():
-        print(f"  {node_id}: {state}")
-
-
+        status_icon = "🟢" if state['alive'] else "🔴"
+        print(f"  {status_icon} {node_id}:")
+        print(f"      Block Index:      {state['block_index']}")
+        print(f"      Events Processed: {state['events_processed']}")
+        print(f"      Restarts:         {state['restarts']}")
+    
+    print("=" * 60)
 
