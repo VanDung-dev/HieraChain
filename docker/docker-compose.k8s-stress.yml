@@ -1,0 +1,44 @@
+# Docker Compose for Stress Testing HieraChain on Kubernetes
+# Runs stress tester in Docker, targets K8s nodes via NodePort
+#
+# Usage:
+#   docker compose -f docker/docker-compose.k8s-stress.yml run stress-tester
+#
+# Prerequisites:
+#   - K8s cluster running with HieraChain nodes deployed
+#   - NodePort service exposed (default: localhost:32661)
+
+version: "3.8"
+
+services:
+  stress-tester:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hierachain-k8s-stress-tester
+    environment:
+      # Target K8s nodes via NodePort (accessible from host)
+      # Docker Desktop: host.docker.internal resolves to host machine
+      - TARGET_NODES=host.docker.internal:32661
+      - TEST_DURATION=60
+      - REAL_REQUESTS=true
+    volumes:
+      - ../tests/stress:/app/tests/stress
+      - ../log:/app/log
+      # Uncomment and adjust path to enable Real K8s Namespace Isolation
+      - ~/.kube/config:/root/.kube/config:ro
+    # Use host network to access K8s NodePort directly
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    command: >
+      python -m pytest tests/stress/ -v
+      --html=/app/log/report/k8s_stress_test_report.html
+      --self-contained-html

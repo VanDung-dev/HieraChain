@@ -1,0 +1,154 @@
+# Sub-chain Deployment Template
+# This template is used by K8sNamespaceManager to deploy sub-chain nodes
+# into their isolated namespaces.
+#
+# Variables (replaced by K8sNamespaceManager):
+#   {{SUBCHAIN_ID}} - Unique identifier for the sub-chain
+#   {{NAMESPACE}} - Full namespace name
+#   {{IMAGE}} - Docker image for hierachain
+#   {{REPLICAS}} - Number of pod replicas
+#   {{NODE_PORT}} - Port for inter-node communication
+#   {{API_PORT}} - Port for API access
+#   {{PEERS}} - Comma-separated list of peer addresses
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "hierachain-{{SUBCHAIN_ID}}"
+  namespace: "{{NAMESPACE}}"
+  labels:
+    app: hierachain
+    component: subchain
+    subchain-id: "{{SUBCHAIN_ID}}"
+spec:
+  replicas: {{REPLICAS}}
+  selector:
+    matchLabels:
+      app: hierachain
+      subchain-id: "{{SUBCHAIN_ID}}"
+  template:
+    metadata:
+      labels:
+        app: hierachain
+        component: subchain
+        subchain-id: "{{SUBCHAIN_ID}}"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: hierachain-node
+          image: "{{IMAGE}}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{NODE_PORT}}
+              name: node-port
+            - containerPort: {{API_PORT}}
+              name: api-port
+          command: ["hrc", "start", "--host", "0.0.0.0", "--port", "{{API_PORT}}"]
+          env:
+            - name: NODE_ID
+              value: "{{SUBCHAIN_ID}}"
+            - name: NODE_PORT
+              value: "{{NODE_PORT}}"
+            - name: PEERS
+              value: "{{PEERS}}"
+            - name: LOG_LEVEL
+              value: "{{LOG_LEVEL}}"
+            - name: DATABASE_PATH
+              value: "/app/data/hierachain.db"
+            - name: HRC_API_HOST
+              value: "0.0.0.0"
+            - name: HRC_SUBCHAIN_ID
+              value: "{{SUBCHAIN_ID}}"
+            - name: HRC_PARENT_CHAIN
+              value: "{{PARENT_CHAIN}}"
+          resources:
+            requests:
+              memory: "{{MEMORY_REQUEST}}"
+              cpu: "{{CPU_REQUEST}}"
+            limits:
+              memory: "{{MEMORY_LIMIT}}"
+              cpu: "{{CPU_LIMIT}}"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: "hierachain-{{SUBCHAIN_ID}}-data"
+---
+# Service for internal communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: "hierachain-{{SUBCHAIN_ID}}"
+  namespace: "{{NAMESPACE}}"
+  labels:
+    app: hierachain
+    subchain-id: "{{SUBCHAIN_ID}}"
+spec:
+  selector:
+    app: hierachain
+    subchain-id: "{{SUBCHAIN_ID}}"
+  ports:
+    - name: node
+      port: {{NODE_PORT}}
+      targetPort: node-port
+    - name: api
+      port: {{API_PORT}}
+      targetPort: api-port
+  type: ClusterIP
+---
+# Headless service for StatefulSet-like DNS
+apiVersion: v1
+kind: Service
+metadata:
+  name: "hierachain-{{SUBCHAIN_ID}}-headless"
+  namespace: "{{NAMESPACE}}"
+  labels:
+    app: hierachain
+    subchain-id: "{{SUBCHAIN_ID}}"
+spec:
+  clusterIP: None
+  selector:
+    app: hierachain
+    subchain-id: "{{SUBCHAIN_ID}}"
+  ports:
+    - name: node
+      port: {{NODE_PORT}}
+      targetPort: node-port
+---
+# PersistentVolumeClaim for data storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "hierachain-{{SUBCHAIN_ID}}-data"
+  namespace: "{{NAMESPACE}}"
+  labels:
+    app: hierachain
+    subchain-id: "{{SUBCHAIN_ID}}"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "{{STORAGE_SIZE}}"

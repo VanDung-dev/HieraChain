@@ -1,0 +1,85 @@
+# Sub-chain Namespace Template
+# This template is used by K8sNamespaceManager to create isolated namespaces
+# for each sub-chain in the hierarchical blockchain system.
+#
+# Variables (replaced by K8sNamespaceManager):
+#   {{SUBCHAIN_ID}} - Unique identifier for the sub-chain
+#   {{NAMESPACE_PREFIX}} - Configurable prefix (default: hrc-subchain-)
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "{{NAMESPACE_PREFIX}}{{SUBCHAIN_ID}}"
+  labels:
+    app: hierachain
+    component: subchain
+    subchain-id: "{{SUBCHAIN_ID}}"
+    managed-by: hierachain-k8s-manager
+    environment: "{{ENVIRONMENT}}"
+---
+# Resource Quota to limit sub-chain resource consumption
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: "{{SUBCHAIN_ID}}-quota"
+  namespace: "{{NAMESPACE_PREFIX}}{{SUBCHAIN_ID}}"
+  labels:
+    app: hierachain
+    subchain-id: "{{SUBCHAIN_ID}}"
+spec:
+  hard:
+    requests.cpu: "{{RESOURCE_REQUEST_CPU_TOTAL}}"
+    requests.memory: "{{RESOURCE_REQUEST_MEMORY_TOTAL}}"
+    limits.cpu: "{{RESOURCE_LIMIT_CPU_TOTAL}}"
+    limits.memory: "{{RESOURCE_LIMIT_MEMORY_TOTAL}}"
+    pods: "{{MAX_PODS}}"
+    persistentvolumeclaims: "{{MAX_PVCS}}"
+---
+# Network Policy for sub-chain isolation
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: "{{SUBCHAIN_ID}}-network-policy"
+  namespace: "{{NAMESPACE_PREFIX}}{{SUBCHAIN_ID}}"
+  labels:
+    app: hierachain
+    subchain-id: "{{SUBCHAIN_ID}}"
+spec:
+  podSelector:
+    matchLabels:
+      app: hierachain
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from same namespace
+    - from:
+        - podSelector: {}
+    # Allow traffic from main hierachain namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              app: hierachain
+              component: mainchain
+    # Allow external API access
+    - ports:
+        - protocol: TCP
+          port: 2661
+  egress:
+    # Allow traffic to same namespace
+    - to:
+        - podSelector: {}
+    # Allow traffic to main hierachain namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              app: hierachain
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
