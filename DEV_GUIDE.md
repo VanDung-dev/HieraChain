@@ -166,8 +166,7 @@ kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout
 curl http://localhost:32661/api/v1/health
 
 # Run stress test
-kubectl apply -f docker/k8s/stress-tester.yaml
-kubectl logs -f job/hierachain-stress-test -n hierachain
+docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
 
 # Cleanup
 kubectl delete -k docker/k8s/
