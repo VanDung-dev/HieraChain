@@ -23,6 +23,15 @@ from hierachain.cluster.state_sync_manager import (
     SyncResponse,
     SyncStatus,
 )
+from hierachain.cluster.cross_level_sync import (
+    CrossLevelSyncManager,
+    CrossLevelSyncStatus,
+    SyncDirection,
+    ConflictResolutionStrategy,
+    SyncConflict,
+    SyncResult,
+    CrossLevelSyncRequest,
+)
 
 __all__ = [
     "ClusterLockdownManager",
@@ -38,5 +47,11 @@ __all__ = [
     "SyncRequest",
     "SyncResponse",
     "SyncStatus",
+    "CrossLevelSyncManager",
+    "CrossLevelSyncStatus",
+    "SyncDirection",
+    "ConflictResolutionStrategy",
+    "SyncConflict",
+    "SyncResult",
+    "CrossLevelSyncRequest",
 ]
-
