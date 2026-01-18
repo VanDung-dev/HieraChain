@@ -325,13 +325,17 @@ def run_real_stress_test(
 
     # Create chain on healthy nodes for stress testing
     logger.info("Creating stress test chain on healthy nodes...")
-    for node_id, status in client.node_status.items():
-        if status.is_healthy:
+    chain_created = False
+    for node_id, node_status in client.node_status.items():
+        if node_status.is_healthy:
             if client.create_chain(node_id, DEFAULT_CHAIN_NAME):
                 logger.info("Chain created on %s", node_id)
-                break  # Only need to create once
+                chain_created = True
             else:
                 logger.warning("Failed to create chain on %s", node_id)
+    
+    if not chain_created:
+        logger.error("Could not create chain on any node!")
 
     # Run test
     results = client.run_flood_test(
