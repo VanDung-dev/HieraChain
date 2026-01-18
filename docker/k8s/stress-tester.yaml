@@ -43,8 +43,8 @@ spec:
               memory: "256Mi"
               cpu: "250m"
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "1Gi"
+              cpu: "1000m"
           volumeMounts:
             - name: reports
               mountPath: /app/log/report

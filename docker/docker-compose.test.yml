@@ -38,7 +38,7 @@ services:
       timeout: 5s
       retries: 3
     restart: unless-stopped
-    command: ["python", "-m", "hierachain.api.server"]
+    command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
 
   node2:
     build:
@@ -76,7 +76,7 @@ services:
     restart: unless-stopped
     depends_on:
       - node1
-    command: ["python", "-m", "hierachain.api.server"]
+    command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
 
   node3:
     build:
@@ -114,7 +114,7 @@ services:
     restart: unless-stopped
     depends_on:
       - node1
-    command: ["python", "-m", "hierachain.api.server"]
+    command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
 
   node4:
     build:
@@ -152,7 +152,7 @@ services:
     restart: unless-stopped
     depends_on:
       - node1
-    command: ["python", "-m", "hierachain.api.server"]
+    command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
 
   # Test runner container
   stress-tester:

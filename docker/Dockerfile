@@ -39,6 +39,6 @@ ENV LOG_LEVEL=INFO
 # Expose ports
 EXPOSE 5000 8000
 
-# Default command
-CMD ["python", "-m", "hierachain"]
+# Default command - use hrc CLI
+CMD ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
 
