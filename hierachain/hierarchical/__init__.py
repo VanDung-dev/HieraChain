@@ -5,9 +5,41 @@ HieraChain module for HieraChain Framework.
 from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.sub_chain import SubChain
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
+from hierachain.hierarchical.k8s_namespace_manager import (
+    K8sNamespaceManager,
+    NamespaceStatus,
+    NamespaceInfo,
+    DeploymentConfig,
+)
+from hierachain.hierarchical.proof_aggregation import (
+    ProofAggregator,
+    AggregatedProof,
+    ProofEntry,
+    AggregationStatus,
+)
+from hierachain.hierarchical.rebalancer import (
+    SubChainRebalancer,
+    RebalanceMetrics,
+    SplitResult,
+    RebalanceStatus,
+    SplitStrategy,
+)
 
 __all__ = [
     'MainChain',
     'SubChain',
-    'HierarchyManager'
+    'HierarchyManager',
+    'K8sNamespaceManager',
+    'NamespaceStatus',
+    'NamespaceInfo',
+    'DeploymentConfig',
+    'ProofAggregator',
+    'AggregatedProof',
+    'ProofEntry',
+    'AggregationStatus',
+    'SubChainRebalancer',
+    'RebalanceMetrics',
+    'SplitResult',
+    'RebalanceStatus',
+    'SplitStrategy',
 ]
