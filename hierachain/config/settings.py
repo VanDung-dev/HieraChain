@@ -91,8 +91,8 @@ class Settings:
     
     # API settings
     API_VERSION = "v1"
-    API_HOST = "localhost"
-    API_PORT = 2661
+    API_HOST = os.getenv("HRC_API_HOST", "localhost")
+    API_PORT = int(os.getenv("HRC_API_PORT", "2661"))
     
     # CLI settings
     CLI_CONFIG_FILE = "chains.json"
@@ -216,7 +216,7 @@ class Settings:
 class DevelopmentSettings(Settings):
     """Development environment settings"""
     LOG_LEVEL = "DEBUG"
-    API_HOST = "localhost"
+    API_HOST = os.getenv("HRC_API_HOST", "localhost")  # Allow override for Docker
     DEFAULT_STORAGE_BACKEND = "memory"
     GO_ENGINE_ENABLED = False  # Disabled by default in dev
 
