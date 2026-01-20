@@ -92,6 +92,7 @@ class RealStressClient:
             status.is_healthy = response.status_code == 200
             return status.is_healthy
         except requests.RequestException as e:
+            logger.warning(f"Health check failed for {node_id} ({status.url}): {e}")
             status.is_healthy = False
             status.last_error = str(e)
             return False
@@ -337,23 +338,23 @@ def run_real_stress_test(
     logger.info("Creating stress test chain on healthy nodes...")
     chain_created = False
     for node_id, node_status in client.node_status.items():
-        if node_status.is_healthy:
-            # If we only have one node address (likely a Load Balancer), try multiple times
-            # to ensure the create command hits all backend replicas.
-            attempts = 1
-            if len(client.node_status) == 1:
-                attempts = 10
-                logger.info(f"detected single endpoint, attempting creation {attempts} times for LB coverage")
+        # Always attempt creation, even if health check failed (might be flakey)
+        # If we only have one node address (likely a Load Balancer), try multiple times
+        # to ensure the create command hits all backend replicas.
+        attempts = 1
+        if len(client.node_status) == 1:
+            attempts = 10
+            logger.info(f"detected single endpoint, attempting creation {attempts} times for LB coverage")
+        
+        for i in range(attempts):
+            if client.create_chain(node_id, DEFAULT_CHAIN_NAME):
+                logger.info("Chain created on %s (attempt %d)", node_id, i+1)
+                chain_created = True
+            else:
+                logger.warning("Failed to create chain on %s (attempt %d)", node_id, i+1)
             
-            for i in range(attempts):
-                if client.create_chain(node_id, DEFAULT_CHAIN_NAME):
-                    logger.info("Chain created on %s (attempt %d)", node_id, i+1)
-                    chain_created = True
-                else:
-                    logger.warning("Failed to create chain on %s (attempt %d)", node_id, i+1)
-                
-                if attempts > 1:
-                    time.sleep(0.5)
+            if attempts > 1:
+                time.sleep(0.5)
     
     if not chain_created:
         msg = "Could not create chain on any node! Aborting test to prevent false positives."
