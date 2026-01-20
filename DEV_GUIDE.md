@@ -156,24 +156,26 @@ Run stress tests in Kubernetes
 
 ```bash
 # Build image & deploy
-docker build -t hierachain:latest -f docker/Dockerfile .
+docker build --no-cache -t hierachain:latest -f docker/Dockerfile .
 kind create cluster --name hiera-cluster
+kind load docker-image hierachain:latest --name hiera-cluster
 kubectl apply -k docker/k8s/
 
 # Wait for pods to be ready
 kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout=120s
 
-# Test API
-curl http://localhost:32661/api/v1/health
-
 # Expose the API to local host
 kubectl port-forward service/hierachain-api 32661:2661 -n hierachain --address 0.0.0.0
 
+# Test API  
+curl http://localhost:32661/api/v1/health
+
 # Run stress test
-docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
+docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
 
 # Cleanup
 kubectl delete -k docker/k8s/
+kind delete cluster --name hiera-cluster
 ```
 
 ---
