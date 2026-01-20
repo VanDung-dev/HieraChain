@@ -152,6 +152,24 @@ class EventCertifier:
                 certification["valid"] = False
                 certification["validation_errors"].append(f"Missing required field: {field}")
 
+        # === SIGNATURE VERIFICATION (Match Rust Logic) ===
+        # If signature and sender are present, we MUST verify them
+        if certification["valid"]:
+            signature = event.event_data.get("signature")
+            sender = event.event_data.get("sender")
+            
+            if signature and sender:
+                # Extract payload from details if available, consistent with Rust impl logic which checks details['payload']
+                # The Rust impl: msg_str = details.get("payload").unwrap_or("")
+                details = event.event_data.get("details", {})
+                payload = details.get("payload", "") if isinstance(details, dict) else ""
+                
+                # Verify
+                from hierachain.security.security_utils import verify_signature
+                if not verify_signature(sender, payload.encode('utf-8'), signature):
+                    certification["valid"] = False
+                    certification["validation_errors"].append("Invalid signature")
+
         # === ZK PROOF VERIFICATION ===
         if settings.ENABLE_ZK_PROOFS and certification["valid"]:
             zk_result = self._verify_zk_proof(event)
@@ -231,7 +249,7 @@ class EventCertifier:
         # Check timestamp is reasonable
         timestamp = event_data.get("timestamp", 0)
         current_time = time.time()
-        if abs(timestamp - current_time) > 3600:  # 1 hour tolerance
+        if abs(timestamp - current_time) > 300:  # 5 minutes tolerance
             return False
             
         return True
