@@ -110,15 +110,6 @@ class Settings:
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
-    # Go Engine settings
-    GO_ENGINE_ENABLED = os.getenv("HIE_USE_GO_ENGINE", "false").lower() == "true"
-    GO_ENGINE_ADDRESS = os.getenv("HIE_GO_ENGINE_ADDRESS", "localhost:50051")
-    GO_ENGINE_TIMEOUT = float(os.getenv("HIE_GO_ENGINE_TIMEOUT", "30.0"))
-    GO_ENGINE_MAX_RETRIES = int(os.getenv("HIE_GO_ENGINE_RETRIES", "3"))
-    GO_ENGINE_RETRY_DELAY = float(os.getenv("HIE_GO_ENGINE_RETRY_DELAY", "1.0"))
-    GO_ENGINE_FALLBACK_ENABLED = os.getenv("HIE_GO_ENGINE_FALLBACK", "true").lower() == "true"
-    GO_ENGINE_HEALTH_CHECK_INTERVAL = float(os.getenv("HIE_GO_ENGINE_HEALTH_INTERVAL", "30.0"))
-
     # Zero Knowledge Proof settings
     # Enable trustless verification of state transitions
     ENABLE_ZK_PROOFS = os.getenv("HRC_ENABLE_ZK_PROOFS", "false").lower() == "true"
@@ -204,18 +195,6 @@ class Settings:
         }
 
     @classmethod
-    def get_go_engine_config(cls) -> dict[str, Any]:
-        """Get Go Engine configuration"""
-        return {
-            "enabled": cls.GO_ENGINE_ENABLED,
-            "address": cls.GO_ENGINE_ADDRESS,
-            "timeout": cls.GO_ENGINE_TIMEOUT,
-            "max_retries": cls.GO_ENGINE_MAX_RETRIES,
-            "retry_delay": cls.GO_ENGINE_RETRY_DELAY,
-            "fallback_enabled": cls.GO_ENGINE_FALLBACK_ENABLED,
-            "health_check_interval": cls.GO_ENGINE_HEALTH_CHECK_INTERVAL
-        }
-
     @classmethod
     def validate_config(cls) -> list[str]:
         """Validate configuration and return list of errors"""
@@ -245,8 +224,6 @@ class DevelopmentSettings(Settings):
     LOG_LEVEL = "DEBUG"
     API_HOST = os.getenv("HRC_API_HOST", "localhost")  # Allow override for Docker
     DEFAULT_STORAGE_BACKEND = "memory"
-    GO_ENGINE_ENABLED = False  # Disabled by default in dev
-
 
 class ProductionSettings(Settings):
     """Production environment settings - Security hardened by default"""
@@ -273,10 +250,6 @@ class ProductionSettings(Settings):
     # MSP (Membership Service Provider) enabled
     MSP_ENABLED = True
     
-    # === PERFORMANCE: Production optimizations ===
-    # Go Engine for high performance (if available)
-    GO_ENGINE_ENABLED = True
-    
     # === CORS: Restricted in production ===
     # Override with env var HRC_CORS_ORIGINS for specific domains
     CORS_ALLOW_ALL = False
@@ -297,8 +270,6 @@ class TestingSettings(Settings):
     DEFAULT_STORAGE_BACKEND = "memory"
     BLOCK_SIZE_LIMIT = 10  # Smaller blocks for testing
     PROOF_SUBMISSION_INTERVAL = 10  # Faster submissions for testing
-    GO_ENGINE_ENABLED = False  # Disabled in testing
-
 
 # Get settings based on environment
 def get_settings() -> Settings:

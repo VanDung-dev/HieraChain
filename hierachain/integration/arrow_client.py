@@ -13,7 +13,7 @@ import struct
 import pyarrow as pa
 import logging
 
-# Import Transaction from types to decouple from go_client
+# Import Transaction from types to decouple integration modules
 from hierachain.integration.types import Transaction
 from hierachain.core.schemas import get_transaction_schema
 
@@ -109,7 +109,7 @@ class ArrowClient:
     def _transactions_to_arrow(self, transactions: list[Transaction]) -> pa.Table:
         """Convert list of Transactions to Arrow Table."""
         
-        # Define Schema matches Go/Rust expectations
+        # Define schema matches core expectations
         # For now, let's map the Transaction fields
         # Note: 'details' is a map/dict, which can be handled as MapType or Struct
         

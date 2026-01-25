@@ -31,7 +31,7 @@ BLOCK_HEADER_SCHEMA = pa.schema([
 
 
 # Transaction Schema - Standardized cross-language schema
-# Must match Rust (core/schemas.rs) and Go (data/schema.go)
+# Must match core schema definitions across languages
 # Updated to include ZK Proof fields for trustless verification
 TRANSACTION_SCHEMA = pa.schema([
     ('tx_id', pa.string()),          # Mandatory

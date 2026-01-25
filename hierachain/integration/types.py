@@ -1,7 +1,7 @@
 """
 Shared types for HieraChain Integration.
 
-This module defines common data structures used by the Go/Arrow client.
+This module defines common data structures used by integration clients.
 """
 
 from __future__ import annotations
