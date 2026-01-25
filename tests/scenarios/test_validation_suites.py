@@ -21,7 +21,6 @@ from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
 from hierachain.security.key_backup_manager import KeyBackupManager
 from hierachain.security.key_manager import KeyManager
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
-from hierachain.units.version import get_version, VERSION
 
 
 # Priority Level 1: Critical Risk Validation Tests
@@ -422,10 +421,6 @@ def test_post_upgrade_validation():
     
     # All components should be operational
     assert all(components_status.values())
-    
-    # Test framework version compliance
-    framework_version = get_version(VERSION)
-    assert framework_version == get_version(VERSION)
     
     # Test non-cryptocurrency compliance
     forbidden_terms = ["transaction", "mining", "coin", "token", "wallet"]
