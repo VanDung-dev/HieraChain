@@ -3,7 +3,7 @@
 ![Phiên bản Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)
 [![Giấy phép](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
 [![Giấy phép](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
-![Phiên bản](https://img.shields.io/badge/version-0.0.1.dev4-orange)
+![Phiên bản](https://img.shields.io/badge/version-0.0.1.dev5-orange)
 ![Tests](https://img.shields.io/badge/tests-371%20passed-green)
 
 [English](README.md) | **Tiếng Việt**
@@ -22,7 +22,6 @@ HieraChain là một phần của hệ sinh thái các công cụ blockchain l�
 |-------|----------|-------|
 | **[HieraChain](https://github.com/VanDung-dev/HieraChain)** | Python | Framework blockchain phân cấp chính (repository này) |
 | [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) | Rust | **Official Core Consensus** - triển khai tối ưu hóa với Python/C bindings |
-| [HieraChain-Engine](https://github.com/VanDung-dev/HieraChain-Engine) | Go | Blockchain engine hiệu suất cao với mạng P2P |
 
 > **Lưu ý**: Trong khi repository này bao gồm triển khai đồng thuận bằng Python thuần, thư viện [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) được khuyến nghị cho các triển khai production yêu cầu hiệu suất cao.
 

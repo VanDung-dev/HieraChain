@@ -2,13 +2,12 @@
 
 ## 📋 Overview
 
-HieraChain is a **multi-language blockchain infrastructure** designed for high-performance enterprise applications. The architecture follows a **layered approach** combining the strengths of three programming languages:
+HieraChain is a **multi-language blockchain infrastructure** designed for high-performance enterprise applications. The architecture follows a **layered approach** combining the strengths of Python and Rust:
 
 | Component | Language | Purpose |
 |:----------|:---------|:--------|
 | **hierachain** | Python | Business logic, REST API, high-level abstractions |
 | **hierachain-consensus** | Rust | High-performance consensus, cryptography |
-| **hierachain-engine** | Go | High-concurrency networking, transaction processing |
 
 ---
 
@@ -25,7 +24,6 @@ HieraChain is a **multi-language blockchain infrastructure** designed for high-p
 - [📊 Performance Architecture](#-performance-architecture)
 - [🌐 Network Architecture](#-network-architecture)
 - [📈 Monitoring & Observability](#-monitoring--observability)
-- [🎯 Environment Variables](#-environment-variables)
 - [📄 License](#-license)
 
 ---
@@ -38,9 +36,9 @@ HieraChain is a **multi-language blockchain infrastructure** designed for high-p
 flowchart TB
     CLIENT["🖥️ <b>Client Applications</b><br/>Web Apps · Mobile · CLI · External Services"]
     
-    API["🌐 <b>API Gateway Layer</b><br/>Python FastAPI · Go gRPC · Arrow IPC"]
+    API["🌐 <b>API Gateway Layer</b><br/>Python FastAPI · Arrow IPC"]
     
-    CORE["⚙️ <b>Core Components</b><br/>hierachain · hierachain-engine · hierachain-consensus"]
+    CORE["⚙️ <b>Core Components</b><br/>hierachain · hierachain-consensus"]
     
     STORAGE["💾 <b>Data & Storage Layer</b><br/>SQL · In-Memory · World State · Arrow IPC"]
 
@@ -56,12 +54,6 @@ flowchart LR
         P2["Blockchain Explorer"]
     end
 
-    subgraph GO["🔷 Go gRPC"]
-        G1["Arrow IPC Server"]
-        G2["Prometheus Metrics"]
-    end
-
-    PY <-->|"Communication"| GO
 ```
 
 ### Core Components Detail
@@ -77,15 +69,6 @@ flowchart LR
         HP1~~~HP2~~~HP3~~~HP4
     end
 
-    subgraph HE["🔷 hierachain-engine"]
-        direction TB
-        HE1["Worker Pool"]
-        HE2["Mempool & Ordering"]
-        HE3["P2P Network"]
-        HE4["ZMQ Transport"]
-        HE1~~~HE2~~~HE3~~~HE4
-    end
-
     subgraph HC["🦀 hierachain-consensus"]
         direction TB
         HC1["Block creation"]
@@ -96,7 +79,6 @@ flowchart LR
     end
 
     HP <-->|"PyO3 FFI"| HC
-    HP <-->|"Arrow IPC"| HE
 ```
 
 ### Storage Layer Detail
@@ -133,7 +115,6 @@ HieraChain Ecosystem/
 │   │   ├── blockchain.py          # Blockchain management
 │   │   ├── caching.py             # Performance caching
 │   │   ├── domain_contract.py     # Smart contracts
-│   │   ├── hybrid_engine.py       # Hybrid processing engine
 │   │   ├── parallel_engine.py     # Parallel execution
 │   │   └── consensus/             # Consensus implementations
 │   ├── domains/                   # Business domain logic
@@ -181,34 +162,7 @@ HieraChain Ecosystem/
 │   ├── error_mitigation/          # Error handling
 │   └── utils/                     # Helper functions
 │
-├── hierachain-engine/             # 🔷 Go - High-Concurrency Layer
-│   ├── api/                       # gRPC & Arrow API
-│   │   ├── arrow_server.go        # Arrow IPC server
-│   │   ├── arrow_handler.go       # Request handlers
-│   │   ├── arrow_protocol.go      # Protocol definitions
-│   │   └── metrics.go             # Prometheus metrics
-│   ├── core/                      # Core processing
-│   │   ├── mempool.go             # Transaction mempool
-│   │   ├── ordering.go            # Transaction ordering
-│   │   └── worker_pool.go         # Worker management
-│   ├── data/                      # Data handling
-│   │   ├── schema.go              # Arrow schemas
-│   │   ├── converter.go           # Data conversion
-│   │   └── ipc.go                 # IPC communication
-│   ├── network/                   # Networking
-│   │   ├── p2p.go                 # Peer-to-peer
-│   │   ├── zmq_transport.go       # ZeroMQ transport
-│   │   └── propagation.go         # Block propagation
-│   ├── integration/               # Integration layer
-│   ├── consensus/                 # Go consensus
-│   └── monitoring/                # Observability
-│
-├── cmd/                           # 🚀 Executables
-│   ├── hierachain/                # Main CLI application
-│   └── arrow-server/              # Standalone Arrow server
-│
 ├── Cargo.toml                     # Rust dependencies
-├── go.mod                         # Go dependencies
 ├── pyproject.toml                 # Python dependencies
 └── Makefile                       # Build automation
 ```
@@ -249,13 +203,13 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    CR["📨 <b>Client Request</b><br/>REST / gRPC / WebSocket"]
+    CR["📨 <b>Client Request</b><br/>REST / Arrow IPC / WebSocket"]
     
-    EP["🚪 <b>Entry Points</b><br/>Python FastAPI · Go gRPC/Arrow · WebSocket"]
+    EP["🚪 <b>Entry Points</b><br/>Python FastAPI · Arrow IPC · WebSocket"]
     
-    MP["📋 <b>Go Mempool</b><br/>Transaction Batching"]
+    MP["📋 <b>Mempool</b><br/>Transaction Batching"]
     
-    WP["⚡ <b>Go Worker Pool</b><br/>Parallel Processing"]
+    WP["⚡ <b>Worker Pool</b><br/>Parallel Processing"]
     
     EX["🔄 <b>Parallel Execution</b><br/>Rust Consensus + Python Business Logic"]
     
@@ -272,7 +226,7 @@ flowchart TB
 
 ### Unified Data Format: Apache Arrow
 
-All three languages communicate using **Apache Arrow** as the common data format, enabling zero-copy data sharing:
+Python and Rust communicate using **Apache Arrow** as the common data format, enabling zero-copy data sharing:
 
 ```mermaid
 flowchart TB
@@ -292,20 +246,14 @@ flowchart TB
         RS1["arrow-rs"]
     end
 
-    subgraph GO["🔷 Go"]
-        GO1["Apache Arrow Go"]
-    end
-
     PY <--> ARROW
     RS <--> ARROW
-    GO <--> ARROW
 ```
 
 | Language | Arrow Library | Integration Method |
 |:---------|:--------------|:-------------------|
 | **Python** | `pyarrow` | Native Python bindings |
 | **Rust** | `arrow-rs` | PyO3 FFI + Arrow IPC |
-| **Go** | `apache-arrow/go` | Arrow IPC Server |
 
 ### Python ↔ Rust (PyO3 FFI + Arrow)
 
@@ -329,27 +277,6 @@ flowchart TB
     PythonLayer --> FFI --> RustLayer
 ```
 
-### Python ↔ Go (Arrow IPC)
-
-```mermaid
-flowchart TB
-    subgraph PY["🐍 Python Client"]
-        PC1["PyArrow"]
-        PC2["Record Batch"]
-        PC1~~~PC2
-    end
-
-    IPC["📦 Arrow IPC<br/>(Zero-Copy)"]
-
-    subgraph GO["🔷 Go Server"]
-        GS1["Apache Arrow Go"]
-        GS2["Port: 50051"]
-        GS1~~~GS2
-    end
-
-    PY --> IPC --> GO
-```
-
 ---
 
 ## ⚙️ Consensus Mechanisms
@@ -361,7 +288,7 @@ flowchart TB
 | **Proof of Authority (PoA)** | Rust | Private networks with trusted validators |
 | **Proof of Federation (PoF)** | Rust | Multi-organization permissioned networks |
 | **BFT Consensus** | Rust/Python | Byzantine fault-tolerant ordering |
-| **Ordering Service** | Rust/Go | Transaction ordering & batching |
+| **Ordering Service** | Rust | Transaction ordering & batching |
 
 ### Algorithm Summary
 
@@ -504,15 +431,15 @@ flowchart TB
 ```mermaid
 flowchart TB
     subgraph Performance["Performance Optimization Strategies"]
-        L1["🔄 <b>Zero-Copy Transfer</b><br/>Arrow IPC<br/>───────────<br/>Eliminates serialization<br/>overhead Python ↔ Go"]
-        L2["🔀 <b>Parallel Processing</b><br/>Go Worker Pool<br/>───────────<br/>Concurrent execution<br/>Configurable workers"]
+        L1["🔄 <b>Zero-Copy Transfer</b><br/>Arrow IPC<br/>───────────<br/>Eliminates serialization<br/>overhead across layers"]
+        L2["🔀 <b>Parallel Processing</b><br/>Worker Pool<br/>───────────<br/>Concurrent execution<br/>Configurable workers"]
         L3["🔐 <b>Native Crypto</b><br/>Rust<br/>───────────<br/>Ed25519 signatures<br/>SHA-256, Merkle trees"]
         L1 ~~~ L2 ~~~ L3
     end
 
     subgraph Batching["Batching & Caching"]
         L4["📦 <b>Batch Operations</b><br/>Rust<br/>───────────<br/>batch_create_blocks<br/>batch_calculate_hashes"]
-        L5["📋 <b>TX Batching</b><br/>Go Mempool<br/>───────────<br/>Groups transactions<br/>Efficient processing"]
+        L5["📋 <b>TX Batching</b><br/>Mempool<br/>───────────<br/>Groups transactions<br/>Efficient processing"]
         L6["💾 <b>Cache Layer</b><br/>Python<br/>───────────<br/>In-memory caching<br/>Frequently accessed data"]
         L4 ~~~ L5 ~~~ L6
     end
@@ -532,19 +459,19 @@ flowchart LR
 
     subgraph Peers["Peer Nodes"]
         subgraph Peer1["Peer Node 1"]
-            P1E["Go Engine (P2P/ZMQ)"]
+            P1E["Network Engine (P2P/ZMQ)"]
             P1A["Python API"]
             P1R["Rust Core"]
             P1E ~~~ P1A ~~~ P1R
         end
         subgraph Peer2["Peer Node 2"]
-            P2E["Go Engine (P2P/ZMQ)"]
+            P2E["Network Engine (P2P/ZMQ)"]
             P2A["Python API"]
             P2R["Rust Core"]
             P2E ~~~ P2A ~~~ P2R
         end
         subgraph Peer3["Peer Node 3"]
-            P3E["Go Engine (P2P/ZMQ)"]
+            P3E["Network Engine (P2P/ZMQ)"]
             P3A["Python API"]
             P3R["Rust Core"]
             P3E ~~~ P3A ~~~ P3R
@@ -553,7 +480,7 @@ flowchart LR
 
     subgraph Protocols["Message Protocols"]
         MP1["ZeroMQ (Fast)"]
-        MP2["gRPC (Structured)"]
+        MP2["HTTP/REST (Structured)"]
         MP3["Arrow IPC (Bulk)"]
         MP1 ~~~ MP2 ~~~ MP3
     end
@@ -579,21 +506,13 @@ flowchart TB
             LOG["Logging (Structured)<br/>JSON logs<br/>Trace IDs<br/>Rotation"]
         end
 
-        ENGINE["Go Engine (metrics.go)<br/>Port: 2112 (/metrics)"]
+        ENGINE["API Service (metrics)<br/>Port: 2112 (/metrics)"]
 
         ENGINE --> PROM --> GRAF
     end
 ```
 
 ---
-
-## 🎯 Environment Variables
-
-| Variable | Default | Description |
-|:---------|:--------|:------------|
-| `HIE_USE_GO_ENGINE` | `false` | Enable Go Engine |
-| `HIE_GO_ENGINE_ADDRESS` | `localhost:50051` | gRPC address |
-| `HIE_METRICS_ADDRESS` | `:2112` | Prometheus metrics port |
 
 ---
 

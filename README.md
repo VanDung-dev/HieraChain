@@ -3,7 +3,7 @@
 ![Python Versions](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
-![Version](https://img.shields.io/badge/version-0.0.1.dev4-orange)
+![Version](https://img.shields.io/badge/version-0.0.1.dev5-orange)
 ![Tests](https://img.shields.io/badge/tests-371%20passed-green)
 
 **English** | [Tiếng Việt](README_vi.md)
@@ -22,7 +22,6 @@ HieraChain is part of a larger ecosystem of blockchain tools:
 |---------|----------|-------------|
 | **[HieraChain](https://github.com/VanDung-dev/HieraChain)** | Python | Main hierarchical blockchain framework (this repository) |
 | [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) | Rust | **Official Core Consensus** - optimized implementation with Python/C bindings |
-| [HieraChain-Engine](https://github.com/VanDung-dev/HieraChain-Engine) | Go | High-performance blockchain engine with P2P networking |
 
 > **Note**: While this repository includes a pure Python consensus implementation, the [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) library is recommended for production deployments requiring high performance.
 
