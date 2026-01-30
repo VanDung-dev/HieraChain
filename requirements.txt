@@ -8,7 +8,7 @@ pyyaml==6.0.3
 redis==7.1.0
 sqlalchemy==2.0.45
 alembic==1.17.2
-python-multipart==0.0.21
+python-multipart==0.0.22
 passlib==1.7.4
 python-dateutil==2.9.0.post0
 httpx==0.28.1
