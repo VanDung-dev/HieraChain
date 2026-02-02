@@ -81,8 +81,14 @@ def demonstrate_hierachain():
     
     # Initialize the hierarchical system
     print("1. Initializing Hierarchical System...")
+    from hierachain.config.settings import settings
+    print(f"DEBUG: Storage Backend: {settings.DEFAULT_STORAGE_BACKEND}")
     try:
         hierarchy_manager = HierarchyManager()
+        if hasattr(hierarchy_manager, 'storage') and hierarchy_manager.storage:
+            print("DEBUG: Storage initialized in HierarchyManager")
+        else:
+            print("DEBUG: Storage NOT initialized in HierarchyManager")
     except Exception as e:
         print(f"Error initializing system: {e}")
         return None
@@ -335,9 +341,9 @@ def demonstrate_hierachain():
 
     # Finalize Sub-Chain blocks
     try:
-        manufacturing_result = manufacturing_chain.finalize_block()
-        quality_result = quality_chain.finalize_block()
-        logistics_result = logistics_chain.finalize_block()
+        manufacturing_result = manufacturing_chain.flush_pending_and_finalize()
+        quality_result = quality_chain.flush_pending_and_finalize()
+        logistics_result = logistics_chain.flush_pending_and_finalize()
     except Exception as e:
         print(f"Error finalizing blocks: {e}")
         return None
