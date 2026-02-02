@@ -11,6 +11,22 @@ from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
+class ChainModel(Base):
+    """
+    Represents a blockchain (Main or Sub-chain).
+    """
+    __tablename__ = 'chains'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(64), unique=True, nullable=False, index=True)
+    chain_type = Column(String(20), nullable=False) # 'main' or 'sub'
+    domain_type = Column(String(64), nullable=True)
+    created_at = Column(Float, default=time.time)
+    updated_at = Column(Float, default=time.time)
+
+    def __repr__(self):
+        return f"<Chain(name='{self.name}', type='{self.chain_type}')>"
+
 class BlockModel(Base):
     """
     Represents a block in the blockchain.
@@ -28,6 +44,7 @@ class BlockModel(Base):
     
     # Metadata (stored as JSON)
     metadata_json = Column(JSON, nullable=True)
+    chain_name = Column(String(64), nullable=True, index=True)
     
     # Relationship to Events
     events = relationship("EventModel", back_populates="block", cascade="all, delete-orphan")
@@ -56,6 +73,10 @@ class EventModel(Base):
     
     # Identity (Sender)
     sender_id = Column(String(64), nullable=True)
+    
+    # Context
+    chain_name = Column(String(64), nullable=True, index=True)
+    entity_id = Column(String(64), nullable=True, index=True)
 
     def __repr__(self):
         return f"<Event(type='{self.event_type}', block='{self.block_hash[:8]}...')>"

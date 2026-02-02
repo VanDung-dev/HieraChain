@@ -42,10 +42,10 @@ class SqlStorageBackend:
 
     def save_block(self, block_data: dict[str, Any]) -> bool:
         """
-        Save a block and its events to the database in a single transaction.
+        Save a block and its events to the database.
         
         Args:
-            block_data: Dictionary representation of the Block.
+            block_data: Dictionary containing block data.
             
         Returns:
             bool: True if successful, False otherwise.
@@ -58,28 +58,42 @@ class SqlStorageBackend:
                 hash=block_data['hash'],
                 previous_hash=block_data['previous_hash'],
                 timestamp=block_data['timestamp'],
-                metadata_json=block_data.get('metadata', {})
+                metadata_json=block_data.get('metadata', {}),
+                chain_name=block_data.get('chain_name')
             )
             
             # 2. Create Event Records
             events = []
             for event_data in block_data.get('events', []):
                 evt_id = event_data.get("event_id")
+                # Extract entity_id from data if available
+                entity_id = event_data.get("entity_id")
+                
                 event_model = EventModel(
                     block_hash=block_data['hash'],
                     event_id=evt_id,
                     event_type=event_data.get('event', 'unknown'),
                     timestamp=event_data.get('timestamp', 0.0),
                     sender_id=event_data.get('sender', None),
-                    data=event_data # Store full JSON
+                    data=event_data, # Store full JSON
+                    chain_name=block_data.get('chain_name'),
+                    entity_id=entity_id
                 )
                 events.append(event_model)
             
             new_block.events = events
             
             session.add(new_block)
-            session.commit()
-            logger.debug(f"Saved Block #{new_block.index} ({len(events)} events) to DB.")
+            try:
+                session.commit()
+                logger.debug(f"Saved Block #{new_block.index} ({len(events)} events) to DB.")
+            except Exception as commit_error:
+                # Handle unique constraint violation or other commit errors
+                if "UNIQUE constraint" in str(commit_error):
+                    session.rollback()
+                    return True # Treat as success (idempotent)
+                else:
+                    raise commit_error
             return True
             
         except Exception as e:
