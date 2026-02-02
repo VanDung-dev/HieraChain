@@ -140,6 +140,25 @@ class BaseChain(SubChain, ABC):
         self.add_event(update_event)
         return True
     
+    def get_entity_history(self, entity_id: str) -> list[dict[str, Any]]:
+        """
+        Get complete history of events for a specific entity.
+        
+        Args:
+            entity_id: Entity identifier to search for
+            
+        Returns:
+            List of events for the specified entity, ordered by timestamp
+        """
+        history = []
+        for block in self.chain:
+            events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
+            if events:
+                for event in events:
+                    if event.get("entity_id") == entity_id:
+                        history.append(event)
+        return history
+
     def create_domain_event(self, event_class: type, entity_id: str, **kwargs) -> BaseEvent:
         """
         Create a domain-specific event using the provided event class.
