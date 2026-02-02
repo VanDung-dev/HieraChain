@@ -18,6 +18,8 @@ from hierachain.hierarchical.private_data import PrivateCollection
 from hierachain.domains.generic.chains.domain_chain import DomainChain
 from hierachain.hierarchical.transaction_manager import CrossChainTransactionManager
 from hierachain.security.verify.block_verifier import get_block_verifier
+from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
+from hierachain.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +64,22 @@ class HierarchyManager:
         
         # Initialize Cross-Chain Transaction Manager
         self.transaction_manager: CrossChainTransactionManager = CrossChainTransactionManager(self)
+
+        # Initialize storage if enabled
+        self.storage = None
+        # Always initialize storage if backend is sqlite
+        if settings.DEFAULT_STORAGE_BACKEND == "sqlite" or "sqlite" in settings.DATABASE_URL:
+            try:
+                # Extract path from DATABASE_URL if possible, else default
+                db_path = "hierachain.db"
+                if settings.DATABASE_URL.startswith("sqlite:///"):
+                    db_path = settings.DATABASE_URL.replace("sqlite:///", "")
+
+                self.storage = SQLiteAdapter(database_path=db_path)
+                # Store main chain
+                self.storage.store_chain(self.main_chain)
+            except Exception as e:
+                logger.error(f"Failed to initialize storage: {e}")
     
     def create_sub_chain(self, name: str, domain_type: str, metadata: dict[str, Any] | None = None) -> bool:
         """
@@ -83,7 +101,7 @@ class HierarchyManager:
         # Connect to main chain (simulated logical connection)
         if sub_chain.connect_to_main_chain(self.main_chain):
             self.sub_chains[name] = sub_chain
-            
+
             # Record creation event on Main Chain
             _connection_metadata = metadata or {}
             # (In a real system, we might log this to main chain)
@@ -198,13 +216,163 @@ class HierarchyManager:
             domain_distribution[d_type] = domain_distribution.get(d_type, 0) + 1
             
         return {
-            "uptime": time.time() - self.system_started_at,
-            "total_chains": len(self.sub_chains) + 1,  # +1 for MainChain
-            "total_transactions_system_wide": total_tx,
-            "total_blocks_system_wide": total_blocks,
-            "domain_types": domain_distribution,
-            "main_chain_height": len(self.main_chain.chain)
-        } 
+            "uptime_seconds": time.time() - self.system_started_at,
+            "total_chains": len(self.sub_chains),
+            "main_chain_blocks": len(self.main_chain.chain),
+            "total_system_blocks": total_blocks,
+            "total_system_transactions": total_tx,
+            "domain_distribution": domain_distribution
+        }
+
+    def trace_entity_across_chains(self, entity_id: str) -> dict[str, list[dict[str, Any]]]:
+        """
+        Trace an entity's history across all chains in the hierarchy.
+        
+        Args:
+            entity_id: The unique identifier of the entity to trace.
+            
+        Returns:
+            A dictionary mapping chain names to lists of events for the entity.
+        """
+        trace_result = {}
+        
+        for chain_name, chain in self.sub_chains.items():
+            try:
+                # Assuming BaseChain/DomainChain has get_entity_history method
+                history = chain.get_entity_history(entity_id)
+                if history:
+                    trace_result[chain_name] = history
+            except AttributeError:
+                # Chain might not support entity history
+                pass
+                
+        return trace_result
+
+    def get_system_integrity_report(self) -> dict[str, Any]:
+        """
+        Generate a system-wide integrity report.
+        
+        Checks validity of all chains and aggregates health metrics.
+        
+        Returns:
+            A dictionary containing system integrity status and metrics.
+        """
+        total_tx = 0
+        total_blocks = len(self.main_chain.chain)
+        total_sub_chain_events = 0
+        total_sub_chain_blocks = 0
+        
+        sub_chain_details = {}
+        issues = []
+        overall_status = "HEALTHY"
+        
+        if not self.main_chain.is_chain_valid():
+            overall_status = "DEGRADED"
+            issues.append("Main Chain validation failed")
+            
+        for name, chain in self.sub_chains.items():
+            is_valid = chain.is_chain_valid()
+            if not is_valid:
+                overall_status = "DEGRADED"
+                issues.append(f"Sub-chain {name} validation failed")
+                
+            # Get chain stats
+            chain_blocks = len(chain.chain)
+            chain_events = 0
+            chain_entities = 0
+            chain_operations = 0
+            
+            if hasattr(chain, "get_domain_statistics"):
+                try:
+                    stats = chain.get_domain_statistics()
+                    chain_blocks = stats.get("total_blocks", chain_blocks)
+                    chain_events = stats.get("total_events", 0)
+                    chain_entities = stats.get("registered_entities", 0)
+                    chain_operations = stats.get("completed_operations", 0)
+                except Exception:
+                    pass
+            
+            total_blocks += chain_blocks
+            total_sub_chain_blocks += chain_blocks
+            total_sub_chain_events += chain_events
+            total_tx += chain_events # events are transactions in this model
+            
+            sub_chain_details[name] = {
+                "domain_type": chain.domain_type,
+                "blocks": chain_blocks,
+                "events": chain_events,
+                "entities": chain_entities,
+                "operations": chain_operations,
+                "valid": is_valid
+            }
+            
+        report = {
+            "timestamp": time.time(),
+            "overall_status": overall_status,
+            "integrity_status": overall_status, # For demo compatibility
+            "system_overview": {
+                "total_sub_chains": len(self.sub_chains),
+                "total_sub_chain_blocks": total_sub_chain_blocks,
+                "total_sub_chain_events": total_sub_chain_events,
+                "system_uptime": time.time() - self.system_started_at
+            },
+            "main_chain": {
+                "valid": self.main_chain.is_chain_valid(),
+                "height": len(self.main_chain.chain)
+            },
+            "sub_chains": {name: {"valid": details["valid"], "height": details["blocks"]} for name, details in sub_chain_details.items()},
+            "sub_chain_details": sub_chain_details,
+            "issues": issues
+        }
+                 
+        return report
+
+    def finalize_main_chain_block(self) -> Any:
+        """
+        Finalize a block on the Main Chain.
+        
+        Returns:
+            The newly created block or None if no pending events.
+        """
+        return self.main_chain.finalize_block()
+    
+    def submit_all_proofs(self) -> dict[str, bool]:
+        """
+        Trigger proof submission for all sub-chains.
+        
+        Returns:
+             Dictionary of submission results per chain.
+        """
+        results = {}
+        for name, chain in self.sub_chains.items():
+            try:
+                results[name] = chain.submit_proof_to_main(self.main_chain)
+            except Exception as e:
+                logger.error(f"Error submitting proof for {name}: {e}")
+                results[name] = False
+        return results
+
+    def get_cross_chain_statistics(self) -> dict[str, Any]:
+        """
+        Get statistics about cross-chain interactions.
+        
+        Returns:
+             Dictionary of cross-chain statistics.
+        """
+        # This is a placeholder implementation for the demo
+        total_entities = 0
+        domain_dist = {}
+        for chain in self.sub_chains.values():
+            if hasattr(chain, "entity_registry"):
+                 total_entities += len(chain.entity_registry)
+                 domain_dist[chain.domain_type] = len(chain.entity_registry)
+        
+        return {
+            "total_unique_entities": total_entities,
+            "cross_chain_operations": 0, # Placeholder
+            "total_proofs_submitted": self.main_chain.proof_count,
+            "domain_distribution": domain_dist
+        }
 
     
     def configure_auto_proof_submission(self, enabled: bool, interval: float = 60.0) -> None:

@@ -125,7 +125,9 @@ class SubChain(Blockchain):
             "storage_dir": f"data/{self.name}/journal",
             "block_size": 50, # Smaller batches for lower latency in demo
             "batch_timeout": 1.0,
-            "worker_threads": 2
+            "worker_threads": 2,
+            "db_url": settings.DATABASE_URL,
+            "chain_name": self.name
         }
 
         # Merge defaults with custom config if provided
