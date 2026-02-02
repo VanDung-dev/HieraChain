@@ -1003,7 +1003,8 @@ class OrderingService:
                 "previous_hash": block.previous_hash,
                 "timestamp": block.timestamp,
                 "events": block.to_event_list(),
-                "metadata": {}
+                "metadata": {},
+                "chain_name": self.config.get("chain_name")
             }
             self.storage.save_block(block_data)
             
