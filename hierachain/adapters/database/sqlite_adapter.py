@@ -69,16 +69,17 @@ class SQLiteAdapter:
                 CREATE TABLE IF NOT EXISTS blocks (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     chain_name TEXT NOT NULL,
-                    block_index INTEGER NOT NULL,
-                    block_hash TEXT NOT NULL,
+                    "index" INTEGER NOT NULL,
+                    hash TEXT NOT NULL,
                     previous_hash TEXT NOT NULL,
                     timestamp REAL NOT NULL,
                     nonce INTEGER DEFAULT 0,
-                    events_count INTEGER NOT NULL,
-                    created_at REAL NOT NULL,
+                    events_count INTEGER DEFAULT 0,
+                    metadata_json JSON,
+                    created_at REAL DEFAULT (unixepoch()),
                     FOREIGN KEY (chain_name) REFERENCES chains (name),
-                    UNIQUE (chain_name, block_index),
-                    UNIQUE (block_hash)
+                    UNIQUE (chain_name, "index"),
+                    UNIQUE (hash)
                 )
             """)
             
@@ -87,15 +88,16 @@ class SQLiteAdapter:
                 CREATE TABLE IF NOT EXISTS events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     chain_name TEXT NOT NULL,
-                    block_id INTEGER NOT NULL,
-                    block_index INTEGER NOT NULL,
+                    block_hash TEXT NOT NULL,
+                    event_id TEXT,
                     entity_id TEXT,  -- Metadata field, not identifier
                     event_type TEXT NOT NULL,
                     timestamp REAL NOT NULL,
-                    details TEXT,  -- JSON string
-                    created_at REAL NOT NULL,
+                    data JSON,  -- JSON string
+                    sender_id TEXT,
+                    created_at REAL DEFAULT (unixepoch()),
                     FOREIGN KEY (chain_name) REFERENCES chains (name),
-                    FOREIGN KEY (block_id) REFERENCES blocks (id)
+                    FOREIGN KEY (block_hash) REFERENCES blocks (hash)
                 )
             """)
             
@@ -120,7 +122,7 @@ class SQLiteAdapter:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_type ON events (event_type)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events (timestamp)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_chain ON events (chain_name)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_blocks_hash ON blocks (block_hash)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_blocks_hash_val ON blocks (hash)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_blocks_chain ON blocks (chain_name)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_proofs_sub_chain ON proofs (sub_chain_name)")
             
@@ -164,10 +166,7 @@ class SQLiteAdapter:
                     VALUES (?, ?, ?, ?, ?)
                 """, (chain.name, chain_type, domain_type, time.time(), time.time()))
                 
-                # Store all blocks
-                for block in chain.chain:
-                    self._store_block(cursor, chain.name, block)
-                
+                # Commit chain record first to ensure it exists even if block storage fails
                 conn.commit()
                 return True
                 
@@ -181,29 +180,46 @@ class SQLiteAdapter:
         # Insert block record
         cursor.execute("""
             INSERT OR REPLACE INTO blocks 
-            (chain_name, block_index, block_hash, previous_hash, timestamp, nonce, events_count, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (chain_name, block.index, block.hash, block.previous_hash, 
-              block.timestamp, block.nonce, len(block.events), time.time()))
-        
-        # Get block ID
-        block_id = cursor.lastrowid
+            (chain_name, "index", hash, previous_hash, timestamp, nonce, events_count, metadata_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            chain_name, 
+            block.index, 
+            block.hash, 
+            block.previous_hash, 
+            block.timestamp, 
+            block.nonce, 
+            len(block.events),
+            json.dumps(block.metadata) if hasattr(block, 'metadata') else None,
+            time.time()
+        ))
         
         # Store events
-        # Store events
-        # Use to_event_list() if available to handle Arrow Tables
-        events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
-        for event in events:
+        for event in block.events:
+            # Extract metadata from event if available
+            entity_id = None
+            if hasattr(event, 'data') and isinstance(event.data, dict):
+                entity_id = event.data.get('entity_id')
+                if not entity_id and 'product_id' in event.data:
+                    entity_id = event.data.get('product_id')
+            
+            # Serialize data to JSON
+            event_data_json = json.dumps(event.data) if hasattr(event, 'data') else "{}"
+            
             cursor.execute("""
-                INSERT OR REPLACE INTO events 
-                (chain_name, block_id, block_index, entity_id, event_type, timestamp, details, created_at)
+                INSERT OR IGNORE INTO events
+                (chain_name, block_hash, event_id, entity_id, event_type, timestamp, data, sender_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (chain_name, block_id, block.index, 
-                  event.get("entity_id"),  # Metadata field
-                  event.get("event"), 
-                  event.get("timestamp"), 
-                  json.dumps(event.get("details", {})),
-                  time.time()))
+            """, (
+                chain_name,
+                block.hash,
+                getattr(event, 'event_id', None),
+                entity_id,
+                event.event_type,
+                event.timestamp,
+                event_data_json,
+                getattr(event, 'sender_id', None)
+            ))
     
     @staticmethod
     def _create_event_from_row(row: sqlite3.Row) -> dict[str, Any]:
