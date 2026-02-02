@@ -39,7 +39,7 @@ class Settings:
     BFT_NODE_COUNT = 4  # Total number of nodes (must be >= 3f + 1)
     
     # Storage settings
-    DEFAULT_STORAGE_BACKEND = "memory"  # memory, redis, sqlite
+    DEFAULT_STORAGE_BACKEND = os.getenv("HRC_STORAGE_BACKEND", "sqlite")  # memory, redis, sqlite
     WORLD_STATE_CACHE_SIZE = 1000
     
     # Advanced Caching settings
@@ -223,7 +223,6 @@ class DevelopmentSettings(Settings):
     """Development environment settings"""
     LOG_LEVEL = "DEBUG"
     API_HOST = os.getenv("HRC_API_HOST", "localhost")  # Allow override for Docker
-    DEFAULT_STORAGE_BACKEND = "memory"
 
 class ProductionSettings(Settings):
     """Production environment settings - Security hardened by default"""
