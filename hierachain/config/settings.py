@@ -65,6 +65,9 @@ class Settings:
     AUTH_ENABLED = os.getenv("HRC_AUTH_ENABLED", "false").lower() == "true"
     API_KEY_LOCATION = os.getenv("HRC_API_KEY_LOCATION", "header")
     API_KEY_NAME = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
+    
+    # Validator Identity
+    VALIDATOR_IDENTITY_PATH = os.getenv("HRC_VALIDATOR_IDENTITY", "validator_key.json")
 
     # CORS settings (defaults allow all for development)
     CORS_ALLOW_ALL = os.getenv("HRC_CORS_ALLOW_ALL", "true").lower() == "true"
