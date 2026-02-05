@@ -19,6 +19,7 @@ from contextlib import asynccontextmanager
 
 from hierachain.api.v1.endpoints import router as v1_router
 from hierachain.api.v2.endpoints import router as v2_router
+from hierachain.api.v3.endpoints import router as v3_router
 from hierachain.config.settings import get_settings
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
@@ -125,6 +126,13 @@ def create_app() -> FastAPI:
         logger.debug("API v2 router included successfully")
     except ImportError:
         logger.warning("API v2 router not available")
+
+    # Try to include v3 router
+    try:
+        fast_app.include_router(v3_router)
+        logger.debug("API v3 router included successfully")
+    except ImportError:
+        logger.warning("API v3 router not available")
     
     # Root endpoint
     @fast_app.get("/")
@@ -145,7 +153,8 @@ def create_app() -> FastAPI:
             ],
             "api_versions": [
                 "/api/v1",
-                "/api/v2" if 'v2_router' in locals() else None
+                "/api/v2",
+                "/api/v3"
             ]
         }
     
