@@ -62,6 +62,35 @@ class LocalKeyProvider(KeyProvider):
         """Generate a new random key provider."""
         return cls(KeyPair.generate())
 
+    @classmethod
+    def from_file(cls, path: str) -> 'LocalKeyProvider':
+        """
+        Load keypair from a validator identity JSON file.
+        
+        Args:
+            path: Path to the validator_key.json file.
+            
+        Returns:
+            LocalKeyProvider instance.
+        """
+        if not os.path.exists(path):
+            raise CryptoError(f"Identity file not found: {path}")
+            
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                
+            private_key_hex = data.get("private_key")
+            if not private_key_hex:
+                raise CryptoError("Missing 'private_key' in identity file")
+                
+            keypair = KeyPair.from_private_key(private_key_hex)
+            return cls(keypair)
+        except json.JSONDecodeError:
+            raise CryptoError(f"Invalid JSON format in {path}")
+        except Exception as e:
+            raise CryptoError(f"Failed to load identity from {path}: {str(e)}")
+
 
 class FileVaultProvider(KeyProvider):
     """
