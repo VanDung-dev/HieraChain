@@ -1,4 +1,4 @@
-# HieraChain Framework
+# HieraChain - Sổ cái doanh nghiệp dựa trên công nghệ blockchain phân cấp
 
 ![Phiên bản Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)
 [![Giấy phép](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
@@ -10,9 +10,9 @@
 
 ## Tổng Quan
 
-HieraChain là một framework blockchain doanh nghiệp tiên tiến được thiết kế đặc biệt cho các ứng dụng kinh doanh mà không có bất kỳ khái niệm tiền điện tử nào. Khác với các nền tảng blockchain truyền thống tập trung vào tiền kỹ thuật số, HieraChain tập trung vào việc cung cấp một cấu trúc phân cấp an toàn để quản lý các hoạt động và quy trình kinh doanh.
+HieraChain là một sổ cái blockchain doanh nghiệp tiên tiến được thiết kế đặc biệt cho các ứng dụng kinh doanh mà không có bất kỳ khái niệm tiền điện tử nào. Khác với các nền tảng blockchain truyền thống tập trung vào tiền kỹ thuật số, HieraChain tập trung vào việc cung cấp một cấu trúc phân cấp an toàn để quản lý các hoạt động và quy trình kinh doanh.
 
-Framework triển khai kiến trúc đa tầng trong đó Main Chain giám sát các Sub-Chain, cho phép quản lý quy trình kinh doanh có khả năng mở rộng và an toàn. Tất cả các hoạt động trong framework được gọi là "sự kiện" (events) thay vì "giao dịch" (transactions), nhấn mạnh sự tập trung vào các ứng dụng kinh doanh.
+Sổ cái triển khai kiến trúc đa tầng trong đó Main Chain giám sát các Sub-Chain, cho phép quản lý quy trình kinh doanh có khả năng mở rộng và an toàn. Tất cả các hoạt động trong hệ thống được gọi là "sự kiện" (events) thay vì "giao dịch" (transactions), nhấn mạnh sự tập trung vào các ứng dụng kinh doanh.
 
 ## Hệ Sinh Thái Dự Án
 
@@ -20,7 +20,7 @@ HieraChain là một phần của hệ sinh thái các công cụ blockchain l�
 
 | Dự án | Ngôn ngữ | Mô tả |
 |-------|----------|-------|
-| **[HieraChain](https://github.com/VanDung-dev/HieraChain)** | Python | Framework blockchain phân cấp chính (repository này) |
+| **[HieraChain](https://github.com/VanDung-dev/HieraChain)** | Python | Sổ cái blockchain phân cấp chính (repository này) |
 | [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) | Rust | **Official Core Consensus** - triển khai tối ưu hóa với Python/C bindings |
 
 > **Lưu ý**: Trong khi repository này bao gồm triển khai đồng thuận bằng Python thuần, thư viện [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) được khuyến nghị cho các triển khai production yêu cầu hiệu suất cao.
@@ -29,7 +29,7 @@ HieraChain là một phần của hệ sinh thái các công cụ blockchain l�
 
 ### Cấu Trúc Phân Cấp
 
-Framework tuân theo kiến trúc phân cấp bao gồm:
+Hệ thống tuân theo kiến trúc phân cấp bao gồm:
 
 1. **Main Chain (Giám sát viên)**
    - Hoạt động như cơ quan gốc trong hệ thống

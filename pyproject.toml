@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "HieraChain"
-description = "A HieraChain framework for enterprise applications"
+description = "HieraChain - The Hierarchical Blockchain Enterprise Ledger"
 readme = "README.md"
 authors = [{ name = "Nguyễn Lê Văn Dũng", email = "dungnguyen2661@gmail.com" }]
 license = { text = "Apache-2.0 OR MIT" }

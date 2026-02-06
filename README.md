@@ -1,4 +1,4 @@
-# HieraChain Framework
+# HieraChain - The Hierarchical Blockchain Enterprise Ledger
 
 ![Python Versions](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
@@ -10,9 +10,9 @@
 
 ## Overview
 
-HieraChain is an advanced enterprise blockchain framework designed specifically for business applications without any cryptocurrency concepts. Unlike traditional blockchain platforms focused on digital currencies, HieraChain focuses on providing a secure, hierarchical structure for managing business operations and processes.
+HieraChain is an advanced enterprise blockchain ledger designed specifically for business applications without any cryptocurrency concepts. Unlike traditional blockchain platforms focused on digital currencies, HieraChain focuses on providing a secure, hierarchical structure for managing business operations and processes.
 
-The framework implements a multi-layer architecture where Main Chains supervise Sub-Chains, enabling scalable and secure business process management. All operations within the framework are referred to as "events" rather than "transactions," emphasizing its focus on business applications.
+The ledger implements a multi-layer architecture where Main Chains supervise Sub-Chains, enabling scalable and secure business process management. All operations within the system are referred to as "events" rather than "transactions," emphasizing its focus on business applications.
 
 ## Project Ecosystem
 
@@ -20,7 +20,7 @@ HieraChain is part of a larger ecosystem of blockchain tools:
 
 | Project | Language | Description |
 |---------|----------|-------------|
-| **[HieraChain](https://github.com/VanDung-dev/HieraChain)** | Python | Main hierarchical blockchain framework (this repository) |
+| **[HieraChain](https://github.com/VanDung-dev/HieraChain)** | Python | Main hierarchical blockchain ledger (this repository) |
 | [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) | Rust | **Official Core Consensus** - optimized implementation with Python/C bindings |
 
 > **Note**: While this repository includes a pure Python consensus implementation, the [HieraChain-Consensus](https://github.com/VanDung-dev/HieraChain-Consensus) library is recommended for production deployments requiring high performance.
@@ -29,7 +29,7 @@ HieraChain is part of a larger ecosystem of blockchain tools:
 
 ### Hierarchical Structure
 
-The framework follows a hierarchical architecture consisting of:
+The system follows a hierarchical architecture consisting of:
 
 1. **Main Chain (Supervisor)**
    - Acts as the root authority in the system
