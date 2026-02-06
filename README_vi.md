@@ -12,7 +12,7 @@
 
 HieraChain là một sổ cái blockchain doanh nghiệp tiên tiến được thiết kế đặc biệt cho các ứng dụng kinh doanh mà không có bất kỳ khái niệm tiền điện tử nào. Khác với các nền tảng blockchain truyền thống tập trung vào tiền kỹ thuật số, HieraChain tập trung vào việc cung cấp một cấu trúc phân cấp an toàn để quản lý các hoạt động và quy trình kinh doanh.
 
-Sổ cái triển khai kiến trúc đa tầng trong đó Main Chain giám sát các Sub-Chain, cho phép quản lý quy trình kinh doanh có khả năng mở rộng và an toàn. Tất cả các hoạt động trong hệ thống được gọi là "sự kiện" (events) thay vì "giao dịch" (transactions), nhấn mạnh sự tập trung vào các ứng dụng kinh doanh.
+Sổ cái triển khai kiến trúc đa tầng trong đó Main Chain giám sát các Sub-Chain, cho phép quản lý quy trình kinh doanh có khả năng mở rộng và an toàn. Tất cả các hoạt động trong hệ thống được gọi là "Event" (events) thay vì "giao dịch" (transactions), nhấn mạnh sự tập trung vào các ứng dụng kinh doanh.
 
 ## Hệ Sinh Thái Dự Án
 
@@ -33,14 +33,14 @@ Hệ thống tuân theo kiến trúc phân cấp bao gồm:
 
 1. **Main Chain (Giám sát viên)**
    - Hoạt động như cơ quan gốc trong hệ thống
-   - Chỉ lưu trữ các bằng chứng mật mã từ Sub-Chain, không lưu dữ liệu domain chi tiết
+   - Chỉ lưu trữ các Proof mật mã từ Sub-Chain, không lưu dữ liệu domain chi tiết
    - Duy trì tính toàn vẹn của toàn bộ hệ thống phân cấp
-   - Cung cấp xác minh bằng chứng và điều phối chuỗi
+   - Cung cấp xác minh Proof và điều phối chuỗi
 
 2. **Sub-Chains (Chuyên gia Domain)**
    - Xử lý các hoạt động kinh doanh theo domain cụ thể
-   - Lưu trữ các sự kiện và dữ liệu domain chi tiết
-   - Gửi bằng chứng mật mã đến Main Chain
+   - Lưu trữ các Event và dữ liệu domain chi tiết
+   - Gửi Proof mật mã đến Main Chain
    - Hoạt động độc lập nhưng được giám sát bởi Main Chain
 
 ```
@@ -52,9 +52,9 @@ Main Chain (Giám sát viên)
 
 ### Nguyên Tắc Thiết Kế Chính
 
-- **Mô hình Sự kiện**: Các hoạt động kinh doanh được biểu diễn dưới dạng "sự kiện" thay vì giao dịch tiền điện tử
-- **Gửi Bằng chứng**: Sub-Chain gửi bằng chứng mật mã đến Main Chain để xác minh
-- **Phân tách Dữ liệu**: Dữ liệu domain chi tiết ở lại Sub-Chain; chỉ bằng chứng đến Main Chain
+- **Mô hình Event**: Các hoạt động kinh doanh được biểu diễn dưới dạng "Event" thay vì giao dịch tiền điện tử
+- **Gửi Proof**: Sub-Chain gửi Proof mật mã đến Main Chain để xác minh
+- **Phân tách Dữ liệu**: Dữ liệu domain chi tiết ở lại Sub-Chain; chỉ Proof đến Main Chain
 - **Nhận dạng Thực thể**: Thực thể được nhận dạng thông qua các trường metadata
 - **Khả năng Mở rộng**: Cấu trúc phân cấp cho phép mở rộng theo chiều ngang qua nhiều domain
 
@@ -79,13 +79,13 @@ Quản lý đa chuỗi:
 
 | Thành phần | Mô tả |
 |------------|-------|
-| `main_chain.py` | Cơ quan gốc lưu trữ bằng chứng |
+| `main_chain.py` | Cơ quan gốc lưu trữ Proof |
 | `sub_chain.py` | Chuỗi theo domain cụ thể |
 | `hierarchy_manager.py` | Điều phối giữa các chuỗi |
-| `channel.py` | Kênh riêng tư cho tổ chức |
+| `channel.py` | Channel riêng tư cho tổ chức |
 | `multi_org.py` | Hỗ trợ đa tổ chức |
 | `private_data.py` | Bộ sưu tập dữ liệu riêng tư |
-| `consensus/bft_consensus.py` | Đồng thuận chống lỗi Byzantine |
+| `consensus/bft_consensus.py` | Consensus chống lỗi Byzantine |
 
 ### Security (`hierachain/security/`)
 
