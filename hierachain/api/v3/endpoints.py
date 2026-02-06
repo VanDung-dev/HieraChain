@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from hierachain.api.v3.schemas import (
     VerifyIdentityRequest, VerifyIdentityResponse, NodeStatusResponse
 )
+from hierachain.units.version import get_version
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.api.v1.endpoints import get_hierarchy_manager
 from hierachain.config.settings import get_settings
@@ -84,7 +85,7 @@ async def get_status(manager: HierarchyManager = Depends(get_hierarchy_manager))
 
     return NodeStatusResponse(
         status="active",
-        version=settings.VERSION,
+        version=get_version(),
         chains_active=chains_active,
         license_active=license_active,
         uptime=uptime_str
