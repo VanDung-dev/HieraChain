@@ -180,6 +180,30 @@ kind delete cluster --name hiera-cluster
 
 ---
 
+## Documentation
+
+The project documentation is built using [MkDocs](https://www.mkdocs.org/) with the [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) theme.
+
+### Serve Locally
+
+To run the documentation server locally with live reloading:
+
+```bash
+mkdocs serve -f docs/mkdocs.yml
+```
+
+Open your browser at `http://127.0.0.1:8000` to view the documentation.
+
+### Build Static Site
+
+To build the static HTML site (output to `site/` directory):
+
+```bash
+mkdocs build -f docs/mkdocs.yml
+```
+
+---
+
 ## Developer Scripts
 
 The `scripts/` directory contains additional utilities for development and benchmarking.
