@@ -19,6 +19,7 @@ pygal==3.1.0
 bandit==1.9.2
 pip-audit==2.10.0
 mkdocs==1.6.1
+zensical==0.0.21
 mkdocs-material==9.7.1
-mkdocs-git-revision-date-localized-plugin>=1.2.0
+mkdocs-git-revision-date-localized-plugin==1.2.0
 build==1.3.0
