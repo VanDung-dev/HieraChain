@@ -18,7 +18,7 @@ from hierachain.security.key_provider import LocalKeyProvider, CryptoError
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(prefix="/api/v3", tags=["System & Admin"])
+router = APIRouter(prefix="/api/v3", tags=["HieraChain-v3 (System & Admin)"])
 
 
 def get_current_key_provider() -> LocalKeyProvider:
