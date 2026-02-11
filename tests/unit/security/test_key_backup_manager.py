@@ -77,16 +77,16 @@ def test_backup_keys_when_disabled():
     assert result == ""
 
 
-@patch('hierachain.security.key_backup_manager.Fernet')
-def test_backup_keys_success(mock_fernet, benchmark):
+@patch('hierachain.security.key_backup_manager.AESGCM')
+def test_backup_keys_success(mock_aesgcm, benchmark):
     """Test successful key backup"""
     config = {"enabled": True}
     km = KeyBackupManager(config)
     
     # Mock encryption
-    mock_fernet_instance = Mock()
-    mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-    mock_fernet.return_value = mock_fernet_instance
+    mock_aesgcm_instance = Mock()
+    mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
+    mock_aesgcm.return_value = mock_aesgcm_instance
     
     public_key = b"test_public_key"
     private_key = b"test_private_key"
@@ -97,8 +97,8 @@ def test_backup_keys_success(mock_fernet, benchmark):
     assert len(backup_id) > 10  # Should have timestamp part
     
     # Check that backup file was created
-    backup_files = os.listdir(backup_dir)
-    assert len(backup_files) >= 1  # At least the metadata file and one backup
+    backup_files = [f for f in os.listdir(backup_dir) if f.endswith(".enc")]
+    assert len(backup_files) >= 1
     
     # Check metadata was updated
     assert os.path.exists(metadata_file)
@@ -107,16 +107,16 @@ def test_backup_keys_success(mock_fernet, benchmark):
     assert result.startswith("consensus_")
 
 
-@patch('hierachain.security.key_backup_manager.Fernet')
-def test_backup_keys_encryption(mock_fernet):
+@patch('hierachain.security.key_backup_manager.AESGCM')
+def test_backup_keys_encryption(mock_aesgcm):
     """Test that backup data is encrypted"""
     config = {"enabled": True}
     km = KeyBackupManager(config)
     
     # Mock encryption
-    mock_fernet_instance = Mock()
-    mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-    mock_fernet.return_value = mock_fernet_instance
+    mock_aesgcm_instance = Mock()
+    mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
+    mock_aesgcm.return_value = mock_aesgcm_instance
     
     public_key = b"test_public_key"
     private_key = b"test_private_key"
@@ -124,27 +124,25 @@ def test_backup_keys_encryption(mock_fernet):
     km.backup_keys(public_key, private_key, "test")
     
     # Check that encryption was called
-    assert mock_fernet.called
-    assert mock_fernet_instance.encrypt.called
-
-    km.backup_keys(public_key, private_key, "test")
+    assert mock_aesgcm.called
+    assert mock_aesgcm_instance.encrypt.called
 
 
-@patch('hierachain.security.key_backup_manager.Fernet')
-def test_restore_keys_success(mock_fernet):
+@patch('hierachain.security.key_backup_manager.AESGCM')
+def test_restore_keys_success(mock_aesgcm):
     """Test successful key restoration"""
     config = {"enabled": True}
     km = KeyBackupManager(config)
     
     # Mock encryption/decryption
-    mock_fernet_instance = Mock()
-    mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-    mock_fernet_instance.decrypt.return_value = json.dumps({
+    mock_aesgcm_instance = Mock()
+    mock_aesgcm_instance.encrypt.return_value = b"encrypted_data_with_nonce"
+    mock_aesgcm_instance.decrypt.return_value = json.dumps({
         "public_key": "746573745f7075626c69635f6b65795f6c6f6e675f656e6f7567685f666f725f74657374696e67",  # long hex string
         "private_key": "746573745f707269766174655f6b65795f6c6f6e675f656e6f7567685f666f725f74657374696e67",  # long hex string
         "key_type": "test"
     }).encode('utf-8')
-    mock_fernet.return_value = mock_fernet_instance
+    mock_aesgcm.return_value = mock_aesgcm_instance
     
     # First backup keys (using longer keys to pass validation)
     public_key = b"test_public_key_long_enough_for_testing"
@@ -156,9 +154,7 @@ def test_restore_keys_success(mock_fernet):
     
     assert "public_key" in restored_keys
     assert "private_key" in restored_keys
-    # Note: Due to hex encoding/decoding in the mock, exact comparison might differ
-    # but the main point is that the method works without throwing exceptions
-
+    
     result = km.restore_keys(backup_id)
     assert "public_key" in result
 
@@ -169,10 +165,10 @@ def test_list_backups():
     km = KeyBackupManager(config)
     
     # Mock encryption
-    with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
-        mock_fernet_instance = Mock()
-        mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-        mock_fernet.return_value = mock_fernet_instance
+    with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
+        mock_aesgcm_instance = Mock()
+        mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
+        mock_aesgcm.return_value = mock_aesgcm_instance
         
         # Create some backups
         km.backup_keys(b"pub1", b"priv1", "type1")
@@ -192,16 +188,16 @@ def test_list_backups():
         assert len(result) >= 2
 
 
-@patch('hierachain.security.key_backup_manager.Fernet')
-def test_verify_backup_integrity_valid(mock_fernet):
+@patch('hierachain.security.key_backup_manager.AESGCM')
+def test_verify_backup_integrity_valid(mock_aesgcm):
     """Test backup integrity verification with valid backup"""
     config = {"enabled": True}
     km = KeyBackupManager(config)
     
     # Mock encryption
-    mock_fernet_instance = Mock()
-    mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-    mock_fernet.return_value = mock_fernet_instance
+    mock_aesgcm_instance = Mock()
+    mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
+    mock_aesgcm.return_value = mock_aesgcm_instance
 
     # Create backup
     backup_id = km.backup_keys(b"pub", b"priv", "test")
@@ -298,11 +294,11 @@ def test_backup_keys_performance(benchmark):
     config = {"enabled": True}
     km = KeyBackupManager(config)
 
-    # Mock en cryption to avoid performance overhead of actual encryption
-    with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
-        mock_fernet_instance = Mock()
-        mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-        mock_fernet.return_value = mock_fernet_instance
+    # Mock encryption to avoid performance overhead of actual encryption
+    with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
+        mock_aesgcm_instance = Mock()
+        mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
+        mock_aesgcm.return_value = mock_aesgcm_instance
 
         # Test with normal size keys
         public_key = b"test_public_key_data_for_performance_testing"
@@ -326,17 +322,17 @@ def test_restore_keys_performance(benchmark):
     km = KeyBackupManager(config)
 
     # Mock encryption/decryption
-    with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
-        mock_fernet_instance = Mock()
-        mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-        mock_fernet_instance.decrypt.return_value = json.dumps({
+    with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
+        mock_aesgcm_instance = Mock()
+        mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
+        mock_aesgcm_instance.decrypt.return_value = json.dumps({
             "public_key": "746573745f7075626c69635f6b65795f646174615f666f725f706572666f726d616e63655f74657374696e67",
             # hex string
             "private_key": "746573745f707269766174655f6b65795f646174615f666f725f706572666f726d616e63655f74657374696e67",
             # hex string
             "key_type": "perf_test"
         }).encode('utf-8')
-        mock_fernet.return_value = mock_fernet_instance
+        mock_aesgcm.return_value = mock_aesgcm_instance
 
         def restore_keys():
             # Create multiple backups first
@@ -362,10 +358,10 @@ def test_backup_security_injection_attacks():
     km = KeyBackupManager(config)
 
     # Mock encryption
-    with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
-        mock_fernet_instance = Mock()
-        mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-        mock_fernet.return_value = mock_fernet_instance
+    with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
+        mock_aesgcm_instance = Mock()
+        mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
+        mock_aesgcm.return_value = mock_aesgcm_instance
 
         # Test injection attempts in key_type
         injection_attempts = [
@@ -398,10 +394,10 @@ def test_backup_security_xss_attacks():
     km = KeyBackupManager(config)
 
     # Mock encryption
-    with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
-        mock_fernet_instance = Mock()
-        mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-        mock_fernet.return_value = mock_fernet_instance
+    with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
+        mock_aesgcm_instance = Mock()
+        mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
+        mock_aesgcm.return_value = mock_aesgcm_instance
 
         # Test XSS attempts in key_type
         xss_attempts = [
