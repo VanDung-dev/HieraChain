@@ -10,8 +10,9 @@ import json
 import shutil
 import hashlib
 import logging
+import secrets
 from datetime import datetime, timedelta
-from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 logger = logging.getLogger(__name__)
 
@@ -261,27 +262,47 @@ class KeyBackupManager:
         
         if os.path.exists(key_file):
             with open(key_file, "rb") as f:
-                return f.read()
+                key = f.read()
+                # Handle legacy Fernet keys (44 bytes base64)
+                if len(key) == 44:
+                    import base64
+                    try:
+                        decoded_key = base64.urlsafe_b64decode(key)
+                        if len(decoded_key) == 32:
+                            return decoded_key
+                    except Exception:
+                        pass
+                return key
         else:
-            # Generate new master key
-            key = Fernet.generate_key()
+            # Generate new 256-bit master key for AES-GCM
+            key = secrets.token_bytes(32)
             os.makedirs(os.path.dirname(key_file), exist_ok=True)
             with open(key_file, "wb") as f:
                 f.write(key)
-            os.chmod(key_file, 0o600)  # Restrict permissions
+            # Try to set permissions, though chmod has limited effect on Windows
+            try:
+                os.chmod(key_file, 0o600)
+            except Exception:
+                pass
             logger.info("Generated new master backup encryption key")
             return key
     
     def _encrypt_backup_data(self, data: dict) -> bytes:
-        """Encrypt backup data using Fernet (AES-256-GCM)."""
-        fernet = Fernet(self.encryption_key)
+        """Encrypt backup data using AES-256-GCM."""
+        aesgcm = AESGCM(self.encryption_key)
+        nonce = secrets.token_bytes(12)  # Standard 12-byte nonce for GCM
         json_data = json.dumps(data).encode('utf-8')
-        return fernet.encrypt(json_data)
+        ciphertext = aesgcm.encrypt(nonce, json_data, None)
+        # Prepend nonce to ciphertext for storage
+        return nonce + ciphertext
     
     def _decrypt_backup_data(self, encrypted_data: bytes) -> dict:
-        """Decrypt backup data."""
-        fernet = Fernet(self.encryption_key)
-        decrypted_data = fernet.decrypt(encrypted_data)
+        """Decrypt backup data encrypted with AES-256-GCM."""
+        aesgcm = AESGCM(self.encryption_key)
+        # Extract 12-byte nonce from the beginning
+        nonce = encrypted_data[:12]
+        ciphertext = encrypted_data[12:]
+        decrypted_data = aesgcm.decrypt(nonce, ciphertext, None)
         return json.loads(decrypted_data.decode('utf-8'))
     
     def _calculate_integrity_hash(self, data: bytes) -> str:
