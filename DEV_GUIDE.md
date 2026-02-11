@@ -9,27 +9,53 @@ This guide contains all the information developers need to work with the HieraCh
 ### Prerequisites
 
 - Python 3.10, 3.11, 3.12, or 3.13
+- `pip` (bundled with Python)
 
-### Quick Start
+### Create Virtual Environment
 
-- Install the required dependencies:
+It is **strongly recommended** to use a virtual environment (`.venv`) to isolate project dependencies.
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+**Windows (PowerShell):**
 
-- Install development dependencies
+```powershell
+# Create venv
+python -m venv .venv
 
-    ```bash
-    pip install -r requirements_dev.txt
-    ```
+# Activate venv
+.venv\Scripts\Activate.ps1
 
-- Install the package:
+# Verify (should point to .venv)
+Get-Command python | Select-Object Source
+```
 
-    ```bash
-    pip install -e .  # Development mode
-    pip install .     # Production mode
-    ```
+**Linux / macOS:**
+
+```bash
+# Create venv
+python3 -m venv .venv
+
+# Activate venv
+source .venv/bin/activate
+
+# Verify (should point to .venv)
+which python
+```
+
+> **Note:** All commands below assume the virtual environment is **activated**.
+> To deactivate, run `deactivate`.
+
+### Install Dependencies
+
+```bash
+# Core dependencies
+pip install -r requirements.txt
+
+# Development & testing dependencies
+pip install -r requirements_dev.txt
+
+# Install the package in development mode
+pip install -e .
+```
 
 This will set up your environment to work with the framework.
 
@@ -201,6 +227,74 @@ To build the static HTML site (output to `site/` directory):
 ```bash
 mkdocs build -f docs/mkdocs.yml
 ```
+
+### Generate API Reference Docs (.py → .md)
+
+API reference documentation is **auto-generated** from Python docstrings using [`pydoc-markdown`](https://pypi.org/project/pydoc-markdown/).
+
+#### Prerequisites
+
+Make sure `pydoc-markdown` is installed inside the `.venv`:
+
+```bash
+pip install pydoc-markdown
+```
+
+#### Generate All Modules
+
+Run the generation script (must use the `.venv` Python):
+
+**Windows (PowerShell):**
+
+```powershell
+$env:PYTHONIOENCODING="utf-8"; .venv\Scripts\python.exe scripts/generate_api_docs.py
+```
+
+**Linux / macOS:**
+
+```bash
+PYTHONIOENCODING=utf-8 .venv/bin/python scripts/generate_api_docs.py
+```
+
+Generated Markdown files are saved to `docs/vi/reference/`.
+
+#### Generate a Specific Module
+
+Use a module shorthand or full path:
+
+```bash
+# By shorthand (matches hierachain.core.block)
+.venv/Scripts/python.exe scripts/generate_api_docs.py block
+
+# By full module path
+.venv/Scripts/python.exe scripts/generate_api_docs.py hierachain.core.block
+
+# Dry-run (preview without writing files)
+.venv/Scripts/python.exe scripts/generate_api_docs.py block --dry-run
+```
+
+#### How It Works
+
+```text
+hierachain/core/block.py          (Python source with Vietnamese docstrings)
+        │
+        ▼  pydoc-markdown parses docstrings
+scripts/generate_api_docs.py       (adds YAML frontmatter + metadata)
+        │
+        ▼
+docs/vi/reference/core/block.md    (Markdown ready for MkDocs)
+```
+
+> **Important:** After modifying docstrings in `.py` files, you must **re-run** the
+> generation script to update the corresponding `.md` files.
+> The `PYTHONIOENCODING=utf-8` environment variable is **required** on Windows
+> to correctly handle Vietnamese characters.
+
+#### Configuration
+
+The `pydoc-markdown` configuration is in [`pydoc-markdown.yml`](pydoc-markdown.yml).
+The module mapping (icon, description, output directory) is defined in
+[`scripts/generate_api_docs.py`](scripts/generate_api_docs.py) → `MODULES` dict.
 
 ---
 
