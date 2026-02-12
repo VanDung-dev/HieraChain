@@ -14,7 +14,10 @@ import hashlib
 import logging
 from typing import Any
 
-from hierachain.core.consensus.base_consensus import BaseConsensus
+from hierachain.core.consensus.base_consensus import (
+    BaseConsensus,
+    _verify_block_zk_proof
+)
 from hierachain.core.block import Block
 
 logger = logging.getLogger(__name__)
@@ -23,9 +26,9 @@ logger = logging.getLogger(__name__)
 class ProofOfFederation(BaseConsensus):
     """
     Proof of Federation (PoF) Consensus.
-    
+
     A Round-Robin based consensus mechanism suitable for semi-trusted consortiums.
-    
+
     Key Features:
     - Rotating Leader: Authorities take turns creating blocks based on block height.
     - Deterministic Schedule: Leader = (BlockHeight) % (TotalAuthorities).
@@ -36,16 +39,16 @@ class ProofOfFederation(BaseConsensus):
     def __init__(self, name: str = "ProofOfFederation"):
         """
         Initialize Proof of Federation.
-        
+    
         Args:
             name: Name of the consensus instance.
         """
         super().__init__(name)
-        
+    
         # Internal state
         self.validators: list[str] = []  # Ordered list of validator IDs
         self.validator_metadata: dict[str, dict[str, Any]] = {}
-        
+    
         # Configuration defaults (can be updated via settings)
         self.config = {
             "block_interval": 5.0,  # Faster than PoA (typically 10s)
@@ -60,31 +63,31 @@ class ProofOfFederation(BaseConsensus):
     def add_validator(self, validator_id: str, metadata: dict[str, Any] | None = None) -> bool:
         """
         Add a validator to the federation.
-        
+    
         Args:
             validator_id: Unique identifier for the validator node.
             metadata: Info about the organization (e.g., "Hospital A", "University B").
-            
+        
         Returns:
             True if added, False if already exists.
         """
         if validator_id in self.validators:
             return False
-            
+        
         self.validators.append(validator_id)
         # Keep list sorted to ensure deterministic order across all nodes
         self.validators.sort()
-        
+    
         self.validator_metadata[validator_id] = metadata or {}
         return True
 
     def remove_validator(self, validator_id: str) -> bool:
         """
         Remove a validator from the federation.
-        
+    
         Args:
             validator_id: ID to remove.
-            
+        
         Returns:
             True if removed, False if not found.
         """
@@ -101,7 +104,7 @@ class ProofOfFederation(BaseConsensus):
     def remove_authority(self, authority_id: str) -> bool:
         """Alias for remove_validator for compatibility."""
         return self.remove_validator(authority_id)
-    
+
     def is_authority(self, authority_id: str) -> bool:
         """Check if an ID is an active authority/validator."""
         return authority_id in self.validators
@@ -109,28 +112,28 @@ class ProofOfFederation(BaseConsensus):
     def get_current_leader(self, block_index: int) -> str | None:
         """
         Determine the expected leader for a specific block index.
-        
+    
         Algorithm: Leader = Validators[ BlockIndex % ValidatorCount ]
-        
+    
         Args:
             block_index: The height/index of the block to be created.
-            
+        
         Returns:
             The validator_id of the expected leader, or None if no validators.
         """
         if not self.validators:
             return None
-            
+        
         leader_idx = block_index % len(self.validators)
         return self.validators[leader_idx]
 
     def can_create_block(self, authority_id: str | None = None) -> bool:
         """
         Check if the authority can create a block.
-        
+    
         Args:
             authority_id: The ID of the authority attempting to create a block.
-            
+        
         Returns:
             True if the authority can create a block, False otherwise.
         """
@@ -142,17 +145,17 @@ class ProofOfFederation(BaseConsensus):
         # 2. If authority_id provided, check if it's a valid validator
         if authority_id and authority_id not in self.validators:
             return False
-            
+        
         return True
 
     def validate_block_proposer(self, block_index: int, proposer_id: str) -> bool:
         """
         Strictly validate if the proposer is the correct leader for this block height.
-        
+    
         Args:
             block_index: Index of the block.
             proposer_id: ID of the node that signed/proposed the block.
-            
+        
         Returns:
             True if it is this proposer's turn.
         """
@@ -173,7 +176,7 @@ class ProofOfFederation(BaseConsensus):
         # 1. Basic structure
         if not block.validate_structure():
             return False
-            
+        
         # 2. Timing check
         time_diff = block.timestamp - previous_block.timestamp
         # Allow slight leniency (drifting clocks), e.g., 80% of interval
@@ -181,21 +184,18 @@ class ProofOfFederation(BaseConsensus):
             return False
 
         # 3. Leader Check
-        # We look for the consensus signature event to find who signed it
-        signer_id = self._extract_signer_id(block)
-        
+        signer_id = _extract_signer_id(block)
+
         if not signer_id:
-            # Block must be signed in PoF
             return False
-            
-        if self.config["enforce_rotation"]:
-            if not self.validate_block_proposer(block.index, signer_id):
-                # "It wasn't your turn!"
-                return False
+
+        if (self.config["enforce_rotation"] and
+                not self.validate_block_proposer(block.index, signer_id)):
+            return False
 
         # 4. ZK Proof Verification (if enabled)
         # Uses shared implementation from BaseConsensus
-        zk_valid = self._verify_block_zk_proof(block, previous_block)
+        zk_valid = _verify_block_zk_proof(block, previous_block)
         if not zk_valid:
             logger.error(f"Block {block.index} ZK proof verification FAILED")
             return False
@@ -204,18 +204,11 @@ class ProofOfFederation(BaseConsensus):
         return True
 
     def finalize_block(self, block: Block, authority_id: str | None = None) -> Block:
-        """
-        Finalize block by attaching the Federation Signature.
-        """
+        """Finalize block by attaching the Federation Signature."""
         if not authority_id or not self.can_create_block(authority_id):
-            # In a real implementation we might raise an error, but here we return unmodified
-            # or let it fail validation later.
             return block
 
-        # Create signature payload
-        signature_data = f"{block.hash}:{authority_id}:{block.index}:{time.time()}"
-        signature = hashlib.sha256(signature_data.encode()).hexdigest()
-
+        signature = _create_federation_signature(block, authority_id)
         consensus_metadata = {
             "consensus_type": "proof_of_federation",
             "leader_id": authority_id,
@@ -224,17 +217,14 @@ class ProofOfFederation(BaseConsensus):
             "round": block.index,
             "finalized_at": time.time()
         }
-        
-        # Append consensus event
-        # Note: In Arrow-based blocks, this appends to the internal list/table
+
         events = block.to_event_list()
         events.append({
             "event": "consensus_finalization",
             "timestamp": time.time(),
             "details": consensus_metadata
         })
-        
-        # Return new block object
+
         return Block(
             index=block.index,
             previous_hash=block.previous_hash,
@@ -243,16 +233,8 @@ class ProofOfFederation(BaseConsensus):
             nonce=block.nonce
         )
 
-    @staticmethod
-    def _extract_signer_id(block: Block) -> str | None:
-        """Helper to find the signer ID from the block's events."""
-        events = block.to_event_list()
-        for event in reversed(events): # Check end of block first
-            if event.get("event") == "consensus_finalization":
-                return event.get("details", {}).get("leader_id")
-        return None
-
     def get_consensus_info(self) -> dict[str, Any]:
+        """Get information about the current consensus state."""
         return {
             "name": self.name,
             "type": "ProofOfFederation",
@@ -270,58 +252,25 @@ class ProofOfFederation(BaseConsensus):
         signatures: list[dict[str, str]],
         required_count: int | None = None
     ) -> bool:
-        """
-        Verify that a message is signed by a quorum of validators.
-
-        Args:
-            message: The message bytes that were signed.
-            signatures: List of dicts {'validator_id': str, 'signature': hex_str}
-            required_count: Number of valid signatures required (default: 2/3 of validators)
-
-        Returns:
-            True if quorum is met with valid signatures.
-        """
+        """Verify that a message is signed by a quorum of validators."""
         if not self.validators:
             return False
 
-        # Default quorum: 2/3 + 1 (BFT standard) or simple majority depending on config
-        # Here using simple majority for Federation, or 2/3 if specified
-        total_validators = len(self.validators)
-        if required_count is None:
-            required_count = (total_validators * 2) // 3 + 1
-
+        required_count = _get_required_quorum_count(
+            len(self.validators), required_count
+        )
         if len(signatures) < required_count:
             return False
 
         valid_count = 0
-        from hierachain.security.security_utils import verify_signature
-
-        # To prevent double voting replay, we track seen validators in this batch
         seen_validators = set()
 
         for sig_entry in signatures:
             validator_id = sig_entry.get("validator_id")
-            signature = sig_entry.get("signature")
-
-            if not validator_id or not signature:
-                continue
-
-            # Check if validator is part of federation
-            if validator_id not in self.validators:
-                continue
-
-            if validator_id in seen_validators:
-                continue
-
-            # Get validator public key (Assumes metadata contains it)
-            # In a real system, we might need a better key lookup
-            meta = self.validator_metadata.get(validator_id, {})
-            public_key = meta.get("public_key")
-            
-            if not public_key:
-                continue
-
-            if verify_signature(public_key, message, signature):
+            if _is_signature_valid(
+                sig_entry, message, self.validators,
+                self.validator_metadata, seen_validators
+            ):
                 valid_count += 1
                 seen_validators.add(validator_id)
 
@@ -330,8 +279,56 @@ class ProofOfFederation(BaseConsensus):
 
         return False
 
-    @staticmethod
-    def verify_block_quorum(block: Block) -> bool:
-        """Verify if block has sufficient federation signatures (if applicable)."""
-        return True
 
+def _extract_signer_id(block: Block) -> str | None:
+    """Helper to find the signer ID from the block's events."""
+    events = block.to_event_list()
+    # Check end of block first for performance
+    for event in reversed(events):
+        if event.get("event") == "consensus_finalization":
+            return event.get("details", {}).get("leader_id")
+    return None
+
+
+def _create_federation_signature(block: Block, leader_id: str) -> str:
+    """Create a federation signature for the block."""
+    signature_data = f"{block.hash}:{leader_id}:{block.index}:{time.time()}"
+    return hashlib.sha256(signature_data.encode()).hexdigest()
+
+
+def _get_required_quorum_count(total_validators: int, manually_required: int | None) -> int:
+    """Calculate the required number of signatures for a quorum."""
+    if manually_required is not None:
+        return manually_required
+    # Default BFT-style quorum: 2/3 + 1
+    return (total_validators * 2) // 3 + 1
+
+
+def _is_signature_valid(
+    sig_entry: dict[str, str],
+    message: bytes,
+    validators: list[str],
+    validator_metadata: dict[str, Any],
+    seen_validators: set[str]
+) -> bool:
+    """Validate a single signature from the signatures list."""
+    validator_id = sig_entry.get("validator_id")
+    signature = sig_entry.get("signature")
+
+    if not validator_id or not signature:
+        return False
+
+    if validator_id not in validators or validator_id in seen_validators:
+        return False
+
+    public_key = validator_metadata.get(validator_id, {}).get("public_key")
+    if not public_key:
+        return False
+
+    from hierachain.security.security_utils import verify_signature
+    return verify_signature(public_key, message, signature)
+
+
+def _verify_block_quorum(_block: Block) -> bool:
+    """Verify if block has sufficient federation signatures (if applicable)."""
+    return True
