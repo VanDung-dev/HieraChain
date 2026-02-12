@@ -198,7 +198,6 @@ class Settings:
         }
 
     @classmethod
-    @classmethod
     def validate_config(cls) -> list[str]:
         """Validate configuration and return list of errors"""
         errors = []
