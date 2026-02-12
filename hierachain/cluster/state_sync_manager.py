@@ -201,9 +201,7 @@ class StateSyncManager:
             from_hash=from_hash,
         )
 
-        logger.info(
-            f"Requesting gap-fill: blocks {from_index} to {to_index}"
-        )
+        logger.info(f"Requesting gap-fill: blocks {from_index} to {to_index}")
 
         return self._broadcast_request(request)
 
@@ -261,9 +259,7 @@ class StateSyncManager:
         logger.info(f"Received {accepted} blocks from {peer_id}")
 
         # Check if we have all blocks
-        if len(self._received_blocks) >= (
-            self._target_to_index - self._target_from_index
-        ):
+        if len(self._received_blocks) >= (self._target_to_index - self._target_from_index):
             self._verify_and_merge()
 
         return accepted
@@ -277,34 +273,43 @@ class StateSyncManager:
             self._verified_blocks = self._received_blocks.copy()
             return self._complete_sync()
 
-        verified = []
-        previous_block = None
+        self._verified_blocks = self._verify_received_blocks()
 
-        for block in self._received_blocks:
-            try:
-                result = self._block_verifier.verify_block(block, previous_block)
-                if result.is_valid():
-                    verified.append(block)
-                    self._stats["blocks_verified"] += 1
-                    previous_block = block
-                else:
-                    logger.warning(
-                        f"Block verification failed: {result.message}"
-                    )
-                    self._stats["blocks_rejected"] += 1
-            except Exception as e:
-                logger.error(f"Block verification error: {e}")
-                self._stats["blocks_rejected"] += 1
-
-        self._verified_blocks = verified
-
-        if not verified:
+        if not self._verified_blocks:
             logger.error("No blocks passed verification")
             self._status = SyncStatus.FAILED
             self._stats["sync_failed"] += 1
             return False
 
         return self._complete_sync()
+
+    def _verify_received_blocks(self) -> list[Any]:
+        """Iterate and verify all received blocks."""
+        verified = []
+        previous_block = None
+
+        for block in self._received_blocks:
+            if self._verify_single_block(block, previous_block):
+                verified.append(block)
+                previous_block = block
+        
+        return verified
+
+    def _verify_single_block(self, block: Any, previous_block: Any | None) -> bool:
+        """Verify a single block and update statistics."""
+        try:
+            result = self._block_verifier.verify_block(block, previous_block)
+            if result.is_valid():
+                self._stats["blocks_verified"] += 1
+                return True
+            
+            logger.warning(f"Block verification failed: {result.message}")
+            self._stats["blocks_rejected"] += 1
+        except Exception as e:
+            logger.error(f"Block verification error: {e}")
+            self._stats["blocks_rejected"] += 1
+            
+        return False
 
     def _complete_sync(self) -> bool:
         """Complete sync by merging verified blocks."""
@@ -322,9 +327,7 @@ class StateSyncManager:
         self._status = SyncStatus.COMPLETE
         self._stats["sync_completed"] += 1
 
-        logger.info(
-            f"Sync completed: {len(self._verified_blocks)} blocks merged"
-        )
+        logger.info(f"Sync completed: {len(self._verified_blocks)} blocks merged")
         return True
 
     def handle_sync_request(
