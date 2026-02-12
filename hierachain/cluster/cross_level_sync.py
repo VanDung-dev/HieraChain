@@ -126,6 +126,95 @@ class SyncResult:
             "state_root_after": self.state_root_after,
         }
 
+def _get_state_root(chain: Any) -> str:
+    """Get state root from chain."""
+    if hasattr(chain, "get_state_root"):
+        return chain.get_state_root()
+    if hasattr(chain, "blockchain"):
+        blocks = chain.blockchain.get_chain()
+        if blocks:
+            last_block = blocks[-1]
+            if hasattr(last_block, "hash"):
+                return last_block.hash
+    return hashlib.sha256(str(time.time()).encode()).hexdigest()
+
+
+def _get_chain_height(chain: Any) -> int:
+    """Get current chain height."""
+    if hasattr(chain, "get_block_count"):
+        return chain.get_block_count()
+    if hasattr(chain, "blockchain"):
+        return len(chain.blockchain.get_chain())
+    return 0
+
+
+def _get_blocks(chain: Any, from_idx: int, to_idx: int) -> list[Any]:
+    """Get blocks from chain."""
+    if hasattr(chain, "get_blocks"):
+        return chain.get_blocks(from_idx, to_idx)
+    if hasattr(chain, "blockchain"):
+        all_blocks = chain.blockchain.get_chain()
+        return all_blocks[from_idx:to_idx]
+    return []
+
+
+def _generate_proof(chain: Any, block_height: int) -> bytes:
+    """Generate proof for chain state."""
+    if hasattr(chain, "generate_proof"):
+        return chain.generate_proof(block_height)
+    # Mock proof generation
+    data = f"{chain}:{block_height}:{time.time()}"
+    return hashlib.sha256(data.encode()).digest()
+
+
+def _apply_block_to_chain(chain: Any, block: Any) -> bool:
+    """Apply a block to chain."""
+    try:
+        if hasattr(chain, "add_block"):
+            return chain.add_block(block)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to apply block: {e}")
+        return False
+
+
+def _verify_anchor_exists(mainchain: Any, subchain_id: str, state_root: str) -> bool:
+    """Verify that an anchor exists in MainChain."""
+    if hasattr(mainchain, "get_anchor"):
+        anchor = mainchain.get_anchor(subchain_id)
+        if anchor and anchor.get("state_root") == state_root:
+            return True
+    return False
+
+
+def _check_conflict(target_chain: Any, block: Any) -> SyncConflict | None:
+    """Check for conflicts when applying block."""
+    if not hasattr(block, "index"):
+        return None
+
+    target_blocks = _get_blocks(target_chain, block.index, block.index + 1)
+    if not target_blocks:
+        return None
+
+    target_block = target_blocks[0]
+    target_hash = (
+        target_block.hash
+        if hasattr(target_block, "hash")
+        else str(target_block)
+    )
+    source_hash = (block.hash if hasattr(block, "hash") else str(block))
+
+    if target_hash != source_hash:
+        return SyncConflict(
+            conflict_id=f"conflict-{int(time.time() * 1000)}",
+            source_chain="mainchain",
+            target_chain="subchain",
+            block_index=block.index,
+            source_hash=source_hash,
+            target_hash=target_hash,
+        )
+    return None
+
 
 class CrossLevelSyncManager:
     """
@@ -242,101 +331,51 @@ class CrossLevelSyncManager:
         start_time = time.time()
         self._stats["syncs_initiated"] += 1
 
-        if not self._mainchain_ref:
-            return SyncResult(
-                success=False,
-                error_message="MainChain not connected",
-            )
-
-        if sub_chain_id not in self._subchains:
-            return SyncResult(
-                success=False,
-                error_message=f"Sub-chain {sub_chain_id} not connected",
-            )
+        # Guard clauses for early exit
+        validation_error = self._validate_connections(sub_chain_id)
+        if validation_error:
+            return validation_error
 
         self._status = CrossLevelSyncStatus.SYNCING_DOWN
         subchain = self._subchains[sub_chain_id]
 
         try:
-            # Get state roots before sync
-            state_root_before = self._get_state_root(subchain)
-
-            # Get blocks from MainChain
+            state_root_before = _get_state_root(subchain)
+            
             if to_block == -1:
-                to_block = self._get_chain_height(self._mainchain_ref)
+                to_block = _get_chain_height(self._mainchain_ref)
 
-            blocks_synced = 0
-            conflicts_found = 0
+            # Core sync logic extracted to helper
+            blocks_synced = self._sync_batches(subchain, from_block, to_block)
 
-            for batch_start in range(from_block, to_block, self.batch_size):
-                batch_end = min(batch_start + self.batch_size, to_block)
-                blocks = self._get_blocks(
-                    self._mainchain_ref, batch_start, batch_end
-                )
-
-                for block in blocks:
-                    # Verify block from MainChain
-                    if not self._verify_block(block):
-                        logger.warning(
-                            f"Block {batch_start} failed verification"
-                        )
-                        continue
-
-                    # Check for conflicts
-                    conflict = self._check_conflict(subchain, block)
-                    if conflict:
-                        conflicts_found += 1
-                        self._conflicts.append(conflict)
-                        resolved = self._resolve_conflict(conflict)
-                        if not resolved:
-                            continue
-
-                    # Apply block to subchain
-                    if self._apply_block_to_chain(subchain, block):
-                        blocks_synced += 1
-
+            # Update stats and status
             self._stats["blocks_synced_down"] += blocks_synced
             self._stats["syncs_completed"] += 1
             self._status = CrossLevelSyncStatus.COMPLETE
 
-            state_root_after = self._get_state_root(subchain)
-
             result = SyncResult(
                 success=True,
                 blocks_synced=blocks_synced,
-                conflicts_found=conflicts_found,
-                conflicts_resolved=len(
-                    [c for c in self._conflicts if c.resolved]
-                ),
+                conflicts_found=len(self._conflicts),
+                conflicts_resolved=len([c for c in self._conflicts if c.resolved]),
                 duration_seconds=time.time() - start_time,
                 state_root_before=state_root_before,
-                state_root_after=state_root_after,
+                state_root_after=_get_state_root(subchain),
             )
 
             if self._on_sync_complete:
                 self._on_sync_complete(result)
 
-            logger.info(
-                f"Sync from MainChain complete: "
-                f"{blocks_synced} blocks to {sub_chain_id}"
-            )
+            logger.info(f"Sync from MainChain complete: {blocks_synced} blocks to {sub_chain_id}")
             return result
 
         except Exception as e:
             logger.error(f"Sync from MainChain failed: {e}")
             self._stats["syncs_failed"] += 1
             self._status = CrossLevelSyncStatus.FAILED
-            return SyncResult(
-                success=False,
-                error_message=str(e),
-                duration_seconds=time.time() - start_time,
-            )
+            return SyncResult(success=False, error_message=str(e), duration_seconds=time.time() - start_time)
 
-    def sync_to_mainchain(
-        self,
-        sub_chain_id: str,
-        proof: bytes | None = None,
-    ) -> SyncResult:
+    def sync_to_mainchain(self, sub_chain_id: str, proof: bytes | None = None) -> SyncResult:
         """
         Sync state from Sub-chain to MainChain (proof submission up).
 
@@ -350,44 +389,29 @@ class CrossLevelSyncManager:
         start_time = time.time()
         self._stats["syncs_initiated"] += 1
 
-        if not self._mainchain_ref:
-            return SyncResult(
-                success=False,
-                error_message="MainChain not connected",
-            )
-
-        if sub_chain_id not in self._subchains:
-            return SyncResult(
-                success=False,
-                error_message=f"Sub-chain {sub_chain_id} not connected",
-            )
+        # Guard clauses
+        validation_error = self._validate_connections(sub_chain_id)
+        if validation_error:
+            return validation_error
 
         self._status = CrossLevelSyncStatus.SYNCING_UP
         subchain = self._subchains[sub_chain_id]
 
         try:
-            # Get state from subchain
-            state_root = self._get_state_root(subchain)
-            block_height = self._get_chain_height(subchain)
+            state_root = _get_state_root(subchain)
+            block_height = _get_chain_height(subchain)
 
-            # Generate proof if not provided
+            # 1. Prepare and verify proof
             if proof is None:
-                proof = self._generate_proof(subchain, block_height)
+                proof = _generate_proof(subchain, block_height)
 
-            # Verify proof before submission
             self._status = CrossLevelSyncStatus.VERIFYING
             if not self._verify_proof(proof, state_root):
-                self._stats["syncs_failed"] += 1
-                self._status = CrossLevelSyncStatus.FAILED
-                return SyncResult(
-                    success=False,
-                    error_message="Proof verification failed",
-                    duration_seconds=time.time() - start_time,
-                )
+                return self._handle_sync_failure("Proof verification failed", start_time)
 
             self._stats["proofs_verified"] += 1
 
-            # Submit proof to MainChain
+            # 2. Submit anchor
             anchor_data = {
                 "sub_chain_id": sub_chain_id,
                 "block_height": block_height,
@@ -396,44 +420,46 @@ class CrossLevelSyncManager:
                 "timestamp": time.time(),
             }
 
-            if self._submit_anchor_to_mainchain(anchor_data):
-                self._stats["blocks_synced_up"] += 1
-                self._stats["syncs_completed"] += 1
-                self._status = CrossLevelSyncStatus.COMPLETE
+            if not self._submit_anchor_to_mainchain(anchor_data):
+                return self._handle_sync_failure("Failed to submit anchor to MainChain", start_time)
 
-                result = SyncResult(
-                    success=True,
-                    blocks_synced=1,
-                    duration_seconds=time.time() - start_time,
-                    state_root_after=state_root,
-                )
-
-                if self._on_sync_complete:
-                    self._on_sync_complete(result)
-
-                logger.info(
-                    f"Sync to MainChain complete: "
-                    f"anchor from {sub_chain_id}"
-                )
-                return result
-            else:
-                raise RuntimeError("Failed to submit anchor to MainChain")
+            # 3. Handle success
+            return self._handle_sync_success(sub_chain_id, state_root, start_time)
 
         except Exception as e:
             logger.error(f"Sync to MainChain failed: {e}")
-            self._stats["syncs_failed"] += 1
-            self._status = CrossLevelSyncStatus.FAILED
-            return SyncResult(
-                success=False,
-                error_message=str(e),
-                duration_seconds=time.time() - start_time,
-            )
+            return self._handle_sync_failure(str(e), start_time)
 
-    def verify_cross_level_state(
-        self,
-        source_chain_id: str,
-        target_chain_id: str,
-    ) -> bool:
+    def _handle_sync_failure(self, error_message: str, start_time: float) -> SyncResult:
+        """Helper to handle sync failure and return result."""
+        self._stats["syncs_failed"] += 1
+        self._status = CrossLevelSyncStatus.FAILED
+        return SyncResult(
+            success=False,
+            error_message=error_message,
+            duration_seconds=time.time() - start_time,
+        )
+
+    def _handle_sync_success(self, sub_chain_id: str, state_root: str, start_time: float) -> SyncResult:
+        """Helper to handle sync success and return result."""
+        self._stats["blocks_synced_up"] += 1
+        self._stats["syncs_completed"] += 1
+        self._status = CrossLevelSyncStatus.COMPLETE
+
+        result = SyncResult(
+            success=True,
+            blocks_synced=1,
+            duration_seconds=time.time() - start_time,
+            state_root_after=state_root,
+        )
+
+        if self._on_sync_complete:
+            self._on_sync_complete(result)
+
+        logger.info(f"Sync to MainChain complete: anchor from {sub_chain_id}")
+        return result
+
+    def verify_cross_level_state(self, source_chain_id: str, target_chain_id: str) -> bool:
         """
         Verify state consistency between two hierarchy levels.
 
@@ -451,22 +477,17 @@ class CrossLevelSyncManager:
             logger.warning("Cannot verify: chain not found")
             return False
 
-        source_root = self._get_state_root(source)
-        target_root = self._get_state_root(target)
+        source_root = _get_state_root(source)
+        target_root = _get_state_root(target)
 
         # For sub-chain to main-chain, verify anchor exists
         if source_chain_id != "mainchain" and target_chain_id == "mainchain":
-            return self._verify_anchor_exists(
-                target, source_chain_id, source_root
-            )
+            return _verify_anchor_exists(target, source_chain_id, source_root)
 
         # For same-level comparison, roots should match
         return source_root == target_root
 
-    def resolve_sync_conflict(
-        self,
-        conflict: SyncConflict,
-    ) -> bool:
+    def resolve_sync_conflict(self,conflict: SyncConflict) -> bool:
         """
         Resolve a sync conflict.
 
@@ -528,9 +549,7 @@ class CrossLevelSyncManager:
     def set_callbacks(
         self,
         on_complete: Callable[[SyncResult], None] | None = None,
-        on_conflict: Callable[
-            [SyncConflict], ConflictResolutionStrategy
-        ] | None = None,
+        on_conflict: Callable[[SyncConflict], ConflictResolutionStrategy] | None = None,
     ) -> None:
         """Set callback functions."""
         self._on_sync_complete = on_complete
@@ -543,6 +562,16 @@ class CrossLevelSyncManager:
         self._pending_blocks.clear()
         self._conflicts.clear()
 
+    def _validate_connections(self, sub_chain_id: str) -> SyncResult | None:
+        """Validate that MainChain and the specified Sub-chain are connected."""
+        if not self._mainchain_ref:
+            return SyncResult(success=False, error_message="MainChain not connected")
+
+        if sub_chain_id not in self._subchains:
+            return SyncResult(success=False, error_message=f"Sub-chain {sub_chain_id} not connected")
+        
+        return None
+
     # Helper methods
 
     def _get_chain_by_id(self, chain_id: str) -> Any:
@@ -550,37 +579,6 @@ class CrossLevelSyncManager:
         if chain_id == "mainchain":
             return self._mainchain_ref
         return self._subchains.get(chain_id)
-
-    def _get_state_root(self, chain: Any) -> str:
-        """Get state root from chain."""
-        if hasattr(chain, "get_state_root"):
-            return chain.get_state_root()
-        if hasattr(chain, "blockchain"):
-            blocks = chain.blockchain.get_chain()
-            if blocks:
-                last_block = blocks[-1]
-                if hasattr(last_block, "hash"):
-                    return last_block.hash
-        return hashlib.sha256(str(time.time()).encode()).hexdigest()
-
-    def _get_chain_height(self, chain: Any) -> int:
-        """Get current chain height."""
-        if hasattr(chain, "get_block_count"):
-            return chain.get_block_count()
-        if hasattr(chain, "blockchain"):
-            return len(chain.blockchain.get_chain())
-        return 0
-
-    def _get_blocks(
-        self, chain: Any, from_idx: int, to_idx: int
-    ) -> list[Any]:
-        """Get blocks from chain."""
-        if hasattr(chain, "get_blocks"):
-            return chain.get_blocks(from_idx, to_idx)
-        if hasattr(chain, "blockchain"):
-            all_blocks = chain.blockchain.get_chain()
-            return all_blocks[from_idx:to_idx]
-        return []
 
     def _verify_block(self, block: Any) -> bool:
         """Verify a block."""
@@ -596,61 +594,35 @@ class CrossLevelSyncManager:
         # Mock verification
         return len(proof) > 0
 
-    def _generate_proof(self, chain: Any, block_height: int) -> bytes:
-        """Generate proof for chain state."""
-        if hasattr(chain, "generate_proof"):
-            return chain.generate_proof(block_height)
-        # Mock proof generation
-        data = f"{chain}:{block_height}:{time.time()}"
-        return hashlib.sha256(data.encode()).digest()
+    def _sync_batches(self, subchain: Any, from_block: int, to_block: int) -> int:
+        """Process sync in batches and return total blocks synced."""
+        total_synced = 0
+        for batch_start in range(from_block, to_block, self.batch_size):
+            batch_end = min(batch_start + self.batch_size, to_block)
+            blocks = _get_blocks(self._mainchain_ref, batch_start, batch_end)
+            
+            for block in blocks:
+                if self._process_block_sync(subchain, block):
+                    total_synced += 1
+        return total_synced
 
-    def _check_conflict(
-        self, target_chain: Any, block: Any
-    ) -> SyncConflict | None:
-        """Check for conflicts when applying block."""
-        if not hasattr(block, "index"):
-            return None
+    def _process_block_sync(self, subchain: Any, block: Any) -> bool:
+        """Process a single block during sync. Returns True if block was applied."""
+        if not self._verify_block(block):
+            logger.warning(f"Block failed verification during sync")
+            return False
 
-        target_blocks = self._get_blocks(
-            target_chain, block.index, block.index + 1
-        )
-        if not target_blocks:
-            return None
+        conflict = _check_conflict(subchain, block)
+        if conflict:
+            self._conflicts.append(conflict)
+            if not self._resolve_conflict(conflict):
+                return False
 
-        target_block = target_blocks[0]
-        target_hash = (
-            target_block.hash
-            if hasattr(target_block, "hash")
-            else str(target_block)
-        )
-        source_hash = (
-            block.hash if hasattr(block, "hash") else str(block)
-        )
-
-        if target_hash != source_hash:
-            return SyncConflict(
-                conflict_id=f"conflict-{int(time.time() * 1000)}",
-                source_chain="mainchain",
-                target_chain="subchain",
-                block_index=block.index,
-                source_hash=source_hash,
-                target_hash=target_hash,
-            )
-        return None
+        return _apply_block_to_chain(subchain, block)
 
     def _resolve_conflict(self, conflict: SyncConflict) -> bool:
         """Resolve a conflict."""
         return self.resolve_sync_conflict(conflict)
-
-    def _apply_block_to_chain(self, chain: Any, block: Any) -> bool:
-        """Apply a block to chain."""
-        try:
-            if hasattr(chain, "add_block"):
-                return chain.add_block(block)
-            return True
-        except Exception as e:
-            logger.error(f"Failed to apply block: {e}")
-            return False
 
     def _submit_anchor_to_mainchain(self, anchor_data: dict) -> bool:
         """Submit anchor event to MainChain."""
@@ -669,13 +641,3 @@ class CrossLevelSyncManager:
         except Exception as e:
             logger.error(f"Failed to submit anchor: {e}")
             return False
-
-    def _verify_anchor_exists(
-        self, mainchain: Any, subchain_id: str, state_root: str
-    ) -> bool:
-        """Verify that an anchor exists in MainChain."""
-        if hasattr(mainchain, "get_anchor"):
-            anchor = mainchain.get_anchor(subchain_id)
-            if anchor and anchor.get("state_root") == state_root:
-                return True
-        return False
