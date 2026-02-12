@@ -298,8 +298,14 @@ class SQLiteAdapter:
             logger.error(f"Error loading chain {chain_name}: {e}")
             return None
     
-    def store_proof(self, main_chain_name: str, sub_chain_name: str, 
-                   proof_hash: str, block_index: int, metadata: dict[str, Any]) -> bool:
+    def store_proof(
+        self,
+        main_chain_name: str,
+        sub_chain_name: str,
+        proof_hash: str,
+        block_index: int,
+        metadata: dict[str, Any]
+    ) -> bool:
         """
         Store a proof submission from Sub-Chain to Main Chain.
         
