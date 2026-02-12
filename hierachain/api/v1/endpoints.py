@@ -131,13 +131,20 @@ async def submit_proof(chain_name: str,manager: HierarchyManager = Depends(get_h
         
         # Check if sub_chain has the required method
         if hasattr(sub_chain, 'submit_proof_to_main'):
-            sub_chain.submit_proof_to_main(main_chain, metadata_filter)
+            success = sub_chain.submit_proof_to_main(main_chain, metadata_filter)
         else:
             # Try alternative method
-            main_chain.add_sub_chain_proof(sub_chain.name, {
-                "proof": "mock_proof",
-                "timestamp": time.time()
-            })
+            success = main_chain.add_proof(
+                sub_chain_name=sub_chain.name,
+                proof_hash="mock_proof_hash",
+                metadata={
+                    "proof": "mock_proof",
+                    "timestamp": time.time()
+                }
+            )
+        
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to submit proof to main chain")
         
         return ProofSubmissionResponse(
             success=True,
