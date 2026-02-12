@@ -9,19 +9,83 @@ and provides indexing capabilities for entities and events.
 import json
 import logging
 import time
+from typing import Any, Callable
+import redis
 
-try:
-    import redis
-    REDIS_AVAILABLE = True
-except ImportError:
-    REDIS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+def _parse_single_json_field(data: dict[str, Any], key: str):
+    """Parse a single JSON field in data dictionary"""
+    if key not in data:
+        return
+    try:
+        data[key] = json.loads(data[key])
+    except (json.JSONDecodeError, TypeError):
+        if key == "events":
+            data[key] = []
+
+def _parse_json_fields(data: dict[str, Any], fields: list[str] | None = None):
+    """Parse JSON fields in data dictionary"""
+    for key in (fields or []):
+        _parse_single_json_field(data, key)
+
+def _convert_fields(data: dict[str, Any], fields: list[str] | None = None, converter: Callable = int):
+    """Convert fields in data dictionary using converter function"""
+    for key in (fields or []):
+        if key in data:
+            try:
+                data[key] = converter(data[key])
+            except (ValueError, TypeError):
+                pass
+
+def _extract_event_from_block(
+    block_data: dict[str, Any],
+    entity_id: str,
+    event_ref: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Extract specific entity event from block data"""
+    if not block_data:
+        return None
+        
+    for event in block_data.get("events", []):
+        if event.get("entity_id") == entity_id:
+            return {
+                "chain_name": event_ref["chain_name"],
+                "block_index": event_ref["block_index"],
+                "event_type": event.get("event", event.get("event_type")),
+                "timestamp": event.get("timestamp"),
+                "details": event.get("details", {})
+            }
+    return None
+
+def _process_redis_data(
+    data: dict[str, Any] | None,
+    json_fields: list[str] | None = None,
+    int_fields: list[str] | None = None,
+    float_fields: list[str] | None = None
+) -> dict[str, Any] | None:
+    """Process data from Redis, converting fields to appropriate types"""
+    if not data:
+        return data
+
+    _parse_json_fields(data, json_fields)
+    _convert_fields(data, int_fields, int)
+    _convert_fields(data, float_fields, float)
+
+    return data
 
 class RedisStorageAdapter:
     """Redis-based storage adapter for blockchain data"""
     
-    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0, password: str = None, **kwargs):
+    def __init__(
+        self,
+        host: str = "localhost",
+        port: int = 6379,
+        db: int = 0,
+        password: str = None,
+        **kwargs
+    ):
         """
         Initialize Redis storage adapter
         
@@ -32,9 +96,6 @@ class RedisStorageAdapter:
             password: Redis password (if required)
             **kwargs: Additional Redis connection parameters
         """
-        if not REDIS_AVAILABLE:
-            raise ImportError("redis is required for Redis adapter. Install with: pip install redis")
-        
         self.host = host
         self.port = port
         self.db = db
@@ -86,8 +147,14 @@ class RedisStorageAdapter:
     def _get_stats_key(self, chain_name: str) -> str:
         """Get Redis key for chain statistics"""
         return f"{self.STATS_PREFIX}{chain_name}"
-    
-    def store_chain_metadata(self, chain_name: str, chain_type: str, parent_chain: str = None, metadata: dict = None):
+
+    def store_chain_metadata(
+        self,
+        chain_name: str,
+        chain_type: str,
+        parent_chain: str = None,
+        metadata: dict = None
+    ):
         """Store chain metadata"""
         try:
             chain_data = {
@@ -190,7 +257,7 @@ class RedisStorageAdapter:
                     self.redis_client.sadd(f"{stats_key}:entities", entity_id)
             
             # Update timestamps
-            self.redis_client.hset(stats_key, "last_updated", time.time())
+            self.redis_client.hset(stats_key, "last_updated", str(time.time()))
             
         except Exception as e:
             logger.error(f"Failed to update chain stats: {e}")
@@ -205,23 +272,11 @@ class RedisStorageAdapter:
             if not chain_data:
                 return None
             
-            # Parse JSON fields
-            for key in ["metadata"]:
-                if key in chain_data:
-                    try:
-                        chain_data[key] = json.loads(chain_data[key])
-                    except json.JSONDecodeError:
-                        pass
-            
-            # Convert numeric fields
-            for key in ["created_at", "updated_at"]:
-                if key in chain_data:
-                    try:
-                        chain_data[key] = float(chain_data[key])
-                    except ValueError:
-                        pass
-            
-            return chain_data
+            return _process_redis_data(
+                chain_data, 
+                json_fields=["metadata"], 
+                float_fields=["created_at", "updated_at"]
+            )
             
         except Exception as e:
             logger.error(f"Failed to get chain metadata {chain_name}: {e}")
@@ -236,24 +291,13 @@ class RedisStorageAdapter:
             if not block_data:
                 return None
             
-            # Parse JSON fields
-            for key in ["events"]:
-                if key in block_data:
-                    try:
-                        block_data[key] = json.loads(block_data[key])
-                    except json.JSONDecodeError:
-                        block_data[key] = []
-            
-            # Convert numeric fields
-            for key in ["index", "timestamp", "nonce", "stored_at"]:
-                if key in block_data:
-                    try:
-                        if key == "index" or key == "nonce":
-                            block_data[key] = int(block_data[key])
-                        else:
-                            block_data[key] = float(block_data[key])
-                    except ValueError:
-                        pass
+            # Process fields
+            block_data = _process_redis_data(
+                block_data,
+                json_fields=["events"],
+                int_fields=["index", "nonce"],
+                float_fields=["timestamp", "stored_at"]
+            )
             
             # Remove storage metadata
             block_data.pop("stored_at", None)
@@ -289,6 +333,22 @@ class RedisStorageAdapter:
             logger.error(f"Failed to get blocks for chain {chain_name}: {e}")
             return []
     
+    def _process_event_ref(self, event_ref_json: str, entity_id: str, chain_name: str = None) -> dict | None:
+        """Process a single event reference JSON"""
+        try:
+            event_ref = json.loads(event_ref_json)
+            
+            # Filter by chain if specified
+            if chain_name and event_ref.get("chain_name") != chain_name:
+                return None
+            
+            # Get full event data from block
+            block_data = self.get_block(event_ref["chain_name"], event_ref["block_index"])
+            return _extract_event_from_block(block_data, entity_id, event_ref)
+            
+        except (json.JSONDecodeError, KeyError):
+            return None
+
     def get_entity_events(self, entity_id: str, chain_name: str = None) -> list[dict]:
         """Get all events for a specific entity"""
         try:
@@ -299,29 +359,9 @@ class RedisStorageAdapter:
             
             events = []
             for event_ref_json in event_refs:
-                try:
-                    event_ref = json.loads(event_ref_json)
-                    
-                    # Filter by chain if specified
-                    if chain_name and event_ref.get("chain_name") != chain_name:
-                        continue
-                    
-                    # Get full event data from block
-                    block_data = self.get_block(event_ref["chain_name"], event_ref["block_index"])
-                    if block_data:
-                        for event in block_data.get("events", []):
-                            if event.get("entity_id") == entity_id:
-                                events.append({
-                                    "chain_name": event_ref["chain_name"],
-                                    "block_index": event_ref["block_index"],
-                                    "event_type": event.get("event", event.get("event_type")),
-                                    "timestamp": event.get("timestamp"),
-                                    "details": event.get("details", {})
-                                })
-                                break
-                
-                except json.JSONDecodeError:
-                    continue
+                event = self._process_event_ref(event_ref_json, entity_id, chain_name)
+                if event:
+                    events.append(event)
             
             return events
             
