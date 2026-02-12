@@ -17,7 +17,7 @@ import pyarrow.parquet as pq
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
-from hierachain.core.block import Block
+from hierachain.core.block import Block, table_to_list_of_dicts
 
 logger = logging.getLogger(__name__)
 
@@ -349,7 +349,7 @@ class FileStorageAdapter:
         events_table = block_data["events"]
         expr = (pc.field("entity_id") == entity_id) & (pc.field("timestamp") == record["timestamp"])
         subset = events_table.filter(expr)
-        subset_rows = Block.table_to_list_of_dicts(subset)
+        subset_rows = table_to_list_of_dicts(subset)
         
         for full_event in subset_rows:
             events.append({
