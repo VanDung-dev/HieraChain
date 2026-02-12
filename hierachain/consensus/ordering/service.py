@@ -1,0 +1,144 @@
+"""
+Ordering service for the HieraChain.
+Coordinates between specialized components to provide ordering functionality.
+"""
+
+from __future__ import annotations
+import threading
+import logging
+import time
+import asyncio
+from queue import Queue
+from typing import Any
+
+from hierachain.core.block import Block
+from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.consensus.ordering.types import PendingEvent, EventStatus, OrderingStatus
+from hierachain.consensus.ordering.utils import generate_event_id
+from hierachain.consensus.ordering.metrics import OrderingMetrics
+from hierachain.consensus.ordering.storage import OrderingStorageHandler
+from hierachain.consensus.ordering.certifier import EventCertifier
+from hierachain.consensus.ordering.block_builder import BlockBuilder
+from hierachain.consensus.ordering.processor import OrderingProcessor
+from hierachain.consensus.ordering.maintenance import OrderingMaintenance
+
+logger = logging.getLogger(__name__)
+
+class OrderingService:
+    """
+    Facade for the Ordering Service package.
+    Coordinates between specialized components to provide ordering functionality.
+    """
+    def __init__(self, config: dict[str, Any], nodes: list[Any] | None = None):
+        self.config = config
+        self.nodes = nodes or []
+        self.status = OrderingStatus.MAINTENANCE
+        self.should_stop = threading.Event()
+        self.event_pool: Queue[PendingEvent] = Queue()
+        self.pending_events: dict[str, PendingEvent] = {}
+        self.blocks_created = 0
+        self.commit_queue: Queue[Block] = Queue()
+        
+        # Component Initialization
+        self.metrics = OrderingMetrics()
+        self.storage_handler = OrderingStorageHandler(config)
+        self.journal = TransactionJournal(config.get("journal_path", "journal/ordering.log"))
+        self.certifier = EventCertifier()
+        self.block_builder = BlockBuilder(config)
+        
+        # Complex Logic Handlers
+        self.processor = OrderingProcessor(self)
+        self.maintenance = OrderingMaintenance(self)
+        
+        # Thread Management
+        self.processing_thread = threading.Thread(
+            target=self._init_processing_thread, 
+            daemon=True,
+            name="OrderingProcessor"
+        )
+        self.processing_thread.start()
+
+    def _init_processing_thread(self):
+        """Entry point for the background processing thread"""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(self.processor.run_async())
+        finally:
+            loop.close()
+
+    def receive_event(self, event_data: dict[str, Any], channel_id: str, submitter_org: str) -> str:
+        """Submit a new event for ordering"""
+        if self.status in [OrderingStatus.LOCKDOWN, OrderingStatus.SHUTDOWN]:
+            raise Exception(f"Ordering service is in {self.status.value} mode")
+
+        self.metrics.record_received()
+        event_id = generate_event_id(event_data, channel_id)
+        
+        if event_id in self.pending_events:
+            return event_id
+
+        pending_event = PendingEvent(
+            event_id=event_id,
+            event_data=event_data,
+            channel_id=channel_id,
+            submitter_org=submitter_org,
+            received_at=time.time(),
+            status=EventStatus.PENDING
+        )
+        
+        self.journal.log_event(event_data)
+        self.pending_events[event_id] = pending_event
+        self.event_pool.put(pending_event)
+        
+        return event_id
+
+    def get_blocks(self, start_index: int = 0) -> list[Block]:
+        """Retrieve blocks starting from index"""
+        return self.storage_handler.get_blocks(start_index)
+
+    def get_next_block(self, timeout: float | None = None) -> Block | None:
+        """Get next committed block from queue"""
+        try:
+            return self.commit_queue.get(timeout=timeout) if timeout else self.commit_queue.get_nowait()
+        except Exception:
+            return None
+
+    @property
+    def block_history(self):
+        return self.storage_handler.block_history
+
+    @block_history.setter
+    def block_history(self, value):
+        self.storage_handler.block_history = value
+
+    def get_statistics(self) -> dict[str, Any]:
+        """Get current service metrics"""
+        return self.metrics.get_stats()
+
+    async def _check_timeout_block_creation(self, force: bool = False):
+        """Proxy for backward compatibility with sub_chain.py"""
+        await self.processor.block_manager.check_timeout_block_creation(force=force)
+
+    def lockdown(self, reason: str = "Manual lockdown") -> bool:
+        """Enter lockdown mode"""
+        return self.maintenance.lockdown(reason)
+
+    def resume(self) -> bool:
+        """Resume from lockdown/maintenance"""
+        return self.maintenance.resume()
+
+    def flush_pool(self) -> int:
+        """Emergency clear of event pool"""
+        return self.maintenance.flush_pool()
+
+    def shutdown(self):
+        """Graceful service shutdown"""
+        logger.info("Ordering service shutting down...")
+        self.status = OrderingStatus.SHUTDOWN
+        self.should_stop.set()
+        self.storage_handler.close()
+        self.journal.close()
+        if self.processing_thread.is_alive():
+            self.processing_thread.join(timeout=5.0)
+        logger.info("Ordering service shutdown complete.")
