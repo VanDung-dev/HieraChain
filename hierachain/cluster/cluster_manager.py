@@ -187,26 +187,24 @@ class ClusterManager:
             ClusterHealthMetrics with current cluster state.
         """
         with self._lock:
-            metrics = ClusterHealthMetrics(
-                total_nodes=len(self._nodes),
+            nodes = list(self._nodes.values())
+            timeout = self.heartbeat_timeout
+
+            # Calculate counts using generator expressions to reduce complexity
+            healthy = sum(1 for n in nodes if n.is_healthy(timeout))
+            unhealthy = sum(1 for n in nodes if not n.is_healthy(timeout) and n.status == NodeStatus.UNHEALTHY)
+            unknown = len(nodes) - healthy - unhealthy
+
+            return ClusterHealthMetrics(
+                total_nodes=len(nodes),
+                healthy_nodes=healthy,
+                unhealthy_nodes=unhealthy,
+                unknown_nodes=unknown,
+                lockdown_votes=sum(1 for n in nodes if n.lockdown_vote),
+                recovery_votes=sum(1 for n in nodes if n.recovery_vote),
                 is_in_lockdown=self._is_locked_down,
                 quorum_threshold=self.quorum_threshold,
             )
-
-            for node in self._nodes.values():
-                if node.is_healthy(self.heartbeat_timeout):
-                    metrics.healthy_nodes += 1
-                elif node.status == NodeStatus.UNHEALTHY:
-                    metrics.unhealthy_nodes += 1
-                else:
-                    metrics.unknown_nodes += 1
-
-                if node.lockdown_vote:
-                    metrics.lockdown_votes += 1
-                if node.recovery_vote:
-                    metrics.recovery_votes += 1
-
-            return metrics
 
     def vote_lockdown(self, node_id: str, reason: str = "") -> bool:
         """
@@ -267,41 +265,27 @@ class ClusterManager:
         Returns:
             True if quorum is reached and lockdown should be triggered.
         """
-        if self._is_locked_down:
-            return False  # Already in lockdown
-
-        lockdown_votes = sum(1 for n in self._nodes.values() if n.lockdown_vote)
         total_nodes = len(self._nodes)
-
-        if total_nodes == 0:
+        if self._is_locked_down or total_nodes == 0:
             return False
 
+        lockdown_votes = sum(1 for n in self._nodes.values() if n.lockdown_vote)
         vote_ratio = lockdown_votes / total_nodes
 
-        if vote_ratio >= self.quorum_threshold:
-            self._is_locked_down = True
-            logger.warning(
-                f"Lockdown quorum reached: {lockdown_votes}/{total_nodes} "
-                f"({vote_ratio:.1%} >= {self.quorum_threshold:.1%})"
-            )
+        if vote_ratio < self.quorum_threshold:
+            logger.debug(f"Lockdown votes: {lockdown_votes}/{total_nodes} ({vote_ratio:.1%} < {self.quorum_threshold:.1%})")
+            return False
 
-            # Clear votes for next round
-            self._clear_lockdown_votes()
-
-            # Trigger callback
-            if self._on_lockdown_quorum:
-                try:
-                    self._on_lockdown_quorum()
-                except Exception as e:
-                    logger.error(f"Error in lockdown callback: {e}")
-
-            return True
-
-        logger.debug(
-            f"Lockdown votes: {lockdown_votes}/{total_nodes} "
-            f"({vote_ratio:.1%} < {self.quorum_threshold:.1%})"
-        )
-        return False
+        self._is_locked_down = True
+        logger.warning(f"Lockdown quorum reached: {lockdown_votes}/{total_nodes} ({vote_ratio:.1%} >= {self.quorum_threshold:.1%})")
+        
+        self._clear_lockdown_votes()
+        if self._on_lockdown_quorum:
+            try:
+                self._on_lockdown_quorum()
+            except Exception as e:
+                logger.error(f"Error in lockdown callback: {e}")
+        return True
 
     def _check_recovery_quorum(self) -> bool:
         """
@@ -310,41 +294,27 @@ class ClusterManager:
         Returns:
             True if quorum is reached and recovery should be triggered.
         """
-        if not self._is_locked_down:
-            return False  # Not in lockdown
-
-        recovery_votes = sum(1 for n in self._nodes.values() if n.recovery_vote)
         total_nodes = len(self._nodes)
-
-        if total_nodes == 0:
+        if not self._is_locked_down or total_nodes == 0:
             return False
 
+        recovery_votes = sum(1 for n in self._nodes.values() if n.recovery_vote)
         vote_ratio = recovery_votes / total_nodes
 
-        if vote_ratio >= self.quorum_threshold:
-            self._is_locked_down = False
-            logger.info(
-                f"Recovery quorum reached: {recovery_votes}/{total_nodes} "
-                f"({vote_ratio:.1%} >= {self.quorum_threshold:.1%})"
-            )
+        if vote_ratio < self.quorum_threshold:
+            logger.debug(f"Recovery votes: {recovery_votes}/{total_nodes} ({vote_ratio:.1%} < {self.quorum_threshold:.1%})")
+            return False
 
-            # Clear votes for next round
-            self._clear_recovery_votes()
-
-            # Trigger callback
-            if self._on_recovery_quorum:
-                try:
-                    self._on_recovery_quorum()
-                except Exception as e:
-                    logger.error(f"Error in recovery callback: {e}")
-
-            return True
-
-        logger.debug(
-            f"Recovery votes: {recovery_votes}/{total_nodes} "
-            f"({vote_ratio:.1%} < {self.quorum_threshold:.1%})"
-        )
-        return False
+        self._is_locked_down = False
+        logger.info(f"Recovery quorum reached: {recovery_votes}/{total_nodes} ({vote_ratio:.1%} >= {self.quorum_threshold:.1%})")
+        
+        self._clear_recovery_votes()
+        if self._on_recovery_quorum:
+            try:
+                self._on_recovery_quorum()
+            except Exception as e:
+                logger.error(f"Error in recovery callback: {e}")
+        return True
 
     def _clear_lockdown_votes(self) -> None:
         """Clear lockdown votes after quorum is reached."""
