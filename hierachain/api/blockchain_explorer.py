@@ -145,10 +145,12 @@ class ChainOverviewComponent:
         """Get main chain statistics"""
         if hasattr(self.chain, 'main_chain'):
             chain = self.chain.main_chain
+            # Use pre-calculated total_events for O(1) performance
+            total_events = getattr(chain, 'total_events', sum(len(block.events) for block in chain.chain))
             return {
                 "block_count": len(chain.chain),
                 "latest_block": chain.chain[-1].index if chain.chain else 0,
-                "total_events": sum(len(block.events) for block in chain.chain)
+                "total_events": total_events
             }
         return {"error": "Main chain not found"}
     
@@ -157,10 +159,12 @@ class ChainOverviewComponent:
         if hasattr(self.chain, 'sub_chains'):
             stats = []
             for name, sub_chain in self.chain.sub_chains.items():
+                # Use pre-calculated total_events for O(1) performance
+                total_events = getattr(sub_chain, 'total_events', sum(len(block.events) for block in sub_chain.chain))
                 stats.append({
                     "name": name,
                     "block_count": len(sub_chain.chain),
-                    "events": sum(len(block.events) for block in sub_chain.chain)
+                    "events": total_events
                 })
             return stats
         return []
@@ -239,31 +243,37 @@ class EntityTracerComponent:
     
     def _search_main_chain(self, entity_id: str) -> list[dict[str, Any]]:
         """Search main chain for entity"""
-        events = []
-        for block in self.chain.main_chain.chain:
-            for event in block.events:
-                if self._event_contains_entity(event, entity_id):
-                    events.append({
-                        "chain": "main_chain",
-                        "block_index": block.index,
-                        "event": event,
-                        "timestamp": event.get('timestamp', block.timestamp if hasattr(block, 'timestamp') else 0)
-                    })
-        return events
+        if not hasattr(self.chain, 'main_chain'):
+            return []
+            
+        # Use indexed search for O(1) performance
+        indexed_events = self.chain.main_chain.get_indexed_entity_events(entity_id)
+        return [
+            {
+                "chain": "main_chain",
+                "block_index": e["block_index"],
+                "event": e["event"],
+                "timestamp": e["timestamp"]
+            }
+            for e in indexed_events
+        ]
     
     def _search_sub_chains(self, entity_id: str) -> list[dict[str, Any]]:
         """Search sub-chains for entity"""
         events = []
+        if not hasattr(self.chain, 'sub_chains'):
+            return []
+            
         for chain_name, sub_chain in self.chain.sub_chains.items():
-            for block in sub_chain.chain:
-                for event in block.events:
-                    if self._event_contains_entity(event, entity_id):
-                        events.append({
-                            "chain": chain_name,
-                            "block_index": block.index,
-                            "event": event,
-                            "timestamp": event.get('timestamp', block.timestamp if hasattr(block, 'timestamp') else 0)
-                        })
+            # Use indexed search for O(1) performance
+            indexed_events = sub_chain.get_indexed_entity_events(entity_id)
+            for e in indexed_events:
+                events.append({
+                    "chain": chain_name,
+                    "block_index": e["block_index"],
+                    "event": e["event"],
+                    "timestamp": e["timestamp"]
+                })
         return events
     
     @staticmethod
@@ -294,20 +304,20 @@ class EventAnalyticsComponent:
         """Get event type statistics"""
         stats = {}
         
+        # Helper to merge counts
+        def merge_counts(chain_obj):
+            counts = getattr(chain_obj, 'event_type_counts', {})
+            for etype, count in counts.items():
+                stats[etype] = stats.get(etype, 0) + count
+
         # Analyze main chain
         if hasattr(self.chain, 'main_chain'):
-            for block in self.chain.main_chain.chain:
-                for event in block.events:
-                    event_type = event.get('event', 'unknown')
-                    stats[event_type] = stats.get(event_type, 0) + 1
+            merge_counts(self.chain.main_chain)
         
         # Analyze sub-chains
         if hasattr(self.chain, 'sub_chains'):
             for sub_chain in self.chain.sub_chains.values():
-                for block in sub_chain.chain:
-                    for event in block.events:
-                        event_type = event.get('event', 'unknown')
-                        stats[event_type] = stats.get(event_type, 0) + 1
+                merge_counts(sub_chain)
         
         return stats
     
@@ -348,12 +358,12 @@ class EventAnalyticsComponent:
         distribution = {}
         
         if hasattr(self.chain, 'main_chain'):
-            main_events = sum(len(block.events) for block in self.chain.main_chain.chain)
+            main_events = getattr(self.chain.main_chain, 'total_events', 0)
             distribution["main_chain"] = main_events
         
         if hasattr(self.chain, 'sub_chains'):
             for name, sub_chain in self.chain.sub_chains.items():
-                sub_events = sum(len(block.events) for block in sub_chain.chain)
+                sub_events = getattr(sub_chain, 'total_events', 0)
                 distribution[name] = sub_events
         
         return distribution
@@ -378,21 +388,10 @@ class ProofVisualizerComponent:
     
     def _get_proof_submissions(self) -> list[dict[str, Any]]:
         """Get recent proof submissions"""
-        proofs = []
-        
         if hasattr(self.chain, 'main_chain'):
-            for block in self.chain.main_chain.chain[-10:]:  # Last 10 blocks
-                for event in block.events:
-                    if event.get('type') == 'sub_chain_proof':
-                        proofs.append({
-                            "block_index": block.index,
-                            "sub_chain": event.get('sub_chain'),
-                            "proof_hash": event.get('proof_hash'),
-                            "metadata": event.get('metadata', {}),
-                            "timestamp": event.get('timestamp')
-                        })
-        
-        return sorted(proofs, key=lambda x: x.get('timestamp', 0), reverse=True)
+            # Use pre-calculated recent proofs for O(1) performance
+            return getattr(self.chain.main_chain, 'recent_proofs', [])
+        return []
     
     def _get_validation_status(self) -> dict[str, Any]:
         """Get validation status"""
@@ -404,13 +403,9 @@ class ProofVisualizerComponent:
     
     def _count_total_proofs(self) -> int:
         """Count total proof submissions"""
-        count = 0
         if hasattr(self.chain, 'main_chain'):
-            for block in self.chain.main_chain.chain:
-                for event in block.events:
-                    if event.get('type') == 'sub_chain_proof':
-                        count += 1
-        return count
+            return getattr(self.chain.main_chain, 'proof_count', 0)
+        return 0
     
     def _get_hierarchy_view(self) -> dict[str, Any]:
         """Get hierarchical view of chains"""
@@ -436,13 +431,7 @@ class ProofVisualizerComponent:
     def _get_latest_proof_for_chain(self, chain_name: str) -> dict[str, Any] | None:
         """Get latest proof for specific chain"""
         if hasattr(self.chain, 'main_chain'):
-            for block in reversed(self.chain.main_chain.chain):
-                for event in block.events:
-                    if (event.get('type') == 'sub_chain_proof' and 
-                        event.get('sub_chain') == chain_name):
-                        return {
-                            "proof_hash": event.get('proof_hash'),
-                            "timestamp": event.get('timestamp'),
-                            "block_index": block.index
-                        }
+            # Use pre-calculated latest proofs for O(1) performance
+            latest_proofs = getattr(self.chain.main_chain, 'latest_proofs', {})
+            return latest_proofs.get(chain_name)
         return None
