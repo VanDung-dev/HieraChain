@@ -206,6 +206,7 @@ class ClusterLockdownManager:
         self._lockdown_votes: dict[str, str] = {}  # node_id -> reason
         self._recovery_votes: set[str] = set()  # node_ids
         self._registered_nodes: set[str] = {node_id}  # All known nodes
+        self._quarantine_reports: dict[str, QuarantineReport] = {}
 
         # Register message handler if ZMQ node provided
         if self._zmq_node:
@@ -297,7 +298,7 @@ class ClusterLockdownManager:
         try:
             import asyncio
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 asyncio.create_task(self._zmq_node.broadcast(message.to_dict()))
             except RuntimeError:
                 asyncio.run(self._zmq_node.broadcast(message.to_dict()))
@@ -337,40 +338,47 @@ class ClusterLockdownManager:
         """Process a validated lockdown message."""
         self._add_to_history(message)
 
-        if message.message_type == LockdownMessageType.LOCKDOWN:
-            if not self._state.is_locked:
-                self._state.is_locked = True
-                self._state.locked_by = message.node_id
-                self._state.lock_reason = message.reason
-                self._state.lock_timestamp = message.timestamp
+        handlers: dict[LockdownMessageType, Callable[[LockdownMessage], None]] = {
+            LockdownMessageType.LOCKDOWN: self._process_lockdown_event,
+            LockdownMessageType.RECOVERY: self._process_recovery_event,
+            LockdownMessageType.LOCKDOWN_VOTE: self._handle_lockdown_vote,
+            LockdownMessageType.RECOVERY_VOTE: self._handle_recovery_vote,
+        }
 
-                logger.warning(
-                    f"Cluster lockdown received from {message.node_id}: {message.reason}"
-                )
+        handler = handlers.get(message.message_type)
+        if handler:
+            handler(message)
 
-                # Trigger local lockdown
-                if self._local_lockdown:
-                    self._local_lockdown()
+    def _process_lockdown_event(self, message: LockdownMessage) -> None:
+        """Handle LOCKDOWN message type."""
+        if not self._state.is_locked:
+            self._state.is_locked = True
+            self._state.locked_by = message.node_id
+            self._state.lock_reason = message.reason
+            self._state.lock_timestamp = message.timestamp
 
-            self._state.locked_nodes.add(message.node_id)
+            logger.warning(
+                f"Cluster lockdown received from {message.node_id}: {message.reason}"
+            )
 
-        elif message.message_type == LockdownMessageType.RECOVERY:
-            if self._state.locked_by == message.node_id:
-                self._state.is_locked = False
-                self._state.locked_by = ""
-                self._state.lock_reason = ""
-                self._state.locked_nodes.clear()
-                logger.info(f"Cluster recovery received from {message.node_id}")
-                
-                # Trigger local recovery callback
-                if self._local_recovery:
-                    self._local_recovery()
+            # Trigger local lockdown
+            if self._local_lockdown:
+                self._local_lockdown()
 
-        elif message.message_type == LockdownMessageType.LOCKDOWN_VOTE:
-            self._handle_lockdown_vote(message)
+        self._state.locked_nodes.add(message.node_id)
 
-        elif message.message_type == LockdownMessageType.RECOVERY_VOTE:
-            self._handle_recovery_vote(message)
+    def _process_recovery_event(self, message: LockdownMessage) -> None:
+        """Handle RECOVERY message type."""
+        if self._state.locked_by == message.node_id:
+            self._state.is_locked = False
+            self._state.locked_by = ""
+            self._state.lock_reason = ""
+            self._state.locked_nodes.clear()
+            logger.info(f"Cluster recovery received from {message.node_id}")
+
+            # Trigger local recovery callback
+            if self._local_recovery:
+                self._local_recovery()
 
     def _handle_lockdown_vote(self, message: LockdownMessage) -> None:
         """Handle a lockdown vote message from a peer."""
@@ -587,8 +595,6 @@ class ClusterLockdownManager:
         report.signature = report.compute_signature(self._secret_key)
 
         # Store locally for reference
-        if not hasattr(self, "_quarantine_reports"):
-            self._quarantine_reports: dict[str, QuarantineReport] = {}
         self._quarantine_reports[self.node_id] = report
 
         logger.info(
@@ -639,8 +645,6 @@ class ClusterLockdownManager:
                 return None
 
             # Store report
-            if not hasattr(self, "_quarantine_reports"):
-                self._quarantine_reports = {}
             self._quarantine_reports[report.node_id] = report
 
             logger.info(
@@ -655,8 +659,6 @@ class ClusterLockdownManager:
 
     def get_quarantine_reports(self) -> dict[str, QuarantineReport]:
         """Get all stored quarantine reports."""
-        if not hasattr(self, "_quarantine_reports"):
-            self._quarantine_reports = {}
         return self._quarantine_reports.copy()
 
 
