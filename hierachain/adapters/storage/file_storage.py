@@ -10,6 +10,7 @@ import json
 import os
 import logging
 import time
+import re
 from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -19,6 +20,59 @@ import pyarrow.compute as pc
 from hierachain.core.block import Block
 
 logger = logging.getLogger(__name__)
+
+def _validate_filename(name: str) -> None:
+    """
+    Validate filename against strict security rules (CWE-22).
+    Allowed: alphanumeric, underscore, hyphen.
+    """
+    if not re.match(r'^[a-zA-Z0-9_\-]+$', name):
+        raise ValueError(f"Security: Invalid name '{name}'. Only alphanumeric, underscore, and hyphen are allowed.")
+
+def _get_sorted_block_files(chain_dir: Path) -> list[Path]:
+    """Get all block files in a directory sorted by index"""
+    return sorted(
+        [f for f in chain_dir.glob("block_*.parquet")],
+        key=lambda x: int(x.stem.split('_')[1])
+    )
+
+def _parse_block_file(block_file: Path) -> dict | None:
+    """Helper to read and parse a block Parquet file"""
+    try:
+        # Read Parquet file
+        table = pq.read_table(block_file)
+        
+        # Extract metadata
+        meta = table.schema.metadata
+        if not meta:
+            logger.warning(f"Block file {block_file} missing metadata")
+            return None
+            
+        # Decode metadata
+        return {
+            "index": int(meta.get(b'index', b'0')),
+            "events": table,
+            "timestamp": float(meta.get(b'timestamp', b'0.0')),
+            "previous_hash": meta.get(b'previous_hash', b'').decode('utf-8'),
+            "nonce": int(meta.get(b'nonce', b'0')),
+            "hash": meta.get(b'hash', b'').decode('utf-8')
+        }
+    except Exception as e:
+        logger.warning(f"Failed to parse block file {block_file}: {e}")
+        return None
+
+def _cleanup_chain_blocks(chain_dir: Path, cutoff_time: float):
+    """Clean up old block files in a specific chain directory"""
+    if not chain_dir.is_dir():
+        return
+        
+    for block_file in chain_dir.glob("block_*.parquet"):
+        try:
+            if block_file.stat().st_mtime < cutoff_time:
+                block_file.unlink()
+                logger.debug(f"Cleaned up old block file: {block_file}")
+        except Exception as e:
+            logger.warning(f"Failed to delete old block file {block_file}: {e}")
 
 class FileStorageAdapter:
     """File-based storage adapter for blockchain data"""
@@ -39,16 +93,6 @@ class FileStorageAdapter:
         self._create_directories()
         logger.info(f"File storage initialized at: {self.storage_path}")
 
-    @staticmethod
-    def _validate_filename(name: str) -> None:
-        """
-        Validate filename against strict security rules (CWE-22).
-        Allowed: alphanumeric, underscore, hyphen.
-        """
-        import re
-        if not re.match(r'^[a-zA-Z0-9_\-]+$', name):
-            raise ValueError(f"Security: Invalid name '{name}'. Only alphanumeric, underscore, and hyphen are allowed.")
-    
     def _create_directories(self):
         """Create necessary directories for storage"""
         directories = [
@@ -64,24 +108,30 @@ class FileStorageAdapter:
     
     def _get_chain_file(self, chain_name: str) -> Path:
         """Get file path for chain metadata"""
-        self._validate_filename(chain_name)
+        _validate_filename(chain_name)
         return self.chains_path / f"{chain_name}.json"
     
     def _get_block_file(self, chain_name: str, block_index: int) -> Path:
         """Get file path for a specific block (Parquet)"""
-        self._validate_filename(chain_name)
+        _validate_filename(chain_name)
         chain_dir = self.blocks_path / chain_name
         chain_dir.mkdir(exist_ok=True)
         return chain_dir / f"block_{block_index:06d}.parquet"
     
     def _get_events_dir(self, chain_name: str) -> Path:
         """Get directory for chain events dataset"""
-        self._validate_filename(chain_name)
+        _validate_filename(chain_name)
         path = self.events_path / chain_name
         path.mkdir(parents=True, exist_ok=True)
         return path
     
-    def store_chain_metadata(self, chain_name: str, chain_type: str, parent_chain: str = None, metadata: dict = None):
+    def store_chain_metadata(
+        self,
+        chain_name: str,
+        chain_type: str,
+        parent_chain: str = None,
+        metadata: dict = None
+    ):
         """Store chain metadata"""
         try:
             chain_data = {
@@ -195,7 +245,9 @@ class FileStorageAdapter:
                 ("block_hash", pa.string())
             ])
             
-            table = pa.Table.from_pylist(indices, schema=schema)
+            # Convert list of dicts to dict of lists for better linter support
+            pydict = {name: [row.get(name) for row in indices] for name in schema.names}
+            table = pa.table(pydict, schema=schema)
             
             # Write partition file
             events_dir = self._get_events_dir(chain_name)
@@ -239,33 +291,7 @@ class FileStorageAdapter:
             if not block_file.exists():
                 return None
             
-            # Read Parquet file
-            table = pq.read_table(block_file)
-            
-            # Extract metadata
-            meta = table.schema.metadata
-            if not meta:
-                logger.warning(f"Block {block_index} missing metadata in Parquet file")
-                return None
-                
-            # Decode metadata
-            # Keys are bytes, values are bytes
-            index = int(meta.get(b'index', b'0'))
-            timestamp = float(meta.get(b'timestamp', b'0.0'))
-            previous_hash = meta.get(b'previous_hash', b'').decode('utf-8')
-            nonce = int(meta.get(b'nonce', b'0'))
-            block_hash = meta.get(b'hash', b'').decode('utf-8')
-
-            block_data = {
-                "index": index,
-                "events": table,  # Zero-copy access
-                "timestamp": timestamp,
-                "previous_hash": previous_hash,
-                "nonce": nonce,
-                "hash": block_hash
-            }
-            
-            return block_data
+            return _parse_block_file(block_file)
                 
         except Exception as e:
             logger.error(f"Failed to get block {block_index} for chain {chain_name}: {e}")
@@ -274,42 +300,25 @@ class FileStorageAdapter:
     def get_chain_blocks(self, chain_name: str, limit: int = None, offset: int = 0) -> list[dict]:
         """Get blocks for a specific chain"""
         try:
-            self._validate_filename(chain_name)
+            _validate_filename(chain_name)
             chain_dir = self.blocks_path / chain_name
             if not chain_dir.exists():
                 return []
             
             # Get all block files and sort by index
-            block_files = sorted(
-                [f for f in chain_dir.glob("block_*.parquet")],
-                key=lambda x: int(x.stem.split('_')[1])
-            )
+            block_files = _get_sorted_block_files(chain_dir)
             
             # Apply offset and limit
-            if offset:
-                block_files = block_files[offset:]
-            if limit:
-                block_files = block_files[:limit]
+            start = offset
+            end = (offset + limit) if limit is not None else None
+            block_files = block_files[start:end]
             
+            # Parse files and collect valid blocks
             blocks = []
             for block_file in block_files:
-                try:
-                    table = pq.read_table(block_file)
-                    meta = table.schema.metadata
-                    
-                    if meta:
-                        block_data = {
-                            "index": int(meta.get(b'index', b'0')),
-                            "events": table,
-                            "timestamp": float(meta.get(b'timestamp', b'0.0')),
-                            "previous_hash": meta.get(b'previous_hash', b'').decode('utf-8'),
-                            "nonce": int(meta.get(b'nonce', b'0')),
-                            "hash": meta.get(b'hash', b'').decode('utf-8')
-                        }
-                        blocks.append(block_data)
-                except Exception as e:
-                    logger.warning(f"Failed to read block file {block_file}: {e}")
-                    continue
+                block_data = _parse_block_file(block_file)
+                if block_data:
+                    blocks.append(block_data)
             
             return blocks
             
@@ -319,6 +328,60 @@ class FileStorageAdapter:
             logger.error(f"Failed to get blocks for chain {chain_name}: {e}")
             return []
     
+    def _get_search_chains(self, chain_name: str = None) -> list[str]:
+        """Determine which chains to search for events"""
+        if chain_name:
+            return [chain_name]
+        return [p.name for p in self.events_path.iterdir() if p.is_dir()]
+
+    def _extract_block_events_for_entity(
+        self, 
+        search_chain: str, 
+        record: dict, 
+        entity_id: str
+    ) -> list[dict]:
+        """Extract events from a block for a specific entity"""
+        events = []
+        block_data = self.get_block(search_chain, record["block_index"])
+        if not block_data:
+            return []
+
+        events_table = block_data["events"]
+        expr = (pc.field("entity_id") == entity_id) & (pc.field("timestamp") == record["timestamp"])
+        subset = events_table.filter(expr)
+        subset_rows = Block.table_to_list_of_dicts(subset)
+        
+        for full_event in subset_rows:
+            events.append({
+                "chain_name": search_chain,
+                "block_index": record["block_index"],
+                "event_type": full_event.get("event"),
+                "timestamp": full_event.get("timestamp"),
+                "details": full_event.get("details", {})
+            })
+        return events
+
+    def _get_events_from_chain(self, search_chain: str, entity_id: str) -> list[dict]:
+        """Get events for an entity from a specific chain's events dataset"""
+        chain_events = []
+        events_dir = self._get_events_dir(search_chain)
+        
+        try:
+            # Load dataset and scan with filter
+            dataset = ds.dataset(events_dir, format="parquet")
+            filtered_table = dataset.scanner(filter=pc.field("entity_id") == entity_id).to_table()
+            sorted_table = filtered_table.sort_by([("timestamp", "ascending")])
+            index_records = sorted_table.to_pylist()
+            
+            for record in index_records:
+                chain_events.extend(
+                    self._extract_block_events_for_entity(search_chain, record, entity_id)
+                )
+        except Exception as e:
+            logger.warning(f"Failed to load events for chain {search_chain}: {e}")
+            
+        return chain_events
+
     def get_entity_events(self, entity_id: str, chain_name: str = None) -> list[dict]:
         """
         Get all events for a specific entity using Arrow Dataset.
@@ -327,46 +390,11 @@ class FileStorageAdapter:
             events = []
             
             # Determine which chains to search
-            chains_to_search = []
-            if chain_name:
-                chains_to_search = [chain_name]
-            else:
-                # Search all chains (directories in events_path)
-                chains_to_search = [p.name for p in self.events_path.iterdir() if p.is_dir()]
+            chains_to_search = self._get_search_chains(chain_name)
             
             # Search each chain's events dataset
             for search_chain in chains_to_search:
-                events_dir = self._get_events_dir(search_chain)
-                
-                try:
-                    # Load dataset
-                    dataset = ds.dataset(events_dir, format="parquet")
-                    filtered_table = dataset.to_table(filter=pc.field("entity_id") == entity_id)
-                    sorted_table = filtered_table.sort_by([("timestamp", "ascending")])
-                    index_records = sorted_table.to_pylist()
-                    
-                    for record in index_records:
-                        # Fetch full block
-                        block_data = self.get_block(search_chain, record["block_index"])
-                        if block_data:
-
-                            events_table = block_data["events"]
-                            expr = (pc.field("entity_id") == entity_id) & (pc.field("timestamp") == record["timestamp"])
-                            subset = events_table.filter(expr)
-                            subset_rows = Block._table_to_list_of_dicts(subset)
-                            
-                            for full_event in subset_rows:
-                                events.append({
-                                    "chain_name": search_chain,
-                                    "block_index": record["block_index"],
-                                    "event_type": full_event.get("event"),
-                                    "timestamp": full_event.get("timestamp"),
-                                    "details": full_event.get("details", {})
-                                })
-                                
-                except Exception as e:
-                    logger.warning(f"Failed to load user config: {e}")
-                    pass
+                events.extend(self._get_events_from_chain(search_chain, entity_id))
             
             # Final sort by timestamp across chains
             events.sort(key=lambda x: x.get("timestamp", 0))
@@ -381,7 +409,7 @@ class FileStorageAdapter:
     def get_chain_stats(self, chain_name: str) -> dict:
         """Get statistics for a specific chain using Arrow Datasets"""
         try:
-            self._validate_filename(chain_name)
+            _validate_filename(chain_name)
             chain_dir = self.blocks_path / chain_name
             events_dir = self._get_events_dir(chain_name)
             
@@ -408,7 +436,7 @@ class FileStorageAdapter:
                     total_events = dataset.count_rows()
                     
                     unique_entities_count = len(
-                        dataset.to_table(columns=['entity_id'])
+                        dataset.scanner(columns=['entity_id']).to_table()
                         .column('entity_id')
                         .unique()
                     )
@@ -448,13 +476,9 @@ class FileStorageAdapter:
         try:
             cutoff_time = time.time() - (days_to_keep * 24 * 60 * 60)
             
-            # Clean up old block files
+            # Clean up old block files for all chains
             for chain_dir in self.blocks_path.iterdir():
-                if chain_dir.is_dir():
-                    for block_file in chain_dir.glob("block_*.parquet"):
-                        if block_file.stat().st_mtime < cutoff_time:
-                            block_file.unlink()
-                            logger.debug(f"Cleaned up old block file: {block_file}")
+                _cleanup_chain_blocks(chain_dir, cutoff_time)
             
             logger.info(f"Cleaned up data older than {days_to_keep} days")
             
@@ -485,56 +509,53 @@ class FileStorageAdapter:
             logger.error(f"Failed to get storage info: {e}")
             return {}
 
-    def get_entity_events_optimized(self, entity_id: str, chain_name: str = None, columns: list[str] = None) -> list[dict]:
+    def _process_optimized_chain_events(
+        self, 
+        search_chain: str, 
+        entity_id: str, 
+        projection: list[str] = None
+    ) -> list[dict]:
+        """Process events for a chain in an optimized way"""
+        chain_events = []
+        events_dir = self._get_events_dir(search_chain)
+        try:
+            dataset = ds.dataset(events_dir, format="parquet")
+            
+            # Filter and project in one operation via scanner
+            filtered_table = dataset.scanner(
+                filter=pc.field("entity_id") == entity_id,
+                columns=projection
+            ).to_table()
+            
+            # Sort by timestamp
+            sorted_table = filtered_table.sort_by([("timestamp", "ascending")])
+            
+            for record in sorted_table.to_pylist():
+                record["chain_name"] = search_chain
+                chain_events.append(record)
+        except Exception as e:
+            logger.error(f"Failed to process chain {search_chain}: {e}")
+            
+        return chain_events
+
+    def get_entity_events_optimized(
+        self,
+        entity_id: str,
+        chain_name: str = None,
+        columns: list[str] = None
+    ) -> list[dict]:
         """
         Get events with column pruning for better performance.
-        
-        Args:
-            entity_id: Entity to query
-            chain_name: Optional chain filter
-            columns: Columns to return (None = all). 
-                     Common columns: ['entity_id', 'event_type', 'timestamp', 'block_index']
-                     
-        Returns:
-            List of event records with only requested columns
         """
         try:
             events = []
-            
-            # Determine which chains to search
-            chains_to_search = []
-            if chain_name:
-                chains_to_search = [chain_name]
-            else:
-                chains_to_search = [
-                    p.name for p in self.events_path.iterdir() if p.is_dir()
-                ]
+            chains_to_search = self._get_search_chains(chain_name)
+            projection = columns if columns else None
             
             for search_chain in chains_to_search:
-                events_dir = self._get_events_dir(search_chain)
-                
-                try:
-                    dataset = ds.dataset(events_dir, format="parquet")
-                    
-                    # Apply column pruning - only read required columns
-                    projection = columns if columns else None
-                    
-                    # Filter and project in one operation
-                    filtered_table = dataset.to_table(
-                        filter=pc.field("entity_id") == entity_id,
-                        columns=projection
-                    )
-                    
-                    # Sort by timestamp
-                    sorted_table = filtered_table.sort_by([("timestamp", "ascending")])
-                    
-                    for record in sorted_table.to_pylist():
-                        record["chain_name"] = search_chain
-                        events.append(record)
-                        
-                except Exception as e:
-                    logger.error(f"Failed to process block file: {e}")
-                    continue
+                events.extend(
+                    self._process_optimized_chain_events(search_chain, entity_id, projection)
+                )
             
             # Final sort across chains
             events.sort(key=lambda x: x.get("timestamp", 0))
