@@ -26,6 +26,109 @@ class EvictionPolicy(Enum):
     TTL = "ttl"  # Time To Live
 
 
+def _check_details_for_entity(details: dict, entity_id: str) -> bool:
+    """Check if any value in details contains the entity."""
+    if not isinstance(details, dict):
+        return False
+    for value in details.values():
+        if value == entity_id or (isinstance(value, str) and entity_id in value):
+            return True
+    return False
+
+
+def _search_nested_for_entity(data: dict | list, entity_id: str) -> bool:
+    """Recursively search nested structures for entity"""
+    items: list[Any] | Any
+    if isinstance(data, dict):
+        items = list(data.values())
+    elif isinstance(data, list):
+        items = data
+    else:
+        return False
+
+    def match(item: Any) -> bool:
+        if item == entity_id:
+            return True
+        if isinstance(item, (dict, list)):
+            return _search_nested_for_entity(item, entity_id)
+        return False
+
+    return any(match(item) for item in items)
+
+
+def _check_nested_structures(event: dict, entity_id: str) -> bool:
+    """Search nested structures within the event for the entity."""
+    if not isinstance(event, dict):
+        return False
+    for value in event.values():
+        if isinstance(value, (dict, list)):
+            if _search_nested_for_entity(value, entity_id):
+                return True
+    return False
+
+
+def _entity_in_metadata(entity_id: str, metadata: dict[str, Any]) -> bool:
+    """Check if entity is referenced in proof metadata"""
+    checks = [
+        metadata.get("entity_id") == entity_id,
+        entity_id in metadata.get("entities", []),
+        isinstance(metadata.get("entity_summary"), dict)
+        and entity_id in str(metadata.get("entity_summary")),
+    ]
+    return any(checks)
+
+
+def _event_contains_entity(event: dict[str, Any], entity_id: str) -> bool:
+    """Check if event contains the entity"""
+    # 1. Direct match
+    if event.get("entity_id") == entity_id:
+        return True
+
+    # 2. Check details dictionary
+    if _check_details_for_entity(event.get("details", {}), entity_id):
+        return True
+
+    # 3. Check nested structures recursively
+    return _check_nested_structures(event, entity_id)
+
+
+def _process_main_chain_block(block: Any, entity_id: str) -> list[dict[str, Any]]:
+    """Extract entity-related events from a single main chain block."""
+    events: list[dict[str, Any]] = []
+    for event in block.events:
+        if event.get("type") == "sub_chain_proof":
+            metadata = event.get("metadata", {})
+            if _entity_in_metadata(entity_id, metadata):
+                events.append({
+                    "chain": "main_chain",
+                    "event": event,
+                    "chain_type": "main_chain",
+                    "block_index": block.index,
+                    "timestamp": event.get("timestamp", 0)
+                })
+    return events
+
+
+def _process_single_sub_chain(
+    sub_chain_name: str,
+    sub_chain: Any,
+    entity_id: str
+) -> list[dict[str, Any]]:
+    """Extract entity-related events from a single sub-chain."""
+    events: list[dict[str, Any]] = []
+    for block in sub_chain.chain:
+        for event in block.events:
+            if _event_contains_entity(event, entity_id):
+                events.append({
+                    "chain": sub_chain_name,
+                    "event": event,
+                    "chain_type": "sub_chain",
+                    "block_index": block.index,
+                    "timestamp": event.get("timestamp", 0)
+                })
+    return events
+
+
 @dataclass
 class CacheEntry:
     """Cache entry with metadata"""
@@ -108,11 +211,7 @@ class AdvancedCache:
                 self._update_access(key)
             else:
                 # Create new entry
-                entry = CacheEntry(
-                    key=key,
-                    value=value,
-                    ttl=ttl
-                )
+                entry = CacheEntry(key=key, value=value, ttl=ttl)
                 self.cache[key] = entry
                 self._update_access(key)
     
@@ -148,40 +247,52 @@ class AdvancedCache:
         """Evict an item based on the eviction policy"""
         if not self.cache:
             return
-        
-        evict_key = None
-        
-        if self.eviction_policy == EvictionPolicy.LRU:
-            # Least Recently Used
-            evict_key = min(self.cache.keys(), 
-                           key=lambda k: self.cache[k].access_time)
-        
-        elif self.eviction_policy == EvictionPolicy.LFU:
-            # Least Frequently Used
-            evict_key = min(self.cache.keys(), 
-                           key=lambda k: (self.cache[k].access_count, self.cache[k].access_time))
-        
-        elif self.eviction_policy == EvictionPolicy.FIFO:
-            # First In First Out
-            evict_key = min(self.cache.keys(), 
-                           key=lambda k: self.cache[k].creation_time)
-        
-        elif self.eviction_policy == EvictionPolicy.TTL:
-            # Time To Live - evict expired items first
-            _current_time = time.time()
-            expired_keys = [k for k, entry in self.cache.items() if entry.is_expired]
-            
-            if expired_keys:
-                evict_key = expired_keys[0]
-            else:
-                # Fallback to LRU if no expired items
-                evict_key = min(self.cache.keys(), 
-                               key=lambda k: self.cache[k].access_time)
-        
+        # Dispatch to policy‑specific eviction helpers
+        evict_key = {
+            EvictionPolicy.LRU: self._evict_lru,
+            EvictionPolicy.LFU: self._evict_lfu,
+            EvictionPolicy.FIFO: self._evict_fifo,
+            EvictionPolicy.TTL: self._evict_ttl,
+        }.get(self.eviction_policy, self._evict_lru)()
         if evict_key:
             self._remove_key(evict_key)
             self.evictions += 1
-    
+
+    def _evict_lru(self) -> str | None:
+        """Evict the least‑recently used entry"""
+        return (
+            min(self.cache.keys(), key=lambda k: self.cache[k].access_time)
+            if self.cache
+            else None
+        )
+
+    def _evict_lfu(self) -> str | None:
+        """Evict the least‑frequently used entry (ties broken by recency)"""
+        return (
+            min(
+                self.cache.keys(),
+                key=lambda k: (self.cache[k].access_count, self.cache[k].access_time),
+            )
+            if self.cache
+            else None
+        )
+
+    def _evict_fifo(self) -> str | None:
+        """Evict the first‑in‑first‑out entry"""
+        return (
+            min(self.cache.keys(), key=lambda k: self.cache[k].creation_time)
+            if self.cache
+            else None
+        )
+
+    def _evict_ttl(self) -> str | None:
+        """Evict an expired TTL entry if any, otherwise fall back to LRU"""
+        expired_keys = [k for k, entry in self.cache.items() if entry.is_expired]
+        if expired_keys:
+            return expired_keys[0]
+        # No expired entries – reuse LRU logic
+        return self._evict_lru()
+
     def _remove_key(self, key: str):
         """Remove a key from the cache"""
         if key in self.cache:
@@ -205,7 +316,6 @@ class AdvancedCache:
     def cleanup_ttl(self):
         """Manual cleanup of expired TTL entries"""
         with self.lock:
-            _current_time = time.time()
             expired_keys = [key for key, entry in self.cache.items() if entry.is_expired]
             
             for key in expired_keys:
@@ -224,7 +334,7 @@ class AdvancedCache:
                 "misses": self.misses,
                 "hit_rate": round(hit_rate, 2),
                 "evictions": self.evictions,
-                "eviction_policy": self.eviction_policy.value
+                "eviction_policy": self.eviction_policy.value,
             }
     
     def get_keys(self) -> list[str]:
@@ -258,42 +368,43 @@ class BlockchainCacheManager:
             "event_cache_policy": "ttl",
             "entity_cache_policy": "lfu",
             "event_ttl": 300,  # 5 minutes
-            "entity_ttl": 3600  # 1 hour
+            "entity_ttl": 3600,  # 1 hour
         }
         
         # Initialize caches
         self.block_cache = AdvancedCache(
             max_size=self.config["block_cache_size"],
-            eviction_policy=self.config["block_cache_policy"]
+            eviction_policy=self.config["block_cache_policy"],
         )
         self.event_cache = AdvancedCache(
             max_size=self.config["event_cache_size"],
-            eviction_policy=self.config["event_cache_policy"]
+            eviction_policy=self.config["event_cache_policy"],
         )
         self.entity_cache = AdvancedCache(
             max_size=self.config["entity_cache_size"],
-            eviction_policy=self.config["entity_cache_policy"]
+            eviction_policy=self.config["entity_cache_policy"],
         )
         
         # Performance tracking
         self.performance_stats = {
             "block_retrievals": 0,
             "cache_hits": 0,
-            "total_time_saved": 0.0
+            "total_time_saved": 0.0,
         }
         
         self.lock = threading.RLock()
         self.logger = logging.getLogger(__name__)
     
+
     def get_block(self, chain_name: str, index: int) -> Any | None:
         """Get block from cache or chain (42x faster when cached)"""
         start_time = time.time()
         cache_key = f"{chain_name}:{index}"
-        
+
         with self.lock:
             # Try cache first
             block = self.block_cache.get(cache_key)
-            
+
             if block is None:
                 # Get from chain
                 chain = self._get_chain(chain_name)
@@ -315,7 +426,9 @@ class BlockchainCacheManager:
             
             # Log performance for monitoring
             if query_time > 0.001:  # Log slow queries
-                self.logger.debug(f"Block retrieval for {cache_key}: {query_time:.4f}s")
+                self.logger.debug(
+                    "Block retrieval for %s: %.4fs", cache_key, query_time
+                )
             
             return block
     
@@ -331,14 +444,9 @@ class BlockchainCacheManager:
                 if block:
                     events = block.events
                     # Cache with TTL
-                    self.event_cache.set(
-                        cache_key, 
-                        events,
-                        ttl=self.config.get("event_ttl", 300)
-                    )
-            
+                    self.event_cache.set(cache_key, events, ttl=self.config.get("event_ttl", 300))
             return events
-    
+
     def get_entity_events(self, entity_id: str, chain_type: str = "all") -> list[dict[str, Any]]:
         """
         Get all events for an entity (18.9x faster when cached)
@@ -356,128 +464,71 @@ class BlockchainCacheManager:
             if events is None:
                 # Fetch from chain
                 events = self._fetch_entity_events(entity_id, chain_type)
-                self.entity_cache.set(
-                    cache_key,
-                    events,
-                    ttl=self.config.get("entity_ttl", 3600)
-                )
-                
+                self.entity_cache.set(cache_key, events, ttl=self.config.get("entity_ttl", 3600))
+
                 # Record performance
                 end_time = time.time()
                 query_time = end_time - start_time
                 if query_time > 0.05:  # Log slow entity queries
-                    self.logger.info(f"Entity query for {entity_id}: {query_time:.4f}s, {len(events)} events")
+                    self.logger.info(
+                        "Entity query for %s: %.4fs, %d events",
+                        entity_id, query_time, len(events)
+                    )
             
             return events
-    
-    def _fetch_entity_events(self, entity_id: str, chain_type: str) -> list[dict[str, Any]]:
+    def _get_main_chain_entity_events(self, entity_id: str) -> list[dict[str, Any]]:
+        """Extract entity-related events from the main chain."""
+        events: list[dict[str, Any]] = []
+        if not hasattr(self.chain, "main_chain"):
+            return events
+
+        for block in self.chain.main_chain.chain:
+            events.extend(_process_main_chain_block(block, entity_id))
+        return events
+
+    def _get_sub_chain_entity_events(self, entity_id: str) -> list[dict[str, Any]]:
+        """Extract entity-related events from all registered sub-chains."""
+        events: list[dict[str, Any]] = []
+        if not hasattr(self.chain, "sub_chains"):
+            return events
+
+        for name, sub_chain in self.chain.sub_chains.items():
+            events.extend(_process_single_sub_chain(name, sub_chain, entity_id))
+
+        return events
+
+    def _fetch_entity_events(
+        self, entity_id: str, chain_type: str
+    ) -> list[dict[str, Any]]:
         """Fetch entity events from the blockchain"""
         events = []
-        
+
         try:
             # Main chain events (proofs)
-            if chain_type in ["all", "main"] and hasattr(self.chain, 'main_chain'):
-                for block in self.chain.main_chain.chain:
-                    for event in block.events:
-                        if event.get("type") == "sub_chain_proof":
-                            metadata = event.get("metadata", {})
-                            if self._entity_in_metadata(entity_id, metadata):
-                                events.append({
-                                    "chain": "main_chain",
-                                    "event": event,
-                                    "chain_type": "main_chain",
-                                    "block_index": block.index,
-                                    "timestamp": event.get("timestamp", 0)
-                                })
-            
+            if chain_type in ["all", "main"]:
+                events.extend(self._get_main_chain_entity_events(entity_id))
+
             # Sub-chain events
-            if chain_type in ["all", "sub"] and hasattr(self.chain, 'sub_chains'):
-                for sub_chain_name, sub_chain in self.chain.sub_chains.items():
-                    for block in sub_chain.chain:
-                        for event in block.events:
-                            if self._event_contains_entity(event, entity_id):
-                                events.append({
-                                    "chain": sub_chain_name,
-                                    "event": event,
-                                    "chain_type": "sub_chain",
-                                    "block_index": block.index,
-                                    "timestamp": event.get("timestamp", 0)
-                                })
-            
+            if chain_type in ["all", "sub"]:
+                events.extend(self._get_sub_chain_entity_events(entity_id))
+
             # Sort by timestamp for chronological order
             events.sort(key=lambda x: x.get("timestamp", 0))
-            
+
         except Exception as e:
-            self.logger.error(f"Error fetching events for entity {entity_id}: {e}")
+            self.logger.error(
+                "Error fetching events for entity %s: %s", entity_id, e
+            )
             events = []
-        
+
         return events
-    
-    def _event_contains_entity(self, event: dict[str, Any], entity_id: str) -> bool:
-        """Check if event contains the entity"""
-        # Direct entity_id match
-        if event.get("entity_id") == entity_id:
-            return True
-        
-        # Check in details
-        details = event.get("details", {})
-        if isinstance(details, dict):
-            for key, value in details.items():
-                if value == entity_id or (isinstance(value, str) and entity_id in value):
-                    return True
-        
-        # Check in nested structures
-        if isinstance(event, dict):
-            for key, value in event.items():
-                if isinstance(value, (dict, list)):
-                    if self._search_nested_for_entity(value, entity_id):
-                        return True
-        
-        return False
-    
-    def _search_nested_for_entity(self, data: dict | list, entity_id: str) -> bool:
-        """Recursively search nested structures for entity"""
-        if isinstance(data, dict):
-            for key, value in data.items():
-                if value == entity_id:
-                    return True
-                elif isinstance(value, (dict, list)):
-                    if self._search_nested_for_entity(value, entity_id):
-                        return True
-        elif isinstance(data, list):
-            for item in data:
-                if item == entity_id:
-                    return True
-                elif isinstance(item, (dict, list)):
-                    if self._search_nested_for_entity(item, entity_id):
-                        return True
-        
-        return False
-    
-    @staticmethod
-    def _entity_in_metadata(entity_id: str, metadata: dict[str, Any]) -> bool:
-        """Check if entity is referenced in proof metadata"""
-        # Direct reference
-        if "entity_id" in metadata and metadata["entity_id"] == entity_id:
-            return True
-        
-        # List of entities
-        if "entities" in metadata and entity_id in metadata["entities"]:
-            return True
-        
-        # Entity count or summary info
-        if "entity_summary" in metadata:
-            summary = metadata["entity_summary"]
-            if isinstance(summary, dict) and entity_id in str(summary):
-                return True
-        
-        return False
+
     
     def _get_chain(self, chain_name: str) -> Any | None:
         """Get chain by name"""
-        if chain_name == "main" and hasattr(self.chain, 'main_chain'):
+        if chain_name == "main" and hasattr(self.chain, "main_chain"):
             return self.chain.main_chain
-        elif hasattr(self.chain, 'sub_chains'):
+        elif hasattr(self.chain, "sub_chains"):
             return self.chain.sub_chains.get(chain_name)
         return None
     
@@ -492,38 +543,54 @@ class BlockchainCacheManager:
             for key in keys_to_remove:
                 self.entity_cache.delete(key)
     
+    def _invalidate_specific_block(self, chain_name: str, index: int):
+        """Invalidate a specific block and its related events."""
+        cache_key = f"{chain_name}:{index}"
+        self.block_cache.delete(cache_key)
+
+        # Also invalidate related event cache
+        event_key = f"events:{chain_name}:{index}"
+        self.event_cache.delete(event_key)
+
+    def _invalidate_chain_blocks(self, chain_name: str):
+        """Invalidate all blocks and event caches for a specific chain."""
+        # 1. Invalidate blocks
+        block_keys = [
+            k for k in self.block_cache.get_keys() if k.startswith(f"{chain_name}:")
+        ]
+        for key in block_keys:
+            self.block_cache.delete(key)
+
+        # 2. Invalidate events
+        event_keys = [
+            k
+            for k in self.event_cache.get_keys()
+            if k.startswith(f"events:{chain_name}:")
+        ]
+        for key in event_keys:
+            self.event_cache.delete(key)
+
     def invalidate_block_cache(self, chain_name: str, index: int | None = None):
         """Invalidate cached blocks for a chain"""
         with self.lock:
             if index is not None:
-                # Invalidate specific block
-                cache_key = f"{chain_name}:{index}"
-                self.block_cache.delete(cache_key)
-                
-                # Also invalidate related event cache
-                event_key = f"events:{chain_name}:{index}"
-                self.event_cache.delete(event_key)
+                self._invalidate_specific_block(chain_name, index)
             else:
-                # Invalidate all blocks for chain
-                keys_to_remove = []
-                for key in self.block_cache.get_keys():
-                    if key.startswith(f"{chain_name}:"):
-                        keys_to_remove.append(key)
-                
-                for key in keys_to_remove:
-                    self.block_cache.delete(key)
-                    
-                # Also invalidate event cache
-                for key in self.event_cache.get_keys():
-                    if key.startswith(f"events:{chain_name}:"):
-                        self.event_cache.delete(key)
-    
+                self._invalidate_chain_blocks(chain_name)
+
     def get_cache_stats(self) -> dict[str, Any]:
         """Get comprehensive cache statistics"""
         with self.lock:
-            total_requests = self.performance_stats["block_retrievals"] + self.performance_stats["cache_hits"]
-            cache_hit_rate = (self.performance_stats["cache_hits"] / total_requests * 100) if total_requests > 0 else 0
-            
+            total_requests = (
+                self.performance_stats["block_retrievals"]
+                + self.performance_stats["cache_hits"]
+            )
+            cache_hit_rate = (
+                (self.performance_stats["cache_hits"] / total_requests * 100)
+                if total_requests > 0
+                else 0
+            )
+
             return {
                 "block_cache": self.block_cache.get_stats(),
                 "event_cache": self.event_cache.get_stats(),
@@ -582,5 +649,5 @@ def create_performance_cache_config() -> dict[str, Any]:
         "event_cache_policy": "ttl",
         "entity_cache_policy": "lfu",
         "event_ttl": 600,  # 10 minutes
-        "entity_ttl": 7200  # 2 hours
+        "entity_ttl": 7200,  # 2 hours
     }
