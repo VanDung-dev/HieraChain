@@ -15,7 +15,7 @@ from hierachain.core.block import Block
 
 def simulate_old_calculate_hash(block: Block) -> str:
     """Simulate the old O(N) hashing method."""
-    events_list = block._table_to_list_of_dicts(block._events)
+    events_list = block.table_to_list_of_dicts(block._events)
     
     block_data = {
         "index": block.index,

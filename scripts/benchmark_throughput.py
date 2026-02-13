@@ -14,7 +14,7 @@ import os
 import asyncio
 from typing import Any
 
-from hierachain.consensus.ordering_service import OrderingService, OrderingNode, OrderingStatus
+from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
 from hierachain.security.security_utils import KeyPair
 from hierachain.config.settings import Settings
 
