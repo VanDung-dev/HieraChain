@@ -46,6 +46,19 @@ class Certificate:
         """Check if certificate has expired"""
         return time.time() > self.valid_until
 
+
+def _generate_cert_id(subject: str, public_key: str) -> str:
+    """Generate unique certificate ID"""
+    data = f"{subject}:{public_key}:{time.time()}"
+    return hashlib.sha256(data.encode()).hexdigest()[:16]
+
+
+def _sign_certificate(cert_id: str, subject: str, public_key: str) -> str:
+    """Generate certificate signature"""
+    data = f"{cert_id}:{subject}:{public_key}"
+    return hashlib.sha256(data.encode()).hexdigest()
+
+
 class CertificateAuthority:
     """Hierarchical Certificate Authority for enterprise environments"""
     
@@ -64,8 +77,13 @@ class CertificateAuthority:
         self.issued_certificates: dict[str, Certificate] = {}
         self.revoked_certificates: set[str] = set()
         
-    def issue_certificate(self, subject: str, public_key: str, 
-                         attributes: dict[str, Any], valid_days: int = 365) -> Certificate:
+    def issue_certificate(
+        self,
+        subject: str,
+        public_key: str,
+        attributes: dict[str, Any],
+        valid_days: int = 365
+    ) -> Certificate:
         """
         Issue a new certificate for an entity.
         
@@ -78,7 +96,7 @@ class CertificateAuthority:
         Returns:
             Issued certificate
         """
-        cert_id = self._generate_cert_id(subject, public_key)
+        cert_id = _generate_cert_id(subject, public_key)
         current_time = time.time()
         valid_until = current_time + (valid_days * 24 * 60 * 60)
         
@@ -91,7 +109,7 @@ class CertificateAuthority:
             valid_until=valid_until,
             status=CertificateStatus.ACTIVE,
             attributes=attributes,
-            signature=self._sign_certificate(cert_id, subject, public_key)
+            signature=_sign_certificate(cert_id, subject, public_key)
         )
         
         self.issued_certificates[cert_id] = certificate
@@ -132,18 +150,6 @@ class CertificateAuthority:
             return False
             
         return certificate.is_valid()
-    
-    @staticmethod
-    def _generate_cert_id(subject: str, public_key: str) -> str:
-        """Generate unique certificate ID"""
-        data = f"{subject}:{public_key}:{time.time()}"
-        return hashlib.sha256(data.encode()).hexdigest()[:16]
-    
-    @staticmethod
-    def _sign_certificate(cert_id: str, subject: str, public_key: str) -> str:
-        """Generate certificate signature"""
-        data = f"{cert_id}:{subject}:{public_key}"
-        return hashlib.sha256(data.encode()).hexdigest()
 
 
 class OrganizationPolicies:
@@ -215,8 +221,13 @@ class HierarchicalMSP:
         # Initialize default roles
         self._initialize_default_roles()
         
-    def register_entity(self, entity_id: str, credentials: dict[str, Any], 
-                       role: str, attributes: dict[str, Any] | None = None) -> bool:
+    def register_entity(
+        self,
+        entity_id: str,
+        credentials: dict[str, Any],
+        role: str,
+        attributes: dict[str, Any] | None = None
+    ) -> bool:
         """
         Register entity with role-based access control and attribute-based policies.
         
@@ -379,8 +390,13 @@ class HierarchicalMSP:
         
         return True
     
-    def define_role(self, role_name: str, permissions: list[str], 
-                   policies: list[str] = None, cert_validity_days: int = 365) -> None:
+    def define_role(
+        self,
+        role_name: str,
+        permissions: list[str],
+        policies: list[str] = None,
+        cert_validity_days: int = 365
+    ) -> None:
         """
         Define a new organizational role.
         
