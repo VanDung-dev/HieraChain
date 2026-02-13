@@ -194,8 +194,11 @@ class ParallelProcessingEngine:
         
         self.logger.info(f"Initialized {len(self.worker_pools)} worker pools")
     
-    def create_worker_pool(self, pool_name: str, max_workers: int, 
-                          pool_type: str = "thread") -> WorkerPool:
+    def create_worker_pool(
+        self, pool_name: str,
+        max_workers: int,
+        pool_type: str = "thread"
+    ) -> WorkerPool:
         """Create a new worker pool"""
         with self.lock:
             if pool_name in self.worker_pools:
@@ -210,11 +213,11 @@ class ParallelProcessingEngine:
     
     def register_default_policies(self):
         """Register default processing policies"""
-        self.register_policy("default", self._default_processing_policy)
-        self.register_policy("validation", self._validation_policy)
-        self.register_policy("indexing", self._indexing_policy)
-        self.register_policy("batch", self._batch_policy)
-        self.register_policy("priority", self._priority_policy)
+        self.register_policy("default", default_processing_policy)
+        self.register_policy("validation", validation_policy)
+        self.register_policy("indexing", indexing_policy)
+        self.register_policy("batch", batch_policy)
+        self.register_policy("priority", priority_policy)
     
     def register_policy(self, policy_name: str, policy_func: Callable):
         """Register a processing policy"""
@@ -222,8 +225,12 @@ class ParallelProcessingEngine:
             self.processing_policies[policy_name] = policy_func
             self.logger.info(f"Registered processing policy: {policy_name}")
     
-    def process_batch(self, data_batch: list[Any], processor_func: Callable, 
-                     policy: str = "default", **kwargs) -> list[ProcessingResult]:
+    def process_batch(
+        self, data_batch: list[Any],
+        processor_func: Callable,
+        policy: str = "default",
+        **kwargs
+    ) -> list[ProcessingResult]:
         """
         Process a batch of data in parallel
         
@@ -240,7 +247,7 @@ class ParallelProcessingEngine:
             return []
         
         # Get processing policy
-        policy_func = self.processing_policies.get(policy, self._default_processing_policy)
+        policy_func = self.processing_policies.get(policy, default_processing_policy)
         
         # Apply policy to determine processing strategy
         processing_config = policy_func(data_batch, processor_func, **kwargs)
@@ -259,8 +266,13 @@ class ParallelProcessingEngine:
         # Process tasks
         return self._execute_tasks(tasks, processing_config)
     
-    def process_chunks(self, data: list[Any], processor_func: Callable, 
-                      policy: str = "default", **kwargs) -> list[ProcessingResult]:
+    def process_chunks(
+        self,
+        data: list[Any],
+        processor_func: Callable,
+        policy: str = "default",
+        **kwargs
+    ) -> list[ProcessingResult]:
         """
         Process data in chunks for better memory efficiency
         
@@ -287,8 +299,11 @@ class ParallelProcessingEngine:
         
         return all_results
     
-    def _execute_tasks(self, tasks: list[ProcessingTask], 
-                      processing_config: dict[str, Any]) -> list[ProcessingResult]:
+    def _execute_tasks(
+        self,
+        tasks: list[ProcessingTask],
+        processing_config: dict[str, Any]
+    ) -> list[ProcessingResult]:
         """Execute a list of tasks according to processing configuration"""
         pool_name = processing_config.get("pool", "general")
         worker_pool = self.worker_pools.get(pool_name)
@@ -326,127 +341,46 @@ class ParallelProcessingEngine:
     
     def _start_task_dispatcher(self):
         """Start background task dispatcher for priority queue"""
-        def dispatch_loop():
-            while True:
-                try:
-                    # Get task from priority queue (blocks if empty)
-                    priority, task = self.task_queue.get(timeout=1.0)
-                    
-                    # Process task with appropriate policy
-                    policy_name = task.metadata.get("policy", "default")
-                    policy_func = self.processing_policies.get(policy_name, self._default_processing_policy)
-                    
-                    # Execute task
-                    processing_config = policy_func([task.data], task.processor_func)
-                    results = self._execute_tasks([task], processing_config)
-                    
-                    # Store result
-                    if results:
-                        self.results_cache[task.task_id] = results[0]
-                    
-                    self.task_queue.task_done()
-                    
-                except queue.Empty:
-                    continue
-                except Exception as e:
-                    self.logger.error(f"Task dispatcher error: {e}")
-        
-        dispatcher_thread = threading.Thread(target=dispatch_loop, daemon=True)
+        dispatcher_thread = threading.Thread(target=self._dispatch_loop, daemon=True)
         dispatcher_thread.start()
-    
-    # Processing Policies
-    
-    @staticmethod
-    def _default_processing_policy(data_batch: list[Any], processor_func: Callable,
-                                   **kwargs) -> dict[str, Any]:
-        """Default processing policy"""
-        # Access parameters to avoid unused parameter warnings
-        _ =  processor_func
-        _ = kwargs
 
-        batch_size = len(data_batch)
-        
-        if batch_size < 10:
-            pool = "general"
-        elif batch_size < 100:
-            pool = "general"
-        else:
-            pool = "cpu_intensive"
-        
-        return {
-            "pool": pool,
-            "priority": 0,
-            "cache_results": False,
-            "timeout": 300  # 5 minutes
-        }
-    
-    @staticmethod
-    def _validation_policy(data_batch: list[Any], processor_func: Callable,
-                           **kwargs) -> dict[str, Any]:
-        """Validation processing policy"""
-        # Access parameters to avoid unused parameter warnings
-        _ = data_batch
-        _ = processor_func
-        _ = kwargs
-        
-        return {
-            "pool": "validation",
-            "priority": 1,
-            "cache_results": True,
-            "timeout": 60,  # 1 minute
-            "retry_count": 2
-        }
-    
-    @staticmethod
-    def _indexing_policy(data_batch: list[Any], processor_func: Callable,
-                         **kwargs) -> dict[str, Any]:
-        """Indexing processing policy"""
-        batch_size = len(data_batch)
-        
-        # Access parameters to avoid unused parameter warnings
-        _ = processor_func
-        _ = kwargs
-        
-        return {
-            "pool": "cpu_intensive" if batch_size > 50 else "general",
-            "priority": -1,  # Lower priority
-            "cache_results": False,
-            "timeout": 600,  # 10 minutes
-            "chunk_parallel": batch_size > 1000
-        }
-    
-    @staticmethod
-    def _batch_policy(data_batch: list[Any], processor_func: Callable,
-                      **kwargs) -> dict[str, Any]:
-        """Batch processing policy"""
-        # Access parameters to avoid unused parameter warnings
-        _ = data_batch
-        _ = processor_func
-        
-        return {
-            "pool": "cpu_intensive",
-            "priority": 0,
-            "cache_results": kwargs.get("cache", False),
-            "timeout": 1800,  # 30 minutes
-            "chunk_parallel": True
-        }
-    
-    @staticmethod
-    def _priority_policy(data_batch: list[Any], processor_func: Callable,
-                         **kwargs) -> dict[str, Any]:
-        """Priority processing policy"""
-        # Access parameters to avoid unused parameter warnings
-        _ = data_batch
-        _ = processor_func
-        _ = kwargs
-        
-        return {
-            "pool": "priority",
-            "priority": 2,
-            "cache_results": True,
-            "timeout": 30,  # 30 seconds
-            "immediate": True
-        }
+    def _dispatch_loop(self):
+        """Background loop for dispatching tasks from the priority queue."""
+        while True:
+            try:
+                # Get task from priority queue (blocks if empty)
+                priority, task = self.task_queue.get(timeout=1.0)
+                _ = priority  # Priority is handled by the queue itself
+                
+                self._process_queued_task(task)
+                self.task_queue.task_done()
+                
+            except queue.Empty:
+                continue
+            except Exception as e:
+                self.logger.error(f"Task dispatcher error: {e}")
+
+    def _process_queued_task(self, task: ProcessingTask):
+        """Process a single task from the priority queue."""
+        try:
+            # Process task with appropriate policy
+            policy_name = task.metadata.get("policy", "default")
+            policy_func = self.processing_policies.get(
+                policy_name,
+                default_processing_policy
+            )
+            
+            # Execute task
+            processing_config = policy_func([task.data], task.processor_func)
+            results = self._execute_tasks([task], processing_config)
+            
+            # Store result
+            if results:
+                self.results_cache[task.task_id] = results[0]
+        except (ProcessingError, queue.Full, RuntimeError) as e:
+            self.logger.error("Error processing queued task %s: %s", task.task_id, e)
+        except Exception as e:
+            self.logger.error("Unexpected error in queued task %s: %s", task.task_id, e)
     
     # Specialized blockchain processing methods
     
@@ -553,8 +487,10 @@ class ParallelProcessingEngine:
 
 # Factory functions and utilities
 
-def create_parallel_engine(max_workers: int | None = None, 
-                          chunk_size: int = 100) -> ParallelProcessingEngine:
+def create_parallel_engine(
+    max_workers: int | None = None,
+    chunk_size: int = 100
+) -> ParallelProcessingEngine:
     """Create parallel processing engine with default configuration"""
     return ParallelProcessingEngine(max_workers, chunk_size)
 
@@ -582,8 +518,11 @@ def parallel_map(data: list[Any], func: Callable, max_workers: int | None = None
         engine.shutdown()
 
 
-def parallel_filter(data: list[Any], predicate: Callable, 
-                   max_workers: int | None = None) -> list[Any]:
+def parallel_filter(
+    data: list[Any],
+    predicate: Callable,
+    max_workers: int | None = None
+) -> list[Any]:
     """Parallel filter function"""
     def filter_func(item):
         return item if predicate(item) else None
@@ -595,3 +534,110 @@ def parallel_filter(data: list[Any], predicate: Callable,
         return [r.result for r in results if r.success and r.result is not None]
     finally:
         engine.shutdown()
+
+
+def default_processing_policy(
+    data_batch: list[Any],
+    processor_func: Callable,
+    **kwargs
+) -> dict[str, Any]:
+    """Default processing policy"""
+    # Access parameters to avoid unused parameter warnings
+    _ = processor_func
+    _ = kwargs
+
+    batch_size = len(data_batch)
+
+    if batch_size < 10:
+        pool = "general"
+    elif batch_size < 100:
+        pool = "general"
+    else:
+        pool = "cpu_intensive"
+
+    return {
+        "pool": pool,
+        "priority": 0,
+        "cache_results": False,
+        "timeout": 300  # 5 minutes
+    }
+
+
+def validation_policy(
+    data_batch: list[Any],
+    processor_func: Callable,
+    **kwargs
+) -> dict[str, Any]:
+    """Validation processing policy"""
+    # Access parameters to avoid unused parameter warnings
+    _ = data_batch
+    _ = processor_func
+    _ = kwargs
+
+    return {
+        "pool": "validation",
+        "priority": 1,
+        "cache_results": True,
+        "timeout": 60,  # 1 minute
+        "retry_count": 2
+    }
+
+
+def indexing_policy(
+    data_batch: list[Any],
+    processor_func: Callable,
+    **kwargs
+) -> dict[str, Any]:
+    """Indexing processing policy"""
+    batch_size = len(data_batch)
+
+    # Access parameters to avoid unused parameter warnings
+    _ = processor_func
+    _ = kwargs
+
+    return {
+        "pool": "cpu_intensive" if batch_size > 50 else "general",
+        "priority": -1,  # Lower priority
+        "cache_results": False,
+        "timeout": 600,  # 10 minutes
+        "chunk_parallel": batch_size > 1000
+    }
+
+
+def batch_policy(
+    data_batch: list[Any],
+    processor_func: Callable,
+    **kwargs
+) -> dict[str, Any]:
+    """Batch processing policy"""
+    # Access parameters to avoid unused parameter warnings
+    _ = data_batch
+    _ = processor_func
+
+    return {
+        "pool": "cpu_intensive",
+        "priority": 0,
+        "cache_results": kwargs.get("cache", False),
+        "timeout": 1800,  # 30 minutes
+        "chunk_parallel": True
+    }
+
+
+def priority_policy(
+    data_batch: list[Any],
+    processor_func: Callable,
+    **kwargs
+) -> dict[str, Any]:
+    """Priority processing policy"""
+    # Access parameters to avoid unused parameter warnings
+    _ = data_batch
+    _ = processor_func
+    _ = kwargs
+
+    return {
+        "pool": "priority",
+        "priority": 2,
+        "cache_results": True,
+        "timeout": 30,  # 30 seconds
+        "immediate": True
+    }
