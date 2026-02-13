@@ -54,6 +54,59 @@ class LogicalOperator(Enum):
     NOT = "not"
 
 
+def _get_dict_value(current: dict, part: str) -> Any:
+    """Get value from dictionary, return None if not found."""
+    return current[part] if part in current else None
+
+
+def _get_sequence_value(current: list | tuple, part: str) -> Any:
+    """Get value from sequence by index, return None if invalid."""
+    if not part.isdigit():
+        return None
+    try:
+        return current[int(part)]
+    except (IndexError, ValueError):
+        return None
+
+
+def _get_arrow_value(current: Any, part: str) -> Any:
+    """Get value from Arrow-compatible object, return None if failed."""
+    try:
+        return current[part]
+    except (KeyError, IndexError, TypeError):
+        return None
+
+
+def _convert_arrow_scalar(value: Any) -> Any:
+    """Convert Arrow scalar to Python object if applicable."""
+    if hasattr(value, "as_py"):
+        return value.as_py()
+    return value
+
+
+def _resolve_value(current: Any, part: str) -> Any:
+    """Resolve value from current object based on its type."""
+    if isinstance(current, dict):
+        return _get_dict_value(current, part)
+    if isinstance(current, (list, tuple)):
+        return _get_sequence_value(current, part)
+    if hasattr(current, "__getitem__"):
+        return _get_arrow_value(current, part)
+    return None
+
+
+def _get_attribute_value(context: dict[str, Any], attribute_path: str) -> Any:
+    """Get attribute value from context using dot notation, supporting Dict and Arrow objects."""
+    current = context
+
+    for part in attribute_path.split('.'):
+        if current is None:
+            return None
+        current = _resolve_value(current, part)
+
+    return _convert_arrow_scalar(current)
+
+
 @dataclass
 class PolicyCondition:
     """Individual policy condition"""
@@ -71,75 +124,40 @@ class PolicyCondition:
         Returns:
             True if condition is satisfied
         """
-        attribute_value = self._get_attribute_value(context, self.attribute)
+        attribute_value = _get_attribute_value(context, self.attribute)
         
         if attribute_value is None:
             return False
         
         try:
-            if self.operator == ComparisonOperator.EQUALS:
-                return attribute_value == self.value
-            elif self.operator == ComparisonOperator.NOT_EQUALS:
-                return attribute_value != self.value
-            elif self.operator == ComparisonOperator.GREATER_THAN:
-                return attribute_value > self.value
-            elif self.operator == ComparisonOperator.LESS_THAN:
-                return attribute_value < self.value
-            elif self.operator == ComparisonOperator.GREATER_OR_EQUAL:
-                return attribute_value >= self.value
-            elif self.operator == ComparisonOperator.LESS_OR_EQUAL:
-                return attribute_value <= self.value
-            elif self.operator == ComparisonOperator.CONTAINS:
-                return self.value in attribute_value
-            elif self.operator == ComparisonOperator.NOT_CONTAINS:
-                return self.value not in attribute_value
-            elif self.operator == ComparisonOperator.IN:
-                return attribute_value in self.value
-            elif self.operator == ComparisonOperator.NOT_IN:
-                return attribute_value not in self.value
-            elif self.operator == ComparisonOperator.MATCHES:
-                return bool(re.match(str(self.value), str(attribute_value)))
-            elif self.operator == ComparisonOperator.NOT_MATCHES:
-                return not bool(re.match(str(self.value), str(attribute_value)))
-            else:
-                return False
-                
+            match self.operator:
+                case ComparisonOperator.EQUALS:
+                    return attribute_value == self.value
+                case ComparisonOperator.NOT_EQUALS:
+                    return attribute_value != self.value
+                case ComparisonOperator.GREATER_THAN:
+                    return attribute_value > self.value
+                case ComparisonOperator.LESS_THAN:
+                    return attribute_value < self.value
+                case ComparisonOperator.GREATER_OR_EQUAL:
+                    return attribute_value >= self.value
+                case ComparisonOperator.LESS_OR_EQUAL:
+                    return attribute_value <= self.value
+                case ComparisonOperator.CONTAINS:
+                    return self.value in attribute_value
+                case ComparisonOperator.NOT_CONTAINS:
+                    return self.value not in attribute_value
+                case ComparisonOperator.IN:
+                    return attribute_value in self.value
+                case ComparisonOperator.NOT_IN:
+                    return attribute_value not in self.value
+                case ComparisonOperator.MATCHES:
+                    return bool(re.match(str(self.value), str(attribute_value)))
+                case ComparisonOperator.NOT_MATCHES:
+                    return not bool(re.match(str(self.value), str(attribute_value)))
         except (TypeError, ValueError, AttributeError):
             return False
-    
-    @staticmethod
-    def _get_attribute_value(context: dict[str, Any], attribute_path: str) -> Any:
-        """Get attribute value from context using dot notation, supporting Dict and Arrow objects"""
-        current = context
-        
-        for part in attribute_path.split('.'):
-            # Case 1: Standard Dictionary
-            if isinstance(current, dict):
-                if part in current:
-                    current = current[part]
-                else:
-                    return None
 
-            # Case 2: PyArrow Objects (Table, RecordBatch, StructScalar, etc.)
-            elif hasattr(current, "__getitem__"):
-                try:
-                    # Try accessing by key/column name
-                    # specific check to avoid index errors on lists/tuples if part is not int
-                    if isinstance(current, (list, tuple)) and not part.isdigit():
-                        return None
-
-                    current = current[part]
-                except (KeyError, IndexError, TypeError):
-                    return None
-            else:
-                return None
-        
-        # Convert Arrow scalars to Python objects for comparison
-        if hasattr(current, "as_py"):
-            return current.as_py()
-
-        return current
-    
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
@@ -221,6 +239,19 @@ class PolicyRule:
         )
 
 
+def _hash_context(context: dict[str, Any]) -> str:
+    """Generate hash of context for caching"""
+    import hashlib
+
+    def _default_serializer(obj):
+        if hasattr(obj, "schema") or hasattr(obj, "to_pylist"):
+            return str(obj)
+        return str(obj)
+
+    context_str = json.dumps(context, sort_keys=True, separators=(',', ':'), default=_default_serializer)
+    return hashlib.sha256(context_str.encode()).hexdigest()[:8]
+
+
 class Policy:
     """
     Enterprise policy with multiple rules and evaluation logic.
@@ -229,10 +260,14 @@ class Policy:
     and conflict resolution strategies.
     """
     
-    def __init__(self, policy_id: str, policy_type: PolicyType, 
-                 rules: list[PolicyRule] | None = None,
-                 default_effect: PolicyEffect = PolicyEffect.DENY,
-                 description: str = ""):
+    def __init__(
+        self,
+        policy_id: str,
+        policy_type: PolicyType,
+        rules: list[PolicyRule] | None = None,
+        default_effect: PolicyEffect = PolicyEffect.DENY,
+        description: str = ""
+    ):
         """
         Initialize policy.
         
@@ -280,6 +315,62 @@ class Policy:
                 return True
         return False
     
+    def _create_evaluation_result(self, context: dict[str, Any]) -> dict[str, Any]:
+        """Create initial evaluation result structure."""
+        return {
+            "policy_id": self.policy_id,
+            "effect": self.default_effect.value,
+            "applicable_rules": [],
+            "decision_path": [],
+            "evaluated_at": time.time(),
+            "context_hash": _hash_context(context)
+        }
+
+    def _check_disabled(self, evaluation_result: dict[str, Any]) -> bool:
+        """Check if policy is disabled. Returns True if disabled."""
+        if not self.metadata.get("enabled", True):
+            evaluation_result["effect"] = PolicyEffect.DENY.value
+            evaluation_result["decision_path"].append("Policy is disabled")
+            return True
+        return False
+
+    def _process_rule_effect(
+        self,
+        rule: PolicyRule,
+        rule_effect: PolicyEffect,
+        evaluation_result: dict[str, Any]
+    ) -> bool:
+        """Process rule effect and update evaluation result. Returns True if should break."""
+        evaluation_result["applicable_rules"].append({
+            "rule_id": rule.rule_id,
+            "effect": rule_effect.value,
+            "priority": rule.priority,
+            "description": rule.description
+        })
+
+        if rule_effect != self.default_effect:
+            effect_value = rule_effect.value if isinstance(rule_effect, PolicyEffect) else str(rule_effect)
+            evaluation_result["effect"] = effect_value
+            evaluation_result["decision_path"].append(f"Rule {rule.rule_id} applied with effect {effect_value}")
+            return True
+
+        evaluation_result["decision_path"].append(f"Rule {rule.rule_id} confirmed default effect")
+        return False
+
+    def _evaluate_rules(self, context: dict[str, Any], evaluation_result: dict[str, Any]) -> None:
+        """Evaluate all rules and update evaluation result."""
+        for rule in self.rules:
+            rule_effect = rule.evaluate(context)
+            if rule_effect is not None and self._process_rule_effect(rule, rule_effect, evaluation_result):
+                break
+
+    def _finalize_result(self, evaluation_result: dict[str, Any]) -> None:
+        """Add final decision path if no rules applied."""
+        if not evaluation_result["applicable_rules"]:
+            evaluation_result["decision_path"].append(
+                f"No rules applied, using default effect {self.default_effect.value}"
+            )
+
     def evaluate(self, context: dict[str, Any]) -> dict[str, Any]:
         """
         Evaluate policy against context.
@@ -290,65 +381,16 @@ class Policy:
         Returns:
             Policy evaluation result
         """
-        evaluation_result = {
-            "policy_id": self.policy_id,
-            "effect": self.default_effect.value,
-            "applicable_rules": [],
-            "decision_path": [],
-            "evaluated_at": time.time(),
-            "context_hash": self._hash_context(context)
-        }
-        
-        if not self.metadata.get("enabled", True):
-            evaluation_result["effect"] = PolicyEffect.DENY.value
-            evaluation_result["decision_path"].append("Policy is disabled")
+        evaluation_result = self._create_evaluation_result(context)
+
+        if self._check_disabled(evaluation_result):
             return evaluation_result
-        
-        # Evaluate rules in priority order
-        for rule in self.rules:
-            rule_effect = rule.evaluate(context)
-            
-            if rule_effect is not None:
-                evaluation_result["applicable_rules"].append({
-                    "rule_id": rule.rule_id,
-                    "effect": rule_effect.value,
-                    "priority": rule.priority,
-                    "description": rule.description
-                })
-                
-                # First applicable rule wins (highest priority)
-                if rule_effect != self.default_effect:
-                    evaluation_result["effect"] = rule_effect.value if isinstance(rule_effect, PolicyEffect) else str(rule_effect)
-                    evaluation_result["decision_path"].append(
-                        f"Rule {rule.rule_id} applied with effect {rule_effect.value if isinstance(rule_effect, PolicyEffect) else str(rule_effect)}"
-                    )
-                    break
-                else:
-                    evaluation_result["decision_path"].append(
-                        f"Rule {rule.rule_id} confirmed default effect"
-                    )
-        
-        # If no rules applied, use default effect
-        if not evaluation_result["applicable_rules"]:
-            evaluation_result["decision_path"].append(
-                f"No rules applied, using default effect {self.default_effect.value}"
-            )
-        
+
+        self._evaluate_rules(context, evaluation_result)
+        self._finalize_result(evaluation_result)
+
         return evaluation_result
-    
-    @staticmethod
-    def _hash_context(context: dict[str, Any]) -> str:
-        """Generate hash of context for caching"""
-        import hashlib
-        
-        def _default_serializer(obj):
-            if hasattr(obj, "schema") or hasattr(obj, "to_pylist"):
-                return str(obj)
-            return str(obj)
-            
-        context_str = json.dumps(context, sort_keys=True, separators=(',', ':'), default=_default_serializer)
-        return hashlib.sha256(context_str.encode()).hexdigest()[:8]
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
@@ -380,6 +422,27 @@ class Policy:
         policy.metadata = data.get("metadata", {})
         
         return policy
+
+
+def _summarize_context(context: dict[str, Any]) -> dict[str, Any]:
+    """Create summary of context for audit logging"""
+    return {
+        "entity_id": context.get("entity_id"),
+        "role": context.get("role"),
+        "action": context.get("action"),
+        "resource": context.get("resource"),
+        "organization": context.get("organization")
+    }
+
+
+def _create_not_found_result(policy_id: str) -> dict[str, Any]:
+    """Create result for policy not found case."""
+    return {
+        "policy_id": policy_id,
+        "effect": PolicyEffect.DENY.value,
+        "error": f"Policy {policy_id} not found",
+        "evaluated_at": time.time()
+    }
 
 
 class PolicyEngine:
@@ -458,6 +521,24 @@ class PolicyEngine:
         
         return True
     
+    def _get_cached_result(self, cache_key: str) -> dict[str, Any] | None:
+        """Get cached result if valid, return None otherwise."""
+        if not self.cache_enabled or cache_key not in self.evaluation_cache:
+            return None
+        cached_result = self.evaluation_cache[cache_key]
+        if time.time() - cached_result["cached_at"] < self.cache_ttl:
+            self.statistics["cached_evaluations"] += 1
+            return cached_result["result"]
+        return None
+
+    def _update_statistics(self, effect: str) -> None:
+        """Update evaluation statistics based on effect."""
+        self.statistics["total_evaluations"] += 1
+        if effect == PolicyEffect.ALLOW.value:
+            self.statistics["allow_decisions"] += 1
+        else:
+            self.statistics["deny_decisions"] += 1
+
     def evaluate_policy(self, policy_id: str, context: dict[str, Any]) -> dict[str, Any]:
         """
         Evaluate single policy against context.
@@ -469,34 +550,20 @@ class PolicyEngine:
         Returns:
             Policy evaluation result
         """
+        cache_key = f"{policy_id}:{_hash_context(context)}"
+        
         # Check cache first
-        cache_key = f"{policy_id}:{self._hash_context(context)}"
-        if self.cache_enabled and cache_key in self.evaluation_cache:
-            cached_result = self.evaluation_cache[cache_key]
-            if time.time() - cached_result["cached_at"] < self.cache_ttl:
-                self.statistics["cached_evaluations"] += 1
-                return cached_result["result"]
+        cached = self._get_cached_result(cache_key)
+        if cached:
+            return cached
         
-        # Get policy
+        # Get policy and evaluate
         policy = self.policies.get(policy_id)
-        if not policy:
-            result = {
-                "policy_id": policy_id,
-                "effect": PolicyEffect.DENY.value,
-                "error": f"Policy {policy_id} not found",
-                "evaluated_at": time.time()
-            }
-        else:
-            result = policy.evaluate(context)
+        result = policy.evaluate(context) if policy else _create_not_found_result(policy_id)
         
-        # Update statistics
-        self.statistics["total_evaluations"] += 1
-        if result["effect"] == PolicyEffect.ALLOW.value:
-            self.statistics["allow_decisions"] += 1
-        else:
-            self.statistics["deny_decisions"] += 1
+        # Update statistics and cache
+        self._update_statistics(result["effect"])
         
-        # Cache result
         if self.cache_enabled:
             self._cache_result(cache_key, result)
         
@@ -505,13 +572,17 @@ class PolicyEngine:
             self._log_audit_event("policy_evaluated", {
                 "policy_id": policy_id,
                 "effect": result["effect"],
-                "context_summary": self._summarize_context(context)
+                "context_summary": _summarize_context(context)
             })
         
         return result
     
-    def evaluate_policy_set(self, set_name: str, context: dict[str, Any],
-                          combination_logic: str = "all_allow") -> dict[str, Any]:
+    def evaluate_policy_set(
+        self,
+        set_name: str,
+        context: dict[str, Any],
+        combination_logic: str = "all_allow"
+    ) -> dict[str, Any]:
         """
         Evaluate set of policies against context.
         
@@ -560,14 +631,19 @@ class PolicyEngine:
         elif combination_logic == "majority_allow":
             # Majority of policies must allow
             allow_count = sum(1 for result in policy_results if result["effect"] == PolicyEffect.ALLOW.value)
-            combined_result["effect"] = PolicyEffect.ALLOW.value if allow_count > len(policy_results) / 2 else PolicyEffect.DENY.value
+            combined_result["effect"] = PolicyEffect.ALLOW.value \
+                if allow_count > len(policy_results) / 2 else PolicyEffect.DENY.value
         else:
             combined_result["effect"] = PolicyEffect.DENY.value
             combined_result["error"] = f"Unknown combination logic: {combination_logic}"
         
         return combined_result
     
-    def get_applicable_policies(self, _context: dict[str, Any], policy_type: PolicyType | None = None) -> list[str]:
+    def get_applicable_policies(
+        self,
+        _context: dict[str, Any],
+        policy_type: PolicyType | None = None
+    ) -> list[str]:
         """Get list of policies that might apply to context"""
         applicable_policies = []
         
@@ -627,31 +703,7 @@ class PolicyEngine:
             "result": result,
             "cached_at": time.time()
         }
-    
-    @staticmethod
-    def _hash_context(context: dict[str, Any]) -> str:
-        """Generate hash of context"""
-        import hashlib
-        
-        def _default_serializer(obj):
-            if hasattr(obj, "schema") or hasattr(obj, "to_pylist"):
-                return str(obj)
-            return str(obj)
 
-        context_str = json.dumps(context, sort_keys=True, separators=(',', ':'), default=_default_serializer)
-        return hashlib.sha256(context_str.encode()).hexdigest()[:8]
-    
-    @staticmethod
-    def _summarize_context(context: dict[str, Any]) -> dict[str, Any]:
-        """Create summary of context for audit logging"""
-        return {
-            "entity_id": context.get("entity_id"),
-            "role": context.get("role"),
-            "action": context.get("action"),
-            "resource": context.get("resource"),
-            "organization": context.get("organization")
-        }
-    
     def _log_audit_event(self, event_type: str, details: dict[str, Any]) -> None:
         """Log audit event"""
         if not self.audit_enabled:
