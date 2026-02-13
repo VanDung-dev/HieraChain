@@ -137,8 +137,12 @@ class ContractLifecycle:
         self.deployment_info: dict[str, Any] | None = None
         self.deprecation_info: dict[str, Any] | None = None
         
-    def transition_to(self, new_status: ContractStatus, reason: str = "", 
-                     metadata: dict[str, Any] = None) -> bool:
+    def transition_to(
+        self,
+        new_status: ContractStatus,
+        reason: str = "",
+        metadata: dict[str, Any] | None = None
+    ) -> bool:
         """
         Transition contract to new status.
         
@@ -151,7 +155,7 @@ class ContractLifecycle:
             True if transition was successful
         """
         # Validate transition
-        if not self._is_valid_transition(self.status, new_status):
+        if not is_valid_status_transition(self.status, new_status):
             return False
         
         # Record status change
@@ -162,42 +166,27 @@ class ContractLifecycle:
             "reason": reason,
             "metadata": metadata or {}
         }
-        
         self.status_history.append(status_change)
         self.status = new_status
-        
         # Handle special status changes
         if new_status == ContractStatus.ACTIVE and not self.deployment_info:
+            md = metadata or {}
             self.deployment_info = {
                 "deployed_at": time.time(),
-                "deployed_by": metadata.get("deployed_by", "system"),
-                "deployment_metadata": metadata
+                "deployed_by": md.get("deployed_by", "system"),
+                "deployment_metadata": md
             }
         elif new_status == ContractStatus.DEPRECATED and not self.deprecation_info:
+            md = metadata or {}
             self.deprecation_info = {
                 "deprecated_at": time.time(),
-                "deprecated_by": metadata.get("deprecated_by", "system"),
+                "deprecated_by": md.get("deprecated_by", "system"),
                 "deprecation_reason": reason,
-                "end_of_life_date": metadata.get("end_of_life_date")
+                "end_of_life_date": md.get("end_of_life_date")
             }
         
         return True
-    
-    @staticmethod
-    def _is_valid_transition(from_status: ContractStatus,
-                             to_status: ContractStatus) -> bool:
-        """Check if status transition is valid"""
-        valid_transitions = {
-            ContractStatus.DEVELOPMENT: [ContractStatus.TESTING, ContractStatus.DISABLED],
-            ContractStatus.TESTING: [ContractStatus.ACTIVE, ContractStatus.DEVELOPMENT, ContractStatus.DISABLED],
-            ContractStatus.ACTIVE: [ContractStatus.DEPRECATED, ContractStatus.DISABLED],
-            ContractStatus.DEPRECATED: [ContractStatus.DISABLED, ContractStatus.ARCHIVED],
-            ContractStatus.DISABLED: [ContractStatus.DEVELOPMENT, ContractStatus.ARCHIVED],
-            ContractStatus.ARCHIVED: []  # No transitions from archived
-        }
-        
-        return to_status in valid_transitions.get(from_status, [])
-    
+
     def get_status_info(self) -> dict[str, Any]:
         """Get comprehensive status information"""
         return {
@@ -217,9 +206,13 @@ class DomainContract:
     blockchain applications.
     """
     
-    def __init__(self, contract_id: str, version: str | ContractVersion,
-                 implementation: Callable | None = None, 
-                 metadata: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        contract_id: str,
+        version: str | ContractVersion,
+        implementation: Callable | None = None,
+        metadata: dict[str, Any] | None = None
+    ):
         """
         Initialize domain contract.
         
@@ -241,14 +234,15 @@ class DomainContract:
         
         # Execution tracking
         self.execution_count = 0
-        self.last_execution = None
+        self.last_execution: float | None = None
         self.execution_history: list[dict[str, Any]] = []
         self.error_count = 0
-        self.last_error = None
+        self.last_error: dict[str, Any] | None = None
         
         # Version management
         self.previous_versions: list['DomainContract'] = []
-        self.deprecation_warning_days = metadata.get("deprecation_warning", 90)
+        md = metadata or {}
+        self.deprecation_warning_days = md.get("deprecation_warning", 90)
         
         # Contract creation timestamp
         self.created_at = time.time()
@@ -313,77 +307,34 @@ class DomainContract:
                 "contract_id": self.contract_id,
                 "version": str(self.version)
             }
-        
         execution_start = time.time()
-        execution_result: dict[str, Any] = {
-            "success": False,
-            "contract_id": self.contract_id,
-            "version": str(self.version),
-            "execution_time": 0,
-            "event_type": event.get("event", "unknown"),
-            "timestamp": execution_start
-        }
+        execution_result = self._initialize_execution_result(event, execution_start)
         
         try:
             # Validate event
-            if not self._validate_event(event):
+            if not validate_domain_event(event):
                 raise ValueError("Invalid event structure")
-            
             # Execute main implementation if available
-            if self.implementation:
-                result = self.implementation(event, context or {}, self.storage)
-                execution_result["result"] = result
+            self._run_implementation(event, context, execution_result)
             
             # Execute registered event handlers
-            event_type = event.get("event", "unknown")
-            if event_type in self.event_handlers:
-                handler_results = []
-                for handler in self.event_handlers[event_type]:
-                    try:
-                        handler_result = handler(event, context or {}, self.storage)
-                        handler_results.append({
-                            "handler": handler.__name__ if hasattr(handler, '__name__') else str(handler),
-                            "result": handler_result,
-                            "success": True
-                        })
-                    except Exception as handler_error:
-                        handler_results.append({
-                            "handler": handler.__name__ if hasattr(handler, '__name__') else str(handler),
-                            "error": str(handler_error),
-                            "success": False
-                        })
-                
-                execution_result["handler_results"] = handler_results
+            self._run_event_handlers(
+                event,
+                context,
+                execution_result
+            )
             
             # Mark as successful
             execution_result["success"] = True
             
             # Update execution tracking
-            self.execution_count += 1
-            self.last_execution = execution_start
-            
-            # Log successful execution
-            self._log_contract_event(ContractEventType.EXECUTED, {
-                "event_type": event_type,
-                "execution_time": time.time() - execution_start,
-                "handlers_executed": len(self.event_handlers.get(event_type, []))
-            })
+            self._update_execution_tracking(
+                execution_start,
+                event.get("event", "unknown")
+            )
             
         except Exception as e:
-            # Handle execution error
-            execution_result["error"] = str(e)
-            self.error_count += 1
-            self.last_error = {
-                "timestamp": time.time(),
-                "error": str(e),
-                "event": event
-            }
-            
-            # Log error
-            self._log_contract_event(ContractEventType.ERROR, {
-                "error": str(e),
-                "event_type": event.get("event", "unknown")
-            })
+            self._handle_execution_error(event, e, execution_result)
         
         # Calculate execution time
         execution_result["execution_time"] = time.time() - execution_start
@@ -392,10 +343,97 @@ class DomainContract:
         self.execution_history.append(execution_result.copy())
         
         return execution_result
+
+    def _initialize_execution_result(self, event: dict[str, Any], start_time: float) -> dict[str, Any]:
+        """Initialize the execution result dictionary."""
+        return {
+            "success": False,
+            "contract_id": self.contract_id,
+            "version": str(self.version),
+            "execution_time": 0,
+            "event_type": event.get("event", "unknown"),
+            "timestamp": start_time
+        }
+
+    def _run_implementation(
+        self,
+        event: dict[str, Any],
+        context: dict[str, Any] | None,
+        result: dict[str, Any]
+    ) -> None:
+        """Execute the main contract implementation."""
+        if self.implementation:
+            ctx = context or {}
+            result["result"] = self.implementation(event, ctx, self.storage)
+
+    def _run_event_handlers(
+        self,
+        event: dict[str, Any],
+        context: dict[str, Any] | None,
+        result: dict[str, Any]
+    ) -> None:
+        """Execute all registered event handlers for the event type."""
+        event_type = event.get("event", "unknown")
+        if event_type in self.event_handlers:
+            handler_results = []
+            for handler in self.event_handlers[event_type]:
+                try:
+                    ctx = context or {}
+                    handler_result = handler(event, ctx, self.storage)
+                    handler_results.append({
+                        "handler": (
+                            handler.__name__ if hasattr(handler, '__name__') else str(handler)
+                        ),
+                        "result": handler_result,
+                        "success": True
+                    })
+                except Exception as handler_error:
+                    handler_results.append({
+                        "handler": (
+                            handler.__name__ if hasattr(handler, '__name__') else str(handler)
+                        ),
+                        "error": str(handler_error),
+                        "success": False
+                    })
+            result["handler_results"] = handler_results
+
+    def _update_execution_tracking(self, start_time: float, event_type: str) -> None:
+        """Update execution counters and log successful execution."""
+        self.execution_count += 1
+        self.last_execution = start_time
+
+        # Log successful execution
+        self._log_contract_event(ContractEventType.EXECUTED, {
+            "event_type": event_type,
+            "execution_time": time.time() - start_time,
+            "handlers_executed": len(self.event_handlers.get(event_type, []))
+        })
+
+    def _handle_execution_error(
+        self,
+        event: dict[str, Any],
+        error: Exception,
+        result: dict[str, Any]
+    ) -> None:
+        """Handle execution exceptions and log error events."""
+        error_msg = str(error)
+        result["error"] = error_msg
+        self.error_count += 1
+        self.last_error = {
+            "timestamp": time.time(),
+            "error": error_msg,
+            "event": event
+        }
+        self._log_contract_event(ContractEventType.ERROR, {
+            "error": error_msg,
+            "event_type": event.get("event", "unknown")
+        })
     
-    def upgrade_to_version(self, new_version: str | ContractVersion,
-                          new_implementation: Callable | None = None,
-                          metadata: dict[str, Any] | None = None) -> bool:
+    def upgrade_to_version(
+        self, new_version: str | ContractVersion,
+        new_implementation: Callable | None = None,
+        metadata: dict[str, Any] | None = None
+    ) -> bool:
         """
         Upgrade contract to new version.
         
@@ -407,7 +445,8 @@ class DomainContract:
         Returns:
             True if upgrade was successful
         """
-        new_version_obj = new_version if isinstance(new_version, ContractVersion) else ContractVersion.from_string(new_version)
+        new_version_obj = new_version \
+            if isinstance(new_version, ContractVersion) else ContractVersion.from_string(new_version)
         
         # Validate version is newer
         if new_version_obj <= self.version:
@@ -446,8 +485,9 @@ class DomainContract:
         self.last_error = None
         
         # Log upgrade
+        from_v = str(current_contract.version)
         self._log_contract_event(ContractEventType.UPGRADED, {
-            "from_version": str(current_contract.version),
+            "from_version": from_v,
             "to_version": str(self.version),
             "upgrade_metadata": metadata or {}
         })
@@ -531,26 +571,6 @@ class DomainContract:
         """Get recent execution history"""
         return self.execution_history[-limit:] if limit > 0 else self.execution_history
     
-    @staticmethod
-    def _validate_event(event: dict[str, Any]) -> bool:
-        """Validate event structure"""
-        required_fields = ["entity_id", "event", "timestamp"]
-        for field in required_fields:
-            if field not in event:
-                return False
-        
-        # Additional validation
-        if not isinstance(event["timestamp"], (int, float)):
-            return False
-            
-        if not isinstance(event["entity_id"], str) or len(event["entity_id"].strip()) == 0:
-            return False
-            
-        if not isinstance(event["event"], str) or len(event["event"].strip()) == 0:
-            return False
-        
-        return True
-    
     def _setup_default_handlers(self) -> None:
         """Setup default event handlers"""
         def default_logging_handler(event: dict[str, Any], context: dict[str, Any], storage: ContractStorage):
@@ -596,3 +616,70 @@ class DomainContract:
         return (f"DomainContract(contract_id='{self.contract_id}', "
                 f"version='{self.version}', status='{self.lifecycle.status.value}', "
                 f"handlers={len(self.event_handlers)}, executions={self.execution_count})")
+
+
+def is_valid_status_transition(from_status: ContractStatus, to_status: ContractStatus) -> bool:
+    """Check if status transition is valid."""
+    valid_transitions = {
+        ContractStatus.DEVELOPMENT: [ContractStatus.TESTING, ContractStatus.DISABLED],
+        ContractStatus.TESTING: [
+            ContractStatus.ACTIVE,
+            ContractStatus.DEVELOPMENT,
+            ContractStatus.DISABLED
+        ],
+        ContractStatus.ACTIVE: [ContractStatus.DEPRECATED, ContractStatus.DISABLED],
+        ContractStatus.DEPRECATED: [ContractStatus.DISABLED, ContractStatus.ARCHIVED],
+        ContractStatus.DISABLED: [ContractStatus.DEVELOPMENT, ContractStatus.ARCHIVED],
+        ContractStatus.ARCHIVED: []  # No transitions from archived
+    }
+
+    return to_status in valid_transitions.get(from_status, [])
+
+
+def validate_domain_event(event: dict[str, Any]) -> bool:
+    """
+    Validate event structure.
+    
+    This function coordinates multiple validation steps to ensure the
+    event structure is correct.
+    """
+    required_fields = ["entity_id", "event", "timestamp"]
+    
+    if not _check_required_fields(event, required_fields):
+        return False
+
+    if not _check_field_types(event):
+        return False
+
+    if not _check_field_values(event):
+        return False
+
+    return True
+
+
+def _check_required_fields(event: dict[str, Any], fields: list[str]) -> bool:
+    """Verify that all required fields are present in the event."""
+    for field in fields:
+        if field not in event:
+            return False
+    return True
+
+
+def _check_field_types(event: dict[str, Any]) -> bool:
+    """Verify that event fields have the correct data types."""
+    if not isinstance(event["timestamp"], (int, float)):
+        return False
+    if not isinstance(event["entity_id"], str):
+        return False
+    if not isinstance(event["event"], str):
+        return False
+    return True
+
+
+def _check_field_values(event: dict[str, Any]) -> bool:
+    """Verify that event fields have valid content/values."""
+    if len(event["entity_id"].strip()) == 0:
+        return False
+    if len(event["event"].strip()) == 0:
+        return False
+    return True
