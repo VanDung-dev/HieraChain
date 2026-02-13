@@ -6,6 +6,7 @@ including storage, conversion, and query operations.
 """
 
 from __future__ import annotations
+
 import time
 import logging
 import threading
@@ -298,7 +299,7 @@ class PerformanceMetrics:
             Dictionary with full summary
         """
         with self._data_lock:
-            summary = {
+            summary: dict[str, Any] = {
                 "enabled": self._enabled,
                 "operations_tracked": len(self._metrics),
                 "total_samples": sum(
@@ -315,7 +316,12 @@ class PerformanceMetrics:
                     reverse=True
                 )
                 summary["top_by_duration"] = [
-                    {"operation": name, "total_ms": round(agg.total_duration_ms, 2)}
+                    {
+                        "operation": name,
+                        "total_duration_ms": round(agg.total_duration_ms, 2),
+                        "avg_duration_ms": round(agg.avg_duration_ms, 2),
+                        "count": agg.count
+                    }
                     for name, agg in sorted_ops[:5]
                 ]
             
@@ -345,16 +351,18 @@ def get_metrics_instance() -> PerformanceMetrics:
 
 def track_arrow_conversion(row_count: int = 0):
     """Context manager for tracking Arrow conversion."""
-    return get_metrics_instance().measure(
-        "arrow_conversion",
+    metrics = get_metrics_instance()
+    return metrics.measure(
+        operation="arrow_conversion",
         row_count=row_count
     )
 
 
 def track_parquet_write(data_size_bytes: int = 0, row_count: int = 0):
     """Context manager for tracking Parquet writes."""
-    return get_metrics_instance().measure(
-        "parquet_write",
+    metrics = get_metrics_instance()
+    return metrics.measure(
+        operation="parquet_write",
         data_size_bytes=data_size_bytes,
         row_count=row_count
     )
@@ -362,12 +370,14 @@ def track_parquet_write(data_size_bytes: int = 0, row_count: int = 0):
 
 def track_parquet_read(data_size_bytes: int = 0):
     """Context manager for tracking Parquet reads."""
-    return get_metrics_instance().measure(
-        "parquet_read",
+    metrics = get_metrics_instance()
+    return metrics.measure(
+        operation="parquet_read",
         data_size_bytes=data_size_bytes
     )
 
 
 def track_query(operation: str = "query"):
     """Context manager for tracking query operations."""
-    return get_metrics_instance().measure(operation)
+    metrics = get_metrics_instance()
+    return metrics.measure(operation=operation)
