@@ -55,6 +55,72 @@ class ZKProvingError(Exception):
     pass
 
 
+def _generate_mock_proof(old_state_root: str, new_state_root: str, block_index: int) -> bytes:
+    """
+    Generate mock proof simulating Groth16/Plonk ZK-SNARK proofs.
+
+    Creates a 2KB-4KB proof that mimics real ZK-SNARK proof structure:
+    - Magic header for identification
+    - Deterministic commitment from public inputs
+    - Random padding to simulate real proof bytes
+
+    This is used for development, testing, and pressure testing.
+
+    Args:
+        old_state_root: Previous state root.
+        new_state_root: New state root.
+        block_index: Block index.
+
+    Returns:
+        Simulated ZK proof bytes (2KB-4KB).
+    """
+
+    # 1. Serialize public inputs to JSON
+    public_inputs = {
+        "old_state_root": old_state_root,
+        "new_state_root": new_state_root,
+        "block_index": block_index,
+        "sub_chain_name": ""  # Default empty as per current schema
+    }
+    payload_bytes = json.dumps(public_inputs, sort_keys=True).encode('utf-8')
+
+    # 2. Compute deterministic commitment (SHA-256)
+    commitment = hashlib.sha256(payload_bytes).digest()
+
+    # 3. Generate realistic proof size (2KB - 4KB, simulating Groth16/Plonk)
+    # Groth16: ~192 bytes, but with padding and metadata: ~2KB
+    # Plonk: variable, typically 2KB-4KB
+    proof_size = random.randint(2048, 4096)
+
+    # 4. Build proof structure
+    magic_bytes = b"mock_zkp_v2\x00"  # 12 bytes header
+    version_bytes = b"\x01\x00\x00\x00"  # 4 bytes version (little-endian)
+    size_bytes = proof_size.to_bytes(4, 'little')  # 4 bytes size
+
+    # 5. Generate random proof body (simulating curve points and field elements)
+    # Keep deterministic header but random body for pressure testing
+    header = magic_bytes + version_bytes + size_bytes + commitment  # 12+4+4+32 = 52 bytes
+    random_body = os.urandom(proof_size - len(header))
+
+    return header + random_body
+
+
+def _verify_mock_proof(proof: bytes) -> bool:
+    """Verify mock proof structure. Returns True if valid."""
+    magic = b"mock_zkp_v2\x00"
+
+    # Check for legacy format compatibility
+    if proof.startswith(b"mock_proof"):
+        return True
+
+    # Verify new format
+    if not proof.startswith(magic):
+        return False
+
+    # Verify proof size is reasonable (at least header size)
+    return len(proof) >= 52
+
+
 class ZKProver:
     """
     Zero Knowledge Proof Generator for SubChain.
@@ -136,7 +202,7 @@ class ZKProver:
         
         try:
             if self.mode == "mock":
-                proof = self._generate_mock_proof(old_state_root, new_state_root, block_index)
+                proof = _generate_mock_proof(old_state_root, new_state_root, block_index)
             elif self.mode == "production":
                 proof = self._generate_production_proof(
                     old_state_root, new_state_root, block_index, events or []
@@ -247,87 +313,19 @@ class ZKProver:
         Args:
             proof: The proof bytes to verify.
             _public_inputs: Dictionary containing old_state_root, new_state_root,
-                           block_index, and sub_chain_name.
+                            block_index, and sub_chain_name.
 
         Returns:
             True if proof is valid, False otherwise.
         """
-
         # Simulate ZK-SNARK verification latency (50-200ms)
         if self.mode == "mock":
             await asyncio.sleep(random.uniform(0.05, 0.2))
-
-            # Verify mock proof structure
-            magic = b"mock_zkp_v2\x00"
-            if not proof.startswith(magic):
-                # Check for old format compatibility
-                if proof.startswith(b"mock_proof"):
-                    return True  # Legacy format
-                return False
-
-            # Verify proof size is reasonable (at least header size)
-            if len(proof) < 52:
-                return False
-
-            return True
+            return _verify_mock_proof(proof)
 
         # Production verification (not implemented)
         raise NotImplementedError("Production verification not yet implemented")
-    
-    @staticmethod
-    def _generate_mock_proof(
-            old_state_root: str,
-        new_state_root: str,
-        block_index: int
-    ) -> bytes:
-        """
-        Generate mock proof simulating Groth16/Plonk ZK-SNARK proofs.
 
-        Creates a 2KB-4KB proof that mimics real ZK-SNARK proof structure:
-        - Magic header for identification
-        - Deterministic commitment from public inputs
-        - Random padding to simulate real proof bytes
-
-        This is used for development, testing, and pressure testing.
-
-        Args:
-            old_state_root: Previous state root.
-            new_state_root: New state root.
-            block_index: Block index.
-
-        Returns:
-            Simulated ZK proof bytes (2KB-4KB).
-        """
-
-        # 1. Serialize public inputs to JSON
-        public_inputs = {
-            "old_state_root": old_state_root,
-            "new_state_root": new_state_root,
-            "block_index": block_index,
-            "sub_chain_name": ""  # Default empty as per current schema
-        }
-        payload_bytes = json.dumps(public_inputs, sort_keys=True).encode('utf-8')
-
-        # 2. Compute deterministic commitment (SHA-256)
-        commitment = hashlib.sha256(payload_bytes).digest()
-
-        # 3. Generate realistic proof size (2KB - 4KB, simulating Groth16/Plonk)
-        # Groth16: ~192 bytes, but with padding and metadata: ~2KB
-        # Plonk: variable, typically 2KB-4KB
-        proof_size = random.randint(2048, 4096)
-
-        # 4. Build proof structure
-        magic_bytes = b"mock_zkp_v2\x00"  # 12 bytes header
-        version_bytes = b"\x01\x00\x00\x00"  # 4 bytes version (little-endian)
-        size_bytes = proof_size.to_bytes(4, 'little')  # 4 bytes size
-
-        # 5. Generate random proof body (simulating curve points and field elements)
-        # Keep deterministic header but random body for pressure testing
-        header = magic_bytes + version_bytes + size_bytes + commitment  # 12+4+4+32 = 52 bytes
-        random_body = os.urandom(proof_size - len(header))
-
-        return header + random_body
-    
     def _generate_production_proof(
         self,
         old_state_root: str,
