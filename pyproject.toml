@@ -1,8 +1,8 @@
 [build-system]
 requires = [
-    "setuptools>=80.9.0",
+    "setuptools>=82.0.0",
     "setuptools_scm[toml]>=9.2.2",
-    "wheel>=0.45.0",
+    "wheel>=0.46.3",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -26,50 +26,55 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "cryptography>=46.0.0",
-    "pydantic>=2.12.0",
-    "python-dotenv>=1.2.0",
-    "fastapi>=0.125.0",
+    "cryptography>=46.0.5",
+    "pydantic>=2.12.5",
+    "python-dotenv>=1.2.1",
+    "fastapi>=0.128.5",
     "uvicorn>=0.38.0",
-    "pyyaml>=6.0.0",
+    "pyyaml>=6.0.3",
     "redis>=7.1.0",
-    "sqlalchemy>=2.0.0",
-    "alembic>=1.17.0",
-    "python-multipart>=0.0.21",
-    "passlib>=1.7.0",
+    "sqlalchemy>=2.0.46",
+    "alembic>=1.17.2",
+    "python-multipart>=0.0.22",
+    "passlib>=1.7.4",
     "python-dateutil>=2.9.0.post0",
-    "httpx>=0.28.0",
-    "click>=8.3.0",
-    "psutil>=7.1.0",
-    "requests>=2.32.0",
-    "pyarrow>=22.0.0",
+    "httpx>=0.28.1",
+    "click>=8.3.1",
+    "psutil>=7.1.3",
+    "requests>=2.32.5",
+    "pyarrow>=23.0.0",
     "pyzmq>=27.1.0",
     "pynacl>=1.6.2",
     "starlette>=0.50.0",
-    "grpcio>=1.76.0",
-    "grpcio-tools>=1.76.0",
-    "protobuf>=6.33.2",
+    "kubernetes>=35.0.0"
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
-    "tox>=4.32.0",
+    "tox>=4.34.1",
     "virtualenv-pyenv>=0.6.0",
-    "black>=25.12.0",
+    "black>=26.1.0",
     "flake8>=7.3.0",
-    "mypy>=1.19.0",
-    "setuptools>=80.9.0",
-    "setuptools_scm>=9.2.0",
-    "wheel>=0.45.0",
-    "coverage>=7.13.0",
+    "mypy>=1.19.1",
+    "setuptools>=82.0.0",
+    "setuptools_scm>=9.2.2",
+    "wheel>=0.46.3",
+    "coverage>=7.13.4",
     "build>=1.3.0",
     "twine>=6.2.0",
-    "hypothesis>=6.148.0",
-    "pytest>=9.0.0",
+    "bandit>=1.9.2",
+    "hypothesis>=6.151.6",
+    "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
-    "pytest-benchmark>=5.2.0",
+    "pytest-benchmark>=5.2.3",
+    "pytest-html>=4.2.0",
+    "pip-audit>=2.10.0",
     "pygal>=3.1.0",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.1",
+    "mkdocs-git-revision-date-localized-plugin>=1.5.1",
+    "polib>=1.2.0",
 ]
 
 [project.scripts]
