@@ -115,10 +115,7 @@ class AnomalyDetector:
         
     def add_data_point(self, metric_name: str, value: float):
         """Add new data point for metric"""
-        self.metric_histories[metric_name].append({
-            'timestamp': time.time(),
-            'value': value
-        })
+        self.metric_histories[metric_name].append({'timestamp': time.time(),'value': value})
     
     def is_anomaly(self, metric_name: str, value: float) -> Tuple[bool, float]:
         """
@@ -283,6 +280,16 @@ class WebhookNotifier:
             return False
 
 
+def _get_severity_symbol(severity: AlertSeverity) -> str:
+    """Get emoji symbol for alert severity"""
+    return {
+        AlertSeverity.INFO: 'ℹ',
+        AlertSeverity.WARNING: '⚠',
+        AlertSeverity.CRITICAL: '✗',
+        AlertSeverity.EMERGENCY: '🚨'
+    }.get(severity, '?')
+
+
 class AlertManager:
     """
     Central alert management system for HieraChain framework.
@@ -411,38 +418,47 @@ class AlertManager:
         # Add to anomaly detection
         self.anomaly_detector.add_data_point(metric_name, value)
         
-        # Check against defined rules
+        # Process each rule
         for rule in self.alert_rules.values():
-            if not rule.enabled or rule.metric_name != metric_name:
-                continue
+            self._process_rule_for_metric(rule, metric_name, value, source_component)
+
+    def _process_rule_for_metric(self, rule: AlertRule, metric_name: str, value: float, source_component: str):
+        """Process a single rule for a given metric update"""
+        if not rule.enabled or rule.metric_name != metric_name:
+            return
             
-            should_alert = False
-            
-            if rule.condition == "greater_than" and rule.threshold is not None:
-                should_alert = value > rule.threshold
-            elif rule.condition == "less_than" and rule.threshold is not None:
-                should_alert = value < rule.threshold
-            elif rule.condition == "equals" and rule.threshold is not None:
-                should_alert = abs(value - rule.threshold) < 0.001
-            elif rule.condition == "anomaly":
-                is_anomaly, z_score = self.anomaly_detector.is_anomaly(metric_name, value)
-                should_alert = is_anomaly
-            
-            if should_alert:
-                # Check cooldown period
-                last_alert_time = self.last_alert_times.get(rule.rule_id, 0)
-                if time.time() - last_alert_time < rule.cooldown_period:
-                    continue
-                
-                # Create alert
-                self.create_alert(
-                    rule=rule,
-                    current_value=value,
-                    source_component=source_component
-                )
+        if self._evaluate_rule_condition(rule, value) and not self._is_in_cooldown(rule):
+            self.create_alert(
+                rule=rule,
+                current_value=value,
+                source_component=source_component
+            )
+
+    def _evaluate_rule_condition(self, rule: AlertRule, value: float) -> bool:
+        """Evaluate if alert rule condition is met"""
+        if rule.condition == "greater_than" and rule.threshold is not None:
+            return value > rule.threshold
+        elif rule.condition == "less_than" and rule.threshold is not None:
+            return value < rule.threshold
+        elif rule.condition == "equals" and rule.threshold is not None:
+            return abs(value - rule.threshold) < 0.001
+        elif rule.condition == "anomaly":
+            is_anomaly, _ = self.anomaly_detector.is_anomaly(rule.metric_name, value)
+            return is_anomaly
+        return False
+
+    def _is_in_cooldown(self, rule: AlertRule) -> bool:
+        """Check if alert rule is in cooldown period"""
+        last_alert_time = self.last_alert_times.get(rule.rule_id, 0)
+        return time.time() - last_alert_time < rule.cooldown_period
     
-    def create_alert(self, rule: AlertRule, current_value: float | None = None,
-                     source_component: str = "unknown", custom_description: str | None = None):
+    def create_alert(
+        self,
+        rule: AlertRule,
+        current_value: float | None = None,
+        source_component: str = "unknown",
+        custom_description: str | None = None
+    ):
         """Create new alert"""
         alert_id = f"{rule.rule_id}_{int(time.time())}"
         
@@ -460,33 +476,17 @@ class AlertManager:
         )
         
         # Check for duplicate suppression
-        if rule.suppress_duplicates:
-            duplicate_found = False
-            for existing_alert in self.active_alerts.values():
-                if (existing_alert.category == alert.category and
-                    existing_alert.metric_name == alert.metric_name and
-                    existing_alert.status == AlertStatus.ACTIVE):
-                    duplicate_found = True
-                    break
-            
-            if duplicate_found:
-                self.logger.debug(f"Suppressing duplicate alert: {alert.title}")
-                return
+        if rule.suppress_duplicates and self._is_duplicate_alert(alert):
+            self.logger.debug(f"Suppressing duplicate alert: {alert.title}")
+            return
         
         # Store alert
         self.active_alerts[alert_id] = alert
         self.alert_history.append(alert)
+        self._trim_alert_history()
         
-        # Trim history if needed
-        if len(self.alert_history) > self.max_history_size:
-            self.alert_history = self.alert_history[-self.max_history_size:]
-        
-        # Update statistics
-        self.stats['total_alerts'] += 1
-        self.stats['alerts_by_severity'][alert.severity.value] += 1
-        self.stats['alerts_by_category'][alert.category.value] += 1
-        
-        # Update last alert time
+        # Update statistics and last alert time
+        self._update_alert_stats(alert)
         self.last_alert_times[rule.rule_id] = time.time()
         
         # Send notifications
@@ -494,36 +494,62 @@ class AlertManager:
         
         # Schedule escalation if configured
         if rule.escalation_time > 0:
-            timer = threading.Timer(
-                rule.escalation_time,
-                self._escalate_alert,
-                args=(alert_id,)
-            )
-            timer.start()
-            self.escalation_timers[alert_id] = timer
+            self._schedule_alert_escalation(alert_id, rule.escalation_time)
         
         # Log alert creation
         self.logger.warning(f"Alert created: {alert.title} (ID: {alert_id})")
+
+    def _is_duplicate_alert(self, alert: Alert) -> bool:
+        """Check if an identical active alert already exists"""
+        for existing_alert in self.active_alerts.values():
+            if (existing_alert.category == alert.category and
+                existing_alert.metric_name == alert.metric_name and
+                existing_alert.status == AlertStatus.ACTIVE):
+                return True
+        return False
+
+    def _trim_alert_history(self):
+        """Trim alert history to max size"""
+        if len(self.alert_history) > self.max_history_size:
+            self.alert_history = self.alert_history[-self.max_history_size:]
+
+    def _update_alert_stats(self, alert: Alert):
+        """Update alert system statistics"""
+        self.stats['total_alerts'] += 1
+        self.stats['alerts_by_severity'][alert.severity.value] += 1
+        self.stats['alerts_by_category'][alert.category.value] += 1
+
+    def _schedule_alert_escalation(self, alert_id: str, escalation_time: int):
+        """Schedule alert escalation timer"""
+        timer = threading.Timer(
+            escalation_time,
+            self._escalate_alert,
+            args=(alert_id,)
+        )
+        timer.start()
+        self.escalation_timers[alert_id] = timer
     
     def _send_notifications(self, alert: Alert):
-        """Send alert notifications"""
+        """Send alert notifications to all registered notifiers"""
         recipients = self.config.get('email_recipients', [])
         
         for notifier in self.notifiers:
-            try:
-                if isinstance(notifier, EmailNotifier):
-                    success = notifier.send_alert(alert, recipients)
-                else:
-                    success = notifier.send_alert(alert)
-                
-                if success:
-                    self.stats['notifications_sent'] += 1
-                else:
-                    self.stats['notifications_failed'] += 1
-                    
-            except Exception as notify_ex:
-                self.logger.error(f"Notification failed: {str(notify_ex)}")
+            success = self._send_to_notifier(notifier, alert, recipients)
+            if success:
+                self.stats['notifications_sent'] += 1
+            else:
                 self.stats['notifications_failed'] += 1
+
+    def _send_to_notifier(self, notifier: Any, alert: Alert, recipients: list[str]) -> bool:
+        """Send alert to a single notifier with error handling"""
+        try:
+            if isinstance(notifier, EmailNotifier):
+                return notifier.send_alert(alert, recipients)
+            else:
+                return notifier.send_alert(alert)
+        except Exception as notify_ex:
+            self.logger.error(f"Notification failed for {type(notifier).__name__}: {str(notify_ex)}")
+            return False
     
     def acknowledge_alert(self, alert_id: str, user: str | None = None) -> bool:
         """Acknowledge an alert"""
@@ -586,8 +612,11 @@ class AlertManager:
             self._send_notifications(escalation_alert)
             self.logger.critical(f"Alert escalated: {alert_id} (level {alert.escalation_level})")
     
-    def get_active_alerts(self, category: AlertCategory | None = None,
-                         severity: AlertSeverity | None = None) -> list[Alert]:
+    def get_active_alerts(
+        self,
+        category: AlertCategory | None = None,
+        severity: AlertSeverity | None = None
+    ) -> list[Alert]:
         """Get active alerts with optional filtering"""
         alerts = list(self.active_alerts.values())
         
@@ -608,100 +637,54 @@ class AlertManager:
             'enabled_rules': len([r for r in self.alert_rules.values() if r.enabled])
         }
     
-    def generate_report(self, format_type: str = "json",
-                       include_history: bool = False) -> str:
+    def generate_report(self, format_type: str = "json", include_history: bool = False) -> str:
         """Generate alert system report"""
+        format_type = format_type.lower()
         active_alerts = list(self.active_alerts.values())
         
-        if format_type.lower() == "json":
-            report_data = {
-                'timestamp': time.time(),
-                'statistics': self.get_alert_statistics(),
-                'active_alerts': [alert.to_dict() for alert in active_alerts]
-            }
-            
-            if include_history:
-                report_data['alert_history'] = [alert.to_dict() for alert in self.alert_history[-100:]]
-            
-            return json.dumps(report_data, indent=2, default=str)
-        
-        elif format_type.lower() == "text":
-            lines = [
-                "Alert System Report",
-                "=" * 40,
-                f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-                f"Active Alerts: {len(active_alerts)}",
-                f"Total Alerts Generated: {self.stats['total_alerts']}",
-                ""
-            ]
-            
-            if active_alerts:
-                lines.append("ACTIVE ALERTS:")
-                lines.append("-" * 20)
-                
-                for alert in sorted(active_alerts, key=lambda x: x.timestamp, reverse=True):
-                    severity_symbol = {
-                        AlertSeverity.INFO: 'ℹ',
-                        AlertSeverity.WARNING: '⚠',
-                        AlertSeverity.CRITICAL: '✗',
-                        AlertSeverity.EMERGENCY: '🚨'
-                    }.get(alert.severity, '?')
-                    
-                    lines.append(f"  {severity_symbol} {alert.title}")
-                    lines.append(f"    Created: {datetime.fromtimestamp(alert.timestamp)}")
-                    lines.append(f"    Source: {alert.source_component}")
-                    lines.append(f"    Status: {alert.status.value}")
-                    lines.append("")
-            else:
-                lines.append("No active alerts.")
-            
-            return "\n".join(lines)
-        
+        if format_type == "json":
+            return self._generate_json_report(active_alerts, include_history)
+        elif format_type == "text":
+            return self._generate_text_report(active_alerts)
         else:
             raise ValueError(f"Unsupported report format: {format_type}")
 
+    def _generate_json_report(self, active_alerts: list[Alert], include_history: bool) -> str:
+        """Generate JSON format report"""
+        report_data = {
+            'timestamp': time.time(),
+            'statistics': self.get_alert_statistics(),
+            'active_alerts': [alert.to_dict() for alert in active_alerts]
+        }
+        
+        if include_history:
+            report_data['alert_history'] = [alert.to_dict() for alert in self.alert_history[-100:]]
+        
+        return json.dumps(report_data, indent=2, default=str)
 
-if __name__ == "__main__":
-    # Example usage and testing
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Alert System Test")
-    parser.add_argument("--config", help="Configuration file path")
-    parser.add_argument("--test", action="store_true", help="Run test scenario")
-    
-    args = parser.parse_args()
-    
-    # Configure logging
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    
-    # Load configuration
-    config_data = {}
-    if args.config:
-        try:
-            with open(args.config, 'r') as f:
-                config_data = json.load(f)
-        except Exception as config_ex:
-            logging.error(f"Failed to load config: {config_ex}")
-    
-    # Create alert manager
-    alert_manager = AlertManager(config_data)
-    
-    if args.test:
-        # Test scenario
-        print("Running alert system test...")
+    def _generate_text_report(self, active_alerts: list[Alert]) -> str:
+        """Generate plain text format report"""
+        lines = [
+            "Alert System Report",
+            "=" * 40,
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Active Alerts: {len(active_alerts)}",
+            f"Total Alerts Generated: {self.stats['total_alerts']}",
+            ""
+        ]
         
-        # Simulate high CPU usage
-        alert_manager.check_metric("cpu_usage", 90.0, "test_component")
+        if active_alerts:
+            lines.append("ACTIVE ALERTS:")
+            lines.append("-" * 20)
+            
+            for alert in sorted(active_alerts, key=lambda x: x.timestamp, reverse=True):
+                severity_symbol = _get_severity_symbol(alert.severity)
+                lines.append(f"  {severity_symbol} {alert.title}")
+                lines.append(f"    Created: {datetime.fromtimestamp(alert.timestamp)}")
+                lines.append(f"    Source: {alert.source_component}")
+                lines.append(f"    Status: {alert.status.value}")
+                lines.append("")
+        else:
+            lines.append("No active alerts.")
         
-        # Simulate consensus failure
-        alert_manager.check_metric("consensus_success_rate", 85.0, "consensus_module")
-        
-        # Generate report
-        report = alert_manager.generate_report("text")
-        print("\n" + report)
-        
-        # Print statistics
-        stats = alert_manager.get_alert_statistics()
-        print(f"\nAlert Statistics: {stats}")
-    else:
-        print("Alert system initialized. Use --test flag to run test scenario.")
+        return "\n".join(lines)
