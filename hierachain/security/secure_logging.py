@@ -20,6 +20,20 @@ LOG_INJECTION_CHARS = {
     "\t": "\\t",
 }
 
+# Translation table for log sanitization (pre-computed for performance)
+_LOG_SANITIZE_TABLE = str.maketrans(LOG_INJECTION_CHARS)
+
+# Maximum string length before truncation
+MAX_LOG_STRING_LENGTH = 500
+
+
+def _sanitize_string(value: str) -> str:
+    """Sanitize a string for logging - replaces dangerous chars and truncates."""
+    result = value.translate(_LOG_SANITIZE_TABLE)
+    if len(result) > MAX_LOG_STRING_LENGTH:
+        result = result[:MAX_LOG_STRING_LENGTH] + "...[truncated]"
+    return result
+
 
 def sanitize_for_log(value: Any) -> str:
     """
@@ -31,33 +45,22 @@ def sanitize_for_log(value: Any) -> str:
     Returns:
         Safe string representation
     """
-    if value is None:
-        return "null"
-    
-    if isinstance(value, (int, float, bool)):
-        return str(value)
-    
-    if isinstance(value, str):
-        result = value
-        # Replace dangerous characters
-        for char, replacement in LOG_INJECTION_CHARS.items():
-            result = result.replace(char, replacement)
-        # Truncate very long strings
-        if len(result) > 500:
-            result = result[:500] + "...[truncated]"
-        return result
-    
-    if isinstance(value, dict):
-        return json.dumps(
-            {k: sanitize_for_log(v) for k, v in value.items()},
-            ensure_ascii=True
-        )
-    
-    if isinstance(value, (list, tuple)):
-        return json.dumps([sanitize_for_log(item) for item in value])
-    
-    # For other types, convert to string and sanitize
-    return sanitize_for_log(str(value))
+    match value:
+        case None:
+            return "null"
+        case bool() | int() | float():
+            return str(value)
+        case str():
+            return _sanitize_string(value)
+        case dict():
+            return json.dumps(
+                {k: sanitize_for_log(v) for k, v in value.items()},
+                ensure_ascii=True
+            )
+        case list() | tuple():
+            return json.dumps([sanitize_for_log(item) for item in value])
+        case _:
+            return _sanitize_string(str(value))
 
 
 class SecureLogger:
@@ -78,7 +81,7 @@ class SecureLogger:
         **kwargs: Any
     ) -> str:
         """Create a structured log entry in JSON format."""
-        log_entry = {
+        log_entry: dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "level": level,
             "logger": self.name,
@@ -87,9 +90,7 @@ class SecureLogger:
         
         # Add extra fields with sanitization
         if kwargs:
-            log_entry["data"] = {
-                k: sanitize_for_log(v) for k, v in kwargs.items()
-            }
+            log_entry["data"] = {k: sanitize_for_log(v) for k, v in kwargs.items()}
         
         return json.dumps(log_entry, ensure_ascii=True)
     
@@ -134,7 +135,7 @@ class SecureLogger:
             severity: Event severity (low, medium, high, critical)
             **kwargs: Additional context data
         """
-        log_entry = {
+        log_entry: dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "type": "security_event",
             "event_type": sanitize_for_log(event_type),
@@ -144,9 +145,7 @@ class SecureLogger:
         }
         
         if kwargs:
-            log_entry["context"] = {
-                k: sanitize_for_log(v) for k, v in kwargs.items()
-            }
+            log_entry["context"] = {k: sanitize_for_log(v) for k, v in kwargs.items()}
         
         structured = json.dumps(log_entry, ensure_ascii=True)
         
@@ -180,7 +179,7 @@ class SecureLogger:
             success: Whether the action was successful
             **kwargs: Additional context
         """
-        log_entry = {
+        log_entry: dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "type": "audit",
             "action": sanitize_for_log(action),
@@ -195,9 +194,7 @@ class SecureLogger:
             log_entry["org_id"] = sanitize_for_log(org_id)
         
         if kwargs:
-            log_entry["details"] = {
-                k: sanitize_for_log(v) for k, v in kwargs.items()
-            }
+            log_entry["details"] = {k: sanitize_for_log(v) for k, v in kwargs.items()}
         
         self.logger.info(json.dumps(log_entry, ensure_ascii=True))
 
