@@ -19,6 +19,43 @@ from hierachain.core.schemas import get_transaction_schema
 
 logger = logging.getLogger(__name__)
 
+
+def _transactions_to_arrow(transactions: list[Transaction]) -> pa.Table:
+    """
+    Chuyển đổi danh sách các đối tượng Transaction thành Apache Arrow Table.
+
+    Hàm này chuẩn hóa dữ liệu giao dịch để phù hợp với schema yêu cầu bởi HieraChain Engine,
+    bao gồm cả các trường metadata (details) và các trường ZK Proof mới được thêm vào.
+
+    Args:
+        transactions: Danh sách các giao dịch cần chuyển đổi.
+
+    Returns:
+        pa.Table: Bảng dữ liệu định dạng Arrow.
+    """
+    schema = get_transaction_schema()
+
+    if not transactions:
+        # Trả về bảng trống với schema đúng nếu không có dữ liệu
+        return pa.Table.from_batches([], schema=schema)
+
+    # Xây dựng từ điển dữ liệu để sử dụng với from_pydict
+    # Điều này đảm bảo tất cả các trường trong TRANSACTION_SCHEMA đều được cung cấp
+    data = {
+        "tx_id": [tx.tx_id for tx in transactions],
+        "entity_id": [tx.entity_id for tx in transactions],
+        "event_type": [tx.event_type for tx in transactions],
+        "arrow_payload": [tx.arrow_payload for tx in transactions],
+        "signature": [tx.signature for tx in transactions],
+        "timestamp": [tx.timestamp for tx in transactions],
+        "details": [tx.details if tx.details else None for tx in transactions],
+        "zk_proof": [None] * len(transactions),
+        "zk_public_inputs": [None] * len(transactions),
+    }
+
+    return pa.Table.from_pydict(data, schema=schema)
+
+
 class ArrowClient:
     """
     Client for communicating with HieraChain Engine via Arrow IPC over TCP.
@@ -33,7 +70,7 @@ class ArrowClient:
         """Establish TCP connection to the server."""
         if self.sock:
             return
-        
+
         try:
             self.sock = socket.create_connection((self.host, self.port))
             logger.info(f"Connected to Arrow Server at {self.host}:{self.port}")
@@ -62,7 +99,7 @@ class ArrowClient:
             self.connect()
 
         # 1. Convert Transactions to Arrow Table/RecordBatch
-        table = self._transactions_to_arrow(transactions)
+        table = _transactions_to_arrow(transactions)
         
         # 2. Serialize to IPC Stream
         sink = pa.BufferOutputStream()
@@ -105,52 +142,6 @@ class ArrowClient:
                 return None
             data.extend(packet)
         return data
-
-    def _transactions_to_arrow(self, transactions: list[Transaction]) -> pa.Table:
-        """Convert list of Transactions to Arrow Table."""
-        
-        # Define schema matches core expectations
-        # For now, let's map the Transaction fields
-        # Note: 'details' is a map/dict, which can be handled as MapType or Struct
-        
-        tx_ids = []
-        entity_ids = []
-        event_types = []
-        arrow_payloads = []
-        signatures = []
-        timestamps = []
-        # Complex types like Map might be tricky, let's start with basic fields + strict schema if needed
-        # Or let pyarrow infer for now, but explicit is better for cross-lang
-        
-        for tx in transactions:
-            tx_ids.append(tx.tx_id)
-            entity_ids.append(tx.entity_id)
-            event_types.append(tx.event_type)
-            arrow_payloads.append(tx.arrow_payload)
-            signatures.append(tx.signature)
-            timestamps.append(tx.timestamp) # Standardize on float64 seconds matching Schema
-            
-            # Details: map[string]string -> List of structs or Map type
-            # For simplicity in this phase, ignoring details or handling simply?
-            # Let's Skip details for complex map handling for a moment or add as binary json?
-            # Let's try to stick to primitives for the first pass or implementation plan doesn't specify schema details.
-        
-        
-        # Use standardized schema
-        schema = get_transaction_schema()
-        
-        # Construct arrays matching the schema fields
-        arrays = [
-            pa.array(tx_ids, pa.string()),
-            pa.array(entity_ids, pa.string()),
-            pa.array(event_types, pa.string()),
-            pa.array(arrow_payloads, pa.binary()),
-            pa.array(signatures, pa.string()),
-            pa.array(timestamps, pa.float64()),
-            pa.array([None] * len(transactions), pa.map_(pa.string(), pa.string())),
-        ]
-        
-        return pa.Table.from_arrays(arrays, schema=schema)
 
     def __enter__(self):
         self.connect()
