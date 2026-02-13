@@ -6,12 +6,12 @@ supporting both Ed25519 (via PyNaCl) and ECDSA (via cryptography).
 """
 
 import json
-import logging
 from typing import Any
 
 from hierachain.security.security_utils import verify_signature, verify_batch_signatures
+from hierachain.security.secure_logging import get_security_logger
 
-logger = logging.getLogger(__name__)
+logger = get_security_logger()
 
 class SignatureVerifier:
     """
@@ -139,15 +139,47 @@ class SignatureVerifier:
 
     @staticmethod
     def _verify_ecdsa(public_key_hex: str, message: bytes, signature_hex: str) -> bool:
-        """Verify standard ECDSA signature (e.g., from generic crypto libs)."""
+        """
+        Verify standard ECDSA signature (e.g., from generic crypto libs).
+        Supports secp256k1 and other common curves if cryptography library is present.
+        """
         try:
-            # Try loading as PEM/DER
-            pub_key_bytes = bytes.fromhex(public_key_hex)
-            pass
-        except Exception:
-            pass
+            from cryptography.hazmat.primitives import hashes, serialization
+            from cryptography.hazmat.primitives.asymmetric import ec
+            from cryptography.exceptions import InvalidSignature
+        except ImportError:
+            logger.warning("cryptography library not available for ECDSA verification")
+            return False
 
-        return False
+        try:
+            # Decode hex strings
+            pub_key_bytes = bytes.fromhex(public_key_hex)
+            sig_bytes = bytes.fromhex(signature_hex)
+
+            # Attempt to load public key (try different formats)
+            try:
+                # Try SubjectPublicKeyInfo (PEM/DER)
+                public_key = serialization.load_der_public_key(pub_key_bytes)
+            except (ValueError, TypeError):
+                # Log and return False if format is unknown or unsupported
+                logger.debug("Unsupported or invalid ECDSA public key format")
+                return False
+
+            # Verify signature if it's an Elliptic Curve key
+            if isinstance(public_key, ec.EllipticCurvePublicKey):
+                public_key.verify(sig_bytes, message, ec.ECDSA(hashes.SHA256()))
+                return True
+            
+            return False
+
+        except InvalidSignature:
+            return False
+        except (ValueError, TypeError) as e:
+            logger.debug(f"ECDSA verification format error: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error during ECDSA verification: {e}", error=str(e))
+            return False
 
     @staticmethod
     def _get_signable_event_content(event: dict[str, Any]) -> bytes:
