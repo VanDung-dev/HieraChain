@@ -91,6 +91,25 @@ def generate_proof_hash(block_hash: str, metadata: dict[str, Any]) -> str:
     return generate_hash(proof_data)
 
 
+def _check_required_fields(event: dict[str, Any]) -> bool:
+    """Check if all required fields are present in the event."""
+    required_fields = ["event", "timestamp", "entity_id"]
+    return all(field in event for field in required_fields)
+
+
+def _check_field_types(event: dict[str, Any]) -> bool:
+    """Check if basic fields have correct data types."""
+    if not isinstance(event["event"], str):
+        return False
+    if not isinstance(event["timestamp"], (int, float)):
+        return False
+    if not isinstance(event["entity_id"], str):
+        return False
+    if "details" in event and not isinstance(event["details"], dict):
+        return False
+    return True
+
+
 def validate_event_structure(event: dict[str, Any]) -> bool:
     """
     Validate event structure according to framework guidelines.
@@ -104,24 +123,42 @@ def validate_event_structure(event: dict[str, Any]) -> bool:
     if not isinstance(event, dict):
         return False
     
-    # Required fields
-    required_fields = ["event", "timestamp"]
-    for field in required_fields:
-        if field not in event:
+    # 1. Required fields
+    if not _check_required_fields(event):
+        return False
+    
+    # 2. Type validation
+    if not _check_field_types(event):
+        return False
+    
+    # 3. Content constraints
+    if not validate_no_cryptocurrency_terms(event):
+        return False
+    
+    return True
+
+
+def _check_forbidden_fields(metadata: dict[str, Any]) -> bool:
+    """Check for forbidden detailed fields in metadata."""
+    forbidden_detailed_fields = [
+        "full_details", "raw_data", "complete_record",
+        "internal_data", "complete_log", "detailed_data"
+    ]
+    return any(field in metadata for field in forbidden_detailed_fields)
+
+
+def _check_nested_structures(value: Any) -> bool:
+    """Check if nested structures (dict/list) exceed summary size limits."""
+    if isinstance(value, dict):
+        if len(value) > 5:  # More than 5 keys is considered detailed
             return False
+        # Recursively check nested dictionaries
+        return validate_proof_metadata(value)
     
-    # Event type should be string
-    if not isinstance(event["event"], str):
+    if isinstance(value, list) and len(value) > 10:
+        # Large lists are considered detailed data
         return False
-    
-    # Timestamp should be numeric
-    if not isinstance(event["timestamp"], (int, float)):
-        return False
-    
-    # If entity_id is present, it should be string (metadata field)
-    if "entity_id" in event and not isinstance(event["entity_id"], str):
-        return False
-    
+        
     return True
 
 
@@ -138,27 +175,13 @@ def validate_proof_metadata(metadata: dict[str, Any]) -> bool:
     if not isinstance(metadata, dict):
         return False
     
-    # Should contain summary information, not detailed domain data
-    forbidden_detailed_fields = [
-        "full_details", "raw_data", "complete_record",
-        "internal_data", "complete_log", "detailed_data"
-    ]
-    for field in forbidden_detailed_fields:
-        if field in metadata:
-            return False
+    # 1. Check for forbidden summary fields
+    if _check_forbidden_fields(metadata):
+        return False
     
-    # Check for nested detailed data that shouldn't be in Main Chain
-    for key, value in metadata.items():
-        if isinstance(value, dict):
-            # If any value is a dict, it's considered detailed data
-            # unless it's a small summary object
-            if len(value) > 5:  # More than 5 keys is considered detailed
-                return False
-            # Recursively check nested dictionaries
-            if not validate_proof_metadata(value):
-                return False
-        elif isinstance(value, list) and len(value) > 10:
-            # Large lists are considered detailed data
+    # 2. Check for nested detailed data
+    for _, value in metadata.items():
+        if not _check_nested_structures(value):
             return False
             
     return True
@@ -190,8 +213,11 @@ def create_event(entity_id: str, event_type: str, details: dict[str, Any] | None
     return event
 
 
-def filter_events_by_timerange(events: list[dict[str, Any]], 
-                              start_time: float, end_time: float) -> list[dict[str, Any]]:
+def filter_events_by_timerange(
+    events: list[dict[str, Any]],
+    start_time: float,
+    end_time: float
+) -> list[dict[str, Any]]:
     """
     Filter events by timestamp range.
     
@@ -219,7 +245,7 @@ def group_events_by_entity(events: list[dict[str, Any]]) -> dict[str, list[dict[
     Returns:
         Dictionary mapping entity_id to list of events
     """
-    grouped = {}
+    grouped: dict[str, list[dict[str, Any]]] = {}
     for event in events:
         entity_id = event.get("entity_id", "unknown")
         if entity_id not in grouped:
@@ -239,7 +265,7 @@ def group_events_by_type(events: list[dict[str, Any]]) -> dict[str, list[dict[st
     Returns:
         Dictionary mapping event type to list of events
     """
-    grouped = {}
+    grouped: dict[str, list[dict[str, Any]]] = {}
     for event in events:
         event_type = event.get("event", "unknown")
         if event_type not in grouped:
@@ -247,6 +273,29 @@ def group_events_by_type(events: list[dict[str, Any]]) -> dict[str, list[dict[st
         grouped[event_type].append(event)
     
     return grouped
+
+
+def _is_block_valid(block: dict[str, Any]) -> bool:
+    """Check if a single block is valid according to framework rules."""
+    # 1. Check basic block structure
+    required_fields = ["index", "events", "timestamp", "previous_hash", "hash"]
+    if not all(field in block for field in required_fields):
+        return False
+        
+    # 2. Check if events is a list
+    if not isinstance(block["events"], list):
+        return False
+        
+    # 3. Check if hash is consistent
+    recalculated_hash = generate_hash({
+        "index": block["index"],
+        "events": block["events"],
+        "timestamp": block["timestamp"],
+        "previous_hash": block["previous_hash"],
+        "nonce": block.get("nonce", 0)
+    })
+    
+    return recalculated_hash == block["hash"]
 
 
 def calculate_chain_integrity_score(chain_data: list[dict[str, Any]]) -> float:
@@ -262,28 +311,8 @@ def calculate_chain_integrity_score(chain_data: list[dict[str, Any]]) -> float:
     if not chain_data:
         return 0.0
     
-    valid_blocks = 0
-    total_blocks = len(chain_data)
-    
-    for i, block in enumerate(chain_data):
-        # Check basic block structure
-        required_fields = ["index", "events", "timestamp", "previous_hash", "hash"]
-        if all(field in block for field in required_fields):
-            # Check if events is a list (not single event)
-            if isinstance(block["events"], list):
-                # Check if hash is consistent
-                recalculated_hash = generate_hash({
-                    "index": block["index"],
-                    "events": block["events"],
-                    "timestamp": block["timestamp"],
-                    "previous_hash": block["previous_hash"],
-                    "nonce": block.get("nonce", 0)
-                })
-                
-                if recalculated_hash == block["hash"]:
-                    valid_blocks += 1
-    
-    return valid_blocks / total_blocks
+    valid_blocks = sum(1 for block in chain_data if _is_block_valid(block))
+    return valid_blocks / len(chain_data)
 
 
 def format_timestamp(timestamp: float) -> str:
@@ -299,6 +328,17 @@ def format_timestamp(timestamp: float) -> str:
     return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
 
 
+def _is_summary_value(value: Any) -> bool:
+    """Check if a value is brief enough to be considered summary-level."""
+    if isinstance(value, (str, int, float, bool)):
+        return True
+    if isinstance(value, dict) and len(value) <= 5:  # Small summary objects
+        return True
+    if isinstance(value, list) and len(value) <= 10:  # Small summary lists
+        return True
+    return False
+
+
 def sanitize_metadata_for_main_chain(metadata: dict[str, Any]) -> dict[str, Any]:
     """
     Sanitize metadata for Main Chain submission by removing detailed data.
@@ -310,30 +350,24 @@ def sanitize_metadata_for_main_chain(metadata: dict[str, Any]) -> dict[str, Any]
         Sanitized metadata suitable for Main Chain
     """
     # Fields that should be removed for Main Chain (too detailed)
-    detailed_fields = [
+    detailed_fields = {
         "full_details", "raw_data", "complete_record", "individual_events",
         "detailed_logs", "complete_history", "full_trace"
-    ]
+    }
     
-    # Fields that must always be preserved regardless of structure rules
-    # ZK proofs are critical for security and must not be filtered out
-    critical_fields = ["zk_proof", "zk_public_inputs", "proof_hash"]
+    # Fields that must always be preserved (ZK proofs)
+    critical_fields = {"zk_proof", "zk_public_inputs", "proof_hash"}
 
     sanitized = {}
     for key, value in metadata.items():
-        # Always preserve critical security fields
+        # 1. Always preserve critical security fields
         if key in critical_fields:
             sanitized[key] = value
             continue
 
-        if key not in detailed_fields:
-            # Keep only summary-level information
-            if isinstance(value, (str, int, float, bool)):
-                sanitized[key] = value
-            elif isinstance(value, dict) and len(value) <= 5:  # Small summary objects
-                sanitized[key] = value
-            elif isinstance(value, list) and len(value) <= 10:  # Small summary lists
-                sanitized[key] = value
+        # 2. Filter out detailed fields and non-summary values
+        if key not in detailed_fields and _is_summary_value(value):
+            sanitized[key] = value
     
     return sanitized
 
@@ -394,7 +428,11 @@ class MerkleTree:
     Merkle Tree implementation for efficient data verification and hashing.
     """
     
-    def __init__(self, data_list: list[str | dict[str, Any]] = None, leaves: list[str] = None):
+    def __init__(
+        self,
+        data_list: list[str | dict[str, Any]] | None = None,
+        leaves: list[str] | None = None
+    ):
         """
         Initialize Merkle Tree.
         
