@@ -12,13 +12,34 @@ from fastapi import Depends, HTTPException, Security
 from fastapi.security import APIKeyHeader, APIKeyQuery
 
 from hierachain.security.key_manager import KeyManager
+from hierachain.security.secure_logging import get_security_logger
 
 # Add the project root to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
+logger = get_security_logger()
+
+
 # Different API key placement options
 api_key_header = APIKeyHeader(name="x-api-key", auto_error=False)
 api_key_query = APIKeyQuery(name="apikey", auto_error=False)
+
+
+def _log_security_event(event_type: str, details: dict):
+    """
+    Log security events for auditing.
+
+    Args:
+        event_type: Type of security event
+        details: Event details
+    """
+    logger.info(
+        f"Security event: {event_type}",
+        event_type=event_type,
+        details=details,
+        source="APIKeyVerifier",
+        framework="hierachain"
+    )
 
 
 class APIKeyVerifier:
@@ -86,7 +107,7 @@ class APIKeyVerifier:
         
         # Check if API key is provided
         if not api_key:
-            self._log_security_event("missing_api_key", {"timestamp": time.time()})
+            _log_security_event("missing_api_key", {"timestamp": time.time()})
             raise HTTPException(
                 status_code=401, 
                 detail="API key missing. Please provide a valid API key."
@@ -94,7 +115,7 @@ class APIKeyVerifier:
         
         # Verify key validity
         if not self.key_manager.is_valid(api_key):
-            self._log_security_event("invalid_api_key", {
+            _log_security_event("invalid_api_key", {
                 "key_prefix": api_key[:8] if len(api_key) >= 8 else "short_key",
                 "timestamp": time.time()
             })
@@ -105,7 +126,7 @@ class APIKeyVerifier:
         
         # Check revocation status
         if self.key_manager.is_revoked(api_key):
-            self._log_security_event("revoked_api_key", {
+            _log_security_event("revoked_api_key", {
                 "key_prefix": api_key[:8],
                 "timestamp": time.time()
             })
@@ -129,7 +150,7 @@ class APIKeyVerifier:
             "verified_at": time.time()
         }
         
-        self._log_security_event("successful_verification", {
+        _log_security_event("successful_verification", {
             "user_id": user_id,
             "app_name": app_details.get('name', 'Unknown') if app_details else 'Unknown',
             "timestamp": time.time()
@@ -173,22 +194,102 @@ class APIKeyVerifier:
             return context
         
         return permission_dependency
-    
-    @staticmethod
-    def _log_security_event(event_type: str, details: dict):
-        """
-        Log security events for auditing.
-        
-        Args:
-            event_type: Type of security event
-            details: Event details
-        """
-        log_entry = {
-            "event_type": event_type,
-            "details": details,
-            "source": "APIKeyVerifier",
-            "framework": "hierachain"
-        }
+
+
+def _has_permission(context: dict, permission_type: str) -> bool:
+    """
+    Check if context has specific permission.
+
+    Args:
+        context: The context containing app details
+        permission_type: The permission type to check for (events, chains, proofs)
+
+    Returns:
+        bool: True if context has the required permission, False otherwise
+    """
+    app_details = context.get('app_details', {})
+    permissions = app_details.get('permissions', [])
+    return permission_type in permissions or 'all' in permissions
+
+
+def require_event_access(context: dict = Depends(APIKeyVerifier)) -> dict:
+    """
+    Require permission to access event-related endpoints.
+
+    Args:
+        context: Context from APIKeyVerifier
+
+    Returns:
+        Dict: Context if permission granted
+
+    Raises:
+        HTTPException: 403 if insufficient permissions
+    """
+    # This would need the original API key for permission checking
+    # In practice, you'd modify the APIKeyVerifier to store the key in context
+    if not _has_permission(context, 'events'):
+        raise HTTPException(
+            status_code=403,
+            detail="Access to event operations requires 'events' permission."
+        )
+    return context
+
+
+def require_chain_access(context: dict = Depends(APIKeyVerifier)) -> dict:
+    """
+    Require permission to access chain-related endpoints.
+
+    Args:
+        context: Context from APIKeyVerifier
+
+    Returns:
+        Dict: Context if permission granted
+
+    Raises:
+        HTTPException: 403 if insufficient permissions
+    """
+    if not _has_permission(context, 'chains'):
+        raise HTTPException(
+            status_code=403,
+            detail="Access to chain operations requires 'chains' permission."
+        )
+    return context
+
+
+def require_proof_access(context: dict = Depends(APIKeyVerifier)) -> dict:
+    """
+    Require permission to access proof submission endpoints.
+
+    Args:
+        context: Context from APIKeyVerifier
+
+    Returns:
+        Dict: Context if permission granted
+
+    Raises:
+        HTTPException: 403 if insufficient permissions
+    """
+    if not _has_permission(context, 'proofs'):
+        raise HTTPException(
+            status_code=403,
+            detail="Access to proof operations requires 'proofs' permission."
+        )
+    return context
+
+
+def _has_event_permission(context: dict) -> bool:
+    """Check if context has event permissions."""
+    return _has_permission(context, 'events')
+
+
+def _has_chain_permission(context: dict) -> bool:
+    """Check if context has chain permissions."""
+    return _has_permission(context, 'chains')
+
+
+def _has_proof_permission(context: dict) -> bool:
+    """Check if context has proof permissions."""
+    return _has_permission(context, 'proofs')
 
 
 class ResourcePermissionChecker:
@@ -205,100 +306,6 @@ class ResourcePermissionChecker:
             verify_api_key: APIKeyVerifier instance to use for permission checking
         """
         self.verify_api_key = verify_api_key
-    
-    def require_event_access(self, context: dict = Depends(APIKeyVerifier)) -> dict:
-        """
-        Require permission to access event-related endpoints.
-        
-        Args:
-            context: Context from APIKeyVerifier
-            
-        Returns:
-            Dict: Context if permission granted
-            
-        Raises:
-            HTTPException: 403 if insufficient permissions
-        """
-        # This would need the original API key for permission checking
-        # In practice, you'd modify the APIKeyVerifier to store the key in context
-        if not self._has_permission(context, 'events'):
-            raise HTTPException(
-                status_code=403,
-                detail="Access to event operations requires 'events' permission."
-            )
-        return context
-    
-    def require_chain_access(self, context: dict = Depends(APIKeyVerifier)) -> dict:
-        """
-        Require permission to access chain-related endpoints.
-        
-        Args:
-            context: Context from APIKeyVerifier
-            
-        Returns:
-            Dict: Context if permission granted
-            
-        Raises:
-            HTTPException: 403 if insufficient permissions
-        """
-        if not self._has_permission(context, 'chains'):
-            raise HTTPException(
-                status_code=403,
-                detail="Access to chain operations requires 'chains' permission."
-            )
-        return context
-    
-    def require_proof_access(self, context: dict = Depends(APIKeyVerifier)) -> dict:
-        """
-        Require permission to access proof submission endpoints.
-        
-        Args:
-            context: Context from APIKeyVerifier
-            
-        Returns:
-            Dict: Context if permission granted
-            
-        Raises:
-            HTTPException: 403 if insufficient permissions
-        """
-        if not self._has_permission(context, 'proofs'):
-            raise HTTPException(
-                status_code=403,
-                detail="Access to proof operations requires 'proofs' permission."
-            )
-        return context
-    
-    @staticmethod
-    def _has_permission(context: dict, permission_type: str) -> bool:
-        """
-        Check if context has specific permission.
-
-        Args:
-            context: The context containing app details
-            permission_type: The permission type to check for (events, chains, proofs)
-
-        Returns:
-            bool: True if context has the required permission, False otherwise
-        """
-        app_details = context.get('app_details', {})
-        permissions = app_details.get('permissions', [])
-        return permission_type in permissions or 'all' in permissions
-    
-    # Deprecated methods for backward compatibility
-    @staticmethod
-    def _has_event_permission(context: dict) -> bool:
-        """Check if context has event permissions."""
-        return ResourcePermissionChecker._has_permission(context, 'events')
-    
-    @staticmethod
-    def _has_chain_permission(context: dict) -> bool:
-        """Check if context has chain permissions."""
-        return ResourcePermissionChecker._has_permission(context, 'chains')
-    
-    @staticmethod
-    def _has_proof_permission(context: dict) -> bool:
-        """Check if context has proof permissions."""
-        return ResourcePermissionChecker._has_permission(context, 'proofs')
 
 
 #Factoryfunction for creating configured APIKeyVerifier instances
@@ -339,11 +346,3 @@ FORM_PARAM_CONFIG = {
     "cache_ttl": 300,
     "revocation_check": "daily"
 }
-
-
-if __name__ == "__main__":
-    # Example usage
-    verify_key = APIKeyVerifier(DEFAULT_CONFIG)
-    print("APIKeyVerifier instance created with default configuration")
-    print("Key location:", verify_key.key_location)
-    print("Key name:", verify_key.key_name)
