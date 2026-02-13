@@ -11,20 +11,12 @@ import threading
 import logging
 import statistics
 import json
-import os
+import psutil
 from typing import Any, Callable, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
 from collections import deque, defaultdict
 from datetime import datetime
-
-# Optional dependency - graceful degradation if not available
-try:
-    import psutil
-    PSUTIL_AVAILABLE = True
-except ImportError:
-    PSUTIL_AVAILABLE = False
-    psutil = None
 
 
 class MetricType(Enum):
@@ -127,48 +119,60 @@ class PerformanceMetric:
         return False, "normal"
 
 
+def _collect_disk_psutil() -> dict[str, float]:
+    """Collect disk metrics using psutil"""
+    disk_usage = psutil.disk_usage('/')
+    disk_io = psutil.disk_io_counters()
+
+    metrics = {
+        'disk_usage_percent': (disk_usage.used / disk_usage.total) * 100,
+        'disk_total': disk_usage.total,
+        'disk_free': disk_usage.free,
+        'disk_used': disk_usage.used
+    }
+
+    if disk_io:
+        metrics.update({
+            'disk_read_bytes': disk_io.read_bytes,
+            'disk_write_bytes': disk_io.write_bytes,
+            'disk_read_count': disk_io.read_count,
+            'disk_write_count': disk_io.write_count
+        })
+
+    return metrics
+
+
+def _collect_network_psutil() -> dict[str, float]:
+    """Collect network metrics using psutil"""
+    network_io = psutil.net_io_counters()
+    network_connections = len(psutil.net_connections())
+
+    return {
+        'network_bytes_sent': network_io.bytes_sent,
+        'network_bytes_recv': network_io.bytes_recv,
+        'network_packets_sent': network_io.packets_sent,
+        'network_packets_recv': network_io.packets_recv,
+        'network_connections_count': network_connections
+    }
+
+
 class SystemMetricsCollector:
     """Collector for system-level performance metrics"""
     
     def __init__(self):
         """Initialize system metrics collector"""
         self.logger = logging.getLogger(__name__)
-        self.process = psutil.Process() if PSUTIL_AVAILABLE else None
-        
-        if not PSUTIL_AVAILABLE:
-            self.logger.warning("psutil not available - using fallback system metrics collection")
+        self.process = psutil.Process()
         
     def collect_cpu_metrics(self) -> dict[str, float]:
         """Collect CPU usage metrics"""
         try:
-            if PSUTIL_AVAILABLE:
-                return {
-                    'cpu_usage_total': psutil.cpu_percent(interval=0.1),
-                    'cpu_usage_process': self.process.cpu_percent(),
-                    'cpu_count': psutil.cpu_count(),
-                    'load_average_1m': psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0.0
-                }
-            else:
-                # Fallback implementation
-                cpu_count = os.cpu_count() or 1
-                
-                # Try to get load average on Unix-like systems
-                load_avg = 0.0
-                try:
-                    if hasattr(os, 'getloadavg'):
-                        load_avg = os.getloadavg()[0]
-                    elif os.path.exists('/proc/loadavg'):
-                        with open('/proc/loadavg', 'r') as load_file:
-                            load_avg = float(load_file.read().split()[0])
-                except (IOError, OSError) as e:
-                    self.logger.debug(f"Load average unavailable: {e}")
-                
-                return {
-                    'cpu_usage_total': min(load_avg * 100 / cpu_count, 100.0),  # Rough approximation
-                    'cpu_usage_process': 0.0,  # Cannot determine without psutil
-                    'cpu_count': cpu_count,
-                    'load_average_1m': load_avg
-                }
+            return {
+                'cpu_usage_total': psutil.cpu_percent(interval=0.1),
+                'cpu_usage_process': self.process.cpu_percent(),
+                'cpu_count': psutil.cpu_count(),
+                'load_average_1m': psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0.0
+            }
         except Exception as e:
             self.logger.error(f"Error collecting CPU metrics: {str(e)}")
             return {}
@@ -176,189 +180,37 @@ class SystemMetricsCollector:
     def collect_memory_metrics(self) -> dict[str, float]:
         """Collect memory usage metrics"""
         try:
-            if PSUTIL_AVAILABLE:
-                virtual_memory = psutil.virtual_memory()
-                process_memory = self.process.memory_info()
-                
-                return {
-                    'memory_usage_percent': virtual_memory.percent,
-                    'memory_total': virtual_memory.total,
-                    'memory_available': virtual_memory.available,
-                    'memory_used': virtual_memory.used,
-                    'process_memory_rss': process_memory.rss,
-                    'process_memory_vms': process_memory.vms
-                }
-            else:
-                # Fallback implementation using /proc/meminfo on Linux
-                memory_info = {}
-                try:
-                    if os.path.exists('/proc/meminfo'):
-                        with open('/proc/meminfo', 'r') as mem_file:
-                            for line in mem_file:
-                                if ':' in line:
-                                    key, value = line.split(':', 1)
-                                    memory_info[key.strip()] = int(value.strip().split()[0]) * 1024  # Convert KB to bytes
-                    
-                    total = memory_info.get('MemTotal', 0)
-                    available = memory_info.get('MemAvailable', memory_info.get('MemFree', 0))
-                    used = total - available
-                    usage_percent = (used / total * 100) if total > 0 else 0
-                    
-                    return {
-                        'memory_usage_percent': usage_percent,
-                        'memory_total': total,
-                        'memory_available': available,
-                        'memory_used': used,
-                        'process_memory_rss': 0,  # Cannot determine without psutil
-                        'process_memory_vms': 0   # Cannot determine without psutil
-                    }
-                except (IOError, OSError, ValueError):
-                    return {
-                        'memory_usage_percent': 0,
-                        'memory_total': 0,
-                        'memory_available': 0,
-                        'memory_used': 0,
-                        'process_memory_rss': 0,
-                        'process_memory_vms': 0
-                    }
+            return self._collect_memory_psutil()
         except Exception as e:
             self.logger.error(f"Error collecting memory metrics: {str(e)}")
             return {}
-    
+
+    def _collect_memory_psutil(self) -> dict[str, float]:
+        """Collect memory metrics using psutil"""
+        virtual_memory = psutil.virtual_memory()
+        process_memory = self.process.memory_info()
+        
+        return {
+            'memory_usage_percent': virtual_memory.percent,
+            'memory_total': virtual_memory.total,
+            'memory_available': virtual_memory.available,
+            'memory_used': virtual_memory.used,
+            'process_memory_rss': process_memory.rss,
+            'process_memory_vms': process_memory.vms
+        }
+
     def collect_disk_metrics(self) -> dict[str, float]:
         """Collect disk usage metrics"""
         try:
-            if PSUTIL_AVAILABLE:
-                disk_usage = psutil.disk_usage('/')
-                disk_io = psutil.disk_io_counters()
-                
-                metrics = {
-                    'disk_usage_percent': (disk_usage.used / disk_usage.total) * 100,
-                    'disk_total': disk_usage.total,
-                    'disk_free': disk_usage.free,
-                    'disk_used': disk_usage.used
-                }
-                
-                if disk_io:
-                    metrics.update({
-                        'disk_read_bytes': disk_io.read_bytes,
-                        'disk_write_bytes': disk_io.write_bytes,
-                        'disk_read_count': disk_io.read_count,
-                        'disk_write_count': disk_io.write_count
-                    })
-                
-                return metrics
-            else:
-                # Fallback implementation using os.statvfs and /proc/diskstats
-                metrics = {}
-                try:
-                    # Get disk usage using statvfs
-                    if hasattr(os, 'statvfs'):
-                        statvfs = os.statvfs('/')
-                        total = statvfs.f_frsize * statvfs.f_blocks
-                        free = statvfs.f_frsize * statvfs.f_bavail
-                        used = total - free
-                        usage_percent = (used / total * 100) if total > 0 else 0
-                        
-                        metrics.update({
-                            'disk_usage_percent': usage_percent,
-                            'disk_total': total,
-                            'disk_free': free,
-                            'disk_used': used
-                        })
-                    
-                    # Try to get disk I/O stats from /proc/diskstats (Linux only)
-                    if os.path.exists('/proc/diskstats'):
-                        with open('/proc/diskstats', 'r') as disk_file:
-                            total_read_bytes = 0
-                            total_write_bytes = 0
-                            for line in disk_file:
-                                fields = line.split()
-                                if len(fields) >= 10:
-                                    # Fields: read_sectors, write_sectors (sectors are typically 512 bytes)
-                                    read_sectors = int(fields[5])
-                                    write_sectors = int(fields[9])
-                                    total_read_bytes += read_sectors * 512
-                                    total_write_bytes += write_sectors * 512
-                            
-                            metrics.update({
-                                'disk_read_bytes': total_read_bytes,
-                                'disk_write_bytes': total_write_bytes,
-                                'disk_read_count': 0,  # Not available in fallback
-                                'disk_write_count': 0  # Not available in fallback
-                            })
-                    
-                    return metrics
-                except (IOError, OSError, ValueError):
-                    return {
-                        'disk_usage_percent': 0,
-                        'disk_total': 0,
-                        'disk_free': 0,
-                        'disk_used': 0,
-                        'disk_read_bytes': 0,
-                        'disk_write_bytes': 0,
-                        'disk_read_count': 0,
-                        'disk_write_count': 0
-                    }
+            return _collect_disk_psutil()
         except Exception as e:
             self.logger.error(f"Error collecting disk metrics: {str(e)}")
             return {}
-    
+
     def collect_network_metrics(self) -> dict[str, float]:
         """Collect network usage metrics"""
         try:
-            if PSUTIL_AVAILABLE:
-                network_io = psutil.net_io_counters()
-                network_connections = len(psutil.net_connections())
-                
-                return {
-                    'network_bytes_sent': network_io.bytes_sent,
-                    'network_bytes_recv': network_io.bytes_recv,
-                    'network_packets_sent': network_io.packets_sent,
-                    'network_packets_recv': network_io.packets_recv,
-                    'network_connections_count': network_connections
-                }
-            else:
-                # Fallback implementation using /proc/net/dev and /proc/net/tcp
-                metrics = {
-                    'network_bytes_sent': 0,
-                    'network_bytes_recv': 0,
-                    'network_packets_sent': 0,
-                    'network_packets_recv': 0,
-                    'network_connections_count': 0
-                }
-                
-                try:
-                    # Get network I/O stats from /proc/net/dev (Linux)
-                    if os.path.exists('/proc/net/dev'):
-                        with open('/proc/net/dev', 'r') as net_file:
-                            lines = net_file.readlines()[2:]  # Skip header lines
-                            for line in lines:
-                                if ':' in line:
-                                    fields = line.split()
-                                    if len(fields) >= 10:
-                                        # Received bytes and packets
-                                        metrics['network_bytes_recv'] += int(fields[1])
-                                        metrics['network_packets_recv'] += int(fields[2])
-                                        # Transmitted bytes and packets
-                                        metrics['network_bytes_sent'] += int(fields[9])
-                                        metrics['network_packets_sent'] += int(fields[10])
-                    
-                    # Count network connections from /proc/net/tcp and /proc/net/udp (Linux)
-                    connection_count = 0
-                    for protocol in ['tcp', 'udp', 'tcp6', 'udp6']:
-                        proc_file = f'/proc/net/{protocol}'
-                        if os.path.exists(proc_file):
-                            with open(proc_file, 'r') as conn_file:
-                                lines = conn_file.readlines()[1:]  # Skip header
-                                connection_count += len(lines)
-                    
-                    metrics['network_connections_count'] = connection_count
-                    
-                except (IOError, OSError) as e:
-                    self.logger.debug(f"Network stats fallback: {e}")
-                
-                return metrics
+            return _collect_network_psutil()
         except Exception as e:
             self.logger.error(f"Error collecting network metrics: {str(e)}")
             return {}
@@ -425,8 +277,9 @@ class BlockchainMetricsCollector:
             
             # Block creation metrics
             if self.block_creation_times:
-                recent_blocks = [b for b in self.block_creation_times 
-                               if current_time - b['timestamp'] <= 300]  # Last 5 minutes
+                recent_blocks = [
+                    b for b in self.block_creation_times if current_time - b['timestamp'] <= 300
+                ]  # Last 5 minutes
                 
                 if recent_blocks:
                     creation_times = [b['time'] for b in recent_blocks]
@@ -464,6 +317,62 @@ class BlockchainMetricsCollector:
             return {}
 
 
+def _calculate_report_summary(current_metrics: dict[str, Any]) -> dict[str, int]:
+    """Calculate summary counts for the report"""
+    return {
+        'total_metrics': len(current_metrics),
+        'critical_alerts': len([m for m in current_metrics.values() if m['status'] == 'critical']),
+        'warning_alerts': len([m for m in current_metrics.values() if m['status'] == 'warning']),
+        'normal_metrics': len([m for m in current_metrics.values() if m['status'] == 'normal'])
+    }
+
+
+def _group_metrics_by_type(current_metrics: dict[str, Any]) -> dict[str, list]:
+    """Group metrics by their type for reporting"""
+    metrics_by_type = defaultdict(list)
+    for name, data in current_metrics.items():
+        metrics_by_type[data['type']].append((name, data))
+    return metrics_by_type
+
+
+def _get_status_symbol(status: str) -> str:
+    """Get the symbol representing a metric status"""
+    return {
+        'normal': '✓',
+        'warning': '⚠',
+        'critical': '✗',
+        'no_data': '-'
+    }.get(status, '?')
+
+
+def _add_type_section_to_report(lines: list[str], metric_type: str, metrics: list):
+    """Add a section for a specific metric type to the text report"""
+    lines.append(f"\n{metric_type.upper()} METRICS:")
+    lines.append("-" * 30)
+
+    for name, data in metrics:
+        status_symbol = _get_status_symbol(data['status'])
+        lines.append(f"  {status_symbol} {name}: {data['current_value']} {data['unit']}")
+
+        if data['status'] in ['warning', 'critical']:
+            threshold = data.get(f"threshold_{data['status']}")
+            if threshold:
+                lines.append(f"    ({data['status']} threshold: {threshold})")
+
+
+def _determine_health_status(avg_score: float, critical_issues: int, warning_issues: int) -> str:
+    """Determine health status string based on score and issues"""
+    if critical_issues > 0:
+        return "critical"
+    if warning_issues > 0:
+        return "warning"
+    if avg_score >= 90:
+        return "excellent"
+    if avg_score >= 70:
+        return "good"
+    return "poor"
+
+
 class PerformanceMonitor:
     """
     Main performance monitoring system for HieraChain framework.
@@ -497,7 +406,7 @@ class PerformanceMonitor:
         
         # Monitoring control
         self.monitoring_active = False
-        self.monitoring_thread: Optional[threading.Thread] = None
+        self.monitoring_thread: threading.Thread | None = None
         self.shutdown_event = threading.Event()
         
         # Custom metrics
@@ -577,11 +486,15 @@ class PerformanceMonitor:
             )
         })
     
-    def add_custom_metric(self, name: str, metric_type: MetricType, 
-                         unit: MetricUnit, description: str,
-                         threshold_warning: float | None = None,
-                         threshold_critical: float | None = None,
-                         callback: Callable[[], float] | None = None):
+    def add_custom_metric(
+        self,
+        name: str,
+        metric_type: MetricType,
+        unit: MetricUnit, description: str,
+        threshold_warning: float | None = None,
+        threshold_critical: float | None = None,
+        callback: Callable[[], float] | None = None
+    ):
         """Add custom performance metric"""
         self.metrics[name] = PerformanceMetric(
             name=name,
@@ -647,65 +560,76 @@ class PerformanceMonitor:
     def _monitoring_loop(self):
         """Main monitoring loop"""
         while self.monitoring_active and not self.shutdown_event.is_set():
-            try:
-                self._collect_all_metrics()
-                self._check_thresholds()
-            except Exception as loop_error:
-                self.logger.error(f"Error in monitoring loop: {str(loop_error)}")
+            self._execute_monitoring_cycle()
             
             # Wait for next collection interval
-            if not self.shutdown_event.wait(self.collection_interval):
-                continue
-            else:
+            if self.shutdown_event.wait(self.collection_interval):
                 break
-    
+
+    def _execute_monitoring_cycle(self):
+        """Execute a single monitoring collection and check cycle"""
+        try:
+            self._collect_all_metrics()
+            self._check_thresholds()
+        except Exception as cycle_error:
+            self.logger.error(f"Error in monitoring cycle: {str(cycle_error)}")
+
     def _collect_all_metrics(self):
         """Collect all performance metrics"""
         try:
-            # Collect system metrics
-            system_metrics = self.system_collector.collect_cpu_metrics()
-            system_metrics.update(self.system_collector.collect_memory_metrics())
-            system_metrics.update(self.system_collector.collect_disk_metrics())
-            system_metrics.update(self.system_collector.collect_network_metrics())
-            
-            # Map system metrics to our metric objects
-            metric_mapping = {
-                'cpu_usage_total': 'cpu_usage',
-                'memory_usage_percent': 'memory_usage',
-                'disk_usage_percent': 'disk_usage',
-                'network_connections_count': 'network_connections'
-            }
-            
-            for sys_metric, our_metric in metric_mapping.items():
-                if sys_metric in system_metrics and our_metric in self.metrics:
-                    self.metrics[our_metric].add_value(system_metrics[sys_metric])
-            
-            # Collect blockchain metrics
-            blockchain_metrics = self.blockchain_collector.collect_metrics()
-            
-            blockchain_mapping = {
-                'event_throughput': 'event_throughput',
-                'block_creation_avg_time': 'block_creation_time',
-                'consensus_success_rate': 'consensus_success_rate',
-                'event_processing_avg_time': 'event_processing_time'
-            }
-            
-            for bc_metric, our_metric in blockchain_mapping.items():
-                if bc_metric in blockchain_metrics and our_metric in self.metrics:
-                    self.metrics[our_metric].add_value(blockchain_metrics[bc_metric])
-            
-            # Collect custom metrics
-            for callback_name, callback in self.custom_metrics_callbacks.items():
-                try:
-                    custom_values = callback()
-                    for metric_name, value in custom_values.items():
-                        if metric_name in self.metrics:
-                            self.metrics[metric_name].add_value(value)
-                except Exception as callback_error:
-                    self.logger.error(f"Error collecting custom metric {callback_name}: {str(callback_error)}")
-            
+            self._collect_system_metrics()
+            self._collect_blockchain_metrics()
+            self._collect_custom_metrics()
         except Exception as collect_error:
-            self.logger.error(f"Error collecting metrics: {str(collect_error)}")
+            self.logger.error(f"Error collecting all metrics: {str(collect_error)}")
+
+    def _collect_system_metrics(self):
+        """Collect and map system-level metrics"""
+        system_metrics = self.system_collector.collect_cpu_metrics()
+        system_metrics.update(self.system_collector.collect_memory_metrics())
+        system_metrics.update(self.system_collector.collect_disk_metrics())
+        system_metrics.update(self.system_collector.collect_network_metrics())
+        
+        mapping = {
+            'cpu_usage_total': 'cpu_usage',
+            'memory_usage_percent': 'memory_usage',
+            'disk_usage_percent': 'disk_usage',
+            'network_connections_count': 'network_connections'
+        }
+        self._apply_metric_mapping(system_metrics, mapping)
+
+    def _collect_blockchain_metrics(self):
+        """Collect and map blockchain-specific metrics"""
+        blockchain_metrics = self.blockchain_collector.collect_metrics()
+        
+        mapping = {
+            'event_throughput': 'event_throughput',
+            'block_creation_avg_time': 'block_creation_time',
+            'consensus_success_rate': 'consensus_success_rate',
+            'event_processing_avg_time': 'event_processing_time'
+        }
+        self._apply_metric_mapping(blockchain_metrics, mapping)
+
+    def _collect_custom_metrics(self):
+        """Collect metrics from custom callbacks"""
+        for callback_name, callback in self.custom_metrics_callbacks.items():
+            self._process_custom_callback(callback_name, callback)
+
+    def _process_custom_callback(self, callback_name: str, callback: Callable[[], dict[str, float]]):
+        """Process a single custom metric callback"""
+        try:
+            custom_values = callback()
+            for metric_name, value in custom_values.items():
+                if metric_name in self.metrics:
+                    self.metrics[metric_name].add_value(value)
+        except Exception as e:
+            self.logger.error(f"Error collecting custom metric {callback_name}: {str(e)}")
+
+    def _apply_metric_mapping(self, source_metrics: dict[str, float], mapping: dict[str, str]):
+        """Apply a mapping from source keys to our internal metric names"""
+        for source_key, internal_name in mapping.items():
+            if source_key in source_metrics and internal_name in self.metrics:
+                self.metrics[internal_name].add_value(source_metrics[source_key])
     
     def _check_thresholds(self):
         """Check metric thresholds and trigger alerts"""
@@ -713,29 +637,36 @@ class PerformanceMonitor:
             return
         
         for metric_name, metric in self.metrics.items():
+            self._process_threshold_check(metric_name, metric)
+
+    def _process_threshold_check(self, metric_name: str, metric: PerformanceMetric):
+        """Process threshold check for a single metric"""
+        try:
+            exceeded, level = metric.is_threshold_exceeded()
+            if exceeded and level in ['warning', 'critical']:
+                current_value = metric.get_current_value()
+                self._trigger_alerts(level, metric, current_value)
+                self._log_alert(metric_name, level, metric, current_value)
+        except Exception as e:
+            self.logger.error(f"Error checking threshold for {metric_name}: {str(e)}")
+
+    def _trigger_alerts(self, level: str, metric: PerformanceMetric, current_value: float):
+        """Trigger all registered alert handlers"""
+        for handler in self.alert_handlers:
             try:
-                exceeded, level = metric.is_threshold_exceeded()
-                
-                if exceeded and level in ['warning', 'critical']:
-                    current_value = metric.get_current_value()
-                    
-                    # Trigger alert handlers
-                    for handler in self.alert_handlers:
-                        try:
-                            handler(level, metric, current_value)
-                        except Exception as handler_error:
-                            self.logger.error(f"Alert handler error: {str(handler_error)}")
-                    
-                    # Log the alert
-                    threshold = (metric.threshold_critical if level == 'critical' 
-                               else metric.threshold_warning)
-                    self.logger.warning(
-                        f"Performance alert: {metric_name} = {current_value} "
-                        f"({level} threshold: {threshold})"
-                    )
-                    
-            except Exception as check_error:
-                self.logger.error(f"Error checking threshold for {metric_name}: {str(check_error)}")
+                handler(level, metric, current_value)
+            except Exception as e:
+                self.logger.error(f"Alert handler error: {str(e)}")
+
+    def _log_alert(self, metric_name: str, level: str, metric: PerformanceMetric, current_value: float):
+        """Log the alert to the system log"""
+        threshold = (
+            metric.threshold_critical if level == 'critical' else metric.threshold_warning
+        )
+        self.logger.warning(
+            f"Performance alert: {metric_name} = {current_value} "
+            f"({level} threshold: {threshold})"
+        )
     
     def get_current_metrics(self) -> dict[str, dict[str, Any]]:
         """Get current metric values and statistics"""
@@ -760,8 +691,11 @@ class PerformanceMonitor:
         
         return result
     
-    def get_metric_history(self, metric_name: str, 
-                          duration_seconds: int | None = None) -> list[dict[str, Any]]:
+    def get_metric_history(
+        self,
+        metric_name: str,
+        duration_seconds: int | None = None
+    ) -> list[dict[str, Any]]:
         """Get metric value history"""
         if metric_name not in self.metrics:
             return []
@@ -781,69 +715,61 @@ class PerformanceMonitor:
         current_metrics = self.get_current_metrics()
         
         if format_type.lower() == "json":
-            report_data = {
-                'timestamp': time.time(),
-                'monitoring_status': 'active' if self.monitoring_active else 'inactive',
-                'metrics': current_metrics,
-                'summary': {
-                    'total_metrics': len(current_metrics),
-                    'critical_alerts': len([m for m in current_metrics.values() if m['status'] == 'critical']),
-                    'warning_alerts': len([m for m in current_metrics.values() if m['status'] == 'warning']),
-                    'normal_metrics': len([m for m in current_metrics.values() if m['status'] == 'normal'])
-                }
-            }
-            
-            return json.dumps(report_data, indent=2, default=str)
-        
+            return self._generate_json_report(current_metrics)
         elif format_type.lower() == "text":
-            lines = [
-                "Performance Monitoring Report",
-                "=" * 50,
-                f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-                f"Status: {'Active' if self.monitoring_active else 'Inactive'}",
-                ""
-            ]
-            
-            # Group metrics by type
-            metrics_by_type = defaultdict(list)
-            for name, data in current_metrics.items():
-                metrics_by_type[data['type']].append((name, data))
-            
-            for metric_type, metrics in metrics_by_type.items():
-                lines.append(f"\n{metric_type.upper()} METRICS:")
-                lines.append("-" * 30)
-                
-                for name, data in metrics:
-                    status_symbol = {
-                        'normal': '✓',
-                        'warning': '⚠',
-                        'critical': '✗',
-                        'no_data': '-'
-                    }.get(data['status'], '?')
-                    
-                    lines.append(f"  {status_symbol} {name}: {data['current_value']} {data['unit']}")
-                    if data['status'] in ['warning', 'critical']:
-                        threshold_key = f"threshold_{data['status']}"
-                        threshold = data.get(threshold_key)
-                        if threshold:
-                            lines.append(f"    ({data['status']} threshold: {threshold})")
-            
-            return "\n".join(lines)
-        
+            return self._generate_text_report(current_metrics)
         else:
             raise ValueError(f"Unsupported report format: {format_type}")
-    
+
+    def _generate_json_report(self, current_metrics: dict[str, Any]) -> str:
+        """Generate JSON format report"""
+        report_data = {
+            'timestamp': time.time(),
+            'monitoring_status': 'active' if self.monitoring_active else 'inactive',
+            'metrics': current_metrics,
+            'summary': _calculate_report_summary(current_metrics)
+        }
+        return json.dumps(report_data, indent=2, default=str)
+
+    def _generate_text_report(self, current_metrics: dict[str, Any]) -> str:
+        """Generate human-readable text report"""
+        lines = [
+            "Performance Monitoring Report",
+            "=" * 50,
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Status: {'Active' if self.monitoring_active else 'Inactive'}",
+            ""
+        ]
+        
+        metrics_by_type = _group_metrics_by_type(current_metrics)
+        for metric_type, metrics in metrics_by_type.items():
+            _add_type_section_to_report(lines, metric_type, metrics)
+            
+        return "\n".join(lines)
+
     def get_health_score(self) -> Tuple[float, str]:
         """Calculate overall system health score (0-100)"""
         if not self.metrics:
             return 0.0, "no_data"
         
+        scores, critical_issues, warning_issues = self._calculate_issue_counts()
+        
+        if not scores:
+            return 0.0, "no_data"
+        
+        avg_score = statistics.mean(scores)
+        status = _determine_health_status(avg_score, critical_issues, warning_issues)
+        
+        return avg_score, status
+
+    def _calculate_issue_counts(self) -> Tuple[list[float], int, int]:
+        """Calculate scores and issue counts for health assessment"""
         scores = []
         critical_issues = 0
         warning_issues = 0
         
         for metric in self.metrics.values():
-            exceeded, level = metric.is_threshold_exceeded()
+            _, level = metric.is_threshold_exceeded()
             
             if level == "critical":
                 scores.append(0.0)
@@ -853,25 +779,8 @@ class PerformanceMonitor:
                 warning_issues += 1
             elif level == "normal":
                 scores.append(100.0)
-            # Skip "no_data" metrics
-        
-        if not scores:
-            return 0.0, "no_data"
-        
-        avg_score = statistics.mean(scores)
-        
-        if critical_issues > 0:
-            status = "critical"
-        elif warning_issues > 0:
-            status = "warning"
-        elif avg_score >= 90:
-            status = "excellent"
-        elif avg_score >= 70:
-            status = "good"
-        else:
-            status = "poor"
-        
-        return avg_score, status
+                
+        return scores, critical_issues, warning_issues
 
 
 def create_default_alert_handler() -> Callable[[str, PerformanceMetric, float], None]:
@@ -885,53 +794,3 @@ def create_default_alert_handler() -> Callable[[str, PerformanceMetric, float], 
         )
     
     return alert_handler
-
-
-if __name__ == "__main__":
-    # Example usage and testing
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Performance Monitor")
-    parser.add_argument("--duration", type=int, default=60, help="Monitoring duration in seconds")
-    parser.add_argument("--interval", type=float, default=5.0, help="Collection interval in seconds")
-    parser.add_argument("--output", help="Output file for report")
-    
-    args = parser.parse_args()
-    
-    # Configure logging
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    
-    # Create and configure monitor
-    monitor_config = {
-        'collection_interval': args.interval,
-        'enable_alerts': True
-    }
-    
-    monitor = PerformanceMonitor(monitor_config)
-    monitor.add_alert_handler(create_default_alert_handler())
-    
-    # Start monitoring
-    monitor.start_monitoring()
-    
-    try:
-        print(f"Monitoring for {args.duration} seconds...")
-        time.sleep(args.duration)
-        
-        # Generate report
-        report = monitor.generate_report("text")
-        
-        if args.output:
-            with open(args.output, 'w') as report_file:
-                report_file.write(report)
-            print(f"Report saved to {args.output}")
-        else:
-            print("\n" + report)
-        
-        # Print health score
-        health_score, health_status = monitor.get_health_score()
-        print(f"\nOverall Health Score: {health_score:.1f}/100 ({health_status})")
-        
-    except KeyboardInterrupt:
-        print("\nMonitoring interrupted by user")
-    finally:
-        monitor.stop_monitoring()
