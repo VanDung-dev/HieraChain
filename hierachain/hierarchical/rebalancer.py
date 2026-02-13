@@ -23,6 +23,79 @@ from typing import Any, Callable
 logger = logging.getLogger(__name__)
 
 
+def _get_sub_chain_id(subchain: Any) -> str:
+    """Get sub-chain ID."""
+    if hasattr(subchain, "name"):
+        return subchain.name
+    if hasattr(subchain, "sub_chain_id"):
+        return subchain.sub_chain_id
+    return f"subchain-{id(subchain)}"
+
+
+def _get_event_count(subchain: Any) -> int:
+    """Get event count from sub-chain."""
+    if hasattr(subchain, "get_event_count"):
+        return subchain.get_event_count()
+    if hasattr(subchain, "blockchain"):
+        blocks = subchain.blockchain.get_chain()
+        return sum(len(b.events) for b in blocks if hasattr(b, "events"))
+    return 0
+
+
+def _get_block_count(subchain: Any) -> int:
+    """Get block count from sub-chain."""
+    if hasattr(subchain, "get_block_count"):
+        return subchain.get_block_count()
+    if hasattr(subchain, "blockchain"):
+        return len(subchain.blockchain.get_chain())
+    return 0
+
+
+def _get_pending_events(subchain: Any) -> list[Any]:
+    """Get pending events from sub-chain."""
+    if hasattr(subchain, "get_pending_events"):
+        return subchain.get_pending_events()
+    return []
+
+
+def _add_event_to_chain(chain: Any, event: Any) -> bool:
+    """Add event to a chain."""
+    try:
+        if hasattr(chain, "add_event"):
+            return chain.add_event(event)
+        return True
+    except Exception as e:  # pylint: disable=broad-except
+        logger.error(f"Failed to add event to chain: {e}")
+        return False
+
+
+def _get_event_entity_id(event: Any) -> str:
+    """Extract entity ID from event."""
+    if isinstance(event, dict):
+        return event.get("entity_id", str(id(event)))
+    if hasattr(event, "entity_id"):
+        return event.entity_id
+    return str(id(event))
+
+
+def _get_event_timestamp(event: Any) -> float:
+    """Extract timestamp from event."""
+    if isinstance(event, dict):
+        return event.get("timestamp", time.time())
+    if hasattr(event, "timestamp"):
+        return event.timestamp
+    return time.time()
+
+
+def _mark_chain_as_split(
+    parent: Any, children: list[Any]
+) -> None:
+    """Mark parent chain as split."""
+    if hasattr(parent, "mark_split"):
+        child_ids = [_get_sub_chain_id(c) for c in children]
+        parent.mark_split(child_ids)
+
+
 class RebalanceStatus(Enum):
     """Status of rebalancing operation."""
     IDLE = "idle"
@@ -134,6 +207,7 @@ class SubChainRebalancer:
         self.cooldown_seconds = cooldown_seconds
         self.split_strategy = split_strategy
         self._k8s_manager = k8s_namespace_manager
+        self._rr_counter = 0
 
         # Monitoring state
         self._status = RebalanceStatus.IDLE
@@ -147,12 +221,8 @@ class SubChainRebalancer:
         self._hierarchy_manager: Any = None
 
         # Callbacks
-        self._on_threshold_exceeded: Callable[
-            [str, RebalanceMetrics], bool
-        ] | None = None
-        self._on_split_complete: Callable[
-            [SplitResult], None
-        ] | None = None
+        self._on_threshold_exceeded: Callable[[str, RebalanceMetrics], bool] | None = None
+        self._on_split_complete: Callable[[SplitResult], None] | None = None
 
         # Stats
         self._stats = {
@@ -165,8 +235,8 @@ class SubChainRebalancer:
         }
 
         logger.info(
-            f"SubChainRebalancer initialized "
-            f"(threshold={threshold_eps} eps, interval={check_interval}s)"
+            f"SubChainRebalancer initialized (threshold={threshold_eps} eps, "
+            f"interval={check_interval}s)"
         )
 
     def register_subchain(
@@ -180,9 +250,7 @@ class SubChainRebalancer:
             subchain: Sub-chain instance reference.
         """
         self._subchains[sub_chain_id] = subchain
-        self._monitored_chains[sub_chain_id] = RebalanceMetrics(
-            sub_chain_id=sub_chain_id
-        )
+        self._monitored_chains[sub_chain_id] = RebalanceMetrics(sub_chain_id=sub_chain_id)
         self._event_counts[sub_chain_id] = []
         logger.info(f"Registered sub-chain for monitoring: {sub_chain_id}")
 
@@ -233,38 +301,45 @@ class SubChainRebalancer:
         self._stats["checks_total"] += 1
 
         for sub_chain_id, subchain in list(self._subchains.items()):
-            metrics = self._collect_metrics(sub_chain_id, subchain)
-            self._monitored_chains[sub_chain_id] = metrics
+            self._process_single_chain_rebalance(sub_chain_id, subchain)
 
-            if self._should_split(metrics):
-                self._stats["thresholds_exceeded"] += 1
-                self._status = RebalanceStatus.THRESHOLD_EXCEEDED
+    def _process_single_chain_rebalance(self, sub_chain_id: str, subchain: Any) -> None:
+        """Process rebalancing check and action for a single sub-chain."""
+        metrics = self._collect_metrics(sub_chain_id, subchain)
+        self._monitored_chains[sub_chain_id] = metrics
 
-                # Check callback
-                should_proceed = True
-                if self._on_threshold_exceeded:
-                    should_proceed = self._on_threshold_exceeded(
-                        sub_chain_id, metrics
-                    )
+        if self._should_split(metrics):
+            self._handle_threshold_exceedance(sub_chain_id, subchain, metrics)
 
-                if should_proceed:
-                    result = self.split_sub_chain(subchain)
-                    if result.success:
-                        metrics.last_split_time = time.time()
-                        metrics.splits_total += 1
+    def _handle_threshold_exceedance(self, sub_chain_id: str, subchain: Any, metrics: "RebalanceMetrics") -> None:
+        """Handle the situation where a threshold is exceeded."""
+        self._stats["thresholds_exceeded"] += 1
+        self._status = RebalanceStatus.THRESHOLD_EXCEEDED
 
-    def _collect_metrics(
-        self, sub_chain_id: str, subchain: Any
-    ) -> RebalanceMetrics:
+        if self._is_split_authorized(sub_chain_id, metrics):
+            self._execute_split_operation(subchain, metrics)
+
+    def _is_split_authorized(self, sub_chain_id: str, metrics: "RebalanceMetrics") -> bool:
+        """Check with optional callback if split is authorized to proceed."""
+        if self._on_threshold_exceeded:
+            return self._on_threshold_exceeded(sub_chain_id, metrics)
+        return True
+
+    def _execute_split_operation(self, subchain: Any, metrics: "RebalanceMetrics") -> None:
+        """Execute the sub-chain split and update statistics on success."""
+        result = self.split_sub_chain(subchain)
+        if result.success:
+            metrics.last_split_time = time.time()
+            metrics.splits_total += 1
+
+    def _collect_metrics(self, sub_chain_id: str, subchain: Any) -> RebalanceMetrics:
         """Collect current metrics for a sub-chain."""
         now = time.time()
-        metrics = self._monitored_chains.get(
-            sub_chain_id, RebalanceMetrics(sub_chain_id=sub_chain_id)
-        )
+        metrics = self._monitored_chains.get(sub_chain_id, RebalanceMetrics(sub_chain_id=sub_chain_id))
 
         # Get event count
-        event_count = self._get_event_count(subchain)
-        block_count = self._get_block_count(subchain)
+        event_count = _get_event_count(subchain)
+        block_count = _get_block_count(subchain)
 
         # Calculate EPS
         history = self._event_counts.get(sub_chain_id, [])
@@ -341,7 +416,7 @@ class SubChainRebalancer:
         self._stats["splits_initiated"] += 1
         self._status = RebalanceStatus.SPLITTING
 
-        parent_id = self._get_sub_chain_id(sub_chain)
+        parent_id = _get_sub_chain_id(sub_chain)
         child_ids = [f"{parent_id}-a", f"{parent_id}-b"]
 
         try:
@@ -352,9 +427,7 @@ class SubChainRebalancer:
 
             # Migrate state
             self._status = RebalanceStatus.MIGRATING
-            events_migrated, blocks_migrated = self._migrate_state(
-                sub_chain, children
-            )
+            events_migrated, blocks_migrated = self._migrate_state(sub_chain, children)
 
             self._stats["events_migrated"] += events_migrated
             self._stats["splits_completed"] += 1
@@ -373,8 +446,8 @@ class SubChainRebalancer:
                 self._on_split_complete(result)
 
             logger.info(
-                f"Split complete: {parent_id} -> "
-                f"{child_ids}, {events_migrated} events migrated"
+                f"Split complete: {parent_id} -> {child_ids}, "
+                f"{events_migrated} events migrated"
             )
 
             # Enter cooldown
@@ -393,35 +466,37 @@ class SubChainRebalancer:
                 duration_seconds=time.time() - start_time,
             )
 
-    def _create_child_chains(
-        self, parent_id: str, child_ids: list[str]
-    ) -> list[Any]:
+    def _create_child_chains(self, parent_id: str, child_ids: list[str]) -> list[Any]:
         """Create child sub-chains."""
         children = []
-
         for child_id in child_ids:
-            # Use HierarchyManager if available
-            if self._hierarchy_manager:
-                success = self._hierarchy_manager.create_sub_chain(
-                    name=child_id,
-                    domain_type="split_child",
-                    metadata={"parent": parent_id},
-                )
-                if success:
-                    child = self._hierarchy_manager.get_sub_chain(child_id)
-                    if child:
-                        children.append(child)
-                        self.register_subchain(child_id, child)
-
-            # Create K8s namespace if manager available
-            if self._k8s_manager:
-                self._k8s_manager.create_namespace(child_id)
-
+            child = self._initialize_single_child_chain(parent_id, child_id)
+            if child:
+                children.append(child)
         return children
 
-    def _migrate_state(
-        self, parent: Any, children: list[Any]
-    ) -> tuple[int, int]:
+    def _initialize_single_child_chain(self, parent_id: str, child_id: str) -> Any:
+        """Initialize a single child chain with hierarchy and K8s."""
+        child = None
+        # Use HierarchyManager if available
+        if self._hierarchy_manager:
+            success = self._hierarchy_manager.create_sub_chain(
+                name=child_id,
+                domain_type="split_child",
+                metadata={"parent": parent_id},
+            )
+            if success:
+                child = self._hierarchy_manager.get_sub_chain(child_id)
+                if child:
+                    self.register_subchain(child_id, child)
+
+        # Create K8s namespace if manager available
+        if self._k8s_manager:
+            self._k8s_manager.create_namespace(child_id)
+
+        return child
+
+    def _migrate_state(self, parent: Any, children: list[Any]) -> tuple[int, int]:
         """
         Migrate state from parent to child chains.
 
@@ -439,18 +514,18 @@ class SubChainRebalancer:
             return 0, 0
 
         # Get events from parent
-        events = self._get_pending_events(parent)
+        events = _get_pending_events(parent)
 
         # Distribute events based on strategy
-        for i, event in enumerate(events):
+        for event in events:
             target_idx = self._select_target_child(event, len(children))
             target = children[target_idx]
 
-            if self._add_event_to_chain(target, event):
+            if _add_event_to_chain(target, event):
                 events_migrated += 1
 
         # Mark parent as split (optional: keep for routing)
-        self._mark_chain_as_split(parent, [c for c in children])
+        _mark_chain_as_split(parent, [c for c in children])
 
         logger.info(
             f"Migrated {events_migrated} events from parent to "
@@ -463,7 +538,7 @@ class SubChainRebalancer:
         """Select target child for event based on strategy."""
         if self.split_strategy == SplitStrategy.HASH_BASED:
             # Hash the entity_id to select child
-            entity_id = self._get_event_entity_id(event)
+            entity_id = _get_event_entity_id(event)
             hash_val = int(hashlib.md5(
                 entity_id.encode()
             ).hexdigest()[:8], 16)
@@ -471,14 +546,12 @@ class SubChainRebalancer:
 
         elif self.split_strategy == SplitStrategy.TIME_BASED:
             # Older events to first child, newer to second
-            timestamp = self._get_event_timestamp(event)
+            timestamp = _get_event_timestamp(event)
             median_time = time.time() - 30  # Simple median
             return 0 if timestamp < median_time else 1
 
         elif self.split_strategy == SplitStrategy.ROUND_ROBIN:
             # Simple round robin
-            if not hasattr(self, "_rr_counter"):
-                self._rr_counter = 0
             self._rr_counter += 1
             return self._rr_counter % num_children
 
@@ -509,77 +582,9 @@ class SubChainRebalancer:
 
     def set_callbacks(
         self,
-        on_threshold: Callable[
-            [str, RebalanceMetrics], bool
-        ] | None = None,
+        on_threshold: Callable[[str, RebalanceMetrics], bool] | None = None,
         on_split: Callable[[SplitResult], None] | None = None,
     ) -> None:
         """Set callback functions."""
         self._on_threshold_exceeded = on_threshold
         self._on_split_complete = on_split
-
-    # Helper methods
-
-    def _get_sub_chain_id(self, subchain: Any) -> str:
-        """Get sub-chain ID."""
-        if hasattr(subchain, "name"):
-            return subchain.name
-        if hasattr(subchain, "sub_chain_id"):
-            return subchain.sub_chain_id
-        return f"subchain-{id(subchain)}"
-
-    def _get_event_count(self, subchain: Any) -> int:
-        """Get event count from sub-chain."""
-        if hasattr(subchain, "get_event_count"):
-            return subchain.get_event_count()
-        if hasattr(subchain, "blockchain"):
-            blocks = subchain.blockchain.get_chain()
-            return sum(len(b.events) for b in blocks if hasattr(b, "events"))
-        return 0
-
-    def _get_block_count(self, subchain: Any) -> int:
-        """Get block count from sub-chain."""
-        if hasattr(subchain, "get_block_count"):
-            return subchain.get_block_count()
-        if hasattr(subchain, "blockchain"):
-            return len(subchain.blockchain.get_chain())
-        return 0
-
-    def _get_pending_events(self, subchain: Any) -> list[Any]:
-        """Get pending events from sub-chain."""
-        if hasattr(subchain, "get_pending_events"):
-            return subchain.get_pending_events()
-        return []
-
-    def _add_event_to_chain(self, chain: Any, event: Any) -> bool:
-        """Add event to a chain."""
-        try:
-            if hasattr(chain, "add_event"):
-                return chain.add_event(event)
-            return True
-        except Exception:
-            return False
-
-    def _get_event_entity_id(self, event: Any) -> str:
-        """Extract entity ID from event."""
-        if isinstance(event, dict):
-            return event.get("entity_id", str(id(event)))
-        if hasattr(event, "entity_id"):
-            return event.entity_id
-        return str(id(event))
-
-    def _get_event_timestamp(self, event: Any) -> float:
-        """Extract timestamp from event."""
-        if isinstance(event, dict):
-            return event.get("timestamp", time.time())
-        if hasattr(event, "timestamp"):
-            return event.timestamp
-        return time.time()
-
-    def _mark_chain_as_split(
-        self, parent: Any, children: list[Any]
-    ) -> None:
-        """Mark parent chain as split."""
-        if hasattr(parent, "mark_split"):
-            child_ids = [self._get_sub_chain_id(c) for c in children]
-            parent.mark_split(child_ids)
