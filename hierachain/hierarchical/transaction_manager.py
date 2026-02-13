@@ -39,6 +39,79 @@ class CrossChainTransaction:
     error_message: str | None = None
 
 
+def _rollback(transaction: CrossChainTransaction, source_chain: Any, dest_chain: Any) -> None:
+    """Rollback the transaction on both chains."""
+    transaction.state = TransactionState.ROLLED_BACK
+    transaction.updated_at = time.time()
+
+    if source_chain:
+        source_chain.rollback_transaction(transaction.transaction_id)
+
+    if dest_chain:
+        dest_chain.rollback_transaction(transaction.transaction_id)
+
+
+def _run_prepare_phase(transaction: CrossChainTransaction, source_chain: Any, dest_chain: Any) -> bool:
+    """Execute Phase 1: Prepare."""
+    tx_id = transaction.transaction_id
+    try:
+        # Ask Source to prepare (lock resources)
+        if not source_chain.prepare_transaction(
+            tx_id, transaction.payload, is_source=True
+        ):
+            raise Exception(
+                "Source chain %s failed to prepare" % transaction.source_chain
+            )
+
+        # Ask Destination to prepare (verify it can accept)
+        if not dest_chain.prepare_transaction(
+            tx_id, transaction.payload, is_source=False
+        ):
+            raise Exception(
+                "Destination chain %s failed to prepare"
+                % transaction.destination_chain
+            )
+
+        transaction.state = TransactionState.PREPARED
+        transaction.updated_at = time.time()
+        return True
+
+    except Exception as e:
+        logger.error("2PC Prepare Phase Failed: %s", e)
+        transaction.error_message = str(e)
+        _rollback(transaction, source_chain, dest_chain)
+        return False
+
+
+def _run_commit_phase(transaction: CrossChainTransaction, source_chain: Any, dest_chain: Any) -> bool:
+    """Execute Phase 2: Commit."""
+    tx_id = transaction.transaction_id
+    try:
+        # Commit Source
+        if not source_chain.commit_transaction(tx_id):
+            raise Exception(
+                "Source chain %s failed to commit" % transaction.source_chain
+            )
+
+        # Commit Destination
+        if not dest_chain.commit_transaction(tx_id):
+            raise Exception(
+                "Destination chain %s failed to commit after source committed"
+                % transaction.destination_chain
+            )
+
+        transaction.state = TransactionState.COMMITTED
+        transaction.updated_at = time.time()
+        return True
+
+    except Exception as e:
+        logger.error("2PC Commit Phase Failed: %s", e)
+        transaction.error_message = str(e)
+        transaction.state = TransactionState.FAILED
+        transaction.updated_at = time.time()
+        return False
+
+
 class CrossChainTransactionManager:
     """
     Manages the lifecycle of cross-chain transactions using 2PC.
@@ -87,11 +160,7 @@ class CrossChainTransactionManager:
     def _execute_2pc(self, transaction: CrossChainTransaction) -> bool:
         """
         Execute the Two-Phase Commit protocol.
-
-        Phase 1: Prepare
-        Phase 2: Commit or Rollback
         """
-        tx_id = transaction.transaction_id
         source_chain = self.hierarchy_manager.get_sub_chain(transaction.source_chain)
         dest_chain = self.hierarchy_manager.get_sub_chain(transaction.destination_chain)
 
@@ -101,59 +170,9 @@ class CrossChainTransactionManager:
             transaction.updated_at = time.time()
             return False
 
-        # --- PHASE 1: PREPARE ---
-        try:
-            # Ask Source to prepare (lock resources)
-            source_prepared = source_chain.prepare_transaction(tx_id, transaction.payload, is_source=True)
-            if not source_prepared:
-                raise Exception(f"Source chain {transaction.source_chain} failed to prepare")
-
-            # Ask Destination to prepare (verify it can accept)
-            dest_prepared = dest_chain.prepare_transaction(tx_id, transaction.payload, is_source=False)
-            if not dest_prepared:
-                # If dest fails, we must rollback source
-                raise Exception(f"Destination chain {transaction.destination_chain} failed to prepare")
-
-            transaction.state = TransactionState.PREPARED
-            transaction.updated_at = time.time()
-
-        except Exception as e:
-            # If Phase 1 fails, we rollback
-            logger.error(f"2PC Prepare Phase Failed: {e}")
-            transaction.error_message = str(e)
-            self._rollback(transaction, source_chain, dest_chain)
+        # Phase 1: Prepare
+        if not _run_prepare_phase(transaction, source_chain, dest_chain):
             return False
 
-        # --- PHASE 2: COMMIT ---
-        try:
-            # Commit Source
-            source_committed = source_chain.commit_transaction(tx_id)
-            if not source_committed:
-                raise Exception(f"Source chain {transaction.source_chain} failed to commit")
-
-            # Commit Destination
-            dest_committed = dest_chain.commit_transaction(tx_id)
-            if not dest_committed:
-                raise Exception(f"Destination chain {transaction.destination_chain} failed to commit after source committed")
-
-            transaction.state = TransactionState.COMMITTED
-            transaction.updated_at = time.time()
-            return True
-
-        except Exception as e:
-            logger.error(f"2PC Commit Phase Failed: {e}")
-            transaction.error_message = str(e)
-            transaction.state = TransactionState.FAILED
-            transaction.updated_at = time.time()
-            return False
-
-    def _rollback(self, transaction: CrossChainTransaction, source_chain: Any, dest_chain: Any) -> None:
-        """Rollback the transaction on both chains."""
-        transaction.state = TransactionState.ROLLED_BACK
-        transaction.updated_at = time.time()
-
-        if source_chain:
-            source_chain.rollback_transaction(transaction.transaction_id)
-
-        if dest_chain:
-            dest_chain.rollback_transaction(transaction.transaction_id)
+        # Phase 2: Commit
+        return _run_commit_phase(transaction, source_chain, dest_chain)
