@@ -13,7 +13,7 @@ import time
 import shutil
 import os
 
-from hierachain.consensus.ordering_service import OrderingService, OrderingNode, OrderingStatus
+from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
 
 
 def test_determinism():
