@@ -4,6 +4,7 @@ Coordinates between specialized components to provide ordering functionality.
 """
 
 from __future__ import annotations
+
 import threading
 import logging
 import time
@@ -71,6 +72,10 @@ class OrderingService:
         """Submit a new event for ordering"""
         if self.status in [OrderingStatus.LOCKDOWN, OrderingStatus.SHUTDOWN]:
             raise Exception(f"Ordering service is in {self.status.value} mode")
+
+        # Validate event_data is a dictionary
+        if not isinstance(event_data, dict):
+            raise ValueError(f"event_data must be a dictionary, got {type(event_data).__name__}")
 
         self.metrics.record_received()
         event_id = generate_event_id(event_data, channel_id)
@@ -149,6 +154,109 @@ class OrderingService:
     def flush_pool(self) -> int:
         """Emergency clear of event pool"""
         return self.maintenance.flush_pool()
+
+    def get_service_status(self) -> dict[str, Any]:
+        """Get comprehensive service status information"""
+        healthy_nodes = sum(1 for n in self.nodes if n.is_healthy())
+        leader_node = next((n.node_id for n in self.nodes if n.is_leader), None)
+        
+        return {
+            "status": self.status.value,
+            "nodes": {
+                "total": len(self.nodes),
+                "healthy": healthy_nodes,
+                "leader": leader_node
+            },
+            "queues": {
+                "pending_events": len(self.pending_events),
+                "event_pool_size": self.event_pool.qsize(),
+                "commit_queue_size": self.commit_queue.qsize()
+            },
+            "blocks_created": self.blocks_created,
+            "configuration": {
+                "block_size": self.config.get("block_size", 500),
+                "batch_timeout": self.config.get("batch_timeout", 2.0),
+                "worker_threads": self.config.get("worker_threads", 4)
+            },
+            "statistics": self.metrics.get_stats()
+        }
+
+    def get_event_status(self, event_id: str) -> dict[str, Any] | None:
+        """Get the status of a specific event"""
+        # Check pending events first
+        if event_id in self.pending_events:
+            pending = self.pending_events[event_id]
+            return {
+                "event_id": event_id,
+                "status": pending.status.value,
+                "received_at": pending.received_at,
+                "channel_id": pending.channel_id,
+                "submitter_org": pending.submitter_org,
+                "certification_result": pending.certification_result
+            }
+        
+        # Check processed events in storage handler
+        if event_id in self.storage_handler.processed_events:
+            processed = self.storage_handler.processed_events[event_id]
+            return {
+                "event_id": event_id,
+                "status": processed.status.value,
+                "received_at": processed.received_at,
+                "channel_id": processed.channel_id,
+                "submitter_org": processed.submitter_org,
+                "certification_result": processed.certification_result
+            }
+        
+        # Check certified events in certifier
+        certification = self.certifier.get_certification(event_id)
+        if certification:
+            return {
+                "event_id": event_id,
+                "status": "certified" if certification.get("valid") else "rejected",
+                "certification_result": certification
+            }
+        
+        return None
+
+    def add_validation_rule(self, rule: callable) -> None:
+        """Add a custom validation rule for events"""
+        self.certifier.add_validation_rule(rule)
+
+    def wait_for_active(self, timeout: float = 5.0) -> bool:
+        """
+        Wait for the service to become active.
+        
+        Args:
+            timeout: Maximum time to wait in seconds.
+            
+        Returns:
+            True if service is active, False if timeout reached.
+        """
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if self.status == OrderingStatus.ACTIVE:
+                return True
+            time.sleep(0.05)
+        return self.status == OrderingStatus.ACTIVE
+
+    def start(self) -> None:
+        """Start or restart the ordering service"""
+        if self.status == OrderingStatus.ACTIVE:
+            logger.warning("Ordering service is already active")
+            return
+        
+        logger.info("Starting ordering service...")
+        self.should_stop.clear()
+        self.status = OrderingStatus.MAINTENANCE
+        
+        # Start a new processing thread
+        self.processing_thread = threading.Thread(
+            target=self._init_processing_thread,
+            daemon=True,
+            name="OrderingProcessor"
+        )
+        self.processing_thread.start()
+        logger.info("Ordering service started")
 
     def shutdown(self):
         """Graceful service shutdown"""
