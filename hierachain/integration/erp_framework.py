@@ -16,6 +16,138 @@ from enum import Enum
 from concurrent.futures import ThreadPoolExecutor
 
 
+def get_nested_value(obj: Any, path: str) -> Any:
+    """Get value from nested object using path notation (e.g., 'a.b.0.c')"""
+    if not path or obj is None:
+        return None
+        
+    current = obj
+    for part in path.split('.'):
+        current = _get_next_level(current, part)
+        if current is None:
+            return None
+    return current
+
+
+def _get_next_level(current: Any, part: str) -> Any:
+    """Helper to get the next level in a nested structure (dict or list)"""
+    if isinstance(current, dict):
+        return current.get(part)
+    if isinstance(current, list) and part.isdigit():
+        index = int(part)
+        return current[index] if 0 <= index < len(current) else None
+    return None
+
+
+def set_nested_value(obj: dict[str, Any], path: str, value: Any):
+    """Set value in nested object using path notation"""
+    if not path:
+        return
+        
+    parts = path.split('.')
+    current = obj
+    
+    for part in parts[:-1]:
+        if part not in current:
+            current[part] = {}
+        current = current[part]
+    
+    current[parts[-1]] = value
+
+
+def add_blockchain_metadata(blockchain_event: dict[str, Any]):
+    """Add required blockchain metadata to the event"""
+    blockchain_event.setdefault("timestamp", time.time())
+    blockchain_event.setdefault("event", "erp_integration")
+    blockchain_event.setdefault("source", "erp_system")
+
+
+# Helper functions for ERP integration
+def transform_id(value: Any, params: dict[str, Any] | None = None) -> str:
+    """Transform ID values"""
+    if params and "prefix" in params:
+        return f"{params['prefix']}{value}"
+    return str(value)
+
+
+def transform_status(value: Any, params: dict[str, Any] | None = None) -> str:
+    """Transform status values"""
+    if params and "mapping" in params:
+        return params["mapping"].get(str(value), str(value))
+    return str(value)
+
+
+def transform_currency(value: Any, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Transform currency values"""
+    return {
+        "amount": float(value),
+        "currency": params.get("target_currency", "USD") if params else "USD"
+    }
+
+
+def transform_boolean(value: Any, _params: dict[str, Any] | None = None) -> bool:
+    """Transform boolean values"""
+    if isinstance(value, bool):
+        return value
+    
+    str_value = str(value).lower()
+    return str_value in ["true", "1", "yes", "on", "active"]
+
+
+def get_entity_key(erp_event: dict[str, Any], profile: dict[str, Any]) -> str:
+    """Generate unique key for entity"""
+    key_fields = profile.get("key_fields", ["id"])
+    key_values = []
+    
+    for key_field in key_fields:
+        value = erp_event.get(key_field, "unknown")
+        key_values.append(str(value))
+    
+    return ":".join(key_values)
+
+
+def compare_states(old_state: dict[str, Any], new_state: dict[str, Any]) -> dict[str, Any]:
+    """Compare two states and return differences"""
+    changes = {}
+    
+    # Process additions and modifications
+    _process_new_and_modified_fields(old_state, new_state, changes)
+    
+    # Process removals
+    _process_removed_fields(old_state, new_state, changes)
+    
+    return changes
+
+
+def _process_new_and_modified_fields(old_state: dict[str, Any], new_state: dict[str, Any], changes: dict[str, Any]):
+    """Helper to detect added or modified fields"""
+    for key, new_value in new_state.items():
+        if key in old_state:
+            _check_for_modification(key, old_state[key], new_value, changes)
+        else:
+            changes[key] = {"new": new_value, "type": "added"}
+
+
+def _check_for_modification(key: str, old_value: Any, new_value: Any, changes: dict[str, Any]):
+    """Helper to check if a specific field has been modified"""
+    if old_value != new_value:
+        changes[key] = {
+            "old": old_value,
+            "new": new_value,
+            "type": "modified"
+        }
+
+
+def _process_removed_fields(old_state: dict[str, Any], new_state: dict[str, Any], changes: dict[str, Any]):
+    """Helper to detect removed fields"""
+    for key, old_value in old_state.items():
+        if key not in new_state:
+            changes[key] = {
+                "old": old_value,
+                "type": "removed"
+            }
+
+
 class IntegrationError(Exception):
     """Exception raised for integration-related errors"""
     pass
@@ -70,10 +202,10 @@ class ERPIntegrationFramework:
         transformers = {
             "date": self._transform_date,
             "amount": self._transform_amount,
-            "id": self._transform_id,
-            "status": self._transform_status,
-            "currency": self._transform_currency,
-            "boolean": self._transform_boolean
+            "id": transform_id,
+            "status": transform_status,
+            "currency": transform_currency,
+            "boolean": transform_boolean
         }
         
         for name, func in transformers.items():
@@ -85,8 +217,12 @@ class ERPIntegrationFramework:
             self.adapters[erp_system] = adapter_class
             self.logger.info(f"Registered adapter for {erp_system}")
     
-    def create_mapping_profile(self, profile_name: str, erp_system: str, 
-                             mapping_rules: dict[str, Any]) -> str:
+    def create_mapping_profile(
+        self,
+        profile_name: str,
+        erp_system: str,
+        mapping_rules: dict[str, Any]
+    ) -> str:
         """Create mapping profile for ERP integration"""
         try:
             return self.mapping_engine.create_profile(
@@ -98,8 +234,11 @@ class ERPIntegrationFramework:
             self.logger.error(f"Failed to create mapping profile {profile_name}: {e}")
             raise IntegrationError(f"Profile creation failed: {e}")
     
-    def translate_erp_to_blockchain(self, erp_event: dict[str, Any], 
-                                  profile_name: str) -> dict[str, Any]:
+    def translate_erp_to_blockchain(
+        self,
+        erp_event: dict[str, Any],
+        profile_name: str
+    ) -> dict[str, Any]:
         """Translate ERP event to blockchain event"""
         try:
             # Get mapping profile
@@ -123,8 +262,12 @@ class ERPIntegrationFramework:
             self.logger.error(f"Translation failed for profile {profile_name}: {e}")
             raise IntegrationError(f"Translation failed: {e}")
     
-    def start_scheduled_sync(self, profile_name: str, interval_seconds: int,
-                           chain: Any = None) -> str:
+    def start_scheduled_sync(
+        self,
+        profile_name: str,
+        interval_seconds: int,
+        chain: Any = None
+    ) -> str:
         """Start scheduled synchronization"""
         try:
             profile = self.mapping_engine.get_profile(profile_name)
@@ -155,8 +298,12 @@ class ERPIntegrationFramework:
             self.logger.error(f"Failed to start scheduled sync for {profile_name}: {e}")
             raise IntegrationError(f"Scheduling failed: {e}")
     
-    def _execute_sync(self, profile_name: str, _profile: dict[str, Any],
-                     adapter: Any, chain: Any) -> SyncResult:
+    def _execute_sync(
+        self,
+        profile_name: str,
+        _profile: dict[str, Any],
+        adapter: Any, chain: Any
+    ) -> SyncResult:
         """Execute synchronization task"""
         result = SyncResult(
             profile_name=profile_name,
@@ -230,37 +377,6 @@ class ERPIntegrationFramework:
         except (ValueError, TypeError):
             self.logger.warning(f"Invalid amount value: {value}")
             return 0.0
-    
-    @staticmethod
-    def _transform_id(value: Any, params: dict[str, Any] | None = None) -> str:
-        """Transform ID values"""
-        if params and "prefix" in params:
-            return f"{params['prefix']}{value}"
-        return str(value)
-    
-    @staticmethod
-    def _transform_status(value: Any, params: dict[str, Any] | None = None) -> str:
-        """Transform status values"""
-        if params and "mapping" in params:
-            return params["mapping"].get(str(value), str(value))
-        return str(value)
-    
-    @staticmethod
-    def _transform_currency(value: Any, params: dict[str, Any] | None = None) -> dict[str, Any]:
-        """Transform currency values"""
-        return {
-            "amount": float(value),
-            "currency": params.get("target_currency", "USD") if params else "USD"
-        }
-    
-    @staticmethod
-    def _transform_boolean(value: Any, _params: dict[str, Any] | None = None) -> bool:
-        """Transform boolean values"""
-        if isinstance(value, bool):
-            return value
-        
-        str_value = str(value).lower()
-        return str_value in ["true", "1", "yes", "on", "active"]
 
 
 class MappingEngine:
@@ -276,8 +392,12 @@ class MappingEngine:
         with self.lock:
             self.transformers[name] = transformer_func
     
-    def create_profile(self, profile_name: str, erp_system: str, 
-                      mapping_rules: dict[str, Any]) -> str:
+    def create_profile(
+        self,
+        profile_name: str,
+        erp_system: str,
+        mapping_rules: dict[str, Any]
+    ) -> str:
         """Create a new mapping profile"""
         with self.lock:
             # Validate mapping rules
@@ -323,17 +443,24 @@ class MappingEngine:
     def _validate_mapping_rules(self, mapping_rules: dict[str, Any]):
         """Validate mapping rule structure"""
         for bc_field, rule in mapping_rules.items():
-            if isinstance(rule, str):
-                # Simple path mapping
-                continue
-            elif isinstance(rule, dict):
-                # Complex rule with transformer
-                if "source_path" not in rule:
-                    raise MappingError(f"Missing source_path for {bc_field}")
-                if "transformer" in rule and rule["transformer"] not in self.transformers:
-                    raise MappingError(f"Invalid transformer {rule['transformer']}")
-            else:
-                raise MappingError(f"Invalid rule format for {bc_field}")
+            self._validate_single_rule(bc_field, rule)
+
+    def _validate_single_rule(self, bc_field: str, rule: Any):
+        """Validate a single mapping rule"""
+        if isinstance(rule, str):
+            # Simple path mapping
+            return
+            
+        if not isinstance(rule, dict):
+            raise MappingError(f"Invalid rule format for {bc_field}")
+            
+        # Complex rule with transformer
+        if "source_path" not in rule:
+            raise MappingError(f"Missing source_path for {bc_field}")
+            
+        transformer = rule.get("transformer")
+        if transformer and transformer not in self.transformers:
+            raise MappingError(f"Invalid transformer {transformer}")
 
 
 class EventTranslator:
@@ -348,78 +475,40 @@ class EventTranslator:
         
         for bc_field, rule in mapping_rules.items():
             try:
-                if isinstance(rule, str):
-                    # Simple path mapping
-                    value = self._get_nested_value(erp_event, rule)
-                elif isinstance(rule, dict):
-                    # Complex rule with transformer
-                    value = self._get_nested_value(erp_event, rule["source_path"])
-                    if "transformer" in rule:
-                        transformer = self._get_transformer(rule["transformer"])
-                        if transformer:
-                            value = transformer(value, rule.get("params"))
-                else:
-                    continue
-                    
-                # Set the value in blockchain event
+                value = self._apply_rule(erp_event, rule)
                 if value is not None:
-                    self._set_nested_value(blockchain_event, bc_field, value)
-                    
+                    set_nested_value(blockchain_event, bc_field, value)
             except Exception as e:
                 self.logger.warning(f"Failed to map field {bc_field}: {e}")
         
-        # Add required blockchain metadata
-        blockchain_event.setdefault("timestamp", time.time())
-        blockchain_event.setdefault("event", "erp_integration")
-        blockchain_event.setdefault("source", "erp_system")
-        
+        add_blockchain_metadata(blockchain_event)
         return blockchain_event
-    
-    @staticmethod
-    def _get_nested_value(obj: dict[str, Any], path: str) -> Any:
-        """Get value from nested object using path notation"""
-        if not path:
-            return None
+
+    def _apply_rule(self, erp_event: dict[str, Any], rule: Any) -> Any:
+        """Apply a single mapping rule to get a value from erp_event"""
+        if isinstance(rule, str):
+            return get_nested_value(erp_event, rule)
             
-        parts = path.split('.')
-        current = obj
-        
-        for part in parts:
-            if isinstance(current, dict) and part in current:
-                current = current[part]
-            elif isinstance(current, list) and part.isdigit():
-                index = int(part)
-                if 0 <= index < len(current):
-                    current = current[index]
-                else:
-                    return None
-            else:
-                return None
-        
-        return current
-    
-    @staticmethod
-    def _set_nested_value(obj: dict[str, Any], path: str, value: Any):
-        """Set value in nested object using path notation"""
-        if not path:
-            return
+        if isinstance(rule, dict):
+            return _handle_complex_rule(erp_event, rule)
             
-        parts = path.split('.')
-        current = obj
+        return None
+
+
+def _handle_complex_rule(erp_event: dict[str, Any], rule: dict[str, Any]) -> Any:
+    """Handle a complex mapping rule with potential transformer"""
+    source_path = rule.get("source_path")
+    if not source_path:
+        return None
         
-        for part in parts[:-1]:
-            if part not in current:
-                current[part] = {}
-            current = current[part]
-        
-        current[parts[-1]] = value
+    value = get_nested_value(erp_event, source_path)
     
-    @staticmethod
-    def _get_transformer(_name: str) -> Callable | None:
-        """Get transformer function by name"""
-        # This would typically reference the mapping engine's transformers
-        # For now, return a simple identity function
-        return lambda v, p: v
+    transformer_name = rule.get("transformer")
+    if transformer_name:
+        # Simple identity function for now
+        transformer = lambda v, p: v
+        return transformer(value, rule.get("params"))
+    return value
 
 
 class ChangeDetector:
@@ -430,16 +519,19 @@ class ChangeDetector:
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
     
-    def detect_changes(self, erp_event: dict[str, Any], 
-                      profile: dict[str, Any]) -> dict[str, Any]:
+    def detect_changes(
+        self,
+        erp_event: dict[str, Any],
+        profile: dict[str, Any]
+    ) -> dict[str, Any]:
         """Detect changes in ERP event and add change metadata"""
-        entity_key = self._get_entity_key(erp_event, profile)
+        entity_key = get_entity_key(erp_event, profile)
         
         with self.lock:
             previous_state = self.previous_states.get(entity_key)
             
             if previous_state:
-                changes = self._compare_states(previous_state, erp_event)
+                changes = compare_states(previous_state, erp_event)
                 if changes:
                     erp_event["changes"] = changes
                     erp_event["change_detected"] = True
@@ -453,51 +545,6 @@ class ChangeDetector:
             self.previous_states[entity_key] = erp_event.copy()
             
         return erp_event
-    
-    @staticmethod
-    def _get_entity_key(erp_event: dict[str, Any],
-                        profile: dict[str, Any]) -> str:
-        """Generate unique key for entity"""
-        key_fields = profile.get("key_fields", ["id"])
-        key_values = []
-        
-        for key_field in key_fields:
-            value = erp_event.get(key_field, "unknown")
-            key_values.append(str(value))
-        
-        return ":".join(key_values)
-    
-    @staticmethod
-    def _compare_states(old_state: dict[str, Any],
-                        new_state: dict[str, Any]) -> dict[str, Any]:
-        """Compare two states and return differences"""
-        changes = {}
-        
-        # Check for modified fields
-        for key, new_value in new_state.items():
-            if key in old_state:
-                old_value = old_state[key]
-                if old_value != new_value:
-                    changes[key] = {
-                        "old": old_value,
-                        "new": new_value,
-                        "type": "modified"
-                    }
-            else:
-                changes[key] = {
-                    "new": new_value,
-                    "type": "added"
-                }
-        
-        # Check for removed fields
-        for key, old_value in old_state.items():
-            if key not in new_state:
-                changes[key] = {
-                    "old": old_value,
-                    "type": "removed"
-                }
-        
-        return changes
 
 
 class SyncScheduler:
@@ -510,8 +557,12 @@ class SyncScheduler:
         self.logger = logging.getLogger(__name__)
         self._shutdown = False
     
-    def schedule_task(self, profile_name: str, task_func: Callable, 
-                     interval_seconds: int) -> str:
+    def schedule_task(
+        self,
+        profile_name: str,
+        task_func: Callable,
+        interval_seconds: int
+    ) -> str:
         """Schedule a synchronization task"""
         with self.lock:
             if self._shutdown:
@@ -552,38 +603,64 @@ class SyncScheduler:
         task_info = self.tasks[profile_name]
         delay = max(0, task_info["next_sync"] - time.time())
         
-        def execute_task():
-            if self._shutdown or profile_name not in self.tasks:
-                return
+        # Schedule with thread pool and timer
+        self.executor.submit(
+            lambda: threading.Timer(
+                delay, 
+                self._run_task_execution, 
+                args=[profile_name]
+            ).start()
+        )
+
+    def _run_task_execution(self, profile_name: str):
+        """Execute the task and handle its lifecycle"""
+        if self._shutdown or profile_name not in self.tasks:
+            return
             
-            inner_task_info = self.tasks[profile_name]
-            inner_task_info["status"] = SyncStatus.SYNCING
-            
-            try:
-                # Execute the task
-                result = inner_task_info["task_func"]()
-                
-                if result.status == SyncStatus.COMPLETED:
-                    inner_task_info["status"] = SyncStatus.COMPLETED
-                    inner_task_info["retry_count"] = 0
-                else:
-                    inner_task_info["status"] = SyncStatus.FAILED
-                    inner_task_info["retry_count"] += 1
-                
-                inner_task_info["last_sync"] = time.time()
-                
-            except Exception as e:
-                inner_task_info["status"] = SyncStatus.FAILED
-                inner_task_info["retry_count"] += 1
-                self.logger.error(f"Task execution failed for {profile_name}: {e}")
-            
-            # Schedule next execution
-            if not self._shutdown and profile_name in self.tasks:
-                inner_task_info["next_sync"] = time.time() + inner_task_info["interval"]
-                self._schedule_next_execution(profile_name)
+        task_info = self.tasks[profile_name]
+        task_info["status"] = SyncStatus.SYNCING
         
-        # Schedule with thread pool
-        self.executor.submit(lambda: threading.Timer(delay, execute_task).start())
+        try:
+            # Execute the task function
+            result = task_info["task_func"]()
+            self._handle_execution_result(profile_name, result)
+        except Exception as e:
+            self._handle_execution_error(profile_name, e)
+        finally:
+            self._reschedule_if_active(profile_name)
+
+    def _handle_execution_result(self, profile_name: str, result: SyncResult):
+        """Handle the result of a task execution"""
+        if profile_name not in self.tasks:
+            return
+            
+        task_info = self.tasks[profile_name]
+        task_info["last_sync"] = time.time()
+        
+        if result.status == SyncStatus.COMPLETED:
+            task_info["status"] = SyncStatus.COMPLETED
+            task_info["retry_count"] = 0
+        else:
+            task_info["status"] = SyncStatus.FAILED
+            task_info["retry_count"] += 1
+
+    def _handle_execution_error(self, profile_name: str, error: Exception):
+        """Handle exceptions during task execution"""
+        if profile_name not in self.tasks:
+            return
+            
+        task_info = self.tasks[profile_name]
+        task_info["status"] = SyncStatus.FAILED
+        task_info["retry_count"] += 1
+        task_info["last_sync"] = time.time()
+        self.logger.error(f"Task execution failed for {profile_name}: {error}")
+
+    def _reschedule_if_active(self, profile_name: str):
+        """Reschedule the next execution if the scheduler is still active"""
+        if not self._shutdown and profile_name in self.tasks:
+            task_info = self.tasks[profile_name]
+            task_info["next_sync"] = time.time() + task_info["interval"]
+            self._schedule_next_execution(profile_name)
     
     def stop_task(self, profile_name: str) -> bool:
         """Stop a scheduled task"""
