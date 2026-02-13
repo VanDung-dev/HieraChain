@@ -8,6 +8,20 @@ It supports key-value storage with indexing capabilities for efficient data retr
 from typing import Any
 
 
+def _remove_key_from_single_index(index: dict[Any, list[str]],field_value: Any,key: str):
+    """Remove a key from a single index value entry."""
+    if field_value not in index:
+        return
+
+    keys = index[field_value]
+    if key not in keys:
+        return
+
+    keys.remove(key)
+    if not keys:
+        del index[field_value]
+
+
 class MemoryStorage:
     """Simple in-memory storage backend for HieraChain"""
     
@@ -24,36 +38,34 @@ class MemoryStorage:
         """Get value by key"""
         return self.data.get(key)
     
+    def _update_index_for_key(self, key: str, value: dict[str, Any]):
+        """Update all indexes for a given key-value pair."""
+        for field_name, index in self.indexes.items():
+            if field_name in value:
+                field_value = value[field_name]
+                keys = index.setdefault(field_value, [])
+                if key not in keys:
+                    keys.append(key)
+
+    def _remove_from_index(self, key: str, value: dict[str, Any]):
+        """Remove key from all indexes."""
+        for field_name, index in self.indexes.items():
+            if field_name in value:
+                _remove_key_from_single_index(index, value[field_name], key)
+    
     def set(self, key: str, value: dict[str, Any]):
         """Set value by key"""
         self.data[key] = value
-        
-        # Update indexes
-        for field_name in self.indexes:
-            if field_name in value:
-                field_value = value[field_name]
-                if field_value not in self.indexes[field_name]:
-                    self.indexes[field_name][field_value] = []
-                if key not in self.indexes[field_name][field_value]:
-                    self.indexes[field_name][field_value].append(key)
+        self._update_index_for_key(key, value)
     
     def delete(self, key: str) -> bool:
         """Delete value by key"""
-        if key in self.data:
-            # Remove from indexes
-            value = self.data[key]
-            for field_name in self.indexes:
-                if field_name in value:
-                    field_value = value[field_name]
-                    if field_value in self.indexes[field_name]:
-                        if key in self.indexes[field_name][field_value]:
-                            self.indexes[field_name][field_value].remove(key)
-                        if not self.indexes[field_name][field_value]:
-                            del self.indexes[field_name][field_value]
-            
-            del self.data[key]
-            return True
-        return False
+        if key not in self.data:
+            return False
+        
+        value = self.data.pop(key)
+        self._remove_from_index(key, value)
+        return True
     
     def query_by_index(self, index_name: str, value: Any) -> list[str]:
         """Query using index"""
