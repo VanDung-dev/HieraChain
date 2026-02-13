@@ -14,6 +14,10 @@ from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime, timezone
 
+from hierachain.security.secure_logging import get_security_logger
+
+logger = get_security_logger()
+
 
 class CertificateType(Enum):
     """Certificate type enumeration"""
@@ -85,8 +89,12 @@ class CertificateRevocationList:
         self.last_updated = time.time()
         self.version = 1
         
-    def revoke_certificate(self, serial_number: str, reason: str = "unspecified",
-                         revocation_date: datetime | None = None) -> None:
+    def revoke_certificate(
+        self,
+        serial_number: str,
+        reason: str = "unspecified",
+        revocation_date: datetime | None = None
+    ) -> None:
         """
         Revoke a certificate.
         
@@ -121,6 +129,38 @@ class CertificateRevocationList:
             "revoked_count": len(self.revoked_certificates),
             "revoked_certificates": list(self.revoked_certificates.keys())
         }
+
+
+def _validate_key_usage(cert: CertificateInfo) -> dict[str, Any]:
+    """Validate certificate key usage"""
+    result = {
+        "valid": True,
+        "warnings": []
+    }
+
+    # Check if key usage is appropriate for certificate type
+    if cert.certificate_type == CertificateType.ROOT_CA:
+        required_usage = ["keyCertSign", "cRLSign"]
+        if not all(usage in cert.key_usage for usage in required_usage):
+            result["warnings"].append(
+                "Root CA certificate missing required key usage extensions"
+            )
+
+    elif cert.certificate_type == CertificateType.INTERMEDIATE_CA:
+        required_usage = ["keyCertSign"]
+        if not all(usage in cert.key_usage for usage in required_usage):
+            result["warnings"].append(
+                "Intermediate CA certificate missing required key usage extensions"
+            )
+
+    elif cert.certificate_type == CertificateType.TLS_SERVER:
+        required_usage = ["keyEncipherment", "digitalSignature"]
+        if not any(usage in cert.key_usage for usage in required_usage):
+            result["warnings"].append(
+                "TLS server certificate missing required key usage extensions"
+            )
+
+    return result
 
 
 class CertificateValidator:
@@ -186,7 +226,7 @@ class CertificateValidator:
         validation_result["warnings"].extend(chain_validation.get("warnings", []))
         
         # Validate key usage
-        key_usage_validation = self._validate_key_usage(cert)
+        key_usage_validation = _validate_key_usage(cert)
         if not key_usage_validation["valid"]:
             validation_result["warnings"].extend(key_usage_validation["warnings"])
         
@@ -202,7 +242,7 @@ class CertificateValidator:
         Returns:
             Chain validation result
         """
-        chain_result = {
+        result = {
             "valid": False,
             "errors": [],
             "warnings": [],
@@ -210,87 +250,148 @@ class CertificateValidator:
             "trust_anchor": ""
         }
         
-        current_cert = cert
-        chain_length = 0
-        visited_subjects = set()
+        return self._recursive_validate_chain(cert, set(), result)
+
+    def _recursive_validate_chain(
+        self,
+        cert: CertificateInfo,
+        visited: set[str],
+        result: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Recursive chain validation helper."""
+        result["chain_length"] += 1
         
-        while current_cert and chain_length < 10:  # Prevent infinite loops
-            chain_length += 1
+        # 1. Depth check
+        if result["chain_length"] > 10:
+            result["errors"].append("Certificate chain too long (>10)")
+            return result
+
+        # 2. Circular check
+        if cert.subject in visited:
+            result["errors"].append("Circular certificate chain detected")
+            return result
+        visited.add(cert.subject)
+
+        # 3. Trust anchor check (Self-signed Root CA)
+        if cert.subject == cert.issuer:
+            return self._finalize_root_validation(cert, result)
+
+        # 4. Issuer lookup and validation
+        issuer_cert = self.trusted_cas.get(cert.issuer)
+        if not issuer_cert:
+            result["errors"].append(f"Issuer certificate not found: {cert.issuer}")
+            return result
             
-            # Check for circular chains
-            if current_cert.subject in visited_subjects:
-                chain_result["errors"].append("Circular certificate chain detected")
-                return chain_result
-            
-            visited_subjects.add(current_cert.subject)
-            
-            # Check if this is a self-signed root CA
-            if current_cert.subject == current_cert.issuer:
-                if current_cert.subject in self.trusted_cas:
-                    chain_result["valid"] = True
-                    chain_result["trust_anchor"] = current_cert.subject
-                    chain_result["chain_length"] = chain_length
-                    return chain_result
-                else:
-                    chain_result["errors"].append(
-                        f"Self-signed certificate {current_cert.subject} is not in trusted CA list"
-                    )
-                    return chain_result
-            
-            # Look for issuer certificate
-            issuer_cert = self.trusted_cas.get(current_cert.issuer)
-            if not issuer_cert:
-                chain_result["errors"].append(
-                    f"Issuer certificate not found: {current_cert.issuer}"
-                )
-                return chain_result
-            
-            # Validate issuer certificate
-            if issuer_cert.is_expired():
-                chain_result["errors"].append(
-                    f"Issuer certificate has expired: {current_cert.issuer}"
-                )
-                return chain_result
-            
-            # Move up the chain
-            current_cert = issuer_cert
-        
-        if chain_length >= 10:
-            chain_result["errors"].append("Certificate chain too long (>10)")
-        
-        return chain_result
-    
-    @staticmethod
-    def _validate_key_usage(cert: CertificateInfo) -> dict[str, Any]:
-        """Validate certificate key usage"""
-        result = {
-            "valid": True,
-            "warnings": []
-        }
-        
-        # Check if key usage is appropriate for certificate type
-        if cert.certificate_type == CertificateType.ROOT_CA:
-            required_usage = ["keyCertSign", "cRLSign"]
-            if not all(usage in cert.key_usage for usage in required_usage):
-                result["warnings"].append(
-                    "Root CA certificate missing required key usage extensions"
-                )
-        
-        elif cert.certificate_type == CertificateType.INTERMEDIATE_CA:
-            required_usage = ["keyCertSign"]
-            if not all(usage in cert.key_usage for usage in required_usage):
-                result["warnings"].append(
-                    "Intermediate CA certificate missing required key usage extensions"
-                )
-        
-        elif cert.certificate_type == CertificateType.TLS_SERVER:
-            required_usage = ["keyEncipherment", "digitalSignature"]
-            if not any(usage in cert.key_usage for usage in required_usage):
-                result["warnings"].append(
-                    "TLS server certificate missing required key usage extensions"
-                )
-        
+        if issuer_cert.is_expired():
+            result["errors"].append(f"Issuer certificate has expired: {cert.issuer}")
+            return result
+
+        # 5. Recurse to issuer
+        return self._recursive_validate_chain(issuer_cert, visited, result)
+
+    def _finalize_root_validation(self, cert: CertificateInfo, result: dict[str, Any]) -> dict[str, Any]:
+        """Finalize validation when a self-signed certificate is reached."""
+        if cert.subject in self.trusted_cas:
+            result["valid"] = True
+            result["trust_anchor"] = cert.subject
+        else:
+            result["errors"].append(f"Self-signed certificate {cert.subject} is not in trusted CA list")
         return result
+
+
+def _generate_serial() -> str:
+    """Generate certificate serial number"""
+    return hashlib.sha256(str(time.time()).encode()).hexdigest()[:16]
+
+
+def _parse_date(date_str: str) -> datetime:
+    """Parse date string to datetime"""
+    if not date_str:
+        return datetime.now(timezone.utc)
+
+    try:
+        # Try multiple date formats
+        formats = [
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d",
+            "%Y/%m/%d %H:%M:%S",
+            "%Y/%m/%d"
+        ]
+
+        for fmt in formats:
+            try:
+                return datetime.strptime(date_str, fmt).replace(tzinfo=timezone.utc)
+            except ValueError:
+                continue
+
+        # If all formats fail, return current time
+        return datetime.now(timezone.utc)
+
+    except (ValueError, TypeError):
+        return datetime.now(timezone.utc)
+
+
+def parse_certificate_data(cert_data: str) -> CertificateInfo:
+    """
+    Parse certificate data (simulated X.509 parsing).
+
+    Note: This is a simplified implementation. In production, you would
+    use a proper X.509 certificate parsing library like cryptography.
+
+    Args:
+        cert_data: Certificate data string
+
+    Returns:
+        Parsed certificate information
+    """
+    lines = cert_data.strip().split('\n')
+    cert_info = {}
+
+    for line in lines:
+        if ':' in line:
+            key, value = line.split(':', 1)
+            cert_info[key.strip()] = value.strip()
+
+    # Create CertificateInfo object
+    return CertificateInfo(
+        serial_number=cert_info.get("Serial", _generate_serial()),
+        subject=cert_info.get("Subject", "Unknown"),
+        issuer=cert_info.get("Issuer", "Unknown"),
+        valid_from=_parse_date(cert_info.get("ValidFrom", "")),
+        valid_until=_parse_date(cert_info.get("ValidUntil", "")),
+        public_key=cert_info.get("PublicKey", ""),
+        signature=cert_info.get("Signature", ""),
+        certificate_type=CertificateType(cert_info.get("Type", "end_entity")),
+        key_usage=cert_info.get("KeyUsage", "").split(','),
+        subject_alt_names=cert_info.get("SubjectAltNames", "").split(',')
+    )
+
+
+def _init_certificate_templates() -> dict[str, dict[str, Any]]:
+    """Initialize certificate templates"""
+    return {
+        "root_ca": {
+            "key_usage": ["keyCertSign", "cRLSign"],
+            "basic_constraints": "CA:TRUE",
+            "validity_years": 10
+        },
+        "intermediate_ca": {
+            "key_usage": ["keyCertSign", "cRLSign"],
+            "basic_constraints": "CA:TRUE, pathlen:0",
+            "validity_years": 5
+        },
+        "end_entity": {
+            "key_usage": ["digitalSignature", "keyEncipherment"],
+            "basic_constraints": "CA:FALSE",
+            "validity_years": 1
+        },
+        "tls_server": {
+            "key_usage": ["digitalSignature", "keyEncipherment"],
+            "extended_key_usage": ["serverAuth"],
+            "basic_constraints": "CA:FALSE",
+            "validity_years": 1
+        }
+    }
 
 
 class CertificateManager:
@@ -307,7 +408,7 @@ class CertificateManager:
         self.certificate_store: dict[str, dict[str, Any]] = {}
         
         # Certificate templates for different types
-        self.certificate_templates = self._init_certificate_templates()
+        self.certificate_templates = _init_certificate_templates()
         
         # Statistics
         self.statistics = {
@@ -317,48 +418,7 @@ class CertificateManager:
             "revoked_certificates": 0,
             "certificates_by_type": {}
         }
-    
-    def parse_certificate_data(self, cert_data: str) -> CertificateInfo:
-        """
-        Parse certificate data (simulated X.509 parsing).
-        
-        Note: This is a simplified implementation. In production, you would 
-        use a proper X.509 certificate parsing library like cryptography.
-        
-        Args:
-            cert_data: Certificate data string
-            
-        Returns:
-            Parsed certificate information
-        """
-        # This is a simplified parser for demonstration
-        # In production, use proper X.509 parsing
-        
-        # Extract basic information from cert_data
-        # This would typically involve ASN.1 parsing
-        
-        lines = cert_data.strip().split('\n')
-        cert_info = {}
-        
-        for line in lines:
-            if ':' in line:
-                key, value = line.split(':', 1)
-                cert_info[key.strip()] = value.strip()
-        
-        # Create CertificateInfo object
-        return CertificateInfo(
-            serial_number=cert_info.get("Serial", self._generate_serial()),
-            subject=cert_info.get("Subject", "Unknown"),
-            issuer=cert_info.get("Issuer", "Unknown"),
-            valid_from=self._parse_date(cert_info.get("ValidFrom", "")),
-            valid_until=self._parse_date(cert_info.get("ValidUntil", "")),
-            public_key=cert_info.get("PublicKey", ""),
-            signature=cert_info.get("Signature", ""),
-            certificate_type=CertificateType(cert_info.get("Type", "end_entity")),
-            key_usage=cert_info.get("KeyUsage", "").split(','),
-            subject_alt_names=cert_info.get("SubjectAltNames", "").split(',')
-        )
-    
+
     def store_certificate(self, cert: CertificateInfo, metadata: dict[str, Any] | None = None) -> str:
         """
         Store certificate with metadata.
@@ -476,66 +536,7 @@ class CertificateManager:
             },
             "validation_result": self.validator.validate_certificate(cert)
         }
-    
-    @staticmethod
-    def _generate_serial() -> str:
-        """Generate certificate serial number"""
-        return hashlib.sha256(str(time.time()).encode()).hexdigest()[:16]
-    
-    @staticmethod
-    def _parse_date(date_str: str) -> datetime:
-        """Parse date string to datetime"""
-        if not date_str:
-            return datetime.now(timezone.utc)
-        
-        try:
-            # Try multiple date formats
-            formats = [
-                "%Y-%m-%d %H:%M:%S",
-                "%Y-%m-%d",
-                "%Y/%m/%d %H:%M:%S",
-                "%Y/%m/%d"
-            ]
-            
-            for fmt in formats:
-                try:
-                    return datetime.strptime(date_str, fmt).replace(tzinfo=timezone.utc)
-                except ValueError:
-                    continue
-            
-            # If all formats fail, return current time
-            return datetime.now(timezone.utc)
-            
-        except (ValueError, TypeError):
-            return datetime.now(timezone.utc)
-    
-    @staticmethod
-    def _init_certificate_templates() -> dict[str, dict[str, Any]]:
-        """Initialize certificate templates"""
-        return {
-            "root_ca": {
-                "key_usage": ["keyCertSign", "cRLSign"],
-                "basic_constraints": "CA:TRUE",
-                "validity_years": 10
-            },
-            "intermediate_ca": {
-                "key_usage": ["keyCertSign", "cRLSign"],
-                "basic_constraints": "CA:TRUE, pathlen:0",
-                "validity_years": 5
-            },
-            "end_entity": {
-                "key_usage": ["digitalSignature", "keyEncipherment"],
-                "basic_constraints": "CA:FALSE",
-                "validity_years": 1
-            },
-            "tls_server": {
-                "key_usage": ["digitalSignature", "keyEncipherment"],
-                "extended_key_usage": ["serverAuth"],
-                "basic_constraints": "CA:FALSE",
-                "validity_years": 1
-            }
-        }
-    
+
     def _update_statistics(self) -> None:
         """Update certificate statistics"""
         total_certs = len(self.certificate_store)
