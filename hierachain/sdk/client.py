@@ -12,6 +12,7 @@ HieraChain API endpoints. Features include:
 import time
 import logging
 import asyncio
+import aiohttp
 from dataclasses import dataclass, field
 from typing import Any
 from enum import Enum
@@ -180,6 +181,62 @@ class HieraChainClient:
         delay = self.config.initial_delay * (self.config.backoff_multiplier ** attempt)
         return min(delay, self.config.max_delay)
 
+    def _check_circuit_breaker(self) -> None:
+        """Check if request should be allowed by circuit breaker."""
+        if not self._circuit.allow_request():
+            raise CircuitOpenError(
+                f"Circuit breaker is open. Retry after "
+                f"{self.config.circuit_recovery_timeout}s"
+            )
+
+    def _handle_response(self, response: Any) -> dict[str, Any]:
+        """Handle HTTP response and check for errors."""
+        if response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
+            raise ServiceUnavailableError("Service unavailable (503)", status_code=503)
+
+        if response.headers.get("X-Lockdown-Mode") == "true":
+            raise LockdownError("Node is in lockdown mode", status_code=503)
+
+        if response.status_code >= 500:
+            response.raise_for_status()
+
+        self._circuit.record_success()
+        return response.json()
+
+    def _execute_request(
+        self,
+        method: str,
+        url: str,
+        data: dict[str, Any] | None,
+        params: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        """Perform a single HTTP request and handle the response."""
+        session = self._get_session()
+        response = session.request(
+            method=method,
+            url=url,
+            json=data,
+            params=params,
+            timeout=self.config.timeout,
+        )
+        return self._handle_response(response)
+
+    def _handle_request_error(self, e: Exception, attempt: int) -> None:
+        """Handle request failure, record to circuit breaker and sleep if needed."""
+        self._circuit.record_failure()
+
+        if attempt >= self.config.max_retries:
+            if isinstance(e, (ServiceUnavailableError, LockdownError)):
+                raise e
+            raise HieraChainAPIError(str(e)) from e
+
+        delay = self._calculate_delay(attempt)
+        logger.warning(
+            f"Request failed ({type(e).__name__}: {e}), "
+            f"retry {attempt + 1}/{self.config.max_retries} in {delay:.1f}s"
+        )
+        time.sleep(delay)
+
     def _request(
         self,
         method: str,
@@ -189,85 +246,15 @@ class HieraChainClient:
     ) -> dict[str, Any]:
         """
         Make HTTP request with retry logic and circuit breaker.
-
-        Args:
-            method: HTTP method (GET, POST, etc.)
-            endpoint: API endpoint path
-            data: Request body for POST/PUT
-            params: Query parameters
-
-        Returns:
-            Response JSON as dictionary
-
-        Raises:
-            CircuitOpenError: If circuit breaker is open
-            HieraChainAPIError: For API errors after retries exhausted
         """
-        if not self._circuit.allow_request():
-            raise CircuitOpenError(
-                f"Circuit breaker is open. Retry after "
-                f"{self.config.circuit_recovery_timeout}s"
-            )
-
+        self._check_circuit_breaker()
         url = f"{self.config.base_url}{endpoint}"
-        session = self._get_session()
-        last_error: Exception | None = None
 
         for attempt in range(self.config.max_retries + 1):
             try:
-                response = session.request(
-                    method=method,
-                    url=url,
-                    json=data,
-                    params=params,
-                    timeout=self.config.timeout,
-                )
-
-                # Handle specific status codes
-                if response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
-                    raise ServiceUnavailableError(
-                        "Service unavailable (503)",
-                        status_code=503
-                    )
-
-                # Check for lockdown header or response
-                if response.headers.get("X-Lockdown-Mode") == "true":
-                    raise LockdownError("Node is in lockdown mode", status_code=503)
-
-                if response.status_code >= 500:
-                    response.raise_for_status()
-
-                # Success
-                self._circuit.record_success()
-                return response.json()
-
-            except (ServiceUnavailableError, LockdownError) as e:
-                self._circuit.record_failure()
-                last_error = e
-
-                if attempt < self.config.max_retries:
-                    delay = self._calculate_delay(attempt)
-                    logger.warning(
-                        f"Request failed ({e}), retry {attempt + 1}/"
-                        f"{self.config.max_retries} in {delay:.1f}s"
-                    )
-                    time.sleep(delay)
-                else:
-                    raise
-
+                return self._execute_request(method, url, data, params)
             except Exception as e:
-                self._circuit.record_failure()
-                last_error = e
-
-                if attempt < self.config.max_retries:
-                    delay = self._calculate_delay(attempt)
-                    logger.warning(
-                        f"Request error ({e}), retry {attempt + 1}/"
-                        f"{self.config.max_retries} in {delay:.1f}s"
-                    )
-                    time.sleep(delay)
-                else:
-                    raise HieraChainAPIError(str(e)) from last_error
+                self._handle_request_error(e, attempt)
 
         raise HieraChainAPIError(f"Request failed after {self.config.max_retries} retries")
 
@@ -326,7 +313,7 @@ class HieraChainClient:
         try:
             response = self._request("GET", "/health")
             return response.get("status") == "healthy"
-        except Exception:
+        except (HieraChainAPIError, CircuitOpenError):
             return False
 
     def close(self) -> None:
@@ -366,20 +353,72 @@ class HieraChainAsyncClient:
     async def _get_session(self) -> Any:
         """Get or create aiohttp session."""
         if self._session is None:
-            try:
-                import aiohttp
-                headers = dict(self.config.headers)
-                if self.config.api_key:
-                    headers["X-API-Key"] = self.config.api_key
-                self._session = aiohttp.ClientSession(headers=headers)
-            except ImportError:
-                raise ImportError("aiohttp library required: pip install aiohttp")
+            headers = dict(self.config.headers)
+            if self.config.api_key:
+                headers["X-API-Key"] = self.config.api_key
+            self._session = aiohttp.ClientSession(headers=headers)
         return self._session
 
     def _calculate_delay(self, attempt: int) -> float:
         """Calculate delay for retry attempt."""
         delay = self.config.initial_delay * (self.config.backoff_multiplier ** attempt)
         return min(delay, self.config.max_delay)
+
+    def _check_circuit_breaker(self) -> None:
+        """Check if request should be allowed by circuit breaker."""
+        if not self._circuit.allow_request():
+            raise CircuitOpenError(
+                f"Circuit breaker is open. Retry after "
+                f"{self.config.circuit_recovery_timeout}s"
+            )
+
+    async def _handle_response(self, response: Any) -> dict[str, Any]:
+        """Handle async HTTP response and check for errors."""
+        if response.status == HTTPStatus.SERVICE_UNAVAILABLE:
+            raise ServiceUnavailableError("Service unavailable", 503)
+
+        if response.headers.get("X-Lockdown-Mode") == "true":
+            raise LockdownError("Node is in lockdown mode", 503)
+
+        if response.status >= 500:
+            response.raise_for_status()
+
+        self._circuit.record_success()
+        return await response.json()
+
+    async def _execute_request(
+        self,
+        method: str,
+        url: str,
+        data: dict[str, Any] | None,
+        params: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        """Perform a single async HTTP request and handle the response."""
+        session = await self._get_session()
+        async with session.request(
+            method=method,
+            url=url,
+            json=data,
+            params=params,
+            timeout=self.config.timeout,
+        ) as response:
+            return await self._handle_response(response)
+
+    async def _handle_request_error(self, e: Exception, attempt: int) -> None:
+        """Handle async request failure, record to circuit breaker and sleep if needed."""
+        self._circuit.record_failure()
+
+        if attempt >= self.config.max_retries:
+            if isinstance(e, (ServiceUnavailableError, LockdownError, HieraChainAPIError)):
+                raise e
+            raise HieraChainAPIError(str(e)) from e
+
+        delay = self._calculate_delay(attempt)
+        logger.warning(
+            f"Request failed ({type(e).__name__}: {e}), "
+            f"retry {attempt + 1}/{self.config.max_retries} in {delay:.1f}s"
+        )
+        await asyncio.sleep(delay)
 
     async def _request(
         self,
@@ -389,53 +428,14 @@ class HieraChainAsyncClient:
         params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Make async HTTP request with retry logic."""
-        if not self._circuit.allow_request():
-            raise CircuitOpenError(
-                f"Circuit breaker is open. Retry after "
-                f"{self.config.circuit_recovery_timeout}s"
-            )
-
+        self._check_circuit_breaker()
         url = f"{self.config.base_url}{endpoint}"
-        session = await self._get_session()
 
         for attempt in range(self.config.max_retries + 1):
             try:
-                async with session.request(
-                    method=method,
-                    url=url,
-                    json=data,
-                    params=params,
-                    timeout=self.config.timeout,
-                ) as response:
-                    if response.status == HTTPStatus.SERVICE_UNAVAILABLE:
-                        raise ServiceUnavailableError("Service unavailable", 503)
-
-                    if response.headers.get("X-Lockdown-Mode") == "true":
-                        raise LockdownError("Node is in lockdown mode", 503)
-
-                    if response.status >= 500:
-                        response.raise_for_status()
-
-                    self._circuit.record_success()
-                    return await response.json()
-
-            except (ServiceUnavailableError, LockdownError) as e:
-                self._circuit.record_failure()
-                if attempt < self.config.max_retries:
-                    delay = self._calculate_delay(attempt)
-                    logger.warning(f"Request failed ({e}), retry in {delay:.1f}s")
-                    await asyncio.sleep(delay)
-                else:
-                    raise
-
+                return await self._execute_request(method, url, data, params)
             except Exception as e:
-                self._circuit.record_failure()
-                if attempt < self.config.max_retries:
-                    delay = self._calculate_delay(attempt)
-                    logger.warning(f"Request error ({e}), retry in {delay:.1f}s")
-                    await asyncio.sleep(delay)
-                else:
-                    raise HieraChainAPIError(str(e)) from e
+                await self._handle_request_error(e, attempt)
 
         raise HieraChainAPIError(f"Request failed after {self.config.max_retries} retries")
 
@@ -468,7 +468,7 @@ class HieraChainAsyncClient:
         try:
             response = await self._request("GET", "/health")
             return response.get("status") == "healthy"
-        except Exception:
+        except (HieraChainAPIError, CircuitOpenError):
             return False
 
     async def close(self) -> None:
