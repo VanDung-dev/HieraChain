@@ -15,6 +15,20 @@ from hierachain.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
+
+def _to_block_dict(block_model: BlockModel) -> dict[str, Any]:
+    """Convert ORM model to dictionary format expected by HieraChain."""
+    events_list = [e.data for e in block_model.events]
+    return {
+        "index": block_model.index,
+        "hash": block_model.hash,
+        "previous_hash": block_model.previous_hash,
+        "timestamp": block_model.timestamp,
+        "events": events_list,
+        "metadata": block_model.metadata_json
+    }
+
+
 class SqlStorageBackend:
     """
     Persistent storage backend using SQL Database.
@@ -137,7 +151,7 @@ class SqlStorageBackend:
             block = session.query(BlockModel).order_by(BlockModel.index.desc()).first()
             if not block:
                 return None
-            return self._to_block_dict(block)
+            return _to_block_dict(block)  # type: ignore[arg-type]
         finally:
             session.close()
 
@@ -148,7 +162,7 @@ class SqlStorageBackend:
             block = session.query(BlockModel).filter_by(index=index).first()
             if not block:
                 return None
-            return self._to_block_dict(block)
+            return _to_block_dict(block)  # type: ignore[arg-type]
         finally:
             session.close()
 
@@ -156,7 +170,7 @@ class SqlStorageBackend:
         """Update a key-value in global state."""
         session = self.Session()
         try:
-            state = session.merge(ChainStateModel(
+            session.merge(ChainStateModel(
                 key=key, 
                 value=value, 
                 last_block_hash=last_block_hash
@@ -167,20 +181,6 @@ class SqlStorageBackend:
             logger.error(f"Failed to update state: {e}")
         finally:
             session.close()
-
-    def _to_block_dict(self, block_model: BlockModel) -> dict[str, Any]:
-        """Convert ORM model to dictionary format expected by HieraChain."""
-        events_list = [
-            e.data for e in block_model.events
-        ]
-        return {
-            "index": block_model.index,
-            "hash": block_model.hash,
-            "previous_hash": block_model.previous_hash,
-            "timestamp": block_model.timestamp,
-            "events": events_list,
-            "metadata": block_model.metadata_json
-        }
 
     def close(self):
         """Close connection pool."""
