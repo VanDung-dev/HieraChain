@@ -215,7 +215,7 @@ The project documentation is built using [MkDocs](https://www.mkdocs.org/) with 
 To run the documentation server locally with live reloading:
 
 ```bash
-mkdocs serve -f docs/mkdocs.yml
+mkdocs serve
 ```
 
 Open your browser at `http://127.0.0.1:8000` to view the documentation.
@@ -225,78 +225,8 @@ Open your browser at `http://127.0.0.1:8000` to view the documentation.
 To build the static HTML site (output to `site/` directory):
 
 ```bash
-mkdocs build -f docs/mkdocs.yml
+mkdocs build
 ```
-
-### Generate API Reference Docs (.py → .md)
-
-API reference documentation is **auto-generated** from Python docstrings using [`pydoc-markdown`](https://pypi.org/project/pydoc-markdown/).
-
-#### Prerequisites
-
-Make sure `pydoc-markdown` is installed inside the `.venv`:
-
-```bash
-pip install pydoc-markdown
-```
-
-#### Generate All Modules
-
-Run the generation script (must use the `.venv` Python):
-
-**Windows (PowerShell):**
-
-```powershell
-$env:PYTHONIOENCODING="utf-8"; .venv\Scripts\python.exe scripts/generate_api_docs.py
-```
-
-**Linux / macOS:**
-
-```bash
-PYTHONIOENCODING=utf-8 .venv/bin/python scripts/generate_api_docs.py
-```
-
-Generated Markdown files are saved to `docs/vi/reference/`.
-
-#### Generate a Specific Module
-
-Use a module shorthand or full path:
-
-```bash
-# By shorthand (matches hierachain.core.block)
-.venv/Scripts/python.exe scripts/generate_api_docs.py block
-
-# By full module path
-.venv/Scripts/python.exe scripts/generate_api_docs.py hierachain.core.block
-
-# Dry-run (preview without writing files)
-.venv/Scripts/python.exe scripts/generate_api_docs.py block --dry-run
-```
-
-#### How It Works
-
-```text
-hierachain/core/block.py          (Python source with Vietnamese docstrings)
-        │
-        ▼  pydoc-markdown parses docstrings
-scripts/generate_api_docs.py       (adds YAML frontmatter + metadata)
-        │
-        ▼
-docs/vi/reference/core/block.md    (Markdown ready for MkDocs)
-```
-
-> **Important:** After modifying docstrings in `.py` files, you must **re-run** the
-> generation script to update the corresponding `.md` files.
-> The `PYTHONIOENCODING=utf-8` environment variable is **required** on Windows
-> to correctly handle Vietnamese characters.
-
-#### Configuration
-
-The `pydoc-markdown` configuration is in [`pydoc-markdown.yml`](pydoc-markdown.yml).
-The module mapping (icon, description, output directory) is defined in
-[`scripts/generate_api_docs.py`](scripts/generate_api_docs.py) → `MODULES` dict.
-
----
 
 ## Developer Scripts
 
