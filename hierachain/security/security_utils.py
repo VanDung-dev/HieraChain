@@ -124,6 +124,21 @@ def generate_key_pair_hex() -> Tuple[str, str]:
     kp = KeyPair.generate()
     return kp.public_key, kp.private_key
 
+def _verify_single_item(item: dict[str, Any]) -> bool:
+    """Verify a single signature item. Returns False on any error."""
+    pk = item.get('public_key')
+    msg = item.get('message')
+    sig = item.get('signature')
+    
+    if not pk or not msg or not sig:
+        return False
+    
+    if isinstance(msg, str):
+        msg = msg.encode('utf-8')
+    
+    return verify_signature_standalone(pk, msg, sig)
+
+
 def verify_batch_signatures(items: list[dict[str, Any]]) -> list[bool]:
     """
     Verify a batch of signatures, designed for multiprocessing.
@@ -137,21 +152,4 @@ def verify_batch_signatures(items: list[dict[str, Any]]) -> list[bool]:
     Returns:
         List of booleans corresponding to validity of each item.
     """
-    results = []
-    for item in items:
-        try:
-            pk = item.get('public_key')
-            msg = item.get('message')
-            sig = item.get('signature')
-            
-            if not pk or not msg or not sig:
-                results.append(False)
-                continue
-                
-            if isinstance(msg, str):
-                msg = msg.encode('utf-8')
-                
-            results.append(verify_signature_standalone(pk, msg, sig))
-        except Exception:
-            results.append(False)
-    return results
+    return [_verify_single_item(item) for item in items]
