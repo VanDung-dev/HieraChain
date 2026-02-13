@@ -13,7 +13,10 @@ from typing import Any
 from hierachain.core.blockchain import Blockchain
 from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.core.consensus.proof_of_federation import ProofOfFederation
-from hierachain.core.utils import sanitize_metadata_for_main_chain, validate_proof_metadata
+from hierachain.core.utils import (
+    sanitize_metadata_for_main_chain,
+    validate_proof_metadata,
+)
 from hierachain.core.block import Block
 from hierachain.config.settings import settings
 from hierachain.security.verify.zk_verifier import ZKVerifier, ZKVerificationError
@@ -21,36 +24,62 @@ from hierachain.security.verify.zk_verifier import ZKVerifier, ZKVerificationErr
 logger = logging.getLogger(__name__)
 
 
+def _find_proof_in_events(events: list[dict[str, Any]], proof_hash: str, sub_chain_name: str) -> bool:
+    """Check if a proof exists in a list of events."""
+    for event in events:
+        if (
+            event.get("event") == "proof_submission"
+            and event.get("details", {}).get("proof_hash") == proof_hash
+            and event.get("details", {}).get("sub_chain_name") == sub_chain_name
+        ):
+            return True
+    return False
+
+
+def _filter_proofs_by_sub_chain(events: list[dict[str, Any]], sub_chain_name: str) -> list[dict[str, Any]]:
+    """Filter events list for proof submissions from a specific sub-chain."""
+    return [
+        event
+        for event in events
+        if (
+            event.get("event") == "proof_submission"
+            and event.get("details", {}).get("sub_chain_name") == sub_chain_name
+        )
+    ]
+
+
 class MainChain(Blockchain):
     """
     Main Chain implementation for the HieraChain framework.
-    
+
     The Main Chain acts as the root authority (like a CEO in an organization) and:
     - Only stores proofs from Sub-Chains, NOT detailed domain data
     - Maintains the integrity of the entire hierarchical system
     - Provides proof verification and chain coordination
     - Uses Proof of Authority consensus suitable for business applications
     """
-    
+
     def __init__(self, name: str = "MainChain"):
         """
         Initialize the Main Chain.
-        
+
         Args:
             name: Name identifier for the Main Chain
         """
         super().__init__(name)
-        
+
         # Dynamic Consensus Loading
         if settings.CONSENSUS_TYPE == "proof_of_federation":
             self.consensus = ProofOfFederation("MainChain_PoF")
         else:
             # Default back to PoA
             self.consensus = ProofOfAuthority("MainChain_PoA")
-            
+
         self.registered_sub_chains: set[str] = set()
         self.sub_chain_metadata: dict[str, dict[str, Any]] = {}
         self.proof_count: int = 0
+        self.latest_proofs: dict[str, dict[str, Any]] = {}
+        self.recent_proofs: list[dict[str, Any]] = []
 
         # ZK Proof Verifier (initialized if ZK proofs are enabled)
         self.zk_verifier: ZKVerifier | None = None
@@ -59,52 +88,55 @@ class MainChain(Blockchain):
             logger.info(f"MainChain initialized with ZK Verification in '{settings.ZK_MODE}' mode")
 
         # Register Main Chain as the primary authority/validator
-        if hasattr(self.consensus, 'add_authority'):
-            self.consensus.add_authority("main_chain", {
-                "role": "root_authority",
-                "permissions": ["proof_validation", "sub_chain_registration"],
-                "created_at": time.time()
-            })
+        if hasattr(self.consensus, "add_authority"):
+            self.consensus.add_authority(
+                "main_chain",
+                {
+                    "role": "root_authority",
+                    "permissions": ["proof_validation", "sub_chain_registration"],
+                    "created_at": time.time(),
+                },
+            )
 
     def is_valid_new_block(self, block) -> bool:
         """
         Validate a new block including consensus rules.
-        
+
         Args:
             block: Block to validate
-            
+
         Returns:
             True if block is valid, False otherwise
         """
         # 1. Base structural validation
         if not super().is_valid_new_block(block):
             return False
-            
+
         # 2. Consensus validation
         previous_block = self.get_latest_block()
-        
+
         if not self.consensus.validate_block(block, previous_block):
             return False
-            
+
         return True
-    
+
     def register_sub_chain(self, sub_chain_name: str, metadata: dict[str, Any] | None = None) -> bool:
         """
         Register a Sub-Chain with the Main Chain.
-        
+
         Args:
             sub_chain_name: Name of the Sub-Chain to register
             metadata: Metadata about the Sub-Chain
-            
+
         Returns:
             True if Sub-Chain was registered successfully, False otherwise
         """
         if sub_chain_name in self.registered_sub_chains:
             return False
-        
+
         self.registered_sub_chains.add(sub_chain_name)
         self.sub_chain_metadata[sub_chain_name] = metadata or {}
-        
+
         # Add Sub-Chain as an authority for proof submission
         self.consensus.add_authority(sub_chain_name, {
             "role": "sub_chain",
@@ -112,7 +144,7 @@ class MainChain(Blockchain):
             "registered_at": time.time(),
             "metadata": metadata
         })
-        
+
         # Create registration event
         registration_event = {
             "entity_id": sub_chain_name,
@@ -124,7 +156,7 @@ class MainChain(Blockchain):
                 "metadata": sanitize_metadata_for_main_chain(metadata or {})
             }
         }
-        
+
         self.add_event(registration_event)
         return True
 
@@ -137,7 +169,7 @@ class MainChain(Blockchain):
     ) -> bool:
         """
         Add a proof from a Sub-Chain to the Main Chain.
-        
+
         This is the critical method that follows framework guidelines:
         - Only stores proof evidence, NOT domain data
         - Metadata contains summary data only
@@ -156,54 +188,78 @@ class MainChain(Blockchain):
         if sub_chain_name not in self.registered_sub_chains:
             logger.warning(f"Rejected proof: SubChain '{sub_chain_name}' not registered")
             return False
-        
+
         # Validate metadata is suitable for Main Chain (no detailed data)
         if not validate_proof_metadata(metadata):
             logger.warning(f"Rejected proof: Invalid metadata from '{sub_chain_name}'")
             return False
 
         # === ZK PROOF VERIFICATION ===
-        zk_verified = False
-        if settings.ENABLE_ZK_PROOFS:
-            if self.zk_verifier is None:
-                logger.error("ZK Proofs enabled but ZKVerifier not initialized")
-                return False
-
-            # Check if ZK proof is required
-            if settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN and zk_proof is None:
-                logger.warning("Rejected proof: ZK proof required but missing")
-                return False
-
-            # Verify ZK proof if provided
-            if zk_proof is not None:
-                public_inputs = {
-                    "old_state_root": metadata.get("previous_merkle_root", ""),
-                    "new_state_root": metadata.get("latest_merkle_root", proof_hash),
-                    "block_index": metadata.get("latest_block_index", 0),
-                    "sub_chain_name": sub_chain_name
-                }
-
-                try:
-                    is_valid = self.zk_verifier.verify(zk_proof, public_inputs)
-                    if not is_valid:
-                        logger.error(
-                            f"ZK Proof FAILED for '{sub_chain_name}' "
-                            f"block {public_inputs['block_index']}"
-                        )
-                        return False
-                    logger.info(
-                        f"ZK Proof VERIFIED for '{sub_chain_name}' "
-                        f"block {public_inputs['block_index']}"
-                    )
-                    zk_verified = True
-                except ZKVerificationError as e:
-                    logger.error(f"ZK Verification error: {e}")
-                    return False
+        zk_verified = self._verify_zk_proof(sub_chain_name, proof_hash, metadata, zk_proof)
+        if settings.ENABLE_ZK_PROOFS and zk_proof is not None and not zk_verified:
+            return False
 
         # Sanitize metadata to ensure only summary data
         sanitized_metadata = sanitize_metadata_for_main_chain(metadata)
-        
-        # Create proof submission event (following guidelines pattern)
+
+        # Record proof and update state
+        return self._record_proof(sub_chain_name, proof_hash, sanitized_metadata, zk_verified)
+
+    def _verify_zk_proof(
+        self,
+        sub_chain_name: str,
+        proof_hash: str,
+        metadata: dict[str, Any],
+        zk_proof: bytes | None
+    ) -> bool:
+        """Verify ZK proof if enabled and provided."""
+        if not settings.ENABLE_ZK_PROOFS:
+            return False
+
+        if self.zk_verifier is None:
+            logger.error("ZK Proofs enabled but ZKVerifier not initialized")
+            return False
+
+        # Check if ZK proof is required
+        if settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN and zk_proof is None:
+            logger.warning("Rejected proof: ZK proof required but missing")
+            return False
+
+        if zk_proof is None:
+            return False
+
+        public_inputs = {
+            "old_state_root": metadata.get("previous_merkle_root", ""),
+            "new_state_root": metadata.get("latest_merkle_root", proof_hash),
+            "block_index": metadata.get("latest_block_index", 0),
+            "sub_chain_name": sub_chain_name
+        }
+
+        try:
+            is_valid = self.zk_verifier.verify(zk_proof, public_inputs)
+            if not is_valid:
+                logger.error(
+                    f"ZK Proof FAILED for '{sub_chain_name}' "
+                    f"block {public_inputs['block_index']}"
+                )
+                return False
+            logger.info(
+                f"ZK Proof VERIFIED for '{sub_chain_name}' "
+                f"block {public_inputs['block_index']}"
+            )
+            return True
+        except ZKVerificationError as e:
+            logger.error(f"ZK Verification error: {e}")
+            return False
+
+    def _record_proof(
+        self,
+        sub_chain_name: str,
+        proof_hash: str,
+        sanitized_metadata: dict[str, Any],
+        zk_verified: bool
+    ) -> bool:
+        """Record proof as an event and update internal state."""
         proof_id = f"PROOF-{self.proof_count + 1}"
         current_time = time.time()
         event: dict[str, Any] = {
@@ -227,125 +283,144 @@ class MainChain(Blockchain):
         # Add the event to Main Chain
         self.add_event(event)
         self.proof_count += 1
-        
+
+        # Track latest proof per sub-chain for fast access
+        self.latest_proofs[sub_chain_name] = {
+            "proof_hash": proof_hash,
+            "timestamp": current_time,
+            "block_index": self.get_latest_block().index + 1,
+        }
+
+        # Track recent proofs globally
+        self._update_recent_proofs(sub_chain_name, proof_hash, sanitized_metadata, current_time)
         return True
-    
+
+    def _update_recent_proofs(
+        self,
+        sub_chain_name: str,
+        proof_hash: str,
+        sanitized_metadata: dict[str, Any],
+        timestamp: float
+    ) -> None:
+        """Update the list of recent proofs."""
+        recent_proof_entry = {
+            "block_index": self.get_latest_block().index + 1,
+            "sub_chain": sub_chain_name,
+            "proof_hash": proof_hash,
+            "metadata": sanitized_metadata,
+            "timestamp": timestamp
+        }
+        self.recent_proofs.append(recent_proof_entry)
+        if len(self.recent_proofs) > 10:
+            self.recent_proofs.pop(0)
+
     def verify_proof(self, proof_hash: str, sub_chain_name: str) -> bool:
         """
         Verify a proof exists in the Main Chain.
-        
+
         Args:
             proof_hash: Hash of the proof to verify
             sub_chain_name: Name of the Sub-Chain that submitted the proof
-            
+
         Returns:
             True if proof exists and is valid, False otherwise
         """
         # Search for proof in all blocks
         for block in self.chain:
-            # Use to_event_list() if available to handle Arrow Tables
-            events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
-            for event in events:
-                if (event.get("event") == "proof_submission" and
-                    event.get("details", {}).get("proof_hash") == proof_hash and
-                    event.get("details", {}).get("sub_chain_name") == sub_chain_name):
-                    return True
-        
-        # Search in pending events as well
-        for event in self.pending_events:
-            if (event.get("event") == "proof_submission" and
-                event.get("details", {}).get("proof_hash") == proof_hash and
-                event.get("details", {}).get("sub_chain_name") == sub_chain_name):
+            events = (
+                block.to_event_list()
+                if hasattr(block, "to_event_list")
+                else block.events
+            )
+            if _find_proof_in_events(events, proof_hash, sub_chain_name):
                 return True
-        
-        return False
-    
+
+        # Search in pending events as well
+        return _find_proof_in_events(self.pending_events, proof_hash, sub_chain_name)
+
     def get_proofs_by_sub_chain(self, sub_chain_name: str) -> list[dict[str, Any]]:
         """
         Get all proofs submitted by a specific Sub-Chain.
-        
+
         Args:
             sub_chain_name: Name of the Sub-Chain
-            
+
         Returns:
             List of proof events from the specified Sub-Chain
         """
         proofs = []
+        # Search for proof in all blocks
         for block in self.chain:
-            # Use to_event_list() if available to handle Arrow Tables
-            events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
-            for event in events:
-                if (event.get("event") == "proof_submission" and
-                    event.get("details", {}).get("sub_chain_name") == sub_chain_name):
-                    proofs.append(event)
-        
+            events = (
+                block.to_event_list()
+                if hasattr(block, "to_event_list")
+                else block.events
+            )
+            proofs.extend(_filter_proofs_by_sub_chain(events, sub_chain_name))
+
         # Add pending proofs as well
-        for event in self.pending_events:
-            if (event.get("event") == "proof_submission" and
-                event.get("details", {}).get("sub_chain_name") == sub_chain_name):
-                proofs.append(event)
-        
+        proofs.extend(_filter_proofs_by_sub_chain(self.pending_events, sub_chain_name))
         return proofs
-    
+
     def get_sub_chain_summary(self, sub_chain_name: str) -> dict[str, Any]:
         """
         Get summary information about a Sub-Chain.
-        
+
         Args:
             sub_chain_name: Name of the Sub-Chain
-            
+
         Returns:
             Summary information about the Sub-Chain
         """
         if sub_chain_name not in self.registered_sub_chains:
             return {}
-        
+
         proofs = self.get_proofs_by_sub_chain(sub_chain_name)
-        
+
         return {
             "sub_chain_name": sub_chain_name,
             "registered": True,
             "total_proofs": len(proofs),
             "metadata": self.sub_chain_metadata.get(sub_chain_name, {}),
             "latest_proof": proofs[-1] if proofs else None,
-            "registration_time": self.sub_chain_metadata.get(sub_chain_name, {}).get("registered_at")
+            "registration_time": self.sub_chain_metadata.get(sub_chain_name, {}).get("registered_at"),
         }
-    
+
     def finalize_block(self) -> "Block | None":
         """
         Finalize pending events into a new block using consensus.
         Overridden from base Blockchain to ensure PoA/PoF compliance.
-        
+
         Returns:
             The newly created and added block, or None if no pending events
         """
         if not self.pending_events:
             return None
-        
+
         # Create block with pending events
         new_block = self.create_block()
-        
+
         # Finalize block using PoA consensus
         finalized_block = self.consensus.finalize_block(new_block, "main_chain")
-        
+
         # Add finalized block to chain
         if self.add_block(finalized_block):
             return finalized_block
-        
+
         return None
 
     def get_main_chain_stats(self) -> dict[str, Any]:
         """
         Get comprehensive statistics about the Main Chain.
-        
+
         Returns:
             Dictionary containing Main Chain statistics
         """
         base_stats = self.get_chain_stats()
-        
+
         # Count proof submissions
         proof_events = self.get_events_by_type("proof_submission")
-        
+
         return {
             **base_stats,
             "role": "main_chain",
@@ -355,23 +430,23 @@ class MainChain(Blockchain):
             "consensus_type": self.consensus.name,
             "authorities": self.consensus.get_validator_count()
         }
-    
+
     def finalize_main_chain_block(self) -> dict[str, Any] | None:
         """
         Finalize a block on the Main Chain using PoA consensus.
-        
+
         Returns:
             Information about the finalized block, or None if no pending events
         """
         if not self.pending_events:
             return None
-        
+
         # Create block with pending events
         new_block = self.create_block()
-        
+
         # Finalize block using PoA consensus
         finalized_block = self.consensus.finalize_block(new_block, "main_chain")
-        
+
         # Add finalized block to chain
         if self.add_block(finalized_block):
             return {
@@ -380,67 +455,73 @@ class MainChain(Blockchain):
                 "events_count": len(finalized_block.events),
                 "finalized_at": time.time()
             }
-        
+
         return None
-    
+
     def validate_sub_chain_proof_format(self, proof_data: dict[str, Any]) -> bool:
         """
         Validate the format of a Sub-Chain proof submission.
-        
+
         Args:
             proof_data: Proof data to validate
-            
+
         Returns:
             True if proof format is valid, False otherwise
         """
         required_fields = ["sub_chain_name", "proof_hash", "metadata"]
-        
+
         for field in required_fields:
             if field not in proof_data:
                 return False
-        
+
         # Validate Sub-Chain is registered
         if proof_data["sub_chain_name"] not in self.registered_sub_chains:
             return False
-        
+
         # Validate metadata doesn't contain detailed domain data
         if not validate_proof_metadata(proof_data["metadata"]):
             return False
-        
+
         return True
-    
+
     def get_hierarchical_integrity_report(self) -> dict[str, Any]:
         """
         Generate an integrity report for the entire hierarchical system.
-        
+
         Returns:
             Comprehensive integrity report
         """
+        sub_chains: dict[str, Any] = {}
+        for sub_chain_name in self.registered_sub_chains:
+            sub_chains[sub_chain_name] = self.get_sub_chain_summary(sub_chain_name)
+
         report = {
             "main_chain": {
                 "name": self.name,
                 "blocks": len(self.chain),
                 "valid": self.is_chain_valid(),
-                "latest_hash": self.get_latest_block().hash
+                "latest_hash": self.get_latest_block().hash,
             },
-            "sub_chains": {},
+            "sub_chains": sub_chains,
             "total_proofs": self.proof_count,
             "registered_sub_chains": len(self.registered_sub_chains),
-            "system_integrity": "healthy" if self.is_chain_valid() else "compromised"
+            "system_integrity": "healthy"
+            if self.is_chain_valid()
+            else "compromised",
         }
-        
-        # Add Sub-Chain summaries
-        for sub_chain_name in self.registered_sub_chains:
-            report["sub_chains"][sub_chain_name] = self.get_sub_chain_summary(sub_chain_name)
-        
         return report
-    
+
     def __str__(self) -> str:
         """String representation of the Main Chain."""
-        return f"MainChain(blocks={len(self.chain)}, sub_chains={len(self.registered_sub_chains)}, proofs={self.proof_count})"
-    
+        return (
+            f"MainChain(blocks={len(self.chain)}, "
+            f"sub_chains={len(self.registered_sub_chains)}, proofs={self.proof_count})"
+        )
+
     def __repr__(self) -> str:
         """Detailed string representation of the Main Chain."""
-        return (f"MainChain(name={self.name}, blocks={len(self.chain)}, "
-                f"sub_chains={len(self.registered_sub_chains)}, proofs={self.proof_count}, "
-                f"valid={self.is_chain_valid()})")
+        return (
+            f"MainChain(name={self.name}, blocks={len(self.chain)}, "
+            f"sub_chains={len(self.registered_sub_chains)}, proofs={self.proof_count}, "
+            f"valid={self.is_chain_valid()})"
+        )
