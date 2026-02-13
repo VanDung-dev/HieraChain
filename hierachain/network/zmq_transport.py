@@ -31,15 +31,14 @@ class ZmqNode:
         port (int): The port to bind for listening (ROUTER).
         peers (Dict[str, str]): Mapping of peer_id -> address (e.g., "tcp://127.0.0.1:5001").
     """
-    
 
     def __init__(
-            self,
-            node_id: str,
-            port: int,
-            host: str = "127.0.0.1",
-            server_secret_key: bytes = None,
-            server_public_key: bytes = None
+        self,
+        node_id: str,
+        port: int,
+        host: str = "127.0.0.1",
+        server_secret_key: bytes = None,
+        server_public_key: bytes = None
     ):
         self.node_id = node_id
         self.host = host
@@ -201,37 +200,60 @@ class ZmqNode:
         """Loop to receive messages from ROUTER socket."""
         while not self._stop_event.is_set():
             try:
-                msg_parts = await self.router.recv_multipart()
-                
-                if len(msg_parts) < 2:
-                    continue
-                    
-                sender_id_bytes = msg_parts[0]
-                message_bytes = msg_parts[-1] # Payload is the last part
-                
-                sender_id = sender_id_bytes.decode('utf-8')
-                message_str = message_bytes.decode('utf-8')
-                
-                try:
-                    message_data = json.loads(message_str)
-                    
-                    # Replay Check
-                    if not self._is_valid_replay(message_data):
-                        continue
-                        
-                    if self._message_handler:
-                        # Process message (could be async or sync)
-                        if asyncio.iscoroutinefunction(self._message_handler):
-                            await self._message_handler(message_data, sender_id)
-                        else:
-                            self._message_handler(message_data, sender_id)
-                except json.JSONDecodeError:
-                    logger.warning(f"Received invalid JSON from {sender_id}")
-                    
-            except zmq.ZMQError as e:
-                if not self._stop_event.is_set():
-                    logger.error(f"ZMQ Receive error: {e}")
-                break
+                await self._receive_once()
             except Exception as e:
-                logger.error(f"Unexpected error in receiver loop: {e}")
-                await asyncio.sleep(1)
+                if not await self._handle_receiver_error(e):
+                    break
+
+    async def _receive_once(self):
+        """Receive and handle a single multipart message."""
+        msg_parts = await self.router.recv_multipart()
+        await self._handle_received_message(msg_parts)
+
+    async def _handle_receiver_error(self, e: Exception) -> bool:
+        """
+        Handle errors in the receiver loop.
+        Returns True if the loop should continue, False if it should stop.
+        """
+        if isinstance(e, zmq.ZMQError):
+            if not self._stop_event.is_set():
+                logger.error(f"ZMQ Receive error: {e}")
+            return False  # Stop the loop for ZMQ errors
+            
+        logger.error(f"Unexpected error in receiver loop: {e}")
+        await asyncio.sleep(1)
+        return True  # Continue for other exceptions
+
+    async def _handle_received_message(self, msg_parts: list[bytes]):
+        """Process raw message parts from the socket."""
+        if len(msg_parts) < 2:
+            return
+
+        try:
+            sender_id = msg_parts[0].decode('utf-8')
+            message_str = msg_parts[-1].decode('utf-8')
+            message_data = json.loads(message_str)
+            
+            await self._process_message_data(message_data, sender_id)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            logger.warning("Received invalid message format or encoding")
+        except Exception as e:
+            logger.error(f"Error processing message parts: {e}")
+
+    async def _process_message_data(self, message_data: dict[str, Any], sender_id: str):
+        """Perform validation and invoke the message handler."""
+        # Replay Check
+        if not self._is_valid_replay(message_data):
+            return
+
+        if not self._message_handler:
+            return
+
+        try:
+            # Process message (could be async or sync)
+            if asyncio.iscoroutinefunction(self._message_handler):
+                await self._message_handler(message_data, sender_id)
+            else:
+                self._message_handler(message_data, sender_id)
+        except Exception as e:
+            logger.error(f"Error in message handler: {e}")
