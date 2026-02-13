@@ -17,6 +17,13 @@ from hierachain.domains.generic.events.base_event import BaseEvent
 logger = logging.getLogger(__name__)
 
 
+def _get_block_events(block: Any) -> list[dict[str, Any]]:
+    """Extract event list from a block."""
+    if hasattr(block, 'to_event_list'):
+        return block.to_event_list()
+    return getattr(block, 'events', [])
+
+
 class BaseChain(SubChain, ABC):
     """
     Abstract base class for domain-specific chains in the hierarchical framework.
@@ -140,6 +147,7 @@ class BaseChain(SubChain, ABC):
         self.add_event(update_event)
         return True
     
+
     def get_entity_history(self, entity_id: str) -> list[dict[str, Any]]:
         """
         Get complete history of events for a specific entity.
@@ -152,11 +160,11 @@ class BaseChain(SubChain, ABC):
         """
         history = []
         for block in self.chain:
-            events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
-            if events:
-                for event in events:
-                    if event.get("entity_id") == entity_id:
-                        history.append(event)
+            events = _get_block_events(block)
+            # Filter events for this entity
+            entity_events = [e for e in events if e.get("entity_id") == entity_id]
+            history.extend(entity_events)
+            
         return history
 
     def create_domain_event(self, event_class: type, entity_id: str, **kwargs) -> BaseEvent:
@@ -241,22 +249,26 @@ class BaseChain(SubChain, ABC):
             self.entity_registry[entity_id]["status"] = new_status
             self.entity_registry[entity_id]["status_updated_at"] = event.timestamp
     
+    def _ensure_resource_list(self, entity_id: str) -> list[str]:
+        """Ensure the entity has an allocated resources list."""
+        if "allocated_resources" not in self.entity_registry[entity_id]:
+            self.entity_registry[entity_id]["allocated_resources"] = []
+        return self.entity_registry[entity_id]["allocated_resources"]
+
     def _handle_resource_allocation(self, event: BaseEvent) -> None:
         """Handle resource allocation events."""
         entity_id = event.entity_id
+        if entity_id not in self.entity_registry:
+            return
+
         resource_id = event.get_detail("resource_id")
         allocation_type = event.get_detail("allocation_type")
+        resources = self._ensure_resource_list(entity_id)
         
-        # Update entity resources if registered
-        if entity_id in self.entity_registry:
-            if "allocated_resources" not in self.entity_registry[entity_id]:
-                self.entity_registry[entity_id]["allocated_resources"] = []
-            
-            if allocation_type == "assigned":
-                self.entity_registry[entity_id]["allocated_resources"].append(resource_id)
-            elif allocation_type == "released":
-                if resource_id in self.entity_registry[entity_id]["allocated_resources"]:
-                    self.entity_registry[entity_id]["allocated_resources"].remove(resource_id)
+        if allocation_type == "assigned":
+            resources.append(resource_id)
+        elif allocation_type == "released" and resource_id in resources:
+            resources.remove(resource_id)
     
     def _handle_quality_check(self, event: BaseEvent) -> None:
         """Handle quality check events."""
@@ -328,7 +340,7 @@ class BaseChain(SubChain, ABC):
             return False
         
         # Apply all domain rules
-        for rule_name, rule_function in self.domain_rules.items():
+        for _, rule_function in self.domain_rules.items():
             try:
                 if not rule_function(entity_info, operation):
                     return False
@@ -372,8 +384,12 @@ class BaseChain(SubChain, ABC):
         return lifecycle_summary
     
     @abstractmethod
-    def validate_domain_operation(self, entity_id: str, operation_type: str, 
-                                 operation_data: dict[str, Any]) -> bool:
+    def validate_domain_operation(
+        self,
+        entity_id: str,
+        operation_type: str,
+        operation_data: dict[str, Any]
+    ) -> bool:
         """
         Validate a domain-specific operation.
         
@@ -413,7 +429,7 @@ class BaseChain(SubChain, ABC):
         base_stats = super().get_domain_statistics()
         
         # Add domain-specific stats
-        entity_statuses = {}
+        entity_statuses: dict[str, int] = {}
         for entity_info in self.entity_registry.values():
             status = entity_info.get("status", "unknown")
             entity_statuses[status] = entity_statuses.get(status, 0) + 1
