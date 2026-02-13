@@ -11,13 +11,13 @@ Supports two modes:
 
 import hashlib
 import json
-import logging
 from typing import Any
 from dataclasses import dataclass
 
 from hierachain.config.settings import settings
+from hierachain.security.secure_logging import get_security_logger
 
-logger = logging.getLogger(__name__)
+logger = get_security_logger()
 
 
 @dataclass
@@ -31,6 +31,16 @@ class ZKPublicInputs:
     new_state_root: str
     block_index: int
     sub_chain_name: str = ""
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ZKPublicInputs":
+        """Create from dictionary."""
+        return cls(
+            old_state_root=data.get("old_state_root", ""),
+            new_state_root=data.get("new_state_root", ""),
+            block_index=data.get("block_index", 0),
+            sub_chain_name=data.get("sub_chain_name", "")
+        )
     
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -44,21 +54,92 @@ class ZKPublicInputs:
     def to_bytes(self) -> bytes:
         """Serialize to bytes for hashing."""
         return json.dumps(self.to_dict(), sort_keys=True).encode('utf-8')
-    
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ZKPublicInputs":
-        """Create from dictionary."""
-        return cls(
-            old_state_root=data.get("old_state_root", ""),
-            new_state_root=data.get("new_state_root", ""),
-            block_index=data.get("block_index", 0),
-            sub_chain_name=data.get("sub_chain_name", "")
-        )
 
 
 class ZKVerificationError(Exception):
     """Exception raised when ZK proof verification fails."""
     pass
+
+
+def _verify_mock(proof: bytes, public_inputs: ZKPublicInputs) -> bool:
+    """
+    Mock verification using SHA-256 hash comparison.
+
+    This mode is for development and testing only.
+    It verifies that the proof matches the expected hash of public inputs.
+
+    Supports two formats:
+    - Legacy: b"mock_proof" + sha256(public_inputs)
+    - V2: b"mock_zkp_v2\\x00" + version(4) + size(4) + sha256(public_inputs)
+
+    Args:
+        proof: Proof bytes (expected to be a SHA-256 hash).
+        public_inputs: Public inputs to verify against.
+
+    Returns:
+        True if proof matches expected hash.
+    """
+    # Compute expected hash from public inputs
+    expected_hash = hashlib.sha256(public_inputs.to_bytes()).digest()
+
+    # V2 format: mock_zkp_v2\x00 (12 bytes) + version (4) + size (4) + hash (32)
+    magic_v2 = b"mock_zkp_v2\x00"
+    if proof.startswith(magic_v2):
+        if len(proof) < 52:  # 12 + 4 + 4 + 32
+            logger.warning("Mock proof v2 too short")
+            return False
+
+        # Extract hash from position 20 (12+4+4)
+        proof_hash = proof[20:52]
+        return proof_hash == expected_hash
+
+    # Legacy format: mock_proof (10 bytes) + hash (32)
+    magic_legacy = b"mock_proof"
+    if proof.startswith(magic_legacy):
+        if len(proof) < len(magic_legacy) + 32:
+            logger.warning("Mock proof legacy too short")
+            return False
+
+        proof_hash = proof[len(magic_legacy):len(magic_legacy) + 32]
+        return proof_hash == expected_hash
+
+    logger.warning("Mock proof missing magic bytes prefix")
+    return False
+
+
+def _validate_public_inputs(inputs: ZKPublicInputs) -> bool:
+    """
+    Validate that public inputs are well-formed.
+
+    Args:
+        inputs: Public inputs to validate.
+
+    Returns:
+        True if inputs are valid.
+    """
+    # Check old_state_root is a valid hash (64 hex chars for SHA-256)
+    if not inputs.old_state_root or len(inputs.old_state_root) < 16:
+        logger.debug(f"Invalid old_state_root: {inputs.old_state_root}")
+        return False
+
+    # Check new_state_root is a valid hash
+    if not inputs.new_state_root or len(inputs.new_state_root) < 16:
+        logger.debug(f"Invalid new_state_root: {inputs.new_state_root}")
+        return False
+
+    # Check block_index is non-negative
+    if inputs.block_index < 0:
+        logger.debug(f"Invalid block_index: {inputs.block_index}")
+        return False
+
+    return True
+
+
+def _normalize_inputs(public_inputs: dict[str, Any] | ZKPublicInputs) -> ZKPublicInputs:
+    """Normalize public inputs to ZKPublicInputs object."""
+    if isinstance(public_inputs, dict):
+        return ZKPublicInputs.from_dict(public_inputs)
+    return public_inputs
 
 
 class ZKVerifier:
@@ -116,86 +197,56 @@ class ZKVerifier:
         """
         self.stats["total_verifications"] += 1
         
-        # Normalize public inputs
-        if isinstance(public_inputs, dict):
-            inputs = ZKPublicInputs.from_dict(public_inputs)
-        else:
-            inputs = public_inputs
-        
-        # Validate public inputs
-        if not self._validate_public_inputs(inputs):
-            logger.warning("Invalid public inputs provided for ZK verification")
-            self.stats["failed_verifications"] += 1
-            return False
+        # 1. Normalize and validate inputs
+        inputs = _normalize_inputs(public_inputs)
+        if not _validate_public_inputs(inputs):
+            return self._handle_verification_failure(inputs, "Invalid public inputs provided")
         
         try:
-            if self.mode == "mock":
-                result = self._verify_mock(proof, inputs)
-            elif self.mode == "production":
-                result = self._verify_production(proof, inputs)
-            else:
-                raise ZKVerificationError(f"Unknown verification mode: {self.mode}")
+            # 2. Perform verification based on mode
+            result = self._execute_verification(proof, inputs)
             
-            if result:
-                self.stats["successful_verifications"] += 1
-                logger.debug(f"ZK Proof verified successfully for block {inputs.block_index}")
-            else:
-                self.stats["failed_verifications"] += 1
-                logger.warning(f"ZK Proof verification FAILED for block {inputs.block_index}")
-            
-            return result
+            # 3. Process result and update stats
+            return self._process_verification_result(result, inputs)
             
         except Exception as e:
+            return self._handle_verification_exception(e)
+
+    def _execute_verification(self, proof: bytes, inputs: ZKPublicInputs) -> bool:
+        """Execute core verification logic based on mode."""
+        if self.mode == "mock":
+            return _verify_mock(proof, inputs)
+        if self.mode == "production":
+            return self._verify_production(proof, inputs)
+        raise ZKVerificationError(f"Unknown verification mode: {self.mode}")
+
+    def _process_verification_result(self, result: bool, inputs: ZKPublicInputs) -> bool:
+        """Update stats and log result."""
+        if result:
+            self.stats["successful_verifications"] += 1
+            logger.debug(f"ZK Proof verified successfully for block {inputs.block_index}")
+        else:
             self.stats["failed_verifications"] += 1
-            logger.error(f"ZK Verification error: {e}")
-            raise ZKVerificationError(f"Verification failed: {e}") from e
-    
-    @staticmethod
-    def _verify_mock(proof: bytes, public_inputs: ZKPublicInputs) -> bool:
-        """
-        Mock verification using SHA-256 hash comparison.
-        
-        This mode is for development and testing only.
-        It verifies that the proof matches the expected hash of public inputs.
-        
-        Supports two formats:
-        - Legacy: b"mock_proof" + sha256(public_inputs)
-        - V2: b"mock_zkp_v2\\x00" + version(4) + size(4) + sha256(public_inputs)
-        
-        Args:
-            proof: Proof bytes (expected to be a SHA-256 hash).
-            public_inputs: Public inputs to verify against.
-        
-        Returns:
-            True if proof matches expected hash.
-        """
-        # Compute expected hash from public inputs
-        expected_hash = hashlib.sha256(public_inputs.to_bytes()).digest()
-        
-        # V2 format: mock_zkp_v2\x00 (12 bytes) + version (4) + size (4) + hash (32)
-        magic_v2 = b"mock_zkp_v2\x00"
-        if proof.startswith(magic_v2):
-            if len(proof) < 52:  # 12 + 4 + 4 + 32
-                logger.warning("Mock proof v2 too short")
-                return False
-            
-            # Extract hash from position 20 (12+4+4)
-            proof_hash = proof[20:52]
-            return proof_hash == expected_hash
-        
-        # Legacy format: mock_proof (10 bytes) + hash (32)
-        magic_legacy = b"mock_proof"
-        if proof.startswith(magic_legacy):
-            if len(proof) < len(magic_legacy) + 32:
-                logger.warning("Mock proof legacy too short")
-                return False
-            
-            proof_hash = proof[len(magic_legacy):len(magic_legacy) + 32]
-            return proof_hash == expected_hash
-        
-        logger.warning("Mock proof missing magic bytes prefix")
+            logger.warning(f"ZK Proof verification FAILED for block {inputs.block_index}")
+        return result
+
+    def _handle_verification_failure(self, inputs: ZKPublicInputs, message: str) -> bool:
+        """Handle pre-verification validation failures."""
+        logger.warning(f"{message} for block {inputs.block_index}")
+        self.stats["failed_verifications"] += 1
         return False
-    
+
+    def _handle_verification_exception(self, e: Exception) -> bool:
+        """Handle exceptions during verification process."""
+        self.stats["failed_verifications"] += 1
+        if isinstance(e, ZKVerificationError):
+            logger.error(f"ZK Verification error: {e}")
+            raise e
+        
+        error_msg = f"Verification failed: {e}"
+        logger.error(error_msg, error=str(e))
+        raise ZKVerificationError(error_msg) from e
+
     def _verify_production(self, proof: bytes, public_inputs: ZKPublicInputs) -> bool:
         """
         Production verification using ZoKrates or external service.
@@ -214,35 +265,7 @@ class ZKVerifier:
             "Production ZK verification not yet implemented. "
             "See ZK_PROOF_ARCHITECTURE.md Section 4.2 for implementation details."
         )
-    
-    @staticmethod
-    def _validate_public_inputs(inputs: ZKPublicInputs) -> bool:
-        """
-        Validate that public inputs are well-formed.
-        
-        Args:
-            inputs: Public inputs to validate.
-        
-        Returns:
-            True if inputs are valid.
-        """
-        # Check old_state_root is a valid hash (64 hex chars for SHA-256)
-        if not inputs.old_state_root or len(inputs.old_state_root) < 16:
-            logger.debug(f"Invalid old_state_root: {inputs.old_state_root}")
-            return False
-        
-        # Check new_state_root is a valid hash
-        if not inputs.new_state_root or len(inputs.new_state_root) < 16:
-            logger.debug(f"Invalid new_state_root: {inputs.new_state_root}")
-            return False
-        
-        # Check block_index is non-negative
-        if inputs.block_index < 0:
-            logger.debug(f"Invalid block_index: {inputs.block_index}")
-            return False
-        
-        return True
-    
+
     def _load_verification_key(self) -> None:
         """Load verification key from configured path."""
         key_path = getattr(settings, 'ZK_VERIFICATION_KEY_PATH', '')
