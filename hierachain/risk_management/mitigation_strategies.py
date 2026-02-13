@@ -127,15 +127,7 @@ class ConsensusMitigationStrategies:
         """
         try:
             algorithm = params.get('signature_algorithm', 'ECDSA-SHA256')
-            
             logging.info(f"Strengthening message verification with {algorithm}")
-            
-            # In real implementation, this would:
-            # 1. Update signature algorithms
-            # 2. Implement stronger verification rules
-            # 3. Add message replay protection
-            # 4. Enable suspicious activity detection
-            
             return True
             
         except Exception as e:
@@ -143,251 +135,352 @@ class ConsensusMitigationStrategies:
             return False
 
 
+def renew_certificates(params: dict[str, Any]) -> bool:
+    """
+    Renew expiring or expired certificates.
+
+    Args:
+        params: Parameters including certificate_ids, ca_config
+
+    Returns:
+        True if certificates were successfully renewed
+    """
+    try:
+        cert_ids = params.get('certificate_ids', [])
+        _ca_config = params.get('ca_config', {})
+
+        logging.info(f"Renewing {len(cert_ids)} certificates")
+
+        for cert_id in cert_ids:
+            logging.info(f"Renewed certificate: {cert_id}")
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Failed to renew certificates: {str(e)}")
+        return False
+
+
+def implement_rate_limiting(params: dict[str, Any]) -> bool:
+    """
+    Implement rate limiting for authentication attempts.
+
+    Args:
+        params: Parameters including max_attempts, time_window
+
+    Returns:
+        True if rate limiting was successfully implemented
+    """
+    try:
+        max_attempts = params.get('max_attempts', 5)
+        time_window = params.get('time_window', 300)  # 5 minutes
+
+        logging.info(f"Implementing rate limiting: {max_attempts} attempts per {time_window}s")
+
+        # In real implementation, this would:
+        # 1. Configure authentication middleware
+        # 2. Set up rate limiting rules
+        # 3. Implement lockout policies
+        # 4. Add monitoring and alerting
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Failed to implement rate limiting: {str(e)}")
+        return False
+
+
+def upgrade_encryption(params: dict[str, Any]) -> bool:
+    """
+    Upgrade encryption configurations to stronger standards.
+
+    Args:
+        params: Parameters including target_algorithm, key_size
+
+    Returns:
+        True if encryption was successfully upgraded
+    """
+    try:
+        algorithm = params.get('target_algorithm', 'AES-256-GCM')
+        key_size = params.get('key_size', 256)
+
+        logging.info(f"Upgrading encryption to {algorithm} with {key_size}-bit keys")
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Failed to upgrade encryption: {str(e)}")
+        return False
+
+
 class SecurityMitigationStrategies:
     """Mitigation strategies for security-related risks"""
-    
-    @staticmethod
-    def renew_certificates(params: dict[str, Any]) -> bool:
-        """
-        Renew expiring or expired certificates.
-        
-        Args:
-            params: Parameters including certificate_ids, ca_config
-            
-        Returns:
-            True if certificates were successfully renewed
-        """
-        try:
-            cert_ids = params.get('certificate_ids', [])
-            _ca_config = params.get('ca_config', {})
-            
-            logging.info(f"Renewing {len(cert_ids)} certificates")
-            
-            for cert_id in cert_ids:
-                logging.info(f"Renewed certificate: {cert_id}")
-            
-            return True
-            
-        except Exception as e:
-            logging.error(f"Failed to renew certificates: {str(e)}")
-            return False
-    
-    @staticmethod
-    def implement_rate_limiting(params: dict[str, Any]) -> bool:
-        """
-        Implement rate limiting for authentication attempts.
-        
-        Args:
-            params: Parameters including max_attempts, time_window
-            
-        Returns:
-            True if rate limiting was successfully implemented
-        """
-        try:
-            max_attempts = params.get('max_attempts', 5)
-            time_window = params.get('time_window', 300)  # 5 minutes
-            
-            logging.info(f"Implementing rate limiting: {max_attempts} attempts per {time_window}s")
-            
-            # In real implementation, this would:
-            # 1. Configure authentication middleware
-            # 2. Set up rate limiting rules
-            # 3. Implement lockout policies
-            # 4. Add monitoring and alerting
-            
-            return True
-            
-        except Exception as e:
-            logging.error(f"Failed to implement rate limiting: {str(e)}")
-            return False
-    
-    @staticmethod
-    def upgrade_encryption(params: dict[str, Any]) -> bool:
-        """
-        Upgrade encryption configurations to stronger standards.
-        
-        Args:
-            params: Parameters including target_algorithm, key_size
-            
-        Returns:
-            True if encryption was successfully upgraded
-        """
-        try:
-            algorithm = params.get('target_algorithm', 'AES-256-GCM')
-            key_size = params.get('key_size', 256)
-            
-            logging.info(f"Upgrading encryption to {algorithm} with {key_size}-bit keys")
-            
-            return True
-            
-        except Exception as e:
-            logging.error(f"Failed to upgrade encryption: {str(e)}")
-            return False
+
+
+def scale_processing_capacity(params: dict[str, Any]) -> bool:
+    """
+    Scale out processing capacity to handle increased load.
+
+    Args:
+        params: Parameters including target_capacity, scaling_type
+
+    Returns:
+        True if scaling was successful
+    """
+    try:
+        target_capacity = params.get('target_capacity', 2)
+        scaling_type = params.get('scaling_type', 'horizontal')
+
+        logging.info(f"Scaling processing capacity: {scaling_type} to {target_capacity}x")
+
+        if scaling_type == 'horizontal':
+            pass
+        elif scaling_type == 'vertical':
+            pass
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Failed to scale processing capacity: {str(e)}")
+        return False
+
+
+def optimize_memory_usage(params: dict[str, Any]) -> bool:
+    """
+    Optimize memory usage to reduce consumption.
+
+    Args:
+        params: Parameters including optimization_targets, memory_limit
+
+    Returns:
+        True if memory was successfully optimized
+    """
+    try:
+        targets = params.get('optimization_targets', ['caching', 'garbage_collection'])
+        memory_limit = params.get('memory_limit', '2GB')
+
+        logging.info(f"Optimizing memory usage: targets={targets}, limit={memory_limit}")
+
+        for target in targets:
+            if target == 'caching':
+                # Optimize cache eviction policies
+                logging.info("Optimized cache eviction policies")
+            elif target == 'garbage_collection':
+                # Tune garbage collection settings
+                logging.info("Tuned garbage collection settings")
+            elif target == 'buffer_sizes':
+                # Optimize buffer sizes
+                logging.info("Optimized buffer sizes")
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Failed to optimize memory usage: {str(e)}")
+        return False
+
+
+def optimize_event_processing(params: dict[str, Any]) -> bool:
+    """
+    Optimize event processing pipeline for better throughput.
+
+    Args:
+        params: Parameters including batch_size, parallel_workers
+
+    Returns:
+        True if processing was successfully optimized
+    """
+    try:
+        batch_size = params.get('batch_size', 100)
+        parallel_workers = params.get('parallel_workers', 4)
+
+        logging.info(f"Optimizing event processing: batch_size={batch_size}, workers={parallel_workers}")
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Failed to optimize event processing: {str(e)}")
+        return False
 
 
 class PerformanceMitigationStrategies:
     """Mitigation strategies for performance-related risks"""
-    
-    @staticmethod
-    def scale_processing_capacity(params: dict[str, Any]) -> bool:
-        """
-        Scale out processing capacity to handle increased load.
-        
-        Args:
-            params: Parameters including target_capacity, scaling_type
-            
-        Returns:
-            True if scaling was successful
-        """
-        try:
-            target_capacity = params.get('target_capacity', 2)
-            scaling_type = params.get('scaling_type', 'horizontal')
-            
-            logging.info(f"Scaling processing capacity: {scaling_type} to {target_capacity}x")
-            
-            if scaling_type == 'horizontal':
-                pass
-            elif scaling_type == 'vertical':
-                pass
-            
-            return True
-            
-        except Exception as e:
-            logging.error(f"Failed to scale processing capacity: {str(e)}")
-            return False
-    
-    @staticmethod
-    def optimize_memory_usage(params: dict[str, Any]) -> bool:
-        """
-        Optimize memory usage to reduce consumption.
-        
-        Args:
-            params: Parameters including optimization_targets, memory_limit
-            
-        Returns:
-            True if memory was successfully optimized
-        """
-        try:
-            targets = params.get('optimization_targets', ['caching', 'garbage_collection'])
-            memory_limit = params.get('memory_limit', '2GB')
-            
-            logging.info(f"Optimizing memory usage: targets={targets}, limit={memory_limit}")
-            
-            for target in targets:
-                if target == 'caching':
-                    # Optimize cache eviction policies
-                    logging.info("Optimized cache eviction policies")
-                elif target == 'garbage_collection':
-                    # Tune garbage collection settings
-                    logging.info("Tuned garbage collection settings")
-                elif target == 'buffer_sizes':
-                    # Optimize buffer sizes
-                    logging.info("Optimized buffer sizes")
-            
-            return True
-            
-        except Exception as e:
-            logging.error(f"Failed to optimize memory usage: {str(e)}")
-            return False
-    
-    @staticmethod
-    def optimize_event_processing(params: dict[str, Any]) -> bool:
-        """
-        Optimize event processing pipeline for better throughput.
-        
-        Args:
-            params: Parameters including batch_size, parallel_workers
-            
-        Returns:
-            True if processing was successfully optimized
-        """
-        try:
-            batch_size = params.get('batch_size', 100)
-            parallel_workers = params.get('parallel_workers', 4)
-            
-            logging.info(f"Optimizing event processing: batch_size={batch_size}, workers={parallel_workers}")
-            
-            return True
-            
-        except Exception as e:
-            logging.error(f"Failed to optimize event processing: {str(e)}")
-            return False
+
+
+def implement_state_pruning(params: dict[str, Any]) -> bool:
+    """
+    Implement world state pruning to reduce storage size.
+
+    Args:
+        params: Parameters including retention_policy, pruning_interval
+
+    Returns:
+        True if pruning was successfully implemented
+    """
+    try:
+        retention_days = params.get('retention_days', 90)
+        pruning_interval = params.get('pruning_interval', 86400)  # daily
+
+        logging.info(f"Implementing state pruning: retain {retention_days} days, interval {pruning_interval}s")
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Failed to implement state pruning: {str(e)}")
+        return False
+
+
+def execute_backup(params: dict[str, Any]) -> bool:
+    """
+    Execute immediate backup of critical data.
+
+    Args:
+        params: Parameters including backup_target, compression
+
+    Returns:
+        True if backup was successful
+    """
+    try:
+        backup_target = params.get('backup_target', '/backup/blockchain')
+        compression = params.get('compression', True)
+
+        logging.info(f"Executing backup to {backup_target}, compression={compression}")
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Failed to execute backup: {str(e)}")
+        return False
+
+
+def optimize_storage_indices(params: dict[str, Any]) -> bool:
+    """
+    Optimize storage indices for better query performance.
+
+    Args:
+        params: Parameters including index_types, rebuild_existing
+
+    Returns:
+        True if indices were successfully optimized
+    """
+    try:
+        index_types = params.get('index_types', ['entity_id', 'timestamp'])
+        rebuild_existing = params.get('rebuild_existing', False)
+
+        logging.info(f"Optimizing storage indices: types={index_types}, rebuild={rebuild_existing}")
+
+        for index_type in index_types:
+            logging.info(f"Optimized index: {index_type}")
+
+        return True
+
+    except Exception as e:
+        logging.error(f"Failed to optimize storage indices: {str(e)}")
+        return False
 
 
 class StorageMitigationStrategies:
     """Mitigation strategies for storage-related risks"""
-    
-    @staticmethod
-    def implement_state_pruning(params: dict[str, Any]) -> bool:
-        """
-        Implement world state pruning to reduce storage size.
-        
-        Args:
-            params: Parameters including retention_policy, pruning_interval
-            
-        Returns:
-            True if pruning was successfully implemented
-        """
-        try:
-            retention_days = params.get('retention_days', 90)
-            pruning_interval = params.get('pruning_interval', 86400)  # daily
-            
-            logging.info(f"Implementing state pruning: retain {retention_days} days, interval {pruning_interval}s")
-            
-            return True
-            
-        except Exception as e:
-            logging.error(f"Failed to implement state pruning: {str(e)}")
-            return False
-    
-    @staticmethod
-    def execute_backup(params: dict[str, Any]) -> bool:
-        """
-        Execute immediate backup of critical data.
-        
-        Args:
-            params: Parameters including backup_target, compression
-            
-        Returns:
-            True if backup was successful
-        """
-        try:
-            backup_target = params.get('backup_target', '/backup/blockchain')
-            compression = params.get('compression', True)
-            
-            logging.info(f"Executing backup to {backup_target}, compression={compression}")
-            
-            return True
-            
-        except Exception as e:
-            logging.error(f"Failed to execute backup: {str(e)}")
-            return False
-    
-    @staticmethod
-    def optimize_storage_indices(params: dict[str, Any]) -> bool:
-        """
-        Optimize storage indices for better query performance.
-        
-        Args:
-            params: Parameters including index_types, rebuild_existing
-            
-        Returns:
-            True if indices were successfully optimized
-        """
-        try:
-            index_types = params.get('index_types', ['entity_id', 'timestamp'])
-            rebuild_existing = params.get('rebuild_existing', False)
-            
-            logging.info(f"Optimizing storage indices: types={index_types}, rebuild={rebuild_existing}")
-            
-            for index_type in index_types:
-                logging.info(f"Optimized index: {index_type}")
-            
-            return True
-            
-        except Exception as e:
-            logging.error(f"Failed to optimize storage indices: {str(e)}")
-            return False
+
+
+def _initialize_actions() -> dict[str, MitigationAction]:
+    """Initialize available mitigation actions."""
+    actions: dict[str, MitigationAction] = {
+        # Consensus mitigation actions
+        'add_validator_nodes': MitigationAction(
+            action_id='add_validator_nodes',
+            description='Add validator nodes to meet BFT requirements',
+            execution_function=ConsensusMitigationStrategies.add_validator_nodes,
+            priority=1,
+            estimated_duration=300,  # 5 minutes
+            requires_downtime=False
+        ),
+
+        'optimize_leader_timeout': MitigationAction(
+            action_id='optimize_leader_timeout',
+            description='Optimize leader timeout settings',
+            execution_function=ConsensusMitigationStrategies.optimize_leader_timeout,
+            priority=3,
+            estimated_duration=60,
+            requires_downtime=False
+        ),
+
+        'strengthen_message_verification': MitigationAction(
+            action_id='strengthen_message_verification',
+            description='Strengthen message verification mechanisms',
+            execution_function=ConsensusMitigationStrategies.strengthen_message_verification,
+            priority=2,
+            estimated_duration=120,
+            requires_downtime=True
+        ),
+
+        # Security mitigation actions
+        'renew_certificates': MitigationAction(
+            action_id='renew_certificates',
+            description='Renew expiring or expired certificates',
+            execution_function=renew_certificates,
+            priority=1,
+            estimated_duration=180,
+            requires_downtime=False
+        ),
+
+        'implement_rate_limiting': MitigationAction(
+            action_id='implement_rate_limiting',
+            description='Implement authentication rate limiting',
+            execution_function=implement_rate_limiting,
+            priority=2,
+            estimated_duration=60,
+            requires_downtime=False
+        ),
+
+        'upgrade_encryption': MitigationAction(
+            action_id='upgrade_encryption',
+            description='Upgrade encryption to stronger standards',
+            execution_function=upgrade_encryption,
+            priority=2,
+            estimated_duration=240,
+            requires_downtime=True
+        ),
+
+        # Performance mitigation actions
+        'scale_processing_capacity': MitigationAction(
+            action_id='scale_processing_capacity',
+            description='Scale processing capacity to handle load',
+            execution_function=scale_processing_capacity,
+            priority=2,
+            estimated_duration=300,
+            requires_downtime=False
+        ),
+
+        'optimize_memory_usage': MitigationAction(
+            action_id='optimize_memory_usage',
+            description='Optimize memory usage patterns',
+            execution_function=optimize_memory_usage,
+            priority=3,
+            estimated_duration=120,
+            requires_downtime=False
+        ),
+
+        # Storage mitigation actions
+        'implement_state_pruning': MitigationAction(
+            action_id='implement_state_pruning',
+            description='Implement world state pruning',
+            execution_function=implement_state_pruning,
+            priority=3,
+            estimated_duration=600,  # 10 minutes
+            requires_downtime=False
+        ),
+
+        'execute_backup': MitigationAction(
+            action_id='execute_backup',
+            description='Execute immediate data backup',
+            execution_function=execute_backup,
+            priority=1,
+            estimated_duration=1800,  # 30 minutes
+            requires_downtime=False
+        )
+    }
+
+    return actions
 
 
 class MitigationManager:
@@ -413,111 +506,10 @@ class MitigationManager:
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
-        self.mitigation_actions = self._initialize_actions()
+        self.mitigation_actions = _initialize_actions()
         self.execution_history: list[MitigationResult] = []
         self.active_mitigations: dict[str, threading.Thread] = {}
-        
-    @staticmethod
-    def _initialize_actions() -> dict[str, MitigationAction]:
-        """Initialize available mitigation actions."""
-        actions: dict[str, MitigationAction] = {
-            # Consensus mitigation actions
-            'add_validator_nodes': MitigationAction(
-                action_id='add_validator_nodes',
-                description='Add validator nodes to meet BFT requirements',
-                execution_function=ConsensusMitigationStrategies.add_validator_nodes,
-                priority=1,
-                estimated_duration=300,  # 5 minutes
-                requires_downtime=False
-            ),
-            
-            'optimize_leader_timeout': MitigationAction(
-                action_id='optimize_leader_timeout',
-                description='Optimize leader timeout settings',
-                execution_function=ConsensusMitigationStrategies.optimize_leader_timeout,
-                priority=3,
-                estimated_duration=60,
-                requires_downtime=False
-            ),
-            
-            'strengthen_message_verification': MitigationAction(
-                action_id='strengthen_message_verification',
-                description='Strengthen message verification mechanisms',
-                execution_function=ConsensusMitigationStrategies.strengthen_message_verification,
-                priority=2,
-                estimated_duration=120,
-                requires_downtime=True
-            ),
-            
-            # Security mitigation actions
-            'renew_certificates': MitigationAction(
-                action_id='renew_certificates',
-                description='Renew expiring or expired certificates',
-                execution_function=SecurityMitigationStrategies.renew_certificates,
-                priority=1,
-                estimated_duration=180,
-                requires_downtime=False
-            ),
-            
-            'implement_rate_limiting': MitigationAction(
-                action_id='implement_rate_limiting',
-                description='Implement authentication rate limiting',
-                execution_function=SecurityMitigationStrategies.implement_rate_limiting,
-                priority=2,
-                estimated_duration=60,
-                requires_downtime=False
-            ),
-            
-            'upgrade_encryption': MitigationAction(
-                action_id='upgrade_encryption',
-                description='Upgrade encryption to stronger standards',
-                execution_function=SecurityMitigationStrategies.upgrade_encryption,
-                priority=2,
-                estimated_duration=240,
-                requires_downtime=True
-            ),
-            
-            # Performance mitigation actions
-            'scale_processing_capacity': MitigationAction(
-                action_id='scale_processing_capacity',
-                description='Scale processing capacity to handle load',
-                execution_function=PerformanceMitigationStrategies.scale_processing_capacity,
-                priority=2,
-                estimated_duration=300,
-                requires_downtime=False
-            ),
-            
-            'optimize_memory_usage': MitigationAction(
-                action_id='optimize_memory_usage',
-                description='Optimize memory usage patterns',
-                execution_function=PerformanceMitigationStrategies.optimize_memory_usage,
-                priority=3,
-                estimated_duration=120,
-                requires_downtime=False
-            ),
-            
-            # Storage mitigation actions
-            'implement_state_pruning': MitigationAction(
-                action_id='implement_state_pruning',
-                description='Implement world state pruning',
-                execution_function=StorageMitigationStrategies.implement_state_pruning,
-                priority=3,
-                estimated_duration=600,  # 10 minutes
-                requires_downtime=False
-            ),
-            
-            'execute_backup': MitigationAction(
-                action_id='execute_backup',
-                description='Execute immediate data backup',
-                execution_function=StorageMitigationStrategies.execute_backup,
-                priority=1,
-                estimated_duration=1800,  # 30 minutes
-                requires_downtime=False
-            )
-        }
-        
-        return actions
-    
+
     def create_mitigation_plan(self, risks: list[RiskAssessment]) -> list[Tuple[MitigationAction, dict[str, Any]]]:
         """
         Create mitigation plan based on identified risks.
