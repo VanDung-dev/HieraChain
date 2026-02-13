@@ -13,8 +13,28 @@ from typing import Any
 from hierachain.storage.memory_storage import MemoryStorage
 
 
+def _extract_events(block) -> list:
+    """Extract events from block, handling different block formats."""
+    if hasattr(block, 'to_event_list'):
+        return block.to_event_list()
+    if hasattr(block, 'events'):
+        return block.events
+    return block.get('events', [])
+
+
 class WorldState:
     """Simplified World State mechanism for HieraChain"""
+    
+    # Event handlers mapping
+    _EVENT_HANDLERS = {
+        "creation": lambda event: {
+            "created_at": event["timestamp"],
+            "status": "active"
+        },
+        "update": lambda event: event.get("updates", {}),
+        "status_change": lambda event: {"status": event["new_status"]},
+    }
+    
     def __init__(self, chain_name: str, storage_backend=None):
         """
         chain_name: Chain name
@@ -29,37 +49,32 @@ class WorldState:
         """Set up indexes for frequent queries"""
         self.storage.create_index("entity_id")
         self.storage.create_index("timestamp")
+
+    def _apply_event_to_state(self, current_state: dict, event: dict) -> dict:
+        """Apply a single event to the current state."""
+        event_type = event.get("event")
+        handler = self._EVENT_HANDLERS.get(event_type)
+        
+        if handler:
+            current_state.update(handler(event))
+        
+        current_state["last_updated"] = event["timestamp"]
+        return current_state
     
     def update_from_block(self, block):
         """Update world state from new block"""
-        # Handle both Arrow-based Blocks and legacy/dict inputs
-        if hasattr(block, 'to_event_list'):
-            events = block.to_event_list()
-        elif hasattr(block, 'events'):
-            events = block.events
-        else:
-            # Fallback for dict representation
-             events = block.get('events', [])
-
+        events = _extract_events(block)
+        
         for event in events:
-            if "entity_id" in event:
-                entity_key = f"{self.chain_name}:{event['entity_id']}"
-                current_state = self.storage.get(entity_key) or {}
-                
-                # Update state based on event type
-                if event["event"] == "creation":
-                    current_state.update({
-                        "created_at": event["timestamp"],
-                        "status": "active"
-                    })
-                elif event["event"] == "update":
-                    current_state.update(event.get("updates", {}))
-                elif event["event"] == "status_change":
-                    current_state["status"] = event["new_status"]
-                
-                current_state["last_updated"] = event["timestamp"]
-                self.storage.set(entity_key, current_state)
-                self.state_cache[entity_key] = current_state
+            if "entity_id" not in event:
+                continue
+            
+            entity_key = f"{self.chain_name}:{event['entity_id']}"
+            current_state = self.storage.get(entity_key) or {}
+            current_state = self._apply_event_to_state(current_state, event)
+            
+            self.storage.set(entity_key, current_state)
+            self.state_cache[entity_key] = current_state
     
     def get_entity_state(self, entity_id: str) -> dict[str, Any] | None:
         """Get current state of entity"""
