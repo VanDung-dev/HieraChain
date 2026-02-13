@@ -9,12 +9,15 @@ import os
 import json
 import shutil
 import hashlib
-import logging
 import secrets
+import base64
+import binascii
 from datetime import datetime, timedelta
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-logger = logging.getLogger(__name__)
+from hierachain.security.secure_logging import get_security_logger
+
+logger = get_security_logger()
 
 
 class BackupError(Exception):
@@ -35,6 +38,112 @@ class IntegrityError(Exception):
 class ValidationError(Exception):
     """Raised when key validation fails."""
     pass
+
+
+def _initialize_master_key() -> bytes:
+    """Initialize or load the master encryption key."""
+    key_file = os.path.join("config", "master_backup_key.key")
+
+    if os.path.exists(key_file):
+        return _load_existing_master_key(key_file)
+    
+    return _generate_new_master_key(key_file)
+
+
+def _load_existing_master_key(key_file: str) -> bytes:
+    """Load and process an existing master key file."""
+    with open(key_file, "rb") as f:
+        key = f.read()
+        
+    # Handle legacy Fernet keys (44 bytes base64)
+    if len(key) == 44:
+        try:
+            decoded_key = base64.urlsafe_b64decode(key)
+            if len(decoded_key) == 32:
+                return decoded_key
+        except (ValueError, binascii.Error):
+            # If it's not valid base64, treat as raw key
+            pass
+            
+    return key
+
+
+def _generate_new_master_key(key_file: str) -> bytes:
+    """Generate a new master key and save it securely."""
+    # Generate new 256-bit master key for AES-GCM
+    key = secrets.token_bytes(32)
+    os.makedirs(os.path.dirname(key_file), exist_ok=True)
+    
+    with open(key_file, "wb") as f:
+        f.write(key)
+        
+    # Try to set permissions, though chmod has limited effect on Windows
+    try:
+        os.chmod(key_file, 0o600)
+    except OSError as e:
+        logger.debug(f"Could not set file permissions on {key_file}: {e}")
+        
+    logger.info("Generated new master backup encryption key")
+    return key
+
+
+def _validate_keys(public_key: bytes, private_key: bytes, _key_type: str) -> bool:
+    """
+    Validate restored keys to ensure they're valid and properly paired.
+
+    Args:
+        public_key: Public key bytes
+        private_key: Private key bytes
+        _key_type: Type of key being validated
+
+    Returns:
+        bool: True if keys are valid
+    """
+    try:
+        # Basic validation - ensure keys are not empty
+        if not public_key or not private_key:
+            return False
+
+        # For demonstration, we'll do basic length checks
+        # In practice, you'd deserialize and validate the actual cryptographic keys
+        if len(public_key) < 32 or len(private_key) < 32:
+            return False
+
+        # Additional validation could include:
+        # - Deserializing keys using cryptography library
+        # - Verifying key pair relationship
+        # - Checking key format and parameters
+
+        return True
+
+    except Exception as e:
+        logger.error(f"Key validation failed: {str(e)}")
+        return False
+
+
+def _apply_restored_keys(public_key: bytes, private_key: bytes, key_type: str):
+    """
+    Integrate restored keys into the system.
+
+    This method would update the relevant system components with restored keys,
+    such as consensus mechanisms, MSP configurations, or identity providers.
+    """
+    # Implementation depends on key type and system architecture
+    # For now, this is a placeholder for system integration
+    logger.info(f"Applied restored {key_type} keys to system (public: {len(public_key)}b, private: {len(private_key)}b)")
+
+
+def _log_backup_success(backup_id: str, hash_value: str, locations: list[str]):
+    """Log successful backup operation."""
+    log_entry = {
+        "event_type": "key_backup_success",
+        "backup_id": backup_id,
+        "hash": hash_value,
+        "locations": locations,
+        "timestamp": datetime.now().isoformat(),
+        "source": "KeyBackupManager"
+    }
+    logger.info("Key backup successful", extra=log_entry)
 
 
 class KeyBackupManager:
@@ -70,7 +179,7 @@ class KeyBackupManager:
         self.auto_restore_threshold = self.config.get('auto_restore_threshold', 1)
         
         # Generate or load master encryption key for backup encryption
-        self.encryption_key = self._initialize_master_key()
+        self.encryption_key = _initialize_master_key()
         
         # Create backup directory if it doesn't exist
         self.backup_dir = "backups/keys"
@@ -148,7 +257,7 @@ class KeyBackupManager:
             # Clean up old backups according to retention policy
             self._cleanup_old_backups()
             
-            self._log_backup_success(backup_id, hash_value, distributed_locations)
+            _log_backup_success(backup_id, hash_value, distributed_locations)
             logger.info(f"Successfully backed up {key_type} keys with ID: {backup_id}")
             
             return backup_id
@@ -196,11 +305,11 @@ class KeyBackupManager:
             private_key = bytes.fromhex(backup_data["private_key"])
             
             # Validate restored keys
-            if not self._validate_keys(public_key, private_key, backup_data.get("key_type", "default")):
+            if not _validate_keys(public_key, private_key, backup_data.get("key_type", "default")):
                 raise ValidationError("Restored keys failed validation")
             
             # Apply restored keys to system
-            self._apply_restored_keys(public_key, private_key, backup_data.get("key_type", "default"))
+            _apply_restored_keys(public_key, private_key, backup_data.get("key_type", "default"))
             
             logger.info(f"Successfully restored keys from backup: {backup_id}")
             return {"public_key": public_key, "private_key": private_key}
@@ -254,39 +363,7 @@ class KeyBackupManager:
         except Exception as e:
             logger.error(f"Backup integrity verification failed for {backup_id}: {str(e)}")
             return False
-    
-    @staticmethod
-    def _initialize_master_key() -> bytes:
-        """Initialize or load the master encryption key."""
-        key_file = os.path.join("config", "master_backup_key.key")
-        
-        if os.path.exists(key_file):
-            with open(key_file, "rb") as f:
-                key = f.read()
-                # Handle legacy Fernet keys (44 bytes base64)
-                if len(key) == 44:
-                    import base64
-                    try:
-                        decoded_key = base64.urlsafe_b64decode(key)
-                        if len(decoded_key) == 32:
-                            return decoded_key
-                    except Exception:
-                        pass
-                return key
-        else:
-            # Generate new 256-bit master key for AES-GCM
-            key = secrets.token_bytes(32)
-            os.makedirs(os.path.dirname(key_file), exist_ok=True)
-            with open(key_file, "wb") as f:
-                f.write(key)
-            # Try to set permissions, though chmod has limited effect on Windows
-            try:
-                os.chmod(key_file, 0o600)
-            except Exception:
-                pass
-            logger.info("Generated new master backup encryption key")
-            return key
-    
+
     def _encrypt_backup_data(self, data: dict) -> bytes:
         """Encrypt backup data using AES-256-GCM."""
         aesgcm = AESGCM(self.encryption_key)
@@ -382,53 +459,7 @@ class KeyBackupManager:
         # Remove from metadata
         del self.metadata[backup_id]
         self._save_metadata()
-    
-    @staticmethod
-    def _validate_keys(public_key: bytes, private_key: bytes, _key_type: str) -> bool:
-        """
-        Validate restored keys to ensure they're valid and properly paired.
-        
-        Args:
-            public_key: Public key bytes
-            private_key: Private key bytes
-            _key_type: Type of key being validated
-            
-        Returns:
-            bool: True if keys are valid
-        """
-        try:
-            # Basic validation - ensure keys are not empty
-            if not public_key or not private_key:
-                return False
-            
-            # For demonstration, we'll do basic length checks
-            # In practice, you'd deserialize and validate the actual cryptographic keys
-            if len(public_key) < 32 or len(private_key) < 32:
-                return False
-            
-            # Additional validation could include:
-            # - Deserializing keys using cryptography library
-            # - Verifying key pair relationship
-            # - Checking key format and parameters
-            
-            return True
-            
-        except Exception as e:
-            logger.error(f"Key validation failed: {str(e)}")
-            return False
-    
-    @staticmethod
-    def _apply_restored_keys(_public_key: bytes, _private_key: bytes, key_type: str):
-        """
-        Integrate restored keys into the system.
-        
-        This method would update the relevant system components with restored keys,
-        such as consensus mechanisms, MSP configurations, or identity providers.
-        """
-        # Implementation depends on key type and system architecture
-        # For now, this is a placeholder for system integration
-        logger.info(f"Applied restored {key_type} keys to system")
-    
+
     def _find_backup_file(self, backup_id: str) -> str | None:
         """Find the backup file for given backup ID."""
         metadata = self.metadata.get(backup_id)
@@ -476,19 +507,6 @@ class KeyBackupManager:
         """Update metadata for a backup."""
         self.metadata[backup_id] = metadata
         self._save_metadata()
-    
-    @staticmethod
-    def _log_backup_success(backup_id: str, hash_value: str, locations: list[str]):
-        """Log successful backup operation."""
-        log_entry = {
-            "event_type": "key_backup_success",
-            "backup_id": backup_id,
-            "hash": hash_value,
-            "locations": locations,
-            "timestamp": datetime.now().isoformat(),
-            "source": "KeyBackupManager"
-        }
-        logger.info("Key backup successful", extra=log_entry)
 
 
 # Factory function for creating configured KeyBackupManager
@@ -503,21 +521,3 @@ def create_key_backup_manager(configuration: dict) -> KeyBackupManager:
         KeyBackupManager: Configured instance
     """
     return KeyBackupManager(configuration)
-
-
-if __name__ == "__main__":
-    # Example usage
-    config = {
-        "enabled": True,
-        "frequency": "daily",
-        "encryption_algorithm": "AES-256-GCM",
-        "locations": ["primary_vault", "secondary_cloud"],
-        "integrity_check": "sha512",
-        "retention_period": 365
-    }
-    
-    manager = KeyBackupManager(config)
-    print("KeyBackupManager initialized with configuration:")
-    print(f"- Encryption: {manager.encryption_algorithm}")
-    print(f"- Locations: {manager.locations}")
-    print(f"- Retention: {manager.retention_period} days")
