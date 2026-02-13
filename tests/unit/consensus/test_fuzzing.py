@@ -10,7 +10,7 @@ import time
 import pytest
 from hypothesis import given, strategies as st, settings, HealthCheck
 
-from hierachain.consensus.ordering_service import (
+from hierachain.consensus import (
     OrderingService,
     OrderingNode,
     OrderingStatus,

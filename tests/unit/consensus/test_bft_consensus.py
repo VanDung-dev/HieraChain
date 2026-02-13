@@ -9,7 +9,8 @@ import time
 
 from hierachain.hierarchical.consensus.bft_consensus import (
     BFTConsensus, create_bft_network, ConsensusError,
-    BFTMessage, MessageType
+    BFTMessage, MessageType, sign_message, verify_message_signature,
+    _validate_consensus_message
 )
 from hierachain.security.security_utils import KeyPair
 from hierachain.error_mitigation.validator import ConsensusValidator
@@ -36,10 +37,14 @@ test_message = BFTMessage(
     sender_id="node_1",
     timestamp=time.time(),
     signature="",
-    data={"test": "data"}
+    data={"test": "data"},
+    nonce="test-nonce"
 )
 # Sign with real key
-test_message.signature = network["node_1"]._sign_message(test_message.get_signable_payload())
+test_message.signature = sign_message(
+    network["node_1"].key_provider,
+    test_message.get_signable_payload()
+)
 
 def test_bft_network_creation():
     """Test creation of BFT network"""
@@ -95,7 +100,7 @@ def test_bft_primary_determination():
 
     # In view 0, primary should be node_1 (first in sorted list)
     assert bft._primary() == "node_1"
-    assert bft._is_primary() is True
+    assert (bft.node_id == bft._primary()) is True
 
     # Test with different node
     bft2 = BFTConsensus(
@@ -106,7 +111,7 @@ def test_bft_primary_determination():
         node_public_keys=public_keys
     )
     assert bft2._primary() == "node_1"  # Still node_1 in view 0
-    assert bft2._is_primary() is False  # node_2 is not primary
+    assert (bft2.node_id == bft2._primary()) is False  # node_2 is not primary
 
 
 def test_consensus_validator_integration():
@@ -276,7 +281,11 @@ def test_bft_with_slow_nodes():
     assert hasattr(slow_node, '_log_node_behavior')
 
     # Test message validation
-    is_valid = normal_node._validate_message(test_message)
+    is_valid = _validate_consensus_message(
+        test_message, normal_node.all_nodes, normal_node.node_public_keys,
+        normal_node.verification_strictness, normal_node.view_change_timeout,
+        normal_node._log_node_behavior
+    )
     # Should be valid
     assert is_valid is True
 
@@ -298,7 +307,11 @@ def test_bft_with_silent_nodes():
     assert hasattr(silent_node, '_log_node_behavior')
 
     # Test message validation
-    is_valid = normal_node._validate_message(test_message)
+    is_valid = _validate_consensus_message(
+        test_message, normal_node.all_nodes, normal_node.node_public_keys,
+        normal_node.verification_strictness, normal_node.view_change_timeout,
+        normal_node._log_node_behavior
+    )
     # Should be valid
     assert is_valid is True
 
@@ -322,10 +335,14 @@ def test_bft_with_malicious_nodes():
         sender_id="node_1",
         timestamp=time.time(),
         signature="",
-        data={"test": "data"}
+        data={"test": "data"},
+        nonce="normal-nonce"
     )
     # Sign with real key
-    normal_message.signature = network["node_1"]._sign_message(normal_message.get_signable_payload())
+    normal_message.signature = sign_message(
+        network["node_1"].key_provider,
+        normal_message.get_signable_payload()
+    )
 
     # Test invalid signature message (simulating malicious behavior)
     invalid_message = BFTMessage(
@@ -335,14 +352,17 @@ def test_bft_with_malicious_nodes():
         sender_id="node_1",
         timestamp=time.time(),
         signature="invalid_signature",  # Invalid signature
-        data={"test": "data"}
+        data={"test": "data"},
+        nonce="invalid-nonce"
     )
 
     normal_node = network["node_3"]
     malicious_node = network["node_2"]
 
     # Test normal signature verification
-    valid_signature_result = normal_node._verify_signature(normal_message)
+    valid_signature_result = verify_message_signature(
+        normal_message, normal_node.node_public_keys
+    )
     assert valid_signature_result is True  # Normal signature should be valid
 
     # Test that malicious behavior detection works
@@ -359,7 +379,11 @@ def test_bft_with_malicious_nodes():
 
     # Test message validation with invalid signature
     # This should trigger malicious node detection
-    is_valid = normal_node._validate_message(invalid_message)
+    is_valid = _validate_consensus_message(
+        invalid_message, normal_node.all_nodes, normal_node.node_public_keys,
+        normal_node.verification_strictness, normal_node.view_change_timeout,
+        normal_node._log_node_behavior
+    )
     # Depending on verification_strictness, this might be False or True with logging
     # But the important thing is that it doesn't break the system
     assert is_valid in [True, False]  # Either result is acceptable
@@ -500,7 +524,9 @@ def test_bft_with_complex_byzantine_attacks():
     )
 
     # Test signature verification
-    is_valid = normal_node._verify_signature(malicious_message)
+    is_valid = verify_message_signature(
+        malicious_message, normal_node.node_public_keys
+    )
     assert is_valid is False  # Should detect invalid signature
 
     # Test that invalid signatures are logged as malicious behavior
