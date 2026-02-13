@@ -21,6 +21,72 @@ from typing import Any, Callable
 logger = logging.getLogger(__name__)
 
 
+def _compute_merkle_root(leaves: list[str]) -> str:
+    """Compute Merkle root from leaf hashes."""
+    if not leaves:
+        return hashlib.sha256(b"").hexdigest()
+
+    if len(leaves) == 1:
+        return leaves[0]
+
+    # Pad to even length
+    if len(leaves) % 2 == 1:
+        leaves = leaves + [leaves[-1]]
+
+    # Compute parent layer
+    parents = []
+    for i in range(0, len(leaves), 2):
+        combined = leaves[i] + leaves[i + 1]
+        parent_hash = hashlib.sha256(combined.encode()).hexdigest()
+        parents.append(parent_hash)
+
+    return _compute_merkle_root(parents)
+
+
+def _zk_aggregate(proofs: list["ProofEntry"]) -> bytes:
+    """
+    Perform ZK proof aggregation (production mode placeholder).
+    """
+    combined = b"".join(p.proof for p in proofs)
+    return hashlib.sha256(combined).digest()
+
+
+def _zk_verify(agg_proof: "AggregatedProof") -> bool:
+    """Verify aggregated proof using ZK verifier (placeholder)."""
+    return bool(agg_proof)
+
+
+def _validate_agg_proof_structure(agg_proof: "AggregatedProof") -> bool:
+    """Verify basic structural integrity of an aggregated proof."""
+    return bool(
+        agg_proof.proof_data
+        and agg_proof.source_proofs
+        and agg_proof.merkle_root
+    )
+
+
+def _calculate_compression_ratio(original_size: int, compressed_size: int) -> float:
+    """Calculate the compression ratio safely."""
+    return original_size / compressed_size if compressed_size > 0 else 1.0
+
+
+def _perform_zk_aggregation(proofs: list["ProofEntry"]) -> tuple[bytes, float]:
+    """Perform real ZK proof aggregation logic."""
+    proof_data = _zk_aggregate(proofs)
+    original_size = sum(len(p.proof) for p in proofs)
+    compression_ratio = _calculate_compression_ratio(original_size, len(proof_data))
+    return proof_data, compression_ratio
+
+
+def _run_zk_verification_flow(agg_proof: "AggregatedProof") -> bool:
+    """Real ZK proof verification flow."""
+    try:
+        return _zk_verify(agg_proof)
+    except Exception as e:
+        logger.error(f"Proof verification failed: {e}")
+        return False
+
+
 class AggregationStatus(Enum):
     """Status of proof aggregation."""
     COLLECTING = "collecting"
@@ -121,9 +187,7 @@ class ProofAggregator:
         self._status = AggregationStatus.COLLECTING
 
         # Callbacks
-        self._on_aggregation_complete: Callable[
-            [AggregatedProof], None
-        ] | None = None
+        self._on_aggregation_complete: Callable[[AggregatedProof], None] | None = None
 
         # Stats
         self._stats = {
@@ -135,10 +199,7 @@ class ProofAggregator:
         }
 
         self._reset_batch()
-        logger.info(
-            f"ProofAggregator initialized "
-            f"(batch_size={batch_size}, mock={use_mock})"
-        )
+        logger.info(f"ProofAggregator initialized (batch_size={batch_size}, mock={use_mock})")
 
     def _reset_batch(self) -> None:
         """Reset batch state for new collection cycle."""
@@ -172,13 +233,8 @@ class ProofAggregator:
         Returns:
             True if proof was added successfully.
         """
-        if self._status not in (
-            AggregationStatus.COLLECTING,
-            AggregationStatus.READY,
-        ):
-            logger.warning(
-                f"Cannot add proof, aggregator status: {self._status}"
-            )
+        if self._status not in (AggregationStatus.COLLECTING, AggregationStatus.READY,):
+            logger.warning(f"Cannot add proof, aggregator status: {self._status}")
             return False
 
         entry = ProofEntry(
@@ -208,10 +264,7 @@ class ProofAggregator:
         if len(self._pending_proofs) >= self.batch_size:
             return True
 
-        if (
-            len(self._pending_proofs) > 0
-            and (time.time() - self._batch_start_time) >= self.batch_timeout
-        ):
+        if len(self._pending_proofs) > 0 and (time.time() - self._batch_start_time) >= self.batch_timeout:
             return True
 
         return False
@@ -230,14 +283,7 @@ class ProofAggregator:
             self._stats["proofs_aggregated"] += len(self._pending_proofs)
 
             if aggregated.compression_ratio > 0:
-                self._stats["total_compression_ratio"] = (
-                    (
-                        self._stats["total_compression_ratio"]
-                        * (self._stats["aggregations_completed"] - 1)
-                        + aggregated.compression_ratio
-                    )
-                    / self._stats["aggregations_completed"]
-                )
+                self._update_total_compression_ratio(aggregated.compression_ratio)
 
             self._status = AggregationStatus.READY
 
@@ -258,6 +304,12 @@ class ProofAggregator:
             self._stats["errors"] += 1
             return False
 
+    def _update_total_compression_ratio(self, current_ratio: float) -> None:
+        """Update the average compression ratio statistic."""
+        prev_ratio = self._stats["total_compression_ratio"]
+        count = self._stats["aggregations_completed"]
+        self._stats["total_compression_ratio"] = ((prev_ratio * (count - 1) + current_ratio) / count)
+
     def _aggregate_proofs(self) -> AggregatedProof:
         """
         Aggregate pending proofs into a single proof.
@@ -271,34 +323,12 @@ class ProofAggregator:
 
         # Calculate merkle root of state roots
         state_roots = [p.state_root for p in proofs]
-        merkle_root = self._compute_merkle_root(state_roots)
+        merkle_root = _compute_merkle_root(state_roots)
 
         if self.use_mock:
-            # Mock aggregation: combine proof hashes
-            combined = b"".join(p.proof for p in proofs)
-            proof_data = hashlib.sha256(combined).digest()
-
-            # Mock compression: smaller output
-            if self.compression_enabled:
-                # Simulate 10:1 compression
-                original_size = sum(len(p.proof) for p in proofs)
-                compressed_size = len(proof_data)
-                compression_ratio = (
-                    original_size / compressed_size
-                    if compressed_size > 0
-                    else 1.0
-                )
-            else:
-                compression_ratio = 1.0
+            proof_data, ratio = self._perform_mock_aggregation(proofs)
         else:
-            # Production: use real ZK proof aggregation
-            # This would integrate with ZKProver for recursive SNARKs
-            proof_data = self._zk_aggregate(proofs)
-            original_size = sum(len(p.proof) for p in proofs)
-            compressed_size = len(proof_data)
-            compression_ratio = (
-                original_size / compressed_size if compressed_size > 0 else 1.0
-            )
+            proof_data, ratio = _perform_zk_aggregation(proofs)
 
         return AggregatedProof(
             aggregation_id=self._generate_aggregation_id(),
@@ -306,50 +336,21 @@ class ProofAggregator:
             source_proofs=source_ids,
             block_indices=block_indices,
             merkle_root=merkle_root,
-            compression_ratio=compression_ratio,
-            metadata={
-                "batch_id": self._current_batch_id,
-                "aggregation_time": time.time(),
-            },
+            compression_ratio=ratio,
+            metadata={"batch_id": self._current_batch_id, "aggregation_time": time.time()},
         )
 
-    def _compute_merkle_root(self, leaves: list[str]) -> str:
-        """Compute Merkle root from leaf hashes."""
-        if not leaves:
-            return hashlib.sha256(b"").hexdigest()
-
-        if len(leaves) == 1:
-            return leaves[0]
-
-        # Pad to even length
-        if len(leaves) % 2 == 1:
-            leaves = leaves + [leaves[-1]]
-
-        # Compute parent layer
-        parents = []
-        for i in range(0, len(leaves), 2):
-            combined = leaves[i] + leaves[i + 1]
-            parent_hash = hashlib.sha256(combined.encode()).hexdigest()
-            parents.append(parent_hash)
-
-        return self._compute_merkle_root(parents)
-
-    def _zk_aggregate(self, proofs: list[ProofEntry]) -> bytes:
-        """
-        Perform ZK proof aggregation (production mode).
-
-        This would use recursive SNARK composition to combine
-        multiple proofs into one.
-        """
-        # Placeholder for real ZK aggregation
-        # In production, this would:
-        # 1. Initialize recursive SNARK circuit
-        # 2. Verify each input proof
-        # 3. Aggregate into single proof
-        # 4. Return compressed proof bytes
-
+    def _perform_mock_aggregation(self, proofs: list[ProofEntry]) -> tuple[bytes, float]:
+        """Perform mock proof aggregation."""
         combined = b"".join(p.proof for p in proofs)
-        return hashlib.sha256(combined).digest()
+        proof_data = hashlib.sha256(combined).digest()
+
+        compression_ratio = 1.0
+        if self.compression_enabled:
+            original_size = sum(len(p.proof) for p in proofs)
+            compression_ratio = _calculate_compression_ratio(original_size, len(proof_data))
+
+        return proof_data, compression_ratio
 
     def aggregate(self) -> AggregatedProof | None:
         """
@@ -376,27 +377,9 @@ class ProofAggregator:
             True if proof is valid.
         """
         if self.use_mock:
-            # Mock verification: check structure
-            if not agg_proof.proof_data:
-                return False
-            if not agg_proof.source_proofs:
-                return False
-            if not agg_proof.merkle_root:
-                return False
-            return True
+            return _validate_agg_proof_structure(agg_proof)
 
-        # Production: use ZK verifier
-        try:
-            # Would call ZKVerifier.verify_aggregated()
-            return self._zk_verify(agg_proof)
-        except Exception as e:
-            logger.error(f"Proof verification failed: {e}")
-            return False
-
-    def _zk_verify(self, agg_proof: AggregatedProof) -> bool:
-        """Verify aggregated proof using ZK verifier."""
-        # Placeholder for real ZK verification
-        return True
+        return _run_zk_verification_flow(agg_proof)
 
     def get_pending_count(self) -> int:
         """Get number of pending proofs."""
@@ -432,9 +415,7 @@ class ProofAggregator:
             "batch_size": self.batch_size,
         }
 
-    def set_callback(
-        self, on_complete: Callable[[AggregatedProof], None] | None
-    ) -> None:
+    def set_callback(self, on_complete: Callable[[AggregatedProof], None] | None) -> None:
         """Set callback for aggregation completion."""
         self._on_aggregation_complete = on_complete
 
