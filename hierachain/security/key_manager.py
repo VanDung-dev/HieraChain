@@ -115,7 +115,7 @@ class KeyManager:
         key_data = self._get_key_data(api_key)
         return key_data.get('app_details', {}) if key_data else None
     
-    def cache_key(self, api_key: str, ttl: int = None):
+    def cache_key(self, api_key: str, ttl: int | None = None):
         """
         Cache API key data for faster subsequent lookups.
         
@@ -133,7 +133,13 @@ class KeyManager:
                 'ttl': ttl
             }
     
-    def create_key(self, user_id: str, permissions: list, app_details: dict = None, expires_in: int = None) -> str:
+    def create_key(
+        self,
+        user_id: str,
+        permissions: list,
+        app_details: dict | None = None,
+        expires_in: int | None = None
+    ) -> str:
         """
         Create a new API key for a user.
         
@@ -149,7 +155,9 @@ class KeyManager:
         # Generate secure API key
         timestamp = str(int(time.time()))
         user_hash = hashlib.sha256(user_id.encode()).hexdigest()[:8]
-        random_suffix = hashlib.sha256(f"{timestamp}{user_id}".encode()).hexdigest()[:16]
+        random_suffix = hashlib.sha256(
+            f"{timestamp}{user_id}".encode()
+        ).hexdigest()[:16]
         # Add random component to ensure keys are always different
         random_bytes = binascii.hexlify(os.urandom(8)).decode()[:8]
         api_key = f"hrc_{user_hash}_{random_suffix}_{random_bytes}"
@@ -189,27 +197,59 @@ class KeyManager:
             dict | None: Key data or None if not found
         """
         # Check cache first
-        cached = self.key_cache.get(api_key)
-        if cached:
-            if time.time() - cached['cached_at'] < cached['ttl']:
-                return cached['data']
-            else:
-                # Cache expired
-                del self.key_cache[api_key]
+        cached_data = self._get_from_cache(api_key)
+        if cached_data is not None:
+            return cached_data
         
         # Get from storage
-        # If it is dict, use the key directly, if it is Redis, use the prefix
-        if hasattr(self.storage, 'set') and hasattr(self.storage, 'get'):
-            # Redis-like storage
-            try:
-                data = self.storage.get(f"api_key:{api_key}")
-                return json.loads(data) if data else None
-            except Exception as e:
-                logger.error(f"Error retrieving key from storage: {e}")
-                return None
-        else:
+        return self._get_from_storage(api_key)
+    
+    def _get_from_cache(self, api_key: str) -> dict | None:
+        """
+        Get key data from cache if valid.
+        
+        Args:
+            api_key: The API key
+            
+        Returns:
+            dict | None: Cached key data or None if not found/expired
+        """
+        cached = self.key_cache.get(api_key)
+        if not cached:
+            return None
+        
+        if time.time() - cached['cached_at'] < cached['ttl']:
+            return cached['data']
+        
+        # Cache expired
+        del self.key_cache[api_key]
+        return None
+    
+    def _get_from_storage(self, api_key: str) -> dict | None:
+        """
+        Get key data from storage backend.
+        
+        Args:
+            api_key: The API key
+            
+        Returns:
+            dict | None: Key data or None if not found
+        """
+        # Check if Redis-like storage (has set/get methods)
+        if not (hasattr(self.storage, 'set') and hasattr(self.storage, 'get')):
             # Dict-like storage (in-memory fallback)
             return self.storage.get(api_key)
+        
+        # Redis-like storage
+        try:
+            data = self.storage.get(f"api_key:{api_key}")
+            return json.loads(data) if data else None
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.error(f"Error decoding key data from storage: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Error retrieving key from storage: {e}")
+            return None
     
     def _store_key_data(self, api_key: str, data: dict):
         """
