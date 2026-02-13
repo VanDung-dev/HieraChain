@@ -17,58 +17,231 @@ from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.core.consensus.proof_of_federation import ProofOfFederation
 from hierachain.config.settings import settings
 from hierachain.core.utils import sanitize_metadata_for_main_chain, create_event
-from hierachain.consensus.ordering_service import OrderingService, OrderingNode, OrderingStatus
+from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
 from hierachain.security.zk_prover import ZKProver
 
 logger = logging.getLogger(__name__)
 
+
+def _generate_zk_proof(name: str, chain: list[Any], latest_block: Any) -> bytes | None:
+    """Generate ZK proof for the latest block transition."""
+    if not settings.ENABLE_ZK_PROOFS:
+        return None
+
+    try:
+        # Get state roots for ZK proof
+        previous_block = chain[-2] if len(chain) > 1 else None
+        old_state_root = previous_block.merkle_root if previous_block else "genesis"
+        new_state_root = latest_block.merkle_root or latest_block.hash
+
+        # Generate ZK proof
+        prover = ZKProver(mode=settings.ZK_MODE)
+        result = prover.generate_proof(
+            old_state_root=old_state_root,
+            new_state_root=new_state_root,
+            block_index=latest_block.index,
+            events=latest_block.to_event_list()
+            if hasattr(latest_block, "to_event_list")
+            else [],
+            sub_chain_name=name,
+        )
+
+        if result.success:
+            logger.info(f"Generated ZK proof for block {latest_block.index} in {result.generation_time_ms:.2f}ms")
+            return result.proof
+
+        logger.warning(f"ZK proof generation failed: {result.error}")
+        return None
+
+    except Exception as e:
+        logger.error(f"ZK proof generation error: {e}")
+        return None
+
+
+def _generate_default_proof_metadata(
+    chain: list[Any],
+    domain_type: str,
+    latest_block_index: int,
+    completed_ops: int
+) -> dict[str, Any]:
+    """Generate default proof metadata for Main Chain submission."""
+    # Count different event types in recent blocks
+    recent_events: list[dict[str, Any]] = []
+    for block in chain[-5:]:  # Last 5 blocks
+        # Use to_event_list() if available to handle Arrow Tables
+        events = (
+            block.to_event_list()
+            if hasattr(block, "to_event_list")
+            else block.events
+        )
+        recent_events.extend(events)
+
+    event_counts: dict[str, int] = {}
+    entity_count = set()
+
+    for event in recent_events:
+        event_type = event.get("event", "unknown")
+        event_counts[event_type] = event_counts.get(event_type, 0) + 1
+
+        if event.get("entity_id") is not None:
+            entity_count.add(event["entity_id"])
+
+    # Create summary metadata (following guidelines)
+    metadata = {
+        "domain_type": domain_type,
+        "latest_block_index": latest_block_index,
+        "total_blocks": len(chain),
+        "recent_events": len(recent_events),
+        "unique_entities": len(entity_count),
+        "completed_operations": completed_ops,
+        "event_types": list(event_counts.keys()),
+        "proof_timestamp": time.time(),
+    }
+
+    return sanitize_metadata_for_main_chain(metadata)
+
+
+def _get_domain_stats_summary(
+    chain: list[Any],
+    domain_type: str,
+    completed_ops: int
+) -> dict[str, Any]:
+    """Calculate domain-specific statistics summary."""
+    # Count entities and operations
+    all_events: list[dict[str, Any]] = []
+    for block in chain:
+        # Use to_event_list() if available to handle Arrow Tables
+        events = (
+            block.to_event_list()
+            if hasattr(block, "to_event_list")
+            else block.events
+        )
+        all_events.extend(events)
+
+    unique_entities = set()
+    operation_types: dict[str, int] = {}
+
+    for event in all_events:
+        if event.get("entity_id") is not None:
+            unique_entities.add(event["entity_id"])
+
+        event_type = event.get("event", "unknown")
+        operation_types[event_type] = operation_types.get(event_type, 0) + 1
+
+    return {
+        "domain_type": domain_type,
+        "unique_entities": len(unique_entities),
+        "completed_operations": completed_ops,
+        "operation_types": operation_types,
+    }
+
+
+def _force_block_creation(ordering_service: Any, timeout: float) -> None:
+    """Force the ordering service to create a block from pending events."""
+    try:
+        ordering_service.force_block_creation(timeout=timeout)
+    except Exception as e:
+        logger.error(f"Error forcing block creation: {e}")
+
+
+def _consumer_loop(sub_chain: Any) -> None:
+    """Background loop to continuously pull and finalize blocks."""
+    while sub_chain.running:
+        try:
+            # Attempt to finalize blocks
+            sub_chain.finalize_sub_chain_block()
+            time.sleep(0.5)
+        except Exception as e:
+            logger.error(f"Error in block consumer loop: {e}")
+            time.sleep(1.0)
+
+
+def _update_local_state_after_proof(
+    sub_chain: Any,
+    main_chain: Any,
+    latest_block: Any,
+    zk_proof: bytes | None
+) -> None:
+    """Update local state after successful proof submission."""
+    sub_chain.last_proof_submission = time.time()
+
+    # Create proof submission event in Sub-Chain
+    proof_event = {
+        "entity_id": sub_chain.name,
+        "event": "proof_submitted",
+        "timestamp": time.time(),
+        "details": {
+            "main_chain_name": getattr(main_chain, "name", str(main_chain)),
+            "proof_hash": latest_block.hash,
+            "block_index": latest_block.index,
+            "submitted_at": time.time(),
+            "zk_proof_included": zk_proof is not None,
+        },
+    }
+
+    sub_chain.add_event(proof_event)
+
+
+def _wait_for_growth(initial_len: int, chain: list[Any], timeout: float) -> bool:
+    """Wait for the chain length to increase."""
+    wait_start = time.time()
+    while len(chain) == initial_len:
+        if time.time() - wait_start > timeout:
+            logger.warning("Timeout waiting for block to appear in chain")
+            return False
+        time.sleep(0.1)
+    return True
+
+
 class SubChain(Blockchain):
     """
     Sub-Chain implementation for the HieraChain framework.
-    
+
     Sub-Chains act as domain experts (like department heads) and:
     - Handle domain-specific business operations
     - Store detailed domain events and data
     - Submit cryptographic proofs to Main Chain
     - Use entity_id as metadata field within events (not as block identifier)
     """
-    
-    def __init__(self, name: str, domain_type: str = "generic", config: dict[str, Any] | None = None):
-        """
-        Initialize a Sub-Chain.
-        
-        Args:
-            name: Name identifier for the Sub-Chain
-            domain_type: Type of domain this Sub-Chain handles
-            config: Optional configuration override for underlying services
-        """
-        if not re.match(r'^[a-zA-Z0-9_\-]+$', name):
+
+    def __init__(
+        self,
+        name: str,
+        domain_type: str = "generic",
+        config: dict[str, Any] | None = None,
+    ):
+        """Initialize a Sub-Chain."""
+        if not re.match(r"^[a-zA-Z0-9_\-]+$", name):
             raise ValueError(f"Invalid SubChain name '{name}'. Allowed: alphanumeric, underscore, hyphen.")
 
         super().__init__(name)
         self.domain_type = domain_type
         self.custom_config = config
-        
+
         # Dynamic Consensus Loading
         if settings.CONSENSUS_TYPE == "proof_of_federation":
-            self.consensus = ProofOfFederation(f"{name}_PoF")
+            new_consensus = ProofOfFederation(f"{name}_PoF")
         else:
-            self.consensus = ProofOfAuthority(f"{name}_PoA")
-            
+            new_consensus = ProofOfAuthority(f"{name}_PoA")
+        self.consensus: Any = new_consensus
+
         self.main_chain_connection: Any | None = None
         self.proof_submission_interval: float = 60.0  # Submit proofs every 60 seconds
         self.last_proof_submission: float = 0.0
         self.completed_operations: int = 0
-        
+
         # Register Sub-Chain as authority for its own operations
-        if hasattr(self.consensus, 'add_authority'):
-            self.consensus.add_authority(name, {
-                "role": "sub_chain_authority",
-                "domain_type": domain_type,
-                "permissions": ["domain_operations", "event_creation"],
-                "created_at": time.time()
-            })
-        
+        if hasattr(self.consensus, "add_authority"):
+            self.consensus.add_authority(
+                name,
+                {
+                    "role": "sub_chain_authority",
+                    "domain_type": domain_type,
+                    "permissions": ["domain_operations", "event_creation"],
+                    "created_at": time.time(),
+                },
+            )
+
         # Initialize Ordering Service
         self._init_ordering_service()
 
@@ -77,7 +250,7 @@ class SubChain(Blockchain):
 
         # Start Block Consumer Thread
         self.running = True
-        self.consumer_thread = threading.Thread(target=self._block_consumer_loop, daemon=True)
+        self.consumer_thread = threading.Thread(target=_consumer_loop, args=(self,), daemon=True)
         self.consumer_thread.start()
 
     def is_valid_new_block(self, block) -> bool:
@@ -87,15 +260,15 @@ class SubChain(Blockchain):
         # 1. Base structural validation
         if not super().is_valid_new_block(block):
             return False
-            
+
         # 2. Consensus validation
         previous_block = self.get_latest_block()
-        
+
         if not self.consensus.validate_block(block, previous_block):
             # Log warning but don't crash - useful for debugging consensus failures
             logger.warning(f"Consensus validation failed for block {block.index}")
             return False
-            
+
         return True
 
     def stop(self):
@@ -103,9 +276,9 @@ class SubChain(Blockchain):
         self.running = False
         if self.consumer_thread:
             self.consumer_thread.join(timeout=2.0)
-        
+
         # Also stop ordering service
-        if hasattr(self, 'ordering_service'):
+        if hasattr(self, "ordering_service"):
             self.ordering_service.shutdown()
 
     def _init_ordering_service(self):
@@ -119,24 +292,24 @@ class SubChain(Blockchain):
             status=OrderingStatus.ACTIVE,
             last_heartbeat=time.time()
         )
-        
+
         # Service configuration
         default_config = {
             "storage_dir": f"data/{self.name}/journal",
-            "block_size": 50, # Smaller batches for lower latency in demo
+            "block_size": 50,  # Smaller batches for lower latency in demo
             "batch_timeout": 1.0,
             "worker_threads": 2,
             "db_url": settings.DATABASE_URL,
-            "chain_name": self.name
+            "chain_name": self.name,
         }
 
         # Merge defaults with custom config if provided
         config = default_config.copy()
-        if hasattr(self, 'custom_config') and self.custom_config:
+        if hasattr(self, "custom_config") and self.custom_config:
             config.update(self.custom_config)
-        
-        self.ordering_service = OrderingService(nodes=[], config=config)
-        
+
+        self.ordering_service = OrderingService(nodes=[local_node], config=config)
+
         # Sync OrderingService with local chain state (Genesis)
         if self.chain:
             latest = self.chain[-1]
@@ -150,29 +323,25 @@ class SubChain(Blockchain):
         # Add timestamp if missing
         if "timestamp" not in event:
             event["timestamp"] = time.time()
-            
+
         # Ensure required fields for OrderingService
         if "entity_id" not in event:
             event["entity_id"] = event.get("sender", "system")
         if "event" not in event:
             event["event"] = event.get("type", "generic_event")
-            
+
         logger.debug(f"SubChain {self.name} adding event: {event.get('event')}")
-        self.ordering_service.receive_event(
-            event_data=event,
-            channel_id=self.name,
-            submitter_org=self.name
-        )
+        self.ordering_service.receive_event(event_data=event, channel_id=self.name, submitter_org=self.name)
 
         return f"tx-{hash(str(event))}"
-    
+
     def connect_to_main_chain(self, main_chain: Any) -> bool:
         """
         Connect this Sub-Chain to a Main Chain.
-        
+
         Args:
             main_chain: Main Chain instance to connect to
-            
+
         Returns:
             True if connection was successful, False otherwise
         """
@@ -184,41 +353,46 @@ class SubChain(Blockchain):
                 "connected_at": time.time(),
                 "capabilities": ["domain_operations", "proof_submission"]
             }
-            
+
             if main_chain.register_sub_chain(self.name, metadata):
                 self.main_chain_connection = main_chain
-                
+
                 # Create connection event
                 connection_event = {
                     "entity_id": self.name,
                     "event": "main_chain_connection",
                     "timestamp": time.time(),
                     "details": {
-                        "main_chain_name": getattr(main_chain, 'name', str(main_chain)),
+                        "main_chain_name": getattr(main_chain, "name", str(main_chain)),
                         "connected_at": time.time(),
-                        "status": "connected"
-                    }
+                        "status": "connected",
+                    },
                 }
-                
+
                 self.add_event(connection_event)
                 return True
         except (AttributeError, TypeError, ValueError):
             pass
-        
+
         return False
-    
-    def start_operation(self, entity_id: str, operation_type: str, details: dict[str, Any] | None = None) -> bool:
+
+    def start_operation(
+        self,
+        entity_id: str,
+        operation_type: str,
+        details: dict[str, Any] | None = None,
+    ) -> bool:
         """
         Start a domain-specific operation for an entity.
-        
+
         This follows the guidelines pattern where entity_id is used as metadata
         field within events, not as block identifier.
-        
+
         Args:
             entity_id: Entity identifier (used as metadata)
             operation_type: Type of operation to start
             details: Additional operation details
-            
+
         Returns:
             True if operation was started successfully, False otherwise
         """
@@ -234,19 +408,24 @@ class SubChain(Blockchain):
                 "started_at": time.time()
             }
         )
-        
+
         self.add_event(event)
         return True
-    
-    def complete_operation(self, entity_id: str, operation_type: str, result: dict[str, Any] | None = None) -> bool:
+
+    def complete_operation(
+        self,
+        entity_id: str,
+        operation_type: str,
+        result: dict[str, Any] | None = None,
+    ) -> bool:
         """
         Complete a domain-specific operation for an entity.
-        
+
         Args:
             entity_id: Entity identifier (used as metadata)
             operation_type: Type of operation being completed
             result: Operation result data
-            
+
         Returns:
             True if operation was completed successfully, False otherwise
         """
@@ -262,20 +441,22 @@ class SubChain(Blockchain):
                 "completed_at": time.time()
             }
         )
-        
+
         self.add_event(event)
         self.completed_operations += 1
         return True
-    
-    def update_entity_status(self, entity_id: str, status: str, details: dict[str, Any] | None = None) -> bool:
+
+    def update_entity_status(
+        self, entity_id: str, status: str, details: dict[str, Any] | None = None
+    ) -> bool:
         """
         Update the status of an entity.
-        
+
         Args:
             entity_id: Entity identifier (used as metadata)
             status: New status for the entity
             details: Additional status details
-            
+
         Returns:
             True if status was updated successfully, False otherwise
         """
@@ -290,26 +471,14 @@ class SubChain(Blockchain):
                 "updated_at": time.time()
             }
         )
-        
+
         self.add_event(event)
         return True
-    
-    def submit_proof_to_main(self, main_chain: Any, metadata_filter: Callable | None = None) -> bool:
-        """
-        Submit cryptographic proof to Main Chain.
-        
-        This follows the guidelines pattern for proof submission where
-        Sub-Chains submit proofs with summary metadata, not detailed data.
-        NOW WITH ZK PROOF GENERATION for trustless verification.
 
-        Args:
-            main_chain: Main Chain to submit proof to
-            metadata_filter: Optional function to generate custom metadata
-            
-        Returns:
-            True if proof was submitted successfully, False otherwise
-        """
-        
+    def submit_proof_to_main(
+        self, main_chain: Any, metadata_filter: Callable | None = None
+    ) -> bool:
+        """Submit cryptographic proof to Main Chain."""
         # Get latest block for proof
         latest_block = self.get_latest_block()
         logger.debug(
@@ -320,265 +489,148 @@ class SubChain(Blockchain):
         if not self.chain or len(self.chain) <= 1:  # Only genesis block
             logger.debug("SubChain has only genesis block. Aborting proof.")
             return False
-        
+
         # Generate summary metadata (not detailed domain data)
-        if metadata_filter:
-            metadata = metadata_filter(self)
-        else:
-            metadata = self._generate_default_proof_metadata()
+        metadata = (
+            metadata_filter(self)
+            if metadata_filter
+            else _generate_default_proof_metadata(
+                self.chain, self.domain_type, latest_block.index, self.completed_operations
+            )
+        )
 
         # === ZK PROOF GENERATION ===
-        zk_proof: bytes | None = None
-        if settings.ENABLE_ZK_PROOFS:
-            try:
-                # Get state roots for ZK proof
-                previous_block = self.chain[-2] if len(self.chain) > 1 else None
-                old_state_root = (
-                    previous_block.merkle_root if previous_block else "genesis"
-                )
-                new_state_root = latest_block.merkle_root or latest_block.hash
-
-                # Generate ZK proof
-                prover = ZKProver(mode=settings.ZK_MODE)
-                result = prover.generate_proof(
-                    old_state_root=old_state_root,
-                    new_state_root=new_state_root,
-                    block_index=latest_block.index,
-                    events=latest_block.to_event_list() if hasattr(
-                        latest_block, 'to_event_list'
-                    ) else [],
-                    sub_chain_name=self.name
-                )
-
-                if result.success:
-                    zk_proof = result.proof
-                    logger.info(
-                        f"Generated ZK proof for block {latest_block.index} "
-                        f"in {result.generation_time_ms:.2f}ms"
-                    )
-                else:
-                    logger.warning(f"ZK proof generation failed: {result.error}")
-                    # Continue without ZK proof if not required
-                    if settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN:
-                        return False
-
-            except Exception as e:
-                logger.error(f"ZK proof generation error: {e}")
-                if settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN:
-                    return False
+        zk_proof = _generate_zk_proof(self.name, self.chain, latest_block)
+        if zk_proof is None and settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN:
+            return False
 
         # Submit proof to Main Chain (with optional ZK proof)
         success = main_chain.add_proof(
             sub_chain_name=self.name,
             proof_hash=latest_block.hash,
             metadata=metadata,
-            zk_proof=zk_proof
+            zk_proof=zk_proof,
         )
         logger.debug(f"MainChain.add_proof returned: {success}")
-        
+
         if success:
-            self.last_proof_submission = time.time()
-            
-            # Create proof submission event in Sub-Chain
-            proof_event = {
-                "entity_id": self.name,
-                "event": "proof_submitted",
-                "timestamp": time.time(),
-                "details": {
-                    "main_chain_name": getattr(main_chain, 'name', str(main_chain)),
-                    "proof_hash": latest_block.hash,
-                    "block_index": latest_block.index,
-                    "submitted_at": time.time(),
-                    "zk_proof_included": zk_proof is not None
-                }
-            }
-            
-            self.add_event(proof_event)
-        
+            _update_local_state_after_proof(self, main_chain, latest_block, zk_proof)
+
         return success
-    
-    def _generate_default_proof_metadata(self) -> dict[str, Any]:
-        """
-        Generate default proof metadata for Main Chain submission.
-        
-        This creates summary metadata only, no detailed domain data.
-        
-        Returns:
-            Summary metadata suitable for Main Chain
-        """
-        latest_block = self.get_latest_block()
-        
-        # Count different event types in recent blocks
-        recent_events = []
-        for block in self.chain[-5:]:  # Last 5 blocks
-            # Use to_event_list() if available to handle Arrow Tables
-            events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
-            recent_events.extend(events)
-        
-        event_counts = {}
-        entity_count = set()
-        
-        for event in recent_events:
-            event_type = event.get("event", "unknown")
-            event_counts[event_type] = event_counts.get(event_type, 0) + 1
-            
-            if event.get("entity_id") is not None:
-                entity_count.add(event["entity_id"])
-        
-        # Create summary metadata (following guidelines)
-        metadata = {
-            "domain_type": self.domain_type,
-            "latest_block_index": latest_block.index,
-            "total_blocks": len(self.chain),
-            "recent_events": len(recent_events),
-            "unique_entities": len(entity_count),
-            "completed_operations": self.completed_operations,
-            "event_types": list(event_counts.keys()),
-            "proof_timestamp": time.time()
-        }
-        
-        return sanitize_metadata_for_main_chain(metadata)
-    
+
     def should_submit_proof(self) -> bool:
         """
         Check if it's time to submit a proof to Main Chain.
-        
+
         Returns:
             True if proof should be submitted, False otherwise
         """
         current_time = time.time()
         time_since_last = current_time - self.last_proof_submission
-        
+
         # Check ordering service for pending events
         has_pending = False
         if hasattr(self, 'ordering_service'):
             has_pending = len(self.ordering_service.pending_events) > 0
-            
-        return (time_since_last >= self.proof_submission_interval and has_pending)
-    
+
+        return time_since_last >= self.proof_submission_interval and has_pending
+
     def auto_submit_proof_if_needed(self) -> bool:
         """
         Automatically submit proof if conditions are met.
-        
+
         Returns:
             True if proof was submitted, False otherwise
         """
         if self.should_submit_proof() and self.main_chain_connection:
             return self.submit_proof_to_main(self.main_chain_connection)
         return False
-    
+
     def get_entity_history(self, entity_id: str) -> list[dict[str, Any]]:
         """
         Get complete history of events for a specific entity.
-        
+
         Args:
             entity_id: Entity identifier to search for
-            
+
         Returns:
             List of events for the specified entity, ordered by timestamp
         """
         entity_events = self.get_events_by_entity(entity_id)
-        
+
         # Sort by timestamp
         entity_events.sort(key=lambda x: x.get("timestamp", 0))
-        
+
         return entity_events
-    
+
     def get_domain_statistics(self) -> dict[str, Any]:
-        """
-        Get comprehensive statistics about this Sub-Chain's domain operations.
-        
-        Returns:
-            Dictionary containing domain statistics
-        """
+        """Get comprehensive statistics about this Sub-Chain's domain operations."""
         base_stats = self.get_chain_stats()
-        
-        # Count entities and operations
-        all_events = []
-        for block in self.chain:
-            # Use to_event_list() if available to handle Arrow Tables
-            events = block.to_event_list() if hasattr(block, 'to_event_list') else block.events
-            all_events.extend(events)
-        
-        unique_entities = set()
-        operation_types = {}
-        
-        for event in all_events:
-            if event.get("entity_id") is not None:
-                unique_entities.add(event["entity_id"])
-            
-            event_type = event.get("event", "unknown")
-            operation_types[event_type] = operation_types.get(event_type, 0) + 1
-        
+        domain_summary = _get_domain_stats_summary(self.chain, self.domain_type, self.completed_operations)
+
         return {
             **base_stats,
-            "domain_type": self.domain_type,
-            "unique_entities": len(unique_entities),
-            "completed_operations": self.completed_operations,
-            "operation_types": operation_types,
+            **domain_summary,
             "main_chain_connected": self.main_chain_connection is not None,
             "last_proof_submission": self.last_proof_submission,
-            "proof_submission_interval": self.proof_submission_interval
+            "proof_submission_interval": self.proof_submission_interval,
         }
-    
+
     def finalize_sub_chain_block(self) -> dict[str, Any] | None:
-        """
-        Pull ordered blocks from Ordering Service and finalize them.
-        """
+        """Pull ordered blocks from Ordering Service and finalize them."""
         new_blocks = []
-        
+
         while True:
             block = self.ordering_service.get_next_block()
             if not block:
-                logger.debug(f"DEBUG: No block returned from get_next_block. Queue {id(self.ordering_service.commit_queue)} empty.")
+                logger.debug(f"No block from get_next_block. Queue {id(self.ordering_service.commit_queue)} empty.")
                 break
-            
-            logger.debug(f"DEBUG: Got block {block.index} from ordering service. Queue {id(self.ordering_service.commit_queue)}")
-            
-            # 2. Stitch block into local chain
-            latest_block = self.get_latest_block()
-            
-            # Re-index to match local chain
-            block.index = latest_block.index + 1
-            block.previous_hash = latest_block.hash
-            
-            # Recalculate hash with new metadata
-            block.hash = block.calculate_hash()
-            
-            # 3. Finalize with consensus (signatures)
-            finalized_block = self.consensus.finalize_block(block, self.name)
-            
-            # 4. Add to chain
-            if self.add_block(finalized_block):
-                new_blocks.append(finalized_block)
-                # Auto-submit proof if needed
-                self.auto_submit_proof_if_needed()
-            else:
-                logger.error(f"Failed to add ordered block {block.index}")
-                
+
+            logger.debug(
+                f"Got block {block.index} from ordering service. "
+                f"Queue {id(self.ordering_service.commit_queue)}"
+            )
+
+            if self._process_and_finalize_block(block):
+                new_blocks.append(block)
+
         if not new_blocks:
             return None
-            
+
         last_block = new_blocks[-1]
-        
         return {
             "block_index": last_block.index,
             "block_hash": last_block.hash,
             "events_count": len(last_block.events),
             "finalized_at": time.time(),
-            "domain_type": self.domain_type
+            "domain_type": self.domain_type,
         }
 
+    def _process_and_finalize_block(self, block: Any) -> bool:
+        """Process, finalize and add a single block to the local chain."""
+        latest_block = self.get_latest_block()
+
+        # Re-index to match local chain
+        block.index = latest_block.index + 1
+        block.previous_hash = latest_block.hash
+
+        # Recalculate hash with new metadata
+        block.hash = block.calculate_hash()
+
+        # Finalize with consensus (signatures)
+        finalized_block = self.consensus.finalize_block(block, self.name)
+
+        # Add to chain
+        if self.add_block(finalized_block):
+            # Auto-submit proof if needed
+            self.auto_submit_proof_if_needed()
+            return True
+
+        logger.error(f"Failed to add ordered block {block.index}")
+        return False
+
     def flush_pending_and_finalize(self, timeout: float = 3.0) -> dict[str, Any] | None:
-        """
-        Flush pending events and finalize the block.
-
-        Args:
-            timeout: Timeout for waiting for block to be finalized
-
-        Returns:
-            Finalized block details or None if timeout
-        """
+        """Flush pending events and finalize the block."""
         logger.debug(f"flush_pending_and_finalize for {self.name}")
         start_time = time.time()
 
@@ -589,58 +641,29 @@ class SubChain(Blockchain):
         # Capture initial chain length
         initial_len = len(self.chain)
 
-        # Force block creation in the ordering service thread
-        loop = getattr(self.ordering_service, 'loop', None)
-        if loop and loop.is_running():
-            import asyncio
-            future = asyncio.run_coroutine_threadsafe(
-                self.ordering_service._check_timeout_block_creation(force=True),
-                loop
-            )
-            try:
-                # Wait for block creation to complete
-                future.result(timeout=timeout)
-                logger.error(f"DEBUG: Block creation future completed. QM={self.ordering_service.commit_queue.qsize()} QID={id(self.ordering_service.commit_queue)} BC={self.ordering_service.blocks_created}")
-            except Exception as e:
-                logger.error(f"Error forcing block creation: {e}")
+        # Force block creation
+        self._force_ordering_block_creation(timeout)
 
         # Try to consume result manually first
         result = self.finalize_sub_chain_block()
         if result:
             return result
-            
-        # If no result, maybe background consumer took it? Wait for chain to grow.
-        wait_start = time.time()
-        while len(self.chain) == initial_len:
-            if time.time() - wait_start > timeout:
-                logger.warning("Timeout waiting for block to appear in chain during flush")
-                break
-            time.sleep(0.1)
 
-        if len(self.chain) > initial_len:
+        # Wait for chain to grow from background consumer
+        if _wait_for_growth(initial_len, self.chain, timeout):
             last_block = self.chain[-1]
             return {
                 "block_index": last_block.index,
                 "block_hash": last_block.hash,
                 "events_count": len(last_block.events),
                 "finalized_at": time.time(),
-                "domain_type": self.domain_type
+                "domain_type": self.domain_type,
             }
-            
         return None
-    
-    def _block_consumer_loop(self):
-        """Background thread to continuously pull blocks."""
-        while self.running:
-            try:
-                # Attempt to finalize blocks
-                result = self.finalize_sub_chain_block()
-                if not result:
-                    # If no blocks, sleep a bit to avoid busy waiting
-                    time.sleep(0.5)
-            except Exception as e:
-                logger.error(f"Error in block consumer loop: {e}")
-                time.sleep(1.0)
+
+    def _force_ordering_block_creation(self, timeout: float) -> None:
+        """Force the ordering service to create a block from pending events."""
+        _force_block_creation(self.ordering_service, timeout)
 
     def sync_chain(self):
         """
@@ -650,25 +673,32 @@ class SubChain(Blockchain):
         try:
             latest_index = self.get_latest_block().index
             missing_blocks = self.ordering_service.get_blocks(start_index=latest_index)
-            
+
             # Using simple iteration
             count = 0
             for block in missing_blocks:
                 if self.add_block(block):
                     count += 1
-                
+
             if count > 0:
                 logger.info(f"Synced/Rehydrated {count} blocks from Ordering Service.")
-                
+
         except Exception as e:
             logger.error(f"Sync failed: {e}")
 
     def __str__(self) -> str:
         """String representation of the Sub-Chain."""
-        return f"SubChain(name={self.name}, domain={self.domain_type}, blocks={len(self.chain)}, operations={self.completed_operations})"
-    
+        return (
+            f"SubChain(name={self.name}, domain={self.domain_type}, "
+            f"blocks={len(self.chain)}, "
+            f"operations={self.completed_operations})"
+        )
+
     def __repr__(self) -> str:
         """Detailed string representation of the Sub-Chain."""
-        return (f"SubChain(name={self.name}, domain_type={self.domain_type}, "
-                f"blocks={len(self.chain)}, operations={self.completed_operations}, "
-                f"main_chain_connected={self.main_chain_connection is not None})")
+        return (
+            f"SubChain(name={self.name}, domain_type={self.domain_type}, "
+            f"blocks={len(self.chain)}, "
+            f"operations={self.completed_operations}, "
+            f"main_chain_connected={self.main_chain_connection is not None})"
+        )
