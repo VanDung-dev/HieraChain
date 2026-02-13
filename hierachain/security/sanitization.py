@@ -38,6 +38,34 @@ SCRIPT_PATTERNS = [
 LOG_INJECTION_CHARS = ["\n", "\r", "\x1b", "\x00"]
 
 
+def _sanitize_html_context(value: str) -> str:
+    """Sanitize for HTML/general context - prevents XSS and template injection."""
+    result = html.escape(value)
+    # Neutralize template expressions with single regex pass
+    combined_pattern = "|".join(TEMPLATE_PATTERNS)
+    return re.sub(combined_pattern, lambda m: html.escape(m.group(0)), result)
+
+
+def _sanitize_log_context(value: str) -> str:
+    """Sanitize for log context - prevents log injection."""
+    return value.translate({ord(c): ord(" ") for c in LOG_INJECTION_CHARS})
+
+
+def _sanitize_filename_context(value: str) -> str:
+    """Sanitize for filename context - prevents path traversal."""
+    result = re.sub(r"[\\/:*?\"<>|]", "_", value)
+    return result.replace("..", "_")
+
+
+# Context-specific sanitizers mapping
+_CONTEXT_SANITIZERS = {
+    "general": _sanitize_html_context,
+    "html": _sanitize_html_context,
+    "log": _sanitize_log_context,
+    "filename": _sanitize_filename_context,
+}
+
+
 def sanitize_string(value: str, context: str = "general") -> str:
     """
     Sanitize a string value based on context.
@@ -52,27 +80,21 @@ def sanitize_string(value: str, context: str = "general") -> str:
     if not isinstance(value, str):
         return value
     
-    result = value
-    
-    if context in ("general", "html"):
-        # HTML encode to prevent XSS
-        result = html.escape(result)
-        
-        # Neutralize template expressions
-        for pattern in TEMPLATE_PATTERNS:
-            result = re.sub(pattern, lambda m: html.escape(m.group(0)), result)
-    
-    if context == "log":
-        # Remove characters that could inject fake log entries
-        for char in LOG_INJECTION_CHARS:
-            result = result.replace(char, " ")
-    
-    if context == "filename":
-        # Remove path traversal and dangerous characters
-        result = re.sub(r"[\\/:*?\"<>|]", "_", result)
-        result = result.replace("..", "_")
-    
-    return result
+    sanitizer = _CONTEXT_SANITIZERS.get(context)
+    return sanitizer(value) if sanitizer else value
+
+
+def _sanitize_value(value: Any, context: str) -> Any:
+    """Sanitize a single value based on its type using pattern matching."""
+    match value:
+        case str():
+            return sanitize_string(value, context)
+        case dict():
+            return sanitize_dict(value, context)
+        case list():
+            return sanitize_list(value, context)
+        case _:
+            return value
 
 
 def sanitize_dict(data: dict[str, Any], context: str = "general") -> dict[str, Any]:
@@ -86,21 +108,10 @@ def sanitize_dict(data: dict[str, Any], context: str = "general") -> dict[str, A
     Returns:
         Sanitized dictionary
     """
-    result = {}
-    for key, value in data.items():
-        # Sanitize key as well
-        safe_key = sanitize_string(str(key), context) if isinstance(key, str) else key
-        
-        if isinstance(value, str):
-            result[safe_key] = sanitize_string(value, context)
-        elif isinstance(value, dict):
-            result[safe_key] = sanitize_dict(value, context)
-        elif isinstance(value, list):
-            result[safe_key] = sanitize_list(value, context)
-        else:
-            result[safe_key] = value
-    
-    return result
+    return {
+        sanitize_string(str(key), context) if isinstance(key, str) else key: _sanitize_value(value, context)
+        for key, value in data.items()
+    }
 
 
 def sanitize_list(data: list[Any], context: str = "general") -> list[Any]:
@@ -114,18 +125,7 @@ def sanitize_list(data: list[Any], context: str = "general") -> list[Any]:
     Returns:
         Sanitized list
     """
-    result = []
-    for item in data:
-        if isinstance(item, str):
-            result.append(sanitize_string(item, context))
-        elif isinstance(item, dict):
-            result.append(sanitize_dict(item, context))
-        elif isinstance(item, list):
-            result.append(sanitize_list(item, context))
-        else:
-            result.append(item)
-    
-    return result
+    return [_sanitize_value(item, context) for item in data]
 
 
 def sanitize_for_output(data: Any, context: str = "general") -> Any:
@@ -139,14 +139,15 @@ def sanitize_for_output(data: Any, context: str = "general") -> Any:
     Returns:
         Sanitized data
     """
-    if isinstance(data, str):
-        return sanitize_string(data, context)
-    elif isinstance(data, dict):
-        return sanitize_dict(data, context)
-    elif isinstance(data, list):
-        return sanitize_list(data, context)
-    else:
-        return data
+    match data:
+        case str():
+            return sanitize_string(data, context)
+        case dict():
+            return sanitize_dict(data, context)
+        case list():
+            return sanitize_list(data, context)
+        case _:
+            return data
 
 
 def sanitize_error_message(error: Exception) -> str:
