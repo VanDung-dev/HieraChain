@@ -7,16 +7,50 @@ to detect unauthorized modifications before the system starts processing data.
 
 import hashlib
 import json
-import logging
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger(__name__)
+from hierachain.security.secure_logging import get_security_logger
+
+logger = get_security_logger()
 
 
 class IntegrityError(Exception):
     """Raised when code integrity check fails."""
     pass
+
+
+def calculate_file_hash(file_path: Path) -> str:
+    """Calculate SHA-256 hash of a file."""
+    hasher = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        while chunk := f.read(8192):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def _build_error_message(result: dict[str, list[str]]) -> str:
+    """Construct detailed error message for integrity failure."""
+    parts = ["Integrity check FAILED:"]
+    if result["modified"]:
+        parts.append(f"  Modified: {result['modified']}")
+    if result["missing"]:
+        parts.append(f"  Missing: {result['missing']}")
+    return "\n".join(parts)
+
+
+def _report_integrity_results(result: dict[str, list[str]]) -> dict[str, list[str]]:
+    """Log findings and raise IntegrityError if critical issues found."""
+    if result["modified"] or result["missing"]:
+        error_msg = _build_error_message(result)
+        logger.critical(error_msg)
+        raise IntegrityError(error_msg)
+
+    if result["new"]:
+        logger.warning(f"New files detected (not in manifest): {result['new']}")
+
+    logger.info("Integrity check PASSED")
+    return result
 
 
 class ChecksumValidator:
@@ -52,14 +86,6 @@ class ChecksumValidator:
         # Directories to verify
         self.protected_dirs = ["hierachain/security", "hierachain/core"]
 
-    def calculate_file_hash(self, file_path: Path) -> str:
-        """Calculate SHA-256 hash of a file."""
-        hasher = hashlib.sha256()
-        with open(file_path, "rb") as f:
-            while chunk := f.read(8192):
-                hasher.update(chunk)
-        return hasher.hexdigest()
-
     def calculate_directory_hash(self, dir_path: str) -> dict[str, str]:
         """
         Calculate SHA-256 hashes for all .py files in a directory.
@@ -79,7 +105,7 @@ class ChecksumValidator:
 
         for py_file in full_path.rglob("*.py"):
             relative_path = str(py_file.relative_to(self.base_path))
-            hashes[relative_path] = self.calculate_file_hash(py_file)
+            hashes[relative_path] = calculate_file_hash(py_file)
 
         return hashes
 
@@ -127,56 +153,50 @@ class ChecksumValidator:
     def verify_integrity(self) -> dict[str, list[str]]:
         """
         Verify code integrity against manifest.
-
+        
         Returns:
             Dict with 'modified', 'missing', and 'new' file lists.
-
+        
         Raises:
             IntegrityError: If any files have been modified or removed.
         """
         manifest = self.load_manifest()
         expected_hashes = manifest.get("files", {})
-
+        
         result: dict[str, list[str]] = {
             "modified": [],
             "missing": [],
             "new": []
         }
+        
+        # 1. Check existing files and detect modifications/missing
+        self._check_manifest_files(expected_hashes, result)
+        
+        # 2. Check for new files not in manifest
+        self._check_for_new_files(expected_hashes, result)
+        
+        # 3. Handle and report results
+        return _report_integrity_results(result)
 
-        # Check each file in manifest
+    def _check_manifest_files(self, expected_hashes: dict[str, str], result: dict[str, list[str]]) -> None:
+        """Check each file in manifest for existence and hash match."""
         for file_path, expected_hash in expected_hashes.items():
             full_path = self.base_path / file_path
-
+            
             if not full_path.exists():
                 result["missing"].append(file_path)
                 continue
-
-            actual_hash = self.calculate_file_hash(full_path)
-            if actual_hash != expected_hash:
+                
+            if calculate_file_hash(full_path) != expected_hash:
                 result["modified"].append(file_path)
 
-        # Check for new files not in manifest
+    def _check_for_new_files(self, expected_hashes: dict[str, str], result: dict[str, list[str]]) -> None:
+        """Scan protected directories for files not present in manifest."""
         for dir_path in self.protected_dirs:
             current_hashes = self.calculate_directory_hash(dir_path)
             for file_path in current_hashes:
                 if file_path not in expected_hashes:
                     result["new"].append(file_path)
-
-        # Report results
-        if result["modified"] or result["missing"]:
-            error_msg = "Integrity check FAILED:\n"
-            if result["modified"]:
-                error_msg += f"  Modified: {result['modified']}\n"
-            if result["missing"]:
-                error_msg += f"  Missing: {result['missing']}\n"
-            logger.critical(error_msg)
-            raise IntegrityError(error_msg)
-
-        if result["new"]:
-            logger.warning(f"New files detected (not in manifest): {result['new']}")
-
-        logger.info("Integrity check PASSED")
-        return result
 
 
 def verify_startup_integrity(abort_on_failure: bool = True) -> bool:
