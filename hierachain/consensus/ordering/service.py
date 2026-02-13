@@ -60,12 +60,12 @@ class OrderingService:
 
     def _init_processing_thread(self):
         """Entry point for the background processing thread"""
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
         try:
-            loop.run_until_complete(self.processor.run_async())
+            self.loop.run_until_complete(self.processor.run_async())
         finally:
-            loop.close()
+            self.loop.close()
 
     def receive_event(self, event_data: dict[str, Any], channel_id: str, submitter_org: str) -> str:
         """Submit a new event for ordering"""
@@ -116,9 +116,27 @@ class OrderingService:
         """Get current service metrics"""
         return self.metrics.get_stats()
 
-    async def _check_timeout_block_creation(self, force: bool = False):
-        """Proxy for backward compatibility with sub_chain.py"""
-        await self.processor.block_manager.check_timeout_block_creation(force=force)
+    def force_block_creation(self, timeout: float = 3.0, force: bool = True) -> None:
+        """
+        Force the creation of a block from pending events.
+        
+        Args:
+            timeout: Maximum time to wait for completion.
+            force: Whether to force creation even if batch is not full or timeout not reached.
+        """
+        if not hasattr(self, "loop") or not self.loop.is_running():
+            logger.warning("Ordering service loop NOT running. Cannot force block creation.")
+            return
+
+        future = asyncio.run_coroutine_threadsafe(
+            self.processor.block_manager.check_timeout_block_creation(force=force), 
+            self.loop
+        )
+        try:
+            future.result(timeout=timeout)
+            logger.debug(f"Forced block creation completed. QM={self.commit_queue.qsize()} BC={self.blocks_created}")
+        except Exception as e:
+            logger.error(f"Error forcing block creation: {e}")
 
     def lockdown(self, reason: str = "Manual lockdown") -> bool:
         """Enter lockdown mode"""
