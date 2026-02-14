@@ -12,11 +12,13 @@ from hierachain.consensus.ordering.types import PendingEvent
 class OrderingStorageHandler:
     """Manages persistent storage and caching for blocks and events"""
     def __init__(self, config: dict[str, Any]):
+        self.config = config
         self.storage = SqlStorageBackend(connection_string=config.get("db_url"))
         cache_size = config.get("block_cache_size", 100)
         self.block_history: deque[Block] = deque(maxlen=cache_size)
         self.last_block: Block | None = None
         self.processed_events: dict[str, PendingEvent] = {}
+        self.chain_name = config.get("chain_name")
 
     def save_block(self, block: Block, chain_name: str | None):
         block_data = {
@@ -49,14 +51,25 @@ class OrderingStorageHandler:
     def _load_from_db(self, start_index: int) -> list[Block]:
         blocks = []
         current_index = start_index
+        
         while True:
-            data = self.storage.get_block_by_index(current_index)
+            # We need to know which chain we are loading blocks for
+            data = self.storage.get_block_by_index(current_index, chain_name=self.chain_name)
             if not data: break
             block = Block(index=data["index"], events=data["events"], previous_hash=data["previous_hash"])
             block.hash, block.timestamp = data["hash"], data["timestamp"]
             blocks.append(block)
             current_index += 1
         return blocks
+
+    def get_latest_block_from_db(self) -> Block | None:
+        """Retrieve the latest block for this chain from DB."""
+        data = self.storage.get_latest_block(chain_name=self.chain_name)
+        if not data:
+            return None
+        block = Block(index=data["index"], events=data["events"], previous_hash=data["previous_hash"])
+        block.hash, block.timestamp = data["hash"], data["timestamp"]
+        return block
 
     def close(self):
         self.storage.close()
