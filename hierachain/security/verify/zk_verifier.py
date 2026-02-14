@@ -218,7 +218,7 @@ class ZKVerifier:
             return _verify_mock(proof, inputs)
         if self.mode == "production":
             return self._verify_production(proof, inputs)
-        raise ZKVerificationError(f"Unknown verification mode: {self.mode}")
+        raise ValueError(f"Unknown verification mode: {self.mode}")
 
     def _process_verification_result(self, result: bool, inputs: ZKPublicInputs) -> bool:
         """Update stats and log result."""
