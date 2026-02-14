@@ -43,7 +43,13 @@ class OrderingService:
         # Component Initialization
         self.metrics = OrderingMetrics()
         self.storage_handler = OrderingStorageHandler(config)
-        self.journal = TransactionJournal(config.get("journal_path", "journal/ordering.log"))
+        
+        # Configure journal based on storage_dir and node_id for persistence
+        storage_dir = config.get("storage_dir", "journal")
+        node_id = nodes[0].node_id if nodes else "unknown"
+        active_log_name = f"node_{node_id}_journal.log"
+        self.journal = TransactionJournal(storage_dir=storage_dir, active_log_name=active_log_name)
+        
         self.certifier = EventCertifier()
         self.block_builder = BlockBuilder(config)
         
@@ -98,6 +104,10 @@ class OrderingService:
         
         return event_id
 
+    def get_latest_block(self) -> Block | None:
+        """Retrieve the latest block for the current chain"""
+        return self.storage_handler.get_latest_block_from_db()
+
     def get_blocks(self, start_index: int = 0) -> list[Block]:
         """Retrieve blocks starting from index"""
         return self.storage_handler.get_blocks(start_index)
@@ -134,7 +144,7 @@ class OrderingService:
             return
 
         future = asyncio.run_coroutine_threadsafe(
-            self.processor.block_manager.check_timeout_block_creation(force=force), 
+            self.processor.force_process_batch_async(), 
             self.loop
         )
         try:
