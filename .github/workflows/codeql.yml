@@ -26,12 +26,8 @@ jobs:
         with:
           languages: python
           config: |
-            paths-ignore:
-              - demo/**
-              - tests/**
-              - testing/**
-              - scripts/**
-              - .github/**
+            paths:
+              - hierachain/**
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v4
