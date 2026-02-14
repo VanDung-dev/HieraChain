@@ -70,7 +70,7 @@ def _check_status_consistency(
     old_status = details.get("old_status")
     new_status = details.get("new_status")
 
-    if entity_status is not None and entity_status != old_status:
+    if old_status is not None and entity_status is not None and entity_status != old_status:
         inconsistencies.append({
             "type": "status_inconsistency",
             "chain_name": chain_name,
@@ -318,6 +318,17 @@ class CrossChainValidator:
         proof_hash = details.get("proof_hash")
 
         if not sub_chain_name or not proof_hash:
+            return
+
+        sub_chain = self.hierarchy_manager.get_sub_chain(sub_chain_name)
+        if not sub_chain:
+            validation_results["missing_blocks"] += 1
+            validation_results["inconsistencies"].append({
+                "type": "missing_sub_chain",
+                "sub_chain_name": sub_chain_name,
+                "proof_hash": proof_hash,
+                "timestamp": proof_event.get("timestamp")
+            })
             return
 
         block = self._find_corresponding_block(sub_chain_name, proof_hash)
