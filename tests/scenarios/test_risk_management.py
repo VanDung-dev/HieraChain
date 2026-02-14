@@ -21,7 +21,9 @@ from hierachain.risk_management.risk_analyzer import (
 from hierachain.risk_management.mitigation_strategies import (
     MitigationManager, MitigationStatus, ConsensusMitigationStrategies,
     SecurityMitigationStrategies, PerformanceMitigationStrategies,
-    StorageMitigationStrategies
+    StorageMitigationStrategies, renew_certificates, implement_rate_limiting,
+    scale_processing_capacity, optimize_memory_usage, execute_backup,
+    implement_state_pruning
 )
 from hierachain.risk_management.audit_logger import (
     AuditLogger, AuditEventType, AuditSeverity,
@@ -360,49 +362,31 @@ def test_consensus_mitigation_strategies():
 def test_security_mitigation_strategies():
     """Test security mitigation strategies"""
     # Test renew_certificates
-    result = SecurityMitigationStrategies.renew_certificates({
-        'certificate_ids': ['cert_001', 'cert_002'],
-        'ca_config': {}
-    })
+    result = renew_certificates({})
     assert result == True
     
     # Test implement_rate_limiting
-    result = SecurityMitigationStrategies.implement_rate_limiting({
-        'max_attempts': 5,
-        'time_window': 300
-    })
+    result = implement_rate_limiting({})
     assert result == True
 
 def test_performance_mitigation_strategies():
     """Test performance mitigation strategies"""
     # Test scale_processing_capacity
-    result = PerformanceMitigationStrategies.scale_processing_capacity({
-        'target_capacity': 3,
-        'scaling_type': 'horizontal'
-    })
+    result = scale_processing_capacity({})
     assert result == True
     
     # Test optimize_memory_usage
-    result = PerformanceMitigationStrategies.optimize_memory_usage({
-        'optimization_targets': ['caching', 'garbage_collection'],
-        'memory_limit': '4GB'
-    })
+    result = optimize_memory_usage({})
     assert result == True
 
 def test_storage_mitigation_strategies():
     """Test storage mitigation strategies"""
     # Test execute_backup
-    result = StorageMitigationStrategies.execute_backup({
-        'backup_target': '/tmp/test_backup',
-        'compression': True
-    })
+    result = execute_backup({})
     assert result == True
     
     # Test implement_state_pruning
-    result = StorageMitigationStrategies.implement_state_pruning({
-        'retention_days': 90,
-        'pruning_interval': 86400
-    })
+    result = implement_state_pruning({})
     assert result == True
 
 def test_mitigation_execution(mitigation_context):

@@ -13,7 +13,7 @@ from unittest.mock import Mock, patch
 
 from hierachain.error_mitigation.validator import ConsensusValidator
 from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
-from hierachain.security.key_backup_manager import KeyBackupManager
+from hierachain.security.key_backup_manager import KeyBackupManager, _validate_keys
 from hierachain.security.key_manager import KeyManager
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
@@ -276,12 +276,12 @@ def test_key_restoration_validation():
     invalid_private = b"short"
     
     # Test valid keys
-    assert backup_manager._validate_keys(valid_public, valid_private, "test") is True
+    assert _validate_keys(valid_public, valid_private, "test") is True
     
     # Test invalid keys
-    assert backup_manager._validate_keys(invalid_public, invalid_private, "test") is False
-    assert backup_manager._validate_keys(b"", valid_private, "test") is False
-    assert backup_manager._validate_keys(valid_public, b"", "test") is False
+    assert _validate_keys(invalid_public, invalid_private, "test") is False
+    assert _validate_keys(b"", valid_private, "test") is False
+    assert _validate_keys(valid_public, b"", "test") is False
 
 
 # Test API-related recovery scenarios.
