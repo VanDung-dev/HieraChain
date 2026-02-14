@@ -144,22 +144,28 @@ class SqlStorageBackend:
         finally:
             session.close()
 
-    def get_latest_block(self) -> dict[str, Any] | None:
+    def get_latest_block(self, chain_name: str | None = None) -> dict[str, Any] | None:
         """Retrieve the latest block from DB."""
         session = self.Session()
         try:
-            block = session.query(BlockModel).order_by(BlockModel.index.desc()).first()
+            query = session.query(BlockModel)
+            if chain_name:
+                query = query.filter_by(chain_name=chain_name)
+            block = query.order_by(BlockModel.index.desc()).first()
             if not block:
                 return None
             return _to_block_dict(block)  # type: ignore[arg-type]
         finally:
             session.close()
 
-    def get_block_by_index(self, index: int) -> dict[str, Any] | None:
+    def get_block_by_index(self, index: int, chain_name: str | None = None) -> dict[str, Any] | None:
         """Retrieve block by index."""
         session = self.Session()
         try:
-            block = session.query(BlockModel).filter_by(index=index).first()
+            query = session.query(BlockModel).filter_by(index=index)
+            if chain_name:
+                query = query.filter_by(chain_name=chain_name)
+            block = query.first()
             if not block:
                 return None
             return _to_block_dict(block)  # type: ignore[arg-type]
