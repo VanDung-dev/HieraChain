@@ -21,20 +21,6 @@ from hierachain.core import schemas
 logger = logging.getLogger(__name__)
 
 
-def _validate_filename(name: str) -> None:
-    """
-    Validate filename against strict security rules (CWE-22).
-    Allowed: alphanumeric, underscore, hyphen, single dot.
-    """
-    # Strict allowlist approach.
-    pattern = r"^[a-zA-Z0-9_\-]+(\.[a-zA-Z0-9]+)?$"
-    if not re.match(pattern, name):
-        raise ValueError(
-            f"Security: Invalid filename '{name}'. "
-            "Allowed: [a-zA-Z0-9_-] and single optional extension."
-        )
-
-
 def _validate_path_component(comp: str) -> None:
     """Validate a single path component for security."""
     if comp in ("", ".", ".."):
@@ -248,6 +234,20 @@ class TransactionJournal:
     pipeline.
     """
 
+    @staticmethod
+    def _validate_filename(name: str) -> None:
+        """
+        Validate filename against strict security rules (CWE-22).
+        Allowed: alphanumeric, underscore, hyphen, single dot.
+        """
+        # Strict allowlist approach.
+        pattern = r"^[a-zA-Z0-9_\-]+(\.[a-zA-Z0-9]+)?$"
+        if not re.match(pattern, name):
+            raise ValueError(
+                f"Security: Invalid filename '{name}'. "
+                "Allowed: [a-zA-Z0-9_-] and single optional extension."
+            )
+
     def __init__(self, storage_dir: str = "data/journal", active_log_name: str = "current.log"):
         """
         Initialize the Transaction Journal.
@@ -273,7 +273,7 @@ class TransactionJournal:
             )
 
         safe_log_name = os.path.basename(active_log_name)
-        _validate_filename(safe_log_name)
+        self._validate_filename(safe_log_name)
 
         # Build active log file path strictly inside storage_path
         self.active_log_file = self.storage_path / safe_log_name
