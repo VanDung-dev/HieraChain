@@ -371,8 +371,8 @@ def test_cross_chain_validation_with_timestamp_inconsistency():
                     break
             
             if modified:
-                from hierachain.core.block import Block
-                block._events = Block._convert_events_to_arrow(events_list)
+                from hierachain.core.block import _convert_events_to_arrow
+                block._events = _convert_events_to_arrow(events_list)
                 
         if found_proof:
             break

@@ -13,7 +13,7 @@ import pytest
 import pyarrow as pa
 from unittest.mock import patch
 
-from hierachain.security.policy_engine import PolicyEngine, PolicyCondition, ComparisonOperator
+from hierachain.security.policy_engine import PolicyEngine, PolicyCondition, ComparisonOperator, _hash_context
 from hierachain.risk_management.audit_logger import AuditEvent, AuditEventType, AuditSeverity
 from hierachain.error_mitigation.validator import APIValidator
 from hierachain.error_mitigation.error_classifier import ErrorClassifier
@@ -76,7 +76,7 @@ def test_policy_engine_hashing():
     context = {"table": table, "id": 1}
     
     # Should not raise TypeError: Object of type Table is not JSON serializable
-    hash_val = PolicyEngine._hash_context(context)
+    hash_val = _hash_context(context)
     assert isinstance(hash_val, str)
     assert len(hash_val) > 0
 
@@ -112,7 +112,7 @@ def test_error_classifier_sanitization():
     }
 
     # We need to mock _log_classification because it writes to file/logger
-    with patch.object(classifier, '_log_classification'):
+    with patch('hierachain.error_mitigation.error_classifier._log_classification'):
         error_info = classifier.classify_error(error_data)
         
         # error_info.metadata should be sanitized

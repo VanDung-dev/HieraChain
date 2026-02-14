@@ -34,7 +34,7 @@ def test_determinism():
     
     node = OrderingNode("node1", "localhost", True, 1.0, OrderingStatus.ACTIVE, time.time())
     
-    service = OrderingService([node], config)
+    service = OrderingService(config, [node])
     
     # Send 3 events with delays to force 3 separate blocks via timeout
     # Send 3 events, waiting for block creation explicitly to ensure deterministic journal order
@@ -72,7 +72,7 @@ def test_determinism():
     # If deterministic, it should produce 3 blocks (even though replay is fast).
     # If not deterministic, it might batch them all into 1 block (since 3 < block_size 10).
     
-    service2 = OrderingService([node], config)
+    service2 = OrderingService(config, [node])
     
     # Wait a bit for recovery to finish (it happens in __init__ -> _recover_state)
     time.sleep(1.0)
