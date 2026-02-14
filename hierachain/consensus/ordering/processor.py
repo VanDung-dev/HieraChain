@@ -31,19 +31,23 @@ class OrderingProcessor:
         # Internal components
         self.block_manager = OrderingBlockManager(service)
         self.recovery = OrderingRecovery(service, self)
+        
+        # Batch management
+        self.current_batch: list[PendingEvent] = []
+        self.last_batch_time = time.time()
+        self.force_process = asyncio.Event()
 
     async def run_async(self):
         """Main async processing loop"""
         await self._initialize_service()
 
-        batch: list[PendingEvent] = []
-        last_batch_time = time.time()
-        batch_size = self.config.get("batch_size", 100)
+        # Use block_size as fallback for batch_size to maintain consistency
+        batch_size = self.config.get("batch_size") or self.config.get("block_size") or 100
         
         while not self.should_stop.is_set():
             try:
-                await self._collect_next_event(batch)
-                last_batch_time = await self._handle_batch_logic(batch, last_batch_time, batch_size)
+                await self._collect_next_event(self.current_batch)
+                self.last_batch_time = await self._handle_batch_logic(self.current_batch, self.last_batch_time, batch_size)
             except Exception as e:
                 logger.error(f"Error in processor loop: {e}")
                 await asyncio.sleep(0.1)
@@ -60,19 +64,26 @@ class OrderingProcessor:
             pending_event = self.event_pool.get_nowait()
             batch.append(pending_event)
         except Empty:
+            # Short sleep if empty to avoid busy waiting
             await asyncio.sleep(0.01)
 
     async def _handle_batch_logic(self, batch: list[PendingEvent], last_batch_time: float, batch_size: int) -> float:
         """Decide if a batch should be processed or if timeout blocks should be checked"""
         is_full = len(batch) >= batch_size
-        is_timeout = (time.time() - last_batch_time) > self.config.get("batch_timeout", 0.1)
+        batch_timeout = self.config.get("batch_timeout", 0.1)
+        is_timeout = (time.time() - last_batch_time) > batch_timeout
+        is_forced = self.force_process.is_set()
         
-        if (batch and (is_full or is_timeout)) or (not batch and self.block_manager.is_block_timeout()):
+        if (batch and (is_full or is_timeout or is_forced)) or (not batch and self.block_manager.is_block_timeout()):
             if batch:
                 await self._process_batch(list(batch))
                 batch.clear()
-                last_batch_time = time.time()
-            await self.block_manager.check_timeout_block_creation()
+            
+            await self.block_manager.check_timeout_block_creation(force=is_forced)
+            # Update last_batch_time whenever we process or check timeout to avoid continuous triggering
+            last_batch_time = time.time()
+            if is_forced:
+                self.force_process.clear()
             
         return last_batch_time
 
@@ -152,5 +163,9 @@ class OrderingProcessor:
                 
         except Exception as e:
             logger.error(f"Error processing event {pending_event.event_id}: {e}")
-            pending_event.status = EventStatus.REJECTED
-            self.metrics.record_rejected()
+
+    async def force_process_batch_async(self) -> None:
+        """Force immediate processing of current batch and block creation"""
+        self.force_process.set()
+        # Give the loop a chance to pick it up
+        await asyncio.sleep(0.05)
