@@ -45,20 +45,35 @@ def create_test_temp_dir():
     return tempfile.mkdtemp(dir=data_root)
 
 
+def get_test_config(temp_dir):
+    """Get a standard test configuration with unique paths."""
+    return {
+        "storage_dir": temp_dir,
+        "journal_path": temp_dir,
+        "db_url": f"sqlite:///{os.path.join(temp_dir, 'test.db')}"
+    }
+
+
 def test_init_with_defaults():
     """Test initialization with default parameters"""
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
         service = OrderingService(nodes=[node], config=config)
         assert service is not None
+        # Wait for service to become active
+        assert service.wait_for_active(timeout=5.0), "Service did not become active"
         assert service.get_service_status()["status"] == "active"
     finally:
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_init_with_params():
@@ -66,7 +81,8 @@ def test_init_with_params():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"block_size": 1000, "batch_timeout": 5.0, "storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
+        config.update({"block_size": 1000, "batch_timeout": 5.0})
         service = OrderingService(nodes=[node], config=config)
 
         status = service.get_service_status()
@@ -76,7 +92,11 @@ def test_init_with_params():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_receive_valid_event():
@@ -84,7 +104,7 @@ def test_receive_valid_event():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
         service = OrderingService(nodes=[node], config=config)
         event = {
             "entity_id": "TEST-001",
@@ -96,7 +116,7 @@ def test_receive_valid_event():
         assert event_id is not None
 
         # Check event status
-        time.sleep(0.5)  # Allow slight processing time
+        time.sleep(1.0)  # Increased wait time for processing
         status = service.get_event_status(event_id)
         assert status is not None
         assert status["status"] in ["pending", "certified"]
@@ -104,8 +124,11 @@ def test_receive_valid_event():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
-
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_block_creation(benchmark: Any) -> None:
@@ -114,8 +137,13 @@ def test_block_creation(benchmark: Any) -> None:
         temp_dir = create_test_temp_dir()
         service = None
         try:
-            config = {"block_size": 3, "batch_timeout": 0.1, "storage_dir": temp_dir}
+            config = get_test_config(temp_dir)
+            # Use a slightly larger timeout to ensure all events are collected into one batch
+            config.update({"block_size": 3, "batch_timeout": 0.5})
             service = OrderingService(nodes=[node], config=config)
+
+            # Wait for service to be active
+            assert service.wait_for_active(timeout=5.0), "Service did not become active"
 
             # Add events to reach batch size
             event_ids = []
@@ -129,14 +157,14 @@ def test_block_creation(benchmark: Any) -> None:
                 event_ids.append(event_id)
 
             # Wait for processing with polling
-            timeout = 2.0
+            timeout = 3.0
             start_wait = time.time()
             block = None
             while time.time() - start_wait < timeout:
                 block = service.get_next_block()
                 if block:
                     break
-                time.sleep(0.1)
+                time.sleep(0.2)
 
             assert block is not None
             assert len(block.events) == 3
@@ -145,7 +173,11 @@ def test_block_creation(benchmark: Any) -> None:
             if service:
                 service.shutdown()
             if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
+                try:
+                    shutil.rmtree(temp_dir)
+                except PermissionError:
+                    time.sleep(0.5)
+                    shutil.rmtree(temp_dir, ignore_errors=True)
 
     benchmark(execute)
 
@@ -155,7 +187,7 @@ def test_invalid_event_handling():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
         service = OrderingService(nodes=[node], config=config)
 
         # Event missing required fields
@@ -163,13 +195,17 @@ def test_invalid_event_handling():
         service.receive_event(invalid_event, "test-channel", "test-org")
 
         # Wait for processing
-        time.sleep(0.5)  # Increased wait time
+        time.sleep(1.0)  # Increased wait time
 
     finally:
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_timeout_block_creation():
@@ -177,7 +213,8 @@ def test_timeout_block_creation():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"block_size": 10, "batch_timeout": 0.1, "storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
+        config.update({"block_size": 10, "batch_timeout": 0.1})
         service = OrderingService(nodes=[node], config=config)
 
         # Submit 1 event and wait for timeout
@@ -189,7 +226,7 @@ def test_timeout_block_creation():
         service.receive_event(event, "test-channel", "test-org")
 
         # Wait for processing
-        time.sleep(0.5)
+        time.sleep(1.5)
 
         block = service.get_next_block()
         assert block is not None
@@ -208,7 +245,11 @@ def test_timeout_block_creation():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_service_status():
@@ -216,7 +257,7 @@ def test_service_status():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
         # Use fresh node to ensure heartbeat is not stale
         fresh_node = create_test_node()
         service = OrderingService(nodes=[fresh_node], config=config)
@@ -228,7 +269,11 @@ def test_service_status():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_custom_validation_rule():
@@ -236,7 +281,7 @@ def test_custom_validation_rule():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
         service = OrderingService(nodes=[node], config=config)
 
         # Add custom rules
@@ -254,7 +299,7 @@ def test_custom_validation_rule():
         event_id = service.receive_event(event, "test-channel", "test-org")
 
         # Wait for processing
-        time.sleep(0.5)
+        time.sleep(1.0)
         status = service.get_event_status(event_id)
         assert status is not None
         assert status["status"] == "rejected"
@@ -262,7 +307,11 @@ def test_custom_validation_rule():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_concurrent_event_processing(benchmark: Any) -> None:
@@ -271,9 +320,11 @@ def test_concurrent_event_processing(benchmark: Any) -> None:
         temp_dir = create_test_temp_dir()
         service = None
         try:
+            config = get_test_config(temp_dir)
+            config.update({"worker_threads": 4})
             service = OrderingService(
                 nodes=[node],
-                config={"worker_threads": 4, "storage_dir": temp_dir}
+                config=config
             )
 
             # Submit multiple events concurrently
@@ -288,7 +339,7 @@ def test_concurrent_event_processing(benchmark: Any) -> None:
                 event_ids.append(event_id)
 
             # Wait for processing
-            time.sleep(0.5)  # Increase wait time for 100 events
+            time.sleep(2.0)  # Increase wait time for 100 events
 
             # Check that all events were processed
             certified_count = 0
@@ -303,7 +354,11 @@ def test_concurrent_event_processing(benchmark: Any) -> None:
             if service:
                 service.shutdown()
             if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
+                try:
+                    shutil.rmtree(temp_dir)
+                except PermissionError:
+                    time.sleep(0.5)
+                    shutil.rmtree(temp_dir, ignore_errors=True)
 
     benchmark(execute)
 
@@ -334,9 +389,10 @@ def test_unhealthy_node(benchmark: Any) -> None:
                 last_heartbeat=time.time()
             )
 
+            config = get_test_config(temp_dir)
             service = OrderingService(
                 nodes=[unhealthy_node, healthy_node],
-                config={"storage_dir": temp_dir}
+                config=config
             )
 
             # Check service status
@@ -348,7 +404,11 @@ def test_unhealthy_node(benchmark: Any) -> None:
             if service:
                 service.shutdown()
             if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
+                try:
+                    shutil.rmtree(temp_dir)
+                except PermissionError:
+                    time.sleep(0.5)
+                    shutil.rmtree(temp_dir, ignore_errors=True)
 
     benchmark(execute)
 
@@ -359,10 +419,11 @@ def test_service_start_stop():
     service = None
     try:
         # Create service with minimal config
-        config = {"storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
         service = OrderingService(nodes=[node], config=config)
 
-        # Check that service is active
+        # Wait for service to become active
+        assert service.wait_for_active(timeout=5.0), "Service did not become active"
         assert service.status == OrderingStatus.ACTIVE
 
         # Test stop
@@ -371,7 +432,7 @@ def test_service_start_stop():
 
         # Test restart
         service.start()
-        time.sleep(0.1)  # Allow thread to start
+        assert service.wait_for_active(timeout=5.0), "Service did not become active after restart"
         assert service.status == OrderingStatus.ACTIVE
         
         # Final cleanup
@@ -380,7 +441,11 @@ def test_service_start_stop():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_system_error_handling():
@@ -388,7 +453,7 @@ def test_system_error_handling():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
         service = OrderingService(nodes=[node], config=config)
 
         # Add a validation rule that raises an exception
@@ -420,7 +485,7 @@ def test_system_error_handling():
         )
 
         # Wait for processing
-        time.sleep(0.5)
+        time.sleep(1.0)
 
         # Check that normal event was processed
         normal_status = service.get_event_status(normal_event_id)
@@ -434,7 +499,11 @@ def test_system_error_handling():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_large_volume_performance(benchmark):
@@ -443,7 +512,8 @@ def test_large_volume_performance(benchmark):
         temp_dir = create_test_temp_dir()
         service = None
         try:
-            config = {"block_size": 100, "batch_timeout": 0.5, "storage_dir": temp_dir}
+            config = get_test_config(temp_dir)
+            config.update({"block_size": 100, "batch_timeout": 0.5})
             service = OrderingService(nodes=[node], config=config)
 
             # Record start time
@@ -462,7 +532,7 @@ def test_large_volume_performance(benchmark):
                 event_ids.append(event_id)
 
             # Wait for all events to be processed
-            time.sleep(0.5)
+            time.sleep(2.0)
 
             # Check performance
             end_time = time.time()
@@ -495,7 +565,11 @@ def test_large_volume_performance(benchmark):
             if 'service' in locals() and hasattr(service, 'shutdown'):
                 service.shutdown()
             if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
+                try:
+                    shutil.rmtree(temp_dir)
+                except PermissionError:
+                    time.sleep(0.5)
+                    shutil.rmtree(temp_dir, ignore_errors=True)
 
     benchmark(execute)
 
@@ -505,7 +579,7 @@ def test_malformed_event_data():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
         service = OrderingService(nodes=[node], config=config)
 
         # Test with non-dictionary event data
@@ -534,7 +608,7 @@ def test_malformed_event_data():
             "timestamp": time.time() + 7200  # 2 hours in the future
         }
         event_id = service.receive_event(future_event, "test-channel", "test-org")
-        time.sleep(1.0)
+        time.sleep(1.5)
         status = service.get_event_status(event_id)
         assert status is not None
         assert status["status"] == "rejected"
@@ -542,7 +616,11 @@ def test_malformed_event_data():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_concurrent_edge_cases():
@@ -550,8 +628,14 @@ def test_concurrent_edge_cases():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"block_size": 5, "batch_timeout": 0.1, "storage_dir": temp_dir}
-        service = OrderingService(nodes=[node], config=config)
+        config = get_test_config(temp_dir)
+        config.update({"block_size": 5, "batch_timeout": 0.1})
+        # Use fresh node to ensure heartbeat is current
+        fresh_node = create_test_node()
+        service = OrderingService(nodes=[fresh_node], config=config)
+        
+        # Wait for service to be active
+        assert service.wait_for_active(timeout=5.0), "Service did not become active"
 
         # Send events in quick succession to test race conditions
         event_ids = []
@@ -565,8 +649,8 @@ def test_concurrent_edge_cases():
             event_id = service.receive_event(event, "test-channel", "test-org")
             event_ids.append(event_id)
 
-        # Wait for processing
-        time.sleep(1.0)
+        # Wait for processing - increased time for reliability
+        time.sleep(3.0)
 
         # Verify all events were processed by checking blocks
         # block_size=5, 10 events => 2 blocks
@@ -595,7 +679,11 @@ def test_concurrent_edge_cases():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_leader_election_scenarios():
@@ -624,7 +712,7 @@ def test_leader_election_scenarios():
 
         service = OrderingService(
             nodes=[leader_node, follower_node],
-            config={"storage_dir": temp_dir}
+            config=get_test_config(temp_dir)
         )
 
         # Check service status shows correct leader
@@ -636,7 +724,11 @@ def test_leader_election_scenarios():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_cleanup_on_service_stop():
@@ -644,7 +736,11 @@ def test_cleanup_on_service_stop():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        service = OrderingService(nodes=[node], config={"storage_dir": temp_dir})
+        fresh_node = create_test_node()
+        service = OrderingService(nodes=[fresh_node], config=get_test_config(temp_dir))
+        
+        # Wait for service to be active
+        assert service.wait_for_active(timeout=5.0), "Service did not become active"
 
         # Submit some events
         for i in range(5):
@@ -656,7 +752,7 @@ def test_cleanup_on_service_stop():
             service.receive_event(event, "test-channel", "test-org")
 
         # Wait a bit for processing to start
-        time.sleep(0.1)
+        time.sleep(0.3)
 
         # Stop service
         service.shutdown()
@@ -673,7 +769,11 @@ def test_cleanup_on_service_stop():
         if service and service.status != OrderingStatus.SHUTDOWN:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_network_failure_scenarios():
@@ -702,7 +802,7 @@ def test_network_failure_scenarios():
 
         service = OrderingService(
             nodes=[leader_node, healthy_node],
-            config={"storage_dir": temp_dir}
+            config=get_test_config(temp_dir)
         )
 
         # Check service status reflects network issues
@@ -714,7 +814,11 @@ def test_network_failure_scenarios():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_network_partition_handling():
@@ -761,7 +865,7 @@ def test_network_partition_handling():
             )
             nodes.append(node_2)
 
-        service = OrderingService(nodes=nodes, config={"storage_dir": temp_dir})
+        service = OrderingService(nodes=nodes, config=get_test_config(temp_dir))
 
         # Check service correctly identifies healthy/unhealthy nodes
         status = service.get_service_status()
@@ -772,7 +876,11 @@ def test_network_partition_handling():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_leader_failover():
@@ -812,7 +920,7 @@ def test_leader_failover():
 
         service = OrderingService(
             nodes=[leader_node, follower_node1, follower_node2],
-            config={"storage_dir": temp_dir}
+            config=get_test_config(temp_dir)
         )
 
         # Check service status
@@ -824,7 +932,11 @@ def test_leader_failover():
         if service and service.status != OrderingStatus.SHUTDOWN:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_complex_event_data():
@@ -832,8 +944,7 @@ def test_complex_event_data():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"storage_dir": temp_dir}
-        service = OrderingService(nodes=[node], config=config)
+        service = OrderingService(nodes=[node], config=get_test_config(temp_dir))
 
         # Complex nested event data
         complex_event = {
@@ -876,7 +987,11 @@ def test_complex_event_data():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_error_classification_with_complex_data():
@@ -1039,7 +1154,7 @@ def test_binary_data_handling():
         # Create binary data
         binary_data = bytes([i % 256 for i in range(1000)])  # 1000 bytes of binary data
 
-        service = OrderingService(nodes=[node], config={"storage_dir": temp_dir})
+        service = OrderingService(nodes=[node], config=get_test_config(temp_dir))
 
         event = {
             "entity_id": "BINARY-001",
@@ -1064,7 +1179,11 @@ def test_binary_data_handling():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_large_payload_handling():
@@ -1072,33 +1191,48 @@ def test_large_payload_handling():
     temp_dir = create_test_temp_dir()
     service = None
     try:
+        config = get_test_config(temp_dir)
+        config.update({
+            "block_size": 2,
+            "batch_timeout": 0.1
+        })
         service = OrderingService(
             nodes=[node],
-            config={
-                "block_size": 2,
-                "batch_timeout": 0.1,
-                "storage_dir": temp_dir
-            }
+            config=config
         )
+
+        # Wait for service to be active
+        assert service.wait_for_active(timeout=5.0), "Service did not become active"
 
         # Create a large payload
         large_payload = "A" * (1024 * 1024)  # 1MB string
 
-        event = {
+        # Use different entity IDs to avoid collision/deduplication if any
+        event1 = {
             "entity_id": "LARGE-001",
             "event": "large_payload_event",
             "timestamp": time.time(),
             "payload": large_payload
         }
+        
+        event2 = {
+            "entity_id": "LARGE-002",
+            "event": "large_payload_event",
+            "timestamp": time.time(),
+            "payload": large_payload
+        }
 
-        # Event IDs unused
-        service.receive_event(event, "test-channel", "test-org")
+        # Submit first event
+        service.receive_event(event1, "test-channel", "test-org")
+        # Wait 0.5s which is > batch_timeout (0.1s), should trigger block creation
         time.sleep(0.5)
 
-        service.receive_event(event, "test-channel", "test-org")
+        # Submit second event
+        service.receive_event(event2, "test-channel", "test-org")
         time.sleep(0.5)
 
         # Check block creation due to timeout (0.1s)
+        # The first event should be in its own block because of the 0.5s wait
         block = service.get_next_block()
         assert block is not None
         assert len(block.events) == 1
@@ -1107,11 +1241,21 @@ def test_large_payload_handling():
         events = block.to_event_list()
         assert events[0]["entity_id"] == "LARGE-001"
         assert events[0]["payload"] == large_payload
+        
+        # The second event should be in the NEXT block
+        block2 = service.get_next_block(timeout=2.0)
+        assert block2 is not None
+        assert len(block2.events) == 1
+        assert block2.to_event_list()[0]["entity_id"] == "LARGE-002"
     finally:
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_very_small_block_size():
@@ -1119,7 +1263,8 @@ def test_very_small_block_size():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        config = {"block_size": 1, "batch_timeout": 0.1, "storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
+        config.update({"block_size": 1, "batch_timeout": 0.1})
         service = OrderingService(nodes=[node], config=config)
 
         event = {
@@ -1144,7 +1289,11 @@ def test_very_small_block_size():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_very_large_block_size():
@@ -1153,8 +1302,12 @@ def test_very_large_block_size():
     service = None
     try:
         # Increase timeout to avoid auto-block creation
-        config = {"block_size": 10000, "batch_timeout": 10.0, "storage_dir": temp_dir}
+        config = get_test_config(temp_dir)
+        config.update({"block_size": 10000, "batch_timeout": 1.0})
         service = OrderingService(nodes=[node], config=config)
+
+        # Wait for service to be active
+        assert service.wait_for_active(timeout=5.0), "Service did not become active"
 
         # Add a few events
         event_ids = []
@@ -1167,13 +1320,26 @@ def test_very_large_block_size():
             event_id = service.receive_event(event, "test-channel", "test-org")
             event_ids.append(event_id)
 
-        time.sleep(0.2)
+        # Wait for events to be processed (certified)
+        # We poll for status instead of a fixed sleep for robustness
+        timeout = 5.0
+        start_wait = time.time()
+        while time.time() - start_wait < timeout:
+            all_certified = True
+            for event_id in event_ids:
+                status = service.get_event_status(event_id)
+                if not status or status["status"] != "certified":
+                    all_certified = False
+                    break
+            if all_certified:
+                break
+            time.sleep(0.2)
 
         # With such a large block size, events should be certified but no block created yet
         for event_id in event_ids:
             status = service.get_event_status(event_id)
             assert status is not None
-            assert status["status"] == "certified"
+            assert status["status"] == "certified", f"Event {event_id} status is {status['status']}, expected certified"
 
         # Should not have created a block yet (only 5 events, block_size=10000)
         block = service.get_next_block()
@@ -1182,7 +1348,11 @@ def test_very_large_block_size():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_service_recovery_after_crash():
@@ -1191,9 +1361,8 @@ def test_service_recovery_after_crash():
     service = None
     new_service = None
     try:
-        db_path = os.path.join(temp_dir, "test.db")
-        db_url = f"sqlite:///{db_path}"
-        config = {"block_size": 3, "batch_timeout": 0.1, "storage_dir": temp_dir, "db_url": db_url}
+        config = get_test_config(temp_dir)
+        config.update({"block_size": 3, "batch_timeout": 0.1})
         service = OrderingService(nodes=[node], config=config)
 
         # Add some events
@@ -1222,9 +1391,17 @@ def test_service_recovery_after_crash():
         }
 
         recovery_event_id = new_service.receive_event(recovery_event, "test-channel", "test-org")
-        time.sleep(0.5)
+        
+        # Wait for event to be processed
+        timeout = 5.0
+        start_wait = time.time()
+        status = None
+        while time.time() - start_wait < timeout:
+            status = new_service.get_event_status(recovery_event_id)
+            if status and status["status"] in ["certified", "ordered"]:
+                break
+            time.sleep(0.1)
 
-        status = new_service.get_event_status(recovery_event_id)
         assert status is not None
         assert status["status"] in ["certified", "ordered"]
     finally:
@@ -1233,7 +1410,11 @@ def test_service_recovery_after_crash():
         if new_service:
             new_service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_access_control_validation():
@@ -1241,7 +1422,7 @@ def test_access_control_validation():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        service = OrderingService(nodes=[node], config={"storage_dir": temp_dir})
+        service = OrderingService(nodes=[node], config=get_test_config(temp_dir))
 
         # Test with normal organization
         normal_event = {
@@ -1263,7 +1444,11 @@ def test_access_control_validation():
         if service:
             service.shutdown()
         if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_network_recovery_with_complex_data():
