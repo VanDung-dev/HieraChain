@@ -310,14 +310,6 @@ class SubChain(Blockchain):
 
         self.ordering_service = OrderingService(nodes=[local_node], config=config)
 
-        # Sync OrderingService with local chain state (Genesis)
-        if self.chain:
-            latest = self.chain[-1]
-            # OrderingService uses block_history to determine previous_hash
-            self.ordering_service.block_history = [latest]
-            # OrderingService uses blocks_created to determine next index
-            self.ordering_service.blocks_created = latest.index + 1
-
     def add_event(self, event: dict[str, Any]) -> str:
         """Add event to Sub-Chain."""
         # Add timestamp if missing
@@ -671,17 +663,30 @@ class SubChain(Blockchain):
         Fetch missing blocks from history.
         """
         try:
-            latest_index = self.get_latest_block().index
-            missing_blocks = self.ordering_service.get_blocks(start_index=latest_index)
-
-            # Using simple iteration
-            count = 0
-            for block in missing_blocks:
-                if self.add_block(block):
-                    count += 1
-
-            if count > 0:
-                logger.info(f"Synced/Rehydrated {count} blocks from Ordering Service.")
+            # 1. First, try to recover the full chain state from Ordering Service/Storage
+            latest_block_os = self.ordering_service.get_latest_block()
+            
+            if latest_block_os and latest_block_os.index > self.get_latest_block().index:
+                logger.info(f"Rehydrating chain {self.name} from index {self.get_latest_block().index} to {latest_block_os.index}")
+                
+                # Fetch all blocks from our current height to the latest in OS
+                start_idx = self.get_latest_block().index + 1
+                missing_blocks = self.ordering_service.get_blocks(start_index=start_idx)
+                
+                count = 0
+                for block in missing_blocks:
+                    # For rehydration, we trust the ordering service's blocks but still validate
+                    # and index them locally.
+                    if self.add_block(block):
+                        count += 1
+                
+                if count > 0:
+                    logger.info(f"Rehydrated {count} blocks from Ordering Service.")
+            
+            # 2. Update OrderingService state to match our now-synced chain
+            latest_local = self.get_latest_block()
+            self.ordering_service.block_history = [latest_local]
+            self.ordering_service.blocks_created = latest_local.index + 1
 
         except Exception as e:
             logger.error(f"Sync failed: {e}")
