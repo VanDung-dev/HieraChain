@@ -164,11 +164,11 @@ def test_key_backup_manager_retention_policies():
     }
     km = KeyBackupManager(config)
     
-    # Mock encryption
-    with (patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet):
-        mock_fernet_instance = Mock()
-        mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-        mock_fernet.return_value = mock_fernet_instance
+    # Mock encryption - use AESGCM instead of Fernet
+    with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
+        mock_aesgcm_instance = Mock()
+        mock_aesgcm_instance.encrypt.return_value = b"encrypted_data_with_nonce"
+        mock_aesgcm.return_value = mock_aesgcm_instance
         
         # Create backup
         backup_id = km.backup_keys(b"pub", b"priv", "retention_test")

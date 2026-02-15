@@ -35,10 +35,10 @@ def test_end_to_end_key_lifecycle(benchmark):
         kb = KeyBackupManager(config)
 
         # Mock encryption for predictable testing
-        with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
-            mock_fernet_instance = Mock()
-            mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-            mock_fernet.return_value = mock_fernet_instance
+        with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
+            mock_aesgcm_instance = Mock()
+            mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
+            mock_aesgcm.return_value = mock_aesgcm_instance
 
             # Convert key to bytes for backup (simulating internal representation)
             key_bytes = api_key.encode('utf-8')
@@ -106,10 +106,10 @@ def test_key_revocation_propagation(benchmark):
         config = {"enabled": True}
         kb = KeyBackupManager(config)
 
-        with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
-            mock_fernet_instance = Mock()
-            mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-            mock_fernet.return_value = mock_fernet_instance
+        with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
+            mock_aesgcm_instance = Mock()
+            mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
+            mock_aesgcm.return_value = mock_aesgcm_instance
 
             key_bytes = api_key.encode('utf-8')
             backup_id = kb.backup_keys(key_bytes, key_bytes, "revocation_test")
@@ -156,17 +156,19 @@ def test_multiple_module_interaction_under_load(benchmark):
         km = KeyManager()
         keys = []
         for i in range(10):
-            key = km.create_key(f"user_{i}", ["read", "write"], {"app": f"LoadTestApp_{i}"})
+            key = km.create_key(
+                f"user_{i}", ["read", "write"], {"app": f"LoadTestApp_{i}"}
+            )
             keys.append(key)
 
         # Backup all keys
         config = {"enabled": True}
         kb = KeyBackupManager(config)
 
-        with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
-            mock_fernet_instance = Mock()
-            mock_fernet_instance.encrypt.return_value = b"encrypted_data"
-            mock_fernet.return_value = mock_fernet_instance
+        with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
+            mock_aesgcm_instance = Mock()
+            mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
+            mock_aesgcm.return_value = mock_aesgcm_instance
 
             backup_ids = []
             for i, key in enumerate(keys):
@@ -235,24 +237,24 @@ def test_security_modules_interoperability(benchmark):
         config = {"enabled": True}
         kb = KeyBackupManager(config)
 
-        with patch('hierachain.security.key_backup_manager.Fernet') as mock_fernet:
-            mock_fernet_instance = Mock()
-            mock_fernet_instance.encrypt.return_value = b"encrypted_data"
+        with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
+            mock_aesgcm_instance = Mock()
+            mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
             # Fix: Mock decrypt to return proper JSON string that matches real behavior
             # The keys should be hex-encoded strings as they are stored in the backup
-            mock_fernet_instance.decrypt.return_value = json.dumps({
-                "public_key": api_key.encode().hex(),  # Store as hex string like in real implementation
+            mock_aesgcm_instance.decrypt.return_value = json.dumps({
+                "public_key": api_key.encode().hex(),  # Store as hex string
                 "private_key": "a" * 64,  # Valid 32-byte hex string for private key
                 "key_type": "interop_test"
             }).encode()
-            mock_fernet.return_value = mock_fernet_instance
+            mock_aesgcm.return_value = mock_aesgcm_instance
 
             key_bytes = api_key.encode('utf-8')
             backup_id = kb.backup_keys(key_bytes, key_bytes, "interop_test")
 
             # Restore the key
             restored_data = kb.restore_keys(backup_id)
-            # Fix: After restoration, the keys are bytes, not UTF-8 strings that need decoding
+            # After restoration, keys are bytes, not UTF-8 strings
             restored_key = restored_data["public_key"].decode('utf-8')
 
             # Verify restored key matches original
@@ -278,6 +280,7 @@ def test_security_modules_interoperability(benchmark):
         # Cross-check information between modules
         assert km.get_user(api_key) == "interop_test_user"
         entity_info = msp.get_entity_info("interop-entity")
+        assert entity_info is not None
         assert entity_info["role"] == "operator"
 
         return True
