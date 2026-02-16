@@ -131,53 +131,65 @@ def test_receive_valid_event():
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
 
+def _start_ordering_service_for_block_test(block_size: int, batch_timeout: float) -> tuple[OrderingService, str]:
+    temp_dir = create_test_temp_dir()
+    config = get_test_config(temp_dir)
+    config.update({"block_size": block_size, "batch_timeout": batch_timeout})
+    service = OrderingService(nodes=[node], config=config)
+    assert service.wait_for_active(timeout=5.0), "Service did not become active"
+    return service, temp_dir
+
+
+def _submit_test_events(service: OrderingService, count: int) -> list[str]:
+    event_ids: list[str] = []
+    for i in range(count):
+        event = {
+            "entity_id": f"TEST-{i:03d}",
+            "event": "test_event",
+            "timestamp": time.time(),
+        }
+        event_id = service.receive_event(event, "test-channel", "test-org")
+        event_ids.append(event_id)
+    return event_ids
+
+
+def _wait_for_block(service: OrderingService, timeout: float = 3.0, interval: float = 0.2):
+    start_wait = time.time()
+    block = None
+    while time.time() - start_wait < timeout:
+        block = service.get_next_block()
+        if block:
+            break
+        time.sleep(interval)
+    return block
+
+
+def _cleanup_ordering_service(service: OrderingService | None, temp_dir: str | None) -> None:
+    if service:
+        service.shutdown()
+    if temp_dir and os.path.exists(temp_dir):
+        try:
+            shutil.rmtree(temp_dir)
+        except PermissionError:
+            time.sleep(0.5)
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+
 def test_block_creation(benchmark: Any) -> None:
     """Test block creation when batch size is reached"""
+
     def execute() -> tuple[OrderingService, dict[str, Any]]:
-        temp_dir = create_test_temp_dir()
-        service = None
+        service: OrderingService | None = None
+        temp_dir: str | None = None
         try:
-            config = get_test_config(temp_dir)
-            # Use a slightly larger timeout to ensure all events are collected into one batch
-            config.update({"block_size": 3, "batch_timeout": 0.5})
-            service = OrderingService(nodes=[node], config=config)
-
-            # Wait for service to be active
-            assert service.wait_for_active(timeout=5.0), "Service did not become active"
-
-            # Add events to reach batch size
-            event_ids = []
-            for i in range(3):
-                event = {
-                    "entity_id": f"TEST-{i:03d}",
-                    "event": "test_event",
-                    "timestamp": time.time()
-                }
-                event_id = service.receive_event(event, "test-channel", "test-org")
-                event_ids.append(event_id)
-
-            # Wait for processing with polling
-            timeout = 3.0
-            start_wait = time.time()
-            block = None
-            while time.time() - start_wait < timeout:
-                block = service.get_next_block()
-                if block:
-                    break
-                time.sleep(0.2)
-
+            service, temp_dir = _start_ordering_service_for_block_test(3, 0.5)
+            _submit_test_events(service, 3)
+            block = _wait_for_block(service)
             assert block is not None
             assert len(block.events) == 3
             return service, block
         finally:
-            if service:
-                service.shutdown()
-            if os.path.exists(temp_dir):
-                try:
-                    shutil.rmtree(temp_dir)
-                except PermissionError:
-                    time.sleep(0.5)
-                    shutil.rmtree(temp_dir, ignore_errors=True)
+            _cleanup_ordering_service(service, temp_dir)
 
     benchmark(execute)
 

@@ -7,6 +7,7 @@ including authority management, block validation, and event validation.
 
 import time
 import hashlib
+from typing import Any
 
 from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.core.block import Block
@@ -334,92 +335,116 @@ def test_performance_with_many_authorities(benchmark):
     benchmark(execute)
 
 
-def test_realistic_environment_simulation(benchmark):
-    """Test with more realistic environment simulation"""
-    def execute():
-        poa = ProofOfAuthority(name="RealisticPoA")
-        poa.config["block_interval"] = 5.0  # 5 seconds between blocks
+def _create_realistic_poa():
+    poa = ProofOfAuthority(name="RealisticPoA")
+    poa.config["block_interval"] = 5.0
+    authorities = {
+        "org1_validator": {"org": "Org1", "role": "validator"},
+        "org2_validator": {"org": "Org2", "role": "validator"},
+        "org3_validator": {"org": "Org3", "role": "validator"},
+        "backup_authority": {"org": "BackupOrg", "role": "backup"},
+    }
+    for auth_id, metadata in authorities.items():
+        poa.add_authority(auth_id, metadata)
+    return poa, authorities
 
-        # Add different types of authorities
-        authorities = {
-            "org1_validator": {"org": "Org1", "role": "validator"},
-            "org2_validator": {"org": "Org2", "role": "validator"},
-            "org3_validator": {"org": "Org3", "role": "validator"},
-            "backup_authority": {"org": "BackupOrg", "role": "backup"}
-        }
 
-        for auth_id, metadata in authorities.items():
-            poa.add_authority(auth_id, metadata)
-
-        # Simulate a day of blockchain operation
-        genesis_block = Block(
-            index=0,
-            events=[{
+def _create_genesis_block():
+    timestamp = time.time()
+    return Block(
+        index=0,
+        events=[
+            {
                 "entity_id": "GENESIS-001",
                 "event": "genesis",
-                "timestamp": time.time()
-            }],
-            previous_hash="0" * 64
-        )
+                "timestamp": timestamp,
+            }
+        ],
+        previous_hash="0" * 64,
+        timestamp=timestamp,
+    )
 
-        blocks = [genesis_block]
-        current_timestamp = genesis_block.timestamp
 
-        # Simulate 24 hours of operation with blocks every 5 seconds
-        # That's 24 * 60 * 60 / 5 = 17280 blocks
-        # We'll simulate a smaller sample of 100 blocks for practicality
-        for i in range(100):
-            current_timestamp += 5.0  # 5 seconds between blocks
-
-            # Create varied events
-            event_types = ["order_created", "payment_processed", "shipment_sent",
-                           "delivery_confirmed", "quality_check", "inventory_update"]
-            event_type = event_types[i % len(event_types)]
-
-            events = [{
+def _generate_realistic_blocks(poa: ProofOfAuthority, genesis_block: Block, num_blocks: int, interval: float):
+    blocks = [genesis_block]
+    current_timestamp = genesis_block.timestamp
+    event_types = [
+        "order_created",
+        "payment_processed",
+        "shipment_sent",
+        "delivery_confirmed",
+        "quality_check",
+        "inventory_update",
+    ]
+    for i in range(num_blocks):
+        current_timestamp += interval
+        event_type = event_types[i % len(event_types)]
+        events = [
+            {
                 "entity_id": f"ENTITY-{i:04d}",
                 "event": event_type,
                 "timestamp": current_timestamp,
                 "details": {
                     "batch_id": f"BATCH-{i // 10:03d}",
-                    "quantity": (i % 100) + 1
-                }
-            }]
+                    "quantity": (i % 100) + 1,
+                },
+            }
+        ]
+        block = Block(
+            index=i + 1,
+            events=events,
+            previous_hash=blocks[-1].hash,
+            timestamp=current_timestamp,
+        )
+        authority_id = poa.get_next_authority(i)
+        block = poa.finalize_block(block, authority_id)
+        block.hash = block.calculate_hash()
+        blocks.append(block)
+    return blocks
 
-            block = Block(
-                index=i + 1,
-                events=events,
-                previous_hash=blocks[-1].hash,
-                timestamp=current_timestamp
-            )
 
-            # Assign authority in round-robin fashion
-            authority_id = poa.get_next_authority(i)
-            block = poa.finalize_block(block, authority_id)
-
-            # Ensure hash is recalculated after finalization (in case of any timing issues)
+def _validate_realistic_chain(poa: ProofOfAuthority, blocks: list[Block]) -> None:
+    for i in range(1, len(blocks)):
+        block = blocks[i]
+        previous_block = blocks[i - 1]
+        if block.hash != block.calculate_hash():
             block.hash = block.calculate_hash()
+        assert poa.validate_block(block, previous_block) is True
 
-            blocks.append(block)
 
-        # Validate the entire chain
-        for i in range(1, len(blocks)):
-            # Ensure hash is correct before validation
-            if blocks[i].hash != blocks[i].calculate_hash():
-                blocks[i].hash = blocks[i].calculate_hash()
-            assert poa.validate_block(blocks[i], blocks[i - 1]) is True
+def _get_consensus_authority_id(event: dict[str, Any]) -> str | None:
+    if event.get("event") != "consensus_finalization":
+        return None
+    details = event.get("details") or {}
+    authority_id = details.get("authority_id")
+    return authority_id or None
 
-        # Verify authority distribution
-        authority_usage = {}
-        for block in blocks[1:]:  # Skip genesis block
-            for event in block.to_event_list():
-                if event.get("event") == "consensus_finalization":
-                    authority_id = event["details"].get("authority_id")
-                    authority_usage[authority_id] = authority_usage.get(authority_id, 0) + 1
 
-        # All authorities should have been used approximately equally
-        assert len(authority_usage) >= 3  # At least main validators used
-        # No authority should be used significantly more than others
+def _iter_consensus_authority_ids(blocks: list[Block]):
+    for block in blocks[1:]:
+        for event in block.to_event_list():
+            authority_id = _get_consensus_authority_id(event)
+            if authority_id is not None:
+                yield authority_id
+
+
+def _calculate_authority_usage(blocks: list[Block]) -> dict[str, int]:
+    authority_usage: dict[str, int] = {}
+    for authority_id in _iter_consensus_authority_ids(blocks):
+        authority_usage[authority_id] = authority_usage.get(authority_id, 0) + 1
+    return authority_usage
+
+
+def test_realistic_environment_simulation(benchmark):
+    """Test with more realistic environment simulation"""
+
+    def execute():
+        poa, _ = _create_realistic_poa()
+        genesis_block = _create_genesis_block()
+        blocks = _generate_realistic_blocks(poa, genesis_block, num_blocks=100, interval=5.0)
+        _validate_realistic_chain(poa, blocks)
+        authority_usage = _calculate_authority_usage(blocks)
+        assert len(authority_usage) >= 3
         return poa, blocks
 
     benchmark(execute)

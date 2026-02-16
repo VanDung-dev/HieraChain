@@ -20,8 +20,7 @@ from hierachain.risk_management.risk_analyzer import (
 )
 from hierachain.risk_management.mitigation_strategies import (
     MitigationManager, MitigationStatus, ConsensusMitigationStrategies,
-    SecurityMitigationStrategies, PerformanceMitigationStrategies,
-    StorageMitigationStrategies, renew_certificates, implement_rate_limiting,
+    renew_certificates, implement_rate_limiting,
     scale_processing_capacity, optimize_memory_usage, execute_backup,
     implement_state_pruning
 )
@@ -73,71 +72,73 @@ def test_validate_risk_profile_config():
         if os.path.exists(valid_path):
             os.unlink(valid_path)
 
+def _load_risk_profile_config(config_path: str) -> Any:
+    with open(config_path, "r") as f:
+        if config_path.endswith(".json"):
+            return json.load(f)
+        if config_path.endswith(".yaml") or config_path.endswith(".yml"):
+            import yaml
+            return yaml.safe_load(f)
+    return None
+
+
+def _validate_bft_consensus(risk_config: dict[str, Any], errors: list[str]) -> None:
+    consensus_config = risk_config.get("consensus") or {}
+    bft_config = consensus_config.get("bft")
+    if not bft_config:
+        return
+    min_nodes = bft_config.get("min_nodes", 0)
+    fault_tolerance = bft_config.get("fault_tolerance", 1)
+    if min_nodes < 3 * fault_tolerance + 1:
+        errors.append(
+            f"BFT consensus: min_nodes ({min_nodes}) < 3*f+1 ({3*fault_tolerance+1})"
+        )
+
+
+def _validate_security_certificates(risk_config: dict[str, Any], errors: list[str]) -> None:
+    security_config = risk_config.get("security") or {}
+    msp_config = security_config.get("msp") or {}
+    cert_lifetimes = msp_config.get("certificate_lifetimes", {}) or {}
+    required_certs = ["root", "intermediate", "entity"]
+    for cert_type in required_certs:
+        if cert_type not in cert_lifetimes:
+            errors.append(f"Missing certificate lifetime for: {cert_type}")
+
+
+def _validate_performance_thresholds(risk_config: dict[str, Any], errors: list[str]) -> None:
+    perf_config = risk_config.get("performance") or {}
+    required_thresholds = ["ordering_service", "caching"]
+    for threshold in required_thresholds:
+        if threshold not in perf_config:
+            errors.append(f"Missing performance threshold: {threshold}")
+
+
+def _validate_mitigation_config(config: dict[str, Any], errors: list[str]) -> None:
+    mitigation_config = config.get("mitigation") or {}
+    testing_config = mitigation_config.get("testing") or {}
+    coverage_target = testing_config.get("coverage_target", 0)
+    if coverage_target < 80:
+        errors.append(
+            f"Test coverage target too low: {coverage_target}% (minimum 80%)"
+        )
+
+
 def validate_risk_profile_config_helper(config_path: str) -> Tuple[bool, list[str]]:
-    """Helper function containing the validation logic from the original test class."""
-    errors = []
+    errors: list[str] = []
     try:
-        with open(config_path, 'r') as f:
-            if config_path.endswith('.json'):
-                config = json.load(f)
-            elif config_path.endswith('.yaml') or config_path.endswith('.yml'):
-                import yaml
-                config = yaml.safe_load(f)
-            else:
-                errors.append("Unsupported configuration file format")
-                return False, errors
-        
-        # Validate risk_management section
-        if 'risk_management' not in config:
+        config = _load_risk_profile_config(config_path)
+        if config is None:
+            errors.append("Unsupported configuration file format")
+            return False, errors
+        if "risk_management" not in config:
             errors.append("Missing 'risk_management' section")
             return False, errors
-        
-        risk_config = config['risk_management']
-        
-        # Validate consensus configuration
-        if 'consensus' in risk_config:
-            consensus_config = risk_config['consensus']
-            if 'bft' in consensus_config:
-                bft_config = consensus_config['bft']
-                min_nodes = bft_config.get('min_nodes', 0)
-                fault_tolerance = bft_config.get('fault_tolerance', 1)
-                
-                if min_nodes < (3 * fault_tolerance + 1):
-                    errors.append(f"BFT consensus: min_nodes ({min_nodes}) < 3*f+1 ({3*fault_tolerance+1})")
-        
-        # Validate security configuration
-        if 'security' in risk_config:
-            security_config = risk_config['security']
-            if 'msp' in security_config:
-                msp_config = security_config['msp']
-                cert_lifetimes = msp_config.get('certificate_lifetimes', {})
-                
-                required_certs = ['root', 'intermediate', 'entity']
-                for cert_type in required_certs:
-                    if cert_type not in cert_lifetimes:
-                        errors.append(f"Missing certificate lifetime for: {cert_type}")
-        
-        # Validate performance thresholds
-        if 'performance' in risk_config:
-            perf_config = risk_config['performance']
-            required_thresholds = ['ordering_service', 'caching']
-            
-            for threshold in required_thresholds:
-                if threshold not in perf_config:
-                    errors.append(f"Missing performance threshold: {threshold}")
-        
-        # Validate mitigation configuration
-        if 'mitigation' in config:
-            mitigation_config = config['mitigation']
-            if 'testing' in mitigation_config:
-                testing_config = mitigation_config['testing']
-                coverage_target = testing_config.get('coverage_target', 0)
-                
-                if coverage_target < 80:
-                    errors.append(f"Test coverage target too low: {coverage_target}% (minimum 80%)")
-        
+        risk_config = config["risk_management"]
+        _validate_bft_consensus(risk_config, errors)
+        _validate_security_certificates(risk_config, errors)
+        _validate_performance_thresholds(risk_config, errors)
+        _validate_mitigation_config(config, errors)
         return len(errors) == 0, errors
-        
     except Exception as e:
         errors.append(f"Configuration validation error: {str(e)}")
         return False, errors

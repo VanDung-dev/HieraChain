@@ -289,44 +289,56 @@ def test_utils_performance_under_load(benchmark):
     benchmark(execute)
 
 
-# Fuzz testing
+def _generate_fuzz_data():
+    data_type = random.choice(
+        ["string", "dict", "list", "int", "float", "none"]
+    )
+    if data_type == "string":
+        return "".join(
+            random.choices(string.printable, k=random.randint(0, 1000))
+        )
+    if data_type == "dict":
+        return {
+            f"key_{i}": random.random()
+            for i in range(random.randint(0, 100))
+        }
+    if data_type == "list":
+        return [
+            random.random() for _ in range(random.randint(0, 100))
+        ]
+    if data_type == "int":
+        return random.randint(-1000000, 1000000)
+    if data_type == "float":
+        return random.uniform(-1000000.0, 1000000.0)
+    return {}
+
+
+def _exercise_utils_with_fuzz_data(data):
+    try:
+        hash_result = generate_hash(data)
+        assert isinstance(hash_result, str)
+        assert len(hash_result) == 64
+    except (TypeError, ValueError):
+        pass
+
+    block_hash = "".join(
+        random.choices("0123456789abcdef", k=64)
+    )
+    try:
+        proof_hash = generate_proof_hash(
+            block_hash, data if isinstance(data, dict) else {}
+        )
+        assert isinstance(proof_hash, str)
+        assert len(proof_hash) == 64
+    except (TypeError, ValueError):
+        pass
+
+
 def test_utils_with_fuzzed_inputs():
     """Fuzz testing utility functions with random inputs"""
     for _ in range(1000):
-        # Generate random data types for testing
-        data_type = random.choice(["string", "dict", "list", "int", "float", "none"])
-
-        if data_type == "string":
-            data = ''.join(random.choices(string.printable, k=random.randint(0, 1000)))
-        elif data_type == "dict":
-            data = {f"key_{i}": random.random() for i in range(random.randint(0, 100))}
-        elif data_type == "list":
-            data = [random.random() for _ in range(random.randint(0, 100))]
-        elif data_type == "int":
-            data = random.randint(-1000000, 1000000)
-        elif data_type == "float":
-            data = random.uniform(-1000000.0, 1000000.0)
-        else:  # none
-            data = {}
-
-        # Test generate_hash with fuzzed input
-        try:
-            hash_result = generate_hash(data)
-            assert isinstance(hash_result, str)
-            assert len(hash_result) == 64
-        except (TypeError, ValueError):
-            # Some inputs might cause exceptions, which is acceptable
-            pass
-
-        # Test generate_proof_hash with fuzzed inputs
-        block_hash = ''.join(random.choices('0123456789abcdef', k=64))
-        try:
-            proof_hash = generate_proof_hash(block_hash, data if isinstance(data, dict) else {})
-            assert isinstance(proof_hash, str)
-            assert len(proof_hash) == 64
-        except (TypeError, ValueError):
-            # Some inputs might cause exceptions, which is acceptable
-            pass
+        data = _generate_fuzz_data()
+        _exercise_utils_with_fuzz_data(data)
 
 
 # Integration testing between utility functions

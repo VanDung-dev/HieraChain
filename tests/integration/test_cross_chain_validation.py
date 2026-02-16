@@ -11,6 +11,31 @@ from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
 
 
+def _iter_block_events(chain):
+    for block in chain:
+        events = block.events
+        if isinstance(events, list):
+            yield block, events, False
+        elif hasattr(events, "to_pylist"):
+            yield block, events.to_pylist(), True
+
+
+def _set_proof_submission_timestamp(main_chain, timestamp):
+    from hierachain.core.block import _convert_events_to_arrow
+
+    for block, events, needs_arrow_update in _iter_block_events(main_chain.chain):
+        for event in events:
+            if event.get("event") == "proof_submission":
+                event["timestamp"] = timestamp
+
+                if needs_arrow_update:
+                    block._events = _convert_events_to_arrow(events)
+
+                return True
+
+    return False
+
+
 def test_cross_chain_validation():
     """Test cross-chain validation functionality"""
     # Create Hierarchy Manager with Main Chain
@@ -249,7 +274,7 @@ def test_cross_chain_validation_system_integrity():
     assert len(integrity_results["sub_chains_valid"]) == 2
     assert all(valid for valid in integrity_results["sub_chains_valid"].values())
     assert integrity_results["proof_consistency"]["overall_consistent"] is True
-    assert integrity_results["ledger_compliance"]["overall_compliant"] is True
+    assert integrity_results["Ledger_compliance"]["overall_compliant"] is True
     assert integrity_results["overall_integrity"] is True
 
 
@@ -346,39 +371,8 @@ def test_cross_chain_validation_with_timestamp_inconsistency():
     sub_chain.submit_proof_to_main(main_chain)
     main_chain.finalize_block()
 
-    # Manually modify the main chain event timestamp to create inconsistency
-    # Find the proof submission event and modify its timestamp to be earlier than block timestamp
-    # Manually modify the main chain event timestamp to create inconsistency
-    found_proof = False
-    for block in main_chain.chain:
-        # Handle both list and PyArrow objects
-        events_list = None
-        is_pyarrow = False
-        
-        if isinstance(block.events, list):
-            events_list = block.events
-        elif hasattr(block.events, "to_pylist"):
-            events_list = block.events.to_pylist()
-            is_pyarrow = True
-            
-        if events_list:
-            modified = False
-            for event in events_list:
-                if event.get("event") == "proof_submission":
-                    event["timestamp"] = 0
-                    found_proof = True
-                    modified = True
-                    break
-            
-            if modified:
-                from hierachain.core.block import _convert_events_to_arrow
-                block._events = _convert_events_to_arrow(events_list)
-                
-        if found_proof:
-            break
-
-    if not found_proof:
-        assert False, "Proof submission event not found in main chain"
+    found_proof = _set_proof_submission_timestamp(main_chain, 0)
+    assert found_proof, "Proof submission event not found in main chain"
 
     # Create validator and run validation
     validator = CrossChainValidator(hierarchy_manager)

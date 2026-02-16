@@ -13,6 +13,44 @@ import struct
 from hierachain.hierarchical.sub_chain import SubChain
 from hierachain.core import schemas
 
+
+def _read_first_journal_row(journal_path, schema):
+    if not os.path.exists(journal_path):
+        return None
+
+    for file in os.listdir(journal_path):
+        if "journal" not in file:
+            continue
+
+        file_path = os.path.join(journal_path, file)
+
+        with open(file_path, "rb") as f:
+            len_bytes = f.read(4)
+            if len(len_bytes) != 4:
+                continue
+
+            length = struct.unpack("<I", len_bytes)[0]
+            batch_data = f.read(length)
+            batch = pa.ipc.read_record_batch(batch_data, schema)
+            rows = batch.to_pylist()
+
+            if rows:
+                return rows[0]
+
+    return None
+
+
+def _wait_for_latest_block(chain, max_retries=20, delay=0.1):
+    latest_block = chain.get_latest_block()
+
+    while latest_block.index == 0 and max_retries > 0:
+        time.sleep(delay)
+        latest_block = chain.get_latest_block()
+        max_retries -= 1
+
+    return latest_block
+
+
 def test_end_to_end_flow():
     chain_name = "test_flow_chain"
     data_dir = f"data/{chain_name}"
@@ -38,50 +76,19 @@ def test_end_to_end_flow():
         print("[Test] Adding event to SubChain...")
         chain.add_event(event_data)
         
-        # 2. Verify Persistence (Journal)
-        time.sleep(1.0) # Wait for thread to write
+        time.sleep(1.0)
         
-        found_journal_data = False
         journal_path = os.path.join(data_dir, "journal")
+        journal_row = _read_first_journal_row(journal_path, schema)
+        assert journal_row is not None, "No valid Arrow journal data found on disk!"
+        assert journal_row["entity_id"] == "entity_123"
         
-        if os.path.exists(journal_path):
-            for file in os.listdir(journal_path):
-                # OrderingService configures journal name as "node_{id}_journal.log"
-                if "journal" in file:
-                    print(f"[Test] Found journal file: {file}")
-                    # Verify content
-                    with open(os.path.join(journal_path, file), 'rb') as f:
-                        # Read length prefix
-                        len_bytes = f.read(4)
-                        if len(len_bytes) == 4:
-                            length = struct.unpack('<I', len_bytes)[0]
-                            print(f"[Test] Journal entry length: {length}")
-                            batch_data = f.read(length)
-                            # Use read_record_batch with schema
-                            batch = pa.ipc.read_record_batch(batch_data, schema)
-                            rows = batch.to_pylist()
-                            print(f"[Test] Journal Data (First Row): {rows[0]}")
-                            
-                            # Verify data content
-                            assert rows[0]['entity_id'] == "entity_123"
-                            found_journal_data = True
-                            
-        assert found_journal_data, "No valid Arrow journal data found on disk!"
-        
-        # 3. Verify Block Construction
         print("[Test] Waiting for Block generation (timeout 1.0s)...")
         time.sleep(1.5) 
         
-        # Trigger SubChain to pull blocks
         print("[Test] waiting check...")
         
-        # With auto-pulling background thread, the block might already be there.
-        max_retries = 20
-        latest_block = chain.get_latest_block()
-        while latest_block.index == 0 and max_retries > 0:
-            time.sleep(0.1)
-            latest_block = chain.get_latest_block()
-            max_retries -= 1
+        latest_block = _wait_for_latest_block(chain)
             
         print(f"[Test] Latest Block Index: {latest_block.index}")
         assert latest_block.index >= 1, "SubChain did not finalize any blocks (auto or manual)!"

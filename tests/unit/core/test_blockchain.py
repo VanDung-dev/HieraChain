@@ -299,66 +299,77 @@ def test_blockchain_event_processing_property(num_events):
     assert chain.is_chain_valid() is True
 
 
-# Fuzz testing
+def _generate_random_detail_value(value_type):
+    if value_type == "string":
+        return "".join(
+            random.choices(string.printable, k=random.randint(0, 100))
+        )
+    if value_type == "int":
+        return random.randint(-1000000, 1000000)
+    if value_type == "float":
+        return random.uniform(-1000000.0, 1000000.0)
+    if value_type == "bool":
+        return random.choice([True, False])
+    if value_type == "list":
+        return [random.random() for _ in range(random.randint(0, 10))]
+    return {
+        f"key_{k}": random.random() for k in range(random.randint(0, 5))
+    }
+
+
+def _generate_random_details():
+    details = {}
+    for _ in range(random.randint(0, 20)):
+        key = "".join(
+            random.choices(
+                string.ascii_letters,
+                k=random.randint(1, 20),
+            )
+        )
+        value_type = random.choice(
+            ["string", "int", "float", "bool", "list", "dict"]
+        )
+        details[key] = _generate_random_detail_value(value_type)
+    return details
+
+
 def test_blockchain_with_fuzzed_events():
     """Fuzz testing with randomized event data"""
     chain = Blockchain(name="FuzzTestChain")
 
-    # Generate fuzzed events
-    for i in range(100):
-        # Random entity_id
-        entity_id = ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(1, 100)))
+    for _ in range(100):
+        entity_id = "".join(
+            random.choices(
+                string.ascii_letters + string.digits,
+                k=random.randint(1, 100),
+            )
+        )
+        event_type = "".join(
+            random.choices(string.printable, k=random.randint(1, 50))
+        )
+        details = _generate_random_details()
 
-        # Random event type
-        event_type = ''.join(random.choices(string.printable, k=random.randint(1, 50)))
-
-        # Random details
-        details = {}
-        for j in range(random.randint(0, 20)):
-            key = ''.join(random.choices(string.ascii_letters, k=random.randint(1, 20)))
-            value_type = random.choice(["string", "int", "float", "bool", "list", "dict"])
-
-            if value_type == "string":
-                value = ''.join(random.choices(string.printable, k=random.randint(0, 100)))
-            elif value_type == "int":
-                value = random.randint(-1000000, 1000000)
-            elif value_type == "float":
-                value = random.uniform(-1000000.0, 1000000.0)
-            elif value_type == "bool":
-                value = random.choice([True, False])
-            elif value_type == "list":
-                value = [random.random() for _ in range(random.randint(0, 10))]
-            else:  # dict
-                value = {f"key_{k}": random.random() for k in range(random.randint(0, 5))}
-
-            details[key] = value
-
-        # Create event with fuzzed data
         event = {
             "entity_id": entity_id,
             "event": event_type,
-            "timestamp": time.time() + random.uniform(-1000000, 1000000)  # Random timestamp
+            "timestamp": time.time()
+            + random.uniform(-1000000, 1000000),
         }
 
         if details:
             event["details"] = details
 
-        # Add event to chain
         try:
             chain.add_event(event)
         except (TypeError, ValueError):
-            # Some malformed events might be rejected, which is fine
             pass
 
-    # Try to finalize a block with valid events
     if chain.pending_events:
         try:
             block = chain.finalize_block()
             if block:
-                # If we successfully created a block, chain should be valid
                 assert chain.is_chain_valid() is True
         except (TypeError, ValueError):
-            # Block creation might fail with invalid events, which is fine
             pass
 
 
