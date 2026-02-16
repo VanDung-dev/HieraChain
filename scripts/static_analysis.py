@@ -11,7 +11,7 @@ import re
 import json
 import logging
 import argparse
-from typing import Any
+from typing import Any, Callable
 from dataclasses import dataclass, asdict
 from enum import Enum
 from pathlib import Path
@@ -295,6 +295,12 @@ class CodeQualityAnalyzer:
         return findings
 
 
+def _read_lines(file_path: str) -> list[str]:
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    return content.splitlines()
+
+
 class ComplianceChecker:
     """Compliance checker for Ledger guidelines"""
     def __init__(self):
@@ -408,44 +414,63 @@ class ComplianceChecker:
             return True
         
         return False
-    
+
+    def _enabled_rules(self) -> list[AnalysisRule]:
+        return [rule for rule in self.compliance_rules if rule.enabled]
+
+    def _should_skip_line_for_rule(
+        self, rule: AnalysisRule, line: str
+    ) -> bool:
+        if rule.rule_id != "COMP_003":
+            return False
+        return self._is_educational_crypto_content(line)
+
+    @staticmethod
+    def _build_finding(
+        rule: AnalysisRule,
+        file_path: str,
+        line: str,
+        line_num: int,
+        match,
+    ) -> AnalysisFinding:
+        return AnalysisFinding(
+            rule_id=rule.rule_id,
+            file_path=file_path,
+            line_number=line_num,
+            column=match.start(),
+            severity=rule.severity,
+            message=rule.message,
+            code_snippet=line.strip(),
+            remediation=rule.remediation,
+            confidence=0.7,
+        )
+
+    def _analyze_lines_for_rule(
+        self, file_path: str, lines: list[str], rule: AnalysisRule
+    ) -> list[AnalysisFinding]:
+        rule_findings: list[AnalysisFinding] = []
+        for line_num, line in enumerate(lines, 1):
+            if self._should_skip_line_for_rule(rule, line):
+                continue
+            match = re.search(rule.pattern, line, re.IGNORECASE)
+            if not match:
+                continue
+            rule_findings.append(
+                self._build_finding(rule, file_path, line, line_num, match)
+            )
+        return rule_findings
+
     def analyze_file(self, file_path: str) -> list[AnalysisFinding]:
         """Analyze file for compliance issues"""
-        findings = []
-        
+        findings: list[AnalysisFinding] = []
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                lines = content.splitlines()
-            
-            for rule in self.compliance_rules:
-                if not rule.enabled:
-                    continue
-                
-                for line_num, line in enumerate(lines, 1):
-                    match = re.search(rule.pattern, line, re.IGNORECASE)
-                    if match:
-                        # Special handling for transaction rule
-                        if rule.rule_id == "COMP_003":
-                            # Skip if it's in comments or acceptable context
-                            if self._is_educational_crypto_content(line):
-                                continue
-                        
-                        findings.append(AnalysisFinding(
-                            rule_id=rule.rule_id,
-                            file_path=file_path,
-                            line_number=line_num,
-                            column=match.start(),
-                            severity=rule.severity,
-                            message=rule.message,
-                            code_snippet=line.strip(),
-                            remediation=rule.remediation,
-                            confidence=0.7
-                        ))
-            
+            lines = _read_lines(file_path)
+            for rule in self._enabled_rules():
+                findings.extend(
+                    self._analyze_lines_for_rule(file_path, lines, rule)
+                )
         except Exception as e:
             logging.error(f"Error analyzing file {file_path}: {str(e)}")
-        
         return findings
 
 
@@ -503,7 +528,16 @@ class DependencyAnalyzer:
         }
         
         return package.lower() in vulnerable_packages and version in vulnerable_packages[package.lower()]
-    
+
+
+def _init_findings_container() -> dict[str, list[AnalysisFinding]]:
+    return {
+        "cryptocurrency": [],
+        "security": [],
+        "quality": [],
+        "compliance": [],
+        "dependencies": [],
+    }
 
 
 class StaticAnalyzer:
@@ -528,60 +562,72 @@ class StaticAnalyzer:
         self.exclude_patterns = self.config.get('exclude_patterns', [
             '__pycache__', '.git', '.venv', 'venv', 'node_modules'
         ])
-    
+
+    def _analyze_python_files_for_project(
+        self, project_root: Path, all_findings: dict[str, list[AnalysisFinding]]
+    ) -> None:
+        if not any(
+            analyzer in self.enabled_analyzers
+            for analyzer in ("security", "quality", "compliance")
+        ):
+            return
+
+        for py_file in self._get_python_files(project_root):
+            file_path = str(py_file)
+
+            if "security" in self.enabled_analyzers:
+                findings = self.security_analyzer.analyze_file(file_path)
+                all_findings["security"].extend(findings)
+
+            if "quality" in self.enabled_analyzers:
+                findings = self.quality_analyzer.analyze_file(file_path)
+                all_findings["quality"].extend(findings)
+
+            if "compliance" in self.enabled_analyzers:
+                findings = self.compliance_checker.analyze_file(file_path)
+                all_findings["compliance"].extend(findings)
+
+    def _analyze_dependencies_for_project(
+        self, project_root: Path, all_findings: dict[str, list[AnalysisFinding]]
+    ) -> None:
+        if "dependencies" not in self.enabled_analyzers:
+            return
+
+        requirements_files = list(project_root.glob("**/requirements*.txt"))
+        for req_file in requirements_files:
+            findings = self.dependency_analyzer.analyze_requirements(str(req_file))
+            all_findings["dependencies"].extend(findings)
+
     def analyze_project(self, project_path: str) -> dict[str, list[AnalysisFinding]]:
         """Analyze entire project"""
-        all_findings = {
-            'cryptocurrency': [],
-            'security': [],
-            'quality': [],
-            'compliance': [],
-            'dependencies': []
-        }
-        
+        all_findings = _init_findings_container()
         project_root = Path(project_path)
-        
-        # Analyze Python files
-        if 'security' in self.enabled_analyzers or 'quality' in self.enabled_analyzers or 'compliance' in self.enabled_analyzers:
-            
-            for py_file in self._get_python_files(project_root):
-                file_path = str(py_file)
-                
-                if 'security' in self.enabled_analyzers:
-                    findings = self.security_analyzer.analyze_file(file_path)
-                    all_findings['security'].extend(findings)
-                
-                if 'quality' in self.enabled_analyzers:
-                    findings = self.quality_analyzer.analyze_file(file_path)
-                    all_findings['quality'].extend(findings)
-                
-                if 'compliance' in self.enabled_analyzers:
-                    findings = self.compliance_checker.analyze_file(file_path)
-                    all_findings['compliance'].extend(findings)
-        
-        # Analyze requirements files
-        if 'dependencies' in self.enabled_analyzers:
-            requirements_files = list(project_root.glob('**/requirements*.txt'))
-            for req_file in requirements_files:
-                findings = self.dependency_analyzer.analyze_requirements(str(req_file))
-                all_findings['dependencies'].extend(findings)
-        
+        self._analyze_python_files_for_project(project_root, all_findings)
+        self._analyze_dependencies_for_project(project_root, all_findings)
         return all_findings
-    
-    def analyze_file(self, file_path: str, analysis_types: list[str] | None = None) -> list[AnalysisFinding]:
+
+    def _get_file_analyzers(
+        self, analysis_types: list[str]
+    ) -> list[Callable[[str], list[AnalysisFinding]]]:
+        analyzers_map = {
+            "security": self.security_analyzer.analyze_file,
+            "quality": self.quality_analyzer.analyze_file,
+            "compliance": self.compliance_checker.analyze_file,
+        }
+        return [
+            analyzer
+            for name, analyzer in analyzers_map.items()
+            if name in analysis_types
+        ]
+
+    def analyze_file(
+        self, file_path: str, analysis_types: list[str] | None = None
+    ) -> list[AnalysisFinding]:
         """Analyze single file"""
-        analysis_types = analysis_types or self.enabled_analyzers
-        findings = []
-        
-        if 'security' in analysis_types:
-            findings.extend(self.security_analyzer.analyze_file(file_path))
-        
-        if 'quality' in analysis_types:
-            findings.extend(self.quality_analyzer.analyze_file(file_path))
-        
-        if 'compliance' in analysis_types:
-            findings.extend(self.compliance_checker.analyze_file(file_path))
-        
+        effective_types = analysis_types or self.enabled_analyzers
+        findings: list[AnalysisFinding] = []
+        for analyzer in self._get_file_analyzers(effective_types):
+            findings.extend(analyzer(file_path))
         return findings
     
     def _get_python_files(self, project_root: Path) -> list[Path]:
@@ -598,40 +644,47 @@ class StaticAnalyzer:
         return python_files
     
     @staticmethod
-    def generate_report(findings: dict[str, list[AnalysisFinding]], output_format: str = "json") -> str:
+    def _generate_json_report(findings: dict[str, list[AnalysisFinding]]) -> str:
+        report_data: dict[str, list[dict[str, Any]]] = {}
+        for category, finding_list in findings.items():
+            report_data[category] = [asdict(finding) for finding in finding_list]
+            for finding_dict in report_data[category]:
+                severity_value = finding_dict.get("severity")
+                if hasattr(severity_value, "value"):
+                    finding_dict["severity"] = severity_value.value
+        return json.dumps(report_data, indent=2, default=str)
+
+    @staticmethod
+    def _generate_text_report(findings: dict[str, list[AnalysisFinding]]) -> str:
+        lines: list[str] = ["Static Analysis Report", "=" * 50, ""]
+        for category, finding_list in findings.items():
+            if not finding_list:
+                continue
+            lines.append(f"\n{category.upper()} ({len(finding_list)} findings):")
+            lines.append("-" * 40)
+            for finding in finding_list:
+                lines.append(
+                    f"  {finding.severity.value.upper()}: {finding.message}"
+                )
+                lines.append(
+                    f"    File: {finding.file_path}:{finding.line_number}"
+                )
+                lines.append(f"    Code: {finding.code_snippet}")
+                lines.append(f"    Fix: {finding.remediation}")
+                lines.append("")
+        return "\n".join(lines)
+
+    @staticmethod
+    def generate_report(
+        findings: dict[str, list[AnalysisFinding]], output_format: str = "json"
+    ) -> str:
         """Generate analysis report"""
-        if output_format.lower() == "json":
-            # Convert findings to serializable format
-            report_data = {}
-            for category, finding_list in findings.items():
-                report_data[category] = [asdict(finding) for finding in finding_list]
-                # Convert enums to strings
-                for finding_dict in report_data[category]:
-                    finding_dict['severity'] = finding_dict['severity'].value if hasattr(finding_dict['severity'], 'value') else finding_dict['severity']
-            
-            return json.dumps(report_data, indent=2, default=str)
-        
-        elif output_format.lower() == "text":
-            lines = ["Static Analysis Report", "=" * 50, ""]
-            
-            for category, finding_list in findings.items():
-                if not finding_list:
-                    continue
-                
-                lines.append(f"\n{category.upper()} ({len(finding_list)} findings):")
-                lines.append("-" * 40)
-                
-                for finding in finding_list:
-                    lines.append(f"  {finding.severity.value.upper()}: {finding.message}")
-                    lines.append(f"    File: {finding.file_path}:{finding.line_number}")
-                    lines.append(f"    Code: {finding.code_snippet}")
-                    lines.append(f"    Fix: {finding.remediation}")
-                    lines.append("")
-            
-            return "\n".join(lines)
-        
-        else:
-            raise ValueError(f"Unsupported output format: {output_format}")
+        fmt = output_format.lower()
+        if fmt == "json":
+            return StaticAnalyzer._generate_json_report(findings)
+        if fmt == "text":
+            return StaticAnalyzer._generate_text_report(findings)
+        raise ValueError(f"Unsupported output format: {output_format}")
     
     @staticmethod
     def get_summary(findings: dict[str, list[AnalysisFinding]]) -> dict[str, Any]:

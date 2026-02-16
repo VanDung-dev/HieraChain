@@ -116,6 +116,58 @@ FUZZ_TARGETS = [
 ]
 
 
+def _analyze_response(
+        result: ProbeResult,
+    response: httpx.Response,
+    category: str,
+    payload: str
+):
+    """Analyze response for signs of vulnerability."""
+    status = response.status_code
+    body = response.text[:1000] if response.text else ""
+
+    # Server error could indicate injection success
+    if status == 500:
+        result.add_finding(
+            severity="medium",
+            message=f"Server error triggered by {category} payload",
+            details={"payload": payload[:100], "response": body[:200]}
+        )
+
+    # Check for reflection (potential XSS)
+    if category == "xss" and payload in body:
+        result.add_finding(
+            severity="high",
+            message="Input reflected in response (potential XSS)",
+            details={"payload": payload}
+        )
+
+    # Check for SQL error messages
+    sql_errors = ["syntax error", "mysql", "postgresql", "sqlite", "ora-"]
+    if any(err in body.lower() for err in sql_errors):
+        result.add_finding(
+            severity="high",
+            message="SQL error message in response (potential SQL injection)",
+            details={"payload": payload, "response": body[:300]}
+        )
+
+    # Check for path disclosure
+    path_indicators = ["/etc/", "C:\\", "\\windows\\", "/var/", "/home/"]
+    if any(ind in body for ind in path_indicators):
+        result.add_finding(
+            severity="medium",
+            message="File path disclosed in response",
+            details={"response": body[:300]}
+        )
+
+    # If 4xx/200, likely handled properly
+    if status in [400, 401, 403, 404, 422] or (status == 200 and not result.findings):
+        result.add_finding(
+            severity="info",
+            message=f"Input handled with status {status}"
+        )
+
+
 class InputFuzzerProbe(BaseProbe):
     """Probe for input validation vulnerabilities."""
     
@@ -180,7 +232,7 @@ class InputFuzzerProbe(BaseProbe):
             result.status_code = response.status_code
             
             # Analyze response for vulnerabilities
-            self._analyze_response(result, response, category, payload_str)
+            _analyze_response(result, response, category, payload_str)
             
         except httpx.RequestError as e:
             result.error = str(e)
@@ -200,59 +252,7 @@ class InputFuzzerProbe(BaseProbe):
             else:
                 result[key] = value
         return result
-    
-    def _analyze_response(
-        self, 
-        result: ProbeResult, 
-        response: httpx.Response, 
-        category: str,
-        payload: str
-    ):
-        """Analyze response for signs of vulnerability."""
-        status = response.status_code
-        body = response.text[:1000] if response.text else ""
-        
-        # Server error could indicate injection success
-        if status == 500:
-            result.add_finding(
-                severity="medium",
-                message=f"Server error triggered by {category} payload",
-                details={"payload": payload[:100], "response": body[:200]}
-            )
-        
-        # Check for reflection (potential XSS)
-        if category == "xss" and payload in body:
-            result.add_finding(
-                severity="high",
-                message="Input reflected in response (potential XSS)",
-                details={"payload": payload}
-            )
-        
-        # Check for SQL error messages
-        sql_errors = ["syntax error", "mysql", "postgresql", "sqlite", "ora-"]
-        if any(err in body.lower() for err in sql_errors):
-            result.add_finding(
-                severity="high",
-                message="SQL error message in response (potential SQL injection)",
-                details={"payload": payload, "response": body[:300]}
-            )
-        
-        # Check for path disclosure
-        path_indicators = ["/etc/", "C:\\", "\\windows\\", "/var/", "/home/"]
-        if any(ind in body for ind in path_indicators):
-            result.add_finding(
-                severity="medium",
-                message="File path disclosed in response",
-                details={"response": body[:300]}
-            )
-        
-        # If 4xx/200, likely handled properly
-        if status in [400, 401, 403, 404, 422] or (status == 200 and not result.findings):
-            result.add_finding(
-                severity="info",
-                message=f"Input handled with status {status}"
-            )
-    
+
     async def _test_json_bombs(self, client: httpx.AsyncClient):
         """Test with JSON bombs (deeply nested, oversized)."""
         # Deeply nested JSON

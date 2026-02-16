@@ -14,6 +14,104 @@ import httpx
 from base_probe import BaseProbe, parse_args, run_probe, ProbeResult
 
 
+def _check_critical_patterns(
+        result: ProbeResult, body: str, context: str
+) -> None:
+    critical_patterns = [
+        (r"Traceback \(most recent call last\):", "Python traceback exposed"),
+        (r'File ".*\.py", line \d+', "Source file path and line exposed"),
+        (r"(/home/|/var/|/usr/|C:\\Users\\)", "System path exposed"),
+        (
+            r"password|secret|token|private.*key",
+            "Sensitive keyword in response",
+        ),
+    ]
+    for pattern, message in critical_patterns:
+        if re.search(pattern, body, re.IGNORECASE):
+            result.add_finding("critical", f"[{context}] {message}")
+
+
+def _check_high_patterns(
+        result: ProbeResult, body: str, context: str
+) -> None:
+    high_patterns = [
+        (r"DEBUG|debug.*mode", "DEBUG mode indicator exposed"),
+        (
+            r"ConnectionError|DatabaseError|Redis",
+            "Backend technology exposed",
+        ),
+        (
+            r"__init__|__call__|__new__",
+            "Python dunder method names exposed",
+        ),
+    ]
+    for pattern, message in high_patterns:
+        if re.search(pattern, body, re.IGNORECASE):
+            result.add_finding("high", f"[{context}] {message}")
+
+
+def _check_medium_patterns(
+        result: ProbeResult, body: str, context: str
+) -> None:
+    medium_patterns = [
+        (r"starlette|fastapi|uvicorn", "Ledger name exposed"),
+        (r"version.*\d+\.\d+\.\d+", "Version number exposed"),
+        (
+            r"internal.*error|unexpected.*error",
+            "Generic internal error message",
+        ),
+    ]
+    for pattern, message in medium_patterns:
+        if re.search(pattern, body, re.IGNORECASE):
+            result.add_finding("medium", f"[{context}] {message}")
+
+
+def _check_response_length(
+        result: ProbeResult, body: str, context: str
+) -> None:
+    if len(body) > 2000:
+        result.add_finding(
+            "medium",
+            f"[{context}] Error response unusually long ({len(body)} chars)",
+        )
+
+
+def _check_error_content_type(
+        result: ProbeResult, response: httpx.Response, context: str
+) -> None:
+    if response.status_code < 400:
+        return
+    content_type = response.headers.get("content-type", "")
+    if "application/json" not in content_type:
+        result.add_finding(
+            "low",
+            f"[{context}] Non-JSON error response: {content_type}",
+        )
+
+
+def _add_info_if_no_findings(
+        result: ProbeResult, context: str
+) -> None:
+    if not result.findings:
+        result.add_finding(
+            "info",
+            f"[{context}] Error response appears properly sanitized",
+        )
+
+
+def _analyze_disclosure(
+        result: ProbeResult, response: httpx.Response, context: str
+):
+    """Analyze response for information disclosure issues."""
+    body = response.text
+    _check_critical_patterns(result, body, context)
+    _check_high_patterns(result, body, context)
+    _check_medium_patterns(result, body, context)
+    _check_response_length(result, body, context)
+    _check_error_content_type(result, response, context)
+    _add_info_if_no_findings(result, context)
+
+
 class LogLevelTestProbe(BaseProbe):
     """Probe for testing LOG_LEVEL configuration effects on error disclosure."""
     
@@ -41,7 +139,7 @@ class LogLevelTestProbe(BaseProbe):
             )
             result.status_code = response.status_code
             
-            self._analyze_disclosure(result, response, "404 Not Found")
+            _analyze_disclosure(result, response, "404 Not Found")
             
         except Exception as e:
             result.error = str(e)
@@ -67,7 +165,7 @@ class LogLevelTestProbe(BaseProbe):
             )
             result.status_code = response.status_code
             
-            self._analyze_disclosure(result, response, "Validation Error")
+            _analyze_disclosure(result, response, "Validation Error")
             
             # Check if too much model info is exposed
             body = response.text.lower()
@@ -94,7 +192,7 @@ class LogLevelTestProbe(BaseProbe):
             )
             result.status_code = response.status_code
             
-            self._analyze_disclosure(result, response, "JSON Parse Error")
+            _analyze_disclosure(result, response, "JSON Parse Error")
             
             body = response.text.lower()
             if "line" in body and "column" in body:
@@ -140,7 +238,7 @@ class LogLevelTestProbe(BaseProbe):
                 
                 if response.status_code >= 500:
                     result.add_finding("medium", f"Got 500 error with '{description}' payload")
-                    self._analyze_disclosure(result, response, f"500 via {description}")
+                    _analyze_disclosure(result, response, f"500 via {description}")
                 else:
                     result.add_finding("info", f"'{description}' handled gracefully (got {response.status_code})")
                     
@@ -175,68 +273,15 @@ class LogLevelTestProbe(BaseProbe):
                 )
                 
                 if response.status_code in [400, 422]:
-                    self._analyze_disclosure(result, response, f"Type confusion: {list(payload.keys())[0]}")
+                    _analyze_disclosure(result, response, f"Type confusion: {list(payload.keys())[0]}")
                 elif response.status_code >= 500:
                     result.add_finding("high", f"Type confusion caused 500 error: {payload}")
-                    self._analyze_disclosure(result, response, "Type confusion 500")
+                    _analyze_disclosure(result, response, "Type confusion 500")
                     
             except Exception as e:
                 result.add_finding("info", f"Type confusion error: {e}")
         
         self.results.append(result)
-    
-    def _analyze_disclosure(self, result: ProbeResult, response: httpx.Response, context: str):
-        """Analyze response for information disclosure issues."""
-        body = response.text
-        body_lower = body.lower()
-        
-        # Critical patterns - should never appear
-        critical_patterns = [
-            (r'Traceback \(most recent call last\):', "Python traceback exposed"),
-            (r'File ".*\.py", line \d+', "Source file path and line exposed"),
-            (r'(/home/|/var/|/usr/|C:\\Users\\)', "System path exposed"),
-            (r'password|secret|token|private.*key', "Sensitive keyword in response"),
-        ]
-        
-        for pattern, message in critical_patterns:
-            if re.search(pattern, body, re.IGNORECASE):
-                result.add_finding("critical", f"[{context}] {message}")
-        
-        # High severity patterns
-        high_patterns = [
-            (r'DEBUG|debug.*mode', "DEBUG mode indicator exposed"),
-            (r'ConnectionError|DatabaseError|Redis', "Backend technology exposed"),
-            (r'__init__|__call__|__new__', "Python dunder method names exposed"),
-        ]
-        
-        for pattern, message in high_patterns:
-            if re.search(pattern, body, re.IGNORECASE):
-                result.add_finding("high", f"[{context}] {message}")
-        
-        # Medium severity patterns
-        medium_patterns = [
-            (r'starlette|fastapi|uvicorn', "Ledger name exposed"),
-            (r'version.*\d+\.\d+\.\d+', "Version number exposed"),
-            (r'internal.*error|unexpected.*error', "Generic internal error message"),
-        ]
-        
-        for pattern, message in medium_patterns:
-            if re.search(pattern, body, re.IGNORECASE):
-                result.add_finding("medium", f"[{context}] {message}")
-        
-        # Check response length - very long error responses might contain too much info
-        if len(body) > 2000:
-            result.add_finding("medium", f"[{context}] Error response unusually long ({len(body)} chars)")
-        
-        # Check for proper JSON structure
-        if response.status_code >= 400:
-            content_type = response.headers.get("content-type", "")
-            if "application/json" not in content_type:
-                result.add_finding("low", f"[{context}] Non-JSON error response: {content_type}")
-        
-        # If no issues found, mark as passing
-        if not result.findings:
-            result.add_finding("info", f"[{context}] Error response appears properly sanitized")
 
 
 if __name__ == "__main__":

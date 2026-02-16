@@ -30,37 +30,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger("SigAudit")
 
-def run_signature_audit(connection_string: str = None, limit: int = 0):
-    """Run the signature audit."""
-    logger.info("Starting Cryptographic Signature Audit...")
-    
+
+def _connect_backend(connection_string: str | None) -> SqlStorageBackend | None:
     try:
-        backend = SqlStorageBackend(connection_string)
+        return SqlStorageBackend(connection_string)
     except Exception as e:
         logger.critical(f"Failed to connect to storage: {e}")
-        return
+        return None
 
-    # Use BlockVerifier just for block sigs, SignatureVerifier for strict logic
-    block_verifier = BlockVerifier(strict_mode=True)
-    sig_verifier = SignatureVerifier()
-    
-    latest_block_dict = backend.get_latest_block()
-    if not latest_block_dict:
-        logger.info("Database empty.")
-        backend.close()
-        return
 
-    tip_index = latest_block_dict['index']
-    start_index = 0
-    
-    # If limit applied, verify last N blocks
+def _determine_start_index(tip_index: int, limit: int) -> int:
     if limit > 0 and tip_index > limit:
         start_index = tip_index - limit + 1
-        logger.info(f"Verifying last {limit} blocks (Index {start_index} to {tip_index})")
-    else:
-        logger.info(f"Verifying all blocks (Index 0 to {tip_index})")
+        logger.info(
+            f"Verifying last {limit} blocks (Index {start_index} to {tip_index})"
+        )
+        return start_index
+    logger.info(f"Verifying all blocks (Index 0 to {tip_index})")
+    return 0
 
-    stats = {
+
+def _init_stats() -> dict[str, int]:
+    return {
         "blocks_checked": 0,
         "blocks_valid": 0,
         "blocks_invalid_sig": 0,
@@ -68,66 +59,80 @@ def run_signature_audit(connection_string: str = None, limit: int = 0):
         "events_checked": 0,
         "events_valid": 0,
         "events_invalid": 0,
-        "events_no_sig": 0
+        "events_no_sig": 0,
     }
 
-    for i in range(start_index, tip_index + 1):
-        block_dict = backend.get_block_by_index(i)
-        if not block_dict:
-            logger.error(f"Missing block at index {i}")
-            continue
-            
-        try:
-            block = Block.from_dict(block_dict)
-            stats["blocks_checked"] += 1
-            
-            # 1. Verify Block Signature
-            # Note: Many early blocks or PoW blocks might not have signatures if not enforced
-            if hasattr(block, 'signature') and block.signature:
-                res = block_verifier.verify_block_signature(block)
-                if res.is_valid:
-                    stats["blocks_valid"] += 1
-                else:
-                    logger.error(f"❌ Block {block.index} signature invalid: {res.message}")
-                    stats["blocks_invalid_sig"] += 1
-            else:
-                stats["blocks_no_sig"] += 1
-                
-            # 2. Verify Event Signatures
-            events_list = block.events.to_pylist() if hasattr(block.events, 'to_pylist') else block.events
-            for event in events_list:
-                stats["events_checked"] += 1
-                sender_id = event.get('sender_id') or event.get('sender')
-                signature = event.get('signature')
-                
-                # Check for public key in event details
-                details = event.get('details', {})
-                public_key = (
-                    details.get('public_key') if isinstance(details, dict) else None
-                )
-                
-                if not public_key and not signature:
-                    stats["events_no_sig"] += 1
-                    continue
-                    
-                if not public_key:
-                    # Can't verify without key
-                    logger.debug(f"Event {event.get('event_id')} has sig but no public key found.")
-                    stats["events_no_sig"] += 1
-                    continue
-                
-                if sig_verifier.verify_event_signature(event, public_key):
-                    stats["events_valid"] += 1
-                else:
-                    logger.error(f"❌ Event {event.get('event_id', '?')} in Block {block.index} has INVALID signature.")
-                    stats["events_invalid"] += 1
-                    
-        except Exception as e:
-            logger.error(f"Error processing block {i}: {e}")
 
-    backend.close()
-    
-    # Report
+def _verify_block_signature(block: Block, block_verifier: BlockVerifier, stats: dict):
+    if hasattr(block, "signature") and block.signature:
+        res = block_verifier.verify_block_signature(block)
+        if res.is_valid:
+            stats["blocks_valid"] += 1
+        else:
+            logger.error(
+                f"❌ Block {block.index} signature invalid: {res.message}"
+            )
+            stats["blocks_invalid_sig"] += 1
+    else:
+        stats["blocks_no_sig"] += 1
+
+
+def _verify_event_signatures(
+    block: Block, sig_verifier: SignatureVerifier, stats: dict
+):
+    events_list = (
+        block.events.to_pylist()
+        if hasattr(block.events, "to_pylist")
+        else block.events
+    )
+    for event in events_list:
+        stats["events_checked"] += 1
+        signature = event.get("signature")
+        details = event.get("details", {})
+        public_key = (
+            details.get("public_key") if isinstance(details, dict) else None
+        )
+        if not public_key and not signature:
+            stats["events_no_sig"] += 1
+            continue
+        if not public_key:
+            logger.debug(
+                f"Event {event.get('event_id')} has sig but no public key found."
+            )
+            stats["events_no_sig"] += 1
+            continue
+        if sig_verifier.verify_event_signature(event, public_key):
+            stats["events_valid"] += 1
+        else:
+            logger.error(
+                "❌ Event "
+                f"{event.get('event_id', '?')} in Block {block.index} "
+                "has INVALID signature."
+            )
+            stats["events_invalid"] += 1
+
+
+def _process_block_index(
+    index: int,
+    backend: SqlStorageBackend,
+    block_verifier: BlockVerifier,
+    sig_verifier: SignatureVerifier,
+    stats: dict,
+):
+    block_dict = backend.get_block_by_index(index)
+    if not block_dict:
+        logger.error(f"Missing block at index {index}")
+        return
+    try:
+        block = Block.from_dict(block_dict)
+        stats["blocks_checked"] += 1
+        _verify_block_signature(block, block_verifier, stats)
+        _verify_event_signatures(block, sig_verifier, stats)
+    except Exception as e:
+        logger.error(f"Error processing block {index}: {e}")
+
+
+def _log_stats(stats: dict):
     logger.info("-" * 40)
     logger.info("AUDIT COMPLETE")
     logger.info("-" * 40)
@@ -140,6 +145,28 @@ def run_signature_audit(connection_string: str = None, limit: int = 0):
     logger.info(f"  - Valid:           {stats['events_valid']}")
     logger.info(f"  - Invalid:         {stats['events_invalid']}")
     logger.info(f"  - No Key/Sig:      {stats['events_no_sig']}")
+
+
+def run_signature_audit(connection_string: str = None, limit: int = 0):
+    """Run the signature audit."""
+    logger.info("Starting Cryptographic Signature Audit...")
+    backend = _connect_backend(connection_string)
+    if backend is None:
+        return
+    block_verifier = BlockVerifier(strict_mode=True)
+    sig_verifier = SignatureVerifier()
+    latest_block_dict = backend.get_latest_block()
+    if not latest_block_dict:
+        logger.info("Database empty.")
+        backend.close()
+        return
+    tip_index = latest_block_dict["index"]
+    start_index = _determine_start_index(tip_index, limit)
+    stats = _init_stats()
+    for i in range(start_index, tip_index + 1):
+        _process_block_index(i, backend, block_verifier, sig_verifier, stats)
+    backend.close()
+    _log_stats(stats)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="HieraChain Signature Audit")

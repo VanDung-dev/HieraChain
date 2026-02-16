@@ -14,6 +14,56 @@ import httpx
 from base_probe import BaseProbe, parse_args, run_probe, ProbeResult
 
 
+def _build_case_variations(api_key: str):
+    return [
+        ("uppercase", api_key.upper()),
+        ("lowercase", api_key.lower()),
+        (
+            "mixed",
+            "".join(
+                c.upper() if i % 2 else c.lower() for i, c in enumerate(api_key)
+            ),
+        ),
+    ]
+
+
+def _analyze_key_rejection(result: ProbeResult, response: httpx.Response, key_type: str):
+    """Analyze how the server rejected an invalid key."""
+    body = response.text.lower()
+
+    # Check status code
+    if response.status_code == 401:
+        result.add_finding("info", f"Server correctly returned 401 for {key_type}")
+    elif response.status_code == 403:
+        result.add_finding("info", f"Server returned 403 for {key_type}")
+    elif response.status_code == 200:
+        result.add_finding("critical", f"Server accepted {key_type} - authentication bypass!")
+    else:
+        result.add_finding("medium", f"Unexpected status {response.status_code} for {key_type}")
+
+    # Check for information leakage in error message
+    sensitive_patterns = [
+        ("database", "Database information leaked"),
+        ("sql", "SQL information leaked"),
+        ("table", "Database table name leaked"),
+        ("password", "Password-related info leaked"),
+        ("secret", "Secret information leaked"),
+        ("internal", "Internal system info leaked"),
+        ("traceback", "Python traceback leaked"),
+        ("exception", "Exception details leaked"),
+    ]
+
+    for pattern, message in sensitive_patterns:
+        if pattern in body:
+            result.add_finding("high", f"{message} in error response for {key_type}")
+
+    # Check response is proper JSON
+    if response.headers.get("content-type", "").startswith("application/json"):
+        result.add_finding("info", "Error response is proper JSON format")
+    else:
+        result.add_finding("medium", f"Error response is not JSON: {response.headers.get('content-type', 'unknown')}")
+
+
 class APIKeyEdgeCasesProbe(BaseProbe):
     """Probe for testing API key edge cases and scope handling."""
     
@@ -47,7 +97,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
             result.elapsed_ms = (asyncio.get_running_loop().time() - start) * 1000
             result.status_code = response.status_code
             
-            self._analyze_key_rejection(result, response, "non-existent key")
+            _analyze_key_rejection(result, response, "non-existent key")
             
         except Exception as e:
             result.error = str(e)
@@ -79,7 +129,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
                 result.elapsed_ms = (asyncio.get_running_loop().time() - start) * 1000
                 result.status_code = response.status_code
                 
-                self._analyze_key_rejection(result, response, name)
+                _analyze_key_rejection(result, response, name)
                 
             except Exception as e:
                 result.error = str(e)
@@ -100,7 +150,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
             result.elapsed_ms = (asyncio.get_running_loop().time() - start) * 1000
             result.status_code = response.status_code
             
-            self._analyze_key_rejection(result, response, "empty key")
+            _analyze_key_rejection(result, response, "empty key")
             
         except Exception as e:
             result.error = str(e)
@@ -130,7 +180,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
             else:
                 result.add_finding("info", f"Server handled long key in {result.elapsed_ms:.0f}ms - no DoS concern")
             
-            self._analyze_key_rejection(result, response, "very long key")
+            _analyze_key_rejection(result, response, "very long key")
             
         except Exception as e:
             result.error = str(e)
@@ -158,7 +208,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
             if "<script>" in response.text.lower():
                 result.add_finding("high", "XSS payload reflected in response!")
             
-            self._analyze_key_rejection(result, response, "special chars key")
+            _analyze_key_rejection(result, response, "special chars key")
             
         except Exception as e:
             result.error = str(e)
@@ -170,7 +220,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
         endpoint = "/api/v1/channels"
         result = ProbeResult("Unicode API Key", endpoint)
         
-        unicode_key = "hrc_тест_यूनिकोड_测试_🔐"
+        unicode_key = "hrc_тест_यूनिकोड_测试_🔐 vãi chưa =)))"
         
         try:
             start = asyncio.get_running_loop().time()
@@ -181,62 +231,79 @@ class APIKeyEdgeCasesProbe(BaseProbe):
             result.elapsed_ms = (asyncio.get_running_loop().time() - start) * 1000
             result.status_code = response.status_code
             
-            self._analyze_key_rejection(result, response, "unicode key")
+            _analyze_key_rejection(result, response, "unicode key")
             
         except Exception as e:
             result.error = str(e)
         
         self.results.append(result)
-    
+
+    async def _get_original_status_code(self, client, endpoint: str):
+        try:
+            response = await client.get(
+                f"{self.base_url}{endpoint}",
+                headers={"x-api-key": self.api_key},
+            )
+            return response.status_code
+        except Exception:
+            return None
+
+    async def _test_case_variation(
+        self,
+        client,
+        endpoint: str,
+        original_response: int | None,
+        name: str,
+        key: str,
+        result: ProbeResult,
+    ):
+        if key == self.api_key:
+            return
+        try:
+            response = await client.get(
+                f"{self.base_url}{endpoint}",
+                headers={"x-api-key": key},
+            )
+            status_code = response.status_code
+            if (
+                original_response in [200, 201]
+                and status_code == original_response
+            ):
+                result.add_finding(
+                    "medium",
+                    f"API key validation appears case-insensitive ({name} variation accepted)",
+                )
+            else:
+                result.add_finding(
+                    "info",
+                    f"Case variation '{name}' properly rejected (got {status_code})",
+                )
+        except Exception as e:
+            result.add_finding("info", f"Error testing {name}: {e}")
+
     async def test_case_sensitivity(self, client):
         """Test whether API key validation is case-sensitive."""
         endpoint = "/api/v1/channels"
         result = ProbeResult("Case Sensitivity Check", endpoint)
-        
-        # If we have a valid key, test case variations
-        if self.api_key:
-            variations = [
-                ("uppercase", self.api_key.upper()),
-                ("lowercase", self.api_key.lower()),
-                ("mixed", "".join(c.upper() if i % 2 else c.lower() for i, c in enumerate(self.api_key)))
-            ]
-            
-            original_response = None
-            try:
-                response = await client.get(
-                    f"{self.base_url}{endpoint}",
-                    headers={"x-api-key": self.api_key}
-                )
-                original_response = response.status_code
-            except:
-                pass
-            
-            for name, key in variations:
-                if key != self.api_key:  # Skip if same as original
-                    try:
-                        response = await client.get(
-                            f"{self.base_url}{endpoint}",
-                            headers={"x-api-key": key}
-                        )
-                        
-                        # If variation works same as original, case insensitivity issue
-                        if response.status_code == original_response and original_response in [200, 201]:
-                            result.add_finding(
-                                "medium", 
-                                f"API key validation appears case-insensitive ({name} variation accepted)"
-                            )
-                        else:
-                            result.add_finding(
-                                "info",
-                                f"Case variation '{name}' properly rejected (got {response.status_code})"
-                            )
-                    except Exception as e:
-                        result.add_finding("info", f"Error testing {name}: {e}")
-        else:
-            result.add_finding("info", "No valid API key provided - skipping case sensitivity test")
-        
+
+        if not self.api_key:
+            result.add_finding(
+                "info",
+                "No valid API key provided - skipping case sensitivity test",
+            )
+            self.results.append(result)
+            return
+
+        variations = _build_case_variations(self.api_key)
+        original_response = await self._get_original_status_code(client, endpoint)
+
+        for name, key in variations:
+            await self._test_case_variation(
+                client, endpoint, original_response, name, key, result
+            )
+
         self.results.append(result)
-    
+
     async def test_scope_bypass_attempts(self, client):
         """Test attempts to bypass scope/permission restrictions."""
         result = ProbeResult("Scope Bypass Attempts", "/api/v2/admin/*")
@@ -283,42 +350,6 @@ class APIKeyEdgeCasesProbe(BaseProbe):
                 result.add_finding("info", f"Error testing {technique}: {e}")
         
         self.results.append(result)
-    
-    def _analyze_key_rejection(self, result: ProbeResult, response: httpx.Response, key_type: str):
-        """Analyze how the server rejected an invalid key."""
-        body = response.text.lower()
-        
-        # Check status code
-        if response.status_code == 401:
-            result.add_finding("info", f"Server correctly returned 401 for {key_type}")
-        elif response.status_code == 403:
-            result.add_finding("info", f"Server returned 403 for {key_type}")
-        elif response.status_code == 200:
-            result.add_finding("critical", f"Server accepted {key_type} - authentication bypass!")
-        else:
-            result.add_finding("medium", f"Unexpected status {response.status_code} for {key_type}")
-        
-        # Check for information leakage in error message
-        sensitive_patterns = [
-            ("database", "Database information leaked"),
-            ("sql", "SQL information leaked"),
-            ("table", "Database table name leaked"),
-            ("password", "Password-related info leaked"),
-            ("secret", "Secret information leaked"),
-            ("internal", "Internal system info leaked"),
-            ("traceback", "Python traceback leaked"),
-            ("exception", "Exception details leaked"),
-        ]
-        
-        for pattern, message in sensitive_patterns:
-            if pattern in body:
-                result.add_finding("high", f"{message} in error response for {key_type}")
-        
-        # Check response is proper JSON
-        if response.headers.get("content-type", "").startswith("application/json"):
-            result.add_finding("info", "Error response is proper JSON format")
-        else:
-            result.add_finding("medium", f"Error response is not JSON: {response.headers.get('content-type', 'unknown')}")
 
 
 if __name__ == "__main__":

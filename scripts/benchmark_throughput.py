@@ -99,8 +99,9 @@ async def run_benchmark(event_count: int, workers: int, batch_size: int):
         
         # Wait for completion
         while True:
-            processed = service.statistics["events_certified"]
-            rejected = service.statistics["events_rejected"]
+            stats = service.get_statistics()
+            processed = stats["events_certified"]
+            rejected = stats["events_rejected"]
             blocks = service.blocks_created
             
             if (processed + rejected) >= event_count:
@@ -119,7 +120,7 @@ async def run_benchmark(event_count: int, workers: int, batch_size: int):
         logger.info("Benchmark Complete!")
         logger.info(f"Duration: {duration:.2f}s")
         logger.info(f"Throughput: {tps:.2f} events/sec")
-        logger.info(f"Average Latency: {service.statistics['average_processing_time']:.4f}s")
+        logger.info(f"Average Latency: {stats['average_processing_time']:.4f}s")
         logger.info(f"Blocks Created: {service.blocks_created}")
         
     finally:

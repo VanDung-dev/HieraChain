@@ -10,6 +10,76 @@ import httpx
 from base_probe import BaseProbe, parse_args, run_probe, ProbeResult
 
 
+def _check_stack_trace(result: ProbeResult, body: str) -> bool:
+    stack_trace_patterns = [
+        r'Traceback \(most recent call last\):',
+        r'File ".*", line \d+, in',
+        r'NameError:',
+        r'TypeError:',
+        r'ValueError:',
+        r'ImportError:',
+        r'ModuleNotFoundError:',
+        r'AttributeError:',
+    ]
+    for pattern in stack_trace_patterns:
+        if re.search(pattern, body):
+            result.add_finding(
+                "critical",
+                f"Possible Stack Trace disclosure matching '{pattern}'",
+                {"snippet": body[:200] + "..."},
+            )
+            return True
+    return False
+
+
+def _check_internal_paths(result: ProbeResult, body: str):
+    path_patterns = [
+        r"/usr/local/lib/python",
+        r"/home/\w+/",
+        r"[C-Z]:\\Users\\",
+    ]
+    for pattern in path_patterns:
+        if re.search(pattern, body, re.IGNORECASE):
+            result.add_finding(
+                "high",
+                "Possible Internal Path disclosure",
+                {"snippet": body[:200]},
+            )
+
+
+def _check_error_content_type(
+        result: ProbeResult,
+    response: httpx.Response,
+    body: str,
+    found_trace: bool,
+):
+    if response.status_code < 400:
+        return
+    if response.headers.get("content-type") != "application/json":
+        result.add_finding(
+            "medium",
+            f"Error response content-type is not JSON: {response.headers.get('content-type')}",
+            {"body_preview": body[:100]},
+        )
+    if not found_trace and not result.findings:
+        result.add_finding(
+            "info",
+            "Error message appears sanitized (no stack trace found).",
+        )
+
+
+def _analyze_error_response(
+        result: ProbeResult, response: httpx.Response
+):
+    """Analyze response body for sensitive patterns."""
+    body = response.text
+    found_trace = _check_stack_trace(result, body)
+    _check_internal_paths(result, body)
+    if "fastapi" in body.lower() or "starlette" in body.lower():
+        pass
+    _check_error_content_type(result, response, body, found_trace)
+
+
 class ErrorDisclosureProbe(BaseProbe):
     async def run(self):
         print(f"[*] Starting Error Disclosure Probe against {self.base_url}...", file=sys.stderr)
@@ -34,7 +104,7 @@ class ErrorDisclosureProbe(BaseProbe):
             result.elapsed_ms = (asyncio.get_running_loop().time() - start) * 1000
             result.status_code = response.status_code
             
-            self._analyze_error_response(result, response)
+            _analyze_error_response(result, response)
             
         except Exception as e:
             result.error = str(e)
@@ -60,7 +130,7 @@ class ErrorDisclosureProbe(BaseProbe):
             result.status_code = response.status_code
             
             # 422 is expected, but check content
-            self._analyze_error_response(result, response)
+            _analyze_error_response(result, response)
             
         except Exception as e:
             result.error = str(e)
@@ -82,74 +152,12 @@ class ErrorDisclosureProbe(BaseProbe):
             result.elapsed_ms = (asyncio.get_running_loop().time() - start) * 1000
             result.status_code = response.status_code
             
-            self._analyze_error_response(result, response)
+            _analyze_error_response(result, response)
             
         except Exception as e:
             result.error = str(e)
         
         self.results.append(result)
-
-    def _analyze_error_response(self, result: ProbeResult, response: httpx.Response):
-        """Analyze response body for sensitive patterns."""
-        body = response.text
-        
-        # 1. Check for Python Stack Trace patterns
-        stack_trace_patterns = [
-            r'Traceback \(most recent call last\):',
-            r'File ".*", line \d+, in',
-            r'NameError:',
-            r'TypeError:',
-            r'ValueError:',
-            r'ImportError:',
-            r'ModuleNotFoundError:',
-            r'AttributeError:'
-        ]
-        
-        found_trace = False
-        for pattern in stack_trace_patterns:
-            if re.search(pattern, body):
-                found_trace = True
-                result.add_finding(
-                    "critical", 
-                    f"Possible Stack Trace disclosure matching '{pattern}'",
-                    {"snippet": body[:200] + "..."}
-                )
-                break
-        
-        # 2. Check for internal path disclosure (Unix or Windows)
-        # Avoid false positives in standard JSON responses (e.g. urls)
-        path_patterns = [
-            r'/usr/local/lib/python',
-            r'/home/\w+/',
-            r'[C-Z]:\\Users\\'
-        ]
-        
-        for pattern in path_patterns:
-            if re.search(pattern, body, re.IGNORECASE):
-                result.add_finding(
-                    "high",
-                    "Possible Internal Path disclosure",
-                    {"snippet": body[:200]}
-                )
-        
-        # 3. Check for specific Ledger info
-        if "fastapi" in body.lower() or "starlette" in body.lower():
-            # This is lower severity, sometimes default in dev mode headers or valid errors
-            # But checking body is good
-            pass
-
-        # 4. Verify clean JSON error format
-        if response.status_code >= 400:
-            if response.headers.get("content-type") != "application/json":
-                result.add_finding(
-                    "medium",
-                    f"Error response content-type is not JSON: {response.headers.get('content-type')}",
-                    {"body_preview": body[:100]}
-                )
-            
-            # If no trace found, mark as Pass
-            if not found_trace and not result.findings:
-                result.add_finding("info", "Error message appears sanitized (no stack trace found).")
 
 
 if __name__ == "__main__":

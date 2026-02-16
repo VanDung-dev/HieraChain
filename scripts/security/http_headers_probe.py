@@ -39,6 +39,57 @@ TEST_ENDPOINTS = [
 ]
 
 
+def _check_required_headers(
+        response: httpx.Response, result: ProbeResult
+) -> None:
+    for header, expected in REQUIRED_HEADERS.items():
+        actual = response.headers.get(header)
+        if not actual:
+            result.add_finding(
+                severity="medium",
+                message=f"Missing security header: {header}",
+                details={"expected": expected},
+            )
+        elif isinstance(expected, list):
+            if actual not in expected:
+                result.add_finding(
+                    severity="low",
+                    message=f"Unexpected value for {header}",
+                    details={"expected": expected, "actual": actual},
+                )
+        elif actual.lower() != expected.lower():
+            result.add_finding(
+                severity="low",
+                message=f"Unexpected value for {header}",
+                details={"expected": expected, "actual": actual},
+            )
+
+
+def _check_dangerous_headers(
+        response: httpx.Response, result: ProbeResult
+) -> None:
+    for header in DANGEROUS_HEADERS:
+        if header in response.headers:
+            result.add_finding(
+                severity="low",
+                message=f"Information disclosure via {header} header",
+                details={"value": response.headers[header]},
+            )
+
+
+def _check_cors(response: httpx.Response, result: ProbeResult) -> None:
+    cors_origin = response.headers.get("access-control-allow-origin")
+    if cors_origin == "*":
+        result.add_finding(
+            severity="medium",
+            message="CORS allows all origins (*)",
+            details={
+                "header": "access-control-allow-origin",
+                "value": "*",
+            },
+        )
+
+
 class HTTPHeadersProbe(BaseProbe):
     """Probe for HTTP security headers."""
     
@@ -51,72 +102,36 @@ class HTTPHeadersProbe(BaseProbe):
         ) as client:
             for endpoint in TEST_ENDPOINTS:
                 await self._check_endpoint(client, endpoint)
-    
+
+    @staticmethod
+    def _add_info_if_no_findings(result: ProbeResult) -> None:
+        if not result.findings:
+            result.add_finding(
+                severity="info",
+                message="All security headers present and correct",
+            )
+
     async def _check_endpoint(self, client: httpx.AsyncClient, endpoint: str):
         """Check headers for a single endpoint."""
         result = ProbeResult(
             name=f"headers_check_{endpoint.replace('/', '_')}",
-            endpoint=endpoint
+            endpoint=endpoint,
         )
-        
+
         try:
             start = time.time()
             response = await client.get(endpoint, headers=self.get_headers())
             result.elapsed_ms = (time.time() - start) * 1000
             result.status_code = response.status_code
             result.headers = dict(response.headers)
-            
-            # Check required headers
-            for header, expected in REQUIRED_HEADERS.items():
-                actual = response.headers.get(header)
-                if not actual:
-                    result.add_finding(
-                        severity="medium",
-                        message=f"Missing security header: {header}",
-                        details={"expected": expected}
-                    )
-                elif isinstance(expected, list):
-                    if actual not in expected:
-                        result.add_finding(
-                            severity="low",
-                            message=f"Unexpected value for {header}",
-                            details={"expected": expected, "actual": actual}
-                        )
-                elif actual.lower() != expected.lower():
-                    result.add_finding(
-                        severity="low",
-                        message=f"Unexpected value for {header}",
-                        details={"expected": expected, "actual": actual}
-                    )
-            
-            # Check dangerous headers
-            for header in DANGEROUS_HEADERS:
-                if header in response.headers:
-                    result.add_finding(
-                        severity="low",
-                        message=f"Information disclosure via {header} header",
-                        details={"value": response.headers[header]}
-                    )
-            
-            # Check CORS
-            cors_origin = response.headers.get("access-control-allow-origin")
-            if cors_origin == "*":
-                result.add_finding(
-                    severity="medium",
-                    message="CORS allows all origins (*)",
-                    details={"header": "access-control-allow-origin", "value": "*"}
-                )
-            
-            # No findings = good
-            if not result.findings:
-                result.add_finding(
-                    severity="info",
-                    message="All security headers present and correct"
-                )
-                
+
+            _check_required_headers(response, result)
+            _check_dangerous_headers(response, result)
+            _check_cors(response, result)
+            self._add_info_if_no_findings(result)
         except httpx.RequestError as e:
             result.error = str(e)
-        
+
         self.results.append(result)
 
 
