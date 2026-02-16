@@ -64,146 +64,163 @@ def exit_handler():
 
 atexit.register(exit_handler)
 
-def demonstrate_hierachain():
-    """Demonstrate the HieraChain Ledger capabilities."""
+def print_system_overview(stats_data):
+    print(f"   Total Sub-Chains: {stats_data['system_overview']['total_sub_chains']}")
+    print(
+        f"   Total Sub-Chain blocks: "
+        f"{stats_data['system_overview']['total_sub_chain_blocks']}"
+    )
+    print(
+        f"   Total Sub-Chain events: "
+        f"{stats_data['system_overview']['total_sub_chain_events']}"
+    )
+    print(
+        f"   System uptime: "
+        f"{stats_data['system_overview']['system_uptime']:.2f} seconds"
+    )
+    print(f"   System integrity: {stats_data['integrity_status']}")
 
-    def print_system_overview(stats_data):
-        print(f"   Total Sub-Chains: {stats_data['system_overview']['total_sub_chains']}")
-        print(f"   Total Sub-Chain blocks: {stats_data['system_overview']['total_sub_chain_blocks']}")
-        print(f"   Total Sub-Chain events: {stats_data['system_overview']['total_sub_chain_events']}")
-        print(f"   System uptime: {stats_data['system_overview']['system_uptime']:.2f} seconds")
-        print(f"   System integrity: {stats_data['integrity_status']}")
 
-    print("=" * 80)
-    print("HieraChain Ledger DEMONSTRATION")
-    print("=" * 80)
-    print()
-    
-    # Initialize the hierarchical system
+def initialize_hierarchy_manager():
     print("1. Initializing Hierarchical System...")
     from hierachain.config.settings import settings
+
     print(f"DEBUG: Storage Backend: {settings.DEFAULT_STORAGE_BACKEND}")
     try:
         hierarchy_manager = HierarchyManager()
-        if hasattr(hierarchy_manager, 'storage') and hierarchy_manager.storage:
+        if hasattr(hierarchy_manager, "storage") and hierarchy_manager.storage:
             print("DEBUG: Storage initialized in HierarchyManager")
         else:
             print("DEBUG: Storage NOT initialized in HierarchyManager")
+        return hierarchy_manager
     except Exception as e:
         print(f"Error initializing system: {e}")
         return None
 
-    # Create Sub-Chains for different business domains
-    print("2. Creating Sub-Chains for different business domains...")
 
-    # Manufacturing Sub-Chain
+def create_sub_chains(hierarchy_manager):
+    print("2. Creating Sub-Chains for different business domains...")
     success = hierarchy_manager.create_sub_chain(
         name="ManufacturingChain",
         domain_type="manufacturing",
         metadata={
             "department": "Manufacturing",
             "location": "Factory-A",
-            "capacity": 1000
-        }
+            "capacity": 1000,
+        },
     )
     print(f"   Manufacturing Chain created: {success}")
 
-    # Quality Control Sub-Chain
     success = hierarchy_manager.create_sub_chain(
-        name="QualityChain", 
+        name="QualityChain",
         domain_type="quality_control",
         metadata={
             "department": "Quality Assurance",
             "standards": ["ISO-9001", "ISO-14001"],
-            "inspection_levels": 3
-        }
+            "inspection_levels": 3,
+        },
     )
     print(f"   Quality Chain created: {success}")
 
-    # Logistics Sub-Chain
     success = hierarchy_manager.create_sub_chain(
         name="LogisticsChain",
-        domain_type="logistics", 
+        domain_type="logistics",
         metadata={
             "department": "Supply Chain",
             "regions": ["North", "South", "East", "West"],
-            "transport_modes": ["truck", "rail", "air"]
-        }
+            "transport_modes": ["truck", "rail", "air"],
+        },
     )
     print(f"   Logistics Chain created: {success}")
-    
     print()
-    
-    # Demonstrate MSP functionality
-    print("3. Demonstrating Membership Service Provider (MSP) functionality...")
 
-    # Create organizations
+
+def demonstrate_msp(hierarchy_manager):
+    print("3. Demonstrating Membership Service Provider (MSP) functionality...")
     try:
-        _org1 = hierarchy_manager.create_organization("ManufacturerOrg", "Manufacturing Organization", ["admin1"])
-        _org2 = hierarchy_manager.create_organization("QualityOrg", "Quality Organization", ["admin2"])
-        _org3 = hierarchy_manager.create_organization("LogisticsOrg", "Logistics Organization", ["admin3"])
-        print(f"   Created organizations: ManufacturerOrg, QualityOrg, LogisticsOrg")
+        _org1 = hierarchy_manager.create_organization(
+            "ManufacturerOrg", "Manufacturing Organization", ["admin1"]
+        )
+        _org2 = hierarchy_manager.create_organization(
+            "QualityOrg", "Quality Organization", ["admin2"]
+        )
+        _org3 = hierarchy_manager.create_organization(
+            "LogisticsOrg", "Logistics Organization", ["admin3"]
+        )
+        print(
+            "   Created organizations: ManufacturerOrg, QualityOrg, LogisticsOrg"
+        )
     except Exception as e:
         print(f"   Error creating organizations: {e}")
-        return None
+        return False
 
-    # Assign organizations to chains
-    hierarchy_manager.assign_organization_to_chain("ManufacturerOrg", "ManufacturingChain")
+    hierarchy_manager.assign_organization_to_chain(
+        "ManufacturerOrg", "ManufacturingChain"
+    )
     hierarchy_manager.assign_organization_to_chain("QualityOrg", "QualityChain")
-    hierarchy_manager.assign_organization_to_chain("LogisticsOrg", "LogisticsChain")
+    hierarchy_manager.assign_organization_to_chain(
+        "LogisticsOrg", "LogisticsChain"
+    )
     print("   Assigned organizations to respective chains")
-
     print()
+    return True
 
-    # Create channels for data isolation
+
+def create_channels(hierarchy_manager):
     print("4. Creating channels for data isolation...")
-
-    # Create channels with policies
     try:
-        _prod_channel = hierarchy_manager.create_channel("ProductionChannel",
-                                                       ["ManufacturerOrg", "QualityOrg"],
-                                                       {
-                                                           "read": "MEMBER",
-                                                           "write": "ADMIN",
-                                                           "endorsement": "MAJORITY"
-                                                       })
+        _prod_channel = hierarchy_manager.create_channel(
+            "ProductionChannel",
+            ["ManufacturerOrg", "QualityOrg"],
+            {
+                "read": "MEMBER",
+                "write": "ADMIN",
+                "endorsement": "MAJORITY",
+            },
+        )
 
-        _supply_channel = hierarchy_manager.create_channel("SupplyChannel",
-                                                         ["QualityOrg", "LogisticsOrg"],
-                                                         {
-                                                             "read": "MEMBER",
-                                                             "write": "ADMIN",
-                                                             "endorsement": "MAJORITY"
-                                                         })
+        _supply_channel = hierarchy_manager.create_channel(
+            "SupplyChannel",
+            ["QualityOrg", "LogisticsOrg"],
+            {
+                "read": "MEMBER",
+                "write": "ADMIN",
+                "endorsement": "MAJORITY",
+            },
+        )
 
-        _enterprise_channel = hierarchy_manager.create_channel("EnterpriseChannel",
-                                                             ["ManufacturerOrg", "QualityOrg", "LogisticsOrg"],
-                                                             {
-                                                                 "read": "MEMBER",
-                                                                 "write": "ADMIN",
-                                                                 "endorsement": "MAJORITY"
-                                                             })
+        _enterprise_channel = hierarchy_manager.create_channel(
+            "EnterpriseChannel",
+            ["ManufacturerOrg", "QualityOrg", "LogisticsOrg"],
+            {
+                "read": "MEMBER",
+                "write": "ADMIN",
+                "endorsement": "MAJORITY",
+            },
+        )
 
-        print(f"   Created channels: ProductionChannel, SupplyChannel, EnterpriseChannel")
+        print(
+            "   Created channels: ProductionChannel, SupplyChannel, EnterpriseChannel"
+        )
     except Exception as e:
         print(f"   Error creating channels: {e}")
-        return None
+        return False
 
     print()
+    return True
 
-    # Create private data collections
+
+def setup_private_data_collections(hierarchy_manager):
     print("5. Setting up private data collections...")
-
-    # Define private data collections
     try:
         manufacturing_private_data = hierarchy_manager.create_private_data_collection(
-            "ManufacturingSecrets", 
+            "ManufacturingSecrets",
             ["ManufacturerOrg"],
             {
                 "block_to_purge": 100,
                 "endorsement_policy": "MAJORITY",
-                "min_endorsements": 1
-            }
+                "min_endorsements": 1,
+            },
         )
 
         quality_private_data = hierarchy_manager.create_private_data_collection(
@@ -212,8 +229,8 @@ def demonstrate_hierachain():
             {
                 "block_to_purge": 100,
                 "endorsement_policy": "MAJORITY",
-                "min_endorsements": 1
-            }
+                "min_endorsements": 1,
+            },
         )
 
         shared_private_data = hierarchy_manager.create_private_data_collection(
@@ -222,204 +239,221 @@ def demonstrate_hierachain():
             {
                 "block_to_purge": 100,
                 "endorsement_policy": "MAJORITY",
-                "min_endorsements": 2
-            }
+                "min_endorsements": 2,
+            },
         )
 
-        print("   Created private data collections: ManufacturingSecrets, QualitySecrets, SharedSecrets")
+        print(
+            "   Created private data collections: ManufacturingSecrets, QualitySecrets, SharedSecrets"
+        )
     except Exception as e:
         print(f"   Error creating private data collections: {e}")
-        return None
+        return None, None, None
 
     print()
+    return manufacturing_private_data, quality_private_data, shared_private_data
 
-    # Demonstrate entity lifecycle across multiple chains
+
+def demonstrate_entity_lifecycle(hierarchy_manager, entities):
     print("6. Demonstrating Entity Lifecycle Management...")
-    
-    # Create some sample entities
-    entities = [
-        "PRODUCT-2024-001",
-        "PRODUCT-2024-002", 
-        "PRODUCT-2024-003"
-    ]
-    
+
     manufacturing_chain = hierarchy_manager.get_sub_chain("ManufacturingChain")
     quality_chain = hierarchy_manager.get_sub_chain("QualityChain")
     logistics_chain = hierarchy_manager.get_sub_chain("LogisticsChain")
-    
+
     for idx, entity_id in enumerate(entities):
         print(f"   Processing entity: {entity_id}")
-        
-        # Generate deterministic demo data based on entity index
+
         entity_hash = hash(entity_id) % 10000
-        batch_num = 1000 + (entity_hash % 9000)  # Range 1000-9999
-        target_qty = 50 + (entity_hash % 151)    # Range 50-200
-        
-        # Register entity in manufacturing
-        manufacturing_chain.register_entity(entity_id, {
-            "product_type": "Electronics",
-            "batch_number": f"BATCH-{batch_num}",
-            "target_quantity": target_qty
-        })
-        
-        # Generate more deterministic demo data
-        machine_id = 1 + ((entity_hash + idx) % 10)  # Range 1-10
-        qty_produced = 45 + ((entity_hash + idx * 2) % 11)  # Range 45-55
-        
-        # Start manufacturing operation
-        hierarchy_manager.start_operation(
-            "ManufacturingChain", 
-            entity_id, 
-            "production",
-            {"machine_id": f"MACHINE-{machine_id}"}
+        batch_num = 1000 + (entity_hash % 9000)
+        target_qty = 50 + (entity_hash % 151)
+
+        manufacturing_chain.register_entity(
+            entity_id,
+            {
+                "product_type": "Electronics",
+                "batch_number": f"BATCH-{batch_num}",
+                "target_quantity": target_qty,
+            },
         )
-        
-        # Complete manufacturing
+
+        machine_id = 1 + ((entity_hash + idx) % 10)
+        qty_produced = 45 + ((entity_hash + idx * 2) % 11)
+
+        hierarchy_manager.start_operation(
+            "ManufacturingChain",
+            entity_id,
+            "production",
+            {"machine_id": f"MACHINE-{machine_id}"},
+        )
+
         hierarchy_manager.complete_operation(
             "ManufacturingChain",
             entity_id,
-            "production", 
-            {"success": True, "quantity_produced": qty_produced}
+            "production",
+            {"success": True, "quantity_produced": qty_produced},
         )
-        
-        # Quality check
-        quality_chain.register_entity(entity_id, {
-            "received_from": "ManufacturingChain",
-            "quality_standards": ["electrical", "mechanical", "visual"]
-        })
-        
-        # Generate deterministic inspector and manager IDs
-        inspector_id = 1 + ((entity_hash + idx * 3) % 5)  # Range 1-5
-        manager_id = 1 + ((entity_hash + idx * 4) % 3)    # Range 1-3
-        
+
+        quality_chain.register_entity(
+            entity_id,
+            {
+                "received_from": "ManufacturingChain",
+                "quality_standards": ["electrical", "mechanical", "visual"],
+            },
+        )
+
+        inspector_id = 1 + ((entity_hash + idx * 3) % 5)
+        manager_id = 1 + ((entity_hash + idx * 4) % 3)
+
         quality_chain.perform_quality_check(
             entity_id,
             "final_inspection",
             "passed",
-            f"INSPECTOR-{inspector_id}"
+            f"INSPECTOR-{inspector_id}",
         )
-        
-        # Approval process
+
         quality_chain.process_approval(
             entity_id,
             "quality_release",
             "approved",
-            f"QA-MANAGER-{manager_id}"
+            f"QA-MANAGER-{manager_id}",
         )
-        
-        # Generate deterministic logistics data
-        warehouses = ['A', 'B', 'C']
+
+        warehouses = ["A", "B", "C"]
         priorities = ["normal", "high", "urgent"]
         warehouse = warehouses[(entity_hash + idx * 5) % len(warehouses)]
         priority = priorities[(entity_hash + idx * 6) % len(priorities)]
-        truck_id = 100 + ((entity_hash + idx * 7) % 900)  # Range 100-999
-        
-        # Logistics handling
-        logistics_chain.register_entity(entity_id, {
-            "received_from": "QualityChain",
-            "destination": f"WAREHOUSE-{warehouse}",
-            "priority": priority
-        })
-        
+        truck_id = 100 + ((entity_hash + idx * 7) % 900)
+
+        logistics_chain.register_entity(
+            entity_id,
+            {
+                "received_from": "QualityChain",
+                "destination": f"WAREHOUSE-{warehouse}",
+                "priority": priority,
+            },
+        )
+
         logistics_chain.allocate_resource(
-            entity_id,
-            "transport_vehicle",
-            f"TRUCK-{truck_id}"
+            entity_id, "transport_vehicle", f"TRUCK-{truck_id}"
         )
-        
-        # Update status
+
         logistics_chain.update_entity_status(
-            entity_id,
-            "shipped",
-            {"message": "Ready for delivery"}
+            entity_id, "shipped", {"message": "Ready for delivery"}
         )
-    
+
     print()
-    
-    # Finalize blocks and submit proofs
+
+
+def finalize_blocks_and_submit_proofs(hierarchy_manager):
     print("7. Finalizing blocks and submitting proofs to Main Chain...")
 
-    # Finalize Sub-Chain blocks
+    manufacturing_chain = hierarchy_manager.get_sub_chain("ManufacturingChain")
+    quality_chain = hierarchy_manager.get_sub_chain("QualityChain")
+    logistics_chain = hierarchy_manager.get_sub_chain("LogisticsChain")
+
     try:
         manufacturing_result = manufacturing_chain.flush_pending_and_finalize()
         quality_result = quality_chain.flush_pending_and_finalize()
         logistics_result = logistics_chain.flush_pending_and_finalize()
     except Exception as e:
         print(f"Error finalizing blocks: {e}")
-        return None
+        return False
 
-    print(f"   Manufacturing block finalized: {manufacturing_result is not None}")
+    print(
+        f"   Manufacturing block finalized: {manufacturing_result is not None}"
+    )
     print(f"   Quality block finalized: {quality_result is not None}")
     print(f"   Logistics block finalized: {logistics_result is not None}")
 
-    # Submit proofs to Main Chain
     try:
         proof_results = hierarchy_manager.submit_all_proofs()
     except Exception as e:
         print(f"Error submitting proofs: {e}")
-        return None
+        return False
 
     print(f"   Proof submissions: {proof_results}")
 
-    # Finalize Main Chain block
     try:
         main_chain_result = hierarchy_manager.finalize_main_chain_block()
     except Exception as e:
         print(f"Error finalizing main chain block: {e}")
-        return None
+        return False
 
-    print(f"   Main Chain block finalized: {main_chain_result is not None}")
-    
+    print(
+        f"   Main Chain block finalized: {main_chain_result is not None}"
+    )
     print()
-    
-    # Demonstrate entity tracing
+    return True
+
+
+def demonstrate_entity_tracing(hierarchy_manager, entities):
     print("8. Demonstrating Entity Tracing Across Chains...")
 
     entity_tracer = EntityTracer(hierarchy_manager)
 
-    for entity_id in entities[:2]:  # Trace first two entities
+    for entity_id in entities[:2]:
         print(f"   Tracing entity: {entity_id}")
-        
+
         try:
-            # Get entity lifecycle
             lifecycle = entity_tracer.get_entity_lifecycle(entity_id)
             print(f"     Found in {len(lifecycle['chains'])} chains")
             print(f"     Total events: {lifecycle['total_events']}")
-            print(f"     Lifecycle stages: {len(lifecycle.get('lifecycle_stages', []))}")
-            print(f"     Cross-chain interactions: {lifecycle.get('cross_chain_interactions', {}).get('total_chains', 0)} chains")
-            
-            # Get performance summary
+            print(
+                f"     Lifecycle stages: "
+                f"{len(lifecycle.get('lifecycle_stages', []))}"
+            )
+            print(
+                "     Cross-chain interactions: "
+                f"{lifecycle.get('cross_chain_interactions', {}).get('total_chains', 0)} chains"
+            )
+
             performance = entity_tracer.get_entity_performance_summary(entity_id)
-            if performance['found']:
-                metrics = performance['performance_metrics']
+            if performance["found"]:
+                metrics = performance["performance_metrics"]
                 print(f"     Completion rate: {metrics['completion_rate']:.2f}")
-                print(f"     Quality pass rate: {metrics['quality_pass_rate']:.2f}")
+                print(
+                    f"     Quality pass rate: {metrics['quality_pass_rate']:.2f}"
+                )
                 print(f"     Approval rate: {metrics['approval_rate']:.2f}")
-                
+
         except Exception as e:
             print(f"Error tracing entity {entity_id}: {e}")
             continue
 
         print()
 
-    # Demonstrate cross-chain validation
+    print()
+
+
+def demonstrate_cross_chain_validation(hierarchy_manager):
     print("9. Demonstrating Cross-Chain Validation...")
 
     validator = CrossChainValidator(hierarchy_manager)
 
-    # Validate system integrity with detailed reporting
     try:
         integrity_report = validator.validate_system_integrity()
-        
-        print(f"   Main Chain valid: {integrity_report['main_chain_valid']}")
-        print(f"   Sub-Chains valid: {all(integrity_report['sub_chains_valid'].values())}")
-        print(f"   Proof consistency: {integrity_report['proof_consistency']['overall_consistent']}")
-        print(f"   Ledger compliance: {integrity_report['ledger_compliance']['overall_compliant']}")
-        print(f"   Overall system integrity: {integrity_report['overall_integrity']}")
 
-        if integrity_report['recommendations']:
+        print(f"   Main Chain valid: {integrity_report['main_chain_valid']}")
+        print(
+            "   Sub-Chains valid: "
+            f"{all(integrity_report['sub_chains_valid'].values())}"
+        )
+        print(
+            "   Proof consistency: "
+            f"{integrity_report['proof_consistency']['overall_consistent']}"
+        )
+        print(
+            "   Ledger compliance: "
+            f"{integrity_report['ledger_compliance']['overall_compliant']}"
+        )
+        print(
+            f"   Overall system integrity: {integrity_report['overall_integrity']}"
+        )
+
+        if integrity_report["recommendations"]:
             print("   Recommendations:")
-            for rec in integrity_report['recommendations']:
+            for rec in integrity_report["recommendations"]:
                 print(f"     - {rec}")
         else:
             print("   No recommendations - system is healthy!")
@@ -428,20 +462,19 @@ def demonstrate_hierachain():
 
     print()
 
-    # Generate comprehensive system report
+
+def generate_system_statistics(hierarchy_manager):
     print("10. Generating System Statistics...")
 
-    system_stats = None  # Initialize the default value
+    system_stats = None
     try:
         system_stats = hierarchy_manager.get_system_integrity_report()
-    
-        # Add a null test before use
+
         if system_stats:
             print_system_overview(system_stats)
 
-        # Show individual chain statistics
         print("\n   Individual Chain Statistics:")
-        for chain_name, details in system_stats['sub_chain_details'].items():
+        for chain_name, details in system_stats["sub_chain_details"].items():
             print(f"     {chain_name}:")
             print(f"       Domain: {details['domain_type']}")
             print(f"       Blocks: {details['blocks']}")
@@ -452,48 +485,55 @@ def demonstrate_hierachain():
         print(f"Error generating system statistics: {e}")
 
     print()
-    
-    # Demonstrate private data usage
+
+
+def demonstrate_private_data_usage(
+    manufacturing_private_data, quality_private_data, shared_private_data
+):
     print("12. Demonstrating Private Data Usage...")
 
-    # Add private data to collections
     try:
-        # Add data to ManufacturingSecrets
         manufacturing_private_data.add_data(
             "secret_formula_001",
             {"formula": "A+B+C", "process_temperature": 200},
             {"creator": "ManufacturerOrg", "endorsements": ["ManufacturerOrg"]},
-            "ManufacturerOrg"
+            "ManufacturerOrg",
         )
 
-        # Add data to QualitySecrets
         quality_private_data.add_data(
             "quality_specs_001",
             {"tolerance": "0.01mm", "inspection_method": "laser_scanning"},
             {"creator": "QualityOrg", "endorsements": ["QualityOrg"]},
-            "QualityOrg"
+            "QualityOrg",
         )
 
-        # Add data to SharedSecrets
         shared_private_data.add_data(
             "shared_contract_001",
             {"terms": "Net 30", "penalty": "2% per day"},
-            {"creator": "ManufacturerOrg", "endorsements": ["ManufacturerOrg", "QualityOrg"]},
-            "ManufacturerOrg"
+            {
+                "creator": "ManufacturerOrg",
+                "endorsements": ["ManufacturerOrg", "QualityOrg"],
+            },
+            "ManufacturerOrg",
         )
 
         print("   Added private data to collections")
 
-        # Retrieve private data
-        formula = manufacturing_private_data.get_data("secret_formula_001", "ManufacturerOrg")
+        formula = manufacturing_private_data.get_data(
+            "secret_formula_001", "ManufacturerOrg"
+        )
         if formula:
             print(f"   Retrieved manufacturing secret: {formula}")
 
-        specs = quality_private_data.get_data("quality_specs_001", "QualityOrg")
+        specs = quality_private_data.get_data(
+            "quality_specs_001", "QualityOrg"
+        )
         if specs:
             print(f"   Retrieved quality secret: {specs}")
 
-        contract = shared_private_data.get_data("shared_contract_001", "QualityOrg")
+        contract = shared_private_data.get_data(
+            "shared_contract_001", "QualityOrg"
+        )
         if contract:
             print(f"   Retrieved shared secret: {contract}")
 
@@ -502,235 +542,336 @@ def demonstrate_hierachain():
 
     print()
 
-    # Demonstrate advanced channel and private data features
+
+def demonstrate_advanced_channel_and_private_data(
+    hierarchy_manager, manufacturing_private_data
+):
     print("13. Demonstrating Advanced Channel and Private Data Features...")
-    
-    # Test unauthorized access to private data
+
     try:
-        # Try to access ManufacturingSecrets from QualityOrg (should fail or return None)
         unauthorized_data = manufacturing_private_data.get_data("secret_formula_001", "QualityOrg")
         if unauthorized_data is None:
-            print("   ✓ Access control working: QualityOrg correctly denied access to ManufacturingSecrets")
+            print(
+                "   ✓ Access control working: "
+                "QualityOrg correctly denied access to ManufacturingSecrets"
+            )
         else:
-            # In some implementations, access control might be handled differently
-            print("   ! Note: QualityOrg accessed ManufacturingSecrets (access control may vary by implementation)")
+            print(
+                "   ! Note: QualityOrg accessed ManufacturingSecrets "
+                "(access control may vary by implementation)"
+            )
     except Exception as e:
-        print(f"   ✓ Access control working: QualityOrg access denied with exception: {e}")
-    
-    # Test authorized access still works
+        print(
+            "   ✓ Access control working: "
+            f"QualityOrg access denied with exception: {e}"
+        )
+
     try:
-        # Ensure authorized access still works
         authorized_data = manufacturing_private_data.get_data("secret_formula_001", "ManufacturerOrg")
         if authorized_data:
-            print("   ✓ Access control working: ManufacturerOrg can access ManufacturingSecrets")
+            print(
+                "   ✓ Access control working: "
+                "ManufacturerOrg can access ManufacturingSecrets"
+            )
         else:
-            print("   ! Note: ManufacturerOrg cannot access its own data (may need investigation)")
+            print(
+                "   ! Note: ManufacturerOrg cannot access its own data "
+                "(may need investigation)"
+            )
     except Exception as e:
         print(f"   ! Error testing authorized access: {e}")
-    
-    # Test channel information retrieval
+
     try:
         prod_channel_info = hierarchy_manager.get_channel("ProductionChannel").get_channel_info()
-        print(f"   Production Channel has {len(prod_channel_info['organizations'])} organizations")
-        print(f"   Production Channel has {len(prod_channel_info['private_collections'])} private collections")
-        
-        # Try to query events from channel
+        print(
+            "   Production Channel has "
+            f"{len(prod_channel_info['organizations'])} organizations"
+        )
+        print(
+            "   Production Channel has "
+            f"{len(prod_channel_info['private_collections'])} private collections"
+        )
+
         prod_channel = hierarchy_manager.get_channel("ProductionChannel")
         events = prod_channel.query_events({"limit": 5}, "ManufacturerOrg")
         if events is not None:
-            print(f"   Successfully queried {len(events)} events from ProductionChannel")
+            print(
+                f"   Successfully queried {len(events)} events from ProductionChannel"
+            )
         else:
-            print("   Access denied when querying events from ProductionChannel")
+            print(
+                "   Access denied when querying events from ProductionChannel"
+            )
     except Exception as e:
         print(f"   Info: Channel information retrieval resulted in: {e}")
-    
-    # Test private data collection information
+
     try:
-        manufacturing_private_data_info = manufacturing_private_data.get_collection_info()
-        print(f"   ManufacturingSecrets collection has {manufacturing_private_data_info['statistics']['total_entries']} entries")
-        print(f"   ManufacturingSecrets collection has {len(manufacturing_private_data_info['members'])} member organizations")
-        
-        # Query keys in private data collection
+        manufacturing_private_data_info = (manufacturing_private_data.get_collection_info())
+        print(
+            "   ManufacturingSecrets collection has "
+            f"{manufacturing_private_data_info['statistics']['total_entries']} entries"
+        )
+        print(
+            "   ManufacturingSecrets collection has "
+            f"{len(manufacturing_private_data_info['members'])} member organizations"
+        )
+
         keys = manufacturing_private_data.query_keys({"limit": 10}, "ManufacturerOrg")
         print(f"   Found {len(keys)} keys in ManufacturingSecrets collection")
     except Exception as e:
         print(f"   Error getting private data collection info: {e}")
-    
+
     print()
 
-    # Demonstrate ordering service and policy engine features
+
+def demonstrate_ordering_service_and_policy():
     print("14. Demonstrating Ordering Service and Policy Engine Features...")
-    
+
     try:
-        # Show ordering service information
         ordering_service_info = {
             "batch_size": 250,
             "max_inflight_events": 10000,
-            "consensus_type": "RAFT"
+            "consensus_type": "RAFT",
         }
-        print(f"   Ordering Service Configuration:")
+        print("   Ordering Service Configuration:")
         print(f"     Batch Size: {ordering_service_info['batch_size']}")
-        print(f"     Max Inflight Events: {ordering_service_info['max_inflight_events']}")
+        print(
+            "     Max Inflight Events: "
+            f"{ordering_service_info['max_inflight_events']}"
+        )
         print(f"     Consensus Type: {ordering_service_info['consensus_type']}")
-        
-        # Demonstrate policy information (simulated)
+
         policy_info = {
             "read_policy": "MEMBER",
-            "write_policy": "ADMIN", 
-            "endorsement_policy": "MAJORITY"
+            "write_policy": "ADMIN",
+            "endorsement_policy": "MAJORITY",
         }
-        print(f"   Channel Policy Information:")
+        print("   Channel Policy Information:")
         print(f"     Read Policy: {policy_info['read_policy']}")
         print(f"     Write Policy: {policy_info['write_policy']}")
         print(f"     Endorsement Policy: {policy_info['endorsement_policy']}")
-        
-        # Test policy evaluation (simulated)
-        print(f"   Policy Evaluation for ManufacturerOrg:")
-        print(f"     Read Access: Granted")
-        print(f"     Write Access: Granted")
-        
+
+        print("   Policy Evaluation for ManufacturerOrg:")
+        print("     Read Access: Granted")
+        print("     Write Access: Granted")
+
     except Exception as e:
         print(f"   Info: Ordering service or policy features resulted in: {e}")
-    
+
     print()
 
-    # Demonstrate risk management and monitoring features
+
+def demonstrate_risk_management_and_monitoring(hierarchy_manager):
     print("15. Demonstrating Risk Management and Monitoring Features...")
-    
+
     try:
-        # Show system health metrics
         system_stats = hierarchy_manager.get_system_integrity_report()
-        print(f"   System Health Metrics:")
+        print("   System Health Metrics:")
         print_system_overview(system_stats)
-        
-        # Show cross-chain statistics
+
         cross_chain_stats = hierarchy_manager.get_cross_chain_statistics()
-        print(f"   Cross-Chain Statistics:")
-        print(f"     Total Unique Entities: {cross_chain_stats['total_unique_entities']}")
-        print(f"     Cross-Chain Operations: {cross_chain_stats['cross_chain_operations']}")
-        print(f"     Total Proofs Submitted: {cross_chain_stats['total_proofs_submitted']}")
-        
-        # Show domain distribution
-        if cross_chain_stats['domain_distribution']:
-            print(f"   Domain Distribution:")
-            for domain, count in cross_chain_stats['domain_distribution'].items():
+        print("   Cross-Chain Statistics:")
+        print(
+            "     Total Unique Entities: "
+            f"{cross_chain_stats['total_unique_entities']}"
+        )
+        print(
+            "     Cross-Chain Operations: "
+            f"{cross_chain_stats['cross_chain_operations']}"
+        )
+        print(
+            "     Total Proofs Submitted: "
+            f"{cross_chain_stats['total_proofs_submitted']}"
+        )
+
+        if cross_chain_stats["domain_distribution"]:
+            print("   Domain Distribution:")
+            for domain, count in cross_chain_stats["domain_distribution"].items():
                 print(f"     {domain}: {count} entities")
-        
+
     except Exception as e:
         print(f"   Error demonstrating risk management features: {e}")
-    
+
     print()
 
-    # Demonstrate configuration checking tools
+
+def demonstrate_configuration_checking_tools(hierarchy_manager):
     print("16. Demonstrating Configuration Checking Tools...")
-    
+
     try:
-        # Simulate configuration checking with risk profiles
         risk_profiles = {
-            "consensus": {
-                "min_nodes": 4,
-                "fault_tolerance": 1
-            },
+            "consensus": {"min_nodes": 4, "fault_tolerance": 1},
             "security": {
                 "certificate_lifetimes": {
                     "root": 3650,
                     "intermediate": 1825,
-                    "entity": 365
+                    "entity": 365,
                 }
             },
             "performance": {
                 "ordering_service": {
                     "batch_size": 250,
                     "timeout": 2.0,
-                    "pool_limit": 10000
+                    "pool_limit": 10000,
                 }
-            }
+            },
         }
-        
+
         print("   Risk Profile Configuration:")
         print("     Consensus:")
-        print(f"       Minimum Nodes: {risk_profiles.get('consensus', {}).get('min_nodes', 0)}")
-        print(f"       Fault Tolerance: {risk_profiles.get('consensus', {}).get('fault_tolerance', 0)}")
+        print(
+            "       Minimum Nodes: "
+            f"{risk_profiles.get('consensus', {}).get('min_nodes', 0)}"
+        )
+        print(
+            "       Fault Tolerance: "
+            f"{risk_profiles.get('consensus', {}).get('fault_tolerance', 0)}"
+        )
         print("     Security:")
         print("       Certificate Lifetimes:")
-        cert_lifetimes = risk_profiles.get('security', {}).get('certificate_lifetimes', {})
+        cert_lifetimes = risk_profiles.get("security", {}).get(
+            "certificate_lifetimes", {}
+        )
         print(f"         Root: {cert_lifetimes.get('root', 0)} days")
-        print(f"         Intermediate: {cert_lifetimes.get('intermediate', 0)} days")
+        print(
+            "         Intermediate: "
+            f"{cert_lifetimes.get('intermediate', 0)} days"
+        )
         print(f"         Entity: {cert_lifetimes.get('entity', 0)} days")
         print("     Performance:")
         print("       Ordering Service:")
-        ordering_service = risk_profiles.get('performance', {}).get('ordering_service', {})
+        ordering_service = risk_profiles.get("performance", {}).get(
+            "ordering_service", {}
+        )
         print(f"         Batch Size: {ordering_service.get('batch_size', 0)}")
         print(f"         Timeout: {ordering_service.get('timeout', 0.0)}s")
         print(f"         Pool Limit: {ordering_service.get('pool_limit', 0)}")
-        
-        # Validate configuration against risk profiles
-        total_sub_chains = system_stats['system_overview']['total_sub_chains']
-        min_required_nodes = risk_profiles['consensus']['min_nodes']
-        
-        if total_sub_chains + 1 >= min_required_nodes:  # +1 for main chain
-            print("   ✓ Configuration Validation: System meets minimum node requirements for BFT consensus")
+
+        system_stats = hierarchy_manager.get_system_integrity_report()
+        total_sub_chains = system_stats["system_overview"]["total_sub_chains"]
+        min_required_nodes = risk_profiles["consensus"]["min_nodes"]
+
+        if total_sub_chains + 1 >= min_required_nodes:
+            print(
+                "   ✓ Configuration Validation: "
+                "System meets minimum node requirements for BFT consensus"
+            )
         else:
-            print("   ✗ Configuration Validation: System does not meet minimum node requirements for BFT consensus")
-            
+            print(
+                "   ✗ Configuration Validation: "
+                "System does not meet minimum node requirements for BFT consensus"
+            )
+
     except Exception as e:
         print(f"   Error demonstrating configuration checking tools: {e}")
-    
+
     print()
 
-    # Demonstrate detailed performance monitoring
+
+def demonstrate_performance_monitoring():
     print("17. Demonstrating Detailed Performance Monitoring...")
-    
+
     try:
-        # Simulate performance metrics
         performance_metrics = {
-            "cpu_usage": 15.5,  # Percentage
-            "memory_usage": 42.3,  # Percentage
-            "disk_io": 127.5,  # MB/s
-            "network_io": 5.2,  # MB/s
-            "block_processing_time": 0.005,  # seconds per block
-            "event_processing_rate": 1250  # events per second
+            "cpu_usage": 15.5,
+            "memory_usage": 42.3,
+            "disk_io": 127.5,
+            "network_io": 5.2,
+            "block_processing_time": 0.005,
+            "event_processing_rate": 1250,
         }
-        
+
         print("   Real-time Performance Metrics:")
         print(f"     CPU Usage: {performance_metrics['cpu_usage']:.1f}%")
         print(f"     Memory Usage: {performance_metrics['memory_usage']:.1f}%")
         print(f"     Disk I/O: {performance_metrics['disk_io']:.1f} MB/s")
         print(f"     Network I/O: {performance_metrics['network_io']:.1f} MB/s")
-        print(f"     Block Processing Time: {performance_metrics['block_processing_time']*1000:.2f} ms/block")
-        print(f"     Event Processing Rate: {performance_metrics['event_processing_rate']} events/sec")
-        
-        # Check against alert thresholds (from risk_profiles.yaml)
-        alert_thresholds = {
-            "cpu": 80,
-            "memory": 90,
-            "error_rate": 5
-        }
-        
+        print(
+            "     Block Processing Time: "
+            f"{performance_metrics['block_processing_time']*1000:.2f} ms/block"
+        )
+        print(
+            "     Event Processing Rate: "
+            f"{performance_metrics['event_processing_rate']} events/sec"
+        )
+
+        alert_thresholds = {"cpu": 80, "memory": 90, "error_rate": 5}
+
         print("   Alert Thresholds Check:")
-        if performance_metrics['cpu_usage'] < alert_thresholds['cpu']:
+        if performance_metrics["cpu_usage"] < alert_thresholds["cpu"]:
             print("     CPU Usage: OK")
         else:
             print("     CPU Usage: WARNING - Above threshold")
-            
-        if performance_metrics['memory_usage'] < alert_thresholds['memory']:
+
+        if performance_metrics["memory_usage"] < alert_thresholds["memory"]:
             print("     Memory Usage: OK")
         else:
             print("     Memory Usage: WARNING - Above threshold")
-            
-        # Simulate error rate
-        error_rate = 0.2  # 0.2%
-        if error_rate < alert_thresholds['error_rate']:
+
+        error_rate = 0.2
+        if error_rate < alert_thresholds["error_rate"]:
             print("     Error Rate: OK")
         else:
             print("     Error Rate: WARNING - Above threshold")
-            
+
     except Exception as e:
         print(f"   Error demonstrating performance monitoring: {e}")
-    
+
     print()
 
-    # Final summary
+
+def demonstrate_hierachain():
+    """Demonstrate the HieraChain Ledger capabilities."""
+
+    print("=" * 80)
+    print("HieraChain Ledger DEMONSTRATION")
+    print("=" * 80)
+    print()
+
+    hierarchy_manager = initialize_hierarchy_manager()
+    if hierarchy_manager is None:
+        return None
+
+    create_sub_chains(hierarchy_manager)
+
+    if not demonstrate_msp(hierarchy_manager):
+        return None
+
+    if not create_channels(hierarchy_manager):
+        return None
+
+    (
+        manufacturing_private_data,
+        quality_private_data,
+        shared_private_data,
+    ) = setup_private_data_collections(hierarchy_manager)
+
+    if not (
+        manufacturing_private_data and quality_private_data and shared_private_data
+    ):
+        return None
+
+    entities = ["PRODUCT-2024-001", "PRODUCT-2024-002", "PRODUCT-2024-003"]
+
+    demonstrate_entity_lifecycle(hierarchy_manager, entities)
+
+    if not finalize_blocks_and_submit_proofs(hierarchy_manager):
+        return None
+
+    demonstrate_entity_tracing(hierarchy_manager, entities)
+    demonstrate_cross_chain_validation(hierarchy_manager)
+    generate_system_statistics(hierarchy_manager)
+    demonstrate_private_data_usage(
+        manufacturing_private_data, quality_private_data, shared_private_data
+    )
+    demonstrate_advanced_channel_and_private_data(
+        hierarchy_manager, manufacturing_private_data
+    )
+    demonstrate_ordering_service_and_policy()
+    demonstrate_risk_management_and_monitoring(hierarchy_manager)
+    demonstrate_configuration_checking_tools(hierarchy_manager)
+    demonstrate_performance_monitoring()
+
     print("18. Ledger Demonstration Summary...")
     print("   ✓ Hierarchical structure (Main Chain + Sub-Chains)")
     print("   ✓ Event-based model (no cryptocurrency terminology)")
@@ -755,7 +896,7 @@ def demonstrate_hierachain():
     print("DEMONSTRATION COMPLETED SUCCESSFULLY!")
     print("The HieraChain Ledger is working correctly.")
     print("=" * 80)
-    
+
     return hierarchy_manager
 
 

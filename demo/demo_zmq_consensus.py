@@ -50,100 +50,124 @@ async def run_node(node_id: str, consensus: BFTConsensus, zmq_node: ZmqNode):
         logger.info(f"Node {node_id} shutting down...")
         await zmq_node.stop()
 
-async def main():
-    logger.info("Initializing Ed25519 + ZeroMQ Consensus Demo (AsyncIO)")
-    
-    # 1. Configuration
+def get_nodes_and_ports():
     nodes = ["node1", "node2", "node3", "node4"]
     base_port = 5555
     ports = {nid: base_port + i for i, nid in enumerate(nodes)}
-    
-    # 2. Key Generation
+    return nodes, ports
+
+
+def generate_keys(nodes):
     logger.info("Generating keys...")
     keypairs = {nid: KeyPair() for nid in nodes}
     public_keys = {nid: kp.public_key for nid, kp in keypairs.items()}
-    
-    # 3. Create Network & Consensus Instances
+    return keypairs, public_keys
+
+
+def create_network_and_consensus(nodes, ports, keypairs, public_keys):
     zmq_nodes = {}
     consensus_map = {}
-    
+
     for nid in nodes:
-        # Create ZmqNode
         znode = ZmqNode(nid, ports[nid])
         zmq_nodes[nid] = znode
-        
-        # Create Consensus
+
         consensus = BFTConsensus(
             node_id=nid,
             all_nodes=nodes,
             f=1,
             keypair=keypairs[nid],
             node_public_keys=public_keys,
-            zmq_node=znode
+            zmq_node=znode,
         )
         consensus_map[nid] = consensus
-    
-    # 4. Connect Peers (Full Mesh)
+
+    return zmq_nodes, consensus_map
+
+
+def connect_peers_full_mesh(nodes, ports, zmq_nodes):
     logger.info("Connecting peers...")
     for nid in nodes:
         for peer in nodes:
             if nid != peer:
-                # address = f"tcp://localhost:{ports[peer]}" 
-                # Note: localhost sometimes resolves to ipv6 ::1, better use 127.0.0.1 for zmq
                 address = f"tcp://127.0.0.1:{ports[peer]}"
                 zmq_nodes[nid].register_peer(peer, address)
-    
-    # 5. Start Node Tasks
+
+
+def start_node_tasks(nodes, zmq_nodes, consensus_map):
     tasks = []
     for nid in nodes:
-        task = asyncio.create_task(run_node(nid, consensus_map[nid], zmq_nodes[nid]))
+        task = asyncio.create_task(
+            run_node(nid, consensus_map[nid], zmq_nodes[nid])
+        )
         tasks.append(task)
-        
-    await asyncio.sleep(2) # Wait for connections
-    
-    # 6. Submit a Request
-    logger.info("Submitting client request to Node1 (Primary)...")
-    client_request = {
+    return tasks
+
+
+def build_client_request():
+    return {
         "client_id": "client_001",
-        "operation": {
-            "type": "transfer",
-            "amount": 100,
-            "to": "bob"
-        }
+        "operation": {"type": "transfer", "amount": 100, "to": "bob"},
     }
-    
-    # Inject request directly into Node1
+
+
+def submit_client_request(consensus_map, client_request):
+    logger.info("Submitting client request to Node1 (Primary)...")
     consensus_map["node1"].request(client_request)
-    
-    # 7. Monitor Consensus
+
+
+async def monitor_consensus(consensus_map, timeout_seconds=15):
     logger.info("Monitoring consensus state...")
     start_time = asyncio.get_running_loop().time()
     success = False
-    
-    while asyncio.get_running_loop().time() - start_time < 15:
+
+    while asyncio.get_running_loop().time() - start_time < timeout_seconds:
         committed_count = 0
         for nid, cons in consensus_map.items():
             status = cons.get_consensus_status()
             if status["state"] == "committed":
                 committed_count += 1
-                # logger.info(f"{nid} COMMITTED sequence {status['sequence_number']}")
-        
+
         if committed_count >= 3:
             logger.info("SUCCESS: Supermajority reached consensus!")
             success = True
             break
-            
+
         await asyncio.sleep(0.5)
-        
+
     if not success:
         logger.error("FAILED to reach consensus in time.")
-    
-    # Cleanup
+
+
+async def cleanup_tasks(tasks):
     logger.info("Demo finished. Cleaning up...")
     for task in tasks:
         task.cancel()
-    
+
     await asyncio.gather(*tasks, return_exceptions=True)
+
+
+async def main():
+    logger.info("Initializing Ed25519 + ZeroMQ Consensus Demo (AsyncIO)")
+
+    nodes, ports = get_nodes_and_ports()
+    keypairs, public_keys = generate_keys(nodes)
+    zmq_nodes, consensus_map = create_network_and_consensus(
+        nodes, ports, keypairs, public_keys
+    )
+
+    connect_peers_full_mesh(nodes, ports, zmq_nodes)
+
+    tasks = start_node_tasks(nodes, zmq_nodes, consensus_map)
+
+    await asyncio.sleep(2)
+
+    client_request = build_client_request()
+    submit_client_request(consensus_map, client_request)
+
+    await monitor_consensus(consensus_map, timeout_seconds=15)
+
+    await cleanup_tasks(tasks)
 
 if __name__ == "__main__":
     try:
