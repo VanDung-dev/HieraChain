@@ -445,7 +445,7 @@ def demonstrate_cross_chain_validation(hierarchy_manager):
         )
         print(
             "   Ledger compliance: "
-            f"{integrity_report['ledger_compliance']['overall_compliant']}"
+            f"{integrity_report['Ledger_compliance']['overall_compliant']}"
         )
         print(
             f"   Overall system integrity: {integrity_report['overall_integrity']}"
