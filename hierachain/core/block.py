@@ -1,7 +1,7 @@
 """
-Block implementation for HieraChain Framework.
+Block implementation for HieraChain Ledger.
 
-This module implements the Block class following the framework guidelines:
+This module implements the Block class following the Ledger guidelines:
 - Blocks contain multiple events, not one event per block
 - Never equate a block with an entity
 - Events are domain-specific operations with metadata

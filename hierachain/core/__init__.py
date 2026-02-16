@@ -1,5 +1,5 @@
 """
-Core module for HieraChain Framework.
+Core module for HieraChain Ledger
 """
 
 from hierachain.core.block import Block

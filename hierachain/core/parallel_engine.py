@@ -1,5 +1,5 @@
 """
-Parallel Processing Engine for HieraChain Framework
+Parallel Processing Engine for HieraChain Ledger
 
 This module provides a sophisticated parallel processing system with configurable
 worker pools, chunk-based processing, and specialized processing policies for

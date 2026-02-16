@@ -1,5 +1,5 @@
 """
-Hierarchy Manager for HieraChain Framework.
+Hierarchy Manager for HieraChain Ledger.
 
 This module provides the HierarchyManager class, which is responsible for
 coordinating the interaction between the Main Chain and multiple Sub-Chains

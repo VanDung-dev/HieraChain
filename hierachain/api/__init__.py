@@ -1,5 +1,5 @@
 """
-API module for HieraChain Framework.
+API module for HieraChain Ledger
 """
 
 from hierachain.api import v1, v2, v3

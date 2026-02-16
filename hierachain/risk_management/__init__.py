@@ -1,5 +1,5 @@
 """
-Risk management module for HieraChain Framework.
+Risk management module for HieraChain Ledger.
 """
 
 __all__ = []

@@ -1,7 +1,7 @@
 """
 Key Manager for API key storage, validation, and revocation checks.
 
-This module handles API key management for the HieraChain framework,
+This module handles API key management for the HieraChain Ledger,
 ensuring secure access control without cryptocurrency concepts.
 """
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class KeyManager:
     """
-    Manages API keys for HieraChain framework access control.
+    Manages API keys for HieraChain Ledger access control.
     Handles key storage, validation, revocation checks, and permissions.
     """
     

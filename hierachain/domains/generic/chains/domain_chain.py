@@ -1,5 +1,5 @@
 """
-Domain Chain implementation for HieraChain Framework.
+Domain Chain implementation for HieraChain Ledger.
 
 This module provides a concrete implementation of BaseChain that can be used
 directly for common business scenarios or as a reference for creating
@@ -79,7 +79,7 @@ class DomainChain(BaseChain):
     Concrete domain chain implementation for general business operations.
 
     This class provides a ready-to-use domain chain that handles common
-    business operations while following framework guidelines. It can be
+    business operations while following Ledgeridelines. It can be
     used directly or extended for specific domain requirements.
     """
 

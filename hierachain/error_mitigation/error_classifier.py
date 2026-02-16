@@ -30,7 +30,7 @@ class PriorityLevel(Enum):
 
 
 class ErrorCategory(Enum):
-    """Error categories for HieraChain framework"""
+    """Error categories for HieraChain Ledger"""
     CONSENSUS = "consensus"
     SECURITY = "security"
     PERFORMANCE = "performance"
@@ -149,7 +149,7 @@ class RiskPriorityMatrix:
 
 class ErrorClassifier:
     """
-    Main error classifier for HieraChain framework
+    Main error classifier for HieraChain Ledger
 
     Classifies errors by type, category, and priority using the risk
     priority matrix and predefined error patterns.

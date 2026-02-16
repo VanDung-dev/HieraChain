@@ -1,5 +1,5 @@
 """
-Integration adapters for HieraChain Framework.
+Integration adapters for HieraChain Ledger.
 """
 
 __all__ = []

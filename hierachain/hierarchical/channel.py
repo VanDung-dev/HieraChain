@@ -1,5 +1,5 @@
 """
-Channel-based Data Isolation for HieraChain Framework.
+Channel-based Data Isolation for HieraChain Ledger
 
 This module implements secure data channels that provide complete isolation between
 organizations in enterprise blockchain applications. Each channel operates as a

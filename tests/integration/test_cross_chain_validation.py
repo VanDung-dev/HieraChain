@@ -249,7 +249,7 @@ def test_cross_chain_validation_system_integrity():
     assert len(integrity_results["sub_chains_valid"]) == 2
     assert all(valid for valid in integrity_results["sub_chains_valid"].values())
     assert integrity_results["proof_consistency"]["overall_consistent"] is True
-    assert integrity_results["framework_compliance"]["overall_compliant"] is True
+    assert integrity_results["ledger_compliance"]["overall_compliant"] is True
     assert integrity_results["overall_integrity"] is True
 
 

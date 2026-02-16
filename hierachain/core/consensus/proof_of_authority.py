@@ -1,8 +1,8 @@
 """
-Proof of Authority consensus mechanism for HieraChain Framework.
+Proof of Authority consensus mechanism for HieraChain Ledger.
 
 This module implements a Proof of Authority (PoA) consensus mechanism suitable
-for the HieraChain framework where specific authorities (Main Chain,
+for the HieraChain Ledger where specific authorities (Main Chain,
 Sub-Chains) have designated roles and permissions for block creation.
 """
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class ProofOfAuthority(BaseConsensus):
     """
     Proof of Authority consensus mechanism.
-    This consensus mechanism is ideal for the HieraChain framework
+    This consensus mechanism is ideal for the HieraChain Ledger
     where:
     - Main Chain acts as the root authority
     - Sub-Chains are authorized domain-specific authorities

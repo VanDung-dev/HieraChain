@@ -1,5 +1,5 @@
 """
-Configuration settings for HieraChain framework.
+Configuration settings for HieraChain Ledger
 
 This module provides the configuration management for the HieraChain system.
 It defines settings for various components including blockchain parameters, consensus 
@@ -16,11 +16,11 @@ from hierachain.units.version import get_version, VERSION
 
 
 class Settings:
-    """Framework configuration settings"""
+    """Ledger configuration settings"""
     
-    # Framework version
+    # Ledger version
     VERSION = get_version(VERSION)
-    FRAMEWORK_NAME = "HieraChain"
+    Ledger_NAME = "HieraChain"
 
     # Blockchain settings
     BLOCK_SIZE_LIMIT = 1000  # Maximum events per block

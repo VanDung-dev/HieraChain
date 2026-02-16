@@ -68,7 +68,7 @@ class ErrorDisclosureProbe(BaseProbe):
         self.results.append(result)
 
     async def check_500_method_not_allowed(self, client):
-        """Trigger potential framework errors (like 405) to check handling."""
+        """Trigger potential ledger errors (like 405) to check handling."""
         endpoint = "/api/v2/channels" # Supports POST, GET
         result = ProbeResult("Method Not Allowed Handling", endpoint)
         
@@ -132,7 +132,7 @@ class ErrorDisclosureProbe(BaseProbe):
                     {"snippet": body[:200]}
                 )
         
-        # 3. Check for specific framework info
+        # 3. Check for specific Ledger info
         if "fastapi" in body.lower() or "starlette" in body.lower():
             # This is lower severity, sometimes default in dev mode headers or valid errors
             # But checking body is good

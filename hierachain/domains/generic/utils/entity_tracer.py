@@ -1,9 +1,9 @@
 """
-Entity Tracer for HieraChain Framework.
+Entity Tracer for HieraChain Ledger.
 
 This module provides comprehensive entity tracing capabilities across
 the HieraChain system, allowing tracking of entities
-across multiple Sub-Chains while maintaining framework guidelines.
+across multiple Sub-Chains while maintaining Ledger guidelines.
 """
 
 import time
@@ -381,7 +381,7 @@ def _generate_recommendations(
 
 class EntityTracer:
     """
-    Entity tracing utility for the HieraChain framework.
+    Entity tracing utility for the HieraChain Ledger.
 
     This class provides comprehensive entity tracking capabilities:
     - Trace entities across multiple Sub-Chains

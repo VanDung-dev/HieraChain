@@ -1,5 +1,5 @@
 """
-Policy Evaluation Engine for HieraChain Framework.
+Policy Evaluation Engine for HieraChain Ledger.
 
 This module implements a comprehensive policy evaluation engine that works with the 
 MSP system for complex organizational policies and access control decisions. It 

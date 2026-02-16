@@ -1,5 +1,5 @@
 """
-Enhanced Audit Logger for HieraChain Framework
+Enhanced Audit Logger for HieraChain Ledger
 
 This module provides comprehensive audit logging capabilities for tracking
 system activities, risk events, and mitigation actions. Supports compliance

@@ -1,5 +1,5 @@
 """
-Secure Channel Management for HieraChain Framework.
+Secure Channel Management for HieraChain Ledger
 
 This module bridges the gap between the application-level security (MSP/Certificates)
 and the network transport (ZeroMQ). It handles:

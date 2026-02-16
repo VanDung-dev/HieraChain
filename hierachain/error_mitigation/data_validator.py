@@ -1,5 +1,5 @@
 """
-Data Validator for HieraChain Framework
+Data Validator for HieraChain Ledger
 
 This module provides data validation utilities for Arrow tables and events,
 ensuring data integrity and schema compliance.

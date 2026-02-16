@@ -1,7 +1,7 @@
 """
 Main entry point for the hierachain package.
 
-This module allows running the HieraChain framework
+This module allows running the HieraChain Ledger
 as a module with `python -m hierachain`.
 """
 

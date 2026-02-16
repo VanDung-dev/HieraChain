@@ -1,5 +1,5 @@
 """
-File storage adapter for HieraChain Framework
+File storage adapter for HieraChain Ledger
 
 This module provides a file-based storage implementation for the HieraChain system.
 It stores blockchain data in a structured directory layout with separate folders for different

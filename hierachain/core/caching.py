@@ -1,5 +1,5 @@
 """
-Advanced Caching System for HieraChain Framework
+Advanced Caching System for HieraChain Ledger
 
 This module provides a sophisticated caching system with multiple eviction policies,
 TTL support, and specialized blockchain data caching. Delivers significant performance

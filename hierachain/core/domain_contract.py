@@ -1,5 +1,5 @@
 """
-Enhanced Domain Contract System for HieraChain Framework.
+Enhanced Domain Contract System for HieraChain Ledger.
 
 This module implements an advanced domain-specific contract system with versioning,
 lifecycle management, and event handlers. The system enables business logic evolution

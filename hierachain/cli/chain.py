@@ -16,7 +16,7 @@ try:
     from hierachain.hierarchical.sub_chain import SubChain
     from hierachain.domains.generic.chains.domain_chain import DomainChain
 except ImportError:
-    # Fallback if framework not fully installed/available
+    # Fallback if Ledger not fully installed/available
     class MainChain: pass
     class SubChain: pass
     class DomainChain:

@@ -1,5 +1,5 @@
 """
-Consensus module for the HieraChain framework.
+Consensus module for the HieraChain Ledger.
 """
 
 from hierachain.consensus.ordering import (

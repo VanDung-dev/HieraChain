@@ -10,9 +10,9 @@
 
 ## Tổng Quan
 
-HieraChain là một sổ cái blockchain doanh nghiệp tiên tiến được thiết kế đặc biệt cho các ứng dụng kinh doanh mà không có bất kỳ khái niệm tiền điện tử nào. Khác với các nền tảng blockchain truyền thống tập trung vào tiền kỹ thuật số, HieraChain tập trung vào việc cung cấp một cấu trúc phân cấp an toàn để quản lý các hoạt động và quy trình kinh doanh.
+HieraChain là một sổ cái doanh nghiệp được xây dựng trên công nghệ blockchain phân cấp, được thiết kế đặc biệt cho các ứng dụng kinh doanh mà không có bất kỳ khái niệm tiền điện tử nào. Thay vì là một nền tảng blockchain mục đích chung tập trung vào tiền kỹ thuật số, HieraChain cung cấp một cấu trúc sổ cái phân cấp, an toàn để quản lý các hoạt động và quy trình kinh doanh.
 
-Sổ cái triển khai kiến trúc đa tầng trong đó Main Chain giám sát các Sub-Chain, cho phép quản lý quy trình kinh doanh có khả năng mở rộng và an toàn. Tất cả các hoạt động trong hệ thống được gọi là "Event" (events) thay vì "giao dịch" (transactions), nhấn mạnh sự tập trung vào các ứng dụng kinh doanh.
+Sổ cái này triển khai kiến trúc đa tầng phân cấp trong đó Main Chain giám sát các Sub-Chain, cho phép quản lý quy trình kinh doanh có khả năng mở rộng và an toàn. Tất cả các hoạt động trong hệ thống được gọi là "Event" (events) thay vì "giao dịch" (transactions), nhấn mạnh sự tập trung vào các ứng dụng kinh doanh.
 
 ## Hệ Sinh Thái Dự Án
 
@@ -158,7 +158,7 @@ Chịu lỗi:
 
 | Thành phần | Mô tả |
 |------------|-------|
-| `erp_framework.py` | Tích hợp hệ thống ERP |
+| `erp_ledger.py` | Tích hợp hệ thống ERP |
 | `enterprise.py` | Kết nối doanh nghiệp |
 
 ### Adapters (`hierachain/adapters/`)

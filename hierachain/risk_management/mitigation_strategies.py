@@ -1,5 +1,5 @@
 """
-Risk Mitigation Strategies for HieraChain Framework
+Risk Mitigation Strategies for HieraChain Ledger
 
 This module implements automated mitigation strategies for risks identified
 by the risk analyzer. Provides concrete implementations for addressing

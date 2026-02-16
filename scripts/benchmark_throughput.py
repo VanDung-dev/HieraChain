@@ -1,5 +1,5 @@
 """
-Benchmarking script for HieraChain Framework.
+Benchmarking script for HieraChain Ledger.
 
 This script uses the OrderingService to simulate a high throughput scenario.
 It generates a specified number of events, submits them to the service, and measures

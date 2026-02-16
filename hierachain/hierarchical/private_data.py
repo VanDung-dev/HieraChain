@@ -1,5 +1,5 @@
 """
-Private Data Collections for HieraChain Framework.
+Private Data Collections for HieraChain Ledger.
 
 This module implements private data collections that allow organizations to share
 sensitive data within a channel while keeping it hidden from other channel participants.

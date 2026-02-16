@@ -1,5 +1,5 @@
 """
-Guard against resource exhaustion for Hierachain framework.
+Guard against resource exhaustion for HieraChain Ledger.
 
 This middleware is designed to be used in conjunction with the PerformanceMonitor
 to provide a basic layer of DoS protection and load shedding. It checks the current

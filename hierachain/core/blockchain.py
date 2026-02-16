@@ -1,8 +1,8 @@
 """
-Base Blockchain implementation for HieraChain Framework.
+Base Blockchain implementation for HieraChain Ledger.
 
 This module implements the base Blockchain class that serves as the foundation
-for both Main Chain and Sub-Chain implementations, following framework guidelines:
+for both Main Chain and Sub-Chain implementations, following Ledger guidelines:
 - Event-based model (not transactions)
 - Multiple events per block
 - Proper chain validation and integrity
@@ -33,10 +33,10 @@ def _is_block_linked_correctly(current: Block, previous: Block) -> bool:
 
 class Blockchain:
     """
-    Base blockchain class for the hierarchical framework.
+    Base blockchain class for the hierarchical Ledger.
 
     This class provides the fundamental blockchain operations and will be
-    extended by MainChain and SubChain classes. It follows the framework
+    extended by MainChain and SubChain classes. It follows the Ledger
     guidelines by using events (not transactions) and supporting multiple
     events per block.
     """

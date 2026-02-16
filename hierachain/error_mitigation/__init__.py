@@ -1,5 +1,5 @@
 """
-Error mitigation module for HieraChain Framework.
+Error mitigation module for HieraChain Ledger.
 """
 
 __all__ = []

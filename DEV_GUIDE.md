@@ -1,6 +1,6 @@
 # Developer Guide
 
-This guide contains all the information developers need to work with the HieraChain framework.
+This guide contains all the information developers need to work with the HieraChain Ledger.
 
 ---
 
@@ -57,7 +57,7 @@ pip install -r requirements_dev.txt
 pip install -e .
 ```
 
-This will set up your environment to work with the framework.
+This will set up your environment to work with the Ledger.
 
 ## Running server
 
@@ -82,7 +82,7 @@ from hierachain.core.blockchain import Blockchain
 
 The demo files are located in the `demo/` directory. Before running demos, ensure you have installed the package and its dependencies.
 
-- **Main Framework Demonstration** - Showcases core HieraChain features including hierarchical chains, MSP, channels, and private data:
+- **Main Ledger Demonstration** - Showcases core HieraChain features including hierarchical chains, MSP, channels, and private data:
 
     ```bash
     python demo/demo.py

@@ -1,5 +1,5 @@
 """
-Security module for HieraChain framework.
+Security module for HieraChain Ledger.
 """
 
 from hierachain.security.identity import IdentityManager, IdentityError

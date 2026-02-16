@@ -1,5 +1,5 @@
 """
-Automated Testing Module for HieraChain Framework
+Automated Testing Module for HieraChain Ledger
 
 This module provides comprehensive automated testing capabilities for
 risk management, mitigation strategies, and system validation.

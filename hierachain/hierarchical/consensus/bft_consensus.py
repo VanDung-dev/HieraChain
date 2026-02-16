@@ -1,5 +1,5 @@
 """
-Byzantine Fault Tolerance Consensus for HieraChain Framework (Legacy Entry Point)
+Byzantine Fault Tolerance Consensus for HieraChain Ledger (Legacy Entry Point)
 
 This module provides the BFT consensus mechanism, now refactored into the
 hierachain.hierarchical.consensus.bft package.

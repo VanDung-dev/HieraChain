@@ -1,5 +1,5 @@
 """
-Enhanced ERP Integration Framework for HieraChain Framework
+Enhanced ERP Integration Ledger for HieraChain Ledger
 
 This module provides comprehensive ERP integration capabilities with advanced
 mapping engine, event translation, change detection, and scheduled synchronization.
@@ -182,8 +182,8 @@ class SyncResult:
         return self.end_time - self.start_time if self.end_time > 0 else 0.0
 
 
-class ERPIntegrationFramework:
-    """Comprehensive ERP integration framework with mapping engine"""
+class ERPIntegrationLedger:
+    """Comprehensive ERP integration Ledger with mapping engine"""
     
     def __init__(self):
         self.adapters: dict[str, Any] = {}
@@ -484,7 +484,8 @@ class EventTranslator:
         add_blockchain_metadata(blockchain_event)
         return blockchain_event
 
-    def _apply_rule(self, erp_event: dict[str, Any], rule: Any) -> Any:
+    @staticmethod
+    def _apply_rule(erp_event: dict[str, Any], rule: Any) -> Any:
         """Apply a single mapping rule to get a value from erp_event"""
         if isinstance(rule, str):
             return get_nested_value(erp_event, rule)
@@ -729,9 +730,9 @@ class SyncScheduler:
 
 
 # Factory functions for easy setup
-def create_erp_integration() -> ERPIntegrationFramework:
-    """Create ERP integration framework with default configuration"""
-    return ERPIntegrationFramework()
+def create_erp_integration() -> ERPIntegrationLedger:
+    """Create ERP integration Ledger with default configuration"""
+    return ERPIntegrationLedger()
 
 
 def create_sap_integration_profile(profile_name: str, sap_config: dict[str, Any]) -> dict[str, Any]:

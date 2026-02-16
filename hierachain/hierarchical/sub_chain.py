@@ -1,9 +1,9 @@
 """
-Sub-Chain implementation for HieraChain Framework.
+Sub-Chain implementation for HieraChain Ledger.
 
 This module implements the Sub-Chain class that handles domain-specific
 business operations and submits proofs to the Main Chain, following
-framework guidelines for HieraChain structure.
+Ledger guidelines for HieraChain structure.
 """
 
 import time
@@ -195,7 +195,7 @@ def _wait_for_growth(initial_len: int, chain: list[Any], timeout: float) -> bool
 
 class SubChain(Blockchain):
     """
-    Sub-Chain implementation for the HieraChain framework.
+    Sub-Chain implementation for the HieraChain Ledger.
 
     Sub-Chains act as domain experts (like department heads) and:
     - Handle domain-specific business operations

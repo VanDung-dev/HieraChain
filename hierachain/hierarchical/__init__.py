@@ -1,5 +1,5 @@
 """
-HieraChain module for HieraChain Framework.
+HieraChain module for HieraChain Ledger.
 """
 
 from hierachain.hierarchical.main_chain import MainChain

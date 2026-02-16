@@ -1,7 +1,7 @@
 """
-Utility functions for HieraChain Framework.
+Utility functions for HieraChain Ledger.
 
-This module provides common utility functions used throughout the framework,
+This module provides common utility functions used throughout the Ledger,
 including cryptographic utilities, validation helpers, and data processing functions.
 """
 
@@ -112,7 +112,7 @@ def _check_field_types(event: dict[str, Any]) -> bool:
 
 def validate_event_structure(event: dict[str, Any]) -> bool:
     """
-    Validate event structure according to framework guidelines.
+    Validate event structure according to Ledger guidelines.
     
     Args:
         event: Event dictionary to validate
@@ -190,7 +190,7 @@ def validate_proof_metadata(metadata: dict[str, Any]) -> bool:
 def create_event(entity_id: str, event_type: str, details: dict[str, Any] | None = None,
                 timestamp: float | None = None) -> dict[str, Any]:
     """
-    Create a properly structured event following framework guidelines.
+    Create a properly structured event following Ledger guidelines.
     
     Args:
         entity_id: Entity identifier (used as metadata)
@@ -276,7 +276,7 @@ def group_events_by_type(events: list[dict[str, Any]]) -> dict[str, list[dict[st
 
 
 def _is_block_valid(block: dict[str, Any]) -> bool:
-    """Check if a single block is valid according to framework rules."""
+    """Check if a single block is valid according to Ledger rules."""
     # 1. Check basic block structure
     required_fields = ["index", "events", "timestamp", "previous_hash", "hash"]
     if not all(field in block for field in required_fields):
@@ -388,7 +388,7 @@ def create_domain_event_template(domain_type: str) -> dict[str, Any]:
         "timestamp": time.time(),
         "details": {
             "domain_type": domain_type,
-            "created_by": "framework_template"
+            "created_by": "Ledger_template"
         }
     }
 

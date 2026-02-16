@@ -2,7 +2,7 @@
 Demonstration script for ZeroMQ-based BFT Consensus.
 
 This script sets up a local network of nodes using AsyncIO and ZeroMQ to demonstrate
-the Byzantine Fault Tolerance (BFT) consensus mechanism in the HieraChain framework.
+the Byzantine Fault Tolerance (BFT) consensus mechanism in the HieraChain Ledger.
 """
 
 

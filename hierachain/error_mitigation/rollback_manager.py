@@ -88,7 +88,7 @@ class RollbackOperation:
 
 class RollbackManager:
     """
-    Main rollback manager for HieraChain framework
+    Main rollback manager for HieraChain Ledger
 
     Coordinates safe rollback operations, manages state snapshots,
     and ensures data integrity during recovery procedures.

@@ -1,5 +1,5 @@
 """
-Blockchain Explorer for HieraChain Framework
+Blockchain Explorer for HieraChain Ledger
 
 This module provides comprehensive blockchain exploration and visualization
 capabilities for developer experience and data analysis.

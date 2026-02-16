@@ -2,7 +2,7 @@
 Key Backup Manager for cryptographic key backup and recovery mechanisms.
 
 This module handles backup and restoration of public and private keys to enhance 
-fault tolerance in the HieraChain framework without cryptocurrency concepts.
+fault tolerance in the HieraChain Ledger without cryptocurrency concepts.
 """
 
 import os

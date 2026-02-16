@@ -1,5 +1,5 @@
 """
-Integration module for HieraChain framework.
+Integration module for HieraChain Ledger.
 """
 
 from hierachain.integration.enterprise import (

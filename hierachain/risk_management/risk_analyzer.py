@@ -1,5 +1,5 @@
 """
-Risk Analysis Tools for HieraChain Framework
+Risk Analysis Tools for HieraChain Ledger
 
 This module provides comprehensive risk analysis capabilities for identifying
 and assessing technical and operational risks in the HieraChain system.

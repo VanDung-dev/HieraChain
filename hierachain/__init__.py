@@ -1,8 +1,8 @@
 """
-HieraChain Framework
+HieraChain Ledger
 =================================
 
-A HieraChain framework designed for enterprise applications 
+A HieraChain Ledger designed for enterprise applications 
 with a focus on business operations rather than cryptocurrency.
 """
 

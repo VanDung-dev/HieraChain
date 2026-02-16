@@ -7,7 +7,7 @@ import os
 import time
 import click
 
-# Placeholder classes for when the full framework isn't available
+# Placeholder classes for when the full Ledgern't available
 try:
     from hierachain.hierarchical.main_chain import MainChain
     from hierachain.hierarchical.sub_chain import SubChain

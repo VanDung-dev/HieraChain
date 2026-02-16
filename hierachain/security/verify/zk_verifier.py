@@ -1,5 +1,5 @@
 """
-Zero Knowledge Proof Verifier for HieraChain Framework.
+Zero Knowledge Proof Verifier for HieraChain Ledger.
 
 This module implements the ZKVerifier class that verifies ZK proofs from SubChains
 to ensure state transitions are mathematically correct, preventing Fake Proofs.

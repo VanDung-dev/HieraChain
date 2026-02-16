@@ -1,5 +1,5 @@
 """
-Generic domain templates for HieraChain Framework.
+Generic domain templates for HieraChain Ledger.
 """
 
 __all__ = []

@@ -1,5 +1,5 @@
 """
-Static Analysis Module for HieraChain Framework
+Static Analysis Module for HieraChain Ledger
 
 This module provides static code analysis capabilities for vulnerability detection,
 code quality assessment, and compliance checking. Integrates with tools like
@@ -296,7 +296,7 @@ class CodeQualityAnalyzer:
 
 
 class ComplianceChecker:
-    """Compliance checker for framework guidelines"""
+    """Compliance checker for Ledger guidelines"""
     def __init__(self):
         """Initialize compliance checker"""
         self.compliance_rules = [

@@ -1,5 +1,5 @@
 """
-Startup Integrity Guard for HieraChain Framework.
+Startup Integrity Guard for HieraChain Ledger.
 
 This module performs SHA-256 checksum verification of critical code directories
 to detect unauthorized modifications before the system starts processing data.

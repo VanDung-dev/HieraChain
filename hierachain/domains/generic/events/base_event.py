@@ -1,9 +1,9 @@
 """
-Base Event class for HieraChain Framework.
+Base Event class for HieraChain Ledger.
 
 This module defines the base event class that serves as the foundation
-for all domain-specific events in the HieraChain framework.
-It ensures proper event structure following framework guidelines.
+for all domain-specific events in the HieraChain Ledger.
+It ensures proper event structure following Ledger guidelines.
 """
 
 import time
@@ -15,9 +15,9 @@ from hierachain.core.utils import validate_event_structure, validate_no_cryptocu
 
 class BaseEvent(ABC):
     """
-    Abstract base class for all events in the HieraChain framework.
+    Abstract base class for all events in the HieraChain Ledger.
     
-    This class ensures that all events follow the framework guidelines:
+    This class ensures that all events follow the Ledger guidelines:
     - Use entity_id as metadata field (not as block identifier)
     - Follow proper event structure with required fields
     - Avoid cryptocurrency terminology
@@ -46,7 +46,7 @@ class BaseEvent(ABC):
     
     def _validate_event(self) -> None:
         """
-        Validate the event structure according to framework guidelines.
+        Validate the event structure according to Ledger guidelines.
         
         Raises:
             ValueError: If event structure is invalid
@@ -87,7 +87,7 @@ class BaseEvent(ABC):
         Convert event to dictionary representation.
         
         Returns:
-            Dictionary representation of the event following framework guidelines
+            Dictionary representation of the event following Ledger guidelines
         """
         return {
             "entity_id": self.entity_id,  # Metadata field

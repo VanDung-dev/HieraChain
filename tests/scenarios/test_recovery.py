@@ -1,5 +1,5 @@
 """
-Recovery Tests for HieraChain Framework
+Recovery Tests for HieraChain Ledger
 Automated recovery scenario tests covering error detection, mitigation, and system restoration
 
 This module implements comprehensive recovery testing scenarios to validate the error

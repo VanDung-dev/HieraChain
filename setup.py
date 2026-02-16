@@ -1,9 +1,9 @@
 """
-HieraChain Framework: A blockChain framework for enterprise applications
+HieraChain - The Hierarchical Blockchain Enterprise Ledger
 
-HieraChain is a framework for building enterprise applications that leverage the power of blockchain technology.
-It provides a set of tools and libraries that enable developers to create secure, decentralized, and scalable
-applications.
+HieraChain is an enterprise ledger built on hierarchical blockchain technology.
+It provides tools and libraries for modeling domains, recording events immutably,
+and building secure, decentralized, and scalable enterprise ledgers.
 """
 
 from setuptools import setup, find_packages
@@ -28,7 +28,7 @@ setup(
     name="HieraChain",
     version=get_version(VERSION),
     author="Nguyễn Lê Văn Dũng",
-    description="A HieraChain framework for enterprise applications",
+    description="A HieraChain Ledger for enterprise applications",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(include=['hierachain', 'hierachain.*'], exclude=['tests*', 'testing*']),
@@ -43,7 +43,7 @@ setup(
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
-        "Topic :: Software Development :: Libraries :: Application Frameworks",
+        "Topic :: Software Development :: Libraries :: Application Ledgers",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",
@@ -51,7 +51,7 @@ setup(
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
     ],
-        keywords="blockchain, framework, enterprise, hierarchical",
+        keywords="blockchain, Ledger, enterprise, hierarchical",
     project_urls={
         "Bug Reports": "https://github.com/VanDung-dev/HieraChain/issues",
         "Source": "https://github.com/VanDung-dev/HieraChain",

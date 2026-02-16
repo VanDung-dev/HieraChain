@@ -1,5 +1,5 @@
 """
-Advanced Membership Service Provider (MSP) for HieraChain Framework.
+Advanced Membership Service Provider (MSP) for HieraChain Ledger.
 
 This module implements enterprise-grade identity management with hierarchical certificate 
 management, role-based access control, and attribute-based policies for large-scale 

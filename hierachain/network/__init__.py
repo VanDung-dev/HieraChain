@@ -1,5 +1,5 @@
 """
-ZeroMQ Transport Module for HieraChain Framework.
+ZeroMQ Transport Module for HieraChain Ledger.
 """
 
 from hierachain.network.zmq_transport import ZmqNode, NetworkError

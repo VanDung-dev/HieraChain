@@ -1,5 +1,5 @@
 """
-Alert System for HieraChain Framework
+Alert System for HieraChain Ledger
 
 This module provides comprehensive alerting and anomaly detection capabilities
 for the risk management and performance monitoring systems. Supports real-time
@@ -292,7 +292,7 @@ def _get_severity_symbol(severity: AlertSeverity) -> str:
 
 class AlertManager:
     """
-    Central alert management system for HieraChain framework.
+    Central alert management system for HieraChain Ledger
     
     Manages alert rules, anomaly detection, notification routing, and
     alert lifecycle (creation, acknowledgment, escalation, resolution).

@@ -1,6 +1,6 @@
 """
 Demo script for showcasing key backup and recovery functionality 
-in the HieraChain framework.
+in the HieraChain Ledger.
 """
 
 import os

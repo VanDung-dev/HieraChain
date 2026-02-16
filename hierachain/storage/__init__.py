@@ -1,5 +1,5 @@
 """
-Storage module for HieraChain framework.
+Storage module for HieraChain Ledger.
 """
 
 from hierachain.storage.world_state import WorldState

@@ -1,5 +1,5 @@
 """
-Certificate Management Utilities for HieraChain Framework.
+Certificate Management Utilities for HieraChain Ledger.
 
 This module provides certificate management utilities that support the advanced MSP 
 implementation and enhance enterprise security capabilities. It includes certificate 
@@ -399,7 +399,7 @@ class CertificateManager:
     Certificate management utilities for enterprise blockchain applications.
     
     Provides comprehensive certificate lifecycle management, validation, and 
-    chain verification capabilities for the HieraChain framework.
+    chain verification capabilities for the HieraChain Ledger.
     """
     
     def __init__(self):

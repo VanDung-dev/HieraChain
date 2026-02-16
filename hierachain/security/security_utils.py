@@ -1,7 +1,7 @@
 """
 Security Utilities for HieraChain.
 
-This module provides cryptographic primitives for the HieraChain framework,
+This module provides cryptographic primitives for the HieraChain Ledger,
 focusing on Ed25519 for digital signatures as required for enterprise-grade security.
 """
 

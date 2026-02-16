@@ -1,8 +1,8 @@
 """
-Base Consensus mechanism for HieraChain Framework.
+Base Consensus mechanism for HieraChain Ledger.
 
 This module defines the abstract base class for consensus mechanisms.
-The framework supports various consensus algorithms while maintaining
+The Ledger supports various consensus algorithms while maintaining
 the event-based model and hierarchical structure principles.
 """
 
@@ -22,7 +22,7 @@ class BaseConsensus(ABC):
     """
     Abstract base class for consensus mechanisms.
     This class defines the interface that all consensus mechanisms must implement
-    in the HieraChain framework. It ensures that consensus algorithms
+    in the HieraChain Ledger. It ensures that consensus algorithms
     work with the event-based model and support the hierarchical structure.
     """
 

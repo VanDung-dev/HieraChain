@@ -1,9 +1,9 @@
 """
-Domain Event implementations for HieraChain Framework.
+Domain Event implementations for HieraChain Ledger.
 
 This module provides concrete domain-specific event implementations that extend
 the base event classes for common business scenarios. These events follow
-framework guidelines and can be used as templates for custom domain implementations.
+Ledger guidelines and can be used as templates for custom domain implementations.
 """
 
 import time
@@ -17,7 +17,7 @@ class DomainEvent(BaseEvent):
     Generic domain event that can be customized for specific business domains.
     
     This class provides a flexible foundation for domain-specific events
-    while maintaining compliance with framework guidelines.
+    while maintaining compliance with Ledger guidelines.
     """
     
     def __init__(

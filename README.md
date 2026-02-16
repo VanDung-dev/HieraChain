@@ -10,9 +10,9 @@
 
 ## Overview
 
-HieraChain is an advanced enterprise blockchain ledger designed specifically for business applications without any cryptocurrency concepts. Unlike traditional blockchain platforms focused on digital currencies, HieraChain focuses on providing a secure, hierarchical structure for managing business operations and processes.
+HieraChain is an enterprise ledger built on hierarchical blockchain technology, designed specifically for business applications without any cryptocurrency concepts. Rather than being a general-purpose blockchain platform focused on digital currencies, HieraChain provides a secure, hierarchical ledger structure for managing business operations and processes.
 
-The ledger implements a multi-layer architecture where Main Chains supervise Sub-Chains, enabling scalable and secure business process management. All operations within the system are referred to as "events" rather than "transactions," emphasizing its focus on business applications.
+This ledger implements a multi-layer hierarchical architecture where Main Chains supervise Sub-Chains, enabling scalable and secure business process management. All operations within the system are referred to as "events" rather than "transactions," emphasizing its focus on business applications.
 
 ## Project Ecosystem
 
@@ -158,7 +158,7 @@ Fault tolerance:
 
 | Component | Description |
 |-----------|-------------|
-| `erp_framework.py` | ERP system integration |
+| `erp_ledger.py` | ERP system integration |
 | `enterprise.py` | Enterprise connectors |
 
 ### Adapters (`hierachain/adapters/`)

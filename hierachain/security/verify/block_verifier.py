@@ -1,5 +1,5 @@
 """
-Block Verification module for HieraChain Framework.
+Block Verification module for HieraChain Ledger.
 
 This module implements comprehensive block verification including:
 - Block hash verification

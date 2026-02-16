@@ -1,5 +1,5 @@
 """
-Zero Knowledge Proof Generator for HieraChain Framework.
+Zero Knowledge Proof Generator for HieraChain Ledger.
 
 This module implements the ZKProver class that generates ZK proofs for SubChain
 block state transitions. These proofs are submitted to MainChain for verification.

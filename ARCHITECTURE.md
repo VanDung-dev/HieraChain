@@ -99,7 +99,7 @@ flowchart LR
 
 ```
 HieraChain Ecosystem/
-├── hierachain/                    # 🐍 Python - Main Framework
+├── hierachain/                    # 🐍 Python - Main Ledger
 │   ├── adapters/                  # External adapters
 │   ├── api/                       # REST API (FastAPI)
 │   │   ├── v1/                    # API version 1

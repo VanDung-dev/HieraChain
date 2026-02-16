@@ -1,7 +1,7 @@
 """
 SQLAlchemy Models for HieraChain Storage.
 
-This module defines the database schema for the HieraChain framework,
+This module defines the database schema for the HieraChain Ledger,
 allowing persistent storage of blocks, events, and world state.
 """
 

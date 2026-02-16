@@ -72,7 +72,7 @@ class LogLevelTestProbe(BaseProbe):
             # Check if too much model info is exposed
             body = response.text.lower()
             if "pydantic" in body:
-                result.add_finding("medium", "Pydantic framework name exposed in validation error")
+                result.add_finding("medium", "Pydantic ledger name exposed in validation error")
             if "field required" in body and "loc" in body:
                 result.add_finding("info", "Standard field validation format - acceptable")
                 
@@ -215,7 +215,7 @@ class LogLevelTestProbe(BaseProbe):
         
         # Medium severity patterns
         medium_patterns = [
-            (r'starlette|fastapi|uvicorn', "Framework name exposed"),
+            (r'starlette|fastapi|uvicorn', "Ledger name exposed"),
             (r'version.*\d+\.\d+\.\d+', "Version number exposed"),
             (r'internal.*error|unexpected.*error', "Generic internal error message"),
         ]

@@ -1,5 +1,5 @@
 """
-API Key Verification module for HieraChain framework.
+API Key Verification module for HieraChain Ledger.
 
 Implements APIKeyVerifier dependency inspired by Google's Apigee for securing API endpoints.
 Ensures only authorized clients with valid, non-revoked API keys can access protected resources.
@@ -30,7 +30,7 @@ class APIKeyVerifier:
     Verify API key dependency inspired by Google's Apigee APIKeyVerifier policy.
     
     This class provides runtime API key verification for HieraChain
-    framework endpoints, ensuring secure access control without cryptocurrency concepts.
+    Ledger endpoints, ensuring secure access control without cryptocurrency concepts.
     
     Features:
     - Runtime key validation and revocation checking
@@ -73,7 +73,7 @@ class APIKeyVerifier:
         Verify API key and return context variables.
         
         This method is called as a FastAPI dependency to verify API keys
-        for protected endpoints in the HieraChain framework.
+        for protected endpoints in the HieraChain Ledger.
         
         Args:
             api_key: The API key from the configured location
@@ -192,7 +192,7 @@ class APIKeyVerifier:
             event_type=event_type,
             details=details,
             source="APIKeyVerifier",
-            framework="hierachain"
+            Ledger="hierachain"
         )
 
 

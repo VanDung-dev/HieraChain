@@ -1,5 +1,5 @@
 """
-Consensus mechanisms for HieraChain Framework.
+Consensus mechanisms for HieraChain Ledger.
 """
 
 from hierachain.core.consensus.base_consensus import BaseConsensus

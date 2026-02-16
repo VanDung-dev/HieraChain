@@ -1,5 +1,5 @@
 """
-Version utility functions for HieraChain Framework.
+Version utility functions for HieraChain Ledger.
 
 This module provides functions for managing and retrieving version information.
 """

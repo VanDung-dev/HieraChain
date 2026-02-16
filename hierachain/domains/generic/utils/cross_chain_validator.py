@@ -1,9 +1,9 @@
 """
-Cross-Chain Validator for HieraChain Framework.
+Cross-Chain Validator for HieraChain Ledger.
 
 This module provides validation capabilities across the HieraChain
 system to ensure data consistency and integrity between Main Chain and Sub-Chains
-while maintaining framework guidelines.
+while maintaining Ledger guidelines.
 """
 
 import time
@@ -152,14 +152,14 @@ def _add_proof_consistency_recommendations(
             )
 
 
-def _add_framework_compliance_recommendations(
+def _add_Ledger_compliance_recommendations(
     validation_results: dict[str, Any],
     recommendations: list[str]
 ) -> None:
-    """Add recommendations related to framework compliance."""
-    framework_compliance = validation_results["framework_compliance"]
-    if not framework_compliance["overall_compliant"]:
-        violation_types = set(v["type"] for v in framework_compliance["violations"])
+    """Add recommendations related to Ledger compliance."""
+    Ledger_compliance = validation_results["Ledger_compliance"]
+    if not Ledger_compliance["overall_compliant"]:
+        violation_types = set(v["type"] for v in Ledger_compliance["violations"])
         if "cryptocurrency_terms" in violation_types:
             recommendations.append("Remove cryptocurrency terminology from events and data")
         if "entity_id_misuse" in violation_types:
@@ -178,7 +178,7 @@ def _generate_system_recommendations(validation_results: dict[str, Any]) -> list
 
     _add_chain_integrity_recommendations(validation_results, recommendations)
     _add_proof_consistency_recommendations(validation_results, recommendations)
-    _add_framework_compliance_recommendations(validation_results, recommendations)
+    _add_Ledger_compliance_recommendations(validation_results, recommendations)
 
     return recommendations
 
@@ -228,7 +228,7 @@ def _get_block_events(block: Any) -> list[dict[str, Any]]:
 
 class CrossChainValidator:
     """
-    Cross-chain validation utility for the HieraChain framework.
+    Cross-chain validation utility for the HieraChain Ledger.
 
     This class provides comprehensive validation capabilities:
     - Validate proof consistency between Main Chain and Sub-Chains
@@ -438,7 +438,7 @@ class CrossChainValidator:
                 "type": "invalid_event_structure",
                 "chain_name": chain_name,
                 "event": event,
-                "issue": "event structure doesn't follow framework guidelines"
+                "issue": "event structure doesn't follow Ledger guidelines"
             })
             return False
 
@@ -525,7 +525,7 @@ class CrossChainValidator:
             main_chain_valid=False,
             sub_chains_valid={},
             proof_consistency={},
-            framework_compliance={},
+            Ledger_compliance={},
             overall_integrity=False,
             recommendations=[]
         )
@@ -540,8 +540,8 @@ class CrossChainValidator:
         # Validate proof consistency
         validation_results["proof_consistency"] = self.validate_proof_consistency()
 
-        # Validate framework compliance
-        validation_results["framework_compliance"] = self._validate_framework_compliance()
+        # Validate Ledger compliance
+        validation_results["Ledger_compliance"] = self._validate_Ledger_compliance()
 
         # Generate recommendations
         validation_results["recommendations"] = _generate_system_recommendations(validation_results)
@@ -551,13 +551,13 @@ class CrossChainValidator:
             validation_results["main_chain_valid"] and
             all(validation_results["sub_chains_valid"].values()) and
             validation_results["proof_consistency"]["overall_consistent"] and
-            validation_results["framework_compliance"]["overall_compliant"]
+            validation_results["Ledger_compliance"]["overall_compliant"]
         )
 
         return validation_results
 
-    def _validate_framework_compliance(self) -> dict[str, Any]:
-        """Validate compliance with framework guidelines."""
+    def _validate_Ledger_compliance(self) -> dict[str, Any]:
+        """Validate compliance with Ledger guidelines."""
         compliance_results = {
             "timestamp": time.time(),
             "chains_checked": 0,
@@ -597,7 +597,7 @@ class CrossChainValidator:
         block_index: int,
         violations: list[dict[str, Any]]
     ) -> None:
-        """Check a single event for framework compliance violations."""
+        """Check a single event for Ledger compliance violations."""
         # Check for cryptocurrency terms
         if not self.validation_rules["no_cryptocurrency_terms"](event):
             violations.append({
@@ -620,7 +620,7 @@ class CrossChainValidator:
                 })
 
     def _check_chain_compliance(self, chain: Any, chain_name: str) -> list[dict[str, Any]]:
-        """Check a single chain for framework compliance."""
+        """Check a single chain for Ledger compliance."""
         violations = []
 
         # Check all blocks in the chain
@@ -662,7 +662,7 @@ class CrossChainValidator:
                 "overall_healthy": system_integrity["overall_integrity"],
                 "main_chain_status": "healthy" if system_integrity["main_chain_valid"] else "compromised",
                 "sub_chains_status": f"{system_integrity['proof_consistency']['consistent_proofs']}/{system_integrity['proof_consistency']['total_proofs_checked']} proofs consistent",
-                "framework_compliance": "compliant" if system_integrity["framework_compliance"]["overall_compliant"] else "violations detected",
+                "Ledger_compliance": "compliant" if system_integrity["Ledger_compliance"]["overall_compliant"] else "violations detected",
                 "total_recommendations": len(system_integrity["recommendations"])
             },
             "recommendations": system_integrity["recommendations"]

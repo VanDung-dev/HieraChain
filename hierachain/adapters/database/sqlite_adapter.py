@@ -1,8 +1,8 @@
 """
-SQLite Database Adapter for HieraChain Framework.
+SQLite Database Adapter for HieraChain Ledger.
 
 This module provides SQLite database integration for persistent storage
-of blockchain data while maintaining framework guidelines and the
+of blockchain data while maintaining Ledger guidelines and the
 event-based model with hierarchical structure.
 """
 
@@ -21,14 +21,14 @@ logger = logging.getLogger(__name__)
 
 class SQLiteAdapter:
     """
-    SQLite database adapter for the HieraChain framework.
+    SQLite database adapter for the HieraChain Ledger.
     
     This adapter provides persistent storage capabilities:
     - Store and retrieve blockchain data
     - Maintain event-based model integrity
     - Support hierarchical chain relationships
     - Provide efficient querying by entity_id (as metadata)
-    - Ensure framework compliance in data storage
+    - Ensure Ledger compliance in data storage
     """
     
     def __init__(self, database_path: str = "hierachain.db"):

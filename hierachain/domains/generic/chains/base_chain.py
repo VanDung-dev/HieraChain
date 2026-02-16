@@ -1,9 +1,9 @@
 """
-Base Chain class for HieraChain Framework.
+Base Chain class for HieraChain Ledger.
 
 This module defines the base chain class that serves as the foundation
 for domain-specific chain implementations. It extends the SubChain class
-with domain-specific functionality while maintaining framework guidelines.
+with domain-specific functionality while maintaining Ledger guidelines.
 """
 
 import time
@@ -26,7 +26,7 @@ def _get_block_events(block: Any) -> list[dict[str, Any]]:
 
 class BaseChain(SubChain, ABC):
     """
-    Abstract base class for domain-specific chains in the hierarchical framework.
+    Abstract base class for domain-specific chains in the hierarchical Ledger.
     
     This class extends SubChain with domain-specific functionality:
     - Provides common domain operations

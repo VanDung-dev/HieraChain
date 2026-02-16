@@ -539,9 +539,7 @@ class SubChainRebalancer:
         if self.split_strategy == SplitStrategy.HASH_BASED:
             # Hash the entity_id to select child
             entity_id = _get_event_entity_id(event)
-            hash_val = int(hashlib.md5(
-                entity_id.encode()
-            ).hexdigest()[:8], 16)
+            hash_val = int(hashlib.sha256(entity_id.encode()).hexdigest()[:8], 16)
             return hash_val % num_children
 
         elif self.split_strategy == SplitStrategy.TIME_BASED:

@@ -1,5 +1,5 @@
 """
-Redis storage adapter for HieraChain Framework
+Redis storage adapter for HieraChain Ledger
 
 This module provides storage functionality for the HieraChain
 using Redis as the backend. It supports storing chain metadata, blocks,

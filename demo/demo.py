@@ -1,7 +1,7 @@
 """
-Main demonstration script for HieraChain Framework.
+Main demonstration script for HieraChain Ledger.
 
-This script demonstrates the key features of the HieraChain framework:
+This script demonstrates the key features of the HieraChain Ledger:
 - Main Chain and Sub-Chain creation and management
 - Entity registration and lifecycle management
 - Business operations (resource allocation, quality checks, approvals)
@@ -12,7 +12,7 @@ This script demonstrates the key features of the HieraChain framework:
 - Channel-based data isolation
 - Private data collections
 
-This serves as both a demonstration and a basic test of the framework.
+This serves as both a demonstration and a basic test of the Ledger.
 """
 
 import sys
@@ -20,7 +20,7 @@ import datetime
 import atexit
 import os
 
-# Import framework components
+# Import Ledger components
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.generic.utils.entity_tracer import EntityTracer
 from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
@@ -65,7 +65,7 @@ def exit_handler():
 atexit.register(exit_handler)
 
 def demonstrate_hierachain():
-    """Demonstrate the HieraChain framework capabilities."""
+    """Demonstrate the HieraChain Ledger capabilities."""
 
     def print_system_overview(stats_data):
         print(f"   Total Sub-Chains: {stats_data['system_overview']['total_sub_chains']}")
@@ -75,7 +75,7 @@ def demonstrate_hierachain():
         print(f"   System integrity: {stats_data['integrity_status']}")
 
     print("=" * 80)
-    print("HieraChain FRAMEWORK DEMONSTRATION")
+    print("HieraChain Ledger DEMONSTRATION")
     print("=" * 80)
     print()
     
@@ -414,7 +414,7 @@ def demonstrate_hierachain():
         print(f"   Main Chain valid: {integrity_report['main_chain_valid']}")
         print(f"   Sub-Chains valid: {all(integrity_report['sub_chains_valid'].values())}")
         print(f"   Proof consistency: {integrity_report['proof_consistency']['overall_consistent']}")
-        print(f"   Framework compliance: {integrity_report['framework_compliance']['overall_compliant']}")
+        print(f"   Ledger compliance: {integrity_report['ledger_compliance']['overall_compliant']}")
         print(f"   Overall system integrity: {integrity_report['overall_integrity']}")
 
         if integrity_report['recommendations']:
@@ -731,7 +731,7 @@ def demonstrate_hierachain():
     print()
 
     # Final summary
-    print("18. Framework Demonstration Summary...")
+    print("18. Ledger Demonstration Summary...")
     print("   ✓ Hierarchical structure (Main Chain + Sub-Chains)")
     print("   ✓ Event-based model (no cryptocurrency terminology)")
     print("   ✓ Entity lifecycle management across multiple chains")
@@ -748,12 +748,12 @@ def demonstrate_hierachain():
     print("   ✓ Risk management and monitoring features")
     print("   ✓ Configuration checking tools")
     print("   ✓ Detailed performance monitoring")
-    print("   ✓ Framework guidelines compliance throughout")
+    print("   ✓ Ledger guidelines compliance throughout")
 
     print()
     print("=" * 80)
     print("DEMONSTRATION COMPLETED SUCCESSFULLY!")
-    print("The HieraChain Framework is working correctly.")
+    print("The HieraChain Ledger is working correctly.")
     print("=" * 80)
     
     return hierarchy_manager
@@ -765,8 +765,8 @@ def main():
         from hierachain.units.version import get_version, VERSION
 
 
-        # Add framework version information
-        print(f"Framework Version: {get_version(VERSION)}")
+        # Add Ledger version information
+        print(f"Ledger Version: {get_version(VERSION)}")
         print("Architecture: HieraChain with Main Chain/Sub-Chains")
         print("Compliance: Non-cryptocurrency, Event-based, Hierarchical Structure")
         print()
@@ -774,7 +774,7 @@ def main():
         _hierarchy_manager = demonstrate_hierachain()
         
         # Optional: Keep the system running for interactive exploration
-        print("\nFramework is ready for use!")
+        print("\nLedger is ready for use!")
         print("You can now:")
         print("- Add more entities and operations")
         print("- Create additional Sub-Chains")

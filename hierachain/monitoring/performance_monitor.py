@@ -1,5 +1,5 @@
 """
-Performance Monitoring Module for HieraChain Framework
+Performance Monitoring Module for HieraChain Ledger
 
 This module provides comprehensive real-time performance monitoring capabilities
 for tracking system health, resource usage, and performance metrics. Supports
@@ -375,7 +375,7 @@ def _determine_health_status(avg_score: float, critical_issues: int, warning_iss
 
 class PerformanceMonitor:
     """
-    Main performance monitoring system for HieraChain framework.
+    Main performance monitoring system for HieraChain Ledger.
     
     Provides real-time monitoring, alerting, and reporting capabilities
     for system and blockchain performance metrics.

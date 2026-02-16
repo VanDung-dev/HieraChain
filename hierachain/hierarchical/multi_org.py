@@ -1,5 +1,5 @@
 """
-Multi-Organization Architecture for HieraChain Framework
+Multi-Organization Architecture for HieraChain Ledger
 
 This module implements the multi-organization architecture with MSP integration,
 designed for enterprise applications. Provides support for multiple organizations, 

@@ -1,9 +1,9 @@
 """
-Main Chain implementation for HieraChain Framework.
+Main Chain implementation for HieraChain Ledger.
 
 This module implements the Main Chain class that acts as the root authority
 in the HieraChain structure. The Main Chain only stores proofs
-from Sub-Chains, never detailed domain data, following framework guidelines.
+from Sub-Chains, never detailed domain data, following Ledger guidelines.
 """
 
 import time
@@ -50,7 +50,7 @@ def _filter_proofs_by_sub_chain(events: list[dict[str, Any]], sub_chain_name: st
 
 class MainChain(Blockchain):
     """
-    Main Chain implementation for the HieraChain framework.
+    Main Chain implementation for the HieraChain Ledger.
 
     The Main Chain acts as the root authority (like a CEO in an organization) and:
     - Only stores proofs from Sub-Chains, NOT detailed domain data
@@ -170,7 +170,7 @@ class MainChain(Blockchain):
         """
         Add a proof from a Sub-Chain to the Main Chain.
 
-        This is the critical method that follows framework guidelines:
+        This is the critical method that follows Ledger guidelines:
         - Only stores proof evidence, NOT domain data
         - Metadata contains summary data only
         - NOW WITH ZK PROOF VERIFICATION for trustless security

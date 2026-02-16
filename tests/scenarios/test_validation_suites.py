@@ -1,9 +1,9 @@
 """
-Validation Suites for HieraChain Framework
+Validation Suites for HieraChain Ledger
 Priority-based risk validation tests covering all identified risks
 
 This module implements comprehensive validation tests for error mitigation and validation
-framework, ensuring all critical, high, medium, and low priority risks are properly tested.
+ledger, ensuring all critical, high, medium, and low priority risks are properly tested.
 """
 
 import pytest
@@ -424,7 +424,7 @@ def test_post_upgrade_validation():
     
     # Test non-cryptocurrency compliance
     forbidden_terms = ["transaction", "mining", "coin", "token", "wallet"]
-    test_description = "HieraChain: Hierarchical blockchain framework with events and proofs"
+    test_description = "HieraChain: Hierarchical blockchain Ledger with events and proofs"
     
     for term in forbidden_terms:
         assert term not in test_description.lower()

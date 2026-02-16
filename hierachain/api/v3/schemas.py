@@ -52,7 +52,7 @@ class NodeStatusResponse(BaseModel):
     )
 
     status: str = Field(..., description="Current status of the node")
-    version: str = Field(..., description="Framework version")
+    version: str = Field(..., description="Ledgerrsion")
     chains_active: int = Field(..., description="Number of currently active chains")
     license_active: bool = Field(..., description="Whether a valid license is active")
     uptime: str = Field(..., description="Node uptime duration")

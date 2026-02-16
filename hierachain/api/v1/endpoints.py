@@ -1,5 +1,5 @@
 """
-API endpoints for HieraChain Framework
+API endpoints for HieraChain Ledger
 
 This module provides RESTful API endpoints for interacting with the HieraChain system.
 The system follows a two-level architecture where sub-chains handle business events and the main chain

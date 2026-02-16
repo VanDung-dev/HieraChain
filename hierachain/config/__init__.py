@@ -1,5 +1,5 @@
 """
-Configuration module for HieraChain Framework.
+Configuration module for HieraChain Ledger.
 """
 
 __all__ = []

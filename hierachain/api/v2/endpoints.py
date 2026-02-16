@@ -1,5 +1,5 @@
 """
-API v2 endpoints for HieraChain Framework
+API v2 endpoints for HieraChain Ledger
 
 This module provides RESTful API endpoints for the advanced enterprise features,
 including channels, private data collections, and enhanced domain contracts.

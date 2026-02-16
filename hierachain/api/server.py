@@ -1,8 +1,8 @@
 """
-FastAPI server for HieraChain Framework
+FastAPI server for HieraChain Ledger
 
-This module implements the REST API server for the HieraChain Framework.
-The framework implements a hierarchical structure where the Main Chain only stores 
+This module implements the REST API server for the HieraChain Ledger
+The Ledger implements a hierarchical structure where the Main Chain only stores 
 proofs from Sub-Chains.
 
 The server uses FastAPI for high performance and includes proper error handling,
@@ -217,23 +217,9 @@ def register_routers(fast_app: FastAPI, api_config):
     async def root():
         """Root endpoint with API information"""
         return {
-            "name": "HieraChain Framework API",
-            "version": api_config["version"],
+            "name": "HieraChain Ledger API",
             "description": "REST API for enterprise blockchain applications",
             "docs_url": "/docs",
-            "health_check": "/api/v1/health",
-            "features": [
-                "Hierarchical chain structure (Main Chain + Sub-Chains)",
-                "Event-based operations (no cryptocurrency terminology)",
-                "Entity tracing across chains",
-                "Proof submission mechanism",
-                "Domain-specific implementations"
-            ],
-            "api_versions": [
-                "/api/v1",
-                "/api/v2",
-                "/api/v3"
-            ]
         }
 
 
@@ -255,8 +241,8 @@ def create_app() -> FastAPI:
     
     # Create FastAPI app
     fast_app = FastAPI(
-        title="HieraChain Framework API",
-        description="REST API for the HieraChain Framework - A general-purpose blockchain system for enterprise applications",
+        title="HieraChain Ledger API",
+        description="REST API for the HieraChain Ledger - A general-purpose blockchain system for enterprise applications",
         version=api_config["version"],
         docs_url="/docs",
         redoc_url="/redoc",
