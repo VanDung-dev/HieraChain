@@ -24,9 +24,12 @@ class BaseEvent(ABC):
     - Support domain-specific customization
     """
     
-    def __init__(self, entity_id: str, event_type: str, 
-                 details: dict[str, Any] | None = None, 
-                 timestamp: float | None = None):
+    def __init__(
+        self,
+        entity_id: str, event_type: str,
+        details: dict[str, Any] | None = None,
+        timestamp: float | None = None
+    ):
         """
         Initialize a base event.
         
@@ -207,9 +210,12 @@ class GenericEvent(BaseEvent):
     used directly or as a reference for creating domain-specific events.
     """
     
-    def __init__(self, entity_id: str, event_type: str, 
-                 details: dict[str, Any] | None = None, 
-                 timestamp: float | None = None):
+    def __init__(
+        self,
+        entity_id: str, event_type: str,
+        details: dict[str, Any] | None = None,
+        timestamp: float | None = None
+    ):
         """
         Initialize a generic event.
         
@@ -239,10 +245,12 @@ class OperationEvent(BaseEvent):
     additional validation for operation-specific requirements.
     """
     
-    def __init__(self, entity_id: str, operation_type: str, 
-                 operation_status: str = "started",
-                 details: dict[str, Any] | None = None, 
-                 timestamp: float | None = None):
+    def __init__(
+        self, entity_id: str, operation_type: str,
+        operation_status: str = "started",
+        details: dict[str, Any] | None = None,
+        timestamp: float | None = None
+    ):
         """
         Initialize an operation event.
         
