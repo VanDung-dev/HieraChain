@@ -15,6 +15,7 @@ from hierachain.consensus.ordering.utils import verify_event_signature
 
 logger = logging.getLogger(__name__)
 
+
 def _verify_zk_proof(event: PendingEvent) -> dict[str, Any]:
     """Verify ZK proof attached to an event."""
     result: dict[str, Any] = {
@@ -51,6 +52,7 @@ def _verify_zk_proof(event: PendingEvent) -> dict[str, Any]:
 
     return result
 
+
 def _validate_structure(event_data: Any) -> bool:
     """Validate basic event structure"""
     if isinstance(event_data, (pa.Table, pa.RecordBatch)):
@@ -65,6 +67,73 @@ def _validate_structure(event_data: Any) -> bool:
         return False
 
     return True
+
+
+_REQUIRED_FIELDS = ["entity_id", "event", "timestamp"]
+
+
+def _run_custom_rules(
+    rules: list[Callable],
+    event_data: dict[str, Any],
+    certification: dict[str, Any],
+) -> None:
+    """Run all custom validation rules against event data."""
+    for rule in rules:
+        try:
+            if not rule(event_data):
+                certification["valid"] = False
+                certification["validation_errors"].append(
+                    f"Validation rule failed: {rule.__name__}"
+                )
+        except Exception as e:
+            certification["valid"] = False
+            certification["validation_errors"].append(
+                f"Validation error: {str(e)}"
+            )
+
+
+def _check_structure_and_fields(
+    event_data: dict[str, Any],
+    certification: dict[str, Any],
+) -> None:
+    """Validate event structure and required fields."""
+    if not certification["valid"]:
+        return
+
+    if not _validate_structure(event_data):
+        certification["valid"] = False
+        certification["validation_errors"].append(
+            "Invalid event structure"
+        )
+        return
+
+    for field_name in _REQUIRED_FIELDS:
+        if field_name not in event_data:
+            certification["valid"] = False
+            certification["validation_errors"].append(
+                f"Missing required field: {field_name}"
+            )
+
+
+def _check_zk_proof(
+    event: PendingEvent,
+    certification: dict[str, Any],
+) -> None:
+    """Run ZK proof verification if enabled and still valid."""
+    if not certification["valid"]:
+        return
+    if not settings.ENABLE_ZK_PROOFS:
+        return
+
+    zk_result = _verify_zk_proof(event)
+    certification["zk_verified"] = zk_result["verified"]
+    if not zk_result["verified"] and zk_result["required"]:
+        certification["valid"] = False
+        certification["validation_errors"].append(
+            "ZK proof verification failed: "
+            f"{zk_result['reason']}"
+        )
+
 
 class EventCertifier:
     """Event certification and validation"""
@@ -97,48 +166,28 @@ class EventCertifier:
         self.validation_rules.append(rule)
         
     def validate(self, event: PendingEvent) -> dict[str, Any]:
-        """Validate and certify an event"""
+        """Validate and certify an event."""
         certification: dict[str, Any] = {
             "event_id": event.event_id,
             "certified_at": time.time(),
             "valid": True,
             "validation_errors": [],
             "metadata": {},
-            "zk_verified": False
+            "zk_verified": False,
         }
         
         # 1. Custom rules
-        for rule in self.validation_rules:
-            try:
-                if not rule(event.event_data):
-                    certification["valid"] = False
-                    certification["validation_errors"].append(f"Validation rule failed: {rule.__name__}")
-            except Exception as e:
-                certification["valid"] = False
-                certification["validation_errors"].append(f"Validation error: {str(e)}")
-        
-        # 2. Basic requirements
-        if certification["valid"]:
-            if not _validate_structure(event.event_data):
-                certification["valid"] = False
-                certification["validation_errors"].append("Invalid event structure")
-            else:
-                for field in ["entity_id", "event", "timestamp"]:
-                    if field not in event.event_data:
-                        certification["valid"] = False
-                        certification["validation_errors"].append(f"Missing required field: {field}")
-        
+        _run_custom_rules(self.validation_rules, event.event_data, certification)
+
+        # 2. Structure + required fields
+        _check_structure_and_fields(event.event_data, certification)
+
         # 3. Signature verification
         if certification["valid"]:
             verify_event_signature(event, certification)
 
         # 4. ZK verification
-        if certification["valid"] and settings.ENABLE_ZK_PROOFS:
-            zk_result = _verify_zk_proof(event)
-            certification["zk_verified"] = zk_result["verified"]
-            if not zk_result["verified"] and zk_result["required"]:
-                certification["valid"] = False
-                certification["validation_errors"].append(f"ZK proof verification failed: {zk_result['reason']}")
+        _check_zk_proof(event, certification)
 
         self.certified_events[event.event_id] = certification
         return certification
