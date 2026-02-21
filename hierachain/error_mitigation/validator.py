@@ -424,6 +424,76 @@ class ResourceValidator:
             f.write(f"{datetime.now().isoformat()}: {json.dumps(scaling_event)}\n")
 
 
+def _validate_arrow_structure(data: pa.Table | pa.RecordBatch) -> None:
+    """Validate required fields in Arrow event data."""
+    if "event" not in data.schema.names:
+        return
+    required_fields = ["entity_id", "event", "timestamp"]
+    missing = [f for f in required_fields if f not in data.schema.names]
+    if missing:
+        logger.error(f"Missing required fields {missing} in Arrow event data")
+
+
+def _check_legacy_structure(data: Any) -> None:
+    """Check required fields in legacy dict event data."""
+    if not isinstance(data, dict) or "event" not in data:
+        return
+    required_fields = ["entity_id", "event", "timestamp"]
+    for field in required_fields:
+        if field not in data:
+            logger.error(f"Missing required field '{field}' in event data")
+
+
+def _serialize_data_content(data: Any) -> str:
+    """Serialize data for hashing in audit logs."""
+    if hasattr(data, "to_pylist"):
+        return json.dumps(data.to_pylist(), sort_keys=True)
+    if hasattr(data, "ToString"):
+        return str(data)
+    try:
+        return json.dumps(data, sort_keys=True)
+    except TypeError:
+        return str(data)
+
+
+def _check_forbidden_terms_in_array(
+    array: pa.Array,
+    field_name: str,
+    forbidden_terms: list[str],
+) -> None:
+    """Scan an Arrow string array for forbidden terms."""
+    utf8_lower = getattr(pc, "utf8_lower")
+    match_substring = getattr(pc, "match_substring")
+    any_op = getattr(pc, "any")
+
+    lower_data = utf8_lower(array)
+    for term in forbidden_terms:
+        matches = match_substring(lower_data, term)
+        if any_op(matches).as_py():
+            error_msg = (
+                f"Forbidden crypto term '{term}' "
+                f"found in column '{field_name}'"
+            )
+            logger.error(error_msg)
+            raise ValidationError(error_msg)
+
+
+def _write_audit_log(audit_entry: dict[str, Any]) -> None:
+    """Persist an audit entry to disk."""
+    try:
+        os.makedirs("log/error_mitigation", exist_ok=True)
+        with open(
+            "log/error_mitigation/api_audit.log",
+            "a", encoding="utf-8"
+        ) as f:
+            f.write(
+                f"{datetime.now().isoformat()}: "
+                f"{json.dumps(audit_entry)}\n"
+            )
+    except (IOError, OSError) as ex:
+        logger.error(f"Failed to write audit log: {ex}")
+
+
 class APIValidator:
     """
     Validates API endpoints and configurations
@@ -457,31 +527,27 @@ class APIValidator:
         Handles nested types: Map, List, Struct.
         """
         try:
-            self._process_arrow_recursive(data, field_name)
+            if isinstance(data, pa.ChunkedArray):
+                self._handle_arrow_chunked(data, field_name)
+            else:
+                self._dispatch_type_validation(data, field_name, data.type)
         except ValidationError:
             raise
         except (AttributeError, TypeError, pa.ArrowInvalid) as e:
             logger.warning(f"Recursive validation error on {field_name}: {e}")
 
-    def _process_arrow_recursive(self, data: Any, field_name: str) -> None:
-        """Internal helper to process Arrow data recursively."""
-        if isinstance(data, pa.ChunkedArray):
-            self._handle_arrow_chunked(data, field_name)
-            return
-
-        type_ = data.type
-        self._dispatch_type_validation(data, field_name, type_)
-
     def _dispatch_type_validation(self, data: Any, field_name: str, type_: pa.DataType) -> None:
-        """Dispatch validation based on ArrowDataType."""
-        if _is_string_type(type_):
-            self._check_string_array(data, field_name)
-        elif pa.types.is_map(type_):
-            self._handle_arrow_map(data, field_name, type_)
-        elif _is_list_type(type_):
-            self._handle_arrow_list(data, field_name)
-        elif pa.types.is_struct(type_):
-            self._handle_arrow_struct(data, field_name, type_)
+        """Dispatch validation based on Arrow DataType."""
+        handlers = [
+            (_is_string_type, lambda d, f, _t: self._check_string_array(d, f)),
+            (pa.types.is_map, lambda d, f, t: self._handle_arrow_map(d, f, t)),
+            (_is_list_type, lambda d, f, _t: self._handle_arrow_list(d, f)),
+            (pa.types.is_struct, lambda d, f, t: self._handle_arrow_struct(d, f, t)),
+        ]
+        for predicate, handler in handlers:
+            if predicate(type_):
+                handler(data, field_name, type_)
+                return
 
     def _handle_arrow_chunked(self, data: pa.ChunkedArray, field_name: str) -> None:
         """Handle ChunkedArray validation"""
@@ -490,16 +556,17 @@ class APIValidator:
 
     def _handle_arrow_map(self, data: pa.Array, field_name: str, type_: pa.DataType) -> None:
         """Handle Arrow Map validation"""
-        try:
-            if hasattr(data, "keys") and hasattr(data, "items"):
-                self._validate_arrow_recursive(data.keys, f"{field_name}.keys")
-                self._validate_arrow_recursive(data.items, f"{field_name}.values")
-            else:
-                self._fallback_map_validation(data, field_name, type_)
-        except ValidationError:
-            raise
-        except (AttributeError, TypeError, pa.ArrowInvalid) as e:
-            logger.warning(f"Map validation skipped for {field_name}: {e}")
+        if hasattr(data, "keys") and hasattr(data, "items"):
+            self._validate_map_keys_values(data, field_name)
+        else:
+            self._fallback_map_validation(data, field_name, type_)
+
+    def _validate_map_keys_values(self, data: pa.Array, field_name: str) -> None:
+        """Validate keys and values of a Map array."""
+        keys = getattr(data, "keys")
+        items = getattr(data, "items")
+        self._validate_arrow_recursive(keys, f"{field_name}.keys")
+        self._validate_arrow_recursive(items, f"{field_name}.values")
 
     def _fallback_map_validation(self, data: pa.Array, field_name: str, type_: pa.DataType) -> None:
         """Fallback validation for map types without keys/values attributes."""
@@ -534,22 +601,7 @@ class APIValidator:
 
     def _check_string_array(self, array: pa.Array, field_name: str) -> None:
         """Helper to check a specific string array using compute."""
-        # Safely get compute functions to avoid IDE unresolved reference warnings
-        utf8_lower = getattr(pc, "utf8_lower")
-        match_substring = getattr(pc, "match_substring")
-        any_op = getattr(pc, "any")
-
-        # Convert to lowercase for checking
-        lower_data = utf8_lower(array)
-
-        for term in self.forbidden_terms:
-            # match_substring returns a boolean array
-            matches = match_substring(lower_data, term)
-            has_term = any_op(matches).as_py()
-            if has_term:
-                error_msg = f"Forbidden crypto term '{term}' found in column '{field_name}'"
-                logger.error(error_msg)
-                raise ValidationError(error_msg)
+        _check_forbidden_terms_in_array(array, field_name, self.forbidden_terms)
 
     def validate_endpoint_data(self, data: Any) -> bool:
         """
@@ -565,40 +617,38 @@ class APIValidator:
             ValidationError: If data contains forbidden elements
         """
         try:
-            if hasattr(data, "schema") and isinstance(data, (pa.Table, pa.RecordBatch)):
-                self._validate_arrow_object(data)
-            else:
-                self._validate_legacy_object(data)
-
+            self._dispatch_data_validation(data)
         except ValidationError:
             raise
         except (AttributeError, TypeError, pa.ArrowInvalid) as e:
             logger.warning(f"Validation complexity check failed: {e}")
-            pass
 
         logger.info("API endpoint data validation passed")
         return True
 
+    def _dispatch_data_validation(self, data: Any) -> None:
+        """Route data to Arrow or legacy validation."""
+        if hasattr(data, "schema") and isinstance(data, (pa.Table, pa.RecordBatch)):
+            self._validate_arrow_object(data)
+        else:
+            self._validate_legacy_object(data)
+
     def _validate_arrow_object(self, data: pa.Table | pa.RecordBatch) -> None:
         """Validate PyArrow Table or RecordBatch"""
-        # 1. Schema Validation (Metadata check)
+        self._validate_arrow_schema(data)
+
+        for col_name in data.column_names:
+            self._validate_arrow_recursive(data[col_name], col_name)
+
+        _validate_arrow_structure(data)
+
+    def _validate_arrow_schema(self, data: pa.Table | pa.RecordBatch) -> None:
+        """Check Arrow schema names for forbidden terms."""
         for name in data.schema.names:
             if any(term in name.lower() for term in self.forbidden_terms):
                 error_msg = f"Forbidden cryptocurrency term '{name}' found in Arrow schema"
                 logger.error(error_msg)
                 raise ValidationError(error_msg)
-
-        # 2. Content Validation using Recursive Helper
-        for col_name in data.column_names:
-            col_data = data[col_name]
-            self._validate_arrow_recursive(col_data, col_name)
-
-        # 3. Structure Validation
-        if "event" in data.schema.names:
-            required_fields = ["entity_id", "event", "timestamp"]
-            missing = [f for f in required_fields if f not in data.schema.names]
-            if missing:
-                logger.error(f"Missing required fields {missing} in Arrow event data")
 
     def _validate_legacy_object(self, data: Any) -> None:
         """Validate Dict/JSON objects"""
@@ -609,16 +659,12 @@ class APIValidator:
                 logger.error(error_msg)
                 raise ValidationError(error_msg)
 
-        if isinstance(data, dict) and "event" in data:
-            required_fields = ["entity_id", "event", "timestamp"]
-            for field in required_fields:
-                if field not in data:
-                    logger.error(f"Missing required field '{field}' in event data")
+        _check_legacy_structure(data)
 
     def audit_api_call(self, endpoint: str, data: Any, user_id: str | None = None) -> None:
         """
         Audit API call for compliance and logging
-        
+
         Args:
             endpoint: API endpoint being called
             data: Request data
@@ -627,34 +673,17 @@ class APIValidator:
         if not self.command_audit:
             return
 
-        try:
-            # Handle data hashing
-            if hasattr(data, "to_pylist"):
-                # Arrow object
-                data_content = json.dumps(data.to_pylist(), sort_keys=True)
-            elif hasattr(data, "ToString"): # C++ arrow?
-                data_content = str(data)
-            else:
-                try:
-                    data_content = json.dumps(data, sort_keys=True)
-                except TypeError:
-                    data_content = str(data)
+        data_content = _serialize_data_content(data)
+        audit_entry = {
+            "event": "api_call_audit",
+            "endpoint": endpoint,
+            "user_id": user_id,
+            "timestamp": time.time(),
+            "data_hash": hashlib.sha256(data_content.encode()).hexdigest()
+        }
+        logger.info(f"API call audited: {endpoint}")
+        _write_audit_log(audit_entry)
 
-            audit_entry = {
-                "event": "api_call_audit",
-                "endpoint": endpoint,
-                "user_id": user_id,
-                "timestamp": time.time(),
-                "data_hash": hashlib.sha256(data_content.encode()).hexdigest()
-            }
-            
-            logger.info(f"API call audited: {endpoint}")
-            
-            os.makedirs("log/error_mitigation", exist_ok=True)
-            with open("log/error_mitigation/api_audit.log", "a", encoding="utf-8") as f:
-                f.write(f"{datetime.now().isoformat()}: {json.dumps(audit_entry)}\n")
-        except Exception as ex:
-            logger.error(f"Failed to write audit log: {ex}")
 
 def validate_certificate(certificate):
     """
@@ -668,6 +697,7 @@ def validate_certificate(certificate):
     """
     if certificate.is_expired():
         raise SecurityError('Certificate validation failed: Certificate has expired')
+
 
 # Factory function for creating validators
 def create_validator(validator_type: str, config: dict[str, Any]):
