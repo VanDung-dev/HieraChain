@@ -9,6 +9,7 @@ stores cryptographic proofs from sub-chains.
 import time
 import re
 import os
+from typing import Any
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 
@@ -17,6 +18,7 @@ from hierachain.api.v1.schemas import (
     ProofSubmissionResponse,
     EntityTraceResponse, ChainStatsResponse
 )
+from hierachain.core.blockchain import Blockchain
 from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.sub_chain import SubChain
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
@@ -190,41 +192,56 @@ async def trace_entity(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to trace entity: {str(e)}")
 
+def _get_chain_by_name(manager: HierarchyManager, chain_name: str) -> Blockchain | None:
+    """Helper to get main or sub chain by name"""
+    if chain_name == "main_chain":
+        return manager.get_main_chain()
+    return manager.get_sub_chain(chain_name)
+
+
+def _calculate_basic_chain_stats(chain) -> tuple[int, int]:
+    """Calculate basic block and event counts for a chain"""
+    chain_blocks = getattr(chain, 'chain', [])
+    total_blocks = len(chain_blocks)
+    
+    # Calculate total events across all blocks
+    total_events = sum(len(getattr(block, 'events', [])) for block in chain_blocks)
+        
+    return total_blocks, total_events
+
+
+def _get_extended_chain_stats(
+    manager: HierarchyManager,
+    chain_name: str,
+    total_blocks: int
+) -> tuple[int | None, int | None]:
+    """Get additional statistics based on the chain type"""
+    if chain_name == "main_chain":
+        # For main chain, provide proof count (blocks excluding genesis)
+        proof_count = max(0, total_blocks - 1)
+        # Count registered sub-chains
+        registered_sub_chains = len(manager.get_all_sub_chains())
+        return proof_count, registered_sub_chains
+    
+    return None, None
+
+
 @router.get("/chains/{chain_name}/stats", response_model=ChainStatsResponse)
-async def get_chain_stats(chain_name: str,manager: HierarchyManager = Depends(get_hierarchy_manager)):
+async def get_chain_stats(
+    chain_name: str,
+    manager: HierarchyManager = Depends(get_hierarchy_manager)
+):
     """Get statistics for a specific chain"""
     try:
-        if chain_name == "main_chain":
-            chain = manager.get_main_chain()
-        else:
-            chain = manager.get_sub_chain(chain_name)
-        
+        chain = _get_chain_by_name(manager, chain_name)
         if not chain:
-            raise HTTPException(status_code=404, detail=f"Chain '{chain_name}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Chain '{chain_name}' not found"
+            )
         
-        # Calculate stats
-        chain_blocks = getattr(chain, 'chain', [])
-        total_blocks = len(chain_blocks)
-        total_events = sum(len(getattr(block, 'events', [])) for block in chain_blocks)
-        
-        # Get unique entities (for sub-chains)
-        unique_entities = set()
-        if hasattr(chain, 'chain'):
-            for block in chain_blocks:
-                for event in getattr(block, 'events', []):
-                    if 'entity_id' in event:
-                        unique_entities.add(event['entity_id'])
-        
-        # Determine additional stats based on chain type
-        proof_count = None
-        registered_sub_chains = None
-        
-        if chain_name == "main_chain":
-            # For main chain, provide proof count
-            proof_count = total_blocks - 1 if total_blocks > 0 else 0  # Exclude genesis block
-        else:
-            # For sub-chains, this would be None
-            pass
+        total_blocks, total_events = _calculate_basic_chain_stats(chain)
+        metrics = _get_extended_chain_stats(manager, chain_name, total_blocks)
+        proof_count, registered_sub_chains = metrics
         
         return ChainStatsResponse(
             chain_name=chain_name,
@@ -233,20 +250,53 @@ async def get_chain_stats(chain_name: str,manager: HierarchyManager = Depends(ge
             proof_count=proof_count,
             registered_sub_chains=registered_sub_chains
         )
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get chain stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get chain stats: {str(e)}") from e
+
+
+def _get_block_events_data(block: Any) -> list[dict[str, Any]]:
+    """Safe extraction of event data from a block"""
+    if hasattr(block, 'to_event_list'):
+        # Best way: uses internal serialization
+        return block.to_event_list()
+
+    events_data = getattr(block, 'events', [])
+    if hasattr(events_data, 'to_pylist'):
+        # Fallback for Arrow Table
+        return events_data.to_pylist()
+
+    return events_data if isinstance(events_data, list) else []
+
+
+def _serialize_block(block: Any) -> dict[str, Any]:
+    """Serialize a single block for API response"""
+    events_data = _get_block_events_data(block)
+    return {
+        "index": getattr(block, 'index', None),
+        "hash": getattr(block, 'hash', None),
+        "previous_hash": getattr(block, 'previous_hash', None),
+        "timestamp": getattr(block, 'timestamp', None),
+        "events_count": len(events_data),
+        "events": events_data
+    }
+
 
 @router.post("/chains/{chain_name}/create")
 async def create_sub_chain(
-    chain_name: str, 
+    chain_name: str,
     chain_type: str = "generic",
     manager: HierarchyManager = Depends(get_hierarchy_manager)
 ):
     """Create a new sub-chain"""
     if not re.match(r'^[a-zA-Z0-9_\-]+$', chain_name):
         raise HTTPException(
-            status_code=400, 
-            detail=f"Invalid chain identifier '{chain_name}'. Only alphanumeric, underscore, and hyphen are allowed."
+            status_code=400,
+            detail=(
+                f"Invalid chain identifier '{chain_name}'. "
+                "Only alphanumeric, underscore, and hyphen are allowed."
+            )
         )
     try:
         main_chain = manager.get_main_chain()
@@ -260,7 +310,7 @@ async def create_sub_chain(
         # Create sub-chain
         sub_chain = SubChain(name=safe_chain_name, domain_type=chain_type)
         manager.add_sub_chain(safe_chain_name, sub_chain)
-        
+
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
             content={
@@ -270,22 +320,18 @@ async def create_sub_chain(
             }
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create sub-chain: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create sub-chain: {str(e)}") from e
 
 @router.get("/chains/{chain_name}/blocks")
 async def get_chain_blocks(
-    chain_name: str, 
-    limit: int = 10, 
+    chain_name: str,
+    limit: int = 10,
     offset: int = 0,
     manager: HierarchyManager = Depends(get_hierarchy_manager)
 ):
     """Get blocks from a specific chain"""
     try:
-        if chain_name == "main_chain":
-            chain = manager.get_main_chain()
-        else:
-            chain = manager.get_sub_chain(chain_name)
-        
+        chain = _get_chain_by_name(manager, chain_name)
         if not chain:
             raise HTTPException(status_code=404, detail=f"Chain '{chain_name}' not found")
         
@@ -293,27 +339,8 @@ async def get_chain_blocks(
         chain_blocks = getattr(chain, 'chain', [])
         blocks = chain_blocks[offset:offset + limit]
         
-        block_data = []
-        for block in blocks:
-            # Serialize events safely
-            events_data = []
-            if hasattr(block, 'to_event_list'):
-                events_data = block.to_event_list()
-            elif hasattr(block, 'events'):
-                events_data = block.events
-                # Handle direct Arrow Table if to_event_list is missing (safety fallback)
-                if hasattr(events_data, 'to_pylist'):
-                    # This is a suboptimal fallback as it doesn't parse JSON details, but prevents crash
-                    events_data = events_data.to_pylist()
-            
-            block_data.append({
-                "index": getattr(block, 'index', None),
-                "hash": getattr(block, 'hash', None),
-                "previous_hash": getattr(block, 'previous_hash', None),
-                "timestamp": getattr(block, 'timestamp', None),
-                "events_count": len(events_data) if isinstance(events_data, list) else 0,
-                "events": events_data
-            })
+        # Serialize each block using helper
+        block_data = [_serialize_block(block) for block in blocks]
         
         return {
             "chain_name": chain_name,
@@ -322,5 +349,7 @@ async def get_chain_blocks(
             "offset": offset,
             "limit": limit
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get blocks: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get blocks: {str(e)}") from e
