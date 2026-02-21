@@ -742,6 +742,26 @@ class ConsensusRecoveryEngine:
         return all(field in state for field in required_fields)
 
 
+def _compute_file_hash(backup_path: str) -> str:
+    """
+    Compute SHA-256 hash of a backup file.
+
+    Args:
+        backup_path: Path to backup file
+
+    Returns:
+        Hex digest string of the file hash
+    """
+    import hashlib
+    hash_func = hashlib.sha256()
+
+    with open(backup_path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(4096), b""):
+            hash_func.update(chunk)
+
+    return hash_func.hexdigest()
+
+
 class BackupRecoveryEngine:
     """
     Manages data backup and restoration operations
@@ -755,7 +775,8 @@ class BackupRecoveryEngine:
         Initialize backup recovery engine
 
         Args:
-            config: Configuration dictionary with backup parameters
+            config: Configuration dictionary with
+                backup parameters
         """
         self.config = config
         self.backup_locations = config.get("locations", ["primary"])
@@ -763,6 +784,8 @@ class BackupRecoveryEngine:
         self.max_recovery_attempts = config.get("max_recovery_attempts", 3)
 
         logger.info(f"Initialized BackupRecoveryEngine with {len(self.backup_locations)} locations")
+
+    # -- public API ------------------------------------------------
 
     def recover_from_backup(self, backup_path: str) -> bool:
         """
@@ -777,28 +800,49 @@ class BackupRecoveryEngine:
         logger.info(f"Attempting recovery from backup: {backup_path}")
 
         for attempt in range(self.max_recovery_attempts):
-            try:
-                # Verify backup integrity
-                if not self._verify_backup_integrity(backup_path):
-                    logger.error(f"Backup integrity check failed: {backup_path}")
-                    continue
-
-                # Restore data
-                if self._restore_data(backup_path):
-                    logger.info(f"Recovery successful from {backup_path}")
-                    return True
-
-            except Exception as e:
-                logger.error(f"Recovery attempt {attempt + 1} failed: {e}")
-                if attempt < self.max_recovery_attempts - 1:
-                    time.sleep(2 ** attempt)  # Exponential backoff
+            if self._attempt_single_recovery(backup_path, attempt):
+                return True
 
         logger.error(f"All recovery attempts failed for {backup_path}")
         return False
 
+    # -- internal: recovery attempt --------------------------------
+
+    def _attempt_single_recovery(self, backup_path: str, attempt: int) -> bool:
+        """
+        Execute a single recovery attempt.
+
+        Args:
+            backup_path: Path to backup file
+            attempt: Zero-based attempt index
+
+        Returns:
+            bool: True if this attempt succeeded
+        """
+        try:
+            if not self._verify_backup_integrity(backup_path):
+                logger.error(f"Backup integrity check failed: {backup_path}")
+                return False
+
+            if self._restore_data(backup_path):
+                logger.info(f"Recovery successful from {backup_path}")
+                return True
+
+            return False
+
+        except (OSError, json.JSONDecodeError,
+                ValueError) as exc:
+            logger.error(f"Recovery attempt {attempt + 1} failed: {exc}")
+            is_last = (attempt >= self.max_recovery_attempts - 1)
+            if not is_last:
+                time.sleep(2 ** attempt)
+            return False
+
+    # -- internal: integrity verification --------------------------
+
     def _verify_backup_integrity(self, backup_path: str) -> bool:
         """
-        Verify backup file integrity
+        Verify backup file integrity.
 
         Args:
             backup_path: Path to backup file
@@ -811,36 +855,47 @@ class BackupRecoveryEngine:
             return False
 
         try:
-            # Calculate hash of backup file
-            import hashlib
-            hash_func = hashlib.sha256() if self.integrity_check == "sha256" else hashlib.sha256()
+            calculated_hash = _compute_file_hash(backup_path)
+            return self._compare_with_stored_hash(backup_path, calculated_hash)
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.error(f"Integrity verification failed: {exc}")
+            return False
 
-            with open(backup_path, "rb") as f:
-                for chunk in iter(lambda: f.read(4096), b""):
-                    hash_func.update(chunk)
+    @staticmethod
+    def _compare_with_stored_hash(backup_path: str,calculated_hash: str) -> bool:
+        """
+        Compare a calculated hash with a stored one.
 
-            calculated_hash = hash_func.hexdigest()
+        If no metadata file exists, verification is
+        skipped and True is returned.
 
-            # Compare with stored hash (would be in metadata file)
-            metadata_path = backup_path + ".meta"
-            if os.path.exists(metadata_path):
-                with open(metadata_path, "r") as f:
-                    metadata = json.load(f)
-                    stored_hash = metadata.get("hash")
+        Args:
+            backup_path: Path to backup file
+            calculated_hash: Hex digest to compare
 
-                    if calculated_hash == stored_hash:
-                        logger.info("Backup integrity verification passed")
-                        return True
-                    else:
-                        logger.error("Backup integrity verification failed: hash mismatch")
-                        return False
+        Returns:
+            bool: True when hashes match or no
+                metadata exists
+        """
+        metadata_path = backup_path + ".meta"
 
+        if not os.path.exists(metadata_path):
             logger.warning("No metadata file found, skipping hash verification")
             return True
 
-        except Exception as e:
-            logger.error(f"Integrity verification failed: {e}")
-            return False
+        with open(metadata_path, "r") as fh:
+            metadata = json.load(fh)
+
+        stored_hash = metadata.get("hash")
+
+        if calculated_hash == stored_hash:
+            logger.info("Backup integrity verification passed")
+            return True
+
+        logger.error("Backup integrity verification failed: hash mismatch")
+        return False
+
+    # -- internal: data restoration --------------------------------
 
     @staticmethod
     def _restore_data(backup_path: str) -> bool:
@@ -854,29 +909,32 @@ class BackupRecoveryEngine:
             bool: True if restoration succeeded
         """
         try:
-            # Simulate data restoration
             logger.info(f"Restoring data from {backup_path}")
 
-            # In real implementation, this would extract and restore actual data
+            # In real implementation, this would
+            # extract and restore actual data
             time.sleep(1)  # Simulate restoration time
 
             restoration_event = {
                 "event": "data_restored_from_backup",
                 "backup_path": backup_path,
-                "timestamp": time.time()
+                "timestamp": time.time(),
             }
 
             logger.info(f"Data restoration completed: {json.dumps(restoration_event)}")
 
             # Log restoration event
             os.makedirs("log/error_mitigation", exist_ok=True)
-            with open("log/error_mitigation/restoration_events.log", "a") as f:
-                f.write(f"{datetime.now().isoformat()}: {json.dumps(restoration_event)}\n")
+            with open(
+                "log/error_mitigation/"
+                "restoration_events.log", "a"
+            ) as fh:
+                fh.write(f"{datetime.now().isoformat()}: {json.dumps(restoration_event)}\n")
 
             return True
 
-        except Exception as e:
-            logger.error(f"Data restoration failed: {e}")
+        except Exception as exc:
+            logger.error(f"Data restoration failed: {exc}")
             return False
 
 
