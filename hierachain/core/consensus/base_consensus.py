@@ -18,6 +18,13 @@ from hierachain.security.verify.zk_verifier import get_zk_verifier
 logger = logging.getLogger(__name__)
 
 
+def _is_event_structure_valid(event: Any) -> bool:
+    """Check if basic event structure and required fields are present."""
+    if not isinstance(event, dict):
+        return False
+    return "event" in event and "timestamp" in event
+
+
 class BaseConsensus(ABC):
     """
     Abstract base class for consensus mechanisms.
@@ -110,12 +117,6 @@ class BaseConsensus(ABC):
         value_str = str(value).lower()
         return any(term in value_str for term in self.FORBIDDEN_TERMS)
 
-    def _is_event_structure_valid(self, event: Any) -> bool:
-        """Check if basic event structure and required fields are present."""
-        if not isinstance(event, dict):
-            return False
-        return "event" in event and "timestamp" in event
-
     def _check_content_fields(self, data: dict[str, Any]) -> bool:
         """Validate a dictionary of fields for forbidden content."""
         return not any(
@@ -143,7 +144,7 @@ class BaseConsensus(ABC):
             return True
 
         return (
-            self._is_event_structure_valid(event) and
+            _is_event_structure_valid(event) and
             not self._contains_forbidden_terms(event.get("event", "")) and
             self._validate_details_content(event.get("details")) and
             self._check_content_fields(event)
