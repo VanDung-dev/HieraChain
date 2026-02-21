@@ -137,6 +137,103 @@ def _build_collection_orgs(org_ids: list[str], manager: Any) -> dict[str, Any]:
     return organizations
 
 
+def _compute_system_integrity_report(manager: Any) -> dict[str, Any]:
+    """Compute system integrity report."""
+    total_sub_chain_events = 0
+    total_sub_chain_blocks = 0
+    sub_chain_details: dict[str, dict[str, Any]] = {}
+    issues: list[str] = []
+    overall_status = "HEALTHY"
+
+    if not manager.main_chain.is_chain_valid():
+        overall_status = "DEGRADED"
+        issues.append("Main Chain validation failed")
+
+    for name, chain in manager.sub_chains.items():
+        details, is_valid = _extract_chain_health(name, chain)
+        if not is_valid:
+            overall_status = "DEGRADED"
+            issues.append(f"Sub-chain {name} validation failed")
+
+        total_sub_chain_blocks += details["blocks"]
+        total_sub_chain_events += details["events"]
+        sub_chain_details[name] = details
+
+    return {
+        "timestamp": time.time(),
+        "overall_status": overall_status,
+        "integrity_status": overall_status,
+        "system_overview": {
+            "total_sub_chains": len(manager.sub_chains),
+            "total_sub_chain_blocks": total_sub_chain_blocks,
+            "total_sub_chain_events": total_sub_chain_events,
+            "system_uptime": time.time() - manager.system_started_at,
+        },
+        "main_chain": {
+            "valid": manager.main_chain.is_chain_valid(),
+            "height": len(manager.main_chain.chain),
+        },
+        "sub_chains": {
+            name: {"valid": details["valid"], "height": details["blocks"]}
+            for name, details in sub_chain_details.items()
+        },
+        "sub_chain_details": sub_chain_details,
+        "issues": issues,
+    }
+
+
+def _compute_proof_consistency(main_chain: MainChain, sub_chains: dict[str, DomainChain]) -> dict[str, Any]:
+    """Compute proof consistency between main chain and sub-chains."""
+    consistency_report: dict[str, Any] = {}
+    for name, chain in sub_chains.items():
+        latest_block = chain.get_latest_block()
+        latest_proof = main_chain.latest_proofs.get(name)
+
+        if not latest_proof:
+            consistency_report[name] = {
+                "consistent": False,
+                "reason": "No proof submitted yet",
+            }
+            continue
+
+        consistency_report[name] = {
+            "consistent": True,
+            "latest_proof_hash": latest_proof.get("proof_hash"),
+            "chain_height": len(chain.chain),
+            "last_block_index": latest_block.index if latest_block else 0,
+        }
+
+    return consistency_report
+
+
+def _validate_cross_chain_consistency(manager: Any) -> dict[str, Any]:
+    """Validate cross-chain consistency."""
+    verifier = get_block_verifier(strict_mode=False)
+    results: dict[str, Any] = {
+        "timestamp": time.time(),
+        "main_chain_valid": manager.main_chain.is_chain_valid(),
+        "overall_consistent": True,
+    }
+
+    main_res = _verify_chain_blocks(verifier, "main_chain", manager.main_chain.chain)
+    results["block_verification"] = {"main_chain": main_res}
+    if not main_res["valid"]:
+        results["overall_consistent"] = False
+
+    sub_val, block_ver, sub_consistent = _validate_all_sub_chains(
+        manager.sub_chains, verifier
+    )
+    results["sub_chain_validation"] = sub_val
+    results["block_verification"].update(block_ver)
+    if not sub_consistent:
+        results["overall_consistent"] = False
+
+    results["proof_consistency"] = _compute_proof_consistency(
+        manager.main_chain, manager.sub_chains
+    )
+    return results
+
+
 class HierarchyManager:
     """
     Manages the hierarchy of chains (Main Chain and Sub-Chains).
@@ -342,55 +439,7 @@ class HierarchyManager:
         return _trace_entity_history(self.sub_chains, entity_id)
 
     def get_system_integrity_report(self) -> dict[str, Any]:
-        """
-        Generate a system-wide integrity report.
-
-        Checks validity of all chains and aggregates health metrics.
-
-        Returns:
-            A dictionary containing system integrity status and metrics.
-        """
-        total_sub_chain_events = 0
-        total_sub_chain_blocks = 0
-        sub_chain_details = {}
-        issues = []
-        overall_status = "HEALTHY"
-
-        if not self.main_chain.is_chain_valid():
-            overall_status = "DEGRADED"
-            issues.append("Main Chain validation failed")
-
-        for name, chain in self.sub_chains.items():
-            details, is_valid = _extract_chain_health(name, chain)
-            if not is_valid:
-                overall_status = "DEGRADED"
-                issues.append(f"Sub-chain {name} validation failed")
-
-            total_sub_chain_blocks += details["blocks"]
-            total_sub_chain_events += details["events"]
-            sub_chain_details[name] = details
-
-        return {
-            "timestamp": time.time(),
-            "overall_status": overall_status,
-            "integrity_status": overall_status,
-            "system_overview": {
-                "total_sub_chains": len(self.sub_chains),
-                "total_sub_chain_blocks": total_sub_chain_blocks,
-                "total_sub_chain_events": total_sub_chain_events,
-                "system_uptime": time.time() - self.system_started_at,
-            },
-            "main_chain": {
-                "valid": self.main_chain.is_chain_valid(),
-                "height": len(self.main_chain.chain),
-            },
-            "sub_chains": {
-                name: {"valid": details["valid"], "height": details["blocks"]}
-                for name, details in sub_chain_details.items()
-            },
-            "sub_chain_details": sub_chain_details,
-            "issues": issues,
-        }
+        return _compute_system_integrity_report(self)
 
     def submit_all_proofs(self) -> dict[str, bool]:
         """
@@ -471,57 +520,10 @@ class HierarchyManager:
         return maintenance_results
 
     def validate_cross_chain_consistency(self) -> dict[str, Any]:
-        """Validate consistency across the hierarchical system."""
-        verifier = get_block_verifier(strict_mode=False)
-        results: dict[str, Any] = {
-            "timestamp": time.time(),
-            "main_chain_valid": self.main_chain.is_chain_valid(),
-            "overall_consistent": True,
-        }
-
-        main_res = _verify_chain_blocks(verifier, "main_chain", self.main_chain.chain)
-        results["block_verification"] = {"main_chain": main_res}
-        if not main_res["valid"]:
-            results["overall_consistent"] = False
-
-        sub_val, block_ver, sub_consistent = _validate_all_sub_chains(self.sub_chains, verifier)
-        results["sub_chain_validation"] = sub_val
-        results["block_verification"].update(block_ver)
-        if not sub_consistent:
-            results["overall_consistent"] = False
-
-        results["proof_consistency"] = self._check_proof_consistency()
-        return results
+        return _validate_cross_chain_consistency(self)
 
     def _check_proof_consistency(self) -> dict[str, Any]:
-        """
-        Check if the proofs stored on the Main Chain are consistent with Sub-Chains.
-
-        Returns:
-            Dictionary with consistency information per Sub-Chain.
-        """
-        consistency_report = {}
-        for name, chain in self.sub_chains.items():
-            latest_block = chain.get_latest_block()
-            latest_proof = self.main_chain.latest_proofs.get(name)
-
-            if not latest_proof:
-                consistency_report[name] = {
-                    "consistent": False,
-                    "reason": "No proof submitted yet"
-                }
-                continue
-
-            # In a real system, we'd verify the hash
-            # For now, we check if the proof hash exists and matches some state
-            consistency_report[name] = {
-                "consistent": True,
-                "latest_proof_hash": latest_proof.get("proof_hash"),
-                "chain_height": len(chain.chain),
-                "last_block_index": latest_block.index if latest_block else 0
-            }
-
-        return consistency_report
+        return _compute_proof_consistency(self.main_chain, self.sub_chains)
 
     def create_organization(
         self, org_id: str, name: str, admin_users: list[str] | None = None
