@@ -18,9 +18,7 @@ from hierachain.domains.generic.events.domain_event import (
 )
 
 
-def _analyze_compliance_status(
-    events: list[dict[str, Any]]
-) -> dict[str, dict[str, Any]]:
+def _analyze_compliance_status(events: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Process compliance events into a summary dictionary."""
     compliance_types: dict[str, dict[str, Any]] = {}
     for event in events:
@@ -74,13 +72,154 @@ def _calculate_performance_stats(events: list[dict[str, Any]]) -> dict[str, int]
     return stats
 
 
+def _safe_ratio(numerator: int, denominator: int) -> float:
+    """Return numerator / denominator, defaulting to 0.0 when empty."""
+    return numerator / max(denominator, 1)
+
+
+class OperationMetricsTracker:
+    """Tracks domain operation metrics (success, quality, approvals, etc.)."""
+
+    def __init__(self):
+        self._metrics: dict[str, int] = {
+            "total_operations": 0,
+            "successful_operations": 0,
+            "failed_operations": 0,
+            "quality_checks_passed": 0,
+            "quality_checks_failed": 0,
+            "approvals_granted": 0,
+            "approvals_rejected": 0,
+            "compliance_violations": 0,
+        }
+
+    # -- convenience accessors ------------------------------------------
+
+    def __getitem__(self, key: str) -> int:
+        return self._metrics[key]
+
+    def copy(self) -> dict[str, int]:
+        """Return a shallow copy of the current metrics."""
+        return dict(self._metrics)
+
+    # -- recording helpers ----------------------------------------------
+
+    def record_operation_started(self):
+        self._metrics["total_operations"] += 1
+
+    def record_operation_result(self, success: bool):
+        if success:
+            self._metrics["successful_operations"] += 1
+        else:
+            self._metrics["failed_operations"] += 1
+
+    def record_quality_result(self, result: str):
+        if result == "passed":
+            self._metrics["quality_checks_passed"] += 1
+        elif result == "failed":
+            self._metrics["quality_checks_failed"] += 1
+
+    def record_approval_result(self, status: str):
+        if status == "approved":
+            self._metrics["approvals_granted"] += 1
+        elif status == "rejected":
+            self._metrics["approvals_rejected"] += 1
+
+    def record_compliance_result(self, status: str):
+        if status == "non_compliant":
+            self._metrics["compliance_violations"] += 1
+
+    # -- computed rates -------------------------------------------------
+
+    @property
+    def success_rate(self) -> float:
+        return _safe_ratio(
+            self._metrics["successful_operations"],
+            self._metrics["total_operations"],
+        )
+
+    @property
+    def quality_pass_rate(self) -> float:
+        total = self._metrics["quality_checks_passed"] + self._metrics["quality_checks_failed"]
+        return _safe_ratio(self._metrics["quality_checks_passed"], total)
+
+    @property
+    def approval_rate(self) -> float:
+        total = self._metrics["approvals_granted"] + self._metrics["approvals_rejected"]
+        return _safe_ratio(self._metrics["approvals_granted"], total)
+
+
+# Required fields per operation type
+_OPERATION_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
+    "quality_check": ("check_type", "check_result"),
+    "approval": ("approval_type", "approver_id"),
+    "resource_allocation": ("resource_type", "resource_id"),
+    "compliance_check": ("compliance_type",),
+}
+
+
+def validate_operation_data(operation_type: str, operation_data: dict[str, Any]) -> bool:
+    """
+    Validate that *operation_data* contains the fields required by
+    *operation_type*.  Returns ``True`` for unknown operation types
+    (default-allow).
+    """
+    required = _OPERATION_REQUIRED_FIELDS.get(operation_type)
+    if required is None:
+        return True
+    return all(field in operation_data for field in required)
+
+
+class TransactionManager:
+    """Manages two-phase-commit (2PC) transaction lifecycle."""
+
+    def __init__(self):
+        self._pending: dict[str, dict[str, Any]] = {}
+
+    @property
+    def pending_transactions(self) -> dict[str, dict[str, Any]]:
+        """Read-only access to pending transactions."""
+        return self._pending
+
+    def is_prepared(self, transaction_id: str) -> bool:
+        return transaction_id in self._pending
+
+    def store_pending(
+        self,
+        transaction_id: str,
+        payload: dict[str, Any],
+        is_source: bool,
+    ):
+        """Store a prepared transaction."""
+        self._pending[transaction_id] = {
+            "payload": payload,
+            "is_source": is_source,
+            "timestamp": float(0),
+        }
+
+    def pop_pending(self, transaction_id: str) -> dict[str, Any] | None:
+        """Remove and return the pending transaction data."""
+        return self._pending.pop(transaction_id, None)
+
+    def rollback(self, transaction_id: str) -> bool:
+        """Rollback (discard) a pending transaction."""
+        if transaction_id in self._pending:
+            del self._pending[transaction_id]
+            return True
+        return False
+
+
 class DomainChain(BaseChain):
     """
     Concrete domain chain implementation for general business operations.
 
     This class provides a ready-to-use domain chain that handles common
-    business operations while following Ledgeridelines. It can be
+    business operations while following Ledger guidelines. It can be
     used directly or extended for specific domain requirements.
+
+    Responsibilities are delegated to helpers:
+      - OperationMetricsTracker  - recording & querying metrics
+      - TransactionManager       - 2PC transaction lifecycle
+      - validate_operation_data  - operation-type validation
     """
 
     def __init__(self, name: str, domain_type: str = "generic"):
@@ -97,20 +236,24 @@ class DomainChain(BaseChain):
         self._setup_default_business_rules()
     
         # Track domain-specific metrics
-        self.operation_metrics = {
-            "total_operations": 0,
-            "successful_operations": 0,
-            "failed_operations": 0,
-            "quality_checks_passed": 0,
-            "quality_checks_failed": 0,
-            "approvals_granted": 0,
-            "approvals_rejected": 0,
-            "compliance_violations": 0
-        }
-    
-        # Store pending 2PC transactions
-        # Format: transaction_id -> payload
-        self._pending_transactions: dict[str, dict[str, Any]] = {}
+        self._metrics = OperationMetricsTracker()
+
+        # 2PC transaction manager
+        self._tx_manager = TransactionManager()
+
+    # -- backward-compatible properties --------------------------------
+
+    @property
+    def operation_metrics(self) -> dict[str, int]:
+        """Backward-compatible dict view of operation metrics."""
+        return self._metrics.copy()
+
+    @property
+    def _pending_transactions(self) -> dict[str, dict[str, Any]]:
+        """Backward-compatible access to pending transactions."""
+        return self._tx_manager.pending_transactions
+
+    # -- business rules ------------------------------------------------
 
     def _setup_default_business_rules(self) -> None:
         """Setup default business rules for the domain chain."""
@@ -124,19 +267,18 @@ class DomainChain(BaseChain):
         def no_concurrent_operations(
             entity_info: dict[str, Any], _operation: str
         ) -> bool:
-            """Rule: No concurrent operations on the same entity."""
+            """Rule: No concurrent operations on same entity."""
             return entity_info.get("current_operation") is None
     
         def quality_check_before_approval(
             entity_info: dict[str, Any], operation: str
         ) -> bool:
-            """Rule: Quality check must pass before approval operations."""
+            """Rule: Quality check must pass before approval."""
             if operation.startswith("approval"):
-                last_quality_check = entity_info.get("last_quality_check", {})
-                return last_quality_check.get("result") == "passed"
+                last_qc = entity_info.get("last_quality_check", {})
+                return last_qc.get("result") == "passed"
             return True
-    
-        # Register default rules
+
         self.add_domain_rule("entity_registered", entity_must_be_registered)
         self.add_domain_rule("no_concurrent_ops", no_concurrent_operations)
         self.add_domain_rule("quality_before_approval", quality_check_before_approval)
@@ -156,25 +298,19 @@ class DomainChain(BaseChain):
             details: Additional operation details
         
         Returns:
-            True if operation was started successfully, False otherwise
+            True if operation was started successfully
         """
         # Validate domain rules
         if not self.validate_domain_rules(entity_id, f"start_{operation_type}"):
             return False
-    
-        # Validate domain-specific operation
+
         operation_data = details or {}
-        if not self.validate_domain_operation(
-            entity_id, operation_type, operation_data
-        ):
+        if not self.validate_domain_operation(entity_id, operation_type, operation_data):
             return False
-    
-        # Start the operation
+
         success = self.start_operation(entity_id, operation_type, details)
-    
         if success:
-            self.operation_metrics["total_operations"] += 1
-    
+            self._metrics.record_operation_started()
         return success
 
     def complete_domain_operation(
@@ -192,20 +328,15 @@ class DomainChain(BaseChain):
             result: Operation result data
         
         Returns:
-            True if operation was completed successfully, False otherwise
+            True if operation was completed successfully
         """
-        # Complete the operation
         success = self.complete_operation(entity_id, operation_type, result)
-    
         if success:
-            # Track operation success/failure
-            operation_success = result and result.get("success", True)
-            if operation_success:
-                self.operation_metrics["successful_operations"] += 1
-            else:
-                self.operation_metrics["failed_operations"] += 1
-    
+            op_ok = result and result.get("success", True)
+            self._metrics.record_operation_result(bool(op_ok))
         return success
+
+    # -- resource allocation -------------------------------------------
 
     def allocate_resource(
         self,
@@ -222,13 +353,12 @@ class DomainChain(BaseChain):
             entity_id: Entity identifier (used as metadata)
             resource_type: Type of resource being allocated
             resource_id: Identifier of the specific resource
-            allocation_type: Type of allocation (assigned, released, reserved)
+            allocation_type: Type of allocation
             details: Additional allocation details
         
         Returns:
-            True if resource was allocated successfully, False otherwise
+            True if resource was allocated successfully
         """
-        # Create resource allocation event
         event = create_resource_allocation(
             entity_id=entity_id,
             resource_type=resource_type,
@@ -237,8 +367,9 @@ class DomainChain(BaseChain):
             domain_type=self.domain_type,
             details=details
         )
-    
         return self.add_domain_event(event)
+
+    # -- quality checks ------------------------------------------------
 
     def perform_quality_check(
         self,
@@ -254,14 +385,13 @@ class DomainChain(BaseChain):
         Args:
             entity_id: Entity identifier (used as metadata)
             check_type: Type of quality check performed
-            check_result: Result of the quality check (passed, failed, pending)
-            inspector_id: Identifier of the inspector/checker
+            check_result: Result (passed, failed, pending)
+            inspector_id: Identifier of the inspector
             details: Additional check details
         
         Returns:
-            True if quality check was recorded successfully, False otherwise
+            True if quality check was recorded successfully
         """
-        # Create quality check event
         event = create_quality_check(
             entity_id=entity_id,
             check_type=check_type,
@@ -270,17 +400,12 @@ class DomainChain(BaseChain):
             domain_type=self.domain_type,
             details=details
         )
-    
         success = self.add_domain_event(event)
-    
         if success:
-            # Track quality check metrics
-            if check_result == "passed":
-                self.operation_metrics["quality_checks_passed"] += 1
-            elif check_result == "failed":
-                self.operation_metrics["quality_checks_failed"] += 1
-    
+            self._metrics.record_quality_result(check_result)
         return success
+
+    # -- status updates ------------------------------------------------
 
     def update_entity_status(
         self,
@@ -299,16 +424,13 @@ class DomainChain(BaseChain):
             reason: Reason for the status change
         
         Returns:
-            True if status was updated successfully, False otherwise
+            True if status was updated successfully
         """
-        # Get current status
         entity_info = self.get_entity_info(entity_id)
         if not entity_info:
             return False
     
         old_status = entity_info.get("status", "unknown")
-    
-        # Create status update event
         event = create_status_update(
             entity_id=entity_id,
             old_status=old_status,
@@ -316,8 +438,9 @@ class DomainChain(BaseChain):
             reason=reason,
             details=details
         )
-    
         return self.add_domain_event(event)
+
+    # -- approvals -----------------------------------------------------
 
     def process_approval(
         self,
@@ -329,22 +452,20 @@ class DomainChain(BaseChain):
     ) -> bool:
         """
         Process an approval for an entity.
-    
+
         Args:
             entity_id: Entity identifier (used as metadata)
             approval_type: Type of approval being processed
-            approval_status: Status of the approval (approved, rejected, pending)
+            approval_status: Status (approved, rejected, pending)
             approver_id: Identifier of the approver
             details: Additional approval details
-        
+
         Returns:
-            True if approval was processed successfully, False otherwise
+            True if approval was processed successfully
         """
-        # Validate domain rules for approval
         if not self.validate_domain_rules(entity_id, f"approval_{approval_type}"):
             return False
-    
-        # Create approval event
+
         event = create_approval(
             entity_id=entity_id,
             approval_type=approval_type,
@@ -353,17 +474,12 @@ class DomainChain(BaseChain):
             domain_type=self.domain_type,
             details=details
         )
-    
         success = self.add_domain_event(event)
-    
         if success:
-            # Track approval metrics
-            if approval_status == "approved":
-                self.operation_metrics["approvals_granted"] += 1
-            elif approval_status == "rejected":
-                self.operation_metrics["approvals_rejected"] += 1
-    
+            self._metrics.record_approval_result(approval_status)
         return success
+
+    # -- compliance ----------------------------------------------------
 
     def check_compliance(
         self,
@@ -379,14 +495,13 @@ class DomainChain(BaseChain):
         Args:
             entity_id: Entity identifier (used as metadata)
             compliance_type: Type of compliance being tracked
-            compliance_status: Status of compliance (compliant, non_compliant, under_review)
-            regulation_reference: Reference to specific regulation or standard
+            compliance_status: Status (compliant, non_compliant)
+            regulation_reference: Reference to regulation
             details: Additional compliance details
         
         Returns:
-            True if compliance check was recorded successfully, False otherwise
+            True if compliance check was recorded successfully
         """
-        # Create compliance event
         event = create_compliance_check(
             entity_id=entity_id,
             compliance_type=compliance_type,
@@ -395,15 +510,12 @@ class DomainChain(BaseChain):
             domain_type=self.domain_type,
             details=details
         )
-    
         success = self.add_domain_event(event)
-    
         if success:
-            # Track compliance violations
-            if compliance_status == "non_compliant":
-                self.operation_metrics["compliance_violations"] += 1
-    
+            self._metrics.record_compliance_result(compliance_status)
         return success
+
+    # -- validation ----------------------------------------------------
 
     def validate_domain_operation(
         self,
@@ -420,34 +532,13 @@ class DomainChain(BaseChain):
             operation_data: Operation data
         
         Returns:
-            True if operation is valid for this domain, False otherwise
+            True if operation is valid for this domain
         """
-        # Basic validation - entity must exist
         if not self.get_entity_info(entity_id):
             return False
-    
-        # Operation-specific validation
-        if operation_type == "quality_check":
-            # Quality checks require check_type and result
-            return "check_type" in operation_data and "check_result" in operation_data
-    
-        elif operation_type == "approval":
-            # Approvals require approval_type and approver
-            return "approval_type" in operation_data and "approver_id" in operation_data
-    
-        elif operation_type == "resource_allocation":
-            # Resource allocation requires resource info
-            return (
-                "resource_type" in operation_data and 
-                "resource_id" in operation_data
-            )
-    
-        elif operation_type == "compliance_check":
-            # Compliance checks require compliance type
-            return "compliance_type" in operation_data
-    
-        # Default validation for other operations
-        return True
+        return validate_operation_data(operation_type, operation_data)
+
+    # -- statistics / reports ------------------------------------------
 
     def get_domain_statistics(self) -> dict[str, Any]:
         """
@@ -457,40 +548,25 @@ class DomainChain(BaseChain):
             Domain-specific statistics
         """
         base_stats = self.get_base_domain_statistics()
-    
-        # Add operation metrics
         base_stats.update({
-            "operation_metrics": self.operation_metrics.copy(),
-            "success_rate": (
-                self.operation_metrics["successful_operations"] / 
-                max(self.operation_metrics["total_operations"], 1)
-            ),
-            "quality_pass_rate": (
-                self.operation_metrics["quality_checks_passed"] / 
-                max(self.operation_metrics["quality_checks_passed"] + 
-                    self.operation_metrics["quality_checks_failed"], 1)
-            ),
-            "approval_rate": (
-                self.operation_metrics["approvals_granted"] / 
-                max(self.operation_metrics["approvals_granted"] + 
-                    self.operation_metrics["approvals_rejected"], 1)
-            )
+            "operation_metrics": self._metrics.copy(),
+            "success_rate": self._metrics.success_rate,
+            "quality_pass_rate": self._metrics.quality_pass_rate,
+            "approval_rate": self._metrics.approval_rate,
         })
-        
         return base_stats
 
     def _get_compliance_events(self, entity_id: str) -> list[dict[str, Any]]:
         """Filter compliance check events for a specific entity."""
         compliance_events: list[dict[str, Any]] = []
         for block in self.chain:
-            # Use to_event_list() if available to handle Arrow Tables
             events = (
-                block.to_event_list() if hasattr(block, 'to_event_list') 
+                block.to_event_list()
+                if hasattr(block, 'to_event_list')
                 else block.events
             )
             for event in events:
-                if (event.get("entity_id") == entity_id and 
-                    event.get("event") == "compliance_check"):
+                if event.get("entity_id") == entity_id and event.get("event") == "compliance_check":
                     compliance_events.append(event)
         return compliance_events
 
@@ -524,7 +600,7 @@ class DomainChain(BaseChain):
             "violations": sum(
                 1 for info in compliance_types.values() 
                 if info["status"] == "non_compliant"
-            )
+            ),
         }
 
 
@@ -546,66 +622,60 @@ class DomainChain(BaseChain):
             "domain_type": self.domain_type,
             "operations_started": stats["started"],
             "operations_completed": stats["completed"],
-            "completion_rate": stats["completed"] / max(stats["started"], 1),
+            "completion_rate": _safe_ratio(stats["completed"], stats["started"]),
             "quality_checks": stats["quality_total"],
-            "quality_pass_rate": (
-                stats["quality_passed"] / max(stats["quality_total"], 1)
-            ),
+            "quality_pass_rate": _safe_ratio(stats["quality_passed"],stats["quality_total"]),
             "approvals_requested": stats["approvals_total"],
-            "approval_rate": (
-                stats["approvals_granted"] / max(stats["approvals_total"], 1)
-            ),
-            "total_events": len(entity_events)
+            "approval_rate": _safe_ratio(stats["approvals_granted"],stats["approvals_total"]),
+            "total_events": len(entity_events),
         }
 
-
-    # --- 2PC Transaction Methods ---
+    # -- 2PC transaction methods (delegates to TransactionManager) -----
 
     def prepare_transaction(
-        self, transaction_id: str, payload: dict[str, Any], 
+        self,
+        transaction_id: str,
+        payload: dict[str, Any],
         is_source: bool = True
     ) -> bool:
         """
         Phase 1: Prepare for a cross-chain transaction.
     
         Args:
-            transaction_id: Unique transaction Identifier.
+            transaction_id: Unique transaction identifier.
             payload: Transaction details.
-            is_source: True if this is the source chain, False if destination.
-        
+            is_source: True if this is the source chain.
+
         Returns:
-            True if prepared successfully (resources locked/validated), False otherwise.
+            True if prepared successfully.
         """
-        if transaction_id in self._pending_transactions:
-            # Already prepared
+        if self._tx_manager.is_prepared(transaction_id):
             return True
-        
-        # Extract entity_id and operation details from payload
+
         entity_id = payload.get("entity_id")
         if not entity_id:
             return False
         
         operation_type = payload.get("operation_type")
         details = payload.get("details", {})
-    
-        # 1. Validate domain rules
+
+        if not self._validate_transaction_payload(entity_id, operation_type, details):
+            return False
+
+        self._tx_manager.store_pending(transaction_id, payload, is_source)
+        return True
+
+    def _validate_transaction_payload(
+        self,
+        entity_id: str,
+        operation_type: str,
+        details: dict[str, Any],
+    ) -> bool:
+        """Validate domain rules and operation data for a 2PC prepare."""
         validation_op = f"prepare_{operation_type}"
         if not self.validate_domain_rules(entity_id, validation_op):
             return False
-        
-        if not self.validate_domain_operation(
-            entity_id, operation_type, details
-        ):
-            return False
-        
-        # 2. Lock resources / Store pending state
-        self._pending_transactions[transaction_id] = {
-            "payload": payload,
-            "is_source": is_source,
-            "timestamp": float(0)  # Using 0 as placeholder or time.time() if imported
-        }
-    
-        return True
+        return self.validate_domain_operation(entity_id, operation_type, details)
 
     def commit_transaction(self, transaction_id: str) -> bool:
         """
@@ -617,32 +687,34 @@ class DomainChain(BaseChain):
         Returns:
             True if committed successfully.
         """
-        if transaction_id not in self._pending_transactions:
+        pending_data = self._tx_manager.pop_pending(transaction_id)
+        if pending_data is None:
             return False
-        
-        pending_data = self._pending_transactions[transaction_id]
+
+        return self._execute_commit(transaction_id, pending_data)
+
+    def _execute_commit(self, transaction_id: str, pending_data: dict[str, Any]) -> bool:
+        """Execute the on-chain operations for a 2PC commit."""
         payload = pending_data["payload"]
-    
         entity_id = payload.get("entity_id")
         operation_type = payload.get("operation_type")
         details = payload.get("details", {})
     
         try:
-            # Record the operation on-chain
-            success = self.start_domain_operation(
-                entity_id, operation_type, details
+            success = self.start_domain_operation(entity_id, operation_type, details)
+            if not success:
+                return False
+
+            self.complete_domain_operation(
+                entity_id,
+                operation_type,
+                {
+                    "status": "committed",
+                    "tx_id": transaction_id,
+                },
             )
-            if success:
-                self.complete_domain_operation(
-                    entity_id, operation_type, 
-                    {"status": "committed", "tx_id": transaction_id}
-                )
-            
-                # Cleanup pending
-                del self._pending_transactions[transaction_id]
-                return True
-            return False
-        except Exception:
+            return True
+        except (KeyError, ValueError, AttributeError, TypeError):
             return False
 
     def rollback_transaction(self, transaction_id: str) -> bool:
@@ -655,10 +727,9 @@ class DomainChain(BaseChain):
         Returns:
             True if rolled back successfully.
         """
-        if transaction_id in self._pending_transactions:
-            del self._pending_transactions[transaction_id]
-            return True
-        return False
+        return self._tx_manager.rollback(transaction_id)
+
+    # -- string representations ----------------------------------------
 
     def __str__(self) -> str:
         """String representation of the domain chain."""
@@ -670,11 +741,14 @@ class DomainChain(BaseChain):
         )
     
     def __repr__(self) -> str:
-        """Detailed string representation of the domain chain."""
-        success_rate = self.operation_metrics['successful_operations'] / max(self.operation_metrics['total_operations'], 1)
+        """Detailed string representation."""
         return (
-            f"DomainChain(name={self.name}, domain_type={self.domain_type}, "
-            f"entities={len(self.entity_registry)}, blocks={len(self.chain)}, "
-            f"total_operations={self.operation_metrics['total_operations']}, "
-            f"success_rate={success_rate:.2f})"
+            f"DomainChain(name={self.name}, "
+            f"domain_type={self.domain_type}, "
+            f"entities={len(self.entity_registry)}, "
+            f"blocks={len(self.chain)}, "
+            f"total_operations="
+            f"{self._metrics['total_operations']}, "
+            f"success_rate="
+            f"{self._metrics.success_rate:.2f})"
         )
