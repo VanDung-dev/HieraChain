@@ -256,6 +256,118 @@ def _init_bft_mitigation_data(error_config: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+class BFTViewChangeManager:
+    """View change manager for BFT consensus"""
+    def __init__(self, consensus):
+        self.consensus = consensus
+
+    def start_timer(self):
+        """Start the view change timer if consensus is not shutting down."""
+        if not self.consensus.is_shutting_down():
+            self.consensus.view_change_timer = start_view_change_timer(
+                self.consensus.view_change_timeout,
+                self._timeout_handler
+            )
+
+    def reset_timer(self):
+        """Reset the view change timer."""
+        if self.consensus.view_change_timer:
+            self.consensus.view_change_timer.cancel()
+        self.start_timer()
+
+    def _timeout_handler(self):
+        """Handle view change timeout."""
+        if not self.consensus.is_shutting_down():
+            self.initiate_view_change(self.consensus.view + 1)
+
+    def initiate_view_change(self, new_view: int):
+        """Initiate a new view change."""
+        with self.consensus.lock:
+            self.consensus.state = ConsensusState.VIEW_CHANGE
+            msg = _create_signed_bft_message(
+                MessageType.VIEW_CHANGE,
+                new_view,
+                self.consensus.committed_sequence,
+                self.consensus.node_id,
+                self.consensus.key_provider,
+                {}
+            )
+            if new_view not in self.consensus.view_change_votes:
+                self.consensus.view_change_votes[new_view] = []
+            self.consensus.view_change_votes[new_view].append(msg)
+            self.consensus.broadcast_message(msg)
+
+    def handle_view_change(self, message: BFTMessage) -> bool:
+        """Handle incoming VIEW_CHANGE messages."""
+        with self.consensus.lock:
+            new_view = message.view
+            if new_view <= self.consensus.view or not verify_message_signature(
+                message,
+                self.consensus.node_public_keys
+            ):
+                return False
+
+            if new_view not in self.consensus.view_change_votes:
+                self.consensus.view_change_votes[new_view] = []
+
+            if not _add_to_votes(self.consensus.view_change_votes[new_view], message):
+                return False
+
+            return self._process_view_change_quorum(new_view)
+
+    def _process_view_change_quorum(self, new_view: int) -> bool:
+        """Check if view change quorum is reached."""
+        if len(self.consensus.view_change_votes[new_view]) >= 2 * self.consensus.f + 1:
+            is_new_primary = self.consensus.node_id == self.consensus.all_nodes[new_view % self.consensus.n]
+            if is_new_primary and self.consensus.state == ConsensusState.VIEW_CHANGE:
+                self._broadcast_new_view(new_view, self.consensus.view_change_votes[new_view])
+        return True
+
+    def handle_new_view(self, message: BFTMessage) -> bool:
+        """Handle incoming NEW_VIEW messages."""
+        with self.consensus.lock:
+            new_view = message.view
+            if new_view <= self.consensus.view or not verify_message_signature(
+                message,
+                self.consensus.node_public_keys
+            ):
+                return False
+
+            if not validate_view_change_proof(
+                new_view,
+                message.data.get("proof", []),
+                self.consensus.f,
+                self.consensus.node_public_keys,
+                self._verify_sig
+            ):
+                self.consensus.log_node_behavior(message.sender_id, "invalid_view_change_proof")
+                return False
+
+            self.consensus.view = new_view
+            self.consensus.state = ConsensusState.IDLE
+            self.reset_timer()
+            return True
+
+    def _verify_sig(self, msg: BFTMessage) -> bool:
+        """Verify message signature."""
+        return verify_message_signature(msg, self.consensus.node_public_keys)
+
+    def _broadcast_new_view(self, new_view: int, proof_messages: list[BFTMessage]):
+        """Broadcast NEW_VIEW message."""
+        msg = _create_signed_bft_message(
+            MessageType.NEW_VIEW,
+            new_view,
+            self.consensus.committed_sequence,
+            self.consensus.node_id,
+            self.consensus.key_provider,
+            {"proof": [m.to_dict() for m in proof_messages]}
+        )
+        self.consensus.view = new_view
+        self.consensus.state = ConsensusState.IDLE
+        self.reset_timer()
+        self.consensus.broadcast_message(msg)
+
+
 class BFTConsensus:
     """Byzantine Fault Tolerance consensus implementation"""
 
@@ -269,7 +381,6 @@ class BFTConsensus:
         node_public_keys: dict[str, str] | None = None,
         zmq_node: ZmqNode | None = None
     ):
-        """Initialize BFT consensus"""
         self.node_id = node_id
         self.all_nodes = all_nodes
         self.f = f
@@ -277,26 +388,41 @@ class BFTConsensus:
         self.node_public_keys = node_public_keys or {}
         self.zmq_node = zmq_node
         self.key_provider = LocalKeyProvider(keypair) if keypair else None
-        
         self.network_send_function: Callable | None = None
         self.chain: Any | None = None
-        
-        if zmq_node:
-            if zmq_node.node_id != node_id:
-                logger.warning("ZmqNode ID %s mismatch with %s", zmq_node.node_id, node_id)
-            self.network_send_function = self._direct_send
-
-        if not self.key_provider:
-            raise ConsensusError("Cryptographic keys are required for BFT consensus")
-
-        if self.n < 3 * self.f + 1:
-            raise ConsensusError(f"BFT requires n >= 3f+1, but n={self.n}, f={self.f}")
-        
-        # State and Storage
+        self.error_config = error_config or {}
+        self._shutting_down = False
         self.view = 0
         self.sequence_number = 0
         self.state = ConsensusState.IDLE
         self.current_request: dict[str, Any] | None = None
+        self._configure_network()
+        self._validate_initial_requirements()
+        self._initialize_internal_state()
+        self._init_error_mitigation()
+        self._validate_bft_requirements()
+        self.view_change_manager.start_timer()
+
+    def _initiate_view_change(self, new_view: int):
+        """Initiate a new view change."""
+        self.view_change_manager.initiate_view_change(new_view)
+
+    def _configure_network(self):
+        """Configure network send function."""
+        if self.zmq_node:
+            if self.zmq_node.node_id != self.node_id:
+                logger.warning("ZmqNode ID %s mismatch with %s", self.zmq_node.node_id, self.node_id)
+            self.network_send_function = self._direct_send
+
+    def _validate_initial_requirements(self):
+        """Validate initial consensus requirements."""
+        if not self.key_provider:
+            raise ConsensusError("Cryptographic keys are required for BFT consensus")
+        if self.n < 3 * self.f + 1:
+            raise ConsensusError(f"BFT requires n >= 3f+1, but n={self.n}, f={self.f}")
+
+    def _initialize_internal_state(self):
+        """Initialize internal consensus state."""
         self.pre_prepare_messages: dict[int, BFTMessage] = {}
         self.prepare_messages: dict[int, list[BFTMessage]] = {}
         self.commit_messages: dict[int, list[BFTMessage]] = {}
@@ -304,38 +430,20 @@ class BFTConsensus:
         self.committed_sequence = -1
         self.pending_requests: list[dict[str, Any]] = []
         self.message_log: list[BFTMessage] = []
-
-        # Monitoring
         self.node_failure_counts: dict[str, int] = {}
         self.max_failure_count = 3
         self.view_change_timer: threading.Timer | None = None
         self.view_change_timeout = 30.0
         self.lock = threading.Lock()
-
-        # Message Handlers with explicit type hint for IDE/Linting
+        self.view_change_manager = BFTViewChangeManager(self)
         self.message_handlers: dict[MessageType, Callable[[BFTMessage], bool]] = {
             MessageType.PRE_PREPARE: self._handle_pre_prepare,
             MessageType.PREPARE: self._handle_prepare,
             MessageType.COMMIT: self._handle_commit,
-            MessageType.VIEW_CHANGE: self._handle_view_change,
-            MessageType.NEW_VIEW: self._handle_new_view
+            MessageType.VIEW_CHANGE: self.view_change_manager.handle_view_change,
+            MessageType.NEW_VIEW: self.view_change_manager.handle_new_view
         }
-        
-        self._shutting_down = False
-        self._start_view_change_timer()
-        
-        # Error mitigation
-        self.error_config = error_config or {}
-        mitigation = _init_bft_mitigation_data(self.error_config)
-        self.consensus_validator = mitigation["validator"]
-        self.error_classifier = mitigation["classifier"]
-        self.verification_strictness = mitigation["strictness"]
-        self.auto_recovery_enabled = mitigation["recovery"]
 
-        if self.consensus_validator:
-            nodes = [type('MockNode', (), {"node_id": n})() for n in self.all_nodes]
-            self.consensus_validator.validate_node_count(nodes)
-    
     def _direct_send(self, target_node: str, message: dict[str, Any]):
         """Directly send a message to a node using ZMQ."""
         send_via_zmq(self.zmq_node, target_node, message)
@@ -414,7 +522,20 @@ class BFTConsensus:
             return False
     
     def _primary(self) -> str:
+        """Return the primary node for the current view."""
         return self.all_nodes[self.view % self.n]
+
+    def is_shutting_down(self) -> bool:
+        """Check if consensus is shutting down."""
+        return self._shutting_down
+
+    def broadcast_message(self, msg: BFTMessage):
+        """Broadcast message with failure detection."""
+        self._broadcast_msg(msg)
+
+    def log_node_behavior(self, node_id: str, issue: str):
+        """Log node behavior issues."""
+        self._log_node_behavior(node_id, issue)
 
     def _broadcast_msg(self, msg: BFTMessage):
         """Broadcast message with failure detection."""
@@ -427,7 +548,7 @@ class BFTConsensus:
             self._log_node_behavior
         )
         if failed > self.f and self.auto_recovery_enabled:
-            self._initiate_view_change(self.view + 1)
+            self.view_change_manager.initiate_view_change(self.view + 1)
 
     # --- Message Handlers ---
     def _handle_pre_prepare(self, message: BFTMessage) -> bool:
@@ -459,7 +580,7 @@ class BFTConsensus:
             )
             self._broadcast_msg(prep_msg)
             self.message_log.append(prep_msg)
-            self._reset_view_change_timer()
+            self.view_change_manager.reset_timer()
             return True
 
     def _handle_prepare(self, message: BFTMessage) -> bool:
@@ -548,114 +669,14 @@ class BFTConsensus:
             return True
         return False
 
-    def _handle_view_change(self, message: BFTMessage) -> bool:
-        """Handle incoming VIEW_CHANGE messages"""
-        with self.lock:
-            new_view = message.view
-            if new_view <= self.view or not verify_message_signature(message, self.node_public_keys):
-                return False
-
-            if new_view not in self.view_change_votes:
-                self.view_change_votes[new_view] = []
-
-            if not _add_to_votes(self.view_change_votes[new_view], message):
-                return False
-
-            return self._process_view_change_quorum(new_view)
-
-    def _process_view_change_quorum(self, new_view: int) -> bool:
-        """Check if 2f+1 view change votes received to become new primary and broadcast NEW_VIEW"""
-        if len(self.view_change_votes[new_view]) >= 2 * self.f + 1:
-            is_new_primary = self.node_id == self.all_nodes[new_view % self.n]
-            if is_new_primary and self.state == ConsensusState.VIEW_CHANGE:
-                self._broadcast_new_view(new_view, self.view_change_votes[new_view])
-        return True
-    
-    def _handle_new_view(self, message: BFTMessage) -> bool:
-        """Handle incoming NEW_VIEW messages."""
-        with self.lock:
-            new_view = message.view
-            if new_view <= self.view or not verify_message_signature(message, self.node_public_keys):
-                return False
-
-            if not validate_view_change_proof(
-                new_view,
-                message.data.get("proof", []),
-                self.f,
-                self.node_public_keys,
-                self._verify_sig_shim
-            ):
-                self._log_node_behavior(message.sender_id, "invalid_view_change_proof")
-                return False
-
-            self.view = new_view
-            self.state = ConsensusState.IDLE
-            self._reset_view_change_timer()
-            return True
-
-    def _verify_sig_shim(self, msg: BFTMessage) -> bool:
-        """Shim for signature verification bypass of lambda lint."""
-        return verify_message_signature(msg, self.node_public_keys)
-
-    def _broadcast_new_view(self, new_view: int, proof_messages: list[BFTMessage]):
-        """Broadcast NEW_VIEW message to all nodes."""
-        msg = _create_signed_bft_message(
-            MessageType.NEW_VIEW,
-            new_view,
-            self.committed_sequence,
-            self.node_id,
-            self.key_provider,
-            {"proof": [m.to_dict() for m in proof_messages]}
-        )
-        self.view = new_view
-        self.state = ConsensusState.IDLE
-        self._reset_view_change_timer()
-        self._broadcast_msg(msg)
-    
     def _log_node_behavior(self, node_id: str, issue: str):
         """Log suspicious node behavior."""
         _log_behavior(
             self.error_classifier, self.node_failure_counts,
             self.max_failure_count, self.auto_recovery_enabled,
             node_id, issue, self.view, self.sequence_number,
-            self._initiate_view_change
+            self.view_change_manager.initiate_view_change
         )
-
-    def _start_view_change_timer(self):
-        """Start the view change timer."""
-        if not self._shutting_down:
-            self.view_change_timer = start_view_change_timer(
-                self.view_change_timeout,
-                self._view_change_timeout_handler
-            )
-    
-    def _reset_view_change_timer(self):
-        """Reset the view change timer."""
-        if self.view_change_timer:
-            self.view_change_timer.cancel()
-        self._start_view_change_timer()
-
-    def _view_change_timeout_handler(self):
-        """Handle view change timer expiration."""
-        if not self._shutting_down:
-            self._initiate_view_change(self.view + 1)
-
-    def _initiate_view_change(self, new_view: int):
-        """Initiate view change protocol."""
-        with self.lock:
-            self.state = ConsensusState.VIEW_CHANGE
-            msg = _create_signed_bft_message(
-                MessageType.VIEW_CHANGE,
-                new_view,
-                self.committed_sequence,
-                self.node_id,
-                self.key_provider,
-                {}
-            )
-            if new_view not in self.view_change_votes:
-                self.view_change_votes[new_view] = []
-            self.view_change_votes[new_view].append(msg)
-            self._broadcast_msg(msg)
 
     def get_consensus_status(self) -> dict[str, Any]:
         return {
