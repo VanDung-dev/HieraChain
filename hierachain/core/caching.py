@@ -1,8 +1,9 @@
 """
 Advanced Caching System for HieraChain Ledger
 
-This module provides a sophisticated caching system with multiple eviction policies,
-TTL support, and specialized blockchain data caching. Delivers significant performance
+This module provides a sophisticated caching system with multiple eviction
+policies, TTL support, and specialized blockchain data caching. Delivers
+significant performance improvements.
 """
 
 import time
@@ -247,7 +248,7 @@ class AdvancedCache:
         """Evict an item based on the eviction policy"""
         if not self.cache:
             return
-        # Dispatch to policy‑specific eviction helpers
+        # Dispatch to policy-specific eviction helpers
         evict_key = {
             EvictionPolicy.LRU: self._evict_lru,
             EvictionPolicy.LFU: self._evict_lfu,
@@ -259,7 +260,7 @@ class AdvancedCache:
             self.evictions += 1
 
     def _evict_lru(self) -> str | None:
-        """Evict the least‑recently used entry"""
+        """Evict the least-recently used entry"""
         return (
             min(self.cache.keys(), key=lambda k: self.cache[k].access_time)
             if self.cache
@@ -267,7 +268,7 @@ class AdvancedCache:
         )
 
     def _evict_lfu(self) -> str | None:
-        """Evict the least‑frequently used entry (ties broken by recency)"""
+        """Evict the least-frequently used entry (ties broken by recency)"""
         return (
             min(
                 self.cache.keys(),
@@ -278,7 +279,7 @@ class AdvancedCache:
         )
 
     def _evict_fifo(self) -> str | None:
-        """Evict the first‑in‑first‑out entry"""
+        """Evict the first-in-first-out entry"""
         return (
             min(self.cache.keys(), key=lambda k: self.cache[k].creation_time)
             if self.cache
@@ -290,7 +291,7 @@ class AdvancedCache:
         expired_keys = [k for k, entry in self.cache.items() if entry.is_expired]
         if expired_keys:
             return expired_keys[0]
-        # No expired entries – reuse LRU logic
+        # No expired entries - reuse LRU logic
         return self._evict_lru()
 
     def _remove_key(self, key: str):
@@ -348,29 +349,192 @@ class AdvancedCache:
             return key in self.cache and not self.cache[key].is_expired
 
 
+# ---------------------------------------------------------------------------
+# Default configuration constant
+# ---------------------------------------------------------------------------
+
+DEFAULT_CACHE_CONFIG: dict[str, Any] = {
+    "block_cache_size": 5000,
+    "event_cache_size": 20000,
+    "entity_cache_size": 10000,
+    "block_cache_policy": "lru",
+    "event_cache_policy": "ttl",
+    "entity_cache_policy": "lfu",
+    "event_ttl": 300,  # 5 minutes
+    "entity_ttl": 3600,  # 1 hour
+}
+
+
+# ---------------------------------------------------------------------------
+# Helper classes extracted from BlockchainCacheManager
+# ---------------------------------------------------------------------------
+
+
+class CachePerformanceTracker:
+    """Tracks cache performance metrics (hits, misses, time saved)."""
+
+    def __init__(self):
+        self.block_retrievals = 0
+        self.cache_hits = 0
+        self.total_time_saved = 0.0
+
+    def record_miss(self):
+        """Record a cache miss (block retrieval from chain)."""
+        self.block_retrievals += 1
+
+    def record_hit(self, estimated_time_saved: float = 0.002):
+        """Record a cache hit."""
+        self.cache_hits += 1
+        self.total_time_saved += estimated_time_saved
+
+    @property
+    def total_requests(self) -> int:
+        return self.block_retrievals + self.cache_hits
+
+    @property
+    def hit_rate(self) -> float:
+        if self.total_requests == 0:
+            return 0.0
+        return self.cache_hits / self.total_requests * 100
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return performance stats as a dictionary."""
+        return {
+            "total_requests": self.total_requests,
+            "cache_hit_rate": round(self.hit_rate, 2),
+            "time_saved_seconds": round(self.total_time_saved, 4),
+        }
+
+
+class CacheInvalidator:
+    """Handles cache invalidation for block, event, and entity caches."""
+
+    def __init__(
+        self,
+        block_cache: AdvancedCache,
+        event_cache: AdvancedCache,
+        entity_cache: AdvancedCache,
+    ):
+        self.block_cache = block_cache
+        self.event_cache = event_cache
+        self.entity_cache = entity_cache
+
+    def invalidate_entity(self, entity_id: str):
+        """Invalidate all cached data for a specific entity."""
+        keys_to_remove = [
+            key
+            for key in self.entity_cache.get_keys()
+            if key.startswith(f"entity:{entity_id}:")
+        ]
+        for key in keys_to_remove:
+            self.entity_cache.delete(key)
+
+    def invalidate_block(self, chain_name: str, index: int | None = None):
+        """Invalidate cached blocks (and related events) for a chain."""
+        if index is not None:
+            self._invalidate_specific_block(chain_name, index)
+        else:
+            self._invalidate_chain_blocks(chain_name)
+
+    def _invalidate_specific_block(self, chain_name: str, index: int):
+        """Invalidate a single block and its related event cache."""
+        self.block_cache.delete(f"{chain_name}:{index}")
+        self.event_cache.delete(
+            f"events:{chain_name}:{index}"
+        )
+
+    def _invalidate_chain_blocks(self, chain_name: str):
+        """Invalidate all blocks and event caches for a chain."""
+        self._delete_keys_with_prefix(self.block_cache, f"{chain_name}:")
+        self._delete_keys_with_prefix(self.event_cache, f"events:{chain_name}:")
+
+    @staticmethod
+    def _delete_keys_with_prefix(cache: AdvancedCache, prefix: str):
+        """Delete all keys from cache that match the prefix."""
+        keys = [
+            k for k in cache.get_keys()
+            if k.startswith(prefix)
+        ]
+        for key in keys:
+            cache.delete(key)
+
+
+class EntityEventFetcher:
+    """Fetches entity-related events from the blockchain."""
+
+    def __init__(self, chain: Any):
+        self.chain = chain
+        self.logger = logging.getLogger(__name__)
+
+    def fetch(self, entity_id: str, chain_type: str) -> list[dict[str, Any]]:
+        """
+        Fetch entity events from the blockchain.
+
+        Args:
+            entity_id: Entity identifier
+            chain_type: "all", "main", or "sub"
+        """
+        try:
+            events = self._collect_events(entity_id, chain_type)
+            events.sort(key=lambda x: x.get("timestamp", 0))
+            return events
+        except Exception as e:
+            self.logger.error(f"Error fetching events for entity {entity_id}: {e}",)
+            return []
+
+    def _collect_events(self, entity_id: str, chain_type: str) -> list[dict[str, Any]]:
+        """Collect events from the requested chain types."""
+        events: list[dict[str, Any]] = []
+        if chain_type in ("all", "main"):
+            events.extend(self._from_main_chain(entity_id))
+        if chain_type in ("all", "sub"):
+            events.extend(self._from_sub_chains(entity_id))
+        return events
+
+    def _from_main_chain(self, entity_id: str) -> list[dict[str, Any]]:
+        """Extract entity-related events from the main chain."""
+        if not hasattr(self.chain, "main_chain"):
+            return []
+        events: list[dict[str, Any]] = []
+        for block in self.chain.main_chain.chain:
+            events.extend(_process_main_chain_block(block, entity_id))
+        return events
+
+    def _from_sub_chains(self, entity_id: str) -> list[dict[str, Any]]:
+        """Extract entity-related events from all sub-chains."""
+        if not hasattr(self.chain, "sub_chains"):
+            return []
+        events: list[dict[str, Any]] = []
+        for name, sub_chain in self.chain.sub_chains.items():
+            events.extend(_process_single_sub_chain(name, sub_chain, entity_id))
+        return events
+
+
+# ---------------------------------------------------------------------------
+# BlockchainCacheManager  (thin orchestrator)
+# ---------------------------------------------------------------------------
+
+
 class BlockchainCacheManager:
-    """Cache manager specifically for blockchain data"""
-    
+    """Cache manager specifically for blockchain data.
+
+    Delegates to specialised helpers:
+      - CachePerformanceTracker  - metrics
+      - CacheInvalidator         - cache invalidation
+      - EntityEventFetcher       - blockchain data retrieval
+    """
+
     def __init__(self, chain: Any, config: dict[str, Any] | None = None):
         """
-        Initialize blockchain cache manager
-        
+        Initialize blockchain cache manager.
+
         Args:
             chain: The blockchain instance to cache
             config: Configuration for the cache
         """
         self.chain = chain
-        self.config = config or {
-            "block_cache_size": 5000,
-            "event_cache_size": 20000,
-            "entity_cache_size": 10000,
-            "block_cache_policy": "lru",
-            "event_cache_policy": "ttl",
-            "entity_cache_policy": "lfu",
-            "event_ttl": 300,  # 5 minutes
-            "entity_ttl": 3600,  # 1 hour
-        }
-        
+        self.config = config or dict(DEFAULT_CACHE_CONFIG)
+
         # Initialize caches
         self.block_cache = AdvancedCache(
             max_size=self.config["block_cache_size"],
@@ -384,61 +548,73 @@ class BlockchainCacheManager:
             max_size=self.config["entity_cache_size"],
             eviction_policy=self.config["entity_cache_policy"],
         )
-        
-        # Performance tracking
-        self.performance_stats = {
-            "block_retrievals": 0,
-            "cache_hits": 0,
-            "total_time_saved": 0.0,
-        }
-        
+
+        # Delegate helpers
+        self.perf_tracker = CachePerformanceTracker()
+        self.invalidator = CacheInvalidator(
+            self.block_cache,
+            self.event_cache,
+            self.entity_cache,
+        )
+        self.event_fetcher = EntityEventFetcher(chain)
+
         self.lock = threading.RLock()
         self.logger = logging.getLogger(__name__)
-    
+
+    # -- backward-compatible property ----------------------------------
+    @property
+    def performance_stats(self) -> dict[str, Any]:
+        """Backward-compatible performance stats dict."""
+        return {
+            "block_retrievals": self.perf_tracker.block_retrievals,
+            "cache_hits": self.perf_tracker.cache_hits,
+            "total_time_saved": self.perf_tracker.total_time_saved,
+        }
+
+    # ----- block retrieval --------------------------------------------
 
     def get_block(self, chain_name: str, index: int) -> Any | None:
-        """Get block from cache or chain (42x faster when cached)"""
+        """Get block from cache or chain (42x faster when cached)."""
         start_time = time.time()
         cache_key = f"{chain_name}:{index}"
 
         with self.lock:
-            # Try cache first
             block = self.block_cache.get(cache_key)
 
             if block is None:
-                # Get from chain
-                chain = self._get_chain(chain_name)
-                if chain and 0 <= index < len(chain.chain):
-                    block = chain.chain[index]
-                    self.block_cache.set(cache_key, block)
-                    
-                    # Record miss
-                    self.performance_stats["block_retrievals"] += 1
-                else:
+                block = self._fetch_block(chain_name, index, cache_key)
+                if block is None:
                     return None
             else:
-                # Record cache hit
-                self.performance_stats["cache_hits"] += 1
-                self.performance_stats["total_time_saved"] += 0.002  # Estimated time saved
-            
-            end_time = time.time()
-            query_time = end_time - start_time
-            
-            # Log performance for monitoring
-            if query_time > 0.001:  # Log slow queries
-                self.logger.debug(
-                    "Block retrieval for %s: %.4fs", cache_key, query_time
-                )
-            
+                self.perf_tracker.record_hit()
+
+            self._log_slow_query(cache_key, start_time)
             return block
-    
+
+    def _fetch_block(self, chain_name: str, index: int, cache_key: str) -> Any | None:
+        """Load a block from the chain and cache it."""
+        chain = self._get_chain(chain_name)
+        if chain is None or not (0 <= index < len(chain.chain)):
+            return None
+        block = chain.chain[index]
+        self.block_cache.set(cache_key, block)
+        self.perf_tracker.record_miss()
+        return block
+
+    def _log_slow_query(self, cache_key: str, start_time: float):
+        """Log queries that take longer than 1 ms."""
+        query_time = time.time() - start_time
+        if query_time > 0.001:
+            self.logger.debug(f"Block retrieval for {cache_key}: {query_time}",)
+
+    # ----- event retrieval --------------------------------------------
+
     def get_events_for_block(self, chain_name: str, index: int) -> list[Any] | None:
-        """Get events for a block"""
+        """Get events for a block."""
         cache_key = f"events:{chain_name}:{index}"
         
         with self.lock:
             events = self.event_cache.get(cache_key)
-            
             if events is None:
                 block = self.get_block(chain_name, index)
                 if block:
@@ -449,8 +625,8 @@ class BlockchainCacheManager:
 
     def get_entity_events(self, entity_id: str, chain_type: str = "all") -> list[dict[str, Any]]:
         """
-        Get all events for an entity (18.9x faster when cached)
-        
+        Get all events for an entity (18.9x faster when cached).
+
         Args:
             entity_id: Entity identifier
             chain_type: "all", "main", or "sub"
@@ -460,164 +636,73 @@ class BlockchainCacheManager:
         
         with self.lock:
             events = self.entity_cache.get(cache_key)
-            
             if events is None:
-                # Fetch from chain
-                events = self._fetch_entity_events(entity_id, chain_type)
-                self.entity_cache.set(cache_key, events, ttl=self.config.get("entity_ttl", 3600))
-
-                # Record performance
-                end_time = time.time()
-                query_time = end_time - start_time
-                if query_time > 0.05:  # Log slow entity queries
-                    self.logger.info(
-                        "Entity query for %s: %.4fs, %d events",
-                        entity_id, query_time, len(events)
-                    )
-            
-            return events
-    def _get_main_chain_entity_events(self, entity_id: str) -> list[dict[str, Any]]:
-        """Extract entity-related events from the main chain."""
-        events: list[dict[str, Any]] = []
-        if not hasattr(self.chain, "main_chain"):
+                events = self.event_fetcher.fetch(entity_id, chain_type)
+                self.entity_cache.set(
+                    cache_key,
+                    events,
+                    ttl=self.config.get("entity_ttl", 3600),
+                )
+                self._log_slow_entity_query(entity_id, start_time, len(events))
             return events
 
-        for block in self.chain.main_chain.chain:
-            events.extend(_process_main_chain_block(block, entity_id))
-        return events
+    def _log_slow_entity_query(self, entity_id: str, start_time: float, event_count: int):
+        """Log entity queries that take longer than 50 ms."""
+        query_time = time.time() - start_time
+        if query_time > 0.05:
+            self.logger.info(f"Entity query for {entity_id}: {query_time}, {event_count} events")
 
-    def _get_sub_chain_entity_events(self, entity_id: str) -> list[dict[str, Any]]:
-        """Extract entity-related events from all registered sub-chains."""
-        events: list[dict[str, Any]] = []
-        if not hasattr(self.chain, "sub_chains"):
-            return events
+    # ----- chain lookup -----------------------------------------------
 
-        for name, sub_chain in self.chain.sub_chains.items():
-            events.extend(_process_single_sub_chain(name, sub_chain, entity_id))
-
-        return events
-
-    def _fetch_entity_events(
-        self, entity_id: str, chain_type: str
-    ) -> list[dict[str, Any]]:
-        """Fetch entity events from the blockchain"""
-        events = []
-
-        try:
-            # Main chain events (proofs)
-            if chain_type in ["all", "main"]:
-                events.extend(self._get_main_chain_entity_events(entity_id))
-
-            # Sub-chain events
-            if chain_type in ["all", "sub"]:
-                events.extend(self._get_sub_chain_entity_events(entity_id))
-
-            # Sort by timestamp for chronological order
-            events.sort(key=lambda x: x.get("timestamp", 0))
-
-        except Exception as e:
-            self.logger.error(
-                "Error fetching events for entity %s: %s", entity_id, e
-            )
-            events = []
-
-        return events
-
-    
     def _get_chain(self, chain_name: str) -> Any | None:
-        """Get chain by name"""
+        """Get chain by name."""
         if chain_name == "main" and hasattr(self.chain, "main_chain"):
             return self.chain.main_chain
-        elif hasattr(self.chain, "sub_chains"):
+        if hasattr(self.chain, "sub_chains"):
             return self.chain.sub_chains.get(chain_name)
         return None
-    
+
+    # ----- invalidation (delegates to CacheInvalidator) ---------------
+
     def invalidate_entity_cache(self, entity_id: str):
-        """Invalidate cached data for specific entity"""
+        """Invalidate cached data for specific entity."""
         with self.lock:
-            keys_to_remove = []
-            for key in self.entity_cache.get_keys():
-                if key.startswith(f"entity:{entity_id}:"):
-                    keys_to_remove.append(key)
-            
-            for key in keys_to_remove:
-                self.entity_cache.delete(key)
-    
-    def _invalidate_specific_block(self, chain_name: str, index: int):
-        """Invalidate a specific block and its related events."""
-        cache_key = f"{chain_name}:{index}"
-        self.block_cache.delete(cache_key)
-
-        # Also invalidate related event cache
-        event_key = f"events:{chain_name}:{index}"
-        self.event_cache.delete(event_key)
-
-    def _invalidate_chain_blocks(self, chain_name: str):
-        """Invalidate all blocks and event caches for a specific chain."""
-        # 1. Invalidate blocks
-        block_keys = [
-            k for k in self.block_cache.get_keys() if k.startswith(f"{chain_name}:")
-        ]
-        for key in block_keys:
-            self.block_cache.delete(key)
-
-        # 2. Invalidate events
-        event_keys = [
-            k
-            for k in self.event_cache.get_keys()
-            if k.startswith(f"events:{chain_name}:")
-        ]
-        for key in event_keys:
-            self.event_cache.delete(key)
+            self.invalidator.invalidate_entity(entity_id)
 
     def invalidate_block_cache(self, chain_name: str, index: int | None = None):
-        """Invalidate cached blocks for a chain"""
+        """Invalidate cached blocks for a chain."""
         with self.lock:
-            if index is not None:
-                self._invalidate_specific_block(chain_name, index)
-            else:
-                self._invalidate_chain_blocks(chain_name)
+            self.invalidator.invalidate_block(chain_name, index)
+
+    # ----- stats / maintenance ----------------------------------------
 
     def get_cache_stats(self) -> dict[str, Any]:
-        """Get comprehensive cache statistics"""
+        """Get comprehensive cache statistics."""
         with self.lock:
-            total_requests = (
-                self.performance_stats["block_retrievals"]
-                + self.performance_stats["cache_hits"]
-            )
-            cache_hit_rate = (
-                (self.performance_stats["cache_hits"] / total_requests * 100)
-                if total_requests > 0
-                else 0
-            )
-
             return {
                 "block_cache": self.block_cache.get_stats(),
                 "event_cache": self.event_cache.get_stats(),
                 "entity_cache": self.entity_cache.get_stats(),
-                "performance": {
-                    "total_requests": total_requests,
-                    "cache_hit_rate": round(cache_hit_rate, 2),
-                    "time_saved_seconds": round(self.performance_stats["total_time_saved"], 4)
-                }
+                "performance": self.perf_tracker.to_dict(),
             }
     
     def optimize_cache(self):
-        """Optimize cache performance by cleaning up expired entries"""
+        """Optimize cache by cleaning up expired entries."""
         with self.lock:
-            self.block_cache.cleanup_ttl()
-            self.event_cache.cleanup_ttl()
-            self.entity_cache.cleanup_ttl()
-            
+            for cache in (
+                self.block_cache,
+                self.event_cache,
+                self.entity_cache,
+            ):
+                cache.cleanup_ttl()
             self.logger.info("Cache optimization completed")
     
     def warm_cache(self, entity_ids: list[str]):
-        """Warm up cache with frequently accessed entities"""
+        """Warm up cache with frequently accessed entities."""
         self.logger.info(f"Warming cache for {len(entity_ids)} entities")
         
         for entity_id in entity_ids:
             try:
-                # Pre-load entity events
                 self.get_entity_events(entity_id, "all")
             except Exception as e:
                 self.logger.warning(f"Failed to warm cache for {entity_id}: {e}")
@@ -625,22 +710,25 @@ class BlockchainCacheManager:
         self.logger.info("Cache warming completed")
     
     def shutdown(self):
-        """Shutdown cache manager"""
+        """Shutdown cache manager."""
         with self.lock:
-            self.block_cache.clear()
-            self.event_cache.clear()
-            self.entity_cache.clear()
+            for cache in (
+                self.block_cache,
+                self.event_cache,
+                self.entity_cache,
+            ):
+                cache.clear()
             self.logger.info("Blockchain cache manager shutdown")
 
 
 # Factory functions
 def create_blockchain_cache(chain: Any, config: dict[str, Any] | None = None) -> BlockchainCacheManager:
-    """Create blockchain cache manager with default configuration"""
+    """Create blockchain cache manager with default configuration."""
     return BlockchainCacheManager(chain, config)
 
 
 def create_performance_cache_config() -> dict[str, Any]:
-    """Create high-performance cache configuration"""
+    """Create high-performance cache configuration."""
     return {
         "block_cache_size": 10000,
         "event_cache_size": 50000,
