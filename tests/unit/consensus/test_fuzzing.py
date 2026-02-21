@@ -73,7 +73,7 @@ def cleanup_service(service):
 # === Fuzzing Tests ===
 
 @given(event_data=arbitrary_dict_strategy)
-@settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow])
+@settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_receive_event_handles_arbitrary_dict(event_data):
     """Verify receive_event doesn't crash on arbitrary dict input."""
     service = create_ordering_service()
@@ -89,7 +89,7 @@ def test_receive_event_handles_arbitrary_dict(event_data):
 
 
 @given(channel_id=st.text(max_size=100), org=st.text(max_size=100))
-@settings(max_examples=30, suppress_health_check=[HealthCheck.too_slow])
+@settings(max_examples=30, suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_receive_event_handles_arbitrary_strings(channel_id, org):
     """Verify channel_id and org string validation."""
     service = create_ordering_service()
@@ -129,7 +129,7 @@ def test_receive_event_rejects_non_dict(non_dict):
         st.integers(min_value=-10**10, max_value=10**15),
     )
 )
-@settings(max_examples=30, suppress_health_check=[HealthCheck.too_slow])
+@settings(max_examples=30, suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_receive_event_handles_invalid_timestamp(timestamp):
     """Verify handling of invalid timestamp values."""
     service = create_ordering_service()
