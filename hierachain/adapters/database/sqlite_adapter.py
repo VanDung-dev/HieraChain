@@ -19,6 +19,77 @@ from hierachain.core.blockchain import Blockchain
 logger = logging.getLogger(__name__)
 
 
+def _extract_entity_id(event: Any) -> str | None:
+    """Extract entity_id from event data if available."""
+    if not hasattr(event, "data") or not isinstance(event.data, dict):
+        return None
+
+    entity_id = event.data.get("entity_id")
+    if not entity_id and "product_id" in event.data:
+        entity_id = event.data.get("product_id")
+    return entity_id
+
+
+def _insert_block_record(cursor: sqlite3.Cursor, chain_name: str, block: Block) -> None:
+    """Insert or replace a block record in the database."""
+    metadata_json = json.dumps(block.metadata) if hasattr(block, "metadata") else None
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO blocks
+        (chain_name, "index", hash, previous_hash, timestamp, nonce, events_count, metadata_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        chain_name,
+        block.index,
+        block.hash,
+        block.previous_hash,
+        block.timestamp,
+        block.nonce,
+        len(block.events),
+        metadata_json,
+        time.time()
+    ))
+
+
+def _insert_event_records(cursor: sqlite3.Cursor, chain_name: str, block_hash: str, events: list[Any]) -> None:
+    """Insert events for a specific block into the database."""
+    for event in events:
+        entity_id = _extract_entity_id(event)
+        event_data_json = json.dumps(event.data) if hasattr(event, "data") else "{}"
+
+        cursor.execute("""
+            INSERT OR IGNORE INTO events
+            (chain_name, block_hash, event_id, entity_id, event_type, timestamp, data, sender_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            chain_name,
+            block_hash,
+            getattr(event, "event_id", None),
+            entity_id,
+            event.event_type,
+            event.timestamp,
+            event_data_json,
+            getattr(event, "sender_id", None)
+        ))
+
+
+def _store_block(cursor: sqlite3.Cursor, chain_name: str, block: Block) -> None:
+    """Store a single block and its events."""
+    _insert_block_record(cursor, chain_name, block)
+    _insert_event_records(cursor, chain_name, block.hash, block.events)
+
+
+def _create_event_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    """Create event dictionary from database row."""
+    return {
+        "chain_name": row["chain_name"],
+        "entity_id": row["entity_id"],
+        "event_type": row["event_type"],
+        "timestamp": row["timestamp"],
+        "data": json.loads(row["data"] or "{}")
+    }
+
+
 class SQLiteAdapter:
     """
     SQLite database adapter for the HieraChain Ledger.
@@ -173,65 +244,6 @@ class SQLiteAdapter:
         except Exception as e:
             logger.error(f"Error storing chain {chain.name}: {e}")
             return False
-    
-    @staticmethod
-    def _store_block(cursor: sqlite3.Cursor, chain_name: str, block: Block) -> None:
-        """Store a single block and its events."""
-        # Insert block record
-        cursor.execute("""
-            INSERT OR REPLACE INTO blocks 
-            (chain_name, "index", hash, previous_hash, timestamp, nonce, events_count, metadata_json, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            chain_name, 
-            block.index, 
-            block.hash, 
-            block.previous_hash, 
-            block.timestamp, 
-            block.nonce, 
-            len(block.events),
-            json.dumps(block.metadata) if hasattr(block, 'metadata') else None,
-            time.time()
-        ))
-        
-        # Store events
-        for event in block.events:
-            # Extract metadata from event if available
-            entity_id = None
-            if hasattr(event, 'data') and isinstance(event.data, dict):
-                entity_id = event.data.get('entity_id')
-                if not entity_id and 'product_id' in event.data:
-                    entity_id = event.data.get('product_id')
-            
-            # Serialize data to JSON
-            event_data_json = json.dumps(event.data) if hasattr(event, 'data') else "{}"
-            
-            cursor.execute("""
-                INSERT OR IGNORE INTO events
-                (chain_name, block_hash, event_id, entity_id, event_type, timestamp, data, sender_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                chain_name,
-                block.hash,
-                getattr(event, 'event_id', None),
-                entity_id,
-                event.event_type,
-                event.timestamp,
-                event_data_json,
-                getattr(event, 'sender_id', None)
-            ))
-    
-    @staticmethod
-    def _create_event_from_row(row: sqlite3.Row) -> dict[str, Any]:
-        """Create event dictionary from database row."""
-        return {
-            "chain_name": row['chain_name'],
-            "block_index": row['block_index'],
-            "entity_id": row['entity_id'],  # Metadata field
-            "event": row['event_type'],
-            "timestamp": row['timestamp'],
-            "details": json.loads(row['details'] or '{}')
-        }
 
     def load_chain(self, chain_name: str) -> dict[str, Any] | None:
         """
@@ -256,7 +268,7 @@ class SQLiteAdapter:
                 
                 # Get all blocks for this chain
                 cursor.execute("""
-                    SELECT * FROM blocks WHERE chain_name = ? ORDER BY block_index
+                    SELECT * FROM blocks WHERE chain_name = ? ORDER BY "index"
                 """, (chain_name,))
                 block_rows = cursor.fetchall()
                 
@@ -265,24 +277,24 @@ class SQLiteAdapter:
                 for block_row in block_rows:
                     # Get events for this block
                     cursor.execute("""
-                        SELECT entity_id, event_type, timestamp, details 
-                        FROM events WHERE block_id = ? ORDER BY id
-                    """, (block_row['id'],))
+                        SELECT entity_id, event_type, timestamp, data 
+                        FROM events WHERE block_hash = ? ORDER BY id
+                    """, (block_row['hash'],))
                     event_rows = cursor.fetchall()
                     
                     # Reconstruct events
                     events = []
                     for event_row in event_rows:
-                        events.append(self._create_event_from_row(event_row))
+                        events.append(_create_event_from_row(event_row))
                     
                     # Create block data
                     block_data = {
-                        "index": block_row['block_index'],
+                        "index": block_row['index'],
                         "events": events,  # Multiple events per block
                         "timestamp": block_row['timestamp'],
                         "previous_hash": block_row['previous_hash'],
                         "nonce": block_row['nonce'],
-                        "hash": block_row['block_hash']
+                        "hash": block_row['hash']
                     }
                     blocks.append(block_data)
                 
@@ -328,7 +340,7 @@ class SQLiteAdapter:
                     (main_chain_name, sub_chain_name, proof_hash, block_index, metadata, submitted_at, created_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, (main_chain_name, sub_chain_name, proof_hash, block_index,
-                      json.dumps(metadata), time.time(), time.time()))
+                json.dumps(metadata), time.time(), time.time()))
                 
                 conn.commit()
                 return True
@@ -369,7 +381,7 @@ class SQLiteAdapter:
                 
                 events = []
                 for row in rows:
-                    events.append(self._create_event_from_row(row))
+                    events.append(_create_event_from_row(row))
                 
                 return events
                 
@@ -409,7 +421,7 @@ class SQLiteAdapter:
                 
                 events = []
                 for row in rows:
-                    events.append(self._create_event_from_row(row))
+                    events.append(_create_event_from_row(row))
                 
                 return events
                 
