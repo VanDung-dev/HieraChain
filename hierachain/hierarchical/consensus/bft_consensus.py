@@ -16,7 +16,6 @@ from hierachain.hierarchical.consensus.bft import (
     ConsensusState,
     sign_message,
     verify_message_signature,
-    _validate_consensus_message
 )
 
 
@@ -59,6 +58,5 @@ __all__ = [
     'ConsensusState',
     'sign_message',
     'verify_message_signature',
-    '_validate_consensus_message',
     'create_bft_network'
 ]
