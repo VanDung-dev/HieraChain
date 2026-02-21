@@ -87,13 +87,174 @@ def _get_event_timestamp(event: Any) -> float:
     return time.time()
 
 
-def _mark_chain_as_split(
-    parent: Any, children: list[Any]
-) -> None:
+def _mark_chain_as_split(parent: Any, children: list[Any]) -> None:
     """Mark parent chain as split."""
     if hasattr(parent, "mark_split"):
         child_ids = [_get_sub_chain_id(c) for c in children]
         parent.mark_split(child_ids)
+
+
+def _update_rebalance_metrics_for_subchain(
+    metrics: "RebalanceMetrics",
+    sub_chain_id: str,
+    subchain: Any,
+    event_counts: dict[str, list[tuple[float, int]]],
+    window_seconds: float = 60.0,
+) -> "RebalanceMetrics":
+    """Update rebalance metrics for a sub-chain."""
+    now = time.time()
+    event_count = _get_event_count(subchain)
+    block_count = _get_block_count(subchain)
+
+    history = event_counts.get(sub_chain_id, [])
+    history.append((now, event_count))
+
+    cutoff = now - window_seconds
+    history = [(t, c) for t, c in history if t > cutoff]
+    event_counts[sub_chain_id] = history
+
+    if len(history) >= 2:
+        time_span = history[-1][0] - history[0][0]
+        count_diff = history[-1][1] - history[0][1]
+        current_eps = count_diff / time_span if time_span > 0 else 0
+    else:
+        current_eps = 0
+
+    metrics.current_eps = current_eps
+    metrics.avg_eps = (metrics.avg_eps + current_eps) / 2
+    metrics.peak_eps = max(metrics.peak_eps, current_eps)
+    metrics.event_count = event_count
+    metrics.block_count = block_count
+    metrics.timestamp = now
+
+    return metrics
+
+
+def _should_split_for_rebalancer(
+    metrics: "RebalanceMetrics",
+    threshold_eps: int,
+    min_events_for_split: int,
+    cooldown_seconds: float,
+) -> bool:
+    """Determine if rebalancing should occur based on metrics."""
+    if metrics.last_split_time > 0:
+        elapsed = time.time() - metrics.last_split_time
+        if elapsed < cooldown_seconds:
+            return False
+
+    if metrics.event_count < min_events_for_split:
+        return False
+
+    if metrics.current_eps >= threshold_eps:
+        return True
+
+    return False
+
+
+def _split_sub_chain_for_rebalancer(rebalancer: "SubChainRebalancer", sub_chain: Any) -> "SplitResult":
+    """Split a sub-chain into two child branches."""
+    start_time = time.time()
+    rebalancer.stats["splits_initiated"] += 1
+    rebalancer.status = RebalanceStatus.SPLITTING
+
+    parent_id = _get_sub_chain_id(sub_chain)
+    child_ids = [f"{parent_id}-a", f"{parent_id}-b"]
+
+    try:
+        children = rebalancer.create_child_chains(parent_id, child_ids)
+        if not children:
+            raise RuntimeError("Failed to create child chains")
+
+        rebalancer.status = RebalanceStatus.MIGRATING
+        events_migrated, blocks_migrated = _migrate_state_for_rebalancer(rebalancer, sub_chain, children)
+
+        rebalancer.stats["events_migrated"] += events_migrated
+        rebalancer.stats["splits_completed"] += 1
+        rebalancer.status = RebalanceStatus.COMPLETE
+
+        result = SplitResult(
+            success=True,
+            parent_chain_id=parent_id,
+            child_chain_ids=child_ids,
+            events_migrated=events_migrated,
+            blocks_migrated=blocks_migrated,
+            duration_seconds=time.time() - start_time,
+        )
+
+        if rebalancer.on_split_complete:
+            rebalancer.on_split_complete(result)
+
+        logger.info(f"Split complete: {parent_id} -> {child_ids}, {events_migrated} events migrated")
+
+        rebalancer.status = RebalanceStatus.COOLDOWN
+
+        return result
+
+    except Exception as e:  # pylint: disable=broad-except
+        logger.error(f"Split failed for {parent_id}: {e}")
+        rebalancer.stats["splits_failed"] += 1
+        rebalancer.status = RebalanceStatus.FAILED
+        return SplitResult(
+            success=False,
+            parent_chain_id=parent_id,
+            error_message=str(e),
+            duration_seconds=time.time() - start_time,
+        )
+
+
+def _migrate_state_for_rebalancer(
+    rebalancer: "SubChainRebalancer",
+    parent: Any,
+    children: list[Any]
+) -> tuple[int, int]:
+    """Migrate state from parent to child chains."""
+    events_migrated = 0
+    blocks_migrated = 0
+
+    if len(children) < 2:
+        return 0, 0
+
+    events = _get_pending_events(parent)
+
+    for event in events:
+        target_idx = _select_target_child_for_rebalancer(
+            rebalancer,
+            event,
+            len(children),
+        )
+        target = children[target_idx]
+
+        if _add_event_to_chain(target, event):
+            events_migrated += 1
+
+    _mark_chain_as_split(parent, [c for c in children])
+
+    logger.info(f"Migrated {events_migrated} events from parent to {len(children)} children")
+
+    return events_migrated, blocks_migrated
+
+
+def _select_target_child_for_rebalancer(
+    rebalancer: "SubChainRebalancer",
+    event: Any,
+    num_children: int,
+) -> int:
+    """Select target child for event based on strategy."""
+    if rebalancer.split_strategy == SplitStrategy.HASH_BASED:
+        entity_id = _get_event_entity_id(event)
+        hash_val = int(hashlib.sha256(entity_id.encode()).hexdigest()[:8], 16)
+        return hash_val % num_children
+
+    if rebalancer.split_strategy == SplitStrategy.TIME_BASED:
+        timestamp = _get_event_timestamp(event)
+        median_time = time.time() - 30
+        return 0 if timestamp < median_time else 1
+
+    if rebalancer.split_strategy == SplitStrategy.ROUND_ROBIN:
+        rebalancer.rr_counter = rebalancer.rr_counter + 1
+        return rebalancer.rr_counter % num_children
+
+    return 0
 
 
 class RebalanceStatus(Enum):
@@ -334,56 +495,12 @@ class SubChainRebalancer:
 
     def _collect_metrics(self, sub_chain_id: str, subchain: Any) -> RebalanceMetrics:
         """Collect current metrics for a sub-chain."""
-        now = time.time()
         metrics = self._monitored_chains.get(sub_chain_id, RebalanceMetrics(sub_chain_id=sub_chain_id))
-
-        # Get event count
-        event_count = _get_event_count(subchain)
-        block_count = _get_block_count(subchain)
-
-        # Calculate EPS
-        history = self._event_counts.get(sub_chain_id, [])
-        history.append((now, event_count))
-
-        # Keep last 60 seconds of history
-        cutoff = now - 60
-        history = [(t, c) for t, c in history if t > cutoff]
-        self._event_counts[sub_chain_id] = history
-
-        if len(history) >= 2:
-            time_span = history[-1][0] - history[0][0]
-            count_diff = history[-1][1] - history[0][1]
-            current_eps = count_diff / time_span if time_span > 0 else 0
-        else:
-            current_eps = 0
-
-        # Update metrics
-        metrics.current_eps = current_eps
-        metrics.avg_eps = (metrics.avg_eps + current_eps) / 2
-        metrics.peak_eps = max(metrics.peak_eps, current_eps)
-        metrics.event_count = event_count
-        metrics.block_count = block_count
-        metrics.timestamp = now
-
-        return metrics
+        return _update_rebalance_metrics_for_subchain(metrics, sub_chain_id, subchain,self._event_counts)
 
     def _should_split(self, metrics: RebalanceMetrics) -> bool:
         """Determine if a sub-chain should be split."""
-        # Check cooldown
-        if metrics.last_split_time > 0:
-            elapsed = time.time() - metrics.last_split_time
-            if elapsed < self.cooldown_seconds:
-                return False
-
-        # Check minimum events
-        if metrics.event_count < self.min_events_for_split:
-            return False
-
-        # Check EPS threshold
-        if metrics.current_eps >= self.threshold_eps:
-            return True
-
-        return False
+        return _should_split_for_rebalancer(metrics, self.threshold_eps, self.min_events_for_split, self.cooldown_seconds)
 
     def check_threshold(self, sub_chain_id: str) -> bool:
         """
@@ -412,59 +529,38 @@ class SubChainRebalancer:
         Returns:
             SplitResult with operation outcome.
         """
-        start_time = time.time()
-        self._stats["splits_initiated"] += 1
-        self._status = RebalanceStatus.SPLITTING
+        return _split_sub_chain_for_rebalancer(self, sub_chain)
 
-        parent_id = _get_sub_chain_id(sub_chain)
-        child_ids = [f"{parent_id}-a", f"{parent_id}-b"]
+    @property
+    def stats(self) -> dict[str, Any]:
+        return self._stats
 
-        try:
-            # Create child sub-chains
-            children = self._create_child_chains(parent_id, child_ids)
-            if not children:
-                raise RuntimeError("Failed to create child chains")
+    @property
+    def status(self) -> RebalanceStatus:
+        return self._status
 
-            # Migrate state
-            self._status = RebalanceStatus.MIGRATING
-            events_migrated, blocks_migrated = self._migrate_state(sub_chain, children)
+    @status.setter
+    def status(self, value: RebalanceStatus) -> None:
+        self._status = value
 
-            self._stats["events_migrated"] += events_migrated
-            self._stats["splits_completed"] += 1
-            self._status = RebalanceStatus.COMPLETE
+    @property
+    def on_split_complete(self) -> Callable[[SplitResult], None] | None:
+        return self._on_split_complete
 
-            result = SplitResult(
-                success=True,
-                parent_chain_id=parent_id,
-                child_chain_ids=child_ids,
-                events_migrated=events_migrated,
-                blocks_migrated=blocks_migrated,
-                duration_seconds=time.time() - start_time,
-            )
+    @on_split_complete.setter
+    def on_split_complete(self, callback: Callable[[SplitResult], None] | None) -> None:
+        self._on_split_complete = callback
 
-            if self._on_split_complete:
-                self._on_split_complete(result)
+    @property
+    def rr_counter(self) -> int:
+        return self._rr_counter
 
-            logger.info(
-                f"Split complete: {parent_id} -> {child_ids}, "
-                f"{events_migrated} events migrated"
-            )
+    @rr_counter.setter
+    def rr_counter(self, value: int) -> None:
+        self._rr_counter = value
 
-            # Enter cooldown
-            self._status = RebalanceStatus.COOLDOWN
-
-            return result
-
-        except Exception as e:
-            logger.error(f"Split failed for {parent_id}: {e}")
-            self._stats["splits_failed"] += 1
-            self._status = RebalanceStatus.FAILED
-            return SplitResult(
-                success=False,
-                parent_chain_id=parent_id,
-                error_message=str(e),
-                duration_seconds=time.time() - start_time,
-            )
+    def create_child_chains(self, parent_id: str, child_ids: list[str]) -> list[Any]:
+        return self._create_child_chains(parent_id, child_ids)
 
     def _create_child_chains(self, parent_id: str, child_ids: list[str]) -> list[Any]:
         """Create child sub-chains."""
@@ -507,54 +603,11 @@ class SubChainRebalancer:
         Returns:
             Tuple of (events_migrated, blocks_migrated).
         """
-        events_migrated = 0
-        blocks_migrated = 0
-
-        if len(children) < 2:
-            return 0, 0
-
-        # Get events from parent
-        events = _get_pending_events(parent)
-
-        # Distribute events based on strategy
-        for event in events:
-            target_idx = self._select_target_child(event, len(children))
-            target = children[target_idx]
-
-            if _add_event_to_chain(target, event):
-                events_migrated += 1
-
-        # Mark parent as split (optional: keep for routing)
-        _mark_chain_as_split(parent, [c for c in children])
-
-        logger.info(
-            f"Migrated {events_migrated} events from parent to "
-            f"{len(children)} children"
-        )
-
-        return events_migrated, blocks_migrated
+        return _migrate_state_for_rebalancer(self, parent, children)
 
     def _select_target_child(self, event: Any, num_children: int) -> int:
         """Select target child for event based on strategy."""
-        if self.split_strategy == SplitStrategy.HASH_BASED:
-            # Hash the entity_id to select child
-            entity_id = _get_event_entity_id(event)
-            hash_val = int(hashlib.sha256(entity_id.encode()).hexdigest()[:8], 16)
-            return hash_val % num_children
-
-        elif self.split_strategy == SplitStrategy.TIME_BASED:
-            # Older events to first child, newer to second
-            timestamp = _get_event_timestamp(event)
-            median_time = time.time() - 30  # Simple median
-            return 0 if timestamp < median_time else 1
-
-        elif self.split_strategy == SplitStrategy.ROUND_ROBIN:
-            # Simple round robin
-            self._rr_counter += 1
-            return self._rr_counter % num_children
-
-        # Default: hash-based
-        return 0
+        return _select_target_child_for_rebalancer(self, event, num_children)
 
     def get_metrics(self, sub_chain_id: str) -> RebalanceMetrics | None:
         """Get metrics for a specific sub-chain."""
