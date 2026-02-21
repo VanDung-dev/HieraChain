@@ -156,6 +156,139 @@ class QuarantineReport:
         return self.signature == self.compute_signature(secret_key)
 
 
+def _apply_lock(
+    state: ClusterState,
+    locked_by: str,
+    reason: str,
+    timestamp: float,
+) -> None:
+    """Apply lockdown state."""
+    state.is_locked = True
+    state.locked_by = locked_by
+    state.lock_reason = reason
+    state.lock_timestamp = timestamp
+
+
+def _clear_lock(state: ClusterState) -> None:
+    """Clear lockdown state (recovery)."""
+    state.is_locked = False
+    state.locked_by = ""
+    state.lock_reason = ""
+    state.locked_nodes.clear()
+
+
+def _async_broadcast(zmq_node, payload: dict) -> bool:
+    """Broadcast payload via ZMQ node, handling event-loop detection."""
+    import asyncio
+    try:
+        asyncio.get_running_loop()
+        asyncio.create_task(zmq_node.broadcast(payload))
+    except RuntimeError:
+        asyncio.run(zmq_node.broadcast(payload))
+    return True
+
+
+def _has_quorum(vote_count: int, total_nodes: int, threshold: float) -> bool:
+    """Check whether vote_count / total_nodes meets the threshold."""
+    if total_nodes == 0:
+        return False
+    return (vote_count / total_nodes) >= threshold
+
+
+def _create_signed_message(
+    node_id: str,
+    reason: str,
+    msg_type: LockdownMessageType,
+    secret_key: str,
+) -> LockdownMessage:
+    """Create a signed LockdownMessage."""
+    msg = LockdownMessage(
+        node_id=node_id,
+        timestamp=time.time(),
+        reason=reason,
+        message_type=msg_type,
+    )
+    msg.signature = msg.compute_signature(secret_key)
+    return msg
+
+
+def _validate_incoming_message(
+    data: dict,
+    sender_id: str,
+    secret_key: str,
+) -> LockdownMessage | None:
+    """Validate an incoming P2P lockdown message.
+
+    Returns the parsed LockdownMessage if valid, None otherwise.
+    """
+    if data.get("msg_type") != "cluster_lockdown":
+        return None
+
+    message = LockdownMessage.from_dict(data)
+
+    if not message.verify_signature(secret_key):
+        logger.warning(f"Invalid signature on lockdown message from {sender_id}")
+        return None
+
+    if abs(time.time() - message.timestamp) > 300:
+        logger.warning(f"Lockdown message expired from {sender_id}")
+        return None
+
+    return message
+
+
+def _invoke_callback(callback: Callable[[], None] | None) -> None:
+    """Invoke callback if it is set."""
+    if callback:
+        callback()
+
+
+def _register_lockdown_vote(
+    lockdown_votes: dict[str, str],
+    recovery_votes: set[str],
+    registered_nodes: set[str],
+    node_id: str,
+    reason: str,
+) -> None:
+    """Register a lockdown vote from a node."""
+    registered_nodes.add(node_id)
+    lockdown_votes[node_id] = reason
+    recovery_votes.discard(node_id)
+
+
+def _register_recovery_vote(
+    lockdown_votes: dict[str, str],
+    recovery_votes: set[str],
+    registered_nodes: set[str],
+    node_id: str,
+) -> None:
+    """Register a recovery vote from a node."""
+    registered_nodes.add(node_id)
+    recovery_votes.add(node_id)
+    lockdown_votes.pop(node_id, None)
+
+
+def _parse_quarantine_report(data: dict, secret_key: str) -> QuarantineReport | None:
+    """Parse and validate a quarantine report."""
+    report = QuarantineReport.from_dict(data)
+    if not report.verify_signature(secret_key):
+        logger.warning(f"Invalid signature on quarantine report from {report.node_id}")
+        return None
+    return report
+
+
+def _add_message_to_history(
+    history: list[LockdownMessage],
+    message: LockdownMessage,
+    max_size: int,
+) -> list[LockdownMessage]:
+    """Add message to history, trimming if needed."""
+    history.append(message)
+    if len(history) > max_size:
+        return history[-max_size:]
+    return history
+
+
 class ClusterLockdownManager:
     """
     Manages cluster-wide lockdown state and broadcasts.
@@ -201,11 +334,11 @@ class ClusterLockdownManager:
         self._message_history: list[LockdownMessage] = []
         self._max_history = 100
         self._quorum_threshold = quorum_threshold
-        
+
         # Track votes from peers
-        self._lockdown_votes: dict[str, str] = {}  # node_id -> reason
-        self._recovery_votes: set[str] = set()  # node_ids
-        self._registered_nodes: set[str] = {node_id}  # All known nodes
+        self._lockdown_votes: dict[str, str] = {}
+        self._recovery_votes: set[str] = set()
+        self._registered_nodes: set[str] = {node_id}
         self._quarantine_reports: dict[str, QuarantineReport] = {}
 
         # Register message handler if ZMQ node provided
@@ -232,24 +365,19 @@ class ClusterLockdownManager:
         Returns:
             True if broadcast was successful.
         """
-        message = LockdownMessage(
-            node_id=self.node_id,
-            timestamp=time.time(),
-            reason=reason,
-            message_type=LockdownMessageType.LOCKDOWN,
+        message = _create_signed_message(
+            self.node_id,
+            reason,
+            LockdownMessageType.LOCKDOWN,
+            self._secret_key,
         )
-        message.signature = message.compute_signature(self._secret_key)
 
         # Update local state
-        self._state.is_locked = True
-        self._state.locked_by = self.node_id
-        self._state.lock_reason = reason
-        self._state.lock_timestamp = message.timestamp
+        _apply_lock(self._state, self.node_id, reason, message.timestamp,)
         self._state.locked_nodes.add(self.node_id)
 
         # Trigger local lockdown
-        if self._local_lockdown:
-            self._local_lockdown()
+        _invoke_callback(self._local_lockdown)
 
         # Broadcast to peers
         return self._broadcast_message(message)
@@ -268,24 +396,18 @@ class ClusterLockdownManager:
             return False
 
         if self._state.locked_by != self.node_id:
-            logger.warning(
-                f"Cannot broadcast recovery: lockdown initiated by {self._state.locked_by}"
-            )
+            logger.warning(f"Cannot broadcast recovery: lockdown initiated by {self._state.locked_by}")
             return False
 
-        message = LockdownMessage(
-            node_id=self.node_id,
-            timestamp=time.time(),
-            reason="Recovery",
-            message_type=LockdownMessageType.RECOVERY,
+        message = _create_signed_message(
+            self.node_id,
+            "Recovery",
+            LockdownMessageType.RECOVERY,
+            self._secret_key,
         )
-        message.signature = message.compute_signature(self._secret_key)
 
         # Update local state
-        self._state.is_locked = False
-        self._state.locked_by = ""
-        self._state.lock_reason = ""
-        self._state.locked_nodes.clear()
+        _clear_lock(self._state)
 
         return self._broadcast_message(message)
 
@@ -296,41 +418,20 @@ class ClusterLockdownManager:
             return False
 
         try:
-            import asyncio
-            try:
-                asyncio.get_running_loop()
-                asyncio.create_task(self._zmq_node.broadcast(message.to_dict()))
-            except RuntimeError:
-                asyncio.run(self._zmq_node.broadcast(message.to_dict()))
-
+            _async_broadcast(self._zmq_node, message.to_dict())
             self._add_to_history(message)
             logger.info(f"Broadcast {message.message_type.value}: {message.reason}")
             return True
-
         except Exception as e:
             logger.error(f"Failed to broadcast message: {e}")
             return False
 
-    def _on_message_received(self, data: dict, sender_id: str) -> None:
+    def _on_message_received(self, data: dict, sender_id: str,) -> None:
         """Handle incoming P2P message."""
-        if data.get("msg_type") != "cluster_lockdown":
-            return  # Not a lockdown message
-
         try:
-            message = LockdownMessage.from_dict(data)
-
-            # Verify signature
-            if not message.verify_signature(self._secret_key):
-                logger.warning(f"Invalid signature on lockdown message from {sender_id}")
-                return
-
-            # Prevent replay attacks (5 minute window)
-            if abs(time.time() - message.timestamp) > 300:
-                logger.warning(f"Lockdown message expired from {sender_id}")
-                return
-
-            self._handle_lockdown_message(message)
-
+            message = _validate_incoming_message(data, sender_id, self._secret_key,)
+            if message:
+                self._handle_lockdown_message(message)
         except Exception as e:
             logger.error(f"Error processing lockdown message: {e}")
 
@@ -352,61 +453,47 @@ class ClusterLockdownManager:
     def _process_lockdown_event(self, message: LockdownMessage) -> None:
         """Handle LOCKDOWN message type."""
         if not self._state.is_locked:
-            self._state.is_locked = True
-            self._state.locked_by = message.node_id
-            self._state.lock_reason = message.reason
-            self._state.lock_timestamp = message.timestamp
-
-            logger.warning(
-                f"Cluster lockdown received from {message.node_id}: {message.reason}"
+            _apply_lock(
+                self._state,
+                message.node_id,
+                message.reason,
+                message.timestamp,
             )
-
-            # Trigger local lockdown
-            if self._local_lockdown:
-                self._local_lockdown()
+            logger.warning(f"Cluster lockdown received from {message.node_id}: {message.reason}")
+            _invoke_callback(self._local_lockdown)
 
         self._state.locked_nodes.add(message.node_id)
 
     def _process_recovery_event(self, message: LockdownMessage) -> None:
         """Handle RECOVERY message type."""
         if self._state.locked_by == message.node_id:
-            self._state.is_locked = False
-            self._state.locked_by = ""
-            self._state.lock_reason = ""
-            self._state.locked_nodes.clear()
+            _clear_lock(self._state)
             logger.info(f"Cluster recovery received from {message.node_id}")
-
-            # Trigger local recovery callback
-            if self._local_recovery:
-                self._local_recovery()
+            _invoke_callback(self._local_recovery)
 
     def _handle_lockdown_vote(self, message: LockdownMessage) -> None:
         """Handle a lockdown vote message from a peer."""
-        self._registered_nodes.add(message.node_id)
-        self._lockdown_votes[message.node_id] = message.reason
-        # Clear any recovery vote from this node
-        self._recovery_votes.discard(message.node_id)
-
-        logger.info(
-            f"Lockdown vote received from {message.node_id}: {message.reason}"
+        _register_lockdown_vote(
+            self._lockdown_votes,
+            self._recovery_votes,
+            self._registered_nodes,
+            message.node_id,
+            message.reason,
         )
-
-        # Check if quorum is reached
+        logger.info(f"Lockdown vote received from {message.node_id}: {message.reason}")
         if self._check_lockdown_quorum():
             logger.warning("Lockdown quorum reached - triggering cluster lockdown")
             self._trigger_quorum_lockdown()
 
     def _handle_recovery_vote(self, message: LockdownMessage) -> None:
         """Handle a recovery vote message from a peer."""
-        self._registered_nodes.add(message.node_id)
-        self._recovery_votes.add(message.node_id)
-        # Clear any lockdown vote from this node
-        if message.node_id in self._lockdown_votes:
-            del self._lockdown_votes[message.node_id]
-
+        _register_recovery_vote(
+            self._lockdown_votes,
+            self._recovery_votes,
+            self._registered_nodes,
+            message.node_id,
+        )
         logger.info(f"Recovery vote received from {message.node_id}")
-
-        # Check if quorum is reached
         if self._check_recovery_quorum():
             logger.info("Recovery quorum reached - lifting cluster lockdown")
             self._trigger_quorum_recovery()
@@ -414,54 +501,39 @@ class ClusterLockdownManager:
     def _check_lockdown_quorum(self) -> bool:
         """Check if lockdown quorum is reached."""
         if self._state.is_locked:
-            return False  # Already in lockdown
-
-        total = len(self._registered_nodes)
-        if total == 0:
             return False
-
-        votes = len(self._lockdown_votes)
-        return (votes / total) >= self._quorum_threshold
+        return _has_quorum(
+            len(self._lockdown_votes),
+            len(self._registered_nodes),
+            self._quorum_threshold,
+        )
 
     def _check_recovery_quorum(self) -> bool:
         """Check if recovery quorum is reached."""
         if not self._state.is_locked:
-            return False  # Not in lockdown
-
-        total = len(self._registered_nodes)
-        if total == 0:
             return False
-
-        votes = len(self._recovery_votes)
-        return (votes / total) >= self._quorum_threshold
+        return _has_quorum(
+            len(self._recovery_votes),
+            len(self._registered_nodes),
+            self._quorum_threshold,
+        )
 
     def _trigger_quorum_lockdown(self) -> None:
         """Trigger lockdown after quorum is reached."""
-        self._state.is_locked = True
-        self._state.locked_by = "quorum"
-        self._state.lock_reason = "Quorum-based lockdown"
-        self._state.lock_timestamp = time.time()
-
-        # Clear votes for next round
+        _apply_lock(
+            self._state,
+            "quorum",
+            "Quorum-based lockdown",
+            time.time(),
+        )
         self._lockdown_votes.clear()
-
-        # Trigger local lockdown
-        if self._local_lockdown:
-            self._local_lockdown()
+        _invoke_callback(self._local_lockdown)
 
     def _trigger_quorum_recovery(self) -> None:
         """Trigger recovery after quorum is reached."""
-        self._state.is_locked = False
-        self._state.locked_by = ""
-        self._state.lock_reason = ""
-        self._state.locked_nodes.clear()
-
-        # Clear votes for next round
+        _clear_lock(self._state)
         self._recovery_votes.clear()
-
-        # Trigger local recovery
-        if self._local_recovery:
-            self._local_recovery()
+        _invoke_callback(self._local_recovery)
 
     def register_node(self, node_id: str) -> None:
         """Register a node in the cluster."""
@@ -471,9 +543,8 @@ class ClusterLockdownManager:
         """
         Broadcast a lockdown vote to all peers.
 
-        Instead of immediately triggering lockdown, this method
-        broadcasts a vote. Lockdown is only triggered when quorum
-        (2/3 of nodes) is reached.
+        Lockdown is only triggered when quorum (2/3 of nodes)
+        is reached.
 
         Args:
             reason: Reason for requesting lockdown.
@@ -481,19 +552,22 @@ class ClusterLockdownManager:
         Returns:
             True if broadcast was successful.
         """
-        message = LockdownMessage(
-            node_id=self.node_id,
-            timestamp=time.time(),
-            reason=reason,
-            message_type=LockdownMessageType.LOCKDOWN_VOTE,
+        message = _create_signed_message(
+            self.node_id,
+            reason,
+            LockdownMessageType.LOCKDOWN_VOTE,
+            self._secret_key,
         )
-        message.signature = message.compute_signature(self._secret_key)
 
         # Register own vote
-        self._lockdown_votes[self.node_id] = reason
-        self._recovery_votes.discard(self.node_id)
+        _register_lockdown_vote(
+            self._lockdown_votes,
+            self._recovery_votes,
+            self._registered_nodes,
+            self.node_id, reason,
+        )
 
-        # Check local quorum (might be enough with existing votes)
+        # Check local quorum
         if self._check_lockdown_quorum():
             logger.warning("Lockdown quorum reached locally")
             self._trigger_quorum_lockdown()
@@ -504,9 +578,8 @@ class ClusterLockdownManager:
         """
         Broadcast a recovery vote to all peers.
 
-        Instead of immediately triggering recovery, this method
-        broadcasts a vote. Recovery is only triggered when quorum
-        (2/3 of nodes) is reached.
+        Recovery is only triggered when quorum (2/3 of nodes)
+        is reached.
 
         Returns:
             True if broadcast was successful.
@@ -515,20 +588,22 @@ class ClusterLockdownManager:
             logger.warning("Cannot vote for recovery: not in lockdown")
             return False
 
-        message = LockdownMessage(
-            node_id=self.node_id,
-            timestamp=time.time(),
-            reason="Recovery vote",
-            message_type=LockdownMessageType.RECOVERY_VOTE,
+        message = _create_signed_message(
+            self.node_id,
+            "Recovery vote",
+            LockdownMessageType.RECOVERY_VOTE,
+            self._secret_key,
         )
-        message.signature = message.compute_signature(self._secret_key)
 
         # Register own vote
-        self._recovery_votes.add(self.node_id)
-        if self.node_id in self._lockdown_votes:
-            del self._lockdown_votes[self.node_id]
+        _register_recovery_vote(
+            self._lockdown_votes,
+            self._recovery_votes,
+            self._registered_nodes,
+            self.node_id,
+        )
 
-        # Check local quorum (might be enough with existing votes)
+        # Check local quorum
         if self._check_recovery_quorum():
             logger.info("Recovery quorum reached locally")
             self._trigger_quorum_recovery()
@@ -544,21 +619,23 @@ class ClusterLockdownManager:
             "recovery_votes": len(self._recovery_votes),
             "quorum_threshold": self._quorum_threshold,
             "is_locked": self._state.is_locked,
-            "lockdown_quorum_reached": (
-                len(self._lockdown_votes) / total >= self._quorum_threshold
-                if total > 0 else False
+            "lockdown_quorum_reached": _has_quorum(
+                len(self._lockdown_votes),
+                total,
+                self._quorum_threshold,
             ),
-            "recovery_quorum_reached": (
-                len(self._recovery_votes) / total >= self._quorum_threshold
-                if total > 0 else False
+            "recovery_quorum_reached": _has_quorum(
+                len(self._recovery_votes),
+                total,
+                self._quorum_threshold,
             ),
         }
 
     def _add_to_history(self, message: LockdownMessage) -> None:
         """Add message to history with size limit."""
-        self._message_history.append(message)
-        if len(self._message_history) > self._max_history:
-            self._message_history = self._message_history[-self._max_history:]
+        self._message_history = _add_message_to_history(
+            self._message_history, message, self._max_history,
+        )
 
     def get_history(self) -> list[dict[str, str | float]]:
         """Get message history as list of dicts."""
@@ -597,10 +674,7 @@ class ClusterLockdownManager:
         # Store locally for reference
         self._quarantine_reports[self.node_id] = report
 
-        logger.info(
-            f"Broadcasting quarantine report: {len(pending_event_ids)} events, "
-            f"block {last_block_index}"
-        )
+        logger.info(f"Broadcasting quarantine report: {len(pending_event_ids)} events, block {last_block_index}")
 
         return self._broadcast_report(report)
 
@@ -611,14 +685,7 @@ class ClusterLockdownManager:
             return False
 
         try:
-            import asyncio
-            try:
-                asyncio.get_running_loop()
-                asyncio.create_task(
-                    self._zmq_node.broadcast(report.to_dict())
-                )
-            except RuntimeError:
-                asyncio.run(self._zmq_node.broadcast(report.to_dict()))
+            _async_broadcast(self._zmq_node, report.to_dict())
             return True
         except Exception as e:
             logger.error(f"Failed to broadcast quarantine report: {e}")
@@ -635,24 +702,17 @@ class ClusterLockdownManager:
             The parsed QuarantineReport if valid, None otherwise.
         """
         try:
-            report = QuarantineReport.from_dict(data)
-
-            # Verify signature
-            if not report.verify_signature(self._secret_key):
-                logger.warning(
-                    f"Invalid signature on quarantine report from {report.node_id}"
-                )
+            report = _parse_quarantine_report(data, self._secret_key)
+            if not report:
                 return None
 
-            # Store report
             self._quarantine_reports[report.node_id] = report
-
             logger.info(
-                f"Received quarantine report from {report.node_id}: "
+                f"Received quarantine report from "
+                f"{report.node_id}: "
                 f"{report.total_pending} events"
             )
             return report
-
         except Exception as e:
             logger.error(f"Error processing quarantine report: {e}")
             return None
@@ -660,5 +720,3 @@ class ClusterLockdownManager:
     def get_quarantine_reports(self) -> dict[str, QuarantineReport]:
         """Get all stored quarantine reports."""
         return self._quarantine_reports.copy()
-
-
