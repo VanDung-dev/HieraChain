@@ -193,6 +193,202 @@ def _wait_for_growth(initial_len: int, chain: list[Any], timeout: float) -> bool
     return True
 
 
+def _connect_sub_chain_to_main(sub_chain: "SubChain", main_chain: Any) -> bool:
+    """Connect a Sub-Chain to the Main Chain."""
+    try:
+        metadata = {
+            "domain_type": sub_chain.domain_type,
+            "sub_chain_name": sub_chain.name,
+            "connected_at": time.time(),
+            "capabilities": ["domain_operations", "proof_submission"],
+        }
+
+        if main_chain.register_sub_chain(sub_chain.name, metadata):
+            sub_chain.main_chain_connection = main_chain
+
+            connection_event = {
+                "entity_id": sub_chain.name,
+                "event": "main_chain_connection",
+                "timestamp": time.time(),
+                "details": {
+                    "main_chain_name": getattr(main_chain, "name", str(main_chain)),
+                    "connected_at": time.time(),
+                    "status": "connected",
+                },
+            }
+
+            sub_chain.add_event(connection_event)
+            return True
+    except (AttributeError, TypeError, ValueError):
+        return False
+
+    return False
+
+
+def _submit_proof_for_sub_chain(
+    sub_chain: "SubChain",
+    main_chain: Any,
+    metadata_filter: Callable | None,
+) -> bool:
+    """Submit a cryptographic proof to the Main Chain."""
+    latest_block = sub_chain.get_latest_block()
+    logger.debug(
+        f"SubChain {sub_chain.name} submitting proof. "
+        f"Chain length: {len(sub_chain.chain)}. Block index: {latest_block.index}"
+    )
+
+    if not sub_chain.chain or len(sub_chain.chain) <= 1:
+        logger.debug("SubChain has only genesis block. Aborting proof.")
+        return False
+
+    metadata = (
+        metadata_filter(sub_chain)
+        if metadata_filter
+        else _generate_default_proof_metadata(
+            sub_chain.chain,
+            sub_chain.domain_type,
+            latest_block.index,
+            sub_chain.completed_operations,
+        )
+    )
+
+    zk_proof = _generate_zk_proof(sub_chain.name, sub_chain.chain, latest_block)
+    if zk_proof is None and settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN:
+        return False
+
+    success = main_chain.add_proof(
+        sub_chain_name=sub_chain.name,
+        proof_hash=latest_block.hash,
+        metadata=metadata,
+        zk_proof=zk_proof,
+    )
+    logger.debug(f"MainChain.add_proof returned: {success}")
+
+    if success:
+        _update_local_state_after_proof(sub_chain, main_chain, latest_block, zk_proof)
+
+    return success
+
+
+def _process_and_finalize_single_block(sub_chain: "SubChain", block: Any) -> bool:
+    """Process and finalize a single block."""
+    latest_block = sub_chain.get_latest_block()
+
+    block.index = latest_block.index + 1
+    block.previous_hash = latest_block.hash
+
+    block.hash = block.calculate_hash()
+
+    finalized_block = sub_chain.consensus.finalize_block(block, sub_chain.name)
+
+    if sub_chain.add_block(finalized_block):
+        sub_chain.auto_submit_proof_if_needed()
+        return True
+
+    logger.error(f"Failed to add ordered block {block.index}")
+    return False
+
+
+def _finalize_sub_chain_block_for_chain(sub_chain: "SubChain") -> dict[str, Any] | None:
+    """Finalize and return a block for the Main Chain."""
+    new_blocks: list[Any] = []
+
+    while True:
+        block = sub_chain.ordering_service.get_next_block()
+        if not block:
+            logger.debug(
+                f"No block from get_next_block. "
+                f"Queue {id(sub_chain.ordering_service.commit_queue)} empty."
+            )
+            break
+
+        logger.debug(
+            f"Got block {block.index} from ordering service. "
+            f"Queue {id(sub_chain.ordering_service.commit_queue)}"
+        )
+
+        if _process_and_finalize_single_block(sub_chain, block):
+            new_blocks.append(block)
+
+    if not new_blocks:
+        return None
+
+    last_block = new_blocks[-1]
+    return {
+        "block_index": last_block.index,
+        "block_hash": last_block.hash,
+        "events_count": len(last_block.events),
+        "finalized_at": time.time(),
+        "domain_type": sub_chain.domain_type,
+    }
+
+
+def _flush_pending_and_finalize_for_sub_chain(sub_chain: "SubChain", timeout: float) -> dict[str, Any] | None:
+    """Flush pending events and finalize the block."""
+    logger.debug(f"flush_pending_and_finalize for {sub_chain.name}")
+    start_time = time.time()
+
+    while not sub_chain.ordering_service.event_pool.empty():
+        if time.time() - start_time > timeout:
+            break
+
+    initial_len = len(sub_chain.chain)
+
+    _force_block_creation(sub_chain.ordering_service, timeout)
+
+    result = _finalize_sub_chain_block_for_chain(sub_chain)
+    if result:
+        return result
+
+    if _wait_for_growth(initial_len, sub_chain.chain, timeout):
+        last_block = sub_chain.chain[-1]
+        return {
+            "block_index": last_block.index,
+            "block_hash": last_block.hash,
+            "events_count": len(last_block.events),
+            "finalized_at": time.time(),
+            "domain_type": sub_chain.domain_type,
+        }
+    return None
+
+
+def _rehydrate_chain_from_ordering_service(sub_chain: "SubChain", latest_block_os: Any) -> None:
+    """Rehydrate the local chain from the Ordering Service."""
+    latest_local = sub_chain.get_latest_block()
+    if not latest_block_os or latest_block_os.index <= latest_local.index:
+        return
+
+    logger.info(f"Rehydrating chain {sub_chain.name} from index {latest_local.index} to {latest_block_os.index}")
+
+    start_idx = latest_local.index + 1
+    missing_blocks = sub_chain.ordering_service.get_blocks(start_index=start_idx)
+
+    count = 0
+    for block in missing_blocks:
+        if sub_chain.add_block(block):
+            count += 1
+
+    if count > 0:
+        logger.info(f"Rehydrated {count} blocks from Ordering Service.")
+
+
+def _reset_ordering_service_state(sub_chain: "SubChain") -> None:
+    """Reset the Ordering Service state."""
+    latest_local = sub_chain.get_latest_block()
+    sub_chain.ordering_service.block_history = [latest_local]
+    sub_chain.ordering_service.blocks_created = latest_local.index + 1
+
+
+def _sync_chain_for_sub_chain(sub_chain: "SubChain") -> None:
+    """Synchronize local chain with Ordering Service (Rehydration)."""
+    try:
+        latest_block_os = sub_chain.ordering_service.get_latest_block()
+        _rehydrate_chain_from_ordering_service(sub_chain, latest_block_os)
+        _reset_ordering_service_state(sub_chain)
+    except Exception as e:
+        logger.error(f"Sync failed: {e}")
+
+
 class SubChain(Blockchain):
     """
     Sub-Chain implementation for the HieraChain Ledger.
@@ -337,36 +533,7 @@ class SubChain(Blockchain):
         Returns:
             True if connection was successful, False otherwise
         """
-        try:
-            # Register with Main Chain
-            metadata = {
-                "domain_type": self.domain_type,
-                "sub_chain_name": self.name,
-                "connected_at": time.time(),
-                "capabilities": ["domain_operations", "proof_submission"]
-            }
-
-            if main_chain.register_sub_chain(self.name, metadata):
-                self.main_chain_connection = main_chain
-
-                # Create connection event
-                connection_event = {
-                    "entity_id": self.name,
-                    "event": "main_chain_connection",
-                    "timestamp": time.time(),
-                    "details": {
-                        "main_chain_name": getattr(main_chain, "name", str(main_chain)),
-                        "connected_at": time.time(),
-                        "status": "connected",
-                    },
-                }
-
-                self.add_event(connection_event)
-                return True
-        except (AttributeError, TypeError, ValueError):
-            pass
-
-        return False
+        return _connect_sub_chain_to_main(self, main_chain)
 
     def start_operation(
         self,
@@ -471,44 +638,7 @@ class SubChain(Blockchain):
         self, main_chain: Any, metadata_filter: Callable | None = None
     ) -> bool:
         """Submit cryptographic proof to Main Chain."""
-        # Get latest block for proof
-        latest_block = self.get_latest_block()
-        logger.debug(
-            f"SubChain {self.name} submitting proof. "
-            f"Chain length: {len(self.chain)}. Block index: {latest_block.index}"
-        )
-
-        if not self.chain or len(self.chain) <= 1:  # Only genesis block
-            logger.debug("SubChain has only genesis block. Aborting proof.")
-            return False
-
-        # Generate summary metadata (not detailed domain data)
-        metadata = (
-            metadata_filter(self)
-            if metadata_filter
-            else _generate_default_proof_metadata(
-                self.chain, self.domain_type, latest_block.index, self.completed_operations
-            )
-        )
-
-        # === ZK PROOF GENERATION ===
-        zk_proof = _generate_zk_proof(self.name, self.chain, latest_block)
-        if zk_proof is None and settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN:
-            return False
-
-        # Submit proof to Main Chain (with optional ZK proof)
-        success = main_chain.add_proof(
-            sub_chain_name=self.name,
-            proof_hash=latest_block.hash,
-            metadata=metadata,
-            zk_proof=zk_proof,
-        )
-        logger.debug(f"MainChain.add_proof returned: {success}")
-
-        if success:
-            _update_local_state_after_proof(self, main_chain, latest_block, zk_proof)
-
-        return success
+        return _submit_proof_for_sub_chain(self, main_chain, metadata_filter)
 
     def should_submit_proof(self) -> bool:
         """
@@ -570,88 +700,15 @@ class SubChain(Blockchain):
 
     def finalize_sub_chain_block(self) -> dict[str, Any] | None:
         """Pull ordered blocks from Ordering Service and finalize them."""
-        new_blocks = []
-
-        while True:
-            block = self.ordering_service.get_next_block()
-            if not block:
-                logger.debug(f"No block from get_next_block. Queue {id(self.ordering_service.commit_queue)} empty.")
-                break
-
-            logger.debug(
-                f"Got block {block.index} from ordering service. "
-                f"Queue {id(self.ordering_service.commit_queue)}"
-            )
-
-            if self._process_and_finalize_block(block):
-                new_blocks.append(block)
-
-        if not new_blocks:
-            return None
-
-        last_block = new_blocks[-1]
-        return {
-            "block_index": last_block.index,
-            "block_hash": last_block.hash,
-            "events_count": len(last_block.events),
-            "finalized_at": time.time(),
-            "domain_type": self.domain_type,
-        }
+        return _finalize_sub_chain_block_for_chain(self)
 
     def _process_and_finalize_block(self, block: Any) -> bool:
         """Process, finalize and add a single block to the local chain."""
-        latest_block = self.get_latest_block()
-
-        # Re-index to match local chain
-        block.index = latest_block.index + 1
-        block.previous_hash = latest_block.hash
-
-        # Recalculate hash with new metadata
-        block.hash = block.calculate_hash()
-
-        # Finalize with consensus (signatures)
-        finalized_block = self.consensus.finalize_block(block, self.name)
-
-        # Add to chain
-        if self.add_block(finalized_block):
-            # Auto-submit proof if needed
-            self.auto_submit_proof_if_needed()
-            return True
-
-        logger.error(f"Failed to add ordered block {block.index}")
-        return False
+        return _process_and_finalize_single_block(self, block)
 
     def flush_pending_and_finalize(self, timeout: float = 3.0) -> dict[str, Any] | None:
         """Flush pending events and finalize the block."""
-        logger.debug(f"flush_pending_and_finalize for {self.name}")
-        start_time = time.time()
-
-        while not self.ordering_service.event_pool.empty():
-            if time.time() - start_time > timeout:
-                break
-
-        # Capture initial chain length
-        initial_len = len(self.chain)
-
-        # Force block creation
-        self._force_ordering_block_creation(timeout)
-
-        # Try to consume result manually first
-        result = self.finalize_sub_chain_block()
-        if result:
-            return result
-
-        # Wait for chain to grow from background consumer
-        if _wait_for_growth(initial_len, self.chain, timeout):
-            last_block = self.chain[-1]
-            return {
-                "block_index": last_block.index,
-                "block_hash": last_block.hash,
-                "events_count": len(last_block.events),
-                "finalized_at": time.time(),
-                "domain_type": self.domain_type,
-            }
-        return None
+        return _flush_pending_and_finalize_for_sub_chain(self, timeout)
 
     def _force_ordering_block_creation(self, timeout: float) -> None:
         """Force the ordering service to create a block from pending events."""
@@ -662,34 +719,7 @@ class SubChain(Blockchain):
         Synchronize local chain with Ordering Service (Rehydration).
         Fetch missing blocks from history.
         """
-        try:
-            # 1. First, try to recover the full chain state from Ordering Service/Storage
-            latest_block_os = self.ordering_service.get_latest_block()
-            
-            if latest_block_os and latest_block_os.index > self.get_latest_block().index:
-                logger.info(f"Rehydrating chain {self.name} from index {self.get_latest_block().index} to {latest_block_os.index}")
-                
-                # Fetch all blocks from our current height to the latest in OS
-                start_idx = self.get_latest_block().index + 1
-                missing_blocks = self.ordering_service.get_blocks(start_index=start_idx)
-                
-                count = 0
-                for block in missing_blocks:
-                    # For rehydration, we trust the ordering service's blocks but still validate
-                    # and index them locally.
-                    if self.add_block(block):
-                        count += 1
-                
-                if count > 0:
-                    logger.info(f"Rehydrated {count} blocks from Ordering Service.")
-            
-            # 2. Update OrderingService state to match our now-synced chain
-            latest_local = self.get_latest_block()
-            self.ordering_service.block_history = [latest_local]
-            self.ordering_service.blocks_created = latest_local.index + 1
-
-        except Exception as e:
-            logger.error(f"Sync failed: {e}")
+        _sync_chain_for_sub_chain(self)
 
     def __str__(self) -> str:
         """String representation of the Sub-Chain."""
