@@ -9,8 +9,8 @@ import threading
 import logging
 import time
 import asyncio
-from queue import Queue
-from typing import Any
+from queue import Queue, Empty
+from typing import Any, Callable
 
 from hierachain.core.block import Block
 from hierachain.error_mitigation.journal import TransactionJournal
@@ -116,7 +116,7 @@ class OrderingService:
         """Get next committed block from queue"""
         try:
             return self.commit_queue.get(timeout=timeout) if timeout else self.commit_queue.get_nowait()
-        except Exception:
+        except Empty:
             return None
 
     @property
@@ -131,13 +131,12 @@ class OrderingService:
         """Get current service metrics"""
         return self.metrics.get_stats()
 
-    def force_block_creation(self, timeout: float = 3.0, force: bool = True) -> None:
+    def force_block_creation(self, timeout: float = 3.0) -> None:
         """
         Force the creation of a block from pending events.
         
         Args:
             timeout: Maximum time to wait for completion.
-            force: Whether to force creation even if batch is not full or timeout not reached.
         """
         if not hasattr(self, "loop") or not self.loop.is_running():
             logger.warning("Ordering service loop NOT running. Cannot force block creation.")
@@ -228,7 +227,7 @@ class OrderingService:
         
         return None
 
-    def add_validation_rule(self, rule: callable) -> None:
+    def add_validation_rule(self, rule: Callable) -> None:
         """Add a custom validation rule for events"""
         self.certifier.add_validation_rule(rule)
 
