@@ -147,51 +147,20 @@ class RollbackManager:
         logger.info(f"Creating snapshot: {snapshot_id} ({snapshot_type.value})")
 
         try:
-            # Capture state data based on type
-            if snapshot_type == RollbackType.CONFIGURATION:
-                data = _capture_configuration_state()
-            elif snapshot_type == RollbackType.CHAIN_STATE:
-                data = _capture_chain_state(components)
-            elif snapshot_type == RollbackType.CONSENSUS_STATE:
-                data = _capture_consensus_state(components)
-            elif snapshot_type == RollbackType.STORAGE_STATE:
-                data = _capture_storage_state(components)
-            elif snapshot_type == RollbackType.FULL_SYSTEM:
-                data = _capture_full_system_state(components)
-            else:
-                raise ValueError(f"Unknown snapshot type: {snapshot_type}")
-
-            # Save snapshot data
+            data = _capture_state(snapshot_type, components)
             data_path = os.path.join(self.snapshots_dir, f"{snapshot_id}.snapshot")
-            with open(data_path, 'w', encoding='utf-8') as f_out:
-                json.dump(data, f_out, indent=4)
 
-            # Calculate hash and size
-            data_hash = _calculate_file_hash(data_path)
-            size_bytes = os.path.getsize(data_path)
-
-            # Create snapshot object
-            new_snapshot = StateSnapshot(
-                snapshot_id=snapshot_id,
-                snapshot_type=snapshot_type,
-                timestamp=timestamp,
-                description=description,
-                data_hash=data_hash,
-                data_path=data_path,
-                metadata={
-                    "component_count": len(components) if components else 0,
-                    "creation_time": datetime.fromtimestamp(timestamp).isoformat()
-                },
-                size_bytes=size_bytes
+            new_snapshot = _persist_snapshot_data(
+                data, data_path, snapshot_id, snapshot_type,
+                timestamp, description, components,
             )
 
-            # Add to snapshots list
             with self.rollback_lock:
                 self.snapshots.append(new_snapshot)
                 self._cleanup_old_snapshots()
                 self._save_snapshots_index()
 
-            logger.info(f"Snapshot created successfully: {snapshot_id} ({size_bytes} bytes)")
+            logger.info(f"Snapshot created successfully: {snapshot_id} ({new_snapshot.size_bytes} bytes)")
             return new_snapshot
 
         except Exception as e:
@@ -402,6 +371,34 @@ def _delete_snapshot_files(snapshot: StateSnapshot) -> None:
         logger.info(f"Removed old snapshot: {snapshot.snapshot_id}")
     except Exception as e:
         logger.error(f"Failed to remove old snapshot {snapshot.snapshot_id}: {e}")
+
+
+def _persist_snapshot_data(
+    data: dict[str, Any],
+    data_path: str,
+    snapshot_id: str,
+    snapshot_type: RollbackType,
+    timestamp: float,
+    description: str,
+    components: list[Any] | None,
+) -> StateSnapshot:
+    """Write snapshot data to disk and build a StateSnapshot object."""
+    with open(data_path, 'w', encoding='utf-8') as f_out:
+        json.dump(data, f_out, indent=4)
+
+    return StateSnapshot(
+        snapshot_id=snapshot_id,
+        snapshot_type=snapshot_type,
+        timestamp=timestamp,
+        description=description,
+        data_hash=_calculate_file_hash(data_path),
+        data_path=data_path,
+        metadata={
+            "component_count": len(components) if components else 0,
+            "creation_time": datetime.fromtimestamp(timestamp).isoformat(),
+        },
+        size_bytes=os.path.getsize(data_path),
+    )
 
 
 def _execute_rollback(rollback_op: RollbackOperation, target_snapshot: StateSnapshot) -> bool:
@@ -655,6 +652,27 @@ def _capture_storage_state(_components: list[Any] | None = None) -> dict[str, An
     }
 
     return storage_state
+
+
+# Dispatch table: snapshot type -> capture function
+_SNAPSHOT_CAPTURE: dict[RollbackType, Any] = {
+    RollbackType.CONFIGURATION: lambda _comps: _capture_configuration_state(),
+    RollbackType.CHAIN_STATE: _capture_chain_state,
+    RollbackType.CONSENSUS_STATE: _capture_consensus_state,
+    RollbackType.STORAGE_STATE: _capture_storage_state,
+    RollbackType.FULL_SYSTEM: _capture_full_system_state,
+}
+
+
+def _capture_state(
+    snapshot_type: RollbackType,
+    components: list[Any] | None,
+) -> dict[str, Any]:
+    """Dispatch to the correct state capture function."""
+    handler = _SNAPSHOT_CAPTURE.get(snapshot_type)
+    if handler is None:
+        raise ValueError(f"Unknown snapshot type: {snapshot_type}")
+    return handler(components)
 
 
 def _rollback_configuration(snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
