@@ -3,13 +3,16 @@ Ordering maintenance and emergency operations for the HieraChain ordering servic
 """
 
 import logging
+import queue
 from hierachain.consensus.ordering.types import OrderingStatus
 from hierachain.consensus.ordering.utils import dump_forensic_data
 
 logger = logging.getLogger(__name__)
 
+
 class OrderingMaintenance:
     """Handles emergency and maintenance operations for the ordering service"""
+
     def __init__(self, service):
         self.service = service
 
@@ -41,7 +44,7 @@ class OrderingMaintenance:
             try:
                 self.service.event_pool.get_nowait()
                 count += 1
-            except Exception:
+            except queue.Empty:
                 break
         
         self.service.pending_events.clear()
