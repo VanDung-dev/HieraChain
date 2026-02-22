@@ -14,6 +14,13 @@ from hierachain.security.identity import IdentityManager
 
 logger = logging.getLogger(__name__)
 
+
+def _evaluate_strict_policy(peer_id: str) -> bool:
+    """Evaluate strict policy for a peer."""
+    logger.debug(f"Peer {peer_id} rejected (strict mode - not in allowlist)")
+    return False
+
+
 class PeerTrustManager:
     """
     Manages trust relationships with network peers.
@@ -43,31 +50,34 @@ class PeerTrustManager:
         """
         Check if a peer is trusted based on current policy.
         """
-        # 1. Blocklist check (Override)
+        if self._is_blocked(peer_id):
+            return False
+        if self._is_allowlisted(peer_id):
+            return True
+        if self.trust_policy == "strict":
+            return _evaluate_strict_policy(peer_id)
+        if self.trust_policy == "open":
+            return self._evaluate_open_policy(peer_id)
+        return False
+
+    def _is_blocked(self, peer_id: str) -> bool:
+        """Check if a peer is in the blocklist."""
         if peer_id in self.blocklist:
             logger.debug(f"Peer {peer_id} rejected (blocklisted)")
-            return False
-
-        # 2. Allowlist check
-        if peer_id in self.allowlist:
             return True
-
-        # 3. Policy Enforcement
-        if self.trust_policy == "strict":
-            # Strict mode: Must be explicitly allowlisted
-            logger.debug(f"Peer {peer_id} rejected (strict mode - not in allowlist)")
-            return False
-
-        if self.trust_policy == "open":
-            # Open mode: Trusted if not blocked
-            # Optional: Check IdentityManager if available
-            if self.identity_manager:
-                user_info = self.identity_manager.get_user_info(peer_id)
-                if not user_info:
-                    pass
-            return True
-
         return False
+
+    def _is_allowlisted(self, peer_id: str) -> bool:
+        """Check if a peer is in the allowlist."""
+        return peer_id in self.allowlist
+
+    def _evaluate_open_policy(self, peer_id: str) -> bool:
+        """Evaluate open policy trust for a peer"""
+        if self.identity_manager:
+            user_info = self.identity_manager.get_user_info(peer_id)
+            if not user_info:
+                return True
+        return True
 
     def set_policy(self, policy: str):
         """Set trust policy mode ('open' or 'strict')."""
