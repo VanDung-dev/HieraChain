@@ -133,32 +133,33 @@ class CertificateRevocationList:
 
 def _validate_key_usage(cert: CertificateInfo) -> dict[str, Any]:
     """Validate certificate key usage"""
-    result = {
-        "valid": True,
-        "warnings": []
+    result = {"valid": True, "warnings": []}
+
+    rules = {
+        CertificateType.ROOT_CA: (
+            ["keyCertSign", "cRLSign"],
+            all,
+            "Root CA certificate missing required key usage extensions",
+        ),
+        CertificateType.INTERMEDIATE_CA: (
+            ["keyCertSign"],
+            all,
+            "Intermediate CA certificate missing required key usage extensions",
+        ),
+        CertificateType.TLS_SERVER: (
+            ["keyEncipherment", "digitalSignature"],
+            any,
+            "TLS server certificate missing required key usage extensions",
+        ),
     }
 
-    # Check if key usage is appropriate for certificate type
-    if cert.certificate_type == CertificateType.ROOT_CA:
-        required_usage = ["keyCertSign", "cRLSign"]
-        if not all(usage in cert.key_usage for usage in required_usage):
-            result["warnings"].append(
-                "Root CA certificate missing required key usage extensions"
-            )
+    rule = rules.get(cert.certificate_type)
+    if not rule:
+        return result
 
-    elif cert.certificate_type == CertificateType.INTERMEDIATE_CA:
-        required_usage = ["keyCertSign"]
-        if not all(usage in cert.key_usage for usage in required_usage):
-            result["warnings"].append(
-                "Intermediate CA certificate missing required key usage extensions"
-            )
-
-    elif cert.certificate_type == CertificateType.TLS_SERVER:
-        required_usage = ["keyEncipherment", "digitalSignature"]
-        if not any(usage in cert.key_usage for usage in required_usage):
-            result["warnings"].append(
-                "TLS server certificate missing required key usage extensions"
-            )
+    required_usage, checker, warning_message = rule
+    if not checker(usage in cert.key_usage for usage in required_usage):
+        result["warnings"].append(warning_message)
 
     return result
 
