@@ -262,21 +262,26 @@ def optimize_memory_usage(params: dict[str, Any]) -> bool:
         logging.info(f"Optimizing memory usage: targets={targets}, limit={memory_limit}")
 
         for target in targets:
-            if target == 'caching':
-                # Optimize cache eviction policies
-                logging.info("Optimized cache eviction policies")
-            elif target == 'garbage_collection':
-                # Tune garbage collection settings
-                logging.info("Tuned garbage collection settings")
-            elif target == 'buffer_sizes':
-                # Optimize buffer sizes
-                logging.info("Optimized buffer sizes")
+            _apply_memory_optimization(target)
 
         return True
 
     except Exception as e:
         logging.error(f"Failed to optimize memory usage: {str(e)}")
         return False
+
+
+def _apply_memory_optimization(target: str) -> None:
+    """Apply memory optimization based on target."""
+    match target:
+        case "caching":
+            logging.info("Optimized cache eviction policies")
+        case "garbage_collection":
+            logging.info("Tuned garbage collection settings")
+        case "buffer_sizes":
+            logging.info("Optimized buffer sizes")
+        case _:
+            logging.warning(f"Unknown memory optimization target: {target}")
 
 
 def optimize_event_processing(params: dict[str, Any]) -> bool:
@@ -511,191 +516,223 @@ class MitigationManager:
         self.active_mitigations: dict[str, threading.Thread] = {}
 
     def create_mitigation_plan(self, risks: list[RiskAssessment]) -> list[Tuple[MitigationAction, dict[str, Any]]]:
-        """
-        Create mitigation plan based on identified risks.
-        
-        Args:
-            risks: List of risk assessments
-            
-        Returns:
-            Ordered list of mitigation actions with parameters
-        """
-        planned_actions = []
-        
-        for risk in risks:
-            # Map risks to mitigation actions
-            if risk.risk_id.startswith('CONSENSUS_001'):
-                action = self.mitigation_actions.get('add_validator_nodes')
-                params = {
-                    'required_count': 1,  # Calculated from risk details
-                    'node_configs': []
-                }
-                if action:
-                    planned_actions.append((action, params))
-                    
-            elif risk.risk_id.startswith('CONSENSUS_002'):
-                action = self.mitigation_actions.get('optimize_leader_timeout')
-                params = {
-                    'target_timeout': 10,
-                    'network_latency': 1.0
-                }
-                if action:
-                    planned_actions.append((action, params))
-                    
-            elif risk.risk_id.startswith('SECURITY_001'):
-                action = self.mitigation_actions.get('renew_certificates')
-                params = {
-                    'certificate_ids': [risk.risk_id.split('_')[-1]],
-                    'ca_config': {}
-                }
-                if action:
-                    planned_actions.append((action, params))
-                    
-            elif risk.risk_id.startswith('SECURITY_002'):
-                action = self.mitigation_actions.get('implement_rate_limiting')
-                params = {
-                    'max_attempts': 5,
-                    'time_window': 300
-                }
-                if action:
-                    planned_actions.append((action, params))
-                    
-            elif risk.risk_id.startswith('PERFORMANCE_001'):
-                action = self.mitigation_actions.get('scale_processing_capacity')
-                params = {
-                    'target_capacity': 2,
-                    'scaling_type': 'horizontal'
-                }
-                if action:
-                    planned_actions.append((action, params))
-                    
-            elif risk.risk_id.startswith('PERFORMANCE_002'):
-                action = self.mitigation_actions.get('optimize_memory_usage')
-                params = {
-                    'optimization_targets': ['caching', 'garbage_collection'],
-                    'memory_limit': '2GB'
-                }
-                if action:
-                    planned_actions.append((action, params))
-                    
-            elif risk.risk_id.startswith('STORAGE_002'):
-                action = self.mitigation_actions.get('execute_backup')
-                params = {
-                    'backup_target': '/backup/blockchain',
-                    'compression': True
-                }
-                if action:
-                    planned_actions.append((action, params))
-        
-        # Sort by priority and severity
-        def priority_key(item):
-            act, _ = item
-            return act.priority
-            
-        planned_actions.sort(key=priority_key)
-        
-        return planned_actions
+        return _create_mitigation_plan(self, risks)
     
-    def execute_mitigation_plan(self, plan: list[Tuple[MitigationAction, dict[str, Any]]], 
-                               async_execution: bool = False) -> list[MitigationResult]:
-        """
-        Execute mitigation plan.
-        
-        Args:
-            plan: List of actions and parameters to execute
-            async_execution: Whether to execute actions asynchronously
-            
-        Returns:
-            List of mitigation results
-        """
-        results = []
-        
-        for action, params in plan:
-            if async_execution and not action.requires_downtime:
-                # Execute asynchronously for non-critical actions
-                thread = threading.Thread(
-                    target=self._execute_action_async,
-                    args=(action, params, results)
-                )
-                thread.start()
-                self.active_mitigations[action.action_id] = thread
-            else:
-                # Execute synchronously
-                result = self._execute_action(action, params)
-                results.append(result)
-                self.execution_history.append(result)
-        
-        return results
+    def execute_mitigation_plan(
+        self,
+        plan: list[Tuple[MitigationAction, dict[str, Any]]],
+        async_execution: bool = False
+    ) -> list[MitigationResult]:
+        """Execute mitigation plan, optionally asynchronously."""
+        return _execute_mitigation_plan(self, plan, async_execution)
     
     def _execute_action(self, action: MitigationAction, params: dict[str, Any]) -> MitigationResult:
-        """Execute single mitigation action."""
-        start_time = time.time()
-        
-        try:
-            self.logger.info(f"Executing mitigation: {action.description}")
-            success = action.execution_function(params)
-            
-            end_time = time.time()
-            
-            return MitigationResult(
-                action_id=action.action_id,
-                status=MitigationStatus.COMPLETED if success else MitigationStatus.FAILED,
-                start_time=start_time,
-                end_time=end_time,
-                error_message=None,
-                output={"success": success, "duration": end_time - start_time}
-            )
-            
-        except Exception as e:
-            end_time = time.time()
-            self.logger.error(f"Mitigation failed: {action.action_id} - {str(e)}")
-            
-            return MitigationResult(
-                action_id=action.action_id,
-                status=MitigationStatus.FAILED,
-                start_time=start_time,
-                end_time=end_time,
-                error_message=str(e),
-                output={"success": False, "duration": end_time - start_time}
-            )
+        """Execute a single mitigation action."""
+        return _execute_action(self, action, params)
     
-    def _execute_action_async(self, action: MitigationAction, params: dict[str, Any], 
-                             results: list[MitigationResult]) -> None:
-        """Execute action asynchronously."""
-        result = self._execute_action(action, params)
-        results.append(result)
-        self.execution_history.append(result)
-        
-        # Remove from active mitigations
-        if action.action_id in self.active_mitigations:
-            del self.active_mitigations[action.action_id]
+    def _execute_action_async(
+        self,
+        action: MitigationAction,
+        params: dict[str, Any],
+        results: list[MitigationResult]
+    ) -> None:
+        """Execute a single mitigation action asynchronously."""
+        _execute_action_async(self, action, params, results)
     
     def get_execution_status(self) -> dict[str, Any]:
         """Get current execution status."""
-        return {
-            'active_mitigations': len(self.active_mitigations),
-            'total_executed': len(self.execution_history),
-            'success_rate': self._calculate_success_rate(),
-            'average_duration': self._calculate_average_duration()
-        }
+        return _get_execution_status(self)
     
     def _calculate_success_rate(self) -> float:
-        """Calculate success rate of executed mitigations."""
-        if not self.execution_history:
-            return 0.0
-            
-        successful = sum(1 for r in self.execution_history if r.status == MitigationStatus.COMPLETED)
-        return successful / len(self.execution_history)
+        """Calculate success rate based on execution history."""
+        return _calculate_success_rate(self)
     
     def _calculate_average_duration(self) -> float:
-        """Calculate average execution duration."""
-        if not self.execution_history:
-            return 0.0
-            
-        durations = [
-            r.end_time - r.start_time 
-            for r in self.execution_history 
-            if r.end_time and r.start_time
-        ]
-        
-        return sum(durations) / len(durations) if durations else 0.0
+        """Calculate average duration of execution."""
+        return _calculate_average_duration(self)
+
+
+def _create_mitigation_plan(
+    manager: MitigationManager,
+    risks: list[RiskAssessment]
+) -> list[Tuple[MitigationAction, dict[str, Any]]]:
+    """Create mitigation plan based on identified risks."""
+    planned_actions: list[Tuple[MitigationAction, dict[str, Any]]] = []
+
+    for risk in risks:
+        action, params = _map_risk_to_action(manager, risk)
+        if action is not None:
+            planned_actions.append((action, params))
+
+    planned_actions.sort(key=lambda item: item[0].priority)
+    return planned_actions
+
+
+def _map_risk_to_action(
+    manager: MitigationManager,
+    risk: RiskAssessment
+) -> Tuple[MitigationAction | None, dict[str, Any]]:
+    """Map risk to mitigation action."""
+    risk_id = risk.risk_id
+
+    if risk_id.startswith('CONSENSUS_001'):
+        action = manager.mitigation_actions.get('add_validator_nodes')
+        params = {
+            'required_count': 1,
+            'node_configs': []
+        }
+        return action, params
+
+    if risk_id.startswith('CONSENSUS_002'):
+        action = manager.mitigation_actions.get('optimize_leader_timeout')
+        params = {
+            'target_timeout': 10,
+            'network_latency': 1.0
+        }
+        return action, params
+
+    if risk_id.startswith('SECURITY_001'):
+        action = manager.mitigation_actions.get('renew_certificates')
+        params = {
+            'certificate_ids': [risk_id.split('_')[-1]],
+            'ca_config': {}
+        }
+        return action, params
+
+    if risk_id.startswith('SECURITY_002'):
+        action = manager.mitigation_actions.get('implement_rate_limiting')
+        params = {
+            'max_attempts': 5,
+            'time_window': 300
+        }
+        return action, params
+
+    if risk_id.startswith('PERFORMANCE_001'):
+        action = manager.mitigation_actions.get('scale_processing_capacity')
+        params = {
+            'target_capacity': 2,
+            'scaling_type': 'horizontal'
+        }
+        return action, params
+
+    if risk_id.startswith('PERFORMANCE_002'):
+        action = manager.mitigation_actions.get('optimize_memory_usage')
+        params = {
+            'optimization_targets': ['caching', 'garbage_collection'],
+            'memory_limit': '2GB'
+        }
+        return action, params
+
+    if risk_id.startswith('STORAGE_002'):
+        action = manager.mitigation_actions.get('execute_backup')
+        params = {
+            'backup_target': '/backup/blockchain',
+            'compression': True
+        }
+        return action, params
+
+    return None, {}
+
+
+def _execute_mitigation_plan(
+    manager: MitigationManager,
+    plan: list[Tuple[MitigationAction, dict[str, Any]]],
+    async_execution: bool
+) -> list[MitigationResult]:
+    """Execute mitigation plan."""
+    results: list[MitigationResult] = []
+
+    for action, params in plan:
+        if async_execution and not action.requires_downtime:
+            thread = threading.Thread(
+                target=_execute_action_async,
+                args=(manager, action, params, results)
+            )
+            thread.start()
+            manager.active_mitigations[action.action_id] = thread
+        else:
+            result = _execute_action(manager, action, params)
+            results.append(result)
+            manager.execution_history.append(result)
+
+    return results
+
+
+def _execute_action(
+    manager: MitigationManager,
+    action: MitigationAction,
+    params: dict[str, Any]
+) -> MitigationResult:
+    """Execute a single mitigation action."""
+    start_time = time.time()
+
+    try:
+        manager.logger.info(f"Executing mitigation: {action.description}")
+        success = action.execution_function(params)
+        end_time = time.time()
+        return MitigationResult(
+            action_id=action.action_id,
+            status=MitigationStatus.COMPLETED if success else MitigationStatus.FAILED,
+            start_time=start_time,
+            end_time=end_time,
+            error_message=None,
+            output={"success": success, "duration": end_time - start_time}
+        )
+    except Exception as e:
+        end_time = time.time()
+        manager.logger.error(f"Mitigation failed: {action.action_id} - {str(e)}")
+        return MitigationResult(
+            action_id=action.action_id,
+            status=MitigationStatus.FAILED,
+            start_time=start_time,
+            end_time=end_time,
+            error_message=str(e),
+            output={"success": False, "duration": end_time - start_time}
+        )
+
+
+def _execute_action_async(
+    manager: MitigationManager,
+    action: MitigationAction,
+    params: dict[str, Any],
+    results: list[MitigationResult]
+) -> None:
+    """Execute a single mitigation action asynchronously."""
+    result = _execute_action(manager, action, params)
+    results.append(result)
+    manager.execution_history.append(result)
+    if action.action_id in manager.active_mitigations:
+        del manager.active_mitigations[action.action_id]
+
+
+def _get_execution_status(manager: MitigationManager) -> dict[str, Any]:
+    """Get current execution status."""
+    return {
+        'active_mitigations': len(manager.active_mitigations),
+        'total_executed': len(manager.execution_history),
+        'success_rate': _calculate_success_rate(manager),
+        'average_duration': _calculate_average_duration(manager)
+    }
+
+
+def _calculate_success_rate(manager: MitigationManager) -> float:
+    """Calculate success rate based on execution history."""
+    if not manager.execution_history:
+        return 0.0
+    successful = sum(
+        1 for r in manager.execution_history
+        if r.status == MitigationStatus.COMPLETED
+    )
+    return successful / len(manager.execution_history)
+
+
+def _calculate_average_duration(manager: MitigationManager) -> float:
+    """Calculate average duration of execution."""
+    if not manager.execution_history:
+        return 0.0
+    durations = [
+        r.end_time - r.start_time
+        for r in manager.execution_history
+        if r.end_time and r.start_time
+    ]
+    return sum(durations) / len(durations) if durations else 0.0
