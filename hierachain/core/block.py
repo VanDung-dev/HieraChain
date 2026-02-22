@@ -71,7 +71,7 @@ class Block:
             # Calculate Merkle Root from list
             self.merkle_root = merkle_root or calculate_merkle_from_list(events)
             # Convert to Arrow Table for efficient storage
-            self._events = _convert_events_to_arrow(events)
+            self._events = convert_events_to_arrow(events)
             
         self.hash = self.calculate_hash()
 
@@ -249,6 +249,11 @@ def _convert_events_to_arrow(events_list: list[dict[str, Any]]) -> pa.Table:
         for name in schema.names
     }
     return pa.table(pydict, schema=schema)
+
+
+def convert_events_to_arrow(events_list: list[dict[str, Any]]) -> pa.Table:
+    """Convert list of dicts to Arrow Table."""
+    return _convert_events_to_arrow(events_list)
 
 
 def calculate_merkle_from_list(events_list: list[dict[str, Any]]) -> str:
