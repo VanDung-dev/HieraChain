@@ -16,6 +16,7 @@ from hierachain.hierarchical.consensus.bft import (
     ConsensusState,
     sign_message,
     verify_message_signature,
+    validate_consensus_message,
 )
 
 
@@ -50,6 +51,8 @@ def create_bft_network(node_configs: list[dict[str, Any]], fault_tolerance: int 
     
     return network
 
+_validate_consensus_message = validate_consensus_message
+
 __all__ = [
     'BFTConsensus',
     'ConsensusError',
@@ -58,5 +61,7 @@ __all__ = [
     'ConsensusState',
     'sign_message',
     'verify_message_signature',
-    'create_bft_network'
+    'create_bft_network',
+    '_validate_consensus_message',
+    'validate_consensus_message',
 ]
