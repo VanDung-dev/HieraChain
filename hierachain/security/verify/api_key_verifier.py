@@ -209,9 +209,7 @@ def require_event_access(context: dict = Depends(APIKeyVerifier)) -> dict:
     Raises:
         HTTPException: 403 if insufficient permissions
     """
-    # This would need the original API key for permission checking
-    # In practice, you'd modify the APIKeyVerifier to store the key in context
-    if not ResourcePermissionChecker._has_permission(context, 'events'):
+    if not ResourcePermissionChecker.has_permission(context, 'events'):
         raise HTTPException(
             status_code=403,
             detail="Access to event operations requires 'events' permission."
@@ -232,7 +230,7 @@ def require_chain_access(context: dict = Depends(APIKeyVerifier)) -> dict:
     Raises:
         HTTPException: 403 if insufficient permissions
     """
-    if not ResourcePermissionChecker._has_permission(context, 'chains'):
+    if not ResourcePermissionChecker.has_permission(context, 'chains'):
         raise HTTPException(
             status_code=403,
             detail="Access to chain operations requires 'chains' permission."
@@ -253,7 +251,7 @@ def require_proof_access(context: dict = Depends(APIKeyVerifier)) -> dict:
     Raises:
         HTTPException: 403 if insufficient permissions
     """
-    if not ResourcePermissionChecker._has_permission(context, 'proofs'):
+    if not ResourcePermissionChecker.has_permission(context, 'proofs'):
         raise HTTPException(
             status_code=403,
             detail="Access to proof operations requires 'proofs' permission."
@@ -263,17 +261,17 @@ def require_proof_access(context: dict = Depends(APIKeyVerifier)) -> dict:
 
 def _has_event_permission(context: dict) -> bool:
     """Check if context has event permissions."""
-    return ResourcePermissionChecker._has_permission(context, 'events')
+    return ResourcePermissionChecker.has_permission(context, 'events')
 
 
 def _has_chain_permission(context: dict) -> bool:
     """Check if context has chain permissions."""
-    return ResourcePermissionChecker._has_permission(context, 'chains')
+    return ResourcePermissionChecker.has_permission(context, 'chains')
 
 
 def _has_proof_permission(context: dict) -> bool:
     """Check if context has proof permissions."""
-    return ResourcePermissionChecker._has_permission(context, 'proofs')
+    return ResourcePermissionChecker.has_permission(context, 'proofs')
 
 
 class ResourcePermissionChecker:
@@ -297,6 +295,21 @@ class ResourcePermissionChecker:
         app_details = context.get('app_details', {})
         permissions = app_details.get('permissions', [])
         return permission_type in permissions or 'all' in permissions
+
+    @staticmethod
+    def has_permission(context: dict, permission_type: str) -> bool:
+        """
+        Public wrapper for checking context permissions without accessing
+        the protected _has_permission method from outside the class.
+
+        Args:
+            context: The context containing app details
+            permission_type: The permission type to check for (events, chains, proofs)
+
+        Returns:
+            bool: True if context has the required permission, False otherwise
+        """
+        return ResourcePermissionChecker._has_permission(context, permission_type)
 
     def __init__(self, verify_api_key: APIKeyVerifier):
         """
