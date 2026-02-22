@@ -314,6 +314,23 @@ class KeyBackupManager:
         self.metadata_file = os.path.join(self.backup_dir, "backup_metadata.json")
         self.metadata = _load_metadata(self.metadata_file)
     
+    def _calculate_integrity_hash(self, data: bytes) -> str:
+        """Calculate hash for integrity checking."""
+        return _calculate_integrity_hash(data, self.integrity_check)
+
+    def _verify_integrity(self, file_path: str, expected_hash: str) -> bool:
+        """Verify backup file integrity."""
+        return _verify_integrity(file_path, expected_hash, self.integrity_check)
+
+    def _distribute_to_locations(self, file_path: str, backup_id: str) -> list[str]:
+        """Distribute encrypted backup to secure locations."""
+        return _distribute_to_locations(file_path, backup_id, self.locations)
+
+    @staticmethod
+    def _log_backup_success(backup_id: str, hash_value: str, locations: list[str]):
+        """Log successful backup operation."""
+        _log_backup_success(backup_id, hash_value, locations)
+
     def backup_keys(self, public_key: bytes, private_key: bytes, key_type: str = "default") -> str:
         """
         Backup keys with encryption and distribution.
@@ -361,17 +378,17 @@ class KeyBackupManager:
                 f.write(encrypted_data)
             
             # Generate integrity hash
-            hash_value = _calculate_integrity_hash(encrypted_data, self.integrity_check)
+            hash_value = self._calculate_integrity_hash(encrypted_data)
             
             # Verify integrity immediately
-            if not _verify_integrity(backup_file, hash_value, self.integrity_check):
+            if not self._verify_integrity(backup_file, hash_value):
                 raise BackupError("Backup integrity verification failed")
             
             # Distribute to configured locations
-            distributed_locations = _distribute_to_locations(backup_file, backup_id, self.locations)
+            distributed_locations = self._distribute_to_locations(backup_file, backup_id)
             
             # Update metadata
-            _update_metadata(self.metadata_file, self.metadata, backup_id, {
+            self._update_metadata(backup_id, {
                 "timestamp": timestamp,
                 "key_type": key_type,
                 "hash": hash_value,
@@ -380,9 +397,9 @@ class KeyBackupManager:
             })
             
             # Clean up old backups according to retention policy
-            _cleanup_old_backups(self.metadata, self.retention_period, self._remove_backup)
+            self._cleanup_old_backups()
             
-            _log_backup_success(backup_id, hash_value, distributed_locations)
+            self._log_backup_success(backup_id, hash_value, distributed_locations)
             logger.info(f"Successfully backed up {key_type} keys with ID: {backup_id}")
             
             return backup_id
@@ -408,7 +425,7 @@ class KeyBackupManager:
         """
         try:
             # Find backup file
-            backup_file = _find_backup_file(backup_id, self.metadata)
+            backup_file = self._find_backup_file(backup_id)
             if not backup_file:
                 raise RestoreError(f"Backup file not found for ID: {backup_id}")
             
@@ -417,8 +434,8 @@ class KeyBackupManager:
                 encrypted_data = f.read()
             
             # Verify integrity
-            expected_hash = _get_backup_hash(backup_id, self.metadata)
-            actual_hash = _calculate_integrity_hash(encrypted_data, self.integrity_check)
+            expected_hash = self._get_backup_hash(backup_id)
+            actual_hash = self._calculate_integrity_hash(encrypted_data)
             if actual_hash != expected_hash:
                 raise IntegrityError(f"Backup integrity check failed for {backup_id}")
             
@@ -478,12 +495,12 @@ class KeyBackupManager:
             bool: True if backup is intact, False otherwise
         """
         try:
-            backup_file = _find_backup_file(backup_id, self.metadata)
+            backup_file = self._find_backup_file(backup_id)
             if not backup_file:
                 return False
             
-            expected_hash = _get_backup_hash(backup_id, self.metadata)
-            return _verify_integrity(backup_file, expected_hash, self.integrity_check)
+            expected_hash = self._get_backup_hash(backup_id)
+            return self._verify_integrity(backup_file, expected_hash)
             
         except Exception as e:
             logger.error(f"Backup integrity verification failed for {backup_id}: {str(e)}")
