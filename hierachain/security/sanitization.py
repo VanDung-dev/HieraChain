@@ -164,10 +164,10 @@ def sanitize_error_message(error: Exception) -> str:
     error_str = str(error)
     
     # Remove file paths
-    error_str = re.sub(r'[A-Za-z]:\\[^\s]+', '[PATH]', error_str)
-    error_str = re.sub(r'/[^\s]+\.py', '[FILE]', error_str)
-    error_str = re.sub(r'/home/[^\s]+', '[PATH]', error_str)
-    error_str = re.sub(r'/var/[^\s]+', '[PATH]', error_str)
+    error_str = re.sub(r'[A-Za-z]:\\\S+', '[PATH]', error_str)
+    error_str = re.sub(r'/\S+\.py', '[FILE]', error_str)
+    error_str = re.sub(r'/home/\S+', '[PATH]', error_str)
+    error_str = re.sub(r'/var/\S+', '[PATH]', error_str)
     
     # Remove line numbers from tracebacks
     error_str = re.sub(r'line \d+', 'line [N]', error_str)
