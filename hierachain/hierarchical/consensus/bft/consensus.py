@@ -109,6 +109,25 @@ def _validate_consensus_message(
         
     return True
 
+
+def validate_consensus_message(
+    message: BFTMessage,
+    all_nodes: list[str],
+    public_keys: dict[str, str],
+    strictness: str,
+    timeout: float,
+    log_func: Callable[[str, str], None]
+) -> bool:
+    """Validate consensus message parameters and signatures."""
+    return _validate_consensus_message(
+        message,
+        all_nodes,
+        public_keys,
+        strictness,
+        timeout,
+        log_func,
+    )
+
 def _cleanup_messages(
     pre_prep: dict[int, BFTMessage],
     prep: dict[int, list[BFTMessage]],
@@ -132,9 +151,7 @@ def _create_signed_bft_message(
     data: dict[str, Any]
 ) -> BFTMessage:
     """Create and sign a BFT message helper."""
-    msg = BFTMessage(
-        msg_type, view, seq, node_id, time.time(), "", data
-    )
+    msg = BFTMessage(msg_type, view, seq, node_id, time.time(), "", data)
     if key_provider:
         msg.signature = sign_message(key_provider, msg.get_signable_payload())
     return msg
