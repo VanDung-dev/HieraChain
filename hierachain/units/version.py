@@ -5,12 +5,33 @@ This module provides functions for managing and retrieving version information.
 """
 
 from typing import Tuple
+import re
 
-# Version information
 VERSION: Tuple[int, int, int, str, int] = (0, 0, 1, "dev", 7)
 
-# Regular expression to match PEP 440 version format
 _VERSION_PATTERN = r"(?P<major>\d+)\.(?P<minor>\d+)(?:\.(?P<micro>\d+))?(?:\.(?P<releaselevel>[a-z]+)(?P<serial>\d+)?)?"
+_RELEASE_LEVEL_ORDER: dict[str, int] = {"dev": 0, "alpha": 1, "beta": 2, "rc": 3, "final": 4}
+
+
+def _format_base_version(major: int, minor: int, micro: int | None) -> str:
+    """Format the base version string without release level or serial number."""
+    if micro is None:
+        return f"{major}.{minor}"
+    return f"{major}.{minor}.{micro}"
+
+
+def _format_release_suffix(releaselevel: str, serial: int) -> str:
+    """
+    Format the release suffix based on release level and serial number.
+    Returns an empty string for 'final' release level.
+    """
+    if releaselevel == "final":
+        return ""
+    if releaselevel == "dev":
+        prefix = ".dev"
+    else:
+        prefix = f"-{releaselevel}"
+    return f"{prefix}{serial}" if serial > 0 else prefix
 
 
 def get_version(version: Tuple[int, int, int, str, int] | None = None) -> str:
@@ -27,22 +48,9 @@ def get_version(version: Tuple[int, int, int, str, int] | None = None) -> str:
     if version is None:
         version = VERSION
     major, minor, micro, releaselevel, serial = version
-    
-    # Build the base version string
-    version_str = f"{major}.{minor}"
-    if micro is not None:
-        version_str += f".{micro}"
-    
-    # Add release level if not final
-    if releaselevel != "final":
-        if releaselevel == "dev":
-            version_str += ".dev"
-        else:
-            version_str += f"-{releaselevel}"
-        if serial > 0:
-            version_str += str(serial)
-    
-    return version_str
+    base = _format_base_version(major, minor, micro)
+    suffix = _format_release_suffix(releaselevel, serial)
+    return base + suffix
 
 
 def get_complete_version(version: Tuple[int, int, int, str, int] | None = None) -> Tuple[int, int, int, str, int]:
@@ -105,89 +113,102 @@ def get_documentation_status(version: Tuple[int, int, int, str, int] | None) -> 
         return "development"
 
 
-def compare_versions(version1: str | Tuple[int, int, int, str, int], 
-                     version2: str | Tuple[int, int, int, str, int]) -> int:
+def _apply_dev_overrides(v: str, base: Tuple[int, int, int, str, int]) -> Tuple[int, int, int, str, int]:
     """
-    Compare two versions.
-    
-    Args:
-        version1: First version to compare (tuple or string)
-        version2: Second version to compare (tuple or string)
-        
-    Returns:
-        -1 if version1 < version2
-        0 if version1 == version2
-        1 if version1 > version2
+    Apply overrides for development versions, handling serial numbers and dev suffixes.
     """
-    def _version_tuple(v: str | Tuple[int, int, int, str, int]) -> Tuple[int, int, int, str, int]:
-        if isinstance(v, str):
-            # Parse string version to tuple (simplified)
-            import re
-            # Match versions like "1.0.0", "1.0.0.dev", "1.0.0-alpha1", etc.
-            match = re.match(_VERSION_PATTERN, v)
-            if match:
-                groups = match.groupdict()
-                major = int(groups['major'])
-                minor = int(groups['minor'])
-                micro = int(groups['micro']) if groups['micro'] else 0
-                releaselevel = groups['releaselevel'] or 'final'
-                serial = int(groups['serial']) if groups['serial'] else 0
-                
-                # Special handling for dev versions
-                if 'dev' in v:
-                    releaselevel = 'dev'
-                    # Extract serial from dev suffix if present
-                    dev_parts = v.split('.dev')
-                    if len(dev_parts) > 1 and dev_parts[1]:
-                        serial = int(dev_parts[1])
-                        
-                return (major, minor, micro, releaselevel, serial)
-            else:
-                # Fallback for simple versions
-                parts = v.split(".")
-                major = int(parts[0])
-                minor = int(parts[1]) if len(parts) > 1 else 0
-                micro = int(parts[2]) if len(parts) > 2 else 0
-                
-                # Handle special cases
-                if "dev" in v:
-                    return (major, minor, micro, "dev", 0)
-                elif "alpha" in v:
-                    return (major, minor, micro, "alpha", 0)
-                elif "beta" in v:
-                    return (major, minor, micro, "beta", 0)
-                elif "rc" in v:
-                    return (major, minor, micro, "rc", 0)
-                else:
-                    return (major, minor, micro, "final", 0)
-        return v
-    
+    major, minor, micro, releaselevel, serial = base
+    if "dev" not in v:
+        return base
+    releaselevel = "dev"
+    dev_parts = v.split(".dev")
+    if len(dev_parts) > 1 and dev_parts[1]:
+        try:
+            serial = int(dev_parts[1])
+        except ValueError:
+            pass
+    return major, minor, micro, releaselevel, serial
+
+
+def _parse_with_pattern(v: str) -> Tuple[int, int, int, str, int] | None:
+    """
+    Attempt to parse version string using a regular expression pattern.
+    Returns None if the pattern does not match.
+    """
+    match = re.match(_VERSION_PATTERN, v)
+    if not match:
+        return None
+    groups = match.groupdict()
+    major = int(groups["major"])
+    minor = int(groups["minor"])
+    micro = int(groups["micro"]) if groups["micro"] else 0
+    releaselevel = groups["releaselevel"] or "final"
+    serial = int(groups["serial"]) if groups["serial"] else 0
+    base = (major, minor, micro, releaselevel, serial)
+    return _apply_dev_overrides(v, base)
+
+
+def _fallback_version_parse(v: str) -> Tuple[int, int, int, str, int]:
+    """
+    Fallback version parsing for strings that do not match the regular expression pattern.
+    Handles simple version formats without release level or serial numbers.
+    """
+    parts = v.split(".")
+    major = int(parts[0])
+    minor = int(parts[1]) if len(parts) > 1 else 0
+    micro = int(parts[2]) if len(parts) > 2 else 0
+
+    for key, level in (("dev", "dev"), ("alpha", "alpha"), ("beta", "beta"), ("rc", "rc")):
+        if key in v:
+            return major, minor, micro, level, 0
+    return major, minor, micro, "final", 0
+
+
+def _parse_version_string(v: str) -> Tuple[int, int, int, str, int]:
+    """
+    Parses a version string into a tuple of (major, minor, micro, releaselevel, serial).
+    Uses a regular expression pattern for parsing, falling back to a simple format if necessary.
+    """
+    parsed = _parse_with_pattern(v)
+    if parsed is not None:
+        return parsed
+    return _fallback_version_parse(v)
+
+
+def _version_tuple(v: str | Tuple[int, int, int, str, int]) -> Tuple[int, int, int, str, int]:
+    """
+    Converts a version string or tuple to a version tuple.
+    If the input is already a tuple, it is returned as is.
+    """
+    if isinstance(v, str):
+        return _parse_version_string(v)
+    return v
+
+
+def _normalize_version_tuple(v: Tuple[int, int, int, str, int]) -> Tuple[int, int, int, int, int]:
+    """
+    Normalize a version tuple by converting release level to an integer for comparison.
+    """
+    major, minor, micro, level, serial = v
+    return major, minor, micro, _RELEASE_LEVEL_ORDER[level], serial
+
+
+def _compare_version_tuples(v1: Tuple[int, int, int, str, int], v2: Tuple[int, int, int, str, int]) -> int:
+    """
+    Compares two version tuples and returns -1, 0, or 1 based on their order.
+    """
+    n1 = _normalize_version_tuple(v1)
+    n2 = _normalize_version_tuple(v2)
+    return (n1 > n2) - (n1 < n2)
+
+
+def compare_versions(
+    version1: str | Tuple[int, int, int, str, int],
+    version2: str | Tuple[int, int, int, str, int]
+) -> int:
+    """
+    Compares two version strings or tuples and returns -1, 0, or 1 based on their order.
+    """
     v1 = _version_tuple(version1)
     v2 = _version_tuple(version2)
-    
-    # Define release level precedence
-    release_levels = ["dev", "alpha", "beta", "rc", "final"]
-    
-    # Compare major, minor, micro
-    for i in range(3):
-        if v1[i] < v2[i]:
-            return -1
-        elif v1[i] > v2[i]:
-            return 1
-    
-    # Compare release levels
-    v1_level_idx = release_levels.index(v1[3])
-    v2_level_idx = release_levels.index(v2[3])
-    
-    if v1_level_idx < v2_level_idx:
-        return -1
-    elif v1_level_idx > v2_level_idx:
-        return 1
-    
-    # Compare serial numbers
-    if v1[4] < v2[4]:
-        return -1
-    elif v1[4] > v2[4]:
-        return 1
-    
-    return 0
+    return _compare_version_tuples(v1, v2)
