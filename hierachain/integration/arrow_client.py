@@ -22,25 +22,21 @@ logger = logging.getLogger(__name__)
 
 def _transactions_to_arrow(transactions: list[Transaction]) -> pa.Table:
     """
-    Chuyển đổi danh sách các đối tượng Transaction thành Apache Arrow Table.
+    Convert the list of Transaction objects into an Apache Arrow Table.
 
-    Hàm này chuẩn hóa dữ liệu giao dịch để phù hợp với schema yêu cầu bởi HieraChain Engine,
-    bao gồm cả các trường metadata (details) và các trường ZK Proof mới được thêm vào.
+    This function normalizes the transaction data to match the schema required by the HieraChain Engine,
+    including the metadata (details) fields and newly added ZK Proof fields.
 
     Args:
-        transactions: Danh sách các giao dịch cần chuyển đổi.
+        transactions: A list of transactions that need to be converted.
 
     Returns:
-        pa.Table: Bảng dữ liệu định dạng Arrow.
+        pa.Table: Arrow format data table.
     """
     schema = get_transaction_schema()
 
-    if not transactions:
-        # Trả về bảng trống với schema đúng nếu không có dữ liệu
-        return pa.Table.from_batches([], schema=schema)
-
-    # Xây dựng từ điển dữ liệu để sử dụng với from_pydict
-    # Điều này đảm bảo tất cả các trường trong TRANSACTION_SCHEMA đều được cung cấp
+    # Build a data dictionary for use with from_pydict
+    # This ensures all fields in the TRANSACTION_SCHEMA are provided
     data = {
         "tx_id": [tx.tx_id for tx in transactions],
         "entity_id": [tx.entity_id for tx in transactions],
@@ -53,7 +49,7 @@ def _transactions_to_arrow(transactions: list[Transaction]) -> pa.Table:
         "zk_public_inputs": [None] * len(transactions),
     }
 
-    return pa.Table.from_pydict(data, schema=schema)
+    return pa.table(data, schema=schema)
 
 
 class ArrowClient:
@@ -139,7 +135,7 @@ class ArrowClient:
         while len(data) < n:
             packet = self.sock.recv(n - len(data))
             if not packet:
-                return None
+                raise ConnectionError("Socket connection closed unexpectedly")
             data.extend(packet)
         return data
 
