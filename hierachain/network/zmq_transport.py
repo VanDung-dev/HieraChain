@@ -72,6 +72,10 @@ class ZmqNode:
         """Get the message handler."""
         return self._message_handler
 
+    def _is_valid_replay(self, message_data: dict[str, Any]) -> bool:
+        """Validate message replay protection."""
+        return _is_valid_replay(self, message_data)
+
     async def start(self):
         """Start the node: bind listener and start receiver loop."""
         try:
