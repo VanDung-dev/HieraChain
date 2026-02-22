@@ -292,46 +292,25 @@ def _get_severity_symbol(severity: AlertSeverity) -> str:
 
 class AlertManager:
     """
-    Central alert management system for HieraChain Ledger
-    
-    Manages alert rules, anomaly detection, notification routing, and
-    alert lifecycle (creation, acknowledgment, escalation, resolution).
+    Central alert management system for HieraChain Ledger.
     """
-    
+
     def __init__(self, config: dict[str, Any] | None = None):
-        """
-        Initialize alert manager.
-        
-        Args:
-            config: Alert system configuration
-        """
         self.config = config or {}
         self.logger = logging.getLogger(__name__)
-        
-        # Alert storage
         self.active_alerts: dict[str, Alert] = {}
         self.alert_history: list[Alert] = []
         self.max_history_size = self.config.get('max_history_size', 10000)
-        
-        # Alert rules
         self.alert_rules: dict[str, AlertRule] = {}
-        self._initialize_default_rules()
-        
-        # Anomaly detection
+        _initialize_default_rules(self)
         self.anomaly_detector = AnomalyDetector(
             window_size=self.config.get('anomaly_window_size', 100),
             sensitivity=self.config.get('anomaly_sensitivity', 2.0)
         )
-        
-        # Notification handlers
         self.notifiers: list[Any] = []
-        self._initialize_notifiers()
-        
-        # Alert suppression and rate limiting
+        _initialize_notifiers(self)
         self.last_alert_times: dict[str, float] = {}
         self.escalation_timers: dict[str, threading.Timer] = {}
-        
-        # Statistics
         self.stats = {
             'total_alerts': 0,
             'alerts_by_severity': defaultdict(int),
@@ -339,352 +318,382 @@ class AlertManager:
             'notifications_sent': 0,
             'notifications_failed': 0
         }
-    
-    def _initialize_default_rules(self):
-        """Initialize default alert rules"""
-        default_rules = [
-            AlertRule(
-                rule_id="CPU_HIGH",
-                name="High CPU Usage",
-                description="CPU usage exceeds threshold",
-                category=AlertCategory.PERFORMANCE,
-                metric_name="cpu_usage",
-                condition="greater_than",
-                threshold=85.0,
-                severity=AlertSeverity.WARNING
-            ),
-            AlertRule(
-                rule_id="CPU_CRITICAL",
-                name="Critical CPU Usage",
-                description="CPU usage critically high",
-                category=AlertCategory.PERFORMANCE,
-                metric_name="cpu_usage",
-                condition="greater_than",
-                threshold=95.0,
-                severity=AlertSeverity.CRITICAL
-            ),
-            AlertRule(
-                rule_id="MEMORY_HIGH",
-                name="High Memory Usage",
-                description="Memory usage exceeds threshold",
-                category=AlertCategory.PERFORMANCE,
-                metric_name="memory_usage",
-                condition="greater_than",
-                threshold=85.0,
-                severity=AlertSeverity.WARNING
-            ),
-            AlertRule(
-                rule_id="CONSENSUS_FAILURE",
-                name="Consensus Failure",
-                description="Consensus success rate below threshold",
-                category=AlertCategory.CONSENSUS,
-                metric_name="consensus_success_rate",
-                condition="less_than",
-                threshold=95.0,
-                severity=AlertSeverity.CRITICAL
-            ),
-            AlertRule(
-                rule_id="RISK_DETECTED",
-                name="Security Risk Detected",
-                description="Security risk detected by risk analyzer",
-                category=AlertCategory.SECURITY,
-                metric_name="risk_count",
-                condition="greater_than",
-                threshold=0,
-                severity=AlertSeverity.WARNING
-            )
-        ]
-        
-        for rule in default_rules:
-            self.alert_rules[rule.rule_id] = rule
-    
-    def _initialize_notifiers(self):
-        """Initialize notification handlers"""
-        # Email notifier
-        if 'email' in self.config:
-            self.notifiers.append(EmailNotifier(self.config['email']))
-        
-        # Webhook notifier
-        if 'webhook' in self.config:
-            self.notifiers.append(WebhookNotifier(self.config['webhook']))
-    
-    def add_alert_rule(self, rule: AlertRule):
+
+    def add_alert_rule(self, rule: AlertRule) -> None:
         """Add new alert rule"""
         self.alert_rules[rule.rule_id] = rule
         self.logger.info(f"Added alert rule: {rule.name}")
-    
-    def check_metric(self, metric_name: str, value: float, source_component: str = "unknown"):
-        """Check metric value against alert rules"""
-        # Add to anomaly detection
+
+    def check_metric(self, metric_name: str, value: float, source_component: str = "unknown") -> None:
+        """Check metric for anomaly"""
         self.anomaly_detector.add_data_point(metric_name, value)
-        
-        # Process each rule
         for rule in self.alert_rules.values():
-            self._process_rule_for_metric(rule, metric_name, value, source_component)
+            _process_rule_for_metric(self, rule, metric_name, value, source_component)
 
-    def _process_rule_for_metric(self, rule: AlertRule, metric_name: str, value: float, source_component: str):
-        """Process a single rule for a given metric update"""
-        if not rule.enabled or rule.metric_name != metric_name:
-            return
-            
-        if self._evaluate_rule_condition(rule, value) and not self._is_in_cooldown(rule):
-            self.create_alert(
-                rule=rule,
-                current_value=value,
-                source_component=source_component
-            )
-
-    def _evaluate_rule_condition(self, rule: AlertRule, value: float) -> bool:
-        """Evaluate if alert rule condition is met"""
-        if rule.condition == "greater_than" and rule.threshold is not None:
-            return value > rule.threshold
-        elif rule.condition == "less_than" and rule.threshold is not None:
-            return value < rule.threshold
-        elif rule.condition == "equals" and rule.threshold is not None:
-            return abs(value - rule.threshold) < 0.001
-        elif rule.condition == "anomaly":
-            is_anomaly, _ = self.anomaly_detector.is_anomaly(rule.metric_name, value)
-            return is_anomaly
-        return False
-
-    def _is_in_cooldown(self, rule: AlertRule) -> bool:
-        """Check if alert rule is in cooldown period"""
-        last_alert_time = self.last_alert_times.get(rule.rule_id, 0)
-        return time.time() - last_alert_time < rule.cooldown_period
-    
     def create_alert(
         self,
         rule: AlertRule,
         current_value: float | None = None,
         source_component: str = "unknown",
         custom_description: str | None = None
-    ):
+    ) -> None:
         """Create new alert"""
-        alert_id = f"{rule.rule_id}_{int(time.time())}"
-        
-        alert = Alert(
-            alert_id=alert_id,
-            timestamp=time.time(),
-            severity=rule.severity,
-            category=rule.category,
-            title=rule.name,
-            description=custom_description or rule.description,
-            source_component=source_component,
-            metric_name=rule.metric_name,
-            current_value=current_value,
-            threshold_value=rule.threshold
-        )
-        
-        # Check for duplicate suppression
-        if rule.suppress_duplicates and self._is_duplicate_alert(alert):
-            self.logger.debug(f"Suppressing duplicate alert: {alert.title}")
-            return
-        
-        # Store alert
-        self.active_alerts[alert_id] = alert
-        self.alert_history.append(alert)
-        self._trim_alert_history()
-        
-        # Update statistics and last alert time
-        self._update_alert_stats(alert)
-        self.last_alert_times[rule.rule_id] = time.time()
-        
-        # Send notifications
-        self._send_notifications(alert)
-        
-        # Schedule escalation if configured
-        if rule.escalation_time > 0:
-            self._schedule_alert_escalation(alert_id, rule.escalation_time)
-        
-        # Log alert creation
-        self.logger.warning(f"Alert created: {alert.title} (ID: {alert_id})")
+        _create_alert(self, rule, current_value, source_component, custom_description)
 
-    def _is_duplicate_alert(self, alert: Alert) -> bool:
-        """Check if an identical active alert already exists"""
-        for existing_alert in self.active_alerts.values():
-            if (existing_alert.category == alert.category and
-                existing_alert.metric_name == alert.metric_name and
-                existing_alert.status == AlertStatus.ACTIVE):
-                return True
-        return False
-
-    def _trim_alert_history(self):
-        """Trim alert history to max size"""
-        if len(self.alert_history) > self.max_history_size:
-            self.alert_history = self.alert_history[-self.max_history_size:]
-
-    def _update_alert_stats(self, alert: Alert):
-        """Update alert system statistics"""
-        self.stats['total_alerts'] += 1
-        self.stats['alerts_by_severity'][alert.severity.value] += 1
-        self.stats['alerts_by_category'][alert.category.value] += 1
-
-    def _schedule_alert_escalation(self, alert_id: str, escalation_time: int):
-        """Schedule alert escalation timer"""
-        timer = threading.Timer(
-            escalation_time,
-            self._escalate_alert,
-            args=(alert_id,)
-        )
-        timer.start()
-        self.escalation_timers[alert_id] = timer
-    
-    def _send_notifications(self, alert: Alert):
-        """Send alert notifications to all registered notifiers"""
-        recipients = self.config.get('email_recipients', [])
-        
-        for notifier in self.notifiers:
-            success = self._send_to_notifier(notifier, alert, recipients)
-            if success:
-                self.stats['notifications_sent'] += 1
-            else:
-                self.stats['notifications_failed'] += 1
-
-    def _send_to_notifier(self, notifier: Any, alert: Alert, recipients: list[str]) -> bool:
-        """Send alert to a single notifier with error handling"""
-        try:
-            if isinstance(notifier, EmailNotifier):
-                return notifier.send_alert(alert, recipients)
-            else:
-                return notifier.send_alert(alert)
-        except Exception as notify_ex:
-            self.logger.error(f"Notification failed for {type(notifier).__name__}: {str(notify_ex)}")
-            return False
-    
     def acknowledge_alert(self, alert_id: str, user: str | None = None) -> bool:
-        """Acknowledge an alert"""
-        if alert_id not in self.active_alerts:
-            return False
-        
-        alert = self.active_alerts[alert_id]
-        alert.status = AlertStatus.ACKNOWLEDGED
-        alert.acknowledgment_time = time.time()
-        
-        # Cancel escalation timer
-        if alert_id in self.escalation_timers:
-            self.escalation_timers[alert_id].cancel()
-            del self.escalation_timers[alert_id]
-        
-        self.logger.info(f"Alert acknowledged: {alert_id} by {user or 'unknown'}")
-        return True
-    
+        """Acknowledge alert"""
+        return _acknowledge_alert(self, alert_id, user)
+
     def resolve_alert(self, alert_id: str, user: str | None = None) -> bool:
-        """Resolve an alert"""
-        if alert_id not in self.active_alerts:
-            return False
-        
-        alert = self.active_alerts[alert_id]
-        alert.status = AlertStatus.RESOLVED
-        alert.resolved_time = time.time()
-        
-        # Remove from active alerts
-        del self.active_alerts[alert_id]
-        
-        # Cancel escalation timer
-        if alert_id in self.escalation_timers:
-            self.escalation_timers[alert_id].cancel()
-            del self.escalation_timers[alert_id]
-        
-        self.logger.info(f"Alert resolved: {alert_id} by {user or 'system'}")
-        return True
-    
-    def _escalate_alert(self, alert_id: str):
-        """Escalate an unacknowledged alert"""
-        if alert_id not in self.active_alerts:
-            return
-        
-        alert = self.active_alerts[alert_id]
-        if alert.status == AlertStatus.ACTIVE:
-            alert.escalation_level += 1
-            
-            # Create escalation alert
-            escalation_alert = Alert(
-                alert_id=f"{alert_id}_ESC_{alert.escalation_level}",
-                timestamp=time.time(),
-                severity=AlertSeverity.CRITICAL,
-                category=alert.category,
-                title=f"ESCALATED: {alert.title}",
-                description=f"Alert has been escalated due to no acknowledgment. Original: {alert.description}",
-                source_component=alert.source_component,
-                escalation_level=alert.escalation_level
-            )
-            
-            self._send_notifications(escalation_alert)
-            self.logger.critical(f"Alert escalated: {alert_id} (level {alert.escalation_level})")
-    
+        """Resolve alert"""
+        return _resolve_alert(self, alert_id, user)
+
     def get_active_alerts(
         self,
         category: AlertCategory | None = None,
         severity: AlertSeverity | None = None
     ) -> list[Alert]:
-        """Get active alerts with optional filtering"""
-        alerts = list(self.active_alerts.values())
-        
-        if category:
-            alerts = [a for a in alerts if a.category == category]
-        
-        if severity:
-            alerts = [a for a in alerts if a.severity == severity]
-        
-        return alerts
-    
+        """Get active alerts"""
+        return _get_active_alerts(self, category, severity)
+
     def get_alert_statistics(self) -> dict[str, Any]:
-        """Get alert system statistics"""
-        return {
-            **self.stats,
-            'active_alerts': len(self.active_alerts),
-            'alert_rules': len(self.alert_rules),
-            'enabled_rules': len([r for r in self.alert_rules.values() if r.enabled])
-        }
-    
+        """Get alert statistics"""
+        return _get_alert_statistics(self)
+
     def generate_report(self, format_type: str = "json", include_history: bool = False) -> str:
-        """Generate alert system report"""
+        """Generate alert report"""
         format_type = format_type.lower()
         active_alerts = list(self.active_alerts.values())
-        
         if format_type == "json":
-            return self._generate_json_report(active_alerts, include_history)
-        elif format_type == "text":
-            return self._generate_text_report(active_alerts)
+            return _generate_json_report(self, active_alerts, include_history)
+        if format_type == "text":
+            return _generate_text_report(self, active_alerts)
+        raise ValueError(f"Unsupported report format: {format_type}")
+
+
+def _initialize_default_rules(manager: AlertManager) -> None:
+    """Initialize default alert rules"""
+    default_rules = [
+        AlertRule(
+            rule_id="CPU_HIGH",
+            name="High CPU Usage",
+            description="CPU usage exceeds threshold",
+            category=AlertCategory.PERFORMANCE,
+            metric_name="cpu_usage",
+            condition="greater_than",
+            threshold=85.0,
+            severity=AlertSeverity.WARNING
+        ),
+        AlertRule(
+            rule_id="CPU_CRITICAL",
+            name="Critical CPU Usage",
+            description="CPU usage critically high",
+            category=AlertCategory.PERFORMANCE,
+            metric_name="cpu_usage",
+            condition="greater_than",
+            threshold=95.0,
+            severity=AlertSeverity.CRITICAL
+        ),
+        AlertRule(
+            rule_id="MEMORY_HIGH",
+            name="High Memory Usage",
+            description="Memory usage exceeds threshold",
+            category=AlertCategory.PERFORMANCE,
+            metric_name="memory_usage",
+            condition="greater_than",
+            threshold=85.0,
+            severity=AlertSeverity.WARNING
+        ),
+        AlertRule(
+            rule_id="CONSENSUS_FAILURE",
+            name="Consensus Failure",
+            description="Consensus success rate below threshold",
+            category=AlertCategory.CONSENSUS,
+            metric_name="consensus_success_rate",
+            condition="less_than",
+            threshold=95.0,
+            severity=AlertSeverity.CRITICAL
+        ),
+        AlertRule(
+            rule_id="RISK_DETECTED",
+            name="Security Risk Detected",
+            description="Security risk detected by risk analyzer",
+            category=AlertCategory.SECURITY,
+            metric_name="risk_count",
+            condition="greater_than",
+            threshold=0,
+            severity=AlertSeverity.WARNING
+        )
+    ]
+    for rule in default_rules:
+        manager.alert_rules[rule.rule_id] = rule
+
+
+def _initialize_notifiers(manager: AlertManager) -> None:
+    """Initialize notifiers"""
+    if 'email' in manager.config:
+        manager.notifiers.append(EmailNotifier(manager.config['email']))
+    if 'webhook' in manager.config:
+        manager.notifiers.append(WebhookNotifier(manager.config['webhook']))
+
+
+def _process_rule_for_metric(
+    manager: AlertManager,
+    rule: AlertRule,
+    metric_name: str,
+    value: float,
+    source_component: str
+) -> None:
+    """Process rule for metric"""
+    if not rule.enabled or rule.metric_name != metric_name:
+        return
+    if _evaluate_rule_condition(manager, rule, value) and not _is_in_cooldown(manager, rule):
+        _create_alert(
+            manager=manager,
+            rule=rule,
+            current_value=value,
+            source_component=source_component,
+            custom_description=None
+        )
+
+
+def _evaluate_rule_condition(manager: AlertManager, rule: AlertRule, value: float) -> bool:
+    """Evaluate rule condition"""
+    if rule.condition == "greater_than" and rule.threshold is not None:
+        return value > rule.threshold
+    if rule.condition == "less_than" and rule.threshold is not None:
+        return value < rule.threshold
+    if rule.condition == "equals" and rule.threshold is not None:
+        return abs(value - rule.threshold) < 0.001
+    if rule.condition == "anomaly":
+        is_anomaly, _ = manager.anomaly_detector.is_anomaly(rule.metric_name, value)
+        return is_anomaly
+    return False
+
+
+def _is_in_cooldown(manager: AlertManager, rule: AlertRule) -> bool:
+    """Check if rule is in cooldown"""
+    last_alert_time = manager.last_alert_times.get(rule.rule_id, 0)
+    return time.time() - last_alert_time < rule.cooldown_period
+
+
+def _create_alert(
+    manager: AlertManager,
+    rule: AlertRule,
+    current_value: float | None,
+    source_component: str,
+    custom_description: str | None
+) -> None:
+    """Create new alert"""
+    alert_id = f"{rule.rule_id}_{int(time.time())}"
+    alert = Alert(
+        alert_id=alert_id,
+        timestamp=time.time(),
+        severity=rule.severity,
+        category=rule.category,
+        title=rule.name,
+        description=custom_description or rule.description,
+        source_component=source_component,
+        metric_name=rule.metric_name,
+        current_value=current_value,
+        threshold_value=rule.threshold
+    )
+    if rule.suppress_duplicates and _is_duplicate_alert(manager, alert):
+        manager.logger.debug(f"Suppressing duplicate alert: {alert.title}")
+        return
+    manager.active_alerts[alert_id] = alert
+    manager.alert_history.append(alert)
+    _trim_alert_history(manager)
+    _update_alert_stats(manager, alert)
+    manager.last_alert_times[rule.rule_id] = time.time()
+    _send_notifications(manager, alert)
+    if rule.escalation_time > 0:
+        _schedule_alert_escalation(manager, alert_id, rule.escalation_time)
+    manager.logger.warning(f"Alert created: {alert.title} (ID: {alert_id})")
+
+
+def _is_duplicate_alert(manager: AlertManager, alert: Alert) -> bool:
+    """Check if alert is a duplicate"""
+    for existing_alert in manager.active_alerts.values():
+        if (
+            existing_alert.category == alert.category
+            and existing_alert.metric_name == alert.metric_name
+            and existing_alert.status == AlertStatus.ACTIVE
+        ):
+            return True
+    return False
+
+
+def _trim_alert_history(manager: AlertManager) -> None:
+    """Trim alert history if necessary"""
+    if len(manager.alert_history) > manager.max_history_size:
+        manager.alert_history = manager.alert_history[-manager.max_history_size:]
+
+
+def _update_alert_stats(manager: AlertManager, alert: Alert) -> None:
+    """Update alert statistics"""
+    manager.stats['total_alerts'] += 1
+    manager.stats['alerts_by_severity'][alert.severity.value] += 1
+    manager.stats['alerts_by_category'][alert.category.value] += 1
+
+
+def _schedule_alert_escalation(manager: AlertManager, alert_id: str, escalation_time: int) -> None:
+    """Schedule alert escalation"""
+    timer = threading.Timer(
+        escalation_time,
+        _escalate_alert,
+        args=(manager, alert_id)
+    )
+    timer.start()
+    manager.escalation_timers[alert_id] = timer
+
+
+def _send_notifications(manager: AlertManager, alert: Alert) -> None:
+    """Send notifications to notifiers"""
+    recipients = manager.config.get('email_recipients', [])
+    for notifier in manager.notifiers:
+        success = _send_to_notifier(manager, notifier, alert, recipients)
+        if success:
+            manager.stats['notifications_sent'] += 1
         else:
-            raise ValueError(f"Unsupported report format: {format_type}")
+            manager.stats['notifications_failed'] += 1
 
-    def _generate_json_report(self, active_alerts: list[Alert], include_history: bool) -> str:
-        """Generate JSON format report"""
-        report_data = {
-            'timestamp': time.time(),
-            'statistics': self.get_alert_statistics(),
-            'active_alerts': [alert.to_dict() for alert in active_alerts]
-        }
-        
-        if include_history:
-            report_data['alert_history'] = [alert.to_dict() for alert in self.alert_history[-100:]]
-        
-        return json.dumps(report_data, indent=2, default=str)
 
-    def _generate_text_report(self, active_alerts: list[Alert]) -> str:
-        """Generate plain text format report"""
-        lines = [
-            "Alert System Report",
-            "=" * 40,
-            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            f"Active Alerts: {len(active_alerts)}",
-            f"Total Alerts Generated: {self.stats['total_alerts']}",
-            ""
+def _send_to_notifier(
+    manager: AlertManager,
+    notifier: Any,
+    alert: Alert,
+    recipients: list[str]
+) -> bool:
+    """Send alert to notifier"""
+    try:
+        if isinstance(notifier, EmailNotifier):
+            return notifier.send_alert(alert, recipients)
+        return notifier.send_alert(alert)
+    except Exception as notify_ex:
+        manager.logger.error(
+            f"Notification failed for {type(notifier).__name__}: {str(notify_ex)}"
+        )
+        return False
+
+
+def _acknowledge_alert(manager: AlertManager, alert_id: str, user: str | None) -> bool:
+    """Acknowledge alert"""
+    if alert_id not in manager.active_alerts:
+        return False
+    alert = manager.active_alerts[alert_id]
+    alert.status = AlertStatus.ACKNOWLEDGED
+    alert.acknowledgment_time = time.time()
+    if alert_id in manager.escalation_timers:
+        manager.escalation_timers[alert_id].cancel()
+        del manager.escalation_timers[alert_id]
+    manager.logger.info(f"Alert acknowledged: {alert_id} by {user or 'unknown'}")
+    return True
+
+
+def _resolve_alert(manager: AlertManager, alert_id: str, user: str | None) -> bool:
+    """Resolve alert"""
+    if alert_id not in manager.active_alerts:
+        return False
+    alert = manager.active_alerts[alert_id]
+    alert.status = AlertStatus.RESOLVED
+    alert.resolved_time = time.time()
+    del manager.active_alerts[alert_id]
+    if alert_id in manager.escalation_timers:
+        manager.escalation_timers[alert_id].cancel()
+        del manager.escalation_timers[alert_id]
+    manager.logger.info(f"Alert resolved: {alert_id} by {user or 'system'}")
+    return True
+
+
+def _escalate_alert(manager: AlertManager, alert_id: str) -> None:
+    """Escalate alert to next level"""
+    if alert_id not in manager.active_alerts:
+        return
+    alert = manager.active_alerts[alert_id]
+    if alert.status == AlertStatus.ACTIVE:
+        alert.escalation_level += 1
+        escalation_alert = Alert(
+            alert_id=f"{alert_id}_ESC_{alert.escalation_level}",
+            timestamp=time.time(),
+            severity=AlertSeverity.CRITICAL,
+            category=alert.category,
+            title=f"ESCALATED: {alert.title}",
+            description=(
+                "Alert has been escalated due to no acknowledgment. "
+                f"Original: {alert.description}"
+            ),
+            source_component=alert.source_component,
+            escalation_level=alert.escalation_level
+        )
+        _send_notifications(manager, escalation_alert)
+        manager.logger.critical(
+            f"Alert escalated: {alert_id} (level {alert.escalation_level})"
+        )
+
+
+def _get_active_alerts(
+    manager: AlertManager,
+    category: AlertCategory | None,
+    severity: AlertSeverity | None
+) -> list[Alert]:
+    """Get active alerts"""
+    alerts = list(manager.active_alerts.values())
+    if category:
+        alerts = [a for a in alerts if a.category == category]
+    if severity:
+        alerts = [a for a in alerts if a.severity == severity]
+    return alerts
+
+
+def _get_alert_statistics(manager: AlertManager) -> dict[str, Any]:
+    """Get alert statistics"""
+    return {
+        **manager.stats,
+        'active_alerts': len(manager.active_alerts),
+        'alert_rules': len(manager.alert_rules),
+        'enabled_rules': len([r for r in manager.alert_rules.values() if r.enabled])
+    }
+
+
+def _generate_json_report(
+    manager: AlertManager,
+    active_alerts: list[Alert],
+    include_history: bool
+) -> str:
+    """Generate JSON-based alert report"""
+    report_data = {
+        'timestamp': time.time(),
+        'statistics': _get_alert_statistics(manager),
+        'active_alerts': [alert.to_dict() for alert in active_alerts]
+    }
+    if include_history:
+        report_data['alert_history'] = [
+            alert.to_dict() for alert in manager.alert_history[-100:]
         ]
-        
-        if active_alerts:
-            lines.append("ACTIVE ALERTS:")
-            lines.append("-" * 20)
-            
-            for alert in sorted(active_alerts, key=lambda x: x.timestamp, reverse=True):
-                severity_symbol = _get_severity_symbol(alert.severity)
-                lines.append(f"  {severity_symbol} {alert.title}")
-                lines.append(f"    Created: {datetime.fromtimestamp(alert.timestamp)}")
-                lines.append(f"    Source: {alert.source_component}")
-                lines.append(f"    Status: {alert.status.value}")
-                lines.append("")
-        else:
-            lines.append("No active alerts.")
-        
-        return "\n".join(lines)
+    return json.dumps(report_data, indent=2, default=str)
+
+
+def _generate_text_report(manager: AlertManager, active_alerts: list[Alert]) -> str:
+    """Generate text-based alert report"""
+    lines = [
+        "Alert System Report",
+        "=" * 40,
+        f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Active Alerts: {len(active_alerts)}",
+        f"Total Alerts Generated: {manager.stats['total_alerts']}",
+        ""
+    ]
+    if active_alerts:
+        lines.append("ACTIVE ALERTS:")
+        lines.append("-" * 20)
+        for alert in sorted(active_alerts, key=lambda x: x.timestamp, reverse=True):
+            severity_symbol = _get_severity_symbol(alert.severity)
+            lines.append(f"  {severity_symbol} {alert.title}")
+            lines.append(f"    Created: {datetime.fromtimestamp(alert.timestamp)}")
+            lines.append(f"    Source: {alert.source_component}")
+            lines.append(f"    Status: {alert.status.value}")
+            lines.append("")
+    else:
+        lines.append("No active alerts.")
+    return "\n".join(lines)
