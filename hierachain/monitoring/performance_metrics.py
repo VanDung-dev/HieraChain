@@ -352,32 +352,38 @@ def get_metrics_instance() -> PerformanceMetrics:
 def track_arrow_conversion(row_count: int = 0):
     """Context manager for tracking Arrow conversion."""
     metrics = get_metrics_instance()
-    return metrics.measure(
+    return PerformanceMetrics.measure(
+        metrics,
         operation="arrow_conversion",
-        row_count=row_count
+        row_count=row_count,
     )
 
 
 def track_parquet_write(data_size_bytes: int = 0, row_count: int = 0):
     """Context manager for tracking Parquet writes."""
     metrics = get_metrics_instance()
-    return metrics.measure(
+    return PerformanceMetrics.measure(
+        metrics,
         operation="parquet_write",
         data_size_bytes=data_size_bytes,
-        row_count=row_count
+        row_count=row_count,
     )
 
 
 def track_parquet_read(data_size_bytes: int = 0):
     """Context manager for tracking Parquet reads."""
     metrics = get_metrics_instance()
-    return metrics.measure(
+    return PerformanceMetrics.measure(
+        metrics,
         operation="parquet_read",
-        data_size_bytes=data_size_bytes
+        data_size_bytes=data_size_bytes,
     )
 
 
 def track_query(operation: str = "query"):
     """Context manager for tracking query operations."""
     metrics = get_metrics_instance()
-    return metrics.measure(operation=operation)
+    return PerformanceMetrics.measure(
+        metrics,
+        operation=operation,
+    )
