@@ -97,29 +97,36 @@ class SignatureVerifier:
         Returns:
             List of booleans.
         """
-        batch_input = []
-        for entry in items:
-            item_type = entry.get('type', 'event')
-            item_data = entry.get('item')
-            pk = entry.get('public_key')
-            
-            if not item_data or not pk or 'signature' not in item_data:
-                # Add dummy invalid entry to preserve index mapping
-                batch_input.append({}) 
-                continue
-
-            if item_type == 'tx':
-                msg = self._get_signable_transaction_content(item_data)
-            else:
-                msg = self._get_signable_event_content(item_data)
-                
-            batch_input.append({
-                'public_key': pk,
-                'message': msg,
-                'signature': item_data['signature']
-            })
-            
+        batch_input = [self._build_batch_entry(entry) for entry in items]
         return verify_batch_signatures(batch_input)
+
+    def _build_batch_entry(self, entry: dict[str, Any]) -> dict[str, Any]:
+        """
+        Build a single batch entry for verification, preserving index mapping.
+
+        Args:
+            entry: Dict with 'item', 'public_key' and optional 'type' ('event'|'tx')
+
+        Returns:
+            Dict suitable for verify_batch_signatures, or empty dict if invalid.
+        """
+        item_type = entry.get('type', 'event')
+        item_data = entry.get('item')
+        pk = entry.get('public_key')
+
+        if not item_data or not pk or 'signature' not in item_data:
+            return {}
+
+        if item_type == 'tx':
+            msg = self._get_signable_transaction_content(item_data)
+        else:
+            msg = self._get_signable_event_content(item_data)
+
+        return {
+            'public_key': pk,
+            'message': msg,
+            'signature': item_data['signature']
+        }
 
     def _verify_any(self, public_key: str, message: bytes, signature: str) -> bool:
         """
