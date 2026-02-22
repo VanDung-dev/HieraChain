@@ -25,7 +25,7 @@ from hierachain.hierarchical.consensus.bft.view_manager import (
 )
 from hierachain.hierarchical.consensus.bft.consensus import (
     BFTConsensus,
-    _validate_consensus_message
+    validate_consensus_message,
 )
 
 __all__ = [
@@ -43,5 +43,5 @@ __all__ = [
     'forward_to_primary',
     'validate_view_change_proof',
     'start_view_change_timer',
-    '_validate_consensus_message'
+    'validate_consensus_message',
 ]
