@@ -249,6 +249,11 @@ class DomainChain(BaseChain):
         return self._metrics.copy()
 
     @property
+    def pending_transactions(self) -> dict[str, dict[str, Any]]:
+        """Read-only access to pending transactions."""
+        return self._tx_manager.pending_transactions
+
+    @property
     def _pending_transactions(self) -> dict[str, dict[str, Any]]:
         """Backward-compatible access to pending transactions."""
         return self._tx_manager.pending_transactions
@@ -258,21 +263,15 @@ class DomainChain(BaseChain):
     def _setup_default_business_rules(self) -> None:
         """Setup default business rules for the domain chain."""
     
-        def entity_must_be_registered(
-            entity_info: dict[str, Any], _operation: str
-        ) -> bool:
+        def entity_must_be_registered(entity_info: dict[str, Any], _operation: str) -> bool:
             """Rule: Entity must be registered before operations."""
             return entity_info.get("status") != "unregistered"
     
-        def no_concurrent_operations(
-            entity_info: dict[str, Any], _operation: str
-        ) -> bool:
+        def no_concurrent_operations(entity_info: dict[str, Any], _operation: str) -> bool:
             """Rule: No concurrent operations on same entity."""
             return entity_info.get("current_operation") is None
     
-        def quality_check_before_approval(
-            entity_info: dict[str, Any], operation: str
-        ) -> bool:
+        def quality_check_before_approval(entity_info: dict[str, Any], operation: str) -> bool:
             """Rule: Quality check must pass before approval."""
             if operation.startswith("approval"):
                 last_qc = entity_info.get("last_quality_check", {})
