@@ -146,6 +146,131 @@ def _log_backup_success(backup_id: str, hash_value: str, locations: list[str]):
     logger.info("Key backup successful", extra=log_entry)
 
 
+def _encrypt_backup_data(data: dict, encryption_key: bytes) -> bytes:
+    """Encrypt backup data using AES-256-GCM."""
+    aesgcm = AESGCM(encryption_key)
+    nonce = secrets.token_bytes(12)
+    json_data = json.dumps(data).encode("utf-8")
+    ciphertext = aesgcm.encrypt(nonce, json_data, None)
+    return nonce + ciphertext
+
+
+def _decrypt_backup_data(encrypted_data: bytes, encryption_key: bytes) -> dict:
+    """Decrypt backup data encrypted with AES-256-GCM."""
+    aesgcm = AESGCM(encryption_key)
+    nonce = encrypted_data[:12]
+    ciphertext = encrypted_data[12:]
+    decrypted_data = aesgcm.decrypt(nonce, ciphertext, None)
+    return json.loads(decrypted_data.decode("utf-8"))
+
+
+def _calculate_integrity_hash(data: bytes, integrity_check: str) -> str:
+    """Calculate hash for integrity checking based on configured algorithm."""
+    algorithms = {
+        "sha512": hashlib.sha512,
+        "sha256": hashlib.sha256,
+    }
+    hash_func = algorithms.get(integrity_check, hashlib.sha512)
+    return hash_func(data).hexdigest()
+
+
+def _verify_integrity(file_path: str, expected_hash: str, integrity_check: str) -> bool:
+    """Verify backup file integrity."""
+    try:
+        with open(file_path, "rb") as f:
+            actual_hash = _calculate_integrity_hash(f.read(), integrity_check)
+        return actual_hash == expected_hash
+    except (IOError, OSError, ValueError):
+        return False
+
+
+def _distribute_to_locations(file_path: str, backup_id: str, locations: list[str]) -> list[str]:
+    """Distribute encrypted backup to secure locations."""
+    distributed_locations: list[str] = []
+    filename = f"{backup_id}.enc"
+
+    for location in locations:
+        try:
+            location_path = os.path.join("backups", location)
+            os.makedirs(location_path, exist_ok=True)
+            dest_path = os.path.join(location_path, filename)
+            shutil.copy2(file_path, dest_path)
+            distributed_locations.append(location)
+        except Exception as e:
+            logger.error(f"Failed to distribute backup to {location}: {str(e)}")
+
+    return distributed_locations
+
+
+def _cleanup_old_backups(metadata: dict, retention_period: int, remove_backup):
+    """Remove backups older than retention period."""
+    cutoff_date = datetime.now() - timedelta(days=retention_period)
+
+    backups_to_remove: list[str] = []
+    for backup_id, entry in metadata.items():
+        backup_time = datetime.fromisoformat(entry.get("timestamp", ""))
+        if backup_time < cutoff_date:
+            backups_to_remove.append(backup_id)
+
+    for backup_id in backups_to_remove:
+        try:
+            remove_backup(backup_id)
+            logger.info(f"Removed expired backup: {backup_id}")
+        except Exception as e:
+            logger.error(f"Failed to remove expired backup {backup_id}: {str(e)}")
+
+
+def _find_backup_file(backup_id: str, metadata: dict) -> str | None:
+    """Find the backup file for given backup ID."""
+    entry = metadata.get(backup_id)
+    if not entry:
+        return None
+
+    primary_path = entry.get("file_path")
+    if primary_path and os.path.exists(primary_path):
+        return primary_path
+
+    for location in entry.get("locations", []):
+        file_path = os.path.join("backups", location, f"{backup_id}.enc")
+        if os.path.exists(file_path):
+            return file_path
+
+    return None
+
+
+def _get_backup_hash(backup_id: str, metadata: dict) -> str:
+    """Retrieve stored hash for backup."""
+    entry = metadata.get(backup_id, {})
+    return entry.get("hash", "")
+
+
+def _load_metadata(metadata_file: str) -> dict:
+    """Load backup metadata from file."""
+    if os.path.exists(metadata_file):
+        try:
+            with open(metadata_file, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to load backup metadata: {str(e)}")
+            return {}
+    return {}
+
+
+def _save_metadata(metadata_file: str, metadata: dict):
+    """Save backup metadata to file."""
+    try:
+        with open(metadata_file, "w") as f:
+            json.dump(metadata, f, indent=2)
+    except Exception as e:
+        logger.error(f"Failed to save backup metadata: {str(e)}")
+
+
+def _update_metadata(metadata_file: str, metadata: dict, backup_id: str, entry: dict):
+    """Update metadata for a backup."""
+    metadata[backup_id] = entry
+    _save_metadata(metadata_file, metadata)
+
+
 class KeyBackupManager:
     """
     Manages backup and restoration of public and private keys.
@@ -187,7 +312,7 @@ class KeyBackupManager:
         
         # Initialize backup metadata storage
         self.metadata_file = os.path.join(self.backup_dir, "backup_metadata.json")
-        self.metadata = self._load_metadata()
+        self.metadata = _load_metadata(self.metadata_file)
     
     def backup_keys(self, public_key: bytes, private_key: bytes, key_type: str = "default") -> str:
         """
@@ -228,7 +353,7 @@ class KeyBackupManager:
             }
             
             # Encrypt backup data
-            encrypted_data = self._encrypt_backup_data(backup_data)
+            encrypted_data = _encrypt_backup_data(backup_data, self.encryption_key)
             
             # Create backup file
             backup_file = os.path.join(self.backup_dir, f"{backup_id}.enc")
@@ -236,17 +361,17 @@ class KeyBackupManager:
                 f.write(encrypted_data)
             
             # Generate integrity hash
-            hash_value = self._calculate_integrity_hash(encrypted_data)
+            hash_value = _calculate_integrity_hash(encrypted_data, self.integrity_check)
             
             # Verify integrity immediately
-            if not self._verify_integrity(backup_file, hash_value):
+            if not _verify_integrity(backup_file, hash_value, self.integrity_check):
                 raise BackupError("Backup integrity verification failed")
             
             # Distribute to configured locations
-            distributed_locations = self._distribute_to_locations(backup_file, backup_id)
+            distributed_locations = _distribute_to_locations(backup_file, backup_id, self.locations)
             
             # Update metadata
-            self._update_metadata(backup_id, {
+            _update_metadata(self.metadata_file, self.metadata, backup_id, {
                 "timestamp": timestamp,
                 "key_type": key_type,
                 "hash": hash_value,
@@ -255,7 +380,7 @@ class KeyBackupManager:
             })
             
             # Clean up old backups according to retention policy
-            self._cleanup_old_backups()
+            _cleanup_old_backups(self.metadata, self.retention_period, self._remove_backup)
             
             _log_backup_success(backup_id, hash_value, distributed_locations)
             logger.info(f"Successfully backed up {key_type} keys with ID: {backup_id}")
@@ -283,7 +408,7 @@ class KeyBackupManager:
         """
         try:
             # Find backup file
-            backup_file = self._find_backup_file(backup_id)
+            backup_file = _find_backup_file(backup_id, self.metadata)
             if not backup_file:
                 raise RestoreError(f"Backup file not found for ID: {backup_id}")
             
@@ -292,13 +417,13 @@ class KeyBackupManager:
                 encrypted_data = f.read()
             
             # Verify integrity
-            expected_hash = self._get_backup_hash(backup_id)
-            actual_hash = self._calculate_integrity_hash(encrypted_data)
+            expected_hash = _get_backup_hash(backup_id, self.metadata)
+            actual_hash = _calculate_integrity_hash(encrypted_data, self.integrity_check)
             if actual_hash != expected_hash:
                 raise IntegrityError(f"Backup integrity check failed for {backup_id}")
             
             # Decrypt backup data
-            backup_data = self._decrypt_backup_data(encrypted_data)
+            backup_data = _decrypt_backup_data(encrypted_data, self.encryption_key)
             
             # Extract keys
             public_key = bytes.fromhex(backup_data["public_key"])
@@ -353,90 +478,20 @@ class KeyBackupManager:
             bool: True if backup is intact, False otherwise
         """
         try:
-            backup_file = self._find_backup_file(backup_id)
+            backup_file = _find_backup_file(backup_id, self.metadata)
             if not backup_file:
                 return False
             
-            expected_hash = self._get_backup_hash(backup_id)
-            return self._verify_integrity(backup_file, expected_hash)
+            expected_hash = _get_backup_hash(backup_id, self.metadata)
+            return _verify_integrity(backup_file, expected_hash, self.integrity_check)
             
         except Exception as e:
             logger.error(f"Backup integrity verification failed for {backup_id}: {str(e)}")
             return False
 
-    def _encrypt_backup_data(self, data: dict) -> bytes:
-        """Encrypt backup data using AES-256-GCM."""
-        aesgcm = AESGCM(self.encryption_key)
-        nonce = secrets.token_bytes(12)  # Standard 12-byte nonce for GCM
-        json_data = json.dumps(data).encode('utf-8')
-        ciphertext = aesgcm.encrypt(nonce, json_data, None)
-        # Prepend nonce to ciphertext for storage
-        return nonce + ciphertext
-    
-    def _decrypt_backup_data(self, encrypted_data: bytes) -> dict:
-        """Decrypt backup data encrypted with AES-256-GCM."""
-        aesgcm = AESGCM(self.encryption_key)
-        # Extract 12-byte nonce from the beginning
-        nonce = encrypted_data[:12]
-        ciphertext = encrypted_data[12:]
-        decrypted_data = aesgcm.decrypt(nonce, ciphertext, None)
-        return json.loads(decrypted_data.decode('utf-8'))
-    
-    def _calculate_integrity_hash(self, data: bytes) -> str:
-        """Calculate SHA-512 hash for integrity checking."""
-        if self.integrity_check == "sha512":
-            return hashlib.sha512(data).hexdigest()
-        elif self.integrity_check == "sha256":
-            return hashlib.sha256(data).hexdigest()
-        else:
-            return hashlib.sha512(data).hexdigest()  # Default to SHA-512
-    
-    def _verify_integrity(self, file_path: str, expected_hash: str) -> bool:
-        """Verify backup file integrity."""
-        try:
-            with open(file_path, "rb") as f:
-                actual_hash = self._calculate_integrity_hash(f.read())
-            return actual_hash == expected_hash
-        except (IOError, OSError, ValueError):
-            return False
-    
-    def _distribute_to_locations(self, file_path: str, backup_id: str) -> list[str]:
-        """Distribute encrypted backup to secure locations."""
-        distributed_locations = []
-        filename = f"{backup_id}.enc"
-        
-        for location in self.locations:
-            try:
-                # Create location directory if it doesn't exist
-                location_path = os.path.join("backups", location)
-                os.makedirs(location_path, exist_ok=True)
-                
-                # Copy backup to location
-                dest_path = os.path.join(location_path, filename)
-                shutil.copy2(file_path, dest_path)
-                distributed_locations.append(location)
-                
-            except Exception as e:
-                logger.error(f"Failed to distribute backup to {location}: {str(e)}")
-        
-        return distributed_locations
-    
     def _cleanup_old_backups(self):
         """Remove backups older than retention period."""
-        cutoff_date = datetime.now() - timedelta(days=self.retention_period)
-        
-        backups_to_remove = []
-        for backup_id, metadata in self.metadata.items():
-            backup_time = datetime.fromisoformat(metadata.get("timestamp", ""))
-            if backup_time < cutoff_date:
-                backups_to_remove.append(backup_id)
-        
-        for backup_id in backups_to_remove:
-            try:
-                self._remove_backup(backup_id)
-                logger.info(f"Removed expired backup: {backup_id}")
-            except Exception as e:
-                logger.error(f"Failed to remove expired backup {backup_id}: {str(e)}")
+        _cleanup_old_backups(self.metadata, self.retention_period, self._remove_backup)
     
     def _remove_backup(self, backup_id: str):
         """Remove a backup and its metadata."""
@@ -462,51 +517,23 @@ class KeyBackupManager:
 
     def _find_backup_file(self, backup_id: str) -> str | None:
         """Find the backup file for given backup ID."""
-        metadata = self.metadata.get(backup_id)
-        if not metadata:
-            return None
-        
-        # Try primary location first
-        primary_path = metadata.get("file_path")
-        if primary_path and os.path.exists(primary_path):
-            return primary_path
-        
-        # Try distributed locations
-        for location in metadata.get("locations", []):
-            file_path = os.path.join("backups", location, f"{backup_id}.enc")
-            if os.path.exists(file_path):
-                return file_path
-        
-        return None
+        return _find_backup_file(backup_id, self.metadata)
     
     def _get_backup_hash(self, backup_id: str) -> str:
         """Retrieve stored hash for backup."""
-        metadata = self.metadata.get(backup_id, {})
-        return metadata.get("hash", "")
+        return _get_backup_hash(backup_id, self.metadata)
     
     def _load_metadata(self) -> dict:
         """Load backup metadata from file."""
-        if os.path.exists(self.metadata_file):
-            try:
-                with open(self.metadata_file, "r") as f:
-                    return json.load(f)
-            except Exception as e:
-                logger.error(f"Failed to load backup metadata: {str(e)}")
-                return {}
-        return {}
+        return _load_metadata(self.metadata_file)
     
     def _save_metadata(self):
         """Save backup metadata to file."""
-        try:
-            with open(self.metadata_file, "w") as f:
-                json.dump(self.metadata, f, indent=2)
-        except Exception as e:
-            logger.error(f"Failed to save backup metadata: {str(e)}")
+        _save_metadata(self.metadata_file, self.metadata)
     
     def _update_metadata(self, backup_id: str, metadata: dict):
         """Update metadata for a backup."""
-        self.metadata[backup_id] = metadata
-        self._save_metadata()
+        _update_metadata(self.metadata_file, self.metadata, backup_id, metadata)
 
 
 # Factory function for creating configured KeyBackupManager
