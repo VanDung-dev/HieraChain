@@ -18,6 +18,22 @@ import os
 # API Base URL
 BASE_URL = "http://127.0.0.1:2661"
 
+
+def _post_and_print(path: str, payload: dict):
+    try:
+        response = requests.post(
+            f"{BASE_URL}{path}",
+            json=payload,
+            timeout=5,
+        )
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {json.dumps(response.json(), indent=2)}")
+    except requests.exceptions.ConnectionError:
+        print("ERROR: Cannot connect to server. Make sure the API server is running.")
+    except Exception as e:
+        print(f"ERROR: {e}")
+
+
 def test_node_status():
     """Test GET /admin/status endpoint"""
     print("\n" + "="*50)
@@ -48,18 +64,7 @@ def test_verify_identity(challenge: str = "abcd1234"):
     
     payload = {"challenge": challenge_hex}
     
-    try:
-        response = requests.post(
-            f"{BASE_URL}/api/v3/verify-identity",
-            json=payload,
-            timeout=5
-        )
-        print(f"Status Code: {response.status_code}")
-        print(f"Response: {json.dumps(response.json(), indent=2)}")
-    except requests.exceptions.ConnectionError:
-        print("ERROR: Cannot connect to server. Make sure the API server is running.")
-    except Exception as e:
-        print(f"ERROR: {e}")
+    _post_and_print("/api/v3/verify-identity", payload)
 
 
 def test_inject_license(license_key: str = None):
@@ -81,18 +86,7 @@ def test_inject_license(license_key: str = None):
     payload = {"license_key": license_key}
     print(f"License Key (first 20 chars): {license_key[:20]}...")
     
-    try:
-        response = requests.post(
-            f"{BASE_URL}/api/v3/inject-license",
-            json=payload,
-            timeout=5
-        )
-        print(f"Status Code: {response.status_code}")
-        print(f"Response: {json.dumps(response.json(), indent=2)}")
-    except requests.exceptions.ConnectionError:
-        print("ERROR: Cannot connect to server. Make sure the API server is running.")
-    except Exception as e:
-        print(f"ERROR: {e}")
+    _post_and_print("/api/v3/inject-license", payload)
 
 
 def test_license_module():
