@@ -320,7 +320,7 @@ class MainChain(Blockchain):
         self,
         sub_chain_name: str,
         proof_hash: str,
-        metadata: dict[str, Any],
+        metadata: dict[str, Any] | None,
         zk_proof: bytes | None = None
     ) -> bool:
         """
@@ -340,12 +340,14 @@ class MainChain(Blockchain):
         Returns:
             True if proof was added successfully, False otherwise
         """
-        # Validate Sub-Chain is registered
         if sub_chain_name not in self.registered_sub_chains:
             logger.warning(f"Rejected proof: SubChain '{sub_chain_name}' not registered")
             return False
 
-        # Validate metadata is suitable for Main Chain (no detailed data)
+        if not isinstance(metadata, dict):
+            logger.warning(f"Rejected proof: Invalid metadata type from '{sub_chain_name}'")
+            return False
+
         if not validate_proof_metadata(metadata):
             logger.warning(f"Rejected proof: Invalid metadata from '{sub_chain_name}'")
             return False
