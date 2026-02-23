@@ -33,7 +33,7 @@ def _remove_data_dir_with_retry(max_retries=3, delay=0.5):
             if attempt < max_retries - 1:
                 time.sleep(delay)
             # On last attempt, ignore the error (files will be cleaned next run)
-        except Exception:
+        except OSError:
             # Ignore other errors during cleanup
             return
 
