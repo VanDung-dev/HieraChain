@@ -4,6 +4,7 @@ Peer Trust Management Module
 This module handles policy enforcement for network peers, including:
 - Allowlisting (Trusted Peers)
 - Blocklisting (Banned Peers)
+- Environment-aware trust policies (open for dev, strict for production)
 - Integration with IdentityManager for organization-level trust
 """
 
@@ -24,13 +25,33 @@ def _evaluate_strict_policy(peer_id: str) -> bool:
 class PeerTrustManager:
     """
     Manages trust relationships with network peers.
+
+    Supports two trust policies:
+    - "open": All peers are trusted unless explicitly blocked.
+    - "strict": Only allowlisted peers are trusted (production default).
     """
 
-    def __init__(self, identity_manager: IdentityManager | None = None):
+    VALID_POLICIES = ("open", "strict")
+
+    def __init__(
+        self,
+        identity_manager: IdentityManager | None = None,
+        trust_policy: str = "open",
+        initial_allowlist: set[str] | None = None,
+    ):
+        if trust_policy not in self.VALID_POLICIES:
+            raise ValueError(f"Invalid trust_policy '{trust_policy}'. Use one of: {self.VALID_POLICIES}")
+
         self.identity_manager = identity_manager
-        self.allowlist: set[str] = set()
+        self.allowlist: set[str] = set(initial_allowlist or set())
         self.blocklist: set[str] = set()
-        self.trust_policy = "open"  # Options: "open", "strict" (allowlist only), "hybrid"
+        self.trust_policy = trust_policy
+
+        if trust_policy == "strict" and not self.allowlist:
+            logger.warning(
+                "PeerTrustManager initialized with 'strict' policy "
+                "but empty allowlist. No peers will be accepted."
+            )
 
     def trust_peer(self, peer_id: str):
         """Add peer to allowlist."""
@@ -81,6 +102,15 @@ class PeerTrustManager:
 
     def set_policy(self, policy: str):
         """Set trust policy mode ('open' or 'strict')."""
-        if policy not in ["open", "strict"]:
-            raise ValueError("Invalid policy (use 'open' or 'strict')")
+        if policy not in self.VALID_POLICIES:
+            raise ValueError(f"Invalid policy '{policy}'. Use one of: {self.VALID_POLICIES}")
         self.trust_policy = policy
+        logger.info(f"Trust policy changed to '{policy}'")
+
+    def load_allowlist(self, peer_ids: list[str]):
+        """Load a list of peer IDs into the allowlist."""
+        for pid in peer_ids:
+            pid = pid.strip()
+            if pid:
+                self.allowlist.add(pid)
+        logger.info(f"Loaded {len(peer_ids)} peers into allowlist. Total: {len(self.allowlist)}")
