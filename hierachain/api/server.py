@@ -156,7 +156,7 @@ def register_exception_handlers(fast_app: FastAPI, settings):
     @fast_app.exception_handler(Exception)
     async def global_exception_handler(_request, exc):
         logger.error(f"Unhandled exception: {str(exc)}")
-        is_debug = settings.LOG_LEVEL == "DEBUG"
+        is_debug = settings.LOG_LEVEL == "DEBUG" and getattr(settings, "ENV", "dev") != "product"
         return JSONResponse(
             status_code=500,
             content={
@@ -190,7 +190,7 @@ def register_exception_handlers(fast_app: FastAPI, settings):
         )
 
 
-def register_routers(fast_app: FastAPI, api_config):
+def register_routers(fast_app: FastAPI):
     """Register API routers and root endpoint"""
     # Try to include v1 router
     try:
@@ -265,7 +265,7 @@ def create_app() -> FastAPI:
     add_rate_limit(fast_app, settings)
 
     # Register Routers and Root Endpoint
-    register_routers(fast_app, api_config)
+    register_routers(fast_app)
 
     # Register Exception Handlers
     register_exception_handlers(fast_app, settings)
