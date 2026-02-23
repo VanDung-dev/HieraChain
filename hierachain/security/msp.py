@@ -280,7 +280,7 @@ class HierarchicalMSP:
             })
             return False
 
-    def validate_identity(self, entity_id: str, credentials: dict[str, Any]) -> bool:
+    def validate_identity(self, entity_id: str | None, credentials: dict[str, Any] | None) -> bool:
         """
         Validate entity identity and credentials.
 
@@ -291,9 +291,9 @@ class HierarchicalMSP:
         Returns:
             True if identity is valid
         """
-        if entity_id not in self.entities:
+        if not entity_id or entity_id not in self.entities:
             return False
-
+        
         if credentials is None:
             return False
 
@@ -314,7 +314,7 @@ class HierarchicalMSP:
         self._log_event("identity_validated", {"entity_id": entity_id})
         return True
     
-    def authorize_action(self, entity_id: str, action: str, resource: str = None) -> bool:
+    def authorize_action(self, entity_id: str | None, action: str | None, resource: str | None = None) -> bool:
         """
         Authorize entity action based on role and policies.
         
@@ -326,14 +326,14 @@ class HierarchicalMSP:
         Returns:
             True if action is authorized
         """
-        if entity_id not in self.entities:
+        if not entity_id or entity_id not in self.entities:
             return False
             
         entity = self.entities[entity_id]
         role = entity["role"]
         
         # Check role permissions
-        if not self.policies.check_permission(role, action):
+        if not action or not self.policies.check_permission(role, action):
             return False
         
         # Evaluate additional policies if needed
