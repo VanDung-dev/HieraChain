@@ -2,11 +2,11 @@
 FastAPI server for HieraChain Ledger
 
 This module implements the REST API server for the HieraChain Ledger
-The Ledger implements a hierarchical structure where the Main Chain only stores 
-proofs from Sub-Chains.
+The Ledger implements a hierarchical structure where the Main Chain
+only stores proofs from Sub-Chains.
 
-The server uses FastAPI for high performance and includes proper error handling,
-CORS support, and comprehensive logging.
+The server uses FastAPI for high performance and includes proper
+error handling, CORS support, and comprehensive logging.
 """
 
 import uvicorn
@@ -25,6 +25,7 @@ from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """Application lifespan events"""
@@ -37,9 +38,36 @@ async def lifespan(_app: FastAPI):
         logger.info("Global API Authentication ENFORCED")
     else:
         logger.warning("Global API Authentication DISABLED")
+
+    # CORS safety checks for production
+    _check_cors_config(settings)
+
     yield
     # Shutdown
     logger.info("Shutting down HieraChain API server...")
+
+
+def _check_cors_config(settings) -> None:
+    """Log warnings if CORS configuration is unsafe for production."""
+    env = getattr(settings, "ENV", "dev")
+    if env != "product":
+        return
+
+    if settings.CORS_ALLOW_ALL:
+        logger.warning(
+            "SECURITY: CORS_ALLOW_ALL is True in production. "
+            "This allows any origin to access the API. "
+            "Set HRC_CORS_ALLOW_ALL=false and configure "
+            "HRC_CORS_ORIGINS for production."
+        )
+
+    if not settings.CORS_ALLOW_ALL and not settings.CORS_ORIGINS:
+        logger.warning(
+            "SECURITY: CORS_ALLOW_ALL is False but "
+            "CORS_ORIGINS is empty in production. "
+            "No cross-origin requests will be allowed. "
+            "Set HRC_CORS_ORIGINS to your frontend domains."
+        )
 
 
 def add_security_headers(fast_app: FastAPI):
@@ -67,9 +95,12 @@ def add_security_headers(fast_app: FastAPI):
             # Relaxed CSP for documentation pages
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-                "img-src 'self' data: https://fastapi.tiangolo.com"
+                "script-src 'self' 'unsafe-inline' "
+                "https://cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' "
+                "https://cdn.jsdelivr.net; "
+                "img-src 'self' data: "
+                "https://fastapi.tiangolo.com"
             )
         else:
             # Strict CSP for API endpoints
@@ -87,8 +118,11 @@ def add_payload_limit(fast_app: FastAPI):
         content_length = request.headers.get("content-length")
 
         # Check limit only for methods that typically have payloads
-        if (request.method in ("POST", "PUT", "PATCH") and 
-            content_length and int(content_length) > max_size):
+        if (
+            request.method in ("POST", "PUT", "PATCH")
+            and content_length
+            and int(content_length) > max_size
+        ):
             return JSONResponse(
                 status_code=413,
                 content={
@@ -235,14 +269,18 @@ def create_app() -> FastAPI:
         auth_dependency = APIKeyVerifier(settings.get_auth_config())
     else:
         # No-op dependency
-        auth_dependency = lambda: None
+        auth_dependency = lambda: None  # noqa: E731
 
     dependencies = [Depends(auth_dependency)] if settings.AUTH_ENABLED else []
     
     # Create FastAPI app
     fast_app = FastAPI(
         title="HieraChain Ledger API",
-        description="REST API for the HieraChain Ledger - A general-purpose blockchain system for enterprise applications",
+        description=(
+            "REST API for the HieraChain Ledger - "
+            "A general-purpose blockchain system "
+            "for enterprise applications"
+        ),
         version=api_config["version"],
         docs_url="/docs",
         redoc_url="/redoc",
@@ -250,13 +288,11 @@ def create_app() -> FastAPI:
         dependencies=dependencies
     )
 
-    # Add CORS middleware
+    # Add CORS middleware (driven by settings)
+    cors_config = settings.get_cors_config()
     fast_app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # In production, specify allowed origins
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        **cors_config
     )
 
     # Add Middlewares
@@ -272,8 +308,10 @@ def create_app() -> FastAPI:
 
     return fast_app
 
+
 # Create app instance
 app = create_app()
+
 
 def run_server():
     """Run the server with uvicorn"""
@@ -292,6 +330,7 @@ def run_server():
         limit_concurrency=100, # Limit concurrent connections
         headers=[("Server", "HieraChain")]  # Custom server header
     )
+
 
 if __name__ == "__main__":
     run_server()
