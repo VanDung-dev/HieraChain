@@ -14,15 +14,23 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 
 from hierachain.api.v1.schemas import (
-    EventRequest, EventResponse, ChainInfoResponse, 
+    EventRequest,
+    EventResponse,
+    ChainInfoResponse,
     ProofSubmissionResponse,
-    EntityTraceResponse, ChainStatsResponse
+    EntityTraceResponse,
+    ChainStatsResponse
 )
 from hierachain.core.blockchain import Blockchain
 from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.sub_chain import SubChain
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.generic.utils.entity_tracer import EntityTracer
+from hierachain.security.verify.api_key_verifier import (
+    require_event_access,
+    require_chain_access,
+    require_proof_access
+)
 
 router = APIRouter(prefix="/api/v1", tags=["HieraChain"])
 
@@ -56,7 +64,9 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": time.time()}
 
-@router.get("/chains", response_model=list[ChainInfoResponse])
+@router.get(
+    "/chains", response_model=list[ChainInfoResponse], dependencies=[Depends(require_chain_access)]
+)
 async def list_chains(manager: HierarchyManager = Depends(get_hierarchy_manager)):
     """List all chains in the hierarchy"""
     try:
@@ -85,7 +95,9 @@ async def list_chains(manager: HierarchyManager = Depends(get_hierarchy_manager)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list chains: {str(e)}") from e
 
-@router.post("/chains/{chain_name}/events", response_model=EventResponse)
+@router.post(
+    "/chains/{chain_name}/events", response_model=EventResponse, dependencies=[Depends(require_event_access)]
+)
 async def add_event(
     chain_name: str, 
     event_request: EventRequest,
@@ -116,7 +128,9 @@ async def add_event(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add event: {str(e)}")
 
-@router.post("/chains/{chain_name}/submit-proof", response_model=ProofSubmissionResponse)
+@router.post(
+    "/chains/{chain_name}/submit-proof", response_model=ProofSubmissionResponse, dependencies=[Depends(require_proof_access)]
+)
 async def submit_proof(chain_name: str,manager: HierarchyManager = Depends(get_hierarchy_manager)):
     """Submit proof from sub-chain to main chain"""
     try:
@@ -156,7 +170,11 @@ async def submit_proof(chain_name: str,manager: HierarchyManager = Depends(get_h
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to submit proof: {str(e)}")
 
-@router.get("/entities/{entity_id}/trace", response_model=EntityTraceResponse)
+@router.get(
+    "/entities/{entity_id}/trace",
+    response_model=EntityTraceResponse,
+    dependencies=[Depends(require_chain_access)]
+)
 async def trace_entity(
     entity_id: str, 
     chain_name: str | None = None,
@@ -226,7 +244,9 @@ def _get_extended_chain_stats(
     return None, None
 
 
-@router.get("/chains/{chain_name}/stats", response_model=ChainStatsResponse)
+@router.get(
+    "/chains/{chain_name}/stats", response_model=ChainStatsResponse, dependencies=[Depends(require_chain_access)]
+)
 async def get_chain_stats(
     chain_name: str,
     manager: HierarchyManager = Depends(get_hierarchy_manager)
@@ -283,7 +303,9 @@ def _serialize_block(block: Any) -> dict[str, Any]:
     }
 
 
-@router.post("/chains/{chain_name}/create")
+@router.post(
+    "/chains/{chain_name}/create", dependencies=[Depends(require_chain_access)]
+)
 async def create_sub_chain(
     chain_name: str,
     chain_type: str = "generic",
@@ -322,7 +344,9 @@ async def create_sub_chain(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create sub-chain: {str(e)}") from e
 
-@router.get("/chains/{chain_name}/blocks")
+@router.get(
+    "/chains/{chain_name}/blocks", dependencies=[Depends(require_chain_access)]
+)
 async def get_chain_blocks(
     chain_name: str,
     limit: int = 10,

@@ -12,6 +12,7 @@ from hierachain.api.v3.schemas import (
 from hierachain.units.version import get_version
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.api.v1.endpoints import get_hierarchy_manager
+from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.config.settings import get_settings
 from hierachain.security.key_provider import LocalKeyProvider, CryptoError
 
@@ -38,7 +39,9 @@ def get_current_key_provider() -> LocalKeyProvider:
         return LocalKeyProvider.generate()
 
 
-@router.post("/verify-identity", response_model=VerifyIdentityResponse)
+@router.post(
+    "/verify-identity", response_model=VerifyIdentityResponse, dependencies=[Depends(require_chain_access)]
+)
 async def verify_identity(
     request: VerifyIdentityRequest,
     key_provider: LocalKeyProvider = Depends(get_current_key_provider)
@@ -59,7 +62,9 @@ async def verify_identity(
         raise HTTPException(status_code=500, detail=f"Identity verification failed: {str(e)}")
 
 
-@router.get("/status", response_model=NodeStatusResponse)
+@router.get(
+    "/status", response_model=NodeStatusResponse, dependencies=[Depends(require_chain_access)]
+)
 async def get_status(manager: HierarchyManager = Depends(get_hierarchy_manager)):
     """
     Get detailed node status report.

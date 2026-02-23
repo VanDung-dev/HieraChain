@@ -7,7 +7,8 @@ including channels, private data collections, and enhanced domain contracts.
 
 import time
 import logging
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from hierachain.security.verify.api_key_verifier import require_chain_access
 
 from hierachain.security.sanitization import (
     sanitize_string,
@@ -56,7 +57,9 @@ async def health_check():
         "new_modules_available": HAS_NEW_MODULES
     }
 
-@router.post("/channels", response_model=ChannelResponse)
+@router.post(
+    "/channels", response_model=ChannelResponse, dependencies=[Depends(require_chain_access)]
+)
 async def create_channel(channel_request: ChannelCreateRequest):
     """Create a new channel for secure inter-organization communication"""
     if not HAS_NEW_MODULES:
@@ -100,7 +103,7 @@ async def create_channel(channel_request: ChannelCreateRequest):
             detail=f"Failed to create channel: {sanitize_error_message(e)}"
         )
 
-@router.get("/channels/{channel_id}", response_model=ChannelResponse)
+@router.get("/channels/{channel_id}", response_model=ChannelResponse, dependencies=[Depends(require_chain_access)])
 async def get_channel(channel_id: str):
     """Get information about a specific channel"""
     if not HAS_NEW_MODULES:
@@ -122,7 +125,9 @@ async def get_channel(channel_id: str):
         channel_id=channel_id
     )
 
-@router.post("/channels/{channel_id}/private-collections", response_model=ChannelResponse)
+@router.post(
+    "/channels/{channel_id}/private-collections", response_model=ChannelResponse, dependencies=[Depends(require_chain_access)]
+)
 async def create_private_collection(channel_id: str, collection_request: PrivateCollectionCreateRequest):
     """Create a private data collection within a channel"""
     if not HAS_NEW_MODULES:
@@ -159,7 +164,9 @@ async def create_private_collection(channel_id: str, collection_request: Private
             detail=f"Failed to create private collection: {str(e)}"
         )
 
-@router.post("/private-data", response_model=PrivateDataResponse)
+@router.post(
+    "/private-data", response_model=PrivateDataResponse, dependencies=[Depends(require_chain_access)]
+)
 async def add_private_data(data_request: PrivateDataRequest):
     """Add private data to a collection"""
     if not HAS_NEW_MODULES:
@@ -191,7 +198,9 @@ async def add_private_data(data_request: PrivateDataRequest):
             detail=f"Failed to add private data: {str(e)}"
         )
 
-@router.post("/contracts", response_model=ContractResponse)
+@router.post(
+    "/contracts", response_model=ContractResponse, dependencies=[Depends(require_chain_access)]
+)
 async def create_contract(contract_request: ContractCreateRequest):
     """Create a new domain contract"""
     if not HAS_NEW_MODULES:
@@ -232,7 +241,9 @@ async def create_contract(contract_request: ContractCreateRequest):
             detail=f"Failed to create contract: {str(e)}"
         )
 
-@router.post("/contracts/execute", response_model=ContractResponse)
+@router.post(
+    "/contracts/execute", response_model=ContractResponse, dependencies=[Depends(require_chain_access)]
+)
 async def execute_contract(execution_request: ContractExecuteRequest):
     """Execute a domain contract with a given event"""
     if not HAS_NEW_MODULES:
@@ -290,7 +301,9 @@ async def execute_contract(execution_request: ContractExecuteRequest):
             detail=f"Failed to execute contract: {sanitize_error_message(e)}"
         )
 
-@router.post("/organizations", response_model=OrganizationResponse)
+@router.post(
+    "/organizations", response_model=OrganizationResponse, dependencies=[Depends(require_chain_access)]
+)
 async def register_organization(org_request: OrganizationRequest):
     """Register a new organization with MSP"""
     if not HAS_NEW_MODULES:
@@ -319,7 +332,9 @@ async def register_organization(org_request: OrganizationRequest):
             detail=f"Failed to register organization: {str(e)}"
         )
 
-@router.get("/organizations/{org_id}", response_model=OrganizationResponse)
+@router.get(
+    "/organizations/{org_id}", response_model=OrganizationResponse, dependencies=[Depends(require_chain_access)]
+)
 async def get_organization(org_id: str):
     """Get information about a registered organization"""
     if not HAS_NEW_MODULES:
