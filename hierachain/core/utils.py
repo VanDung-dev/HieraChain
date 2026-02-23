@@ -162,7 +162,7 @@ def _check_nested_structures(value: Any) -> bool:
     return True
 
 
-def validate_proof_metadata(metadata: dict[str, Any]) -> bool:
+def validate_proof_metadata(metadata: Any) -> bool:
     """
     Validate proof metadata for Main Chain submission.
     
