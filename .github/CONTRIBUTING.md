@@ -32,7 +32,7 @@ We use the standard **Fork & Pull** workflow:
 ## 2. Development Environment
 
 To set up the environment, install dependencies, and run tests, please see the detailed guide at:
-👉 **[Developer Guide](./DEV_GUIDE.md)**
+👉 **[Developer Guide](../DEV_GUIDE.md)**
 
 ## 3. Coding Standards
 
@@ -58,7 +58,7 @@ You can run all tests using the command:
 python -m pytest tests -v
 ```
 
-To run specific parts, please refer to the details in **[DEV_GUIDE.md](./DEV_GUIDE.md#running-tests)**.
+To run specific parts, please refer to the details in **[DEV_GUIDE.md](../DEV_GUIDE.md#running-tests)**.
 
 ### Contribution Requirements
 
