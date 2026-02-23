@@ -72,6 +72,18 @@ class Settings:
     # Validator Identity
     VALIDATOR_IDENTITY_PATH = os.getenv("HRC_VALIDATOR_IDENTITY", "validator_key.json")
 
+    # P2P Network settings
+    # Trust policy: "open" (any peer unless blocked), "strict" (allowlist only)
+    P2P_TRUST_POLICY = os.getenv("HRC_P2P_TRUST_POLICY", "open")
+    # Comma-separated list of trusted peer IDs for strict mode
+    P2P_PEER_ALLOWLIST: list[str] = (
+        os.getenv("HRC_P2P_PEER_ALLOWLIST", "").split(",")
+        if os.getenv("HRC_P2P_PEER_ALLOWLIST")
+        else []
+    )
+    # Require cryptographic signature verification on P2P messages
+    P2P_REQUIRE_SIGNATURES = os.getenv("HRC_P2P_REQUIRE_SIGNATURES", "false").lower() == "true"
+
     # CORS settings (defaults allow all for development)
     CORS_ALLOW_ALL = os.getenv("HRC_CORS_ALLOW_ALL", "true").lower() == "true"
     CORS_ORIGINS: list[str] = os.getenv("HRC_CORS_ORIGINS", "").split(",") if os.getenv("HRC_CORS_ORIGINS") else []
@@ -203,6 +215,15 @@ class Settings:
         }
 
     @classmethod
+    def get_p2p_config(cls) -> dict[str, Any]:
+        """Get P2P network security configuration"""
+        return {
+            "trust_policy": cls.P2P_TRUST_POLICY,
+            "peer_allowlist": cls.P2P_PEER_ALLOWLIST,
+            "require_signatures": cls.P2P_REQUIRE_SIGNATURES,
+        }
+
+    @classmethod
     def get_cors_config(cls) -> dict[str, Any]:
         """
         Get CORS middleware configuration based on current settings.
@@ -293,6 +314,10 @@ class ProductionSettings(Settings):
     # === Rate Limiting: Recommended ===
     RATE_LIMIT_ENABLED = True
     RATE_LIMIT_REQUESTS_PER_MINUTE = 100
+
+    # === P2P: Strict trust by default in production ===
+    P2P_TRUST_POLICY = "strict"
+    P2P_REQUIRE_SIGNATURES = True
 
 
 class TestingSettings(Settings):
