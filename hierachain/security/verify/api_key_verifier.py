@@ -8,11 +8,13 @@ Ensures only authorized clients with valid, non-revoked API keys can access prot
 import time
 import sys
 import os
-from fastapi import Depends, HTTPException, Security
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import APIKeyHeader, APIKeyQuery
+from typing import Any
 
 from hierachain.security.key_manager import KeyManager
 from hierachain.security.secure_logging import get_security_logger
+from hierachain.config.settings import get_settings
 
 # Add the project root to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
@@ -68,14 +70,15 @@ class APIKeyVerifier:
         else:
             self.api_key_dependency = api_key_header  # Default to header
     
-    async def __call__(self, api_key: str | None = Security(api_key_header)) -> dict:
+    async def __call__(self, request: Request, api_key: str | None = None) -> dict:
         """
-        Verify API key and return context variables.
+        Verify API key from the incoming request. variables.
         
         This method is called as a FastAPI dependency to verify API keys
         for protected endpoints in the HieraChain Ledger.
         
         Args:
+            request: The FastAPI Request object
             api_key: The API key from the configured location
             
         Returns:
@@ -88,6 +91,10 @@ class APIKeyVerifier:
             # Return minimal context when verification is disabled
             return {"user_id": "system", "app_details": {"name": "System Access"}}
         
+        # If api_key is not passed directly, try to extract it from the request based on config
+        if not api_key and request:
+            api_key = await self.api_key_dependency(request)
+            
         # Check if API key is provided
         if not api_key:
             self._log_security_event("missing_api_key", {"timestamp": time.time()})
@@ -130,7 +137,8 @@ class APIKeyVerifier:
             "user_id": user_id,
             "app_details": app_details,
             "api_key_prefix": api_key[:8],
-            "verified_at": time.time()
+            "verified_at": time.time(),
+            "_api_key": api_key  # Store for permission checks
         }
         
         self._log_security_event("successful_verification", {
@@ -196,19 +204,34 @@ class APIKeyVerifier:
         )
 
 
-def require_event_access(context: dict = Depends(APIKeyVerifier)) -> dict:
+def get_auth_dependency() -> Any:
+    """
+    Factory to get the configured APIKeyVerifier instance based on app settings.
+    If auth is disabled, returns a dummy dependency.
+    """
+    settings = get_settings()
+    if settings.AUTH_ENABLED:
+        return APIKeyVerifier(settings.get_auth_config())
+    return None
+
+def _get_active_verifier() -> Any:
+    """Helper to get an instance for Depends"""
+    return get_auth_dependency()
+
+async def require_event_access(
+    request: Request,
+    context: dict | None = Depends(_get_active_verifier)
+) -> dict:
     """
     Require permission to access event-related endpoints.
-
-    Args:
-        context: Context from APIKeyVerifier
-
-    Returns:
-        Dict: Context if permission granted
-
-    Raises:
-        HTTPException: 403 if insufficient permissions
     """
+    if context is None:
+        return {} # Auth disabled
+    
+    # We must explicitly call the verifier if it wasn't resolved fully
+    if callable(context) and isinstance(context, APIKeyVerifier):
+        context = await context(request)
+
     if not ResourcePermissionChecker.has_permission(context, 'events'):
         raise HTTPException(
             status_code=403,
@@ -217,19 +240,19 @@ def require_event_access(context: dict = Depends(APIKeyVerifier)) -> dict:
     return context
 
 
-def require_chain_access(context: dict = Depends(APIKeyVerifier)) -> dict:
+async def require_chain_access(
+    request: Request,
+    context: dict | None = Depends(_get_active_verifier)
+) -> dict:
     """
     Require permission to access chain-related endpoints.
-
-    Args:
-        context: Context from APIKeyVerifier
-
-    Returns:
-        Dict: Context if permission granted
-
-    Raises:
-        HTTPException: 403 if insufficient permissions
     """
+    if context is None:
+        return {} # Auth disabled
+        
+    if callable(context) and isinstance(context, APIKeyVerifier):
+        context = await context(request)
+
     if not ResourcePermissionChecker.has_permission(context, 'chains'):
         raise HTTPException(
             status_code=403,
@@ -238,19 +261,19 @@ def require_chain_access(context: dict = Depends(APIKeyVerifier)) -> dict:
     return context
 
 
-def require_proof_access(context: dict = Depends(APIKeyVerifier)) -> dict:
+async def require_proof_access(
+    request: Request,
+    context: dict | None = Depends(_get_active_verifier)
+) -> dict:
     """
     Require permission to access proof submission endpoints.
-
-    Args:
-        context: Context from APIKeyVerifier
-
-    Returns:
-        Dict: Context if permission granted
-
-    Raises:
-        HTTPException: 403 if insufficient permissions
     """
+    if context is None:
+        return {} # Auth disabled
+        
+    if callable(context) and isinstance(context, APIKeyVerifier):
+        context = await context(request)
+
     if not ResourcePermissionChecker.has_permission(context, 'proofs'):
         raise HTTPException(
             status_code=403,
