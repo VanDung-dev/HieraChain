@@ -76,7 +76,6 @@ class TestSignatureVerifier:
 
     def test_batch_verify(self, verifier, keypair):
         # Create multiple events
-        events = []
         batch_input = []
         
         for i in range(5):

@@ -53,15 +53,7 @@ def test_immutability():
     """
     block = Block(1, [], timestamp=100.0)
     assert len(block.events) == 0
-    
-    new_event = {'entity_id': 'e1', 'event': 't1', 'timestamp': 1.0, 'details': {'a': 1}}
-    
-    # Verify that add_event is no longer supported
-    try:
-        block.add_event(new_event)
-        assert False, "Block should be immutable, add_event should not exist"
-    except AttributeError:
-        pass  # Expected behavior
+    assert not hasattr(block, "add_event")
 
 def test_filtering():
     """
@@ -93,6 +85,7 @@ def test_performance_bench():
     start = time.time()
     events = [{'entity_id': f'e{i}', 'event': 't', 'timestamp': float(i), 'details': {'i': i}} for i in range(1000)]
     block = Block(1, events)
+    assert len(block.events) == 1000
     duration = time.time() - start
     print(f"Time to create block with 1000 events: {duration:.4f}s")
     assert duration < 1.0

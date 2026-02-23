@@ -118,7 +118,7 @@ def test_pof_validation_min_validators():
     # Even if signed by correct leader, should fail if not enough validators
     # Leader for 1 is val_2 (sorted: val_1, val_2. 1%2=1)
     leader = "val_2"
-    block = pof.finalize_block(block, leader)
+    pof.finalize_block(block, leader)
 
     assert pof.can_create_block("val_1") is False
 

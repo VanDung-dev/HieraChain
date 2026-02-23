@@ -11,6 +11,7 @@ import time
 import pytest
 import random
 import string
+from typing import Any
 
 from hierachain.core.blockchain import Blockchain
 from hierachain.core.block import Block
@@ -230,13 +231,13 @@ def test_blockchain_performance_with_large_number_of_events(benchmark):
     """Test blockchain performance with large number of events"""
 
     def create_and_process_events():
-        chain = Blockchain(name="PerformanceTestChain")
+        local_chain = Blockchain(name="PerformanceTestChain")
 
         # Add a large number of events
         num_events = 5000
 
         for i in range(num_events):
-            chain.add_event({
+            local_chain.add_event({
                 "entity_id": f"PERF-{i}",
                 "event": f"perf_event_{i % 100}",
                 "timestamp": time.time(),
@@ -248,21 +249,21 @@ def test_blockchain_performance_with_large_number_of_events(benchmark):
             })
 
         # Finalize multiple blocks
-        blocks_created = 0
-        while chain.pending_events:
-            block = chain.finalize_block()
+        created_blocks = 0
+        while local_chain.pending_events:
+            block = local_chain.finalize_block()
             if block:
-                blocks_created += 1
+                created_blocks += 1
 
-        return chain, blocks_created
+        return local_chain, created_blocks
 
     # Benchmark the whole process
-    chain, blocks_created = benchmark(create_and_process_events)
+    perf_chain, perf_blocks_created = benchmark(create_and_process_events)
 
     # Verify chain integrity
-    assert chain.is_chain_valid() is True
-    assert len(chain.chain) == blocks_created + 1  # +1 for genesis block
-    assert len(chain.pending_events) == 0
+    assert perf_chain.is_chain_valid() is True
+    assert len(perf_chain.chain) == perf_blocks_created + 1
+    assert len(perf_chain.pending_events) == 0
 
 
 # Property-based testing
@@ -349,7 +350,7 @@ def test_blockchain_with_fuzzed_events():
         )
         details = _generate_random_details()
 
-        event = {
+        event: dict[str, Any] = {
             "entity_id": entity_id,
             "event": event_type,
             "timestamp": time.time()

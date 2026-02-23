@@ -21,6 +21,13 @@ backup_dir = "backups/keys"
 metadata_file = os.path.join(backup_dir, "backup_metadata.json")
 
 
+def _sanitize_key_type(value):
+    sanitized_attempt = "".join(
+        c for c in value if c.isalnum() or c in (" ", "-", "_")
+    ).rstrip()
+    return sanitized_attempt.replace(" ", "_")
+
+
 @pytest.fixture(autouse=True)
 def setup_and_teardown():
     """Setup and teardown for each test"""
@@ -373,10 +380,7 @@ def test_backup_security_injection_attacks():
 
         for attempt in injection_attempts:
             backup_id = km.backup_keys(b"pub_key", b"priv_key", attempt)
-            # After sanitization, the backup_id should start with a cleaned version of the key_type
-            # Special characters should be removed or replaced
-            sanitized_attempt = "".join(c for c in attempt if c.isalnum() or c in (' ', '-', '_')).rstrip()
-            sanitized_attempt = sanitized_attempt.replace(' ', '_')
+            sanitized_attempt = _sanitize_key_type(attempt)
             assert backup_id.startswith(sanitized_attempt)
 
             # Verify we can list backups with the original key_type
@@ -408,10 +412,7 @@ def test_backup_security_xss_attacks():
 
         for attempt in xss_attempts:
             backup_id = km.backup_keys(b"pub_key", b"priv_key", attempt)
-            # After sanitization, the backup_id should start with a cleaned version of the key_type
-            # Special characters should be removed or replaced
-            sanitized_attempt = "".join(c for c in attempt if c.isalnum() or c in (' ', '-', '_')).rstrip()
-            sanitized_attempt = sanitized_attempt.replace(' ', '_')
+            sanitized_attempt = _sanitize_key_type(attempt)
             assert backup_id.startswith(sanitized_attempt)
 
             # Verify we can list backups with the original key_type

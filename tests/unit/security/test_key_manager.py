@@ -48,14 +48,12 @@ def test_is_valid_with_invalid_key():
     km = KeyManager()
 
     def test_multiple_invalid_keys():
-        results = []
-        # Test with empty string key
-        results.append(km.is_valid(""))
-        # Test with short key
-        results.append(km.is_valid("short"))
-        # Test with non-existent key
-        results.append(km.is_valid("non_existent_key"))
-        return results
+        invalid_results = [
+            km.is_valid(""),
+            km.is_valid("short"),
+            km.is_valid("non_existent_key")
+        ]
+        return invalid_results
 
     results = test_multiple_invalid_keys()
     assert all(result is False for result in results)
@@ -276,14 +274,12 @@ def test_is_valid_with_edge_cases():
     km = KeyManager()
 
     def test_multiple_edge_cases():
-        results = []
-        # Test with None key
-        results.append(km.is_valid(None))
-        # Test with empty string
-        results.append(km.is_valid(""))
-        # Test with very short key
-        results.append(km.is_valid("abc"))
-        return results
+        edge_results = [
+            km.is_valid(None),
+            km.is_valid(""),
+            km.is_valid("abc")
+        ]
+        return edge_results
 
     results = test_multiple_edge_cases()
     assert all(result is False for result in results[:3])
@@ -326,20 +322,18 @@ def test_create_key_with_various_inputs():
     km = KeyManager()
 
     def create_multiple_keys():
-        keys = []
-        # Normal case
-        keys.append(km.create_key("normal_user", ["read", "write"]))
-        # User ID with special characters
-        keys.append(km.create_key("user@domain.com", ["read"]))
-        # Empty permissions
-        keys.append(km.create_key("user_no_perms", []))
-        return keys
+        keys_list = [
+            km.create_key("normal_user", ["read", "write"]),
+            km.create_key("user@domain.com", ["read"]),
+            km.create_key("user_no_perms", [])
+        ]
+        return keys_list
 
-    keys = create_multiple_keys()
+    created_keys = create_multiple_keys()
 
-    for key in keys:
-        assert key.startswith("hrc_")
-        assert len(key) > 16
+    for api_key in created_keys:
+        assert api_key.startswith("hrc_")
+        assert len(api_key) > 16
 
 
 def test_revoke_key_nonexistent():
@@ -357,16 +351,16 @@ def test_key_creation_performance(benchmark):
         start_time = time.perf_counter()
 
         # Create 100keys to test performance
-        keys = []
+        created_keys = []
         for i in range(100):
-            key = km.create_key(f"user_{i}", ["read", "write"], {"name": f"App {i}"})
-            keys.append(key)
+            created_key = km.create_key(f"user_{i}", ["read", "write"], {"name": f"App {i}"})
+            created_keys.append(created_key)
 
         end_time = time.perf_counter()
 
         # Creating100 keys should take less than 2 seconds
         assert (end_time - start_time) < 2.0
-        assert len(keys) == 100
+        assert len(created_keys) == 100
 
     benchmark(test_multiple_keys)
 
@@ -377,16 +371,16 @@ def test_key_validation_performance(benchmark):
 
     def create_keys():
         # Create testkeys
-        keys = []
+        created_keys = []
         for i in range(100):
-            key = km.create_key(f"user_{i}", ["read", "write"], {"name": f"App {i}"})
-            keys.append(key)
+            created_key = km.create_key(f"user_{i}", ["read", "write"], {"name": f"App {i}"})
+            created_keys.append(created_key)
 
         start_time = time.perf_counter()
 
         #Validate 100 keys
-        for key in keys:
-            assert km.is_valid(key) is True
+        for created_key in created_keys:
+            assert km.is_valid(created_key) is True
 
         end_time = time.perf_counter()
 
@@ -436,20 +430,20 @@ def test_security_injection_attacks():
     ]
 
     def create_keys_with_injection_attempts():
-        keys = []
+        injection_key_list = []
         for attempt in sql_injection_attempts:
             # These should be treated as regular user_ids, not cause errors
-            key = km.create_key(attempt, ["read"], {"name": "Injection Test"})
-            keys.append(key)
-        return keys
+            created_key = km.create_key(attempt, ["read"], {"name": "Injection Test"})
+            injection_key_list.append(created_key)
+        return injection_key_list
 
-    keys = create_keys_with_injection_attempts()
+    injection_keys = create_keys_with_injection_attempts()
 
-    for key in keys:
-        assert key is not None
-        assert km.is_valid(key) is True
+    for injection_key in injection_keys:
+        assert injection_key is not None
+        assert km.is_valid(injection_key) is True
         # Keys should not have special interpretation of these characters
-        assert "'" not in key or "\"" not in key  # Our key generation should not include these
+        assert "'" not in injection_key or "\"" not in injection_key
 
 
 def test_security_xss_attacks():
@@ -465,20 +459,20 @@ def test_security_xss_attacks():
     ]
 
     def test_xss_attempts():
-        results = []
+        xss_results = []
         for i, attempt in enumerate(xss_attempts):
             # These should be treated as regular app details, not cause errors
-            key = km.create_key(f"xss_test_user_{i}", ["read"], attempt)
-            assert key is not None
-            results.append((key, km.is_valid(key)))
-        return results
+            created_key = km.create_key(f"xss_test_user_{i}", ["read"], attempt)
+            assert created_key is not None
+            xss_results.append((created_key, km.is_valid(created_key)))
+        return xss_results
 
     results = test_xss_attempts()
 
     # When we retrieve app details, they should be preserved as-is
-    for key, is_valid in results:
+    for xss_key, is_valid in results:
         assert is_valid is True
-        details = km.get_app_details(key)
+        details = km.get_app_details(xss_key)
         assert details is not None
 
 
@@ -496,15 +490,15 @@ def test_security_directory_traversal():
     ]
 
     def test_traversal_attempts():
-        results = []
+        traversal_results = []
         for attempt in traversal_attempts:
             # These should be treated as regular user_ids, not cause filesystem access
-            key = km.create_key(attempt, ["read"], {"name": "Traversal Test"})
-            assert key is not None
-            results.append((key, km.is_valid(key)))
-        return results
+            created_traversal_key = km.create_key(attempt, ["read"], {"name": "Traversal Test"})
+            assert created_traversal_key is not None
+            traversal_results.append((created_traversal_key, km.is_valid(created_traversal_key)))
+        return traversal_results
 
     results = test_traversal_attempts()
 
-    for key, is_valid in results:
+    for traversal_key, is_valid in results:
         assert is_valid is True

@@ -1,6 +1,8 @@
-import pytest
-from unittest.mock import patch, MagicMock
-from fastapi import FastAPI
+"""
+Test suite for the Hierachain API server module.
+"""
+
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from hierachain.api.server import create_app

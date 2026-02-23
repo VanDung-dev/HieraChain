@@ -8,6 +8,7 @@ including hash generation, entity ID generation, and proof hash generation.
 import time
 import random
 import string
+from typing import Any
 from hypothesis import given, strategies as st
 
 from hierachain.core.utils import (
@@ -98,8 +99,9 @@ def test_validate_proof_metadata():
 def test_generate_hash_edge_cases():
     """Test hash generation with edge cases"""
     # Test with None input - should handle gracefully
+    none_input: Any = None
     try:
-        hash_none = generate_hash(None)
+        hash_none = generate_hash(none_input)
         # If it doesn't raise exception, it should produce consistent result
         assert isinstance(hash_none, str)
         assert len(hash_none) == 64
@@ -163,8 +165,9 @@ def test_generate_proof_hash_edge_cases():
     assert len(empty_metadata_proof)== 64
 
     # Edge case: None metadata (if supported)
+    none_metadata: Any = None
     try:
-        none_metadata_proof = generate_proof_hash(block_hash, None)
+        none_metadata_proof = generate_proof_hash(block_hash, none_metadata)
         assert isinstance(none_metadata_proof, str)
         assert len(none_metadata_proof) == 64
     except (TypeError, ValueError):
@@ -184,8 +187,9 @@ def test_validate_proof_metadata_edge_cases():
     assert validate_proof_metadata({}) is True
 
     # Edge case: None metadata
+    none_metadata: Any = None
     try:
-        result = validate_proof_metadata(None)
+        result = validate_proof_metadata(none_metadata)
         # If it doesn't raise exception, should return boolean
         assert isinstance(result, bool)
     except (TypeError, ValueError):

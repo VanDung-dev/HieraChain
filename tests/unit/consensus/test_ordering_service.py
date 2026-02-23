@@ -9,6 +9,7 @@ import shutil
 from typing import Any
 
 from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
+from hierachain.core.block import Block
 from hierachain.error_mitigation.error_classifier import (
     ErrorClassifier, PriorityLevel, ErrorCategory,
 )
@@ -178,13 +179,14 @@ def _cleanup_ordering_service(service: OrderingService | None, temp_dir: str | N
 def test_block_creation(benchmark: Any) -> None:
     """Test block creation when batch size is reached"""
 
-    def execute() -> tuple[OrderingService, dict[str, Any]]:
+    def execute() -> tuple[OrderingService, Block]:
         service: OrderingService | None = None
         temp_dir: str | None = None
         try:
             service, temp_dir = _start_ordering_service_for_block_test(3, 0.5)
             _submit_test_events(service, 3)
             block = _wait_for_block(service)
+            assert service is not None
             assert block is not None
             assert len(block.events) == 3
             return service, block
@@ -596,7 +598,8 @@ def test_malformed_event_data():
 
         # Test with non-dictionary event data
         try:
-            service.receive_event("not a dict!!!", "test-channel", "test-org")
+            bad_event: Any = "not a dict!!!"
+            service.receive_event(bad_event, "test-channel", "test-org")
             assert False, "Should have raised ValueError"
         except ValueError:
             pass

@@ -39,23 +39,23 @@ def setup_msp():
 def test_msp_initialization():
     """Test MSP initialization"""
     def init_msp():
-        msp, _, _ = setup_msp()
-        return msp
+        msp_instance, _, _ = setup_msp()
+        return msp_instance
 
     msp = init_msp()
 
     assert msp.organization_id == "test-org"
     assert msp.ca is not None
     assert msp.policies is not None
-    assert len(msp.roles) > 0  # Should have default roles
-    assert len(msp.audit_log) == 0  # Should start empty
+    assert len(msp.roles) > 0
+    assert len(msp.audit_log) == 0
 
 
 def test_default_roles_initialization():
     """Test default roles are properly initialized"""
     def init_roles():
-        msp, _, _ = setup_msp()
-        return msp
+        msp_instance, _, _ = setup_msp()
+        return msp_instance
 
     msp = init_roles()
 
@@ -584,16 +584,11 @@ def test_validate_identity_with_invalid_inputs():
     msp.register_entity("test-validate-user", test_credentials, "operator")
 
     def validate_all_cases():
-        # Test with None entity_id
-        result1 = msp.validate_identity(None, test_credentials)
-
-        # Test with empty entity_id
-        result2 = msp.validate_identity("", test_credentials)
-
-        # Test with None credentials
-        result3 = msp.validate_identity("test-validate-user", None)
-
-        return result1, result2, result3
+        return (
+            msp.validate_identity(None, test_credentials),
+            msp.validate_identity("", test_credentials),
+            msp.validate_identity("test-validate-user", None),
+        )
 
     result1, result2, result3 = validate_all_cases()
 
@@ -610,16 +605,11 @@ def test_authorize_action_edge_cases():
     msp.register_entity("test-auth-user", test_credentials, "operator")
 
     def authorize_all_cases():
-        # Test with empty action
-        result1 = msp.authorize_action("test-auth-user", "")
-
-        # Test with None action
-        result2 = msp.authorize_action("test-auth-user", None)
-
-        # Test with non-existent user
-        result3 = msp.authorize_action("nonexistent_user", "view_data")
-
-        return result1, result2, result3
+        return (
+            msp.authorize_action("test-auth-user", ""),
+            msp.authorize_action("test-auth-user", None),
+            msp.authorize_action("nonexistent_user", "view_data"),
+        )
 
     result1, result2, result3 = authorize_all_cases()
 
@@ -653,51 +643,43 @@ def test_full_entity_lifecycle():
     }
 
     def full_lifecycle():
-        msp = setup_integration_msp()
-
-        # 1. Register entity
-        register_result = msp.register_entity(
+        msp_instance = setup_integration_msp()
+        
+        register_ok = msp_instance.register_entity(
             "integration-user",
             credentials,
             "admin",
             attributes
         )
-
-        # 2. Validate identity
-        # For validation, we should only pass the public key, not the private key
+        
         validation_credentials = {
             "public_key": credentials["public_key"]
         }
-        validate_result = msp.validate_identity(
+        validate_ok = msp_instance.validate_identity(
             "integration-user",
             validation_credentials
         )
-
-        # 3. Authorize actions
-        auth_result = msp.authorize_action(
+        
+        auth_ok = msp_instance.authorize_action(
             "integration-user",
             "manage_entities"
         )
-
-        # 4. Get entity info
-        info = msp.get_entity_info("integration-user")
-
-        # 5. Revoke entity
-        revoke_result = msp.revoke_entity(
+        
+        entity_info = msp_instance.get_entity_info("integration-user")
+        
+        revoke_ok = msp_instance.revoke_entity(
             "integration-user",
             "end_of_employment"
         )
-
-        # 6. Try to validate again (should still work even after revocation)
-        validate_after_revoke = msp.validate_identity(
+        
+        validate_after_revoke_local = msp_instance.validate_identity(
             "integration-user",
             validation_credentials
         )
-
-        return register_result, validate_result, auth_result, info, revoke_result, validate_after_revoke
-
-    results = full_lifecycle()
-    register_result, validate_result, auth_result, info, revoke_result, validate_after_revoke = results
+        
+        return register_ok, validate_ok, auth_ok, entity_info, revoke_ok, validate_after_revoke_local
+    
+    register_result, validate_result, auth_result, info, revoke_result, validate_after_revoke_ok = full_lifecycle()
 
     assert register_result, "Entity registration failed"
     assert validate_result, "Identity validation failed after registration"
@@ -718,18 +700,14 @@ def test_role_based_access_control():
     msp.register_entity("test-viewer", viewer_creds, "viewer")
 
     def test_rbac():
-        # Test admin permissions
-        admin_manage = msp.authorize_action("test-admin", "manage_entities")
-        admin_view = msp.authorize_action("test-admin", "view_data")
-
-        # Test viewer permissions
-        viewer_manage = msp.authorize_action("test-viewer", "manage_entities")
-        viewer_view = msp.authorize_action("test-viewer", "view_data")
-
-        return (admin_manage, admin_view, viewer_manage, viewer_view)
-
-    results = test_rbac()
-    admin_manage, admin_view, viewer_manage, viewer_view = results
+        return (
+            msp.authorize_action("test-admin", "manage_entities"),
+            msp.authorize_action("test-admin", "view_data"),
+            msp.authorize_action("test-viewer", "manage_entities"),
+            msp.authorize_action("test-viewer", "view_data"),
+        )
+    
+    admin_manage, admin_view, viewer_manage, viewer_view = test_rbac()
 
     assert admin_manage
     assert admin_view
@@ -829,28 +807,24 @@ def test_msp_security_injection_attacks():
     ]
 
     def test_sql_injections():
-        results = []
+        sql_results = []
         for attempt in sql_injection_attempts:
-            # These should be treated as regular entity_ids
-            result = msp.register_entity(attempt, credentials, "operator")
-            results.append(result)
+            registration_ok = msp.register_entity(attempt, credentials, "operator")
+            sql_results.append(registration_ok)
 
-            # Validation should work normally
             is_valid = msp.validate_identity(attempt, credentials)
-            results.append(is_valid)
+            sql_results.append(is_valid)
 
-            # Entity info should be retrievable
             entity_info = msp.get_entity_info(attempt)
-            results.append(entity_info is not None)
-        return results
+            sql_results.append(entity_info is not None)
+        return sql_results
 
-    results = test_sql_injections()
+    sql_results_list = test_sql_injections()
 
-    # All operations should succeed
-    for i in range(0, len(results), 3):
-        assert results[i] is True    # Registration
-        assert results[i+1] is True  # Validation
-        assert results[i+2] is True  # Info retrieval
+    for i in range(0, len(sql_results_list), 3):
+        assert sql_results_list[i] is True
+        assert sql_results_list[i+1] is True
+        assert sql_results_list[i+2] is True
 
 
 def test_msp_security_xss_attacks():
@@ -876,26 +850,24 @@ def test_msp_security_xss_attacks():
     }
 
     def test_xss_attempts():
-        results = []
-        for a, attributes in enumerate(xss_attempts):
-            entity_id = f"xss-test-entity-{a}"
-            result = msp.register_entity(entity_id, credentials, "viewer", attributes)
-            results.append(result)
+        xss_results = []
+        for index, attributes in enumerate(xss_attempts):
+            entity_id = f"xss-test-entity-{index}"
+            registration_ok = msp.register_entity(entity_id, credentials, "viewer", attributes)
+            xss_results.append(registration_ok)
 
-            # Entity info should be retrievable withattributes preserved
             entity_info = msp.get_entity_info(entity_id)
-            results.append(entity_info is not None)
+            xss_results.append(entity_info is not None)
             if entity_info:
-                results.append(entity_info["attributes"] == attributes)
-        return results
+                xss_results.append(entity_info["attributes"] == attributes)
+        return xss_results
 
-    results = test_xss_attempts()
+    xss_results_list = test_xss_attempts()
 
-    # All operations should succeed
-    for i in range(0, len(results), 3):
-        assert results[i] is True     # Registration
-        assert results[i+1] is True   # Info retrieval
-        assert results[i+2] is True   # Attributes preserved
+    for i in range(0, len(xss_results_list), 3):
+        assert xss_results_list[i] is True
+        assert xss_results_list[i+1] is True
+        assert xss_results_list[i+2] is True
 
 
 def test_msp_directory_traversal_attacks():
@@ -921,20 +893,17 @@ def test_msp_directory_traversal_attacks():
     ]
 
     def test_traversal_attempts():
-        results = []
+        traversal_results = []
         for attempt in traversal_attempts:
-            # These should be treated as regular entity_ids
-            result = msp.register_entity(attempt, credentials, "operator")
-            results.append(result)
+            registration_ok = msp.register_entity(attempt, credentials, "operator")
+            traversal_results.append(registration_ok)
 
-            # Validation should work normally
             is_valid = msp.validate_identity(attempt, credentials)
-            results.append(is_valid)
-        return results
+            traversal_results.append(is_valid)
+        return traversal_results
 
-    results = test_traversal_attempts()
+    traversal_results_list = test_traversal_attempts()
 
-    # All operations should succeed
-    for i in range(0, len(results), 2):
-        assert results[i] is True     # Registration
-        assert results[i+1] is True   # Validation
+    for i in range(0, len(traversal_results_list), 2):
+        assert traversal_results_list[i] is True
+        assert traversal_results_list[i+1] is True

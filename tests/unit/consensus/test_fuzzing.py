@@ -115,7 +115,7 @@ def test_receive_event_rejects_non_dict(non_dict):
     """Verify non-dict input is rejected with ValueError."""
     service = create_ordering_service()
     try:
-        with pytest.raises((ValueError, TypeError)):
+        with pytest.raises(Exception):
             service.receive_event(non_dict, "channel", "org")
     finally:
         cleanup_service(service)

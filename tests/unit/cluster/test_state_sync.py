@@ -4,7 +4,6 @@ Unit tests for StateSyncManager.
 Tests the "Resurrection" logic - syncing missing blocks from peers.
 """
 
-import time
 from dataclasses import dataclass
 
 from hierachain.cluster.state_sync_manager import (
@@ -45,8 +44,16 @@ class MockBlockVerifier:
     def __init__(self, all_valid: bool = True):
         self.all_valid = all_valid
 
-    def verify_block(self, block, previous_block=None):
+    def verify_block(self, _block, _previous_block=None):
         return MockVerificationResult(valid=self.all_valid)
+
+
+def _receive_two_blocks_for_sync(manager: StateSyncManager) -> None:
+    manager._status = SyncStatus.REQUESTING
+    manager._target_from_index = 0
+    manager._target_to_index = 2
+    blocks = [MockBlock(1, "hash1"), MockBlock(2, "hash2")]
+    manager.receive_blocks(blocks, "peer-1")
 
 
 class TestSyncRequest:
@@ -171,20 +178,15 @@ class TestBlockVerification:
         verifier = MockBlockVerifier(all_valid=True)
         synced_blocks = []
 
-        def on_complete(blocks):
-            synced_blocks.extend(blocks)
+        def on_complete(received_blocks):
+            synced_blocks.extend(received_blocks)
 
         manager = StateSyncManager(
             node_id="node-1",
             block_verifier=verifier,
             on_sync_complete=on_complete,
         )
-        manager._status = SyncStatus.REQUESTING
-        manager._target_from_index = 0
-        manager._target_to_index = 2
-
-        blocks = [MockBlock(1, "hash1"), MockBlock(2, "hash2")]
-        manager.receive_blocks(blocks, "peer-1")
+        _receive_two_blocks_for_sync(manager)
 
         # Should trigger verification and completion
         assert manager.status == SyncStatus.COMPLETE
@@ -197,12 +199,7 @@ class TestBlockVerification:
             node_id="node-1",
             block_verifier=verifier,
         )
-        manager._status = SyncStatus.REQUESTING
-        manager._target_from_index = 0
-        manager._target_to_index = 2
-
-        blocks = [MockBlock(1, "hash1"), MockBlock(2, "hash2")]
-        manager.receive_blocks(blocks, "peer-1")
+        _receive_two_blocks_for_sync(manager)
 
         # Should fail verification
         assert manager.status == SyncStatus.FAILED
@@ -212,20 +209,15 @@ class TestBlockVerification:
         """Test that without verifier, all blocks are accepted."""
         synced_blocks = []
 
-        def on_complete(blocks):
-            synced_blocks.extend(blocks)
+        def on_complete(received_blocks):
+            synced_blocks.extend(received_blocks)
 
         manager = StateSyncManager(
             node_id="node-1",
             block_verifier=None,
             on_sync_complete=on_complete,
         )
-        manager._status = SyncStatus.REQUESTING
-        manager._target_from_index = 0
-        manager._target_to_index = 2
-
-        blocks = [MockBlock(1, "hash1"), MockBlock(2, "hash2")]
-        manager.receive_blocks(blocks, "peer-1")
+        _receive_two_blocks_for_sync(manager)
 
         assert manager.status == SyncStatus.COMPLETE
         assert len(synced_blocks) == 2

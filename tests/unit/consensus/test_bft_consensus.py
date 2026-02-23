@@ -8,9 +8,14 @@ including message handling, consensus phases, and node communication.
 import time
 
 from hierachain.hierarchical.consensus.bft_consensus import (
-    BFTConsensus, create_bft_network, ConsensusError,
-    BFTMessage, MessageType, sign_message, verify_message_signature,
-    _validate_consensus_message
+    BFTConsensus,
+    create_bft_network,
+    ConsensusError,
+    BFTMessage,
+    MessageType,
+    sign_message,
+    verify_message_signature,
+    validate_consensus_message,
 )
 from hierachain.security.security_utils import KeyPair
 from hierachain.error_mitigation.validator import ConsensusValidator
@@ -38,13 +43,35 @@ test_message = BFTMessage(
     timestamp=time.time(),
     signature="",
     data={"test": "data"},
-    nonce="test-nonce"
+    nonce="test-nonce",
 )
 # Sign with real key
 test_message.signature = sign_message(
     network["node_1"].key_provider,
-    test_message.get_signable_payload()
+    test_message.get_signable_payload(),
 )
+
+
+def _create_bft_setup():
+    node_ids = ["node_1", "node_2", "node_3", "node_4"]
+    keypairs = {nid: KeyPair() for nid in node_ids}
+    public_keys = {nid: kp.public_key for nid, kp in keypairs.items()}
+    return node_ids, keypairs, public_keys
+
+
+def _check_message_validation_and_error_mitigation(normal_node, other_node):
+    assert hasattr(other_node, "log_node_behavior")
+    is_valid = validate_consensus_message(
+        test_message,
+        normal_node.all_nodes,
+        normal_node.node_public_keys,
+        normal_node.verification_strictness,
+        normal_node.view_change_timeout,
+        normal_node.log_node_behavior,
+    )
+    assert is_valid is True
+    assert normal_node.consensus_validator is not None
+    assert normal_node.error_classifier is not None
 
 def test_bft_network_creation():
     """Test creation of BFT network"""
@@ -63,10 +90,8 @@ def test_bft_network_creation():
 
 def test_bft_consensus_initialization():
     """Test BFT consensus initialization"""
-    node_ids = ["node_1", "node_2", "node_3", "node_4"]
-    keypairs = {nid: KeyPair() for nid in node_ids}
-    public_keys = {nid: kp.public_key for nid, kp in keypairs.items()}
-    
+    node_ids, keypairs, public_keys = _create_bft_setup()
+
     bft = BFTConsensus(
         node_id="node_1", 
         all_nodes=node_ids, 
@@ -86,10 +111,8 @@ def test_bft_consensus_initialization():
 
 def test_bft_primary_determination():
     """Test primary node determination"""
-    node_ids = ["node_1", "node_2", "node_3", "node_4"]
-    keypairs = {nid: KeyPair() for nid in node_ids}
-    public_keys = {nid: kp.public_key for nid, kp in keypairs.items()}
-    
+    node_ids, keypairs, public_keys = _create_bft_setup()
+
     bft = BFTConsensus(
         node_id="node_1", 
         all_nodes=node_ids, 
@@ -242,7 +265,7 @@ def test_error_mitigation_with_node_failures():
     assert error_info.error_type == "node_no_response"
 
     # Test node behavior logging
-    primary._log_node_behavior("node_2", "no_response")
+    primary.log_node_behavior("node_2", "no_response")
     # Check that node failure is tracked
     assert "node_2" in primary.node_failure_counts
 
@@ -270,58 +293,20 @@ def test_error_mitigation_with_node_failures():
 
 def test_bft_with_slow_nodes():
     """Test BFT consensus behavior with slow nodes"""
-    # Create a simple test without triggering full consensus
-    # Just test that the slow node detection mechanism works
-
-    # Test that normal node processes message correctly
     normal_node = network["node_3"]
     slow_node = network["node_2"]
 
-    # Test that slow node detection would work by checking internal mechanisms
-    assert hasattr(slow_node, '_log_node_behavior')
-
-    # Test message validation
-    is_valid = _validate_consensus_message(
-        test_message, normal_node.all_nodes, normal_node.node_public_keys,
-        normal_node.verification_strictness, normal_node.view_change_timeout,
-        normal_node._log_node_behavior
-    )
-    # Should be valid
-    assert is_valid is True
-
-    # Test that we can at least initialize the nodes with error mitigation
-    assert normal_node.consensus_validator is not None
-    assert normal_node.error_classifier is not None
+    _check_message_validation_and_error_mitigation(normal_node, slow_node)
 
 
 def test_bft_with_silent_nodes():
     """Test BFT consensus behavior with silent nodes"""
-    # Similar to slow nodes test, focus on component-level testing
-    # rather than full consensus flow
-
-    # Test that normal node processes message correctly
     normal_node = network["node_3"]
     silent_node = network["node_2"]
 
-    # Test that silent node detection mechanism exists
-    assert hasattr(silent_node, '_log_node_behavior')
+    _check_message_validation_and_error_mitigation(normal_node, silent_node)
 
-    # Test message validation
-    is_valid = _validate_consensus_message(
-        test_message, normal_node.all_nodes, normal_node.node_public_keys,
-        normal_node.verification_strictness, normal_node.view_change_timeout,
-        normal_node._log_node_behavior
-    )
-    # Should be valid
-    assert is_valid is True
-
-    # Test that we can at least initialize the nodes with error mitigation
-    assert normal_node.consensus_validator is not None
-    assert normal_node.error_classifier is not None
-
-    # Test that node failure tracking works
-    silent_node._log_node_behavior("node_2", "no_response")
-    # Check that the failure count is tracked
+    silent_node.log_node_behavior("node_2", "no_response")
     assert "node_2" in silent_node.node_failure_counts
 
 
@@ -366,27 +351,26 @@ def test_bft_with_malicious_nodes():
     assert valid_signature_result is True  # Normal signature should be valid
 
     # Test that malicious behavior detection works
-    assert hasattr(malicious_node, '_log_node_behavior')
+    assert hasattr(malicious_node, 'log_node_behavior')
 
     # Test that we can initialize the nodes with error mitigation
     assert normal_node.consensus_validator is not None
     assert normal_node.error_classifier is not None
 
     # Test node behavior logging for malicious actions
-    malicious_node._log_node_behavior("node_2", "invalid_signature")
+    malicious_node.log_node_behavior("node_2", "invalid_signature")
     # Check that error was classified
     assert normal_node.error_classifier is not None
 
-    # Test message validation with invalid signature
-    # This should trigger malicious node detection
-    is_valid = _validate_consensus_message(
-        invalid_message, normal_node.all_nodes, normal_node.node_public_keys,
-        normal_node.verification_strictness, normal_node.view_change_timeout,
-        normal_node._log_node_behavior
+    is_valid = validate_consensus_message(
+        invalid_message,
+        normal_node.all_nodes,
+        normal_node.node_public_keys,
+        normal_node.verification_strictness,
+        normal_node.view_change_timeout,
+        normal_node.log_node_behavior,
     )
-    # Depending on verification_strictness, this might be False or True with logging
-    # But the important thing is that it doesn't break the system
-    assert is_valid in [True, False]  # Either result is acceptable
+    assert is_valid in [True, False]
 
 
 def test_bft_with_split_brain_scenario():
@@ -470,10 +454,10 @@ def test_bft_with_temporary_network_partition():
 
     # Test that nodes can handle network issues
     node = network["node_1"]
-    assert hasattr(node, '_log_node_behavior')
+    assert hasattr(node, 'log_node_behavior')
 
     # Test node behavior logging for network issues
-    node._log_node_behavior("node_2", "network_partition")
+    node.log_node_behavior("node_2", "network_partition")
     assert "node_2" in node.node_failure_counts
 
 
@@ -530,7 +514,7 @@ def test_bft_with_complex_byzantine_attacks():
     assert is_valid is False  # Should detect invalid signature
 
     # Test that invalid signatures are logged as malicious behavior
-    assert hasattr(normal_node, '_log_node_behavior')
+    assert hasattr(normal_node, 'log_node_behavior')
 
     # Test error classification summary
     summary = classifier.get_classification_summary()
@@ -538,5 +522,5 @@ def test_bft_with_complex_byzantine_attacks():
     assert "categories" in summary
 
     # Test node failure tracking for malicious behavior
-    normal_node._log_node_behavior("node_2", "invalid_signature")
+    normal_node.log_node_behavior("node_2", "invalid_signature")
     assert "node_2" in normal_node.node_failure_counts

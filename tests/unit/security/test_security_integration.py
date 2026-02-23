@@ -64,13 +64,13 @@ def test_end_to_end_key_lifecycle(benchmark):
         }
 
         # Register entity
-        result = msp.register_entity(
+        registration_ok = msp.register_entity(
             "integration-entity",
             credentials,
             "admin"
         )
 
-        assert result is True
+        assert registration_ok is True
 
         # Verify entity registration
         entity_info = msp.get_entity_info("integration-entity")
@@ -128,8 +128,8 @@ def test_key_revocation_propagation(benchmark):
             "private_key": "revocation-private-key"
         }
 
-        result = msp.register_entity("revocation-entity", credentials, "operator")
-        assert result is True
+        registration_ok = msp.register_entity("revocation-entity", credentials, "operator")
+        assert registration_ok is True
 
         # Verify initial state
         assert km.is_valid(api_key) is True
@@ -191,8 +191,8 @@ def test_multiple_module_interaction_under_load(benchmark):
                 "private_key": f"private-key-{i}"
             }
 
-            result = msp.register_entity(f"load-entity-{i}", credentials, "operator")
-            assert result is True
+            registration_ok = msp.register_entity(f"load-entity-{i}", credentials, "operator")
+            assert registration_ok is True
 
         # Validate all entities
         for i, key in enumerate(keys):
@@ -274,8 +274,8 @@ def test_security_modules_interoperability(benchmark):
         }
 
         # Register entity with restored key information
-        result = msp.register_entity("interop-entity", credentials, "operator")
-        assert result is True
+        registration_ok = msp.register_entity("interop-entity", credentials, "operator")
+        assert registration_ok is True
 
         # Cross-check information between modules
         assert km.get_user(api_key) == "interop_test_user"

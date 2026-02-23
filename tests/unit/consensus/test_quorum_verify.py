@@ -1,8 +1,13 @@
 
 import pytest
-from unittest.mock import MagicMock, patch
 from hierachain.core.consensus.proof_of_federation import ProofOfFederation
 from hierachain.security.security_utils import generate_key_pair_hex, KeyPair
+
+
+def _sign_message(private_key_hex, message):
+    kp = KeyPair.from_private_key(private_key_hex)
+    return kp.sign(message)
+
 
 class TestQuorumVerification:
     @pytest.fixture
@@ -22,10 +27,6 @@ class TestQuorumVerification:
             })
         return vals
 
-    def _sign_message(self, private_key_hex, message):
-        kp = KeyPair.from_private_key(private_key_hex)
-        return kp.sign(message)
-
     def test_verify_quorum_signatures_success(self, consensus, validators):
         """Test successful quorum verification."""
         # Add validators to consensus
@@ -37,7 +38,7 @@ class TestQuorumVerification:
         
         # Sign with 2 validators
         for i in range(2): 
-            sig = self._sign_message(validators[i]["private_key"], message)
+            sig = _sign_message(validators[i]["private_key"], message)
             signatures.append({
                 "validator_id": validators[i]["id"],
                 "signature": sig
@@ -56,7 +57,7 @@ class TestQuorumVerification:
         
         signatures = []
         for v in vals_to_sign:
-            sig = self._sign_message(v["private_key"], message)
+            sig = _sign_message(v["private_key"], message)
             signatures.append({
                 "validator_id": v["id"],
                 "signature": sig
@@ -75,7 +76,7 @@ class TestQuorumVerification:
         
         signatures = []
         # Proper signer, but signed DIFFERENT message
-        sig = self._sign_message(validators[0]["private_key"], invalid_message)
+        sig = _sign_message(validators[0]["private_key"], invalid_message)
         signatures.append({
             "validator_id": validators[0]["id"],
             "signature": sig
@@ -90,7 +91,7 @@ class TestQuorumVerification:
         message = b"data"
         
         # Sign with unknown validator (validators[1] is not added)
-        sig = self._sign_message(validators[1]["private_key"], message)
+        sig = _sign_message(validators[1]["private_key"], message)
         signatures = [{
             "validator_id": validators[1]["id"],
             "signature": sig
@@ -104,7 +105,7 @@ class TestQuorumVerification:
         consensus.add_validator(validators[1]["id"], {"public_key": validators[1]["public_key"]})
         
         message = b"vote"
-        sig = self._sign_message(validators[0]["private_key"], message)
+        sig = _sign_message(validators[0]["private_key"], message)
         
         # Submit same valid signature twice
         signatures = [
