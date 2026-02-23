@@ -33,7 +33,7 @@ class KeyManager:
         self.key_cache: dict[str, dict] = {}
         self.cache_ttl = 300  # 5 minutes default TTL
         
-    def is_valid(self, api_key: str) -> bool:
+    def is_valid(self, api_key: str | None) -> bool:
         """
         Check if API key is valid and properly formatted.
         
