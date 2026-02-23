@@ -8,8 +8,8 @@ verification, permission checking, and security event logging.
 import pytest
 import asyncio
 import inspect
-from unittest.mock import Mock, patch, ANY
-from fastapi import HTTPException
+from unittest.mock import Mock, patch, ANY, AsyncMock
+from fastapi import HTTPException, Request
 
 from hierachain.security.verify.api_key_verifier import (
     APIKeyVerifier,
@@ -62,10 +62,10 @@ async def test_verify_api_key_success(mock_key_manager, default_config, benchmar
     verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
 
-    async def verify_key_async(key):
-        return await verify_key(key)
+    async def verify_key_async():
+        return await verify_key(request=None, api_key="valid_api_key")
 
-    context = await benchmark.pedantic(verify_key_async, args=("valid_api_key",), kwargs={}, iterations=1, rounds=1)
+    context = await benchmark.pedantic(verify_key_async, iterations=1, rounds=1)
 
     assert "user_id" in context
     assert "app_details" in context
@@ -87,7 +87,7 @@ async def test_verify_api_key_missing_key(default_config):
     verify_key = APIKeyVerifier(default_config)
     
     with pytest.raises(HTTPException) as exc_info:
-        await verify_key(None)
+        await verify_key(request=None, api_key=None)
     
     assert exc_info.value.status_code == 401
     assert "API key missing" in str(exc_info.value.detail)
@@ -101,7 +101,7 @@ async def test_verify_api_key_invalid_key(mock_key_manager, default_config):
     verify_key.key_manager = mock_key_manager
     
     with pytest.raises(HTTPException) as exc_info:
-        await verify_key("invalid_api_key")
+        await verify_key(request=None, api_key="invalid_api_key")
     
     assert exc_info.value.status_code == 401
     assert "Invalid API key" in str(exc_info.value.detail)
@@ -118,7 +118,7 @@ async def test_verify_api_key_revoked_key(mock_key_manager, default_config):
     verify_key.key_manager = mock_key_manager
     
     with pytest.raises(HTTPException) as exc_info:
-        await verify_key("revoked_api_key")
+        await verify_key(request=None, api_key="revoked_api_key")
     
     assert exc_info.value.status_code == 401
     assert "API key revoked" in str(exc_info.value.detail)
@@ -132,7 +132,7 @@ async def test_verify_api_key_disabled(disabled_config):
     """Test verification when disabled"""
     verify_key = APIKeyVerifier(disabled_config)
     
-    context = await verify_key("any_key")
+    context = await verify_key(request=None, api_key="any_key")
     
     assert context["user_id"] == "system"
     assert context["app_details"]["name"] == "System Access"
@@ -144,10 +144,10 @@ async def test_verify_api_key_cache_enabled(mock_key_manager, default_config, be
     verify_key = APIKeyVerifier(default_config)
     verify_key.key_manager = mock_key_manager
 
-    async def verify_key_async(key):
-        return await verify_key(key)
+    async def verify_key_async():
+        return await verify_key(request=None, api_key="valid_api_key")
 
-    await benchmark.pedantic(verify_key_async, args=("valid_api_key",), kwargs={}, iterations=1, rounds=1)
+    await benchmark.pedantic(verify_key_async, iterations=1, rounds=1)
 
     mock_key_manager.cache_key.assert_called_once_with("valid_api_key", ttl=300)
 
@@ -232,7 +232,7 @@ async def test_verify_api_key_cache_zero_ttl(mock_key_manager):
     verify_key = APIKeyVerifier(config)
     verify_key.key_manager = mock_key_manager
     
-    await verify_key("valid_api_key")
+    await verify_key(request=None, api_key="valid_api_key")
     
     # With TTL=0, cache_key should not be called
     mock_key_manager.cache_key.assert_not_called()
@@ -251,7 +251,7 @@ async def test_verify_api_key_cache_disabled(mock_key_manager):
     verify_key = APIKeyVerifier(config)
     verify_key.key_manager = mock_key_manager
     
-    await verify_key("valid_api_key")
+    await verify_key(request=None, api_key="valid_api_key")
     
     # With negative TTL, cache_key should not be called
     mock_key_manager.cache_key.assert_not_called()
@@ -286,7 +286,7 @@ async def test_verify_api_key_security_logging(mock_key_manager, default_config)
     # Mock the _log_security_event method to track calls
     with patch.object(APIKeyVerifier, '_log_security_event') as mock_log:
         # Test successful verification logs
-        await verify_key("valid_api_key")
+        await verify_key(request=None, api_key="valid_api_key")
         mock_log.assert_called_with("successful_verification", {
             "user_id": "test_user",
             "app_name": "Test App",
@@ -299,7 +299,7 @@ async def test_verify_api_key_security_logging(mock_key_manager, default_config)
         # Test invalid key logs
         mock_key_manager.is_valid.return_value = False
         try:
-            await verify_key("invalid_api_key")
+            await verify_key(request=None, api_key="invalid_api_key")
         except HTTPException:
             pass
         
@@ -317,7 +317,7 @@ async def test_verify_api_key_performance_many_requests(mock_key_manager, defaul
 
     async def many_concurrent_requests():
         # Create 100 concurrent requests
-        tasks = [verify_key(f"api_key_{i}") for i in range(100)]
+        tasks = [verify_key(request=None, api_key=f"api_key_{i}") for i in range(100)]
         results = await asyncio.gather(*tasks)
         return results
 
@@ -344,7 +344,7 @@ async def test_integration_verify_api_key_and_resource_permission_checker(mock_k
     assert checker.verify_api_key == verify_key
     
     # Test context creation
-    context = await verify_key("valid_api_key")
+    context = await verify_key(request=None, api_key="valid_api_key")
     assert "user_id" in context
     assert "app_details" in context
 
