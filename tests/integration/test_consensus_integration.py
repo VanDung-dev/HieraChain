@@ -14,6 +14,17 @@ from hierachain.hierarchical.sub_chain import SubChain
 from hierachain.core.block import Block
 
 
+def _build_valid_event_block(chain):
+    latest_block = chain.get_latest_block()
+    block = Block(
+        index=latest_block.index + 1,
+        events=[{"event": "valid_event", "timestamp": time.time()}],
+        previous_hash=latest_block.hash,
+    )
+    block.calculate_hash()
+    return block
+
+
 def test_unfinalized_block_rejection():
     """
     Test that a block without proper consensus finalization (signature)
@@ -81,13 +92,7 @@ def test_signature_tampering_detection():
     chain.start_operation("ENTITY-X", "test_op")
 
     # 1. Create raw block
-    latest_block = chain.get_latest_block()
-    block = Block(
-        index=latest_block.index + 1,
-        events=[{"event": "valid_event", "timestamp": time.time()}],
-        previous_hash=latest_block.hash
-    )
-    block.calculate_hash()
+    block = _build_valid_event_block(chain)
 
     # 2. Finalize it properly
     finalized_block = chain.consensus.finalize_block(block, chain.name)
@@ -135,13 +140,7 @@ def test_content_tampering_detection():
     chain.consensus.config["block_interval"] = 0
     chain.start_operation("ENTITY-Y", "test_op")
 
-    latest_block = chain.get_latest_block()
-    block = Block(
-        index=latest_block.index + 1,
-        events=[{"event": "valid_event", "timestamp": time.time()}],
-        previous_hash=latest_block.hash
-    )
-    block.calculate_hash()
+    block = _build_valid_event_block(chain)
 
     # Finalize
     finalized_block = chain.consensus.finalize_block(block, chain.name)

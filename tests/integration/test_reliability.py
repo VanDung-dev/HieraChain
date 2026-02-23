@@ -78,6 +78,9 @@ def test_recovery_and_rehydration():
         print(f"[Test] Restored Block Index: {latest_block_2.index}")
         
         assert latest_block_2.index == 3, f"Restored chain height mismatch. Expected 3, got {latest_block_2.index}"
+        assert latest_block_2.hash == last_block_hash, (
+            f"Restored latest block hash mismatch. Expected {last_block_hash}, got {latest_block_2.hash}"
+        )
         
         # Verify Content Integrity
         total_events_2 = sum(len(b.events) for b in chain2.chain)
@@ -98,7 +101,4 @@ def test_recovery_and_rehydration():
 
     finally:
         if os.path.exists(data_dir):
-            try:
-                shutil.rmtree(data_dir, ignore_errors=True)
-            except Exception:
-                pass
+            shutil.rmtree(data_dir, ignore_errors=True)

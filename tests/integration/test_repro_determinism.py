@@ -16,6 +16,15 @@ import os
 from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
 
 
+def _wait_and_log_blocks(service, phase_label):
+    time.sleep(1.0)
+    blocks = service.get_blocks()
+    print(f"{phase_label} Blocks Created: {len(blocks)}")
+    for b in blocks:
+        print(f"  Block {b.index}: {len(b.events)} events, Hash: {b.hash[:8]}")
+    return blocks
+
+
 def test_determinism():
     data_dir = "data/test_determinism"
     if os.path.exists(data_dir):
@@ -24,21 +33,16 @@ def test_determinism():
 
     print("=== Phase 1: Original Run ===")
     
-    # 1. Config
     config = {
         "storage_dir": os.path.join(data_dir, "journal"),
-        "block_size": 10,       # Large enough not to trigger immediately
-        "batch_timeout": 0.5,   # Fast timeout
+        "block_size": 10,
+        "batch_timeout": 0.5,
         "worker_threads": 1
     }
     
     node = OrderingNode("node1", "localhost", True, 1.0, OrderingStatus.ACTIVE, time.time())
     
     service = OrderingService(config, [node])
-    
-    # Send 3 events with delays to force 3 separate blocks via timeout
-    # Send 3 events, waiting for block creation explicitly to ensure deterministic journal order
-    ids = []
     current_block_count = 0
     for i in range(3):
         event = {"event": "test", "entity_id": f"e{i}", "timestamp": time.time(), "val": i}
@@ -54,33 +58,16 @@ def test_determinism():
         
         current_block_count = service.blocks_created
         print(f"Block created (Total: {current_block_count})")
-        
-    # Wait for processing
-    time.sleep(1.0)
     
-    blocks_phase1 = service.get_blocks()
-    print(f"Phase 1 Blocks Created: {len(blocks_phase1)}")
-    for b in blocks_phase1:
-        print(f"  Block {b.index}: {len(b.events)} events, Hash: {b.hash[:8]}")
+    blocks_phase1 = _wait_and_log_blocks(service, "Phase 1")
         
     service.shutdown()
     
     print("\n=== Phase 2: Recovery Run ===")
     
-    # Restart service with SAME data dir
-    # It should replay the journal.
-    # If deterministic, it should produce 3 blocks (even though replay is fast).
-    # If not deterministic, it might batch them all into 1 block (since 3 < block_size 10).
-    
     service2 = OrderingService(config, [node])
-    
-    # Wait a bit for recovery to finish (it happens in __init__ -> _recover_state)
-    time.sleep(1.0)
-    
-    blocks_phase2 = service2.get_blocks()
-    print(f"Phase 2 Blocks Created: {len(blocks_phase2)}")
-    for b in blocks_phase2:
-        print(f"  Block {b.index}: {len(b.events)} events, Hash: {b.hash[:8]}")
+        
+    blocks_phase2 = _wait_and_log_blocks(service2, "Phase 2")
         
     service2.shutdown()
 

@@ -11,6 +11,14 @@ from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.hierarchical.transaction_manager import TransactionState
 
 
+def _assert_2pc_outcome(hierarchy, tx_id, source_chain, dest_chain, expected_state):
+    assert tx_id is not None
+    tx = hierarchy.transaction_manager.get_transaction(tx_id)
+    assert tx.state == expected_state
+    assert len(source_chain.pending_transactions) == 0
+    assert len(dest_chain.pending_transactions) == 0
+
+
 @pytest.fixture
 def hierarchy_setup():
     hierarchy = HierarchyManager("TestMainChain")
@@ -47,16 +55,13 @@ def test_2pc_success(hierarchy_setup):
         "SourceChain", "DestChain", payload
     )
     
-    assert tx_id is not None
-    
-    # Check transaction state
-    tx = hierarchy.transaction_manager.get_transaction(tx_id)
-    # Verify transaction state is COMMITTED
-    assert tx.state == TransactionState.COMMITTED
-    
-    # Verify no pending locks (meaning commit finished and cleaned up)
-    assert len(source_chain._pending_transactions) == 0
-    assert len(dest_chain._pending_transactions) == 0
+    _assert_2pc_outcome(
+        hierarchy,
+        tx_id,
+        source_chain,
+        dest_chain,
+        TransactionState.COMMITTED,
+    )
 
 
 def test_2pc_prepare_failure(hierarchy_setup):
@@ -77,11 +82,10 @@ def test_2pc_prepare_failure(hierarchy_setup):
         "SourceChain", "DestChain", payload
     )
     
-    assert tx_id is not None
-    tx = hierarchy.transaction_manager.get_transaction(tx_id)
-    # If prepare fails, the transaction is rolled back
-    assert tx.state == TransactionState.ROLLED_BACK
-    
-    # Verify no pending locks
-    assert len(source_chain._pending_transactions) == 0
-    assert len(dest_chain._pending_transactions) == 0
+    _assert_2pc_outcome(
+        hierarchy,
+        tx_id,
+        source_chain,
+        dest_chain,
+        TransactionState.ROLLED_BACK,
+    )

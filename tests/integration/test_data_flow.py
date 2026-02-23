@@ -101,10 +101,6 @@ def test_end_to_end_flow():
 
     finally:
         # Cleanup
-        try:
-            chain.stop()
-        except Exception:
-            pass
-            
+        chain.stop()
         if os.path.exists(data_dir):
             shutil.rmtree(data_dir, ignore_errors=True)

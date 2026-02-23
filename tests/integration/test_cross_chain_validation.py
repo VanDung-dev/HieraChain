@@ -6,6 +6,7 @@ including proof consistency checks and hierarchical integrity verification.
 """
 
 import time
+from typing import cast
 
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
@@ -21,7 +22,7 @@ def _iter_block_events(chain):
 
 
 def _set_proof_submission_timestamp(main_chain, timestamp):
-    from hierachain.core.block import _convert_events_to_arrow
+    from hierachain.core.block import convert_events_to_arrow
 
     for block, events, needs_arrow_update in _iter_block_events(main_chain.chain):
         for event in events:
@@ -29,11 +30,72 @@ def _set_proof_submission_timestamp(main_chain, timestamp):
                 event["timestamp"] = timestamp
 
                 if needs_arrow_update:
-                    block._events = _convert_events_to_arrow(events)
+                    block._events = convert_events_to_arrow(events)
 
                 return True
 
     return False
+
+
+def _add_full_test_operation(chain, entity_id):
+    chain.start_operation(entity_id, "test_operation", {"param": "value1"})
+    chain.update_entity_status(entity_id, "in_progress")
+    chain.complete_operation(entity_id, "test_operation", {"result": "success"})
+
+
+def _add_simple_test_operation(chain, entity_id="ENTITY-001"):
+    chain.start_operation(entity_id, "test_operation", {"param": "value1"})
+    chain.complete_operation(entity_id, "test_operation", {"result": "success"})
+
+
+def _finalize_sub_chain_and_submit(sub_chain, main_chain):
+    time.sleep(1.0)
+    sub_chain.flush_pending_and_finalize()
+    sub_chain.submit_proof_to_main(main_chain)
+    main_chain.finalize_block()
+
+
+def _setup_two_test_sub_chains_with_proofs(
+    hierarchy_manager,
+    main_chain,
+    chain1_name,
+    chain2_name,
+):
+    hierarchy_manager.create_sub_chain(chain1_name, "testing")
+    hierarchy_manager.create_sub_chain(chain2_name, "validation")
+    sub_chain1 = hierarchy_manager.get_sub_chain(chain1_name)
+    sub_chain2 = hierarchy_manager.get_sub_chain(chain2_name)
+    assert sub_chain1 is not None
+    assert sub_chain2 is not None
+    sub_chain1.consensus.config["block_interval"] = 0
+    sub_chain2.consensus.config["block_interval"] = 0
+    sub_chain1.proof_submission_interval = float("inf")
+    sub_chain2.proof_submission_interval = float("inf")
+
+    _add_simple_test_operation(sub_chain1, "ENTITY-001")
+
+    time.sleep(1.0)
+    sub_chain1.flush_pending_and_finalize()
+    sub_chain1.submit_proof_to_main(main_chain)
+
+    sub_chain2.start_operation(
+        "ENTITY-002",
+        "validate_operation",
+        {"param": "value2"},
+    )
+    sub_chain2.complete_operation(
+        "ENTITY-002",
+        "validate_operation",
+        {"result": "validated"},
+    )
+
+    time.sleep(1.0)
+    sub_chain2.flush_pending_and_finalize()
+    sub_chain2.submit_proof_to_main(main_chain)
+
+    main_chain.finalize_block()
+
+    return sub_chain1, sub_chain2
 
 
 def test_cross_chain_validation():
@@ -55,15 +117,10 @@ def test_cross_chain_validation():
     sub_chain.proof_submission_interval = float('inf')
     
     # Add operations to Sub-Chain
-    sub_chain.start_operation("ENTITY-001", "test_operation", {"param": "value1"})
-    sub_chain.update_entity_status("ENTITY-001", "in_progress")
-    sub_chain.complete_operation("ENTITY-001", "test_operation", {"result": "success"})
+    _add_full_test_operation(sub_chain, "ENTITY-001")
 
     # Finalize Sub-Chain block and submit proof
-    time.sleep(1.0)
-    sub_chain.flush_pending_and_finalize()
-    sub_chain.submit_proof_to_main(main_chain)
-    main_chain.finalize_block()
+    _finalize_sub_chain_and_submit(sub_chain, main_chain)
     
     # Create validator and run validation
     validator = CrossChainValidator(hierarchy_manager)
@@ -144,13 +201,8 @@ def test_cross_chain_validation_with_missing_sub_chain():
     sub_chain.proof_submission_interval = float('inf')
 
     # Add operations and submit proof
-    sub_chain.start_operation("ENTITY-001", "test_operation", {"param": "value1"})
-    sub_chain.complete_operation("ENTITY-001", "test_operation", {"result": "success"})
-    
-    time.sleep(1.0)
-    sub_chain.flush_pending_and_finalize()
-    sub_chain.submit_proof_to_main(main_chain)
-    main_chain.finalize_block()
+    _add_simple_test_operation(sub_chain, "ENTITY-001")
+    _finalize_sub_chain_and_submit(sub_chain, main_chain)
 
     # Simulate a missing sub-chain by removing it from hierarchy manager
     # but keeping the proof in main chain
@@ -234,36 +286,12 @@ def test_cross_chain_validation_system_integrity():
     main_chain = hierarchy_manager.main_chain
     main_chain.consensus.config["block_interval"] = 0
 
-    # Create Sub-Chains
-    hierarchy_manager.create_sub_chain("TestSubChain1", "testing")
-    hierarchy_manager.create_sub_chain("TestSubChain2", "validation")
-
-    sub_chain1 = hierarchy_manager.get_sub_chain("TestSubChain1")
-    sub_chain2 = hierarchy_manager.get_sub_chain("TestSubChain2")
-    assert sub_chain1 is not None
-    assert sub_chain2 is not None
-    sub_chain1.consensus.config["block_interval"] = 0
-    sub_chain2.consensus.config["block_interval"] = 0
-
-    sub_chain1.proof_submission_interval = float('inf')
-    sub_chain2.proof_submission_interval = float('inf')
-
-    # Add operations to Sub-Chains
-    sub_chain1.start_operation("ENTITY-001", "test_operation", {"param": "value1"})
-    sub_chain1.complete_operation("ENTITY-001", "test_operation", {"result": "success"})
-    
-    time.sleep(1.0)
-    sub_chain1.flush_pending_and_finalize()
-    sub_chain1.submit_proof_to_main(main_chain)
-
-    sub_chain2.start_operation("ENTITY-002", "validate_operation", {"param": "value2"})
-    sub_chain2.complete_operation("ENTITY-002", "validate_operation", {"result": "validated"})
-    
-    time.sleep(1.0)
-    sub_chain2.flush_pending_and_finalize()
-    sub_chain2.submit_proof_to_main(main_chain)
-
-    main_chain.finalize_block()
+    _setup_two_test_sub_chains_with_proofs(
+        hierarchy_manager,
+        main_chain,
+        "TestSubChain1",
+        "TestSubChain2",
+    )
 
     # Create validator and run system integrity validation
     validator = CrossChainValidator(hierarchy_manager)
@@ -285,36 +313,12 @@ def test_cross_chain_validation_fault_tolerance():
     main_chain = hierarchy_manager.main_chain
     main_chain.consensus.config["block_interval"] = 0
 
-    # Create Sub-Chains
-    hierarchy_manager.create_sub_chain("FaultToleranceSubChain1", "testing")
-    hierarchy_manager.create_sub_chain("FaultToleranceSubChain2", "validation")
-
-    sub_chain1 = hierarchy_manager.get_sub_chain("FaultToleranceSubChain1")
-    sub_chain2 = hierarchy_manager.get_sub_chain("FaultToleranceSubChain2")
-    assert sub_chain1 is not None
-    assert sub_chain2 is not None
-    sub_chain1.consensus.config["block_interval"] = 0
-    sub_chain2.consensus.config["block_interval"] = 0
-
-    sub_chain1.proof_submission_interval = float('inf')
-    sub_chain2.proof_submission_interval = float('inf')
-
-    # Add operations to Sub-Chains
-    sub_chain1.start_operation("ENTITY-001", "test_operation", {"param": "value1"})
-    sub_chain1.complete_operation("ENTITY-001", "test_operation", {"result": "success"})
-    
-    time.sleep(1.0)
-    sub_chain1.flush_pending_and_finalize()
-    sub_chain1.submit_proof_to_main(main_chain)
-
-    sub_chain2.start_operation("ENTITY-002", "validate_operation", {"param": "value2"})
-    sub_chain2.complete_operation("ENTITY-002", "validate_operation", {"result": "validated"})
-    
-    time.sleep(1.0)
-    sub_chain2.flush_pending_and_finalize()
-    sub_chain2.submit_proof_to_main(main_chain)
-
-    main_chain.finalize_block()
+    sub_chain1, sub_chain2 = _setup_two_test_sub_chains_with_proofs(
+        hierarchy_manager,
+        main_chain,
+        "FaultToleranceSubChain1",
+        "FaultToleranceSubChain2",
+    )
 
     # Simulate a fault in Sub-Chain 1 by removing its blocks to simulate data loss
     # This should cause a "missing_block" or "missing_sub_chain" inconsistency depending on implementation
@@ -355,8 +359,7 @@ def test_cross_chain_validation_with_timestamp_inconsistency():
 
 
     # Add operations and submit proof
-    sub_chain.start_operation("ENTITY-001", "test_operation", {"param": "value1"})
-    sub_chain.complete_operation("ENTITY-001", "test_operation", {"result": "success"})
+    _add_simple_test_operation(sub_chain, "ENTITY-001")
 
     # Manually modify the sub-chain block timestamp to create inconsistency
     # We need to do this before finalizing to ensure we can control the timestamp
@@ -364,12 +367,7 @@ def test_cross_chain_validation_with_timestamp_inconsistency():
         # Add a small delay to ensure different timestamps
         time.sleep(1.0)
 
-    time.sleep(1.0)
-    sub_chain.flush_pending_and_finalize()
-
-    # Submit proof to main chain
-    sub_chain.submit_proof_to_main(main_chain)
-    main_chain.finalize_block()
+    _finalize_sub_chain_and_submit(sub_chain, main_chain)
 
     found_proof = _set_proof_submission_timestamp(main_chain, 0)
     assert found_proof, "Proof submission event not found in main chain"
@@ -426,13 +424,8 @@ def test_cross_chain_validation_with_corrupted_entity_data():
 
 
     # Add operations with entity that has invalid data
-    test_chain.start_operation("ENTITY-001", "test_operation", {"param": "value1"})
-    test_chain.complete_operation("ENTITY-001", "test_operation", {"result": "success"})
-    
-    time.sleep(1.0)
-    test_chain.flush_pending_and_finalize()
-    test_chain.submit_proof_to_main(main_chain)
-    main_chain.finalize_block()
+    _add_simple_test_operation(test_chain, "ENTITY-001")
+    _finalize_sub_chain_and_submit(test_chain, main_chain)
 
     # Create validator and run entity validation on non-existent entity
     validator = CrossChainValidator(hierarchy_manager)
@@ -574,19 +567,18 @@ def test_cross_chain_validation_with_invalid_input_data():
 
     # None operation name
     try:
-        sub_chain.start_operation("ENTITY-001", None, {"param": "value1"})
+        sub_chain.start_operation(
+            "ENTITY-001",
+            cast(str, cast(object, None)),
+            {"param": "value1"},
+        )
     except (ValueError, TypeError, AttributeError):
         # Handle exception if implementation raises one for None operation
         pass
 
     # Add at least one valid operation to continue test
-    sub_chain.start_operation("ENTITY-001", "test_operation", {"param": "value1"})
-    sub_chain.complete_operation("ENTITY-001", "test_operation", {"result": "success"})
-
-    time.sleep(1.0)
-    sub_chain.flush_pending_and_finalize()
-    sub_chain.submit_proof_to_main(main_chain)
-    main_chain.finalize_block()
+    _add_simple_test_operation(sub_chain, "ENTITY-001")
+    _finalize_sub_chain_and_submit(sub_chain, main_chain)
 
     # Create validator and run validation
     validator = CrossChainValidator(hierarchy_manager)
