@@ -18,6 +18,9 @@ from hierachain.units.version import get_version, VERSION
 class Settings:
     """Ledger configuration settings"""
     
+    # Environment
+    ENV = os.getenv("HRC_ENV", "dev").lower()
+    
     # Ledger version
     VERSION = get_version(VERSION)
     Ledger_NAME = "HieraChain"
