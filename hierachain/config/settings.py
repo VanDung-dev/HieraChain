@@ -75,6 +75,8 @@ class Settings:
     # CORS settings (defaults allow all for development)
     CORS_ALLOW_ALL = os.getenv("HRC_CORS_ALLOW_ALL", "true").lower() == "true"
     CORS_ORIGINS: list[str] = os.getenv("HRC_CORS_ORIGINS", "").split(",") if os.getenv("HRC_CORS_ORIGINS") else []
+    CORS_ALLOW_METHODS: list[str] = ["*"]
+    CORS_ALLOW_HEADERS: list[str] = ["*"]
 
     # HTTPS/HSTS settings (disabled by default, enabled in production)
     HSTS_ENABLED = os.getenv("HRC_HSTS_ENABLED", "false").lower() == "true"
@@ -201,6 +203,29 @@ class Settings:
         }
 
     @classmethod
+    def get_cors_config(cls) -> dict[str, Any]:
+        """
+        Get CORS middleware configuration based on current settings.
+        
+        When CORS_ALLOW_ALL is True, uses wildcard origins with credentials
+        disabled (CORS spec forbids allow_origins=['*'] with credentials).
+        When CORS_ALLOW_ALL is False, uses explicit origins with credentials.
+        """
+        if cls.CORS_ALLOW_ALL:
+            return {
+                "allow_origins": ["*"],
+                "allow_credentials": False,
+                "allow_methods": cls.CORS_ALLOW_METHODS,
+                "allow_headers": cls.CORS_ALLOW_HEADERS,
+            }
+        return {
+            "allow_origins": cls.CORS_ORIGINS if cls.CORS_ORIGINS else [],
+            "allow_credentials": True,
+            "allow_methods": cls.CORS_ALLOW_METHODS,
+            "allow_headers": cls.CORS_ALLOW_HEADERS,
+        }
+
+    @classmethod
     def validate_config(cls) -> list[str]:
         """Validate configuration and return list of errors"""
         errors = []
@@ -257,7 +282,9 @@ class ProductionSettings(Settings):
     # === CORS: Restricted in production ===
     # Override with env var HRC_CORS_ORIGINS for specific domains
     CORS_ALLOW_ALL = False
-    CORS_ORIGINS: list[str] = []  # Must be set via env var in production
+    CORS_ORIGINS: list[str] = os.getenv("HRC_CORS_ORIGINS", "").split(",") if os.getenv("HRC_CORS_ORIGINS") else []
+    CORS_ALLOW_METHODS: list[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    CORS_ALLOW_HEADERS: list[str] = ["Authorization", "Content-Type", "X-API-Key", "X-Request-ID"]
     
     # === HTTPS: Headers enabled ===
     HSTS_ENABLED = True
