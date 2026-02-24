@@ -5,15 +5,15 @@ This module implements the persistent storage layer using SQLAlchemy.
 It connects the application logic (OrderingService) with the database models.
 """
 
-import logging
 from typing import Any
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 from hierachain.storage.models import Base, BlockModel, EventModel, ChainStateModel
 from hierachain.config.settings import settings
+from hierachain.security.secure_logging import get_storage_logger
 
-logger = logging.getLogger(__name__)
+logger = get_storage_logger()
 
 
 def _to_block_dict(block_model: BlockModel) -> dict[str, Any]:
@@ -27,6 +27,39 @@ def _to_block_dict(block_model: BlockModel) -> dict[str, Any]:
         "events": events_list,
         "metadata": block_model.metadata_json
     }
+
+
+def _build_block_model(block_data: dict[str, Any]) -> BlockModel:
+    """Create a BlockModel instance from block data dictionary."""
+    return BlockModel(
+        index=block_data['index'],
+        hash=block_data['hash'],
+        previous_hash=block_data['previous_hash'],
+        timestamp=block_data['timestamp'],
+        metadata_json=block_data.get('metadata', {}),
+        chain_name=block_data.get('chain_name')
+    )
+
+
+def _build_event_models(block_data: dict[str, Any]) -> list[EventModel]:
+    """Create a list of EventModel instances from block data dictionary."""
+    block_hash = block_data['hash']
+    chain_name = block_data.get('chain_name')
+
+    events = []
+    for event_data in block_data.get('events', []):
+        event_model = EventModel(
+            block_hash=block_hash,
+            event_id=event_data.get("event_id"),
+            event_type=event_data.get('event', 'unknown'),
+            timestamp=event_data.get('timestamp', 0.0),
+            sender_id=event_data.get('sender', None),
+            data=event_data,  # Store full JSON
+            chain_name=chain_name,
+            entity_id=event_data.get("entity_id")
+        )
+        events.append(event_model)
+    return events
 
 
 class SqlStorageBackend:
@@ -44,15 +77,19 @@ class SqlStorageBackend:
                                Defaults to settings.DATABASE_URL
         """
         self.db_url = connection_string or settings.DATABASE_URL
-        self.engine = create_engine(self.db_url, echo=False)  # set echo=True for debug SQL
-        
+        # Control SQL echo via settings to prevent schema leaks in production
+        sql_echo = getattr(settings, 'LOG_SQL_DETAIL', False)
+        self.engine = create_engine(self.db_url, echo=sql_echo)
+
         # Create all tables (if they don't exist)
         Base.metadata.create_all(self.engine)
-        
+
         # Create thread-safe session factory
         self.Session = scoped_session(sessionmaker(bind=self.engine))
-        
-        logger.info(f"SqlStorageBackend initialized with {self.db_url}")
+
+        logger.info("SqlStorageBackend initialized",
+                    backend_type=self.db_url.split("://")[0]
+                    if "://" in self.db_url else "unknown")
 
     def save_block(self, block_data: dict[str, Any]) -> bool:
         """
@@ -66,53 +103,28 @@ class SqlStorageBackend:
         """
         session = self.Session()
         try:
-            # 1. Create Block Record
-            new_block = BlockModel(
-                index=block_data['index'],
-                hash=block_data['hash'],
-                previous_hash=block_data['previous_hash'],
-                timestamp=block_data['timestamp'],
-                metadata_json=block_data.get('metadata', {}),
-                chain_name=block_data.get('chain_name')
-            )
-            
-            # 2. Create Event Records
-            events = []
-            for event_data in block_data.get('events', []):
-                evt_id = event_data.get("event_id")
-                # Extract entity_id from data if available
-                entity_id = event_data.get("entity_id")
-                
-                event_model = EventModel(
-                    block_hash=block_data['hash'],
-                    event_id=evt_id,
-                    event_type=event_data.get('event', 'unknown'),
-                    timestamp=event_data.get('timestamp', 0.0),
-                    sender_id=event_data.get('sender', None),
-                    data=event_data, # Store full JSON
-                    chain_name=block_data.get('chain_name'),
-                    entity_id=entity_id
-                )
-                events.append(event_model)
-            
-            new_block.events = events
+            new_block = _build_block_model(block_data)
+            new_block.events = _build_event_models(block_data)
             
             session.add(new_block)
-            try:
-                session.commit()
-                logger.debug(f"Saved Block #{new_block.index} ({len(events)} events) to DB.")
-            except Exception as commit_error:
-                # Handle unique constraint violation or other commit errors
-                if "UNIQUE constraint" in str(commit_error):
-                    session.rollback()
-                    return True # Treat as success (idempotent)
-                else:
-                    raise commit_error
-            return True
+            session.commit()
             
+            if getattr(settings, 'LOG_SQL_DETAIL', False):
+                logger.debug("Block saved to DB",
+                            block_index=new_block.index,
+                            events_count=len(new_block.events))
+            return True
+
         except Exception as e:
             session.rollback()
-            logger.error(f"Failed to save block to DB: {e}")
+            
+            # Idempotency: Treat unique constraint violation as success
+            if "UNIQUE constraint" in str(e):
+                return True
+                
+            logger.error("Database operation failed", operation="save_block")
+            if getattr(settings, 'LOG_SQL_DETAIL', False):
+                logger.debug("Save block error detail", error_type=type(e).__name__)
             return False
         finally:
             session.close()
@@ -177,14 +189,16 @@ class SqlStorageBackend:
         session = self.Session()
         try:
             session.merge(ChainStateModel(
-                key=key, 
-                value=value, 
+                key=key,
+                value=value,
                 last_block_hash=last_block_hash
             ))
             session.commit()
         except Exception as e:
             session.rollback()
-            logger.error(f"Failed to update state: {e}")
+            logger.error("Database operation failed", operation="update_state", key=key)
+            if getattr(settings, 'LOG_SQL_DETAIL', False):
+                logger.debug("Update state error detail", error_type=type(e).__name__)
         finally:
             session.close()
 
