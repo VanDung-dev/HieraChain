@@ -12,6 +12,7 @@ from hierachain.security.verify.api_key_verifier import require_chain_access
 
 from hierachain.security.sanitization import (
     sanitize_string,
+    sanitize_dict,
     sanitize_for_output,
     sanitize_error_message
 )
@@ -143,15 +144,26 @@ async def create_private_collection(channel_id: str, collection_request: Private
         )
     
     try:
-        # In a real implementation, this would create an actual PrivateCollection object
-        collection_name = collection_request.name
+        # Sanitize user input before storing
+        collection_name = sanitize_string(collection_request.name)
+        safe_members = [sanitize_string(m) for m in collection_request.members] if collection_request.members else []
+        safe_config = sanitize_dict(collection_request.config) if collection_request.config else {}
+
         _private_collections[collection_name] = {
             "name": collection_name,
             "channel_id": channel_id,
-            "members": collection_request.members,
-            "config": collection_request.config,
+            "members": safe_members,
+            "config": safe_config,
             "created_at": time.time()
         }
+
+        api_logger.audit(
+            action="create",
+            resource="private_collection",
+            success=True,
+            collection_name=collection_name,
+            channel_id=channel_id,
+        )
         
         return ChannelResponse(
             success=True,
@@ -159,9 +171,14 @@ async def create_private_collection(channel_id: str, collection_request: Private
             channel_id=channel_id
         )
     except Exception as e:
+        api_logger.error(
+            "Failed to create private collection",
+            error=str(e),
+            channel_id=channel_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create private collection: {str(e)}"
+            detail=f"Failed to create private collection: {sanitize_error_message(e)}"
         )
 
 @router.post(
@@ -183,9 +200,16 @@ async def add_private_data(data_request: PrivateDataRequest):
         )
     
     try:
-        # In a real implementation, this would add data to an actual PrivateCollection object
-        key = data_request.key
-        # Data would be encrypted and stored with access control in a real implementation
+        # Sanitize key before using
+        key = sanitize_string(data_request.key)
+
+        api_logger.audit(
+            action="add",
+            resource="private_data",
+            success=True,
+            collection=collection_name,
+            key=key,
+        )
         
         return PrivateDataResponse(
             success=True,
@@ -193,9 +217,14 @@ async def add_private_data(data_request: PrivateDataRequest):
             key=key
         )
     except Exception as e:
+        api_logger.error(
+            "Failed to add private data",
+            error=str(e),
+            collection=collection_name,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to add private data: {str(e)}"
+            detail=f"Failed to add private data: {sanitize_error_message(e)}"
         )
 
 @router.post(
@@ -238,7 +267,7 @@ async def create_contract(contract_request: ContractCreateRequest):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create contract: {str(e)}"
+            detail=f"Failed to create contract: {sanitize_error_message(e)}"
         )
 
 @router.post(
@@ -313,13 +342,22 @@ async def register_organization(org_request: OrganizationRequest):
         )
     
     try:
-        # In a real implementation, this would create an actual HierarchicalMSP object
-        org_id = org_request.org_id
+        # Sanitize organization input before storing
+        org_id = sanitize_string(org_request.org_id)
+        safe_ca_config = sanitize_dict(org_request.ca_config) if org_request.ca_config else {}
+
         _organizations[org_id] = {
             "id": org_id,
-            "ca_config": org_request.ca_config,
+            "ca_config": safe_ca_config,
             "registered_at": time.time()
         }
+
+        api_logger.audit(
+            action="register",
+            resource="organization",
+            success=True,
+            org_id=org_id,
+        )
         
         return OrganizationResponse(
             success=True,
@@ -327,9 +365,14 @@ async def register_organization(org_request: OrganizationRequest):
             org_id=org_id
         )
     except Exception as e:
+        api_logger.error(
+            "Failed to register organization",
+            error=str(e),
+            org_id=org_request.org_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to register organization: {str(e)}"
+            detail=f"Failed to register organization: {sanitize_error_message(e)}"
         )
 
 @router.get(

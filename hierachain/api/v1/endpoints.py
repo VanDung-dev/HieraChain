@@ -13,6 +13,13 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 
+from hierachain.security.sanitization import (
+    sanitize_string,
+    sanitize_dict,
+    sanitize_error_message,
+)
+from hierachain.security.secure_logging import SecureLogger
+
 from hierachain.api.v1.schemas import (
     EventRequest,
     EventResponse,
@@ -31,6 +38,9 @@ from hierachain.security.verify.api_key_verifier import (
     require_chain_access,
     require_proof_access
 )
+
+# Secure logger for API v1
+api_logger = SecureLogger("hierachain.api.v1")
 
 router = APIRouter(prefix="/api/v1", tags=["HieraChain"])
 
@@ -93,7 +103,8 @@ async def list_chains(manager: HierarchyManager = Depends(get_hierarchy_manager)
         
         return chains
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to list chains: {str(e)}") from e
+        api_logger.error("Failed to list chains", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to list chains: {sanitize_error_message(e)}") from e
 
 @router.post(
     "/chains/{chain_name}/events", response_model=EventResponse, dependencies=[Depends(require_event_access)]
@@ -109,16 +120,29 @@ async def add_event(
         if not sub_chain:
             raise HTTPException(status_code=404, detail=f"Sub-chain '{chain_name}' not found")
         
+        # Sanitize user input before storing
+        safe_entity_id = sanitize_string(event_request.entity_id)
+        safe_event_type = sanitize_string(event_request.event_type)
+        safe_details = sanitize_dict(event_request.details) if event_request.details else {}
+
         # Create event from request
         event = {
-            "entity_id": event_request.entity_id,
-            "event": event_request.event_type,
+            "entity_id": safe_entity_id,
+            "event": safe_event_type,
             "timestamp": time.time(),
-            "details": event_request.details or {}
+            "details": safe_details
         }
         
         # Add event to sub-chain
         sub_chain.add_event(event)
+
+        api_logger.audit(
+            action="add_event",
+            resource="sub_chain",
+            success=True,
+            chain_name=chain_name,
+            entity_id=safe_entity_id,
+        )
         
         return EventResponse(
             success=True,
@@ -126,7 +150,8 @@ async def add_event(
             event_id=f"{chain_name}_{len(sub_chain.chain)}_{len(sub_chain.pending_events)}"
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to add event: {str(e)}")
+        api_logger.error("Failed to add event", error=str(e), chain_name=chain_name)
+        raise HTTPException(status_code=500, detail=f"Failed to add event: {sanitize_error_message(e)}")
 
 @router.post(
     "/chains/{chain_name}/submit-proof", response_model=ProofSubmissionResponse, dependencies=[Depends(require_proof_access)]
@@ -168,7 +193,8 @@ async def submit_proof(chain_name: str,manager: HierarchyManager = Depends(get_h
             proof_id=f"{chain_name}_{len(sub_chain.chain)}" if sub_chain.chain else None
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to submit proof: {str(e)}")
+        api_logger.error("Failed to submit proof", error=str(e), chain_name=chain_name)
+        raise HTTPException(status_code=500, detail=f"Failed to submit proof: {sanitize_error_message(e)}")
 
 @router.get(
     "/entities/{entity_id}/trace",
@@ -182,6 +208,9 @@ async def trace_entity(
     tracer: EntityTracer = Depends(get_entity_tracer)
 ):
     """Trace an entity across chains"""
+    # Sanitize path parameter
+    safe_entity_id = sanitize_string(entity_id)
+
     try:
         if chain_name:
             # Trace in specific chain
@@ -189,11 +218,11 @@ async def trace_entity(
             if not sub_chain:
                 raise HTTPException(status_code=404, detail=f"Sub-chain '{chain_name}' not found")
             
-            trace_result = tracer.trace_entity_in_chain(entity_id, chain_name)
+            trace_result = tracer.trace_entity_in_chain(safe_entity_id, chain_name)
             events = trace_result.get("events", [])
         else:
             # Trace across all chains
-            trace_result = tracer.trace_entity_across_chains(entity_id)
+            trace_result = tracer.trace_entity_across_chains(safe_entity_id)
             # Flatten events from all chains
             events = []
             for chain_events in trace_result.values():
@@ -203,12 +232,15 @@ async def trace_entity(
         chain_names = list(set(event.get('chain', 'unknown') for event in events))
         
         return EntityTraceResponse(
-            entity_id=entity_id,
+            entity_id=safe_entity_id,
             chains=chain_names,
             events=events
         )
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to trace entity: {str(e)}")
+        api_logger.error("Failed to trace entity", error=str(e), entity_id=safe_entity_id)
+        raise HTTPException(status_code=500, detail=f"Failed to trace entity: {sanitize_error_message(e)}")
 
 def _get_chain_by_name(manager: HierarchyManager, chain_name: str) -> Blockchain | None:
     """Helper to get main or sub chain by name"""
@@ -273,7 +305,8 @@ async def get_chain_stats(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get chain stats: {str(e)}") from e
+        api_logger.error("Failed to get chain stats", error=str(e), chain_name=chain_name)
+        raise HTTPException(status_code=500, detail=f"Failed to get chain stats: {sanitize_error_message(e)}") from e
 
 
 def _get_block_events_data(block: Any) -> list[dict[str, Any]]:
@@ -316,10 +349,13 @@ async def create_sub_chain(
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Invalid chain identifier '{chain_name}'. "
+                f"Invalid chain identifier '{sanitize_string(chain_name)}'. "
                 "Only alphanumeric, underscore, and hyphen are allowed."
             )
         )
+    # Sanitize chain_type parameter
+    safe_chain_type = sanitize_string(chain_type)
+
     try:
         main_chain = manager.get_main_chain()
         if not main_chain:
@@ -330,8 +366,16 @@ async def create_sub_chain(
         safe_chain_name = os.path.basename(chain_name)
 
         # Create sub-chain
-        sub_chain = SubChain(name=safe_chain_name, domain_type=chain_type)
+        sub_chain = SubChain(name=safe_chain_name, domain_type=safe_chain_type)
         manager.add_sub_chain(safe_chain_name, sub_chain)
+
+        api_logger.audit(
+            action="create",
+            resource="sub_chain",
+            success=True,
+            chain_name=safe_chain_name,
+            chain_type=safe_chain_type,
+        )
 
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
@@ -342,7 +386,8 @@ async def create_sub_chain(
             }
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create sub-chain: {str(e)}") from e
+        api_logger.error("Failed to create sub-chain", error=str(e), chain_name=chain_name)
+        raise HTTPException(status_code=500, detail=f"Failed to create sub-chain: {sanitize_error_message(e)}") from e
 
 @router.get(
     "/chains/{chain_name}/blocks", dependencies=[Depends(require_chain_access)]
@@ -376,4 +421,5 @@ async def get_chain_blocks(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get blocks: {str(e)}") from e
+        api_logger.error("Failed to get blocks", error=str(e), chain_name=chain_name)
+        raise HTTPException(status_code=500, detail=f"Failed to get blocks: {sanitize_error_message(e)}") from e

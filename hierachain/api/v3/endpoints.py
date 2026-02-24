@@ -3,7 +3,6 @@ API v3 endpoints for System Management
 """
 
 import time
-import logging
 import os
 from fastapi import APIRouter, HTTPException, Depends
 from hierachain.api.v3.schemas import (
@@ -15,8 +14,10 @@ from hierachain.api.v1.endpoints import get_hierarchy_manager
 from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.config.settings import get_settings
 from hierachain.security.key_provider import LocalKeyProvider, CryptoError
+from hierachain.security.sanitization import sanitize_error_message
+from hierachain.security.secure_logging import SecureLogger
 
-logger = logging.getLogger(__name__)
+logger = SecureLogger("hierachain.api.v3")
 
 
 router = APIRouter(prefix="/api/v3", tags=["HieraChain-v3 (System & Admin)"])
@@ -29,13 +30,13 @@ def get_current_key_provider() -> LocalKeyProvider:
     
     try:
         if os.path.exists(identity_path):
-            logger.info(f"Loading node identity from {identity_path}")
+            logger.info("Loading node identity", path=identity_path)
             return LocalKeyProvider.from_file(identity_path)
         else:
-            logger.warning(f"Identity file {identity_path} not found. Using ephemeral key.")
+            logger.warning("Identity file not found, using ephemeral key", path=identity_path)
             return LocalKeyProvider.generate()
     except CryptoError as e:
-        logger.error(f"Failed to load node identity: {e}")
+        logger.error("Failed to load node identity", error=str(e))
         return LocalKeyProvider.generate()
 
 
@@ -59,7 +60,10 @@ async def verify_identity(
             challenge=request.challenge
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Identity verification failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Identity verification failed: {sanitize_error_message(e)}"
+        )
 
 
 @router.get(
