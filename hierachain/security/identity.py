@@ -8,12 +8,12 @@ identity validation for enterprise applications.
 
 import time
 from typing import Any
-import logging
 from nacl.encoding import HexEncoder
 
 from hierachain.security.security_utils import verify_signature
+from hierachain.security.secure_logging import SecureLogger
 
-logger = logging.getLogger(__name__)
+logger = SecureLogger("hierachain.security.identity")
 
 
 class IdentityError(Exception):
@@ -68,7 +68,14 @@ class IdentityManager:
             self.roles[role] = []
         self.roles[role].append(user_id)
         
-        logger.info(f"Registered user {user_id} with role {role}")
+        logger.security_event(
+            event_type="user_registered",
+            message="New user registered",
+            severity="low",
+            user_id=user_id,
+            role=role,
+            org_id=org_id,
+        )
         return user_id
     
     def validate_identity(self, user_id: str, required_role: str | None = None) -> bool:
@@ -95,7 +102,12 @@ class IdentityManager:
         """
         user = self.users.get(user_id)
         if not user or not user.get("public_key"):
-            logger.warning(f"Cannot verify signature: User {user_id} not found or has no public key")
+            logger.security_event(
+                event_type="signature_verification_failed",
+                message="Cannot verify signature: user not found or has no public key",
+                severity="medium",
+                user_id=user_id,
+            )
             return False
             
         return verify_signature(user["public_key"], message, signature)
