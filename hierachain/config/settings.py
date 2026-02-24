@@ -69,6 +69,16 @@ class Settings:
     API_KEY_LOCATION = os.getenv("HRC_API_KEY_LOCATION", "header")
     API_KEY_NAME = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
     
+    # Master key management
+    # Source: "auto" (env → file → generate), "env" (env var only), "file" (file only)
+    MASTER_KEY_SOURCE = os.getenv("HRC_MASTER_KEY_SOURCE", "auto")
+    MASTER_KEY_FILE = os.getenv("HRC_MASTER_KEY_FILE", os.path.join("config", "master_backup_key.key"))
+    
+    # Brute-force protection for API key verification
+    AUTH_BRUTE_FORCE_MAX_FAILURES = int(os.getenv("HRC_BF_MAX_FAILURES", "5"))
+    AUTH_BRUTE_FORCE_LOCKOUT_SECONDS = int(os.getenv("HRC_BF_LOCKOUT_SECONDS", "900"))
+    AUTH_BRUTE_FORCE_WINDOW_SECONDS = int(os.getenv("HRC_BF_WINDOW_SECONDS", "300"))
+    
     # Validator Identity
     VALIDATOR_IDENTITY_PATH = os.getenv("HRC_VALIDATOR_IDENTITY", "validator_key.json")
 
@@ -211,7 +221,17 @@ class Settings:
         return {
             "enabled": cls.AUTH_ENABLED,
             "key_location": cls.API_KEY_LOCATION,
-            "key_name": cls.API_KEY_NAME
+            "key_name": cls.API_KEY_NAME,
+            "brute_force": {
+                "max_failures": cls.AUTH_BRUTE_FORCE_MAX_FAILURES,
+                "lockout_duration": cls.AUTH_BRUTE_FORCE_LOCKOUT_SECONDS,
+                "tracking_window": cls.AUTH_BRUTE_FORCE_WINDOW_SECONDS,
+            },
+            "master_key": {
+                "source": cls.MASTER_KEY_SOURCE,
+                "key_file": cls.MASTER_KEY_FILE,
+                "environment": cls.ENV,
+            }
         }
 
     @classmethod
@@ -318,6 +338,9 @@ class ProductionSettings(Settings):
     # === P2P: Strict trust by default in production ===
     P2P_TRUST_POLICY = "strict"
     P2P_REQUIRE_SIGNATURES = True
+
+    # === Crypto: Secure key management in production ===
+    MASTER_KEY_SOURCE = "env"  # Prefer env var in production
 
 
 class TestingSettings(Settings):
