@@ -9,14 +9,15 @@ event-based model with hierarchical structure.
 import sqlite3
 import json
 import time
-import logging
-from typing import Any
+from typing import Any, Callable
 from contextlib import contextmanager
 
-from hierachain.core.block import Block
+from hierachain.core.block import Block, table_to_list_of_dicts
 from hierachain.core.blockchain import Blockchain
+from hierachain.security.secure_logging import get_storage_logger
+from hierachain.config.settings import settings
 
-logger = logging.getLogger(__name__)
+logger = get_storage_logger()
 
 
 def _extract_entity_id(event: Any) -> str | None:
@@ -76,7 +77,8 @@ def _insert_event_records(cursor: sqlite3.Cursor, chain_name: str, block_hash: s
 def _store_block(cursor: sqlite3.Cursor, chain_name: str, block: Block) -> None:
     """Store a single block and its events."""
     _insert_block_record(cursor, chain_name, block)
-    _insert_event_records(cursor, chain_name, block.hash, block.events)
+    events_list = table_to_list_of_dicts(block.events)
+    _insert_event_records(cursor, chain_name, block.hash, events_list)
 
 
 def _create_event_from_row(row: sqlite3.Row) -> dict[str, Any]:
@@ -123,81 +125,127 @@ class SQLiteAdapter:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             
-            # Create chains table
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS chains (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT UNIQUE NOT NULL,
-                    chain_type TEXT NOT NULL,  -- 'main' or 'sub'
-                    domain_type TEXT,
-                    created_at REAL NOT NULL,
-                    updated_at REAL NOT NULL
-                )
-            """)
-            
-            # Create blocks table
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS blocks (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    chain_name TEXT NOT NULL,
-                    "index" INTEGER NOT NULL,
-                    hash TEXT NOT NULL,
-                    previous_hash TEXT NOT NULL,
-                    timestamp REAL NOT NULL,
-                    nonce INTEGER DEFAULT 0,
-                    events_count INTEGER DEFAULT 0,
-                    metadata_json JSON,
-                    created_at REAL DEFAULT (unixepoch()),
-                    FOREIGN KEY (chain_name) REFERENCES chains (name),
-                    UNIQUE (chain_name, "index"),
-                    UNIQUE (hash)
-                )
-            """)
-            
-            # Create events table - stores individual events from blocks
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS events (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    chain_name TEXT NOT NULL,
-                    block_hash TEXT NOT NULL,
-                    event_id TEXT,
-                    entity_id TEXT,  -- Metadata field, not identifier
-                    event_type TEXT NOT NULL,
-                    timestamp REAL NOT NULL,
-                    data JSON,  -- JSON string
-                    sender_id TEXT,
-                    created_at REAL DEFAULT (unixepoch()),
-                    FOREIGN KEY (chain_name) REFERENCES chains (name),
-                    FOREIGN KEY (block_hash) REFERENCES blocks (hash)
-                )
-            """)
-            
-            # Create proofs table - for Main Chain proof submissions
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS proofs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    main_chain_name TEXT NOT NULL,
-                    sub_chain_name TEXT NOT NULL,
-                    proof_hash TEXT NOT NULL,
-                    block_index INTEGER NOT NULL,
-                    metadata TEXT,  -- JSON string with summary data only
-                    submitted_at REAL NOT NULL,
-                    created_at REAL NOT NULL,
-                    FOREIGN KEY (main_chain_name) REFERENCES chains (name),
-                    FOREIGN KEY (sub_chain_name) REFERENCES chains (name)
-                )
-            """)
-            
-            # Create indexes for efficient querying
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_entity_id ON events (entity_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_type ON events (event_type)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events (timestamp)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_chain ON events (chain_name)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_blocks_hash_val ON blocks (hash)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_blocks_chain ON blocks (chain_name)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_proofs_sub_chain ON proofs (sub_chain_name)")
+            self._create_tables(cursor)
+            self._create_indexes(cursor)
             
             conn.commit()
+    
+    def _create_tables(self, cursor: sqlite3.Cursor) -> None:
+        """Create all database tables."""
+        self._create_chains_table(cursor)
+        self._create_blocks_table(cursor)
+        self._create_events_table(cursor)
+        self._create_proofs_table(cursor)
+    
+    @staticmethod
+    def _create_chains_table(cursor: sqlite3.Cursor) -> None:
+        """Create chains table."""
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS chains (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL,
+                chain_type TEXT NOT NULL,  -- 'main' or 'sub'
+                domain_type TEXT,
+                created_at REAL NOT NULL,
+                updated_at REAL NOT NULL
+            )
+        """)
+    
+    @staticmethod
+    def _create_blocks_table(cursor: sqlite3.Cursor) -> None:
+        """Create blocks table."""
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS blocks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chain_name TEXT NOT NULL,
+                "index" INTEGER NOT NULL,
+                hash TEXT NOT NULL,
+                previous_hash TEXT NOT NULL,
+                timestamp REAL NOT NULL,
+                nonce INTEGER DEFAULT 0,
+                events_count INTEGER DEFAULT 0,
+                metadata_json JSON,
+                created_at REAL DEFAULT (unixepoch()),
+                FOREIGN KEY (chain_name) REFERENCES chains (name),
+                UNIQUE (chain_name, "index"),
+                UNIQUE (hash)
+            )
+        """)
+
+    @staticmethod
+    def _create_events_table(cursor: sqlite3.Cursor) -> None:
+        """Create events table."""
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chain_name TEXT NOT NULL,
+                block_hash TEXT NOT NULL,
+                event_id TEXT,
+                entity_id TEXT,  -- Metadata field, not identifier
+                event_type TEXT NOT NULL,
+                timestamp REAL NOT NULL,
+                data JSON,  -- JSON string
+                sender_id TEXT,
+                created_at REAL DEFAULT (unixepoch()),
+                FOREIGN KEY (chain_name) REFERENCES chains (name),
+                FOREIGN KEY (block_hash) REFERENCES blocks (hash)
+            )
+        """)
+
+    @staticmethod
+    def _create_proofs_table(cursor: sqlite3.Cursor) -> None:
+        """Create proofs table."""
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS proofs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                main_chain_name TEXT NOT NULL,
+                sub_chain_name TEXT NOT NULL,
+                proof_hash TEXT NOT NULL,
+                block_index INTEGER NOT NULL,
+                metadata TEXT,  -- JSON string with summary data only
+                submitted_at REAL NOT NULL,
+                created_at REAL NOT NULL,
+                FOREIGN KEY (main_chain_name) REFERENCES chains (name),
+                FOREIGN KEY (sub_chain_name) REFERENCES chains (name)
+            )
+        """)
+    
+    @staticmethod
+    def _create_indexes(cursor: sqlite3.Cursor) -> None:
+        """Create database indexes for efficient querying."""
+        indexes = [
+            ("idx_events_entity_id", "events (entity_id)"),
+            ("idx_events_type", "events (event_type)"),
+            ("idx_events_timestamp", "events (timestamp)"),
+            ("idx_events_chain", "events (chain_name)"),
+            ("idx_blocks_hash_val", "blocks (hash)"),
+            ("idx_blocks_chain", "blocks (chain_name)"),
+            ("idx_proofs_sub_chain", "proofs (sub_chain_name)")
+        ]
+        
+        for index_name, index_definition in indexes:
+            cursor.execute(f"CREATE INDEX IF NOT EXISTS {index_name} ON {index_definition}")
+    
+    @staticmethod
+    def _execute_with_error_handling(operation: str, func: Callable, **context) -> Any:
+        """
+        Execute a database operation with standardized error handling.
+        
+        Args:
+            operation: Name of the operation for logging
+            func: Function to execute
+            **context: Additional context for logging
+            
+        Returns:
+            Result of the function or appropriate default value on error
+        """
+        try:
+            return func()
+        except Exception as e:
+            logger.error("Database operation failed", operation=operation, **context)
+            if settings.LOG_SQL_DETAIL:
+                logger.debug("Database operation error detail", error_type=type(e).__name__)
+            return None
     
     @contextmanager
     def _get_connection(self):
@@ -222,28 +270,29 @@ class SQLiteAdapter:
         Returns:
             True if stored successfully, False otherwise
         """
-        try:
+        def _store_chain_operation():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 
-                # Determine chain type
-                chain_type = "main" if "MainChain" in str(type(chain)) else "sub"
+                chain_type = self._determine_chain_type(chain)
                 domain_type = getattr(chain, 'domain_type', None)
                 
-                # Insert or update chain record
                 cursor.execute("""
                     INSERT OR REPLACE INTO chains 
                     (name, chain_type, domain_type, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?)
                 """, (chain.name, chain_type, domain_type, time.time(), time.time()))
                 
-                # Commit chain record first to ensure it exists even if block storage fails
                 conn.commit()
                 return True
-                
-        except Exception as e:
-            logger.error(f"Error storing chain {chain.name}: {e}")
-            return False
+        
+        result = self._execute_with_error_handling("store_chain", _store_chain_operation, chain_name=chain.name)
+        return result if result is not None else False
+    
+    @staticmethod
+    def _determine_chain_type(chain: Blockchain) -> str:
+        """Determine if chain is main or sub chain."""
+        return "main" if "MainChain" in str(type(chain)) else "sub"
 
     def load_chain(self, chain_name: str) -> dict[str, Any] | None:
         """
@@ -259,44 +308,11 @@ class SQLiteAdapter:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 
-                # Get chain info
-                cursor.execute("SELECT * FROM chains WHERE name = ?", (chain_name,))
-                chain_row = cursor.fetchone()
-                
+                chain_row = self._get_chain_info(cursor, chain_name)
                 if not chain_row:
                     return None
                 
-                # Get all blocks for this chain
-                cursor.execute("""
-                    SELECT * FROM blocks WHERE chain_name = ? ORDER BY "index"
-                """, (chain_name,))
-                block_rows = cursor.fetchall()
-                
-                # Load blocks with events
-                blocks = []
-                for block_row in block_rows:
-                    # Get events for this block
-                    cursor.execute("""
-                        SELECT entity_id, event_type, timestamp, data 
-                        FROM events WHERE block_hash = ? ORDER BY id
-                    """, (block_row['hash'],))
-                    event_rows = cursor.fetchall()
-                    
-                    # Reconstruct events
-                    events = []
-                    for event_row in event_rows:
-                        events.append(_create_event_from_row(event_row))
-                    
-                    # Create block data
-                    block_data = {
-                        "index": block_row['index'],
-                        "events": events,  # Multiple events per block
-                        "timestamp": block_row['timestamp'],
-                        "previous_hash": block_row['previous_hash'],
-                        "nonce": block_row['nonce'],
-                        "hash": block_row['hash']
-                    }
-                    blocks.append(block_data)
+                blocks = self._load_blocks_with_events(cursor, chain_name)
                 
                 return {
                     "name": chain_row['name'],
@@ -307,8 +323,98 @@ class SQLiteAdapter:
                 }
                 
         except Exception as e:
-            logger.error(f"Error loading chain {chain_name}: {e}")
+            logger.error("Database operation failed", operation="load_chain", chain_name=chain_name)
+            if settings.LOG_SQL_DETAIL:
+                logger.debug("Load chain error detail", error_type=type(e).__name__)
             return None
+    
+    @staticmethod
+    def _get_chain_info(cursor: sqlite3.Cursor, chain_name: str) -> sqlite3.Row | None:
+        """Get chain information from database."""
+        cursor.execute("SELECT * FROM chains WHERE name = ?", (chain_name,))
+        return cursor.fetchone()
+    
+    def _load_blocks_with_events(self, cursor: sqlite3.Cursor, chain_name: str) -> list[dict[str, Any]]:
+        """Load all blocks with their events for a chain."""
+        block_rows = self._get_block_rows(cursor, chain_name)
+        
+        blocks = []
+        for block_row in block_rows:
+            events = self._load_block_events(cursor, block_row['hash'])
+            block_data = self._create_block_data(block_row, events)
+            blocks.append(block_data)
+        
+        return blocks
+    
+    @staticmethod
+    def _get_block_rows(cursor: sqlite3.Cursor, chain_name: str) -> list[sqlite3.Row]:
+        """Get all block rows for a chain."""
+        cursor.execute("""
+            SELECT * FROM blocks WHERE chain_name = ? ORDER BY "index"
+        """, (chain_name,))
+        return cursor.fetchall()
+    
+    @staticmethod
+    def _load_block_events(cursor: sqlite3.Cursor, block_hash: str) -> list[dict[str, Any]]:
+        """Load events for a specific block."""
+        cursor.execute("""
+            SELECT entity_id, event_type, timestamp, data 
+            FROM events WHERE block_hash = ? ORDER BY id
+        """, (block_hash,))
+        event_rows = cursor.fetchall()
+        
+        return [_create_event_from_row(row) for row in event_rows]
+
+    @staticmethod
+    def _create_block_data(block_row: sqlite3.Row, events: list[dict[str, Any]]) -> dict[str, Any]:
+        """Create block data dictionary from database row and events."""
+        return {
+            "index": block_row['index'],
+            "events": events,  # Multiple events per block
+            "timestamp": block_row['timestamp'],
+            "previous_hash": block_row['previous_hash'],
+            "nonce": block_row['nonce'],
+            "hash": block_row['hash']
+        }
+
+    def _get_events_by_filter(self, filter_field: str, filter_value: str, chain_name: str | None, operation_name: str) -> list[dict[str, Any]]:
+        """
+        Get events by filtering on a specific field.
+        
+        Args:
+            filter_field: Field name to filter on (e.g., 'entity_id', 'event_type')
+            filter_value: Value to filter by
+            chain_name: Optional chain name to filter by
+            operation_name: Name of the operation for logging
+            
+        Returns:
+            List of events matching the filter criteria
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                
+                if chain_name:
+                    cursor.execute(f"""
+                        SELECT chain_name, block_index, entity_id, event_type, timestamp, details
+                        FROM events WHERE {filter_field} = ? AND chain_name = ?
+                        ORDER BY timestamp
+                    """, (filter_value, chain_name))
+                else:
+                    cursor.execute(f"""
+                        SELECT chain_name, block_index, entity_id, event_type, timestamp, details
+                        FROM events WHERE {filter_field} = ?
+                        ORDER BY timestamp
+                    """, (filter_value,))
+                
+                rows = cursor.fetchall()
+                return [_create_event_from_row(row) for row in rows]
+                
+        except Exception as e:
+            logger.error("Database operation failed", operation=operation_name, **{filter_field: filter_value})
+            if settings.LOG_SQL_DETAIL:
+                logger.debug("Get events by filter error detail", error_type=type(e).__name__)
+            return []
     
     def store_proof(
         self,
@@ -331,7 +437,7 @@ class SQLiteAdapter:
         Returns:
             True if stored successfully, False otherwise
         """
-        try:
+        def _store_proof_operation():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 
@@ -344,10 +450,9 @@ class SQLiteAdapter:
                 
                 conn.commit()
                 return True
-                
-        except Exception as e:
-            logger.error(f"Error storing proof: {e}")
-            return False
+        
+        result = self._execute_with_error_handling("store_proof", _store_proof_operation)
+        return result if result is not None else False
     
     def get_entity_events(self, entity_id: str, chain_name: str | None = None) -> list[dict[str, Any]]:
         """
@@ -360,34 +465,7 @@ class SQLiteAdapter:
         Returns:
             List of events for the entity
         """
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                
-                if chain_name:
-                    cursor.execute("""
-                        SELECT chain_name, block_index, entity_id, event_type, timestamp, details
-                        FROM events WHERE entity_id = ? AND chain_name = ?
-                        ORDER BY timestamp
-                    """, (entity_id, chain_name))
-                else:
-                    cursor.execute("""
-                        SELECT chain_name, block_index, entity_id, event_type, timestamp, details
-                        FROM events WHERE entity_id = ?
-                        ORDER BY timestamp
-                    """, (entity_id,))
-                
-                rows = cursor.fetchall()
-                
-                events = []
-                for row in rows:
-                    events.append(_create_event_from_row(row))
-                
-                return events
-                
-        except Exception as e:
-            logger.error(f"Error getting entity events: {e}")
-            return []
+        return self._get_events_by_filter("entity_id", entity_id, chain_name, "get_entity_events")
     
     def get_events_by_type(self, event_type: str, chain_name: str | None = None) -> list[dict[str, Any]]:
         """
@@ -400,34 +478,7 @@ class SQLiteAdapter:
         Returns:
             List of events of the specified type
         """
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                
-                if chain_name:
-                    cursor.execute("""
-                        SELECT chain_name, block_index, entity_id, event_type, timestamp, details
-                        FROM events WHERE event_type = ? AND chain_name = ?
-                        ORDER BY timestamp
-                    """, (event_type, chain_name))
-                else:
-                    cursor.execute("""
-                        SELECT chain_name, block_index, entity_id, event_type, timestamp, details
-                        FROM events WHERE event_type = ?
-                        ORDER BY timestamp
-                    """, (event_type,))
-                
-                rows = cursor.fetchall()
-                
-                events = []
-                for row in rows:
-                    events.append(_create_event_from_row(row))
-                
-                return events
-                
-        except Exception as e:
-            logger.error(f"Error getting events by type: {e}")
-            return []
+        return self._get_events_by_filter("event_type", event_type, chain_name, "get_events_by_type")
     
     def get_chain_statistics(self, chain_name: str) -> dict[str, Any]:
         """
@@ -486,7 +537,9 @@ class SQLiteAdapter:
                 }
                 
         except Exception as e:
-            logger.error(f"Error getting chain statistics: {e}")
+            logger.error("Database operation failed", operation="get_chain_statistics", chain_name=chain_name)
+            if settings.LOG_SQL_DETAIL:
+                logger.debug("Get chain statistics error detail", error_type=type(e).__name__)
             return {}
     
     def get_proof_history(self, sub_chain_name: str) -> list[dict[str, Any]]:
@@ -504,8 +557,7 @@ class SQLiteAdapter:
                 cursor = conn.cursor()
                 
                 cursor.execute("""
-                    SELECT main_chain_name, sub_chain_name, proof_hash, block_index, 
-                           metadata, submitted_at
+                    SELECT main_chain_name, sub_chain_name, proof_hash, block_index, metadata, submitted_at
                     FROM proofs WHERE sub_chain_name = ?
                     ORDER BY submitted_at DESC
                 """, (sub_chain_name,))
@@ -527,7 +579,9 @@ class SQLiteAdapter:
                 return proofs
                 
         except Exception as e:
-            logger.error(f"Error getting proof history: {e}")
+            logger.error("Database operation failed", operation="get_proof_history", sub_chain_name=sub_chain_name)
+            if settings.LOG_SQL_DETAIL:
+                logger.debug("Get proof history error detail", error_type=type(e).__name__)
             return []
     
     def cleanup_old_data(self, days_to_keep: int = 30) -> bool:
@@ -563,12 +617,17 @@ class SQLiteAdapter:
                 proofs_deleted = cursor.rowcount
                 
                 conn.commit()
-                
-                logger.info(f"Cleanup completed: {events_deleted} events, {blocks_deleted} blocks, {proofs_deleted} proofs deleted")
+
+                logger.info("Cleanup completed",
+                            events_deleted=events_deleted,
+                            blocks_deleted=blocks_deleted,
+                            proofs_deleted=proofs_deleted)
                 return True
-                
+
         except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
+            logger.error("Database operation failed", operation="cleanup")
+            if settings.LOG_SQL_DETAIL:
+                logger.debug("Cleanup error detail", error_type=type(e).__name__)
             return False
     
     def __str__(self) -> str:
