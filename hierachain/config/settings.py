@@ -139,6 +139,9 @@ class Settings:
     # Logging settings
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    # Enable detailed SQL logging (query echo, verbose DB errors)
+    # Should be False in production to avoid leaking DB schema details
+    LOG_SQL_DETAIL = os.getenv("HRC_LOG_SQL_DETAIL", "true").lower() == "true"
     
     # Zero Knowledge Proof settings
     # Enable trustless verification of state transitions
@@ -341,6 +344,9 @@ class ProductionSettings(Settings):
 
     # === Crypto: Secure key management in production ===
     MASTER_KEY_SOURCE = "env"  # Prefer env var in production
+
+    # === Logging: Restrict SQL detail in production ===
+    LOG_SQL_DETAIL = False
 
 
 class TestingSettings(Settings):
