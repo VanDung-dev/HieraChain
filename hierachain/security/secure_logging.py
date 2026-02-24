@@ -215,6 +215,11 @@ def get_audit_logger() -> SecureLogger:
     return SecureLogger("hierachain.audit")
 
 
+def get_storage_logger() -> SecureLogger:
+    """Get secure logger for storage and database operations."""
+    return SecureLogger("hierachain.storage")
+
+
 # Convenience function for quick sanitized logging
 def log_user_action(
     logger: logging.Logger,
