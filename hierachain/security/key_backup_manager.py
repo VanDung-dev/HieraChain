@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from hierachain.security.secure_logging import get_security_logger
+from hierachain.security.master_key_provider import MasterKeyProvider
 
 logger = get_security_logger()
 
@@ -40,14 +41,17 @@ class ValidationError(Exception):
     pass
 
 
-def _initialize_master_key() -> bytes:
-    """Initialize or load the master encryption key."""
-    key_file = os.path.join("config", "master_backup_key.key")
+def _initialize_master_key(config: dict | None = None) -> bytes:
+    """Initialize or load the master encryption key.
 
-    if os.path.exists(key_file):
-        return _load_existing_master_key(key_file)
-    
-    return _generate_new_master_key(key_file)
+    Uses MasterKeyProvider for flexible key source resolution.
+    Falls back to legacy file-based approach if no config provided.
+
+    Args:
+        config: Optional master key configuration dictionary
+    """
+    provider = MasterKeyProvider(config)
+    return provider.get_master_key()
 
 
 def _load_existing_master_key(key_file: str) -> bytes:
@@ -304,7 +308,8 @@ class KeyBackupManager:
         self.auto_restore_threshold = self.config.get('auto_restore_threshold', 1)
         
         # Generate or load master encryption key for backup encryption
-        self.encryption_key = _initialize_master_key()
+        master_key_config = self.config.get('master_key', None)
+        self.encryption_key = _initialize_master_key(master_key_config)
         
         # Create backup directory if it doesn't exist
         self.backup_dir = "backups/keys"
