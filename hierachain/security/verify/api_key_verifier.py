@@ -14,6 +14,7 @@ from typing import Any
 
 from hierachain.security.key_manager import KeyManager
 from hierachain.security.secure_logging import get_security_logger
+from hierachain.security.brute_force_protector import BruteForceProtector
 from hierachain.config.settings import get_settings
 
 # Add the project root to the path for imports
@@ -25,6 +26,26 @@ logger = get_security_logger()
 # Different API key placement options
 api_key_header = APIKeyHeader(name="x-api-key", auto_error=False)
 api_key_query = APIKeyQuery(name="apikey", auto_error=False)
+
+
+def _get_system_context() -> dict:
+    """Return minimal context when verification is disabled."""
+    return {
+        "user_id": "system",
+        "app_details": {"name": "System Access"}
+    }
+
+
+def _extract_client_ip(request: Request) -> str:
+    """Extract client IP from request for brute-force tracking."""
+    if request and request.client:
+        return request.client.host
+    return "unknown"
+
+
+def _get_key_prefix(api_key: str) -> str:
+    """Get key prefix for logging purposes."""
+    return api_key[:8] if len(api_key) >= 8 else "short_key"
 
 
 class APIKeyVerifier:
@@ -68,11 +89,15 @@ class APIKeyVerifier:
         elif self.key_location == 'query':
             self.api_key_dependency = APIKeyQuery(name=self.key_name, auto_error=False)
         else:
-            self.api_key_dependency = api_key_header  # Default to header
+            self.api_key_dependency = api_key_header
+
+        # Initialize brute-force protection
+        bf_config = config.get('brute_force', {})
+        self.brute_force_protector = BruteForceProtector(bf_config)
     
     async def __call__(self, request: Request, api_key: str | None = None) -> dict:
         """
-        Verify API key from the incoming request. variables.
+        Verify API key from the incoming request.
         
         This method is called as a FastAPI dependency to verify API keys
         for protected endpoints in the HieraChain Ledger.
@@ -88,65 +113,107 @@ class APIKeyVerifier:
             HTTPException: 401 for missing/invalid keys, 403 for insufficient permissions
         """
         if not self.enabled:
-            # Return minimal context when verification is disabled
-            return {"user_id": "system", "app_details": {"name": "System Access"}}
+            return _get_system_context()
+
+        client_ip = _extract_client_ip(request)
+        await self._check_brute_force_protection(client_ip)
         
-        # If api_key is not passed directly, try to extract it from the request based on config
-        if not api_key and request:
-            api_key = await self.api_key_dependency(request)
+        api_key = await self._extract_api_key(request, api_key)
+        self._validate_api_key_present(api_key, client_ip)
+        
+        key_prefix = _get_key_prefix(api_key)
+        await self._verify_key_validity(api_key, key_prefix, client_ip)
+        
+        return self._build_success_context(api_key, key_prefix)
+
+    async def _check_brute_force_protection(self, client_ip: str) -> None:
+        """Check if IP is locked out due to brute-force attempts."""
+        if not self.brute_force_protector.is_locked_out(client_ip):
+            return
             
-        # Check if API key is provided
-        if not api_key:
-            self._log_security_event("missing_api_key", {"timestamp": time.time()})
-            raise HTTPException(
-                status_code=401, 
-                detail="API key missing. Please provide a valid API key."
-            )
-        
-        # Verify key validity
+        remaining = self.brute_force_protector.get_remaining_lockout(client_ip)
+        self._log_security_event("ip_locked_out", {
+            "ip": client_ip,
+            "remaining_seconds": round(remaining),
+            "timestamp": time.time()
+        })
+        raise HTTPException(
+            status_code=429,
+            detail="Too many failed authentication attempts. Please try again later."
+        )
+
+    async def _extract_api_key(self, request: Request, api_key: str | None) -> str | None:
+        """Extract API key from request if not provided directly."""
+        if api_key or not request:
+            return api_key
+        return await self.api_key_dependency(request)
+
+    def _validate_api_key_present(self, api_key: str | None, client_ip: str) -> None:
+        """Validate that API key is provided."""
+        if api_key:
+            return
+            
+        self.brute_force_protector.record_failure(client_ip, "no_key")
+        self._log_security_event("missing_api_key", {"timestamp": time.time()})
+        raise HTTPException(
+            status_code=401,
+            detail="API key missing. Please provide a valid API key."
+        )
+
+    async def _verify_key_validity(self, api_key: str, key_prefix: str, client_ip: str) -> None:
+        """Verify API key validity and revocation status."""
         if not self.key_manager.is_valid(api_key):
-            self._log_security_event("invalid_api_key", {
-                "key_prefix": api_key[:8] if len(api_key) >= 8 else "short_key",
-                "timestamp": time.time()
-            })
-            raise HTTPException(
-                status_code=401, 
-                detail="Invalid API key. The provided key is not valid or has expired."
-            )
-        
-        # Check revocation status
+            await self._handle_invalid_key(key_prefix, client_ip)
+            
         if self.key_manager.is_revoked(api_key):
-            self._log_security_event("revoked_api_key", {
-                "key_prefix": api_key[:8],
-                "timestamp": time.time()
-            })
-            raise HTTPException(
-                status_code=401, 
-                detail="API key revoked. The provided key has been revoked."
-            )
-        
-        # Cache result if enabled
+            await self._handle_revoked_key(key_prefix, client_ip)
+
+    async def _handle_invalid_key(self, key_prefix: str, client_ip: str) -> None:
+        """Handle invalid API key case."""
+        self.brute_force_protector.record_failure(client_ip, key_prefix)
+        self._log_security_event("invalid_api_key", {
+            "key_prefix": key_prefix,
+            "timestamp": time.time()
+        })
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid API key. The provided key is not valid or has expired."
+        )
+
+    async def _handle_revoked_key(self, key_prefix: str, client_ip: str) -> None:
+        """Handle revoked API key case."""
+        self.brute_force_protector.record_failure(client_ip, key_prefix)
+        self._log_security_event("revoked_api_key", {
+            "key_prefix": key_prefix,
+            "timestamp": time.time()
+        })
+        raise HTTPException(
+            status_code=401,
+            detail="API key revoked. The provided key has been revoked."
+        )
+
+    def _build_success_context(self, api_key: str, key_prefix: str) -> dict:
+        """Build success context after verification."""
         if self.cache_ttl > 0:
             self.key_manager.cache_key(api_key, ttl=self.cache_ttl)
-        
-        # Populate context variables
+
         user_id = self.key_manager.get_user(api_key)
         app_details = self.key_manager.get_app_details(api_key)
-        
+
         context = {
             "user_id": user_id,
             "app_details": app_details,
-            "api_key_prefix": api_key[:8],
+            "api_key_prefix": key_prefix,
             "verified_at": time.time(),
-            "_api_key": api_key  # Store for permission checks
+            "_api_key": api_key
         }
-        
+
         self._log_security_event("successful_verification", {
             "user_id": user_id,
             "app_name": app_details.get('name', 'Unknown') if app_details else 'Unknown',
             "timestamp": time.time()
         })
-        
+
         return context
     
     def check_resource_permission(self, api_key: str, resource: str) -> bool:
