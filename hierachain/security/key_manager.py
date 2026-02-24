@@ -10,9 +10,10 @@ import time
 import json
 import hashlib
 import binascii
-import logging
 
-logger = logging.getLogger(__name__)
+from hierachain.security.secure_logging import SecureLogger
+
+logger = SecureLogger("hierachain.security.key_manager")
 
 
 class KeyManager:
@@ -171,7 +172,15 @@ class KeyManager:
         }
         
         self._store_key_data(api_key, key_data)
-        
+
+        logger.security_event(
+            event_type="api_key_created",
+            message="New API key created",
+            severity="medium",
+            user_id=user_id,
+            permissions=permissions,
+        )
+
         return api_key
     
     def revoke_key(self, api_key: str):
@@ -185,6 +194,14 @@ class KeyManager:
         # Remove from cache
         if api_key in self.key_cache:
             del self.key_cache[api_key]
+
+        key_prefix = api_key[:8] if len(api_key) >= 8 else "short"
+        logger.security_event(
+            event_type="api_key_revoked",
+            message="API key revoked",
+            severity="high",
+            key_prefix=key_prefix,
+        )
     
     def _get_key_data(self, api_key: str) -> dict | None:
         """
@@ -245,10 +262,10 @@ class KeyManager:
             data = self.storage.get(f"api_key:{api_key}")
             return json.loads(data) if data else None
         except (json.JSONDecodeError, TypeError) as e:
-            logger.error(f"Error decoding key data from storage: {e}")
+            logger.error("Error decoding key data from storage", error=str(e))
             return None
         except Exception as e:
-            logger.error(f"Error retrieving key from storage: {e}")
+            logger.error("Error retrieving key from storage", error=str(e),)
             return None
     
     def _store_key_data(self, api_key: str, data: dict):
@@ -265,7 +282,7 @@ class KeyManager:
             try:
                 self.storage.set(f"api_key:{api_key}", json.dumps(data))
             except Exception as e:
-                logger.error(f"Error storing key to storage: {e}")
+                logger.error("Error storing key to storage", error=str(e))
                 # Fallback to memory
                 self.storage[api_key] = data
         else:
