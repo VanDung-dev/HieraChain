@@ -88,20 +88,24 @@ def add_security_headers(fast_app: FastAPI):
         # Hide Server Information
         if "server" in response.headers:
             del response.headers["server"]
-        response.headers["Server"] = "HieraChain"
 
         # Allow Swagger UI to work properly
+        settings = get_settings()
+        env = getattr(settings, "ENV", "dev")
         if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
-            # Relaxed CSP for documentation pages
-            response.headers["Content-Security-Policy"] = (
-                "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' "
-                "https://cdn.jsdelivr.net; "
-                "style-src 'self' 'unsafe-inline' "
-                "https://cdn.jsdelivr.net; "
-                "img-src 'self' data: "
-                "https://fastapi.tiangolo.com"
-            )
+            if env == "dev":
+                # Relaxed CSP for documentation pages
+                response.headers["Content-Security-Policy"] = (
+                    "default-src 'self'; "
+                    "script-src 'self' 'unsafe-inline' "
+                    "https://cdn.jsdelivr.net; "
+                    "style-src 'self' 'unsafe-inline' "
+                    "https://cdn.jsdelivr.net; "
+                    "img-src 'self' data: "
+                    "https://fastapi.tiangolo.com"
+                )
+            else:
+                response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'"
         else:
             # Strict CSP for API endpoints
             response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
