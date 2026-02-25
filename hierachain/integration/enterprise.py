@@ -7,6 +7,7 @@ blockchain-compatible events while maintaining the hierarchical structure where 
 events are later summarized on the main chain.
 """
 
+import os
 import time
 import logging
 from typing import Any
@@ -63,8 +64,8 @@ class SAPIntegration(BaseERPIntegration):
         # Placeholder implementation
         # In real implementation, this would use SAP RFC or REST API
         url = self.config.get("url")
-        username = self.config.get("username")
-        password = self.config.get("password")
+        username = os.environ.get("HRC_SAP_USERNAME", self.config.get("username"))
+        password = os.environ.get("HRC_SAP_PASSWORD", self.config.get("password"))
         
         if not all([url, username, password]):
             raise IntegrationError("Missing required SAP connection parameters")
@@ -100,8 +101,8 @@ class OracleIntegration(BaseERPIntegration):
         """Connect to Oracle system"""
         # Placeholder implementation
         url = self.config.get("url")
-        username = self.config.get("username")
-        password = self.config.get("password")
+        username = os.environ.get("HRC_ORACLE_USERNAME", self.config.get("username"))
+        password = os.environ.get("HRC_ORACLE_PASSWORD", self.config.get("password"))
         
         if not all([url, username, password]):
             raise IntegrationError("Missing required Oracle connection parameters")
@@ -135,8 +136,8 @@ class DynamicsIntegration(BaseERPIntegration):
         """Connect to Dynamics system"""
         # Placeholder implementation
         url = self.config.get("url")
-        username = self.config.get("username")
-        password = self.config.get("password")
+        username = os.environ.get("HRC_DYNAMICS_USERNAME", self.config.get("username"))
+        password = os.environ.get("HRC_DYNAMICS_PASSWORD", self.config.get("password"))
         
         if not all([url, username, password]):
             raise IntegrationError("Missing required Dynamics connection parameters")
