@@ -311,7 +311,7 @@ class ClusterLockdownManager:
         zmq_node=None,
         local_lockdown_callback: Callable[[], None] | None = None,
         local_recovery_callback: Callable[[], None] | None = None,
-        secret_key: str = "default_secret_key",
+        secret_key: str | None = None,
         quorum_threshold: float = 0.66,  # 2/3 majority - use 0.66 for proper 3-node quorum
     ):
         """
@@ -325,6 +325,12 @@ class ClusterLockdownManager:
             secret_key: Shared secret for message signing.
             quorum_threshold: Fraction of nodes needed for quorum (default 2/3).
         """
+        if not secret_key or secret_key == "default_secret_key":
+            import os
+            secret_key = os.environ.get("HRC_CLUSTER_SECRET", "")
+            if not secret_key:
+                logger.warning("No secure secret_key provided for lockdown protocol. Authentication may be compromised.")
+
         self.node_id = node_id
         self._zmq_node = zmq_node
         self._local_lockdown = local_lockdown_callback
