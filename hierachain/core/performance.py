@@ -8,7 +8,7 @@ for heavy CPU operations (hashing, signature verification).
 import os
 import logging
 import asyncio
-import pickle
+import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Callable, Any, Optional
 
@@ -84,17 +84,13 @@ def serialize_for_pool(data: Any) -> bytes:
     Pre-serialization allows better control over memory and timing.
 
     Args:
-        data: Any data to serialize (dict, list, or any picklable object).
+        data: Any data to serialize (dict, list, or any serializable object).
 
     Returns:
         Serialized bytes ready for inter-process transfer.
-
-    Note:
-        For PyArrow Tables/RecordBatches, use pyarrow.ipc.serialize_schema
-        and pyarrow.ipc methods directly for best performance.
     """
 
-    return pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
+    return json.dumps(data).encode("utf-8")
 
 
 def deserialize_from_pool(data: bytes) -> Any:
@@ -110,4 +106,4 @@ def deserialize_from_pool(data: bytes) -> Any:
         Deserialized Python object.
     """
 
-    return pickle.loads(data)
+    return json.loads(data.decode("utf-8"))
