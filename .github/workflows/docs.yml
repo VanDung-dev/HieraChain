@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       publish_docs:
-        description: "Publish live to https://docs.hierachain.com"
+        description: "Publish live to https://docs.hierachain.org"
         default: true
         type: boolean
 
@@ -59,11 +59,11 @@ jobs:
             exit 1
           fi
 
-      - name: Publish Docs to https://docs.hierachain.com
+      - name: Publish Docs to https://docs.hierachain.org
         if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_docs == 'true')
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./site
-          cname: docs.hierachain.com
+          cname: docs.hierachain.org
           commit_message: "docs: update docs for HieraChain"
