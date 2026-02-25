@@ -157,10 +157,15 @@ class EmailNotifier:
         Args:
             smtp_config: SMTP configuration dictionary
         """
+        import os
         self.smtp_server = smtp_config.get('server', 'localhost')
         self.smtp_port = smtp_config.get('port', 587)
-        self.username = smtp_config.get('username')
-        self.password = smtp_config.get('password')
+        self.username = os.environ.get('HRC_SMTP_USERNAME', smtp_config.get('username'))
+        self.password = os.environ.get('HRC_SMTP_PASSWORD', smtp_config.get('password'))
+        
+        if self.password in ("default_password", "password", "admin"):
+            logging.warning("SMTP Password is set to a weak default value. Please change it via HRC_SMTP_PASSWORD.")
+            
         self.from_email = smtp_config.get('from_email', 'alerts@blockchain.local')
         self.use_tls = smtp_config.get('use_tls', True)
         self.enabled = smtp_config.get('enabled', False)
