@@ -352,31 +352,73 @@ def _flush_pending_and_finalize_for_sub_chain(sub_chain: "SubChain", timeout: fl
     return None
 
 
-def _rehydrate_chain_from_ordering_service(sub_chain: "SubChain", latest_block_os: Any) -> None:
+def _rehydrate_chain_from_ordering_service(sub_chain: "SubChain", _latest_block_os: Any) -> None:
     """Rehydrate the local chain from the Ordering Service."""
-    latest_local = sub_chain.get_latest_block()
-    if not latest_block_os or latest_block_os.index <= latest_local.index:
+    all_blocks = sub_chain.ordering_service.get_blocks(start_index=0)
+
+    if not all_blocks:
         return
 
-    logger.info(f"Rehydrating chain {sub_chain.name} from index {latest_local.index} to {latest_block_os.index}")
+    # Check if local chain needs rehydration
+    latest_local = sub_chain.get_latest_block()
 
-    start_idx = latest_local.index + 1
-    missing_blocks = sub_chain.ordering_service.get_blocks(start_index=start_idx)
+    # If local chain already has more or equal blocks, skip rehydration
+    if latest_local.index >= all_blocks[-1].index:
+        logger.info(
+            f"Chain {sub_chain.name} already up to date. Local index: {latest_local.index}, "
+            f"DB index: {all_blocks[-1].index}"
+        )
+        return
 
-    count = 0
-    for block in missing_blocks:
-        if sub_chain.add_block(block):
-            count += 1
+    logger.info(f"Rehydrating chain {sub_chain.name} from index {latest_local.index} to {all_blocks[-1].index}")
 
-    if count > 0:
-        logger.info(f"Rehydrated {count} blocks from Ordering Service.")
+    # Clear the locally created chain (including the newly created genesis block)
+    sub_chain.chain.clear()
+
+    # Add all blocks from DB to the chain with proper indexing
+    for block in all_blocks:
+        sub_chain.chain.append(block)
+        _update_event_statistics(sub_chain, block)
+
+    # Also update the ordering service's block_history and blocks_created to match
+    sub_chain.ordering_service.block_history = list(sub_chain.chain)
+    sub_chain.ordering_service.blocks_created = all_blocks[-1].index + 1
+
+    logger.info(
+        f"Rehydrated {len(all_blocks)} blocks from Ordering Service. "
+        f"Latest index: {all_blocks[-1].index if all_blocks else 0}"
+    )
+
+
+def _update_event_statistics(sub_chain: "SubChain", block: Any) -> None:
+    """Update event statistics for a block during rehydration."""
+    events = (
+        block.to_event_list()
+        if hasattr(block, "to_event_list")
+        else block.events
+    )
+    sub_chain.total_events += len(events)
+
+    for event in events:
+        etype = event.get("event", "unknown")
+        sub_chain.event_type_counts[etype] = sub_chain.event_type_counts.get(etype, 0) + 1
+
+        entity_id = event.get("entity_id")
+        if entity_id:
+            if entity_id not in sub_chain.entity_event_index:
+                sub_chain.entity_event_index[entity_id] = []
+            sub_chain.entity_event_index[entity_id].append({
+                "block_index": block.index,
+                "event": event,
+            })
 
 
 def _reset_ordering_service_state(sub_chain: "SubChain") -> None:
     """Reset the Ordering Service state."""
     latest_local = sub_chain.get_latest_block()
-    sub_chain.ordering_service.block_history = [latest_local]
+    sub_chain.ordering_service.block_history = list(sub_chain.chain)
     sub_chain.ordering_service.blocks_created = latest_local.index + 1
+    logger.info(f"Reset ordering service state: blocks_created = {sub_chain.ordering_service.blocks_created}")
 
 
 def _sync_chain_for_sub_chain(sub_chain: "SubChain") -> None:
