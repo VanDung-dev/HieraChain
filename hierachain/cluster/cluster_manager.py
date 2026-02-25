@@ -96,6 +96,7 @@ class ClusterManager:
         heartbeat_timeout: float = 30.0,
         on_lockdown_quorum: Callable[[], None] | None = None,
         on_recovery_quorum: Callable[[], None] | None = None,
+        cluster_secret: str = "",
     ):
         """
         Initialize cluster manager.
@@ -106,12 +107,14 @@ class ClusterManager:
             heartbeat_timeout: Seconds before node is considered unhealthy.
             on_lockdown_quorum: Callback when lockdown quorum is reached.
             on_recovery_quorum: Callback when recovery quorum is reached.
+            cluster_secret: Shared secret for node authentication.
         """
         self.node_id = node_id
         self.quorum_threshold = quorum_threshold
         self.heartbeat_timeout = heartbeat_timeout
         self._on_lockdown_quorum = on_lockdown_quorum
         self._on_recovery_quorum = on_recovery_quorum
+        self.cluster_secret = cluster_secret
 
         self._nodes: dict[str, NodeHealthStatus] = {}
         self._is_locked_down = False
@@ -121,14 +124,28 @@ class ClusterManager:
         self.register_node(node_id, "localhost")
         self.update_heartbeat(node_id)
 
-    def register_node(self, node_id: str, address: str) -> None:
+    def register_node(self, node_id: str, address: str, auth_token: str | None = None) -> None:
         """
         Register a node in the cluster.
 
         Args:
             node_id: Unique identifier of the node.
             address: Network address of the node.
+            auth_token: Optional authentication token for the node.
         """
+        import re
+
+        # Basic address validation
+        if not re.match(r"^([a-zA-Z0-9.-]+)(:\d+)?$", address) and node_id != self.node_id and address != "localhost":
+            logger.warning(f"Invalid address format for node {node_id}")
+            return
+
+        # Basic auth verification
+        if getattr(self, "cluster_secret", "") and node_id != self.node_id:
+            if not auth_token or auth_token != self.cluster_secret:
+                logger.warning(f"Authentication failed for node {node_id}")
+                return
+
         with self._lock:
             if node_id not in self._nodes:
                 self._nodes[node_id] = NodeHealthStatus(
