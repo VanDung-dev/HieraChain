@@ -5,11 +5,11 @@ This module handles API key management for the HieraChain Ledger,
 ensuring secure access control without cryptocurrency concepts.
 """
 
-import os
+
 import time
 import json
 import hashlib
-import binascii
+import secrets
 
 from hierachain.security.secure_logging import SecureLogger
 
@@ -154,14 +154,9 @@ class KeyManager:
             str: Generated API key
         """
         # Generate secure API key
-        timestamp = str(int(time.time()))
         user_hash = hashlib.sha256(user_id.encode()).hexdigest()[:8]
-        random_suffix = hashlib.sha256(
-            f"{timestamp}{user_id}".encode()
-        ).hexdigest()[:16]
-        # Add random component to ensure keys are always different
-        random_bytes = binascii.hexlify(os.urandom(8)).decode()[:8]
-        api_key = f"hrc_{user_hash}_{random_suffix}_{random_bytes}"
+        random_component = secrets.token_urlsafe(32)
+        api_key = f"hrc_{user_hash}_{random_component}"
         
         key_data = {
             'user_id': user_id,
