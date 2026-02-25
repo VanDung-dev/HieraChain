@@ -11,6 +11,7 @@ import hashlib
 from typing import Any
 from dataclasses import dataclass
 from enum import Enum
+from hierachain.security.security_utils import KeyPair
 
 
 class CertificateStatus(Enum):
@@ -53,10 +54,10 @@ def _generate_cert_id(subject: str, public_key: str) -> str:
     return hashlib.sha256(data.encode()).hexdigest()[:16]
 
 
-def _sign_certificate(cert_id: str, subject: str, public_key: str) -> str:
+def _sign_certificate(cert_id: str, subject: str, public_key: str, ca_key: KeyPair) -> str:
     """Generate certificate signature"""
     data = f"{cert_id}:{subject}:{public_key}"
-    return hashlib.sha256(data.encode()).hexdigest()
+    return ca_key.sign(data.encode())
 
 
 class CertificateAuthority:
@@ -76,6 +77,7 @@ class CertificateAuthority:
         self.policy = policy
         self.issued_certificates: dict[str, Certificate] = {}
         self.revoked_certificates: set[str] = set()
+        self.ca_key = KeyPair.generate()
         
     def issue_certificate(
         self,
@@ -109,7 +111,7 @@ class CertificateAuthority:
             valid_until=valid_until,
             status=CertificateStatus.ACTIVE,
             attributes=attributes,
-            signature=_sign_certificate(cert_id, subject, public_key)
+            signature=_sign_certificate(cert_id, subject, public_key, self.ca_key)
         )
         
         self.issued_certificates[cert_id] = certificate
