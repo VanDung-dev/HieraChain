@@ -1,0 +1,69 @@
+name: Publish Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/vi/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'docs/vi/**'
+      - 'mkdocs.yml'
+  workflow_dispatch:
+    inputs:
+      publish_docs:
+        description: "Publish live to https://docs.hierachain.com"
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  Docs:
+    if: github.repository == 'VanDung-dev/HieraChain'
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REF: ${{ github.head_ref || github.ref }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ env.GITHUB_REF }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install zensical
+          pip install mkdocs-git-revision-date-localized-plugin
+
+      - name: Build Vietnamese Docs
+        run: zensical build -f mkdocs.yml
+
+      - name: Check for Build Warnings
+        run: |
+          if [ -d "site" ]; then
+            echo "✓ Docs built successfully"
+          else
+            echo "✗ Docs build failed"
+            exit 1
+          fi
+
+      - name: Publish Docs to https://docs.hierachain.com
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_docs == 'true')
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          cname: docs.hierachain.com
+          commit_message: "docs: update docs for HieraChain"
