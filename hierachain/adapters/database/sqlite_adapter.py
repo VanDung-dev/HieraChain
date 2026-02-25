@@ -394,6 +394,11 @@ class SQLiteAdapter:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 
+                allowed_fields = {"chain_name", "event_type", "entity_id", "timestamp"}
+                if filter_field not in allowed_fields:
+                    logger.warning("Invalid filter field", filter_field=filter_field)
+                    return []
+
                 if chain_name:
                     cursor.execute(f"""
                         SELECT chain_name, block_index, entity_id, event_type, timestamp, details
