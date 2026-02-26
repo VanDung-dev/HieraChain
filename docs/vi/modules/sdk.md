@@ -4,7 +4,7 @@ description: "SDK client: hierachain/sdk/client.py — truy cập HieraChain t�
 icon: material/tools
 ---
 
-# SDK
+# SDK Module (`hierachain/sdk/*`)
 
 ## Mục đích
 

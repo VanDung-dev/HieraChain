@@ -4,7 +4,7 @@ description: "Module REST API v1/v2/v3: server, router, schemas và ví dụ cur
 icon: material/api
 ---
 
-# API Module
+# API Module (`hierachain/api/*`)
 
 ## Mục đích
 

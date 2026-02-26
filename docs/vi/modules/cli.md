@@ -4,7 +4,7 @@ description: "Công cụ dòng lệnh hrc và các nhóm lệnh: chain, node, ev
 icon: material/console
 ---
 
-# CLI Module
+# CLI Module (`hierachain/cli/*`)
 
 ## Mục đích
 

@@ -4,7 +4,7 @@ description: "Enterprise/ERP integration and Arrow client: arrow_client, enterpr
 icon: material/puzzle
 ---
 
-# Integration
+# Integration Module (`hierachain/integration/*`)
 
 ## Mục đích
 

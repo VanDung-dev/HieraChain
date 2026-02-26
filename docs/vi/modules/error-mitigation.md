@@ -4,7 +4,7 @@ description: "Giảm thiểu lỗi và phục hồi: validator, data_validator, 
 icon: material/bug
 ---
 
-# Error Mitigation Module
+# Error Mitigation Module (`hierachain/error_mitigation/*`)
 
 ## Mục đích
 

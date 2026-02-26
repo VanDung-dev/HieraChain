@@ -4,7 +4,7 @@ description: "Core HieraChain module: Block, Blockchain, Schema, Utils, Caching,
 icon: material/cube
 ---
 
-# Core (`hierachain/core/*`)
+# Core Module (`hierachain/core/*`)
 
 ## Mục đích
 

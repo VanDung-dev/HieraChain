@@ -4,7 +4,7 @@ description: "Lớp truyền thông và tin cậy ngang hàng: ZMQ transport, k�
 icon: material/access-point-network
 ---
 
-# Network (`hierachain/network/*`)
+# Network Module (`hierachain/network/*`)
 
 ## Mục đích
 

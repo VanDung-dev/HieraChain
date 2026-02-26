@@ -4,7 +4,7 @@ description: "Các adapter lưu trữ/cơ sở dữ liệu: SQLite, File, Redis 
 icon: material/vector-polyline
 ---
 
-# Adapters
+# Adapters Module (`hierachain/adapters/*`)
 
 ## Mục đích
 

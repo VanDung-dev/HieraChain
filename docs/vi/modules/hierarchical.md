@@ -4,7 +4,7 @@ description: Main Chain, Sub-Chain, và Hierarchy Manager — kiến trúc đa c
 icon: material/layers
 ---
 
-# Hierarchical (`hierachain/hierarchical/*`)
+# Hierarchical Module (`hierachain/hierarchical/*`)
 
 ## Mục đích
 

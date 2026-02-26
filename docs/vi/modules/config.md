@@ -4,7 +4,7 @@ description: "Tổng quan module cấu hình: settings, logging; phân biệt v�
 icon: material/cog
 ---
 
-# Config Module
+# Config Module (`hierachain/config/*`)
 
 ## Mục đích
 

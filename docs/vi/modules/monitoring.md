@@ -4,7 +4,7 @@ description: "Giám sát hiệu năng và cảnh báo: PerformanceMonitor, metri
 icon: material/chart-line
 ---
 
-# Monitoring Module
+# Monitoring Module (`hierachain/monitoring/*`)
 
 ## Mục đích
 

@@ -4,7 +4,7 @@ description: "Module lưu trữ: world state, backend bộ nhớ/SQL, cấu hìn
 icon: material/database
 ---
 
-# Storage Module
+# Storage Module (`hierachain/storage/*`)
 
 ## Mục đích
 

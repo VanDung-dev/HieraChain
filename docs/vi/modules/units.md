@@ -4,7 +4,7 @@ description: "Thông tin phiên bản/đơn vị: hierachain/units/version.py �
 icon: material/ruler
 ---
 
-# Units
+# Units (`hierachain/units/*`)
 
 ## Mục đích
 
@@ -23,7 +23,7 @@ current = get_version(VERSION)
 
 ## Liên quan
 
-* Config/Settings: [Config (Module)](config.md)
+* Config/Settings: [Config](config.md)
 
 ---
 

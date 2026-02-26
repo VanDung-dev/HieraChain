@@ -4,7 +4,7 @@ description: "Cụm và đồng bộ liên tầng: cluster_manager, cross_level_
 icon: material/server-network
 ---
 
-# Cluster
+# Cluster Module (`hierachain/cluster/*`)
 
 ## Mục đích
 

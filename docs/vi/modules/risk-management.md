@@ -4,7 +4,7 @@ description: "Phát hiện, chấm điểm và giảm thiểu rủi ro: risk_ana
 icon: material/alert-circle
 ---
 
-# Risk Management
+# Risk Management Module (`hierachain/risk_management/*`)
 
 ## Mục đích
 

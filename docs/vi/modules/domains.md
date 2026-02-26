@@ -4,7 +4,7 @@ description: "Miền nghiệp vụ chung: chains/events/utils — base_chain, do
 icon: material/domain
 ---
 
-# Domains (Generic)
+# Domains Module (`hierachain/domains/generic/*`) 
 
 Mô‑đun cung cấp khung chung cho các miền nghiệp vụ (generic domains) để chuẩn hoá cách xây dựng chuỗi và sự kiện domain.
 

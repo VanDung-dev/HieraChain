@@ -4,7 +4,7 @@ description: "HieraChain security module: MSP/Identity, API Key & Policy, Key Ma
 icon: material/security
 ---
 
-# Security (`hierachain/security/*`)
+# Security Module (`hierachain/security/*`)
 
 ## Mục đích
 
