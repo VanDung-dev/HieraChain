@@ -208,14 +208,14 @@ kind delete cluster --name hiera-cluster
 
 ## Documentation
 
-The project documentation is built using [MkDocs](https://www.mkdocs.org/) with the [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) theme.
+The project documentation is built using [zensical](https://zensical.org/).
 
 ### Serve Locally
 
 To run the documentation server locally with live reloading:
 
 ```bash
-mkdocs serve
+zensical serve
 ```
 
 Open your browser at `http://127.0.0.1:8000` to view the documentation.
@@ -225,7 +225,7 @@ Open your browser at `http://127.0.0.1:8000` to view the documentation.
 To build the static HTML site (output to `site/` directory):
 
 ```bash
-mkdocs build
+zensical build
 ```
 
 ## Developer Scripts
