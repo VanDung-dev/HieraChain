@@ -82,6 +82,7 @@ nav:
   - Modules:
       - Core: modules/core.md
       - Hierarchical: modules/hierarchical.md
+      - Ordering: modules/ordering.md
       - Security: modules/security.md
       - API: modules/api.md
       - Storage: modules/storage.md
@@ -93,7 +94,7 @@ nav:
       - Cluster: modules/cluster.md
       - Domains: modules/domains.md
       - Risk Management: modules/risk-management.md
-      - Config (Module): modules/config.md
+      - Config: modules/config.md
       - CLI: modules/cli.md
       - SDK: modules/sdk.md
       - Units: modules/units.md
