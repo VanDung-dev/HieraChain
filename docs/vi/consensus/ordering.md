@@ -299,8 +299,8 @@ ORDERING_CONFIG = {
 ## Liên quan
 
 * Kiến trúc Consensus: [Consensus & Ordering](../architecture/consensus.md)
-* Hierarchical module: [Hierarchical](hierarchical.md)
-* Error Mitigation: [Error Mitigation](error-mitigation.md)
+* Hierarchical module: [Hierarchical](../modules/hierarchical.md)
+* Error Mitigation: [Error Mitigation](../modules/error-mitigation.md)
 * Thuật ngữ: [Thuật ngữ](../glossary.md)
 
 ---
