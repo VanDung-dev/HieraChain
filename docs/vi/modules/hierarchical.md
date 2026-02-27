@@ -368,29 +368,29 @@ event_id = sub_chain.add_event({
 
     **FACT**
 
-    - Các tệp: `hierachain/hierarchical/{main_chain.py, sub_chain.py, hierarchy_manager.py, channel.py, multi_org.py, private_data.py}` và `hierachain/hierarchical/consensus/*` (vai trò BFT Consensus), `hierachain/consensus/ordering/service.py` (vai trò Ordering).
-    - Proof Aggregation: `hierarchical/proof_aggregation.py` (`ProofAggregator` gộp proof từ nhiều sub-chain).
-    - Rebalancer: `hierarchical/rebalancer.py` (`SubChainRebalancer` tự động chia tách khi tải vượt ngưỡng).
-    - Main Chain giữ Proof/metadata; Sub-Chain giữ dữ liệu domain và tạo Proof; Hierarchy Manager điều phối — phản ánh trực tiếp bố cục mô-đun.
+    * Các tệp: `hierachain/hierarchical/{main_chain.py, sub_chain.py, hierarchy_manager.py, channel.py, multi_org.py, private_data.py}` và `hierachain/hierarchical/consensus/*` (vai trò BFT Consensus), `hierachain/consensus/ordering/service.py` (vai trò Ordering).
+    * Proof Aggregation: `hierarchical/proof_aggregation.py` (`ProofAggregator` gộp proof từ nhiều sub-chain).
+    * Rebalancer: `hierarchical/rebalancer.py` (`SubChainRebalancer` tự động chia tách khi tải vượt ngưỡng).
+    * Main Chain giữ Proof/metadata; Sub-Chain giữ dữ liệu domain và tạo Proof; Hierarchy Manager điều phối — phản ánh trực tiếp bố cục mô-đun.
 
     **DECISION**
 
-    - Tài liệu ưu tiên mô tả luồng kỹ thuật, liên kết tệp thật; tránh kể chuyện.
-    - Nhất quán thuật ngữ theo glossary; phân tách dữ liệu (data separation) là nguyên tắc cốt lõi.
+    * Tài liệu ưu tiên mô tả luồng kỹ thuật, liên kết tệp thật; tránh kể chuyện.
+    * Nhất quán thuật ngữ theo glossary; phân tách dữ liệu (data separation) là nguyên tắc cốt lõi.
 
     **ASSUMPTION**
 
-    - Đồng hồ hệ thống đủ đồng bộ để timestamp phục vụ kiểm toán.
-    - Hạ tầng mạng ổn định; có cơ chế retry/idempotency cho gửi proof.
+    * Đồng hồ hệ thống đủ đồng bộ để timestamp phục vụ kiểm toán.
+    * Hạ tầng mạng ổn định; có cơ chế retry/idempotency cho gửi proof.
 
     **INVARIANT**
 
-    - Main Chain không lưu dữ liệu domain chi tiết.
-    - Proof phải xác định (deterministic) và có thể xác minh lại từ dữ liệu block Sub-Chain.
-    - Block đã commit là bất biến.
+    * Main Chain không lưu dữ liệu domain chi tiết.
+    * Proof phải xác định (deterministic) và có thể xác minh lại từ dữ liệu block Sub-Chain.
+    * Block đã commit là bất biến.
 
     **EDGE CASES**
 
-    - Mất kết nối trong lúc neo proof → retry có idempotency, tránh trùng lặp.
-    - Sự kiện out-of-order → ordering phải bảo đảm thứ tự trước khi đóng block.
-    - Lệch đồng hồ hệ thống → có thể ảnh hưởng kiểm toán, cần đồng bộ thời gian.
+    * Mất kết nối trong lúc neo proof → retry có idempotency, tránh trùng lặp.
+    * Sự kiện out-of-order → ordering phải bảo đảm thứ tự trước khi đóng block.
+    * Lệch đồng hồ hệ thống → có thể ảnh hưởng kiểm toán, cần đồng bộ thời gian.

@@ -12,10 +12,45 @@ Quản lý cụm (cluster) và cơ chế đồng bộ trạng thái giữa các 
 
 ## Kiến trúc & khái niệm
 
-* Cluster Manager: `hierachain/cluster/cluster_manager.py` — điều phối node/role trong cụm.
-* Cross‑Level Sync: `hierachain/cluster/cross_level_sync.py` — đồng bộ trạng thái giữa các tầng (cross‑level).
-* Lockdown Protocol: `hierachain/cluster/lockdown_protocol.py` — cơ chế hạn chế/tạm dừng an toàn khi có sự cố nghiêm trọng.
-* State Sync Manager: `hierachain/cluster/state_sync_manager.py` — quản lý đồng bộ trạng thái.
+<div class="grid cards" markdown>
+
+* :material-server-network:{ .lg .middle } __Cluster Manager__
+
+    ---
+
+    __File__: `hierachain/cluster/cluster_manager.py`
+
+    * Điều phối node/role trong cụm.
+    * Quản lý vòng đời node, election leader.
+
+* :material-connection:{ .lg .middle } __Cross‑Level Sync__
+
+    ---
+
+    __File__: `hierachain/cluster/cross_level_sync.py`
+
+    * Đồng bộ trạng thái giữa các tầng (cross‑level).
+    * Đảm bảo tính nhất quán liên tầng.
+
+* :material-shield-lock:{ .lg .middle } __Lockdown Protocol__
+
+    ---
+
+    __File__: `hierachain/cluster/lockdown_protocol.py`
+
+    * Cơ chế hạn chế/tạm dừng an toàn khi có sự cố nghiêm trọng.
+    * Bảo vệ tính toàn vẹn hệ thống trong trạng thái khẩn cấp.
+
+* :material-database-sync:{ .lg .middle } __State Sync Manager__
+
+    ---
+
+    __File__: `hierachain/cluster/state_sync_manager.py`
+
+    * Quản lý đồng bộ trạng thái giữa các node.
+    * Checkpoint và khôi phục trạng thái.
+
+</div>
 
 ## API công khai (mang tính mô tả)
 

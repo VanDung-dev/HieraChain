@@ -23,7 +23,6 @@ theme:
   name: zensical
   language: vi
   icon:
-    logo: material/link-variant
     repo: fontawesome/brands/github
   features:
     - navigation.tabs

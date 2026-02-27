@@ -12,7 +12,7 @@ Tài liệu này định nghĩa chi tiết cấu trúc dữ liệu (Data Schema)
 
 HieraChain tuân thủ nghiêm ngặt các định nghĩa Schema sau đây để đảm bảo tính nhất quán trên toàn mạng lưới (Main Chain & Sub Chains).
 
-### 1.1 Event
+### Event
 
 Event là đơn vị dữ liệu nhỏ nhất, đại diện cho một hành động nghiệp vụ cụ thể.
 

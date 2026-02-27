@@ -8,7 +8,7 @@ icon: material/cube
 
 ## Mục đích
 
-Mô-đun Core cung cấp cấu trúc dữ liệu và thuật toán nền tảng: `Block`, `Blockchain`, schema Arrow, băm/Merkle, và tiện ích hiệu năng. Đây là lớp thấp nhất mà các tầng `hierarchical/*` dựa vào.
+Core Module cung cấp cấu trúc dữ liệu và thuật toán nền tảng: `Block`, `Blockchain`, schema Arrow, băm/Merkle, và tiện ích hiệu năng. Đây là lớp thấp nhất mà các tầng `hierarchical/*` dựa vào.
 
 ## Kiến trúc & khái niệm
 

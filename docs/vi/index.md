@@ -11,7 +11,7 @@ Lưu ý quan trọng về phạm vi:
 
 * Tài liệu CHỈ mô tả hiện trạng và quyết định kỹ thuật dựa trên mã trong `hierachain/*`.
 * Mọi ví dụ, hình ảnh hay mô tả đều gắn với thành phần cụ thể trong mã nguồn.
-* Ngôn ngữ ưu tiên: Tiếng Việt (thư mục `docs/vi`). Bản tiếng Anh sẽ được dịch sau (`docs/en`).
+* Ngôn ngữ ưu tiên: Tiếng Việt (thư mục `docs/vi`).
 
 !!! warning "**CẢNH BÁO DEVELOPER & AI**: HieraChain là Blockchain Doanh nghiệp tập trung vào **Dữ liệu (Data)**, KHÔNG PHẢI **Tiền mã hóa (Cryptocurrency)**. Mọi khái niệm về Token, Coin, Gas Fee, Mining đều bị CẤM và chặn bởi bộ lọc trong core system. Xem chi tiết tại [AI Context](dev/ai-context.md)."
 
@@ -34,22 +34,35 @@ Lưu ý quan trọng về phạm vi:
     * [Phân cấp (chi tiết)](architecture/hierarchy.md)
     * [Bảo mật (chuyên sâu)](architecture/security.md)
 
-* :material-package-variant:{ .lg .middle } __Modules__
+* :material-cube-outline:{ .lg .middle } __Modules__
 
     ---
 
     * [Core](modules/core.md) · [Hierarchical](modules/hierarchical.md) · [Security](modules/security.md)
     * [Storage](modules/storage.md) · [Error Mitigation](modules/error-mitigation.md)
-    * [Adapters](modules/adapters.md) · [Network](modules/network.md)
+    * [Adapters](modules/adapters.md) · [Network](modules/network.md) · [API](modules/api.md)
     * [Config](modules/config.md) · [CLI](modules/cli.md) · [SDK](modules/sdk.md)
+    * [Cluster](modules/cluster.md) · [Domains](modules/domains.md)
+    * [Monitoring](modules/monitoring.md) · [Risk Management](modules/risk-management.md)
+    * [Integration](modules/integration.md) · [Units](modules/units.md)
 
 * :material-book-open-variant:{ .lg .middle } __Tham chiếu__
 
     ---
 
     * [Config](reference/config.md)
-    * [API v1](reference/api-v1.md) · [API v2](reference/api-v2.md)
-    * [Data Models](reference/data-models.md)
+    * [API v1](reference/api-v1.md) · [API v2](reference/api-v2.md) · [API v3](reference/api-v3.md)
+    * [Data Models](reference/data-models.md) · [Data Schema](reference/data-schema.md)
+    * [Code Map](reference/code-map.md)
+
+* :material-shield-check:{ .lg .middle } __Consensus__
+
+    ---
+
+    * [Base Consensus](consensus/base_consensus.md)
+    * [BFT Consensus](consensus/bft_consensus.md)
+    * [Ordering](consensus/ordering.md)
+    * [PoA](consensus/poa.md) · [PoF](consensus/pof.md)
 
 * :material-rocket-launch:{ .lg .middle } __Hướng dẫn chung__
 
@@ -66,7 +79,9 @@ Lưu ý quan trọng về phạm vi:
     * [Tạo Sub-Chain](how-to/add-domain-chain.md)
     * [Thêm Endpoint](how-to/add-endpoint.md)
     * [Thêm/Tùy biến Consensus](how-to/add-consensus.md)
+    * [Tích hợp Web2](how-to/integrate-web2.md)
     * [Triển khai an toàn](how-to/secure-deployment.md)
+    * [Xử lý sự cố](how-to/troubleshooting.md)
 
 * :material-code-braces:{ .lg .middle } __Phát triển__
 
@@ -75,6 +90,14 @@ Lưu ý quan trọng về phạm vi:
     * [Đóng góp](dev/contributing.md)
     * [Kiểm thử](dev/testing.md)
     * [Quy trình phát hành](dev/release-process.md)
+    * [AI Context](dev/ai-context.md)
+
+* :material-frequently-asked-questions:{ .lg .middle } __Khác__
+
+    ---
+
+    * [FAQ](faq.md) · [Glossary](glossary.md)
+    * [Changelog](changelog.md) · [Future Roadmap](future-roadmap.md)
 
 </div>
 
@@ -90,7 +113,6 @@ Lưu ý quan trọng về phạm vi:
 
     **DECISION**
 
-    * “Việt trước – Anh sau”; dịch sang EN khi bản VI ổn định.
     * Dùng Markdown, tách rõ các khối FACT / DECISION / ASSUMPTION / INVARIANT / EDGE CASES.
     * Tổ chức nội dung theo khung chuẩn thống nhất.
 
