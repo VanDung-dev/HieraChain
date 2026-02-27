@@ -31,9 +31,6 @@
         <loc>https://docs.hierachain.org/modules/hierarchical/</loc>
       </url>
       <url>
-        <loc>https://docs.hierachain.org/modules/ordering/</loc>
-      </url>
-      <url>
         <loc>https://docs.hierachain.org/modules/security/</loc>
       </url>
       <url>
@@ -77,6 +74,21 @@
       </url>
       <url>
         <loc>https://docs.hierachain.org/modules/units/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/consensus/base_consensus/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/consensus/poa/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/consensus/pof/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/consensus/bft_consensus/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/consensus/ordering/</loc>
       </url>
       <url>
         <loc>https://docs.hierachain.org/reference/code-map/</loc>

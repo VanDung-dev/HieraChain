@@ -6,19 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Quy trình phát hành phiên bản và tài liệu: versioning bằng setuptools_scm, chuẩn bị gói, ghi chú phát hành.">
+        <meta name="description" content="Đồng thuận hiệu năng cao dành cho các tổ chức được nhận dạng (Authorized Entities).">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
       
       
-        <link rel="canonical" href="https://docs.hierachain.org/dev/release-process/">
+        <link rel="canonical" href="https://docs.hierachain.org/consensus/poa/">
       
       
-        <link rel="prev" href="../testing/">
+        <link rel="prev" href="../base_consensus/">
       
       
-        <link rel="next" href="../ai-context/">
+        <link rel="next" href="../pof/">
       
       
         
@@ -31,7 +31,7 @@
     
     
       
-        <title>Quy trình phát hành - HieraChain Docs</title>
+        <title>Proof of Authority (PoA) - HieraChain Docs</title>
       
     
     
@@ -87,7 +87,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#quy-trinh-phat-hanh" class="md-skip">
+        <a href="#proof-of-authority-poa-hierachaincoreconsensusproof_of_authoritypy" class="md-skip">
           Bỏ qua
         </a>
       
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Quy trình phát hành
+              Proof of Authority (PoA)
             
           </span>
         </div>
@@ -306,11 +306,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../consensus/base_consensus/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../base_consensus/" class="md-tabs__link">
           
   
   Cơ chế đồng thuận
@@ -382,13 +384,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../contributing/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../dev/contributing/" class="md-tabs__link">
           
   
   Phát triển
@@ -1439,8 +1439,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -1458,17 +1460,20 @@
     
     
       
+        
+        
+      
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -1486,7 +1491,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1504,7 +1509,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../consensus/base_consensus/" class="md-nav__link">
+      <a href="../base_consensus/" class="md-nav__link">
         
   
   
@@ -1531,10 +1536,39 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../consensus/poa/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.1 12.5 1.4 1.41-6.53 6.59L12.5 17l1.4-1.41 2.07 2.08zM11 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 2a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2m0 7c.68 0 1.5.09 2.41.26l-1.67 1.67-.74-.03c-2.97 0-6.1 1.46-6.1 2.1v1.1h6.2L13 20H3v-3c0-2.66 5.33-4 8-4"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Proof of Authority
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1552,6 +1586,137 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Mục lục
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#muc-ich" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mục đích
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kien-truc-khai-niem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kiến trúc &amp; khái niệm
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-cong-khai-public-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API công khai (Public API)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cau-hinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cấu hình
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tinh-nang-han-che" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tính năng &amp; hạn chế
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bao-mat-quyen-truy-cap-neu-ap-dung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bảo mật &amp; quyền truy cập (nếu áp dụng)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Xử lý lỗi &amp; khắc phục
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hieu-nang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hiệu năng
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#faq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FAQ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Liên quan
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1564,7 +1729,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../consensus/pof/" class="md-nav__link">
+      <a href="../pof/" class="md-nav__link">
         
   
   
@@ -1594,7 +1759,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../consensus/bft_consensus/" class="md-nav__link">
+      <a href="../bft_consensus/" class="md-nav__link">
         
   
   
@@ -1624,7 +1789,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../consensus/ordering/" class="md-nav__link">
+      <a href="../ordering/" class="md-nav__link">
         
   
   
@@ -2379,10 +2544,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -2398,20 +2561,17 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2429,7 +2589,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2447,7 +2607,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../contributing/" class="md-nav__link">
+      <a href="../../dev/contributing/" class="md-nav__link">
         
   
   
@@ -2477,7 +2637,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../testing/" class="md-nav__link">
+      <a href="../../dev/testing/" class="md-nav__link">
         
   
   
@@ -2504,39 +2664,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m20 22-3.86-1.55c.7-1.53 1.2-3.11 1.51-4.72zM7.86 20.45 4 22l2.35-6.27c.31 1.61.81 3.19 1.51 4.72M12 2s5 2 5 10c0 3.1-.75 5.75-1.67 7.83A2 2 0 0 1 13.5 21h-3a2 2 0 0 1-1.83-1.17C7.76 17.75 7 15.1 7 12c0-8 5-10 5-10m0 10c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2"/></svg>
-  
-  <span class="md-ellipsis">
-    
-  
-    Quy trình phát hành
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="././" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../dev/release-process/" class="md-nav__link">
         
   
   
@@ -2554,82 +2685,6 @@
   
 
       </a>
-      
-        
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Mục lục
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#versioning" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Versioning
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#chuan-bi-phat-hanh" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Chuẩn bị phát hành
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ong-goi" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Đóng gói
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#phat-hanh-tai-lieu" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Phát hành tài liệu
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ghi-chu-phat-hanh" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ghi chú phát hành
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2642,7 +2697,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ai-context/" class="md-nav__link">
+      <a href="../../dev/ai-context/" class="md-nav__link">
         
   
   
@@ -2855,10 +2910,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#versioning" class="md-nav__link">
+  <a href="#muc-ich" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Versioning
+        Mục đích
       
     </span>
   </a>
@@ -2866,10 +2921,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#chuan-bi-phat-hanh" class="md-nav__link">
+  <a href="#kien-truc-khai-niem" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Chuẩn bị phát hành
+        Kiến trúc &amp; khái niệm
       
     </span>
   </a>
@@ -2877,10 +2932,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ong-goi" class="md-nav__link">
+  <a href="#api-cong-khai-public-api" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Đóng gói
+        API công khai (Public API)
       
     </span>
   </a>
@@ -2888,10 +2943,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#phat-hanh-tai-lieu" class="md-nav__link">
+  <a href="#cau-hinh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phát hành tài liệu
+        Cấu hình
       
     </span>
   </a>
@@ -2899,10 +2954,65 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ghi-chu-phat-hanh" class="md-nav__link">
+  <a href="#tinh-nang-han-che" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Ghi chú phát hành
+        Tính năng &amp; hạn chế
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bao-mat-quyen-truy-cap-neu-ap-dung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bảo mật &amp; quyền truy cập (nếu áp dụng)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Xử lý lỗi &amp; khắc phục
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hieu-nang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hiệu năng
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#faq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FAQ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Liên quan
       
     </span>
   </a>
@@ -2924,7 +3034,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/dev/release-process.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/consensus/poa.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -2933,63 +3043,96 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/dev/release-process.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/consensus/poa.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
   
 
 
-<h1 id="quy-trinh-phat-hanh">Quy trình phát hành</h1>
-<h2 id="versioning">Versioning</h2>
+<h1 id="proof-of-authority-poa-hierachaincoreconsensusproof_of_authoritypy">Proof of Authority - PoA (<code>hierachain/core/consensus/proof_of_authority.py</code>)</h1>
+<h2 id="muc-ich">Mục đích</h2>
+<p>PoA trong HieraChain Ledger là cơ chế sinh khối cho mạng chính (<code>Main Chain</code>) hoặc chuỗi phụ (<code>Sub-Chains</code>) dựa trên thẩm quyền. Không giải nén các tính toán tìm kiếm (mining) nặng nề, PoA dành cho các node có danh tính nhằm mang lại hiệu suất tạo khối tuyệt đối cao và an toàn cho doanh nghiệp (ví dụ mạng nội bộ hoặc hệ sinh thái một tập đoàn).</p>
+<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
 <ul>
-<li>Dùng <code>setuptools_scm</code> (xem <code>pyproject.toml</code>) để suy luận phiên bản từ thẻ Git.</li>
-<li>Tạo thẻ theo mẫu: <code>vX.Y.Z</code> hoặc <code>vX.Y.Z.devN</code> cho bản phát triển.</li>
+<li>Lớp <code>ProofOfAuthority</code> kế thừa <code>BaseConsensus</code> (<code>hierachain/core/consensus/proof_of_authority.py</code>).</li>
+<li>Xác định Authorities thông qua định danh <code>authority_id</code> và Public Key (sở hữu mã xác minh chữ ký).</li>
+<li>Phân bổ tạo khối theo lịch quy ước (<code>Round-Robin</code>) giữa các node để tối ưu công bằng tính toán.</li>
+<li>Áp dụng Zero-Knowledge (ZK Proof) để đảm bảo thông tin nội bộ của khối thuộc Enterprise được bảo mật hoàn toàn.</li>
 </ul>
-<h2 id="chuan-bi-phat-hanh">Chuẩn bị phát hành</h2>
-<ol>
-<li>Đảm bảo test xanh: <code>pytest -v</code>.</li>
-<li>Soát tài liệu: liên kết/chỉ mục/nav cập nhật.</li>
-<li>Cập nhật <code>docs/vi/changelog.md</code> với nội dung phát hành.</li>
-</ol>
-<h2 id="ong-goi">Đóng gói</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>build
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>twine<span class="w"> </span>check<span class="w"> </span>dist/*
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># (tuỳ chọn) twine upload dist/*</span>
+<h2 id="api-cong-khai-public-api">API công khai (Public API)</h2>
+<ul>
+<li><code>add_authority(authority_id: str, metadata: dict[str, Any] | None = None) -&gt; bool</code>: Chấp thuận danh tính mới sinh khối.</li>
+<li><code>remove_authority(authority_id: str) -&gt; bool</code>: Loại bỏ Authority khỏi tập hợp đồng thuận.</li>
+<li><code>is_authority(authority_id: str) -&gt; bool</code>: Kiểm tra Node có thuộc tập hợp tạo khối hay không.</li>
+<li><code>can_create_block(authority_id: str | None = None) -&gt; bool</code>: Trả về <code>True</code> nếu thuộc Authority.</li>
+<li><code>validate_block(block: Block, previous_block: Block) -&gt; bool</code>: Tiến trình xác nhận thời gian sinh khối, sự kiện cấu trúc và chữ ký hợp lệ.</li>
+<li><code>get_next_authority(current_block_index: int) -&gt; str | None</code>: Cho ra thuật toán luân phiên Round-Robin.</li>
+</ul>
+<p>Ví dụ thêm Node sinh khối mới:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.consensus.proof_of_authority</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProofOfAuthority</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">poa</span> <span class="o">=</span> <span class="n">ProofOfAuthority</span><span class="p">()</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">poa</span><span class="o">.</span><span class="n">add_authority</span><span class="p">(</span><span class="s2">&quot;node_1&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;public_key&quot;</span><span class="p">:</span> <span class="s2">&quot;Bằng chứng...&quot;</span><span class="p">})</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">poa</span><span class="o">.</span><span class="n">is_authority</span><span class="p">(</span><span class="s2">&quot;node_1&quot;</span><span class="p">))</span> <span class="c1"># True</span>
 </code></pre></div>
-<h2 id="phat-hanh-tai-lieu">Phát hành tài liệu</h2>
+<h2 id="cau-hinh">Cấu hình</h2>
 <ul>
-<li>Build site tĩnh bằng MkDocs (thực hiện sau khi nội dung ổn định).</li>
-<li>CI (sau): build preview trên PR, publish khi merge <code>main</code>.</li>
+<li>Config cơ bản nội bộ của thuật toán nằm trong <code>self.config</code> với chu kỳ tối thiểu <code>block_interval: 10.0</code> giây, cấm <code>mining</code>, <code>coin_transfer</code>, v.v...</li>
+<li>Ràng buộc cấu hình <code>require_authority_signature</code> chỉ cho phép lưu trạng thái khi AuthNode ký khối thành công. Khả năng giám sát giới hạn lên đến <code>max_authorities: 100</code> node.</li>
 </ul>
-<h2 id="ghi-chu-phat-hanh">Ghi chú phát hành</h2>
+<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
 <ul>
-<li>Tóm tắt thay đổi chính của mã và tài liệu.</li>
-<li>Link tới các PR liên quan; liệt kê điểm phá vỡ (breaking changes) nếu có.</li>
+<li><strong>Tính năng</strong>: Tiết kiệm tài nguyên; khối được xác nhận ngay lập tức theo <code>block_interval</code>; an toàn trên môi trường định danh thực (KYC/Enterprise).</li>
+<li><strong>Hạn chế</strong>: Không phù hợp để vận hành Permissionless (các Blockchain mở như Bitcoin, mà bất kỳ ai cũng có thể vào giải mã/bỏ phiếu).</li>
+</ul>
+<h2 id="bao-mat-quyen-truy-cap-neu-ap-dung">Bảo mật &amp; quyền truy cập (nếu áp dụng)</h2>
+<ul>
+<li>Toàn bộ khối đều được bảo vệ và xác nhận thông qua chữ ký của node tạo lập <code>_create_authority_signature</code>.</li>
+<li>Chữ ký băm cùng các đối tượng (Hash khối, Authority ID, Timestamp). Quá trình xác thực ngược lại bởi hàm <code>verify_signature</code> của module Security hệ thống.</li>
+</ul>
+<h2 id="xu-ly-loi-khac-phuc">Xử lý lỗi &amp; khắc phục</h2>
+<ul>
+<li>Ký khối thất bại khi thiếu Public Key, hoặc Signature sai, hệ thống lập tức từ chối và ghi log trả về <code>False</code>.</li>
+<li>Nếu khối bị sinh ra nhanh hơn thời gian quy định (thấp hơn <code>block_interval / 2</code>), tiến trình validate báo lỗi chống DDos nội bộ.</li>
+</ul>
+<h2 id="hieu-nang">Hiệu năng</h2>
+<ul>
+<li>Khả năng xử lý lượng giao dịch (TPS) vô cùng cao và ổn định vì được xử lý qua nhóm các Authority có cấu hình máy chủ mạnh.</li>
+</ul>
+<h2 id="faq">FAQ</h2>
+<ul>
+<li><strong>Liệu có thể loại bỏ hay thay đổi luân phiên Authority không?</strong> Có, bằng API <code>add_authority</code> và <code>remove_authority</code> trong lúc blockchain đang chạy. Nhưng quá trình này sẽ không ảnh hưởng luồng (vẫn chạy bình thường trên số node còn lại).</li>
+</ul>
+<h2 id="lien-quan">Liên quan</h2>
+<ul>
+<li><a href="../base_consensus/">Base Consensus</a></li>
 </ul>
 <hr />
 <details class="info">
 <summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
 <p><strong>FACT</strong></p>
 <ul>
-<li><code>setuptools_scm</code> được cấu hình trong <code>pyproject.toml</code>.</li>
-<li>Dự án dùng nhiều giấy phép (Apache-2.0 hoặc MIT) — xem README/Licenses.</li>
+<li>File <code>hierachain/core/consensus/proof_of_authority.py</code> triển khai Round-Robin cho thuật toán Proof-of-Authority bằng phương thức <code>get_next_authority</code>.</li>
+<li>Cấm các event type phục vụ tiền điện tử (<code>mining</code>, <code>transaction</code>).</li>
 </ul>
 <p><strong>DECISION</strong></p>
 <ul>
-<li>Chỉ publish tài liệu sau khi docs/vi ổn định và qua review.</li>
+<li>PoA được mặc định sử dụng cho HieraChain khi khối doanh nghiệp được quản lý ở mạng đơn tổ chức (Single-Orgs) hoặc mạng tập đoàn nơi các Node được chỉ định sẵn sinh block.</li>
+<li>Chấp nhận không kiểm tra chữ ký cho các máy Client nếu <code>metadata</code> bỏ trống Public Key (phù hợp cho Unit Test). Tuy nhiên, trên Production, <code>metadata</code> Public Key luôn bắt buộc.</li>
 </ul>
 <p><strong>ASSUMPTION</strong></p>
 <ul>
-<li>Có quyền push thẻ và quyền publish gói (nếu áp dụng).</li>
+<li>Giả định rủi ro mạng (phân mảnh nội bộ) và node ác ý thấp vì đã được chỉ định bằng danh tính.</li>
 </ul>
 <p><strong>INVARIANT</strong></p>
 <ul>
-<li>Tag phiên bản phải khớp nội dung; không cập nhật docs sau khi đã gắn thẻ nếu chưa tăng phiên bản.</li>
+<li>Nếu quá trình ký <code>consensus_finalization</code> thiếu vắng ID hoặc sai Public Key, kết quả xác nhận khối vĩnh viễn không vượt qua.</li>
+<li>Difficulty cho PoA luôn trả về 1.0.</li>
 </ul>
 <p><strong>EDGE CASES</strong></p>
 <ul>
-<li>Chênh lệch thẻ/commit gây sai phiên bản suy luận → kiểm tra lại lịch sử Git trước khi build.</li>
+<li>Khi <code>authorities</code> rỗng (Chưa node nào cấu hình định danh), quá trình gọi API lấy người kế tiếp sẽ trả về <code>None</code> – blockchain không sinh khối đồng thuận.</li>
 </ul>
 </details>
 
@@ -3032,7 +3175,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
         
           
-          <a href="../testing/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Kiểm thử">
+          <a href="../base_consensus/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Base Consensus">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -3042,20 +3185,20 @@
                 Trước
               </span>
               <div class="md-ellipsis">
-                Kiểm thử
+                Base Consensus
               </div>
             </div>
           </a>
         
         
           
-          <a href="../ai-context/" class="md-footer__link md-footer__link--next" aria-label="Sau: AI Context">
+          <a href="../pof/" class="md-footer__link md-footer__link--next" aria-label="Sau: Proof of Federation">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Sau
               </span>
               <div class="md-ellipsis">
-                AI Context
+                Proof of Federation
               </div>
             </div>
             <div class="md-footer__button md-icon">

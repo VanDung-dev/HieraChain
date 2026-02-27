@@ -6,19 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Quy trình phát hành phiên bản và tài liệu: versioning bằng setuptools_scm, chuẩn bị gói, ghi chú phát hành.">
+        <meta name="description" content="Byzantine Fault Tolerance — Cơ chế đồng thuận chịu lỗi Byzantine, bảo đảm tính nhất quán cho mạng lưới.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
       
       
-        <link rel="canonical" href="https://docs.hierachain.org/dev/release-process/">
+        <link rel="canonical" href="https://docs.hierachain.org/consensus/bft_consensus/">
       
       
-        <link rel="prev" href="../testing/">
+        <link rel="prev" href="../pof/">
       
       
-        <link rel="next" href="../ai-context/">
+        <link rel="next" href="../ordering/">
       
       
         
@@ -31,7 +31,7 @@
     
     
       
-        <title>Quy trình phát hành - HieraChain Docs</title>
+        <title>BFT Consensus module - HieraChain Docs</title>
       
     
     
@@ -87,7 +87,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#quy-trinh-phat-hanh" class="md-skip">
+        <a href="#bft-consensus-hierachainhierarchicalconsensusbft" class="md-skip">
           Bỏ qua
         </a>
       
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Quy trình phát hành
+              BFT Consensus module
             
           </span>
         </div>
@@ -306,11 +306,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../consensus/base_consensus/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../base_consensus/" class="md-tabs__link">
           
   
   Cơ chế đồng thuận
@@ -382,13 +384,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../contributing/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../dev/contributing/" class="md-tabs__link">
           
   
   Phát triển
@@ -1439,8 +1439,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -1458,17 +1460,20 @@
     
     
       
+        
+        
+      
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -1486,7 +1491,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1504,7 +1509,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../consensus/base_consensus/" class="md-nav__link">
+      <a href="../base_consensus/" class="md-nav__link">
         
   
   
@@ -1534,7 +1539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../consensus/poa/" class="md-nav__link">
+      <a href="../poa/" class="md-nav__link">
         
   
   
@@ -1564,7 +1569,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../consensus/pof/" class="md-nav__link">
+      <a href="../pof/" class="md-nav__link">
         
   
   
@@ -1591,10 +1596,39 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../consensus/bft_consensus/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1m9 3c0 5.55-3.84 10.74-9 12-5.16-1.26-9-6.45-9-12V5l9-4 9 4zm-9-5a3 3 0 0 0-3 3c0 1.31.83 2.42 2 2.83V18h2v-2h2v-2h-2v-2.17c1.17-.41 2-1.52 2-2.83a3 3 0 0 0-3-3"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    BFT Consensus
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1612,6 +1646,154 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Mục lục
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#muc-ich" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mục đích
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kien-truc-khai-niem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kiến trúc &amp; khái niệm
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cac-thanh-phan-chinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Các thành phần chính
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Các thành phần chính">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-bftconsensus-main-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. BFTConsensus (Main Class)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-bft-cryptographic-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. BFT Cryptographic Operations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-network-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Network Transport
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-view-change-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. View Change Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#luong-xu-ly-protocol-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Luồng xử lý (Protocol Flow)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cau-hinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cấu hình
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#faq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FAQ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Liên quan
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1624,7 +1806,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../consensus/ordering/" class="md-nav__link">
+      <a href="../ordering/" class="md-nav__link">
         
   
   
@@ -2379,10 +2561,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -2398,20 +2578,17 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2429,7 +2606,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2447,7 +2624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../contributing/" class="md-nav__link">
+      <a href="../../dev/contributing/" class="md-nav__link">
         
   
   
@@ -2477,7 +2654,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../testing/" class="md-nav__link">
+      <a href="../../dev/testing/" class="md-nav__link">
         
   
   
@@ -2504,39 +2681,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m20 22-3.86-1.55c.7-1.53 1.2-3.11 1.51-4.72zM7.86 20.45 4 22l2.35-6.27c.31 1.61.81 3.19 1.51 4.72M12 2s5 2 5 10c0 3.1-.75 5.75-1.67 7.83A2 2 0 0 1 13.5 21h-3a2 2 0 0 1-1.83-1.17C7.76 17.75 7 15.1 7 12c0-8 5-10 5-10m0 10c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2"/></svg>
-  
-  <span class="md-ellipsis">
-    
-  
-    Quy trình phát hành
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="././" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../dev/release-process/" class="md-nav__link">
         
   
   
@@ -2554,82 +2702,6 @@
   
 
       </a>
-      
-        
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Mục lục
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#versioning" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Versioning
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#chuan-bi-phat-hanh" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Chuẩn bị phát hành
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ong-goi" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Đóng gói
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#phat-hanh-tai-lieu" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Phát hành tài liệu
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ghi-chu-phat-hanh" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ghi chú phát hành
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2642,7 +2714,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ai-context/" class="md-nav__link">
+      <a href="../../dev/ai-context/" class="md-nav__link">
         
   
   
@@ -2855,10 +2927,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#versioning" class="md-nav__link">
+  <a href="#muc-ich" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Versioning
+        Mục đích
       
     </span>
   </a>
@@ -2866,10 +2938,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#chuan-bi-phat-hanh" class="md-nav__link">
+  <a href="#kien-truc-khai-niem" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Chuẩn bị phát hành
+        Kiến trúc &amp; khái niệm
       
     </span>
   </a>
@@ -2877,10 +2949,71 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ong-goi" class="md-nav__link">
+  <a href="#cac-thanh-phan-chinh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Đóng gói
+        Các thành phần chính
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Các thành phần chính">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-bftconsensus-main-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. BFTConsensus (Main Class)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-bft-cryptographic-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. BFT Cryptographic Operations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-network-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Network Transport
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-view-change-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. View Change Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#luong-xu-ly-protocol-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Luồng xử lý (Protocol Flow)
       
     </span>
   </a>
@@ -2888,10 +3021,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#phat-hanh-tai-lieu" class="md-nav__link">
+  <a href="#cau-hinh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Phát hành tài liệu
+        Cấu hình
       
     </span>
   </a>
@@ -2899,10 +3032,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ghi-chu-phat-hanh" class="md-nav__link">
+  <a href="#faq" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Ghi chú phát hành
+        FAQ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Liên quan
       
     </span>
   </a>
@@ -2924,7 +3068,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/dev/release-process.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/consensus/bft_consensus.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -2933,63 +3077,203 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/dev/release-process.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/consensus/bft_consensus.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
   
 
 
-<h1 id="quy-trinh-phat-hanh">Quy trình phát hành</h1>
-<h2 id="versioning">Versioning</h2>
+<h1 id="bft-consensus-hierachainhierarchicalconsensusbft">BFT Consensus (<code>hierachain/hierarchical/consensus/bft/*</code>)</h1>
+<h2 id="muc-ich">Mục đích</h2>
+<p>BFT Consensus là cơ chế đồng thuận chịu lỗi Byzantine, cho phép hệ thống HieraChain hoạt động chính xác ngay cả khi có đến <code>f</code> nodes bị lỗi hoặc thực hiện hành vi độc hại, trong tổng số <code>3f + 1</code> nodes. Đoạn mã này tập trung cung cấp lõi bảo mật đồng thuận mạng ngang hàng.</p>
+<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
+<div class="grid cards">
 <ul>
-<li>Dùng <code>setuptools_scm</code> (xem <code>pyproject.toml</code>) để suy luận phiên bản từ thẻ Git.</li>
-<li>Tạo thẻ theo mẫu: <code>vX.Y.Z</code> hoặc <code>vX.Y.Z.devN</code> cho bản phát triển.</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg></span> <strong>BFT Consensus</strong></p>
+<hr />
+<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/consensus.py</code></p>
+<ul>
+<li>Lớp giao tiếp chính (<code>BFTConsensus</code>) xử lý vòng đời của đồng thuận PBFT.</li>
+<li>Thực thi các pha: Pre-Prepare, Prepare, và Commit.</li>
+<li>Đầu mối lưu và tiếp nhận Operation từ hệ thống vào quá trình bỏ phiếu.</li>
 </ul>
-<h2 id="chuan-bi-phat-hanh">Chuẩn bị phát hành</h2>
-<ol>
-<li>Đảm bảo test xanh: <code>pytest -v</code>.</li>
-<li>Soát tài liệu: liên kết/chỉ mục/nav cập nhật.</li>
-<li>Cập nhật <code>docs/vi/changelog.md</code> với nội dung phát hành.</li>
-</ol>
-<h2 id="ong-goi">Đóng gói</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>-m<span class="w"> </span>build
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>twine<span class="w"> </span>check<span class="w"> </span>dist/*
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># (tuỳ chọn) twine upload dist/*</span>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg></span> <strong>Cryptographic Operations</strong></p>
+<hr />
+<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/cryptographic.py</code></p>
+<ul>
+<li>Ký và xác minh chữ ký điện tử (<code>Ed25519</code>) cho Data payload.</li>
+<li>Hash thông điệp nhằm tạo Proof xác thực dữ liệu bất biến.</li>
+<li>Tích hợp thuật toán Zero-Knowledge Proof (ZK).</li>
+</ul>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4v2h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg></span> <strong>Network Transport</strong></p>
+<hr />
+<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/network.py</code></p>
+<ul>
+<li>Chịu trách nhiệm truyền thông tin sử dụng ZeroMQ (ZMQ).</li>
+<li>Hỗ trợ quảng bá <code>broadcast</code> P2P hoặc định tuyến <code>forward_to_primary</code>.</li>
+</ul>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 4v12h18V4zm0-2h18a2 2 0 0 1 2 2v12c0 .53-.21 1.04-.59 1.41-.37.38-.88.59-1.41.59h-7v2h2v2H8v-2h2v-2H3c-.53 0-1.04-.21-1.41-.59C1.21 17.04 1 16.53 1 16V4c0-1.11.89-2 2-2m7.84 6.93c.31-.3.73-.48 1.16-.48.43.01.85.18 1.16.49.3.3.48.72.48 1.15 0 .44-.18.85-.48 1.16-.31.31-.73.48-1.16.48s-.85-.18-1.16-.48c-.3-.31-.48-.72-.48-1.16 0-.43.18-.85.48-1.16M10.07 12a2.68 2.68 0 0 0 3.86 0c.51-.5.8-1.19.8-1.91s-.29-1.42-.8-1.93-1.21-.8-1.93-.8-1.42.29-1.93.8-.8 1.21-.8 1.93.29 1.41.8 1.91M6 10.09A6.45 6.45 0 0 1 12 6c2.73 0 5.06 1.7 6 4.09a6.42 6.42 0 0 1-6 4.09c-2.73 0-5.06-1.68-6-4.09"/></svg></span> <strong>View Manager</strong></p>
+<hr />
+<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/view_manager.py</code></p>
+<ul>
+<li>Quản lý trạng thái Node và Timeout để kích hoạt luân chuyển Primary Node.</li>
+<li>Tiến hành xác thực <code>validate_view_change_proof</code>.</li>
+</ul>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"/></svg></span> <strong>Types &amp; Enums</strong></p>
+<hr />
+<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/types.py</code></p>
+<ul>
+<li>Định nghĩa đối tượng lõi <code>BFTMessage</code> và enum trạng thái vòng đời BFT (<code>ConsensusState</code>, <code>MessageType</code>).</li>
+</ul>
+</li>
+</ul>
+</div>
+<h2 id="cac-thanh-phan-chinh">Các thành phần chính</h2>
+<h3 id="1-bftconsensus-main-class">1. BFTConsensus (Main Class)</h3>
+<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/consensus.py</code></p>
+<p>Lớp lõi thực thi chu trình BFT:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.consensus.bft.consensus</span><span class="w"> </span><span class="kn">import</span> <span class="n">BFTConsensus</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">bft</span> <span class="o">=</span> <span class="n">BFTConsensus</span><span class="p">(</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">node_id</span><span class="o">=</span><span class="s2">&quot;node_1&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">all_nodes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;node_1&quot;</span><span class="p">,</span> <span class="s2">&quot;node_2&quot;</span><span class="p">,</span> <span class="s2">&quot;node_3&quot;</span><span class="p">,</span> <span class="s2">&quot;node_4&quot;</span><span class="p">],</span>  <span class="c1"># 3f+1 = 4 → f=1</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">key_pair</span><span class="o">=</span><span class="n">key_pair</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">chain</span><span class="o">=</span><span class="n">sub_chain</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">f</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">view_change_timeout</span><span class="o">=</span><span class="mf">10.0</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Đẩy một operation vào chu trình đồng thuận</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">operation</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="s2">&quot;order_001&quot;</span><span class="p">,</span> <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;CREATE_ORDER&quot;</span><span class="p">}</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">bft</span><span class="o">.</span><span class="n">submit_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">)</span>
 </code></pre></div>
-<h2 id="phat-hanh-tai-lieu">Phát hành tài liệu</h2>
+<p>BFT chỉ commit operation khi đã thu được đủ <code>2f + 1</code> messages hợp lệ cho pha hiện tại.</p>
+<h3 id="2-bft-cryptographic-operations">2. BFT Cryptographic Operations</h3>
+<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/cryptographic.py</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.consensus.bft.cryptographic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">sign_message</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">verify_message_signature</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">hash_request</span><span class="p">,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">verify_operation_zk_proof</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Ký xác nhận thông điệp để gửi ra Network</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">sign_message</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">key_provider</span><span class="p">)</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="c1"># Xác minh lại thông điệp nhận từ Network qua Public Keys</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">is_valid</span> <span class="o">=</span> <span class="n">verify_message_signature</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">public_keys</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="3-network-transport">3. Network Transport</h3>
+<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/network.py</code></p>
+<p>Giao tiếp với độ trễ cực thấp:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.consensus.bft.network</span><span class="w"> </span><span class="kn">import</span> <span class="n">broadcast</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Quảng bá thông điệp BFT tới toàn bộ Endpoints cấu hình </span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">broadcast</span><span class="p">(</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">sender_node</span><span class="o">=</span><span class="n">zmq_node</span><span class="p">,</span> 
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">message</span><span class="o">=</span><span class="n">bft_message</span><span class="p">,</span> 
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">all_node_endpoints</span><span class="o">=</span><span class="n">endpoints</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">)</span>
+</code></pre></div>
+<h3 id="4-view-change-manager">4. View Change Manager</h3>
+<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/view_manager.py</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.consensus.bft.view_manager</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">validate_view_change_proof</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">start_view_change_timer</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">)</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Hệ thống tự động thiết lập view_change nếu time out xảy ra</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># và đòi hỏi Proof bao hàm 2f+1 signatures</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">is_valid_proof</span> <span class="o">=</span> <span class="n">validate_view_change_proof</span><span class="p">(</span><span class="n">view</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">proof</span><span class="o">=</span><span class="n">proof_list</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">node_public_keys</span><span class="o">=</span><span class="n">keys</span><span class="p">,</span> <span class="n">verify_sig_func</span><span class="o">=</span><span class="n">verify_message_signature</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="luong-xu-ly-protocol-flow">Luồng xử lý (Protocol Flow)</h2>
+<pre class="mermaid"><code>sequenceDiagram
+    participant C as Client
+    participant P as Primary
+    participant R1 as Replica 1
+    participant R2 as Replica 2
+
+    C-&gt;&gt;P: Request
+    P-&gt;&gt;R1: Pre-Prepare
+    P-&gt;&gt;R2: Pre-Prepare
+
+    R1--&gt;&gt;P: Prepare
+    R1--&gt;&gt;R2: Prepare
+    R2--&gt;&gt;P: Prepare
+    R2--&gt;&gt;R1: Prepare
+
+    P--&gt;&gt;R1: Commit
+    P--&gt;&gt;R2: Commit
+    R1--&gt;&gt;P: Commit
+    R1--&gt;&gt;R2: Commit
+    R2--&gt;&gt;P: Commit
+    R2--&gt;&gt;R1: Commit
+
+    Note over P,R2: Execute Operation
+    P-&gt;&gt;C: Reply</code></pre>
+<h2 id="cau-hinh">Cấu hình</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">BFT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="s2">&quot;f&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>                          <span class="c1"># Hệ số rủi ro chịu đựng được f &lt; n/3</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="s2">&quot;view_change_timeout&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>     <span class="c1"># Timeout Timeout để đổi Primary</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="s2">&quot;message_timeout&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>          <span class="c1"># Khoảng chờ độ trễ Node</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="s2">&quot;checkpoint_interval&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>      <span class="c1"># Block đánh dấu để giải phóng State</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="s2">&quot;strictness&quot;</span><span class="p">:</span> <span class="s2">&quot;high&quot;</span><span class="p">,</span>            
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="s2">&quot;enable_zk_proofs&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>       <span class="c1"># Zero-Knowledge</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="faq">FAQ</h2>
+<div class="admonition question">
+<p class="admonition-title">Làm sao để tích hợp BFT vào một Sub-Chain mới?</p>
+<p>Bạn có thể khởi tạo instance của <code>BFTConsensus(...)</code> và truyền vào <code>SubChain(consensus=bft)</code> ở cấp độ quản lý Hierarchy. Sub-Chain sẽ nhường quyền chốt Block lại cho BFT xử lý tự động theo P2P.</p>
+</div>
+<div class="admonition question">
+<p class="admonition-title">BFT khác PoF (Proof of Federation) như thế nào?</p>
+<p>BFT chống lỗi phá hoại (từ chối dịch vụ hoặc thay đổi data, tốn nhiều Network băng thông). Trong khi PoF dựa trên xoay vòng và niềm tin, tốc độ nhanh hơn, nhưng nếu một node bị chi phối thì tính ổn định bị thao túng mạnh hơn bft.</p>
+</div>
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Build site tĩnh bằng MkDocs (thực hiện sau khi nội dung ổn định).</li>
-<li>CI (sau): build preview trên PR, publish khi merge <code>main</code>.</li>
-</ul>
-<h2 id="ghi-chu-phat-hanh">Ghi chú phát hành</h2>
-<ul>
-<li>Tóm tắt thay đổi chính của mã và tài liệu.</li>
-<li>Link tới các PR liên quan; liệt kê điểm phá vỡ (breaking changes) nếu có.</li>
+<li>Tổng quan kiến trúc: <a href="../../architecture/overview/">Tổng quan</a></li>
+<li>Cơ chế Consensus Core: <a href="../base_consensus/">Base Consensus</a></li>
+<li>Thuật ngữ: <a href="../../glossary/">Thuật ngữ</a></li>
 </ul>
 <hr />
 <details class="info">
 <summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
 <p><strong>FACT</strong></p>
 <ul>
-<li><code>setuptools_scm</code> được cấu hình trong <code>pyproject.toml</code>.</li>
-<li>Dự án dùng nhiều giấy phép (Apache-2.0 hoặc MIT) — xem README/Licenses.</li>
+<li>Mã nguồn thực thi thuộc nhóm: <code>hierachain/hierarchical/consensus/bft/*.py</code> (consensus, cryptographic, network, view_manager, types).</li>
+<li>Network implementation chạy qua ZeroMQ dựa trên các hàm <code>send_via_zmq</code> và <code>broadcast</code> thay vì HTTP phổ thông.</li>
 </ul>
 <p><strong>DECISION</strong></p>
 <ul>
-<li>Chỉ publish tài liệu sau khi docs/vi ổn định và qua review.</li>
+<li>Chia nhỏ logic BFT (thay vì dồn vào 1 file) để tuân thủ tính module hoá tốt hơn, giúp Network/Crypto độc lập ra khỏi State Machine Consensus.</li>
+<li>Áp dụng PBFT (Practical Byzantine Fault Tolerance) làm công thức thiết kế. Yêu cầu <code>3f + 1</code> Node để kháng được <code>f</code> Node độc hại.</li>
+<li>Template tài liệu Grid Cards (mkdocs material) áp dụng đồng nhất qua thư mục <code>ordering</code> / <code>bft</code>.</li>
 </ul>
 <p><strong>ASSUMPTION</strong></p>
 <ul>
-<li>Có quyền push thẻ và quyền publish gói (nếu áp dụng).</li>
+<li>Network duy trì Partial Synchrony (Độ trễ có giới hạn trong vòng cho phép của View Timeout).</li>
+<li>Đồng hồ tự duy trì sự đồng bộ ở khoảng NTP &lt; 100ms.</li>
 </ul>
 <p><strong>INVARIANT</strong></p>
 <ul>
-<li>Tag phiên bản phải khớp nội dung; không cập nhật docs sau khi đã gắn thẻ nếu chưa tăng phiên bản.</li>
+<li>Core BFT chỉ thực thi lệnh Execute Transaction khi xác nhận nhận đủ <code>2f + 1</code> Commit messages minh bạch từ các tham gia.</li>
+<li>Sequence ID là tăng đơn điệu theo thời gian để chặn replay-attacks.</li>
 </ul>
 <p><strong>EDGE CASES</strong></p>
 <ul>
-<li>Chênh lệch thẻ/commit gây sai phiên bản suy luận → kiểm tra lại lịch sử Git trước khi build.</li>
+<li>View Change Collision: Nếu Node liên tục chuyển View do bị thao túng, mạng vẫn ưu tiên <code>NEW_VIEW</code> chứa tập hợp Valid Proof đúng của số lớn <code>2f + 1</code>.</li>
+<li>Message cũ: BFT Dropped lập tức với Log Reject dành cho các Packet đến từ View hoặc Seq cũ hơn Session.</li>
 </ul>
 </details>
 
@@ -3032,7 +3316,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
         
           
-          <a href="../testing/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Kiểm thử">
+          <a href="../pof/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Proof of Federation">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -3042,20 +3326,20 @@
                 Trước
               </span>
               <div class="md-ellipsis">
-                Kiểm thử
+                Proof of Federation
               </div>
             </div>
           </a>
         
         
           
-          <a href="../ai-context/" class="md-footer__link md-footer__link--next" aria-label="Sau: AI Context">
+          <a href="../ordering/" class="md-footer__link md-footer__link--next" aria-label="Sau: Ordering">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Sau
               </span>
               <div class="md-ellipsis">
-                AI Context
+                Ordering
               </div>
             </div>
             <div class="md-footer__button md-icon">
