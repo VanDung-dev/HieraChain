@@ -2329,6 +2329,67 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#production-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Production Checklist
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Production Checklist">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bat-buoc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bắt buộc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#khuyen-nghi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Khuyến nghị
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-enterprise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional (Enterprise)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kiem-tra-cau-hinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kiểm tra cấu hình
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3009,6 +3070,67 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#production-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Production Checklist
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Production Checklist">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bat-buoc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bắt buộc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#khuyen-nghi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Khuyến nghị
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-enterprise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional (Enterprise)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kiem-tra-cau-hinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kiểm tra cấu hình
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3127,6 +3249,51 @@
 <li>Dùng <code>python-dotenv</code> chỉ trong dev; production dùng hệ thống secrets (K8s Secret, Vault…).</li>
 <li>Kiểm tra <code>hierachain/security/secure_logging.py</code> và <code>security/sanitization.py</code> để tránh rò rỉ dữ liệu nhạy cảm.</li>
 </ul>
+<h2 id="production-checklist">Production Checklist</h2>
+<p>Dưới đây là checklist nhanh để triển khai HieraChain trong production:</p>
+<h3 id="bat-buoc">Bắt buộc</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Thiết lập môi trường production</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_ENV</span><span class="o">=</span>production
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Bật xác thực</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_AUTH_ENABLED</span><span class="o">=</span><span class="nb">true</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="c1"># Chính sách tin cậy P2P nghiêm ngặt</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_P2P_TRUST_POLICY</span><span class="o">=</span>strict
+</code></pre></div>
+<h3 id="khuyen-nghi">Khuyến nghị</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Sử dụng biến môi trường cho master key</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_MASTER_KEY_SOURCE</span><span class="o">=</span>env
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Bật rate limiting</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_RATE_LIMIT</span><span class="o">=</span><span class="nb">true</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_RATE_LIMIT_RPM</span><span class="o">=</span><span class="m">100</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="c1"># Bật HSTS</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_HSTS_ENABLED</span><span class="o">=</span><span class="nb">true</span>
+</code></pre></div>
+<h3 id="optional-enterprise">Optional (Enterprise)</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Sử dụng Vault bên ngoài</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_VAULT_ADDR</span><span class="o">=</span>https://vault.company.com
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Bật HSM cho key management</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_HSM_ENABLED</span><span class="o">=</span><span class="nb">true</span>
+</code></pre></div>
+<h3 id="kiem-tra-cau-hinh">Kiểm tra cấu hình</h3>
+<p>Sau khi cấu hình, bạn có thể kiểm tra cấu hình bảo mật bằng cách:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.config.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_security_config</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">warnings</span> <span class="o">=</span> <span class="n">check_security_config</span><span class="p">()</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">warnings</span><span class="p">:</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;WARNING: </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Mẹo</p>
+<ul>
+<li>Chỉ WARN, không ngăn chặn dev dùng insecure mode (giữ flexibility)</li>
+<li>Dev tự handle enterprise integrations (LDAP, HSM, SIEM) bên ngoài</li>
+</ul>
+</div>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
 <li>Mô‑đun Security: <a href="../../modules/security/">Security</a></li>
