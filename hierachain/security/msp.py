@@ -201,14 +201,27 @@ class HierarchicalMSP:
     including certificate management, role-based access control, and audit logging.
     """
     
-    def __init__(self, organization_id: str, ca_config: dict[str, Any]):
+    def __init__(self, organization_id: str, ca_config: dict[str, Any], config=None):
         """
         Initialize Hierarchical MSP.
         
         Args:
             organization_id: Unique enterprise organization identifier
             ca_config: Certificate authority configuration with hierarchical trust chains
+            config: Optional configuration dict with security settings.
+                  - enforce_authorization: bool, default True. Set to False for testing only!
         """
+        import warnings
+        
+        if config is None:
+            config = {}
+        
+        if not config.get("enforce_authorization", True):
+            warnings.warn(
+                "HierarchicalMSP: enforce_authorization=False - disable only for testing!",
+                category=UserWarning
+            )
+        
         self.organization_id = organization_id
         self.ca = CertificateAuthority(
             root_cert=ca_config["root_cert"],

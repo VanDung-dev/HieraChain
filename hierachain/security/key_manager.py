@@ -22,13 +22,26 @@ class KeyManager:
     Handles key storage, validation, revocation checks, and permissions.
     """
     
-    def __init__(self, storage_backend=None):
+    def __init__(self, storage_backend=None, config=None):
         """
         Initialize KeyManager with optional storage backend.
         
         Args:
             storage_backend: Optional storage backend (Redis, database, etc.)
+            config: Optional configuration dict with security settings.
+                   - verify_signatures: bool, default True. Set to False for testing only!
         """
+        import warnings
+        
+        if config is None:
+            config = {}
+        
+        if not config.get("verify_signatures", True):
+            warnings.warn(
+                "Security: verify_signatures=False is insecure! Use only for testing!",
+                category=UserWarning
+            )
+        
         self.storage = storage_backend or {}  # In-memory fallback
         self.revoked_keys: set[str] = set()
         self.key_cache: dict[str, dict] = {}

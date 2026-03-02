@@ -24,7 +24,25 @@ class IdentityError(Exception):
 class IdentityManager:
     """Simple identity management for enterprise applications"""
     
-    def __init__(self):
+    def __init__(self, config=None):
+        """
+        Initialize IdentityManager.
+        
+        Args:
+            config: Optional configuration dict with security settings.
+                  - validate_signatures: bool, default True. Set to False for testing only!
+        """
+        import warnings
+        
+        if config is None:
+            config = {}
+        
+        if not config.get("validate_signatures", True):
+            warnings.warn(
+                "IdentityManager: validate_signatures=False is insecure! Use only for testing!",
+                category=UserWarning
+            )
+        
         self.organizations: dict[str, dict[str, Any]] = {}
         self.users: dict[str, dict[str, Any]] = {}
         self.roles: dict[str, list[str]] = {}

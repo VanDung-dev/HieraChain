@@ -148,8 +148,20 @@ class ZKProver:
         Args:
             mode: Proving mode ("mock" or "production").
                   Defaults to settings.ZK_MODE if not specified.
+                  
+        Note:
+            ⚠️ Running in MOCK mode is insecure and NOT for production use!
         """
+        import warnings
+        
         self.mode = mode or getattr(settings, 'ZK_MODE', 'mock')
+        
+        if self.mode == "mock":
+            warnings.warn(
+                "ZKProver running in MOCK mode - NOT for production!",
+                UserWarning
+            )
+        
         self.proving_key: bytes | None = None
         self.circuit_path: str | None = None
         self.stats = {

@@ -94,7 +94,10 @@ class LocalKeyProvider(KeyProvider):
 
 class FileVaultProvider(KeyProvider):
     """
-    Provider that stores the private key in an encrypted file (Virtual HSM).
+    Local file-based vault for development/testing.
+    
+    ⚠️ Production: Use HSM or cloud KMS instead.
+    See: MasterKeyProvider for production key management.
     
     The private key is only decrypted briefly during the signing operation 
     (or held in protected memory depending on implementation), relying on 
