@@ -113,6 +113,63 @@ Mặc định phục vụ tại `http://localhost:2661`. Đặt `HRC_API_HOST`/`
 * Dùng `python-dotenv` chỉ trong dev; production dùng hệ thống secrets (K8s Secret, Vault…).
 * Kiểm tra `hierachain/security/secure_logging.py` và `security/sanitization.py` để tránh rò rỉ dữ liệu nhạy cảm.
 
+## Production Checklist
+
+Dưới đây là checklist nhanh để triển khai HieraChain trong production:
+
+### Bắt buộc
+
+```bash
+# Thiết lập môi trường production
+export HRC_ENV=production
+
+# Bật xác thực
+export HRC_AUTH_ENABLED=true
+
+# Chính sách tin cậy P2P nghiêm ngặt
+export HRC_P2P_TRUST_POLICY=strict
+```
+
+### Khuyến nghị
+
+```bash
+# Sử dụng biến môi trường cho master key
+export HRC_MASTER_KEY_SOURCE=env
+
+# Bật rate limiting
+export HRC_RATE_LIMIT=true
+export HRC_RATE_LIMIT_RPM=100
+
+# Bật HSTS
+export HRC_HSTS_ENABLED=true
+```
+
+### Optional (Enterprise)
+
+```bash
+# Sử dụng Vault bên ngoài
+export HRC_VAULT_ADDR=https://vault.company.com
+
+# Bật HSM cho key management
+export HRC_HSM_ENABLED=true
+```
+
+### Kiểm tra cấu hình
+
+Sau khi cấu hình, bạn có thể kiểm tra cấu hình bảo mật bằng cách:
+
+```python
+from hierachain.config.settings import check_security_config
+
+warnings = check_security_config()
+for w in warnings:
+    print(f"WARNING: {w}")
+```
+
+!!! tip "Mẹo"
+    - Chỉ WARN, không ngăn chặn dev dùng insecure mode (giữ flexibility)
+    - Dev tự handle enterprise integrations (LDAP, HSM, SIEM) bên ngoài
+
 ## Liên quan
 
 * Mô‑đun Security: [Security](../modules/security.md)
