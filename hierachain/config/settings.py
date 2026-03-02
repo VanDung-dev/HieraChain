@@ -18,8 +18,19 @@ from hierachain.units.version import get_version, VERSION
 class Settings:
     """Ledger configuration settings"""
     
-    # Environment
-    ENV = os.getenv("HRC_ENV", "dev").lower()
+    # Environment - use property ENV below
+    
+    @property
+    def ENV(self) -> str:
+        """Auto-detect environment from environment variable."""
+        env = os.getenv("HRC_ENV") or os.getenv("ENV")
+        if env in ("production", "prod"):
+            return "production"
+        if env in ("development", "dev"):
+            return "development"
+        if env in ("test", "testing"):
+            return "test"
+        return env or "development"
     
     # Ledger version
     VERSION = get_version(VERSION)
@@ -371,3 +382,58 @@ def get_settings() -> Settings:
 
 # Global settings instance
 settings = get_settings()
+
+
+def _check_auth_enabled(s) -> str | None:
+    """Check AUTH_ENABLED setting."""
+    if not getattr(s, 'AUTH_ENABLED', True):
+        return "AUTH_ENABLED should be True in production"
+    return None
+
+def _check_cors_all(s) -> str | None:
+    """Check CORS_ALLOW_ALL setting."""
+    if getattr(s, 'CORS_ALLOW_ALL', False):
+        return "CORS_ALLOW_ALL should be False in production"
+    return None
+
+def _check_p2p_trust(s) -> str | None:
+    """Check P2P_TRUST_POLICY setting."""
+    if not getattr(s, 'P2P_TRUST_POLICY', None):
+        return "P2P_TRUST_POLICY not set"
+    return None
+
+def _check_hsts_enabled(s) -> str | None:
+    """Check HSTS_ENABLED setting."""
+    if not getattr(s, 'HSTS_ENABLED', False):
+        return "HSTS_ENABLED should be True in production"
+    return None
+
+
+def check_security_config() -> list[str]:
+    """
+    Returns the warnings list for the current config.
+
+    This function checks the security profiles and issues an alert
+    If a configuration is detected that is not safe for production.
+    
+    Returns:
+        List of warning strings.
+    """
+    s = settings
+    warnings = []
+    
+    env = s.ENV
+    
+    if env == "production":
+        checks = [
+            _check_auth_enabled,
+            _check_cors_all,
+            _check_p2p_trust,
+            _check_hsts_enabled,
+        ]
+        for check in checks:
+            result = check(s)
+            if result:
+                warnings.append(result)
+    
+    return warnings
