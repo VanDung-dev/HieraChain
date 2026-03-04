@@ -31,10 +31,8 @@ Bạn có thể sử dụng thư viện Consensus viết bằng Rust:
 
 ### hrc-core (Enterprise / Lazy Mode)
 
-Nếu bạn không muốn tốn công sức cấu hình phức tạp (hoặc bạn "lười"), bạn có thể sử dụng giải pháp **hrc-core**.
-
 * **hrc-core là gì?**: Đây là nhân (kernel) của HieraChain được viết **thuần bằng Rust** (Native Rust) nhưng vẫn giữ giao diện Python (Python Bindings) để dễ sử dụng. Nó mang lại hiệu năng tối đa của Rust với sự tiện lợi của Python.
-* **Liên hệ**: Để tìm hiểu và truy cập `hrc-core`, vui lòng liên hệ trực tiếp qua email: [dungngnuyen2661@gmail.com*](mailto:dungngnuyen2661@gmail.com)
+* **Tình trạng**: Hiện tại `hrc-core` đang trong giai đoạn thử nghiệm và hoàn thiện.
 
 ---
 
