@@ -115,6 +115,7 @@ nav:
       - Tích hợp vào Web2: how-to/integrate-web2.md
       - Tạo Sub-Chain: how-to/add-domain-chain.md
       - Thêm Endpoint: how-to/add-endpoint.md
+      - Sử dụng WebSocket: how-to/add-websocket.md
       - Thêm/Tùy biến Consensus: how-to/add-consensus.md
       - Triển khai an toàn: how-to/secure-deployment.md
       - Khắc phục sự cố: how-to/troubleshooting.md
