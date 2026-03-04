@@ -1,11 +1,11 @@
 # Core system libraries
 cryptography==46.0.5
 pydantic==2.12.5
-python-dotenv==1.2.1
-fastapi==0.128.5
+python-dotenv==1.2.2
+fastapi==0.128.8
 uvicorn==0.38.0
 pyyaml==6.0.3
-redis==7.1.0
+redis==7.1.1
 sqlalchemy==2.0.46
 alembic==1.17.2
 python-multipart==0.0.22
@@ -15,9 +15,10 @@ httpx==0.28.1
 click==8.3.1
 psutil==7.1.3
 requests==2.32.5
-pyarrow==23.0.0
+pyarrow==23.0.1
 pyzmq==27.1.0
 pynacl==1.6.2
 starlette==0.50.0
 kubernetes==35.0.0
 aiohttp==3.13.3
+graphene==3.4.3
