@@ -20,6 +20,8 @@ from contextlib import asynccontextmanager
 from hierachain.api.v1.endpoints import router as v1_router
 from hierachain.api.v2.endpoints import router as v2_router
 from hierachain.api.v3.endpoints import router as v3_router
+from hierachain.api.websocket.endpoints import router as ws_router
+from hierachain.api.websocket.manager import ws_manager
 from hierachain.config.settings import get_settings
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
@@ -31,6 +33,10 @@ async def lifespan(_app: FastAPI):
     """Application lifespan events"""
     # Startup
     logger.info("Starting HieraChain API server...")
+    
+    # Start WebSocket manager
+    await ws_manager.start()
+    logger.info("WebSocket manager started")
     
     # Log authentication status on startup
     settings = get_settings()
@@ -45,6 +51,10 @@ async def lifespan(_app: FastAPI):
     yield
     # Shutdown
     logger.info("Shutting down HieraChain API server...")
+    
+    # Stop WebSocket manager
+    await ws_manager.stop()
+    logger.info("WebSocket manager stopped")
 
 
 def _check_cors_config(settings) -> None:
@@ -250,6 +260,13 @@ def register_routers(fast_app: FastAPI):
         logger.debug("API v3 router included successfully")
     except ImportError:
         logger.warning("API v3 router not available")
+    
+    # Try to include WebSocket router
+    try:
+        fast_app.include_router(ws_router)
+        logger.debug("WebSocket router included successfully")
+    except ImportError:
+        logger.warning("WebSocket router not available")
     
     @fast_app.get("/")
     async def root():
