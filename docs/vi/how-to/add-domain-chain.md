@@ -4,7 +4,7 @@ description: "Hướng dẫn từng bước tạo Sub-Chain mới bằng Hierarc
 icon: material/source-branch-plus
 ---
 
-# How-to: Tạo Sub-Chain mới
+# Tạo Sub-Chain mới
 
 ## Mục đích
 

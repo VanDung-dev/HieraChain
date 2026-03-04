@@ -4,7 +4,7 @@ description: "Hướng dẫn tích hợp ứng dụng Web2, Legacy system và ER
 icon: material/web
 ---
 
-# How-to: Tích hợp Web2 & Hệ thống có sẵn
+# Tích hợp Web2 & Hệ thống có sẵn
 
 ## Mục đích
 

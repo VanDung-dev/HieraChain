@@ -4,7 +4,7 @@ description: "Hướng dẫn cấu hình PoA/PoF hoặc bổ sung cơ chế đ�
 icon: material/cog-sync
 ---
 
-# How-to: Thêm/Tùy biến Consensus
+# Thêm/Tùy biến Consensus
 
 Trang này hướng dẫn hai con đường: (A) chỉ cấu hình để chọn PoA/PoF/BFT hiện có; (B) mở rộng bằng cách thêm cơ chế đồng thuận mới dựa trên `BaseConsensus`.
 

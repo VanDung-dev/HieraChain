@@ -79,6 +79,100 @@ Các schema chính nằm ở `hierachain/api/v3/schemas.py`:
 * `VerifyIdentityRequest`, `VerifyIdentityResponse`
 * `NodeStatusResponse`
 
+## WebSocket API — Real-time Events
+
+Định nghĩa trong `hierachain/api/websocket/`, cung cấp kết nối real-time qua WebSocket.
+
+### Kết nối
+
+* **Endpoint**: `ws://localhost:2661/ws`
+* **Protocol**: JSON messages
+* **Authentication**: Optional — thêm query param `?token=<api_key>` nếu bật AUTH
+
+### Message Format
+
+```json
+// Client → Server (subscribe)
+{"action": "subscribe", "chain_name": "supply_chain", "event_type": null}
+
+// Client → Server (unsubscribe)
+{"action": "unsubscribe", "chain_name": "supply_chain"}
+
+// Client → Server (ping)
+{"action": "ping"}
+
+// Server → Client (block event)
+{"type": "new_block", "chain_name": "supply_chain", "data": {...}}
+
+// Server → Client (event)
+{"type": "new_event", "chain_name": "supply_chain", "data": {...}}
+
+// Server → Client (pong)
+{"type": "pong", "timestamp": 1234567890}
+```
+
+### Subscriptions
+
+* **Per-chain**: Nhận tất cả events/blocks từ một chain cụ thể
+  ```json
+  {"action": "subscribe", "chain_name": "supply_chain"}
+  ```
+* **Per-event-type**: Nhận events theo loại (ví dụ: `production_complete`)
+  ```json
+  {"action": "subscribe", "chain_name": "supply_chain", "event_type": "production_complete"}
+  ```
+* **Unsubscribe**: Huỷ subscription
+  ```json
+  {"action": "unsubscribe", "chain_name": "supply_chain"}
+  ```
+
+### Ví dụ JavaScript
+
+```javascript
+const ws = new WebSocket('ws://localhost:2661/ws');
+
+ws.onopen = () => {
+  console.log('Connected to HieraChain WebSocket');
+  // Subscribe to chain events
+  ws.send(JSON.stringify({
+    action: 'subscribe',
+    chain_name: 'supply_chain'
+  }));
+};
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Received:', data.type, data);
+};
+
+// Keep alive with ping every 30 seconds
+setInterval(() => {
+  ws.send(JSON.stringify({ action: 'ping' }));
+}, 30000);
+```
+
+### Playground
+
+Giao diện test WebSocket có sẵn tại: `http://localhost:2661/ws/playground`
+
+### Kiến trúc
+
+* `websocket_manager.py`: Quản lý connection lifecycle, subscriptions, broadcasting
+  * `WebSocketManager`: Singleton quản lý tất cả connections
+  * `connect()` / `disconnect()`: Thêm/xoá connection
+  * `subscribe()` / `unsubscribe()`: Quản lý subscriptions
+  * `broadcast_to_chain()`: Gửi message tới subscribers của một chain
+* `websocket_endpoints.py`: FastAPI WebSocket endpoints
+  * `/ws`: Main WebSocket endpoint
+  * `/ws/playground`: HTML playground
+  * `/ws/status`: Connection stats
+
+### Cấu hình
+
+Các biến liên quan (xem `hierachain/config/settings.py`):
+
+* Không có cấu hình riêng — WebSocket sử dụng cùng host/port với HTTP API
+
 ## Ví dụ curl
 
 ```bash

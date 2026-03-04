@@ -4,7 +4,7 @@ description: "Bật xác thực, CORS/HSTS, Rate Limit, API Key và Resource Gua
 icon: material/shield-check
 ---
 
-# How-to: Triển khai an toàn
+# Triển khai an toàn
 
 Mục tiêu: cấu hình HieraChain ở môi trường production với các biện pháp bảo vệ cơ bản (AUTH, CORS/HSTS, Rate Limit, API key) và bảo vệ tài nguyên (Resource Guard).
 
