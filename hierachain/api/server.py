@@ -12,9 +12,9 @@ error handling, CORS support, and comprehensive logging.
 import uvicorn
 import logging
 import time
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from contextlib import asynccontextmanager
 
 from hierachain.api.v1.endpoints import router as v1_router
@@ -22,6 +22,7 @@ from hierachain.api.v2.endpoints import router as v2_router
 from hierachain.api.v3.endpoints import router as v3_router
 from hierachain.api.websocket.endpoints import router as ws_router
 from hierachain.api.websocket.manager import ws_manager
+from hierachain.api.graphql.schema import schema as graphql_schema
 from hierachain.config.settings import get_settings
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
@@ -80,45 +81,53 @@ def _check_cors_config(settings) -> None:
         )
 
 
-def add_security_headers(fast_app: FastAPI):
+def _get_csp_for_docs(is_dev: bool) -> str:
+    """Get Content-Security-Policy for documentation pages."""
+    if is_dev:
+        return (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https://fastapi.tiangolo.com"
+        )
+    return "default-src 'self'; script-src 'self'; style-src 'self'"
+
+
+def _get_csp_for_api() -> str:
+    """Get strict Content-Security-Policy for API endpoints."""
+    return "default-src 'none'; frame-ancestors 'none'"
+
+
+def _is_docs_path(path: str) -> bool:
+    """Check if request path is for documentation pages."""
+    return path in ("/docs", "/redoc", "/openapi.json")
+
+
+def add_security_headers(fast_app: FastAPI, is_dev: bool):
     """Add security headers middleware to the application"""
+    # Cache environment flag at registration time
+
     @fast_app.middleware("http")
     async def security_headers_middleware(request: Request, call_next):
         response = await call_next(request)
-        # Prevent MIME-sniffing
+        
+        # Set standard security headers
         response.headers["X-Content-Type-Options"] = "nosniff"
-        # Prevent Clickjacking (protects Swagger UI)
         response.headers["X-Frame-Options"] = "DENY"
-        # Control referrer information
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        # Prevent caching of sensitive data
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
         response.headers["Pragma"] = "no-cache"
         
         # Hide Server Information
         if "server" in response.headers:
             del response.headers["server"]
-
-        # Allow Swagger UI to work properly
-        settings = get_settings()
-        env = getattr(settings, "ENV", "dev")
-        if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
-            if env == "dev":
-                # Relaxed CSP for documentation pages
-                response.headers["Content-Security-Policy"] = (
-                    "default-src 'self'; "
-                    "script-src 'self' 'unsafe-inline' "
-                    "https://cdn.jsdelivr.net; "
-                    "style-src 'self' 'unsafe-inline' "
-                    "https://cdn.jsdelivr.net; "
-                    "img-src 'self' data: "
-                    "https://fastapi.tiangolo.com"
-                )
-            else:
-                response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'"
+        
+        # Set CSP based on path
+        path = request.url.path
+        if _is_docs_path(path):
+            response.headers["Content-Security-Policy"] = _get_csp_for_docs(is_dev)
         else:
-            # Strict CSP for API endpoints
-            response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+            response.headers["Content-Security-Policy"] = _get_csp_for_api()
         
         return response
 
@@ -238,36 +247,69 @@ def register_exception_handlers(fast_app: FastAPI, settings):
         )
 
 
-def register_routers(fast_app: FastAPI):
-    """Register API routers and root endpoint"""
-    # Try to include v1 router
+def _register_api_router(fast_app: FastAPI, router, version: str):
+    """Helper to register an API router with error handling."""
     try:
-        fast_app.include_router(v1_router)
-        logger.debug("API v1 router included successfully")
+        fast_app.include_router(router)
+        logger.debug(f"API {version} router included successfully")
     except ImportError:
-        logger.warning("API v1 router not available")
-    
-    # Try to include v2 router
-    try:
-        fast_app.include_router(v2_router)
-        logger.debug("API v2 router included successfully")
-    except ImportError:
-        logger.warning("API v2 router not available")
+        logger.warning(f"API {version} router not available")
 
-    # Try to include v3 router
-    try:
-        fast_app.include_router(v3_router)
-        logger.debug("API v3 router included successfully")
-    except ImportError:
-        logger.warning("API v3 router not available")
-    
-    # Try to include WebSocket router
+
+def _register_websocket_router(fast_app: FastAPI):
+    """Helper to register WebSocket router with error handling."""
     try:
         fast_app.include_router(ws_router)
         logger.debug("WebSocket router included successfully")
     except ImportError:
         logger.warning("WebSocket router not available")
-    
+
+
+def _register_graphql_router(fast_app: FastAPI):
+    """Helper to register GraphQL router with error handling."""
+    try:
+        graphql_router = APIRouter()
+        
+        @graphql_router.post("/graphql")
+        async def graphql_endpoint(request: Request):
+            """GraphQL endpoint handler"""
+            try:
+                body = await request.json()
+                query = body.get("query", "")
+                variables = body.get("variables", {})
+                operation_name = body.get("operationName")
+                
+                result = graphql_schema.execute(
+                    query,
+                    variable_values=variables,
+                    operation_name=operation_name
+                )
+                
+                if result.errors:
+                    return JSONResponse(
+                        status_code=400,
+                        content={
+                            "data": result.data,
+                            "errors": [{"message": str(err.message)} for err in result.errors]
+                        }
+                    )
+                
+                return {"data": result.data}
+            except Exception as exc:
+                logger.error(f"GraphQL error: {exc}")
+                return JSONResponse(
+                    status_code=400,
+                    content={"errors": [{"message": str(exc)}]}
+                )
+        
+        fast_app.include_router(graphql_router)
+        logger.debug("GraphQL endpoint included successfully")
+    except Exception as e:
+        logger.warning(f"GraphQL endpoint failed to load: {e}")
+
+
+def _register_root_endpoint(fast_app: FastAPI):
+    """Helper to register root endpoint."""
     @fast_app.get("/")
     async def root():
         """Root endpoint with API information"""
@@ -276,6 +318,16 @@ def register_routers(fast_app: FastAPI):
             "description": "REST API for enterprise blockchain applications",
             "docs_url": "/docs",
         }
+
+
+def register_routers(fast_app: FastAPI):
+    """Register API routers and root endpoint"""
+    _register_api_router(fast_app, v1_router, "v1")
+    _register_api_router(fast_app, v2_router, "v2")
+    _register_api_router(fast_app, v3_router, "v3")
+    _register_websocket_router(fast_app)
+    _register_graphql_router(fast_app)
+    _register_root_endpoint(fast_app)
 
 
 def create_app() -> FastAPI:
@@ -317,7 +369,7 @@ def create_app() -> FastAPI:
     )
 
     # Add Middlewares
-    add_security_headers(fast_app)
+    add_security_headers(fast_app, settings.ENV in ("dev", "development"))
     add_payload_limit(fast_app)
     add_rate_limit(fast_app, settings)
 
