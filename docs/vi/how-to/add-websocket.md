@@ -1,6 +1,7 @@
 ---
 title: "Sử dụng WebSocket"
 description: "Hướng dẫn kết nối real-time với HieraChain qua WebSocket: subscribe events, nhận thông báo block mới, và ví dụ client."
+icon: material/connection
 ---
 
 # How-to: Sử dụng WebSocket
