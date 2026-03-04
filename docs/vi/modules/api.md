@@ -173,6 +173,108 @@ Các biến liên quan (xem `hierachain/config/settings.py`):
 
 * Không có cấu hình riêng — WebSocket sử dụng cùng host/port với HTTP API
 
+## GraphQL API — Query & Mutation
+
+Định nghĩa trong `hierachain/api/graphql/schema.py`, cung cấp giao diện GraphQL để truy vấn và thao tác dữ liệu.
+
+### Kết nối
+
+* **Endpoint**: `http://localhost:2661/graphql` (nếu được bật trong server)
+* **Library**: Sử dụng `graphene` (Python)
+
+### GraphQL Types
+
+* `EventType`: entity_id, event_type, details (JSON string), timestamp, signature
+* `BlockType`: index, hash, previous_hash, timestamp, nonce, events, metadata
+* `BlockMetadataType`: chain_name, events_count, validator_signatures
+* `ChainStatusType`: chain_name, block_count, latest_block_index, latest_block_hash, status
+
+### GraphQL Queries
+
+```graphql
+# Lấy một block cụ thể
+query {
+  block(chainName: "supply_chain", blockIndex: 0) {
+    index
+    hash
+    timestamp
+    events {
+      entityId
+      eventType
+      timestamp
+    }
+  }
+}
+
+# Lấy nhiều blocks với phân trang
+query {
+  blocks(chainName: "supply_chain", fromIndex: 0, toIndex: 10, limit: 5) {
+    index
+    hash
+    timestamp
+  }
+}
+
+# Lấy events với bộ lọc
+query {
+  events(chainName: "supply_chain", entityId: "PROD-001", eventType: "created", fromTimestamp: 1700000000, toTimestamp: 1800000000, limit: 10) {
+    entityId
+    eventType
+    details
+    timestamp
+  }
+}
+
+# Lấy trạng thái chain
+query {
+  chainStatus(chainName: "supply_chain") {
+    chainName
+    blockCount
+    latestBlockIndex
+    latestBlockHash
+    status
+  }
+}
+
+# Lấy tất cả chains
+query {
+  allChains {
+    chainName
+    blockCount
+    status
+  }
+}
+```
+
+### GraphQL Mutations
+
+```graphql
+# Thêm event vào chain
+mutation {
+  addEvent(event: {
+    chainName: "supply_chain"
+    entityId: "PROD-001"
+    eventType: "created"
+    details: "{\"key\": \"value\"}"
+  }) {
+    success
+    blockIndex
+    error
+  }
+}
+```
+
+### Helper Functions
+
+* `_filter_event()`: Hàm nội bộ lọc events theo các tiêu chí (entity_id, event_type, from_timestamp, to_timestamp). Sử dụng `all()` với generator expression để giảm cyclomatic complexity.
+* `_to_event_type()`, `_to_block_type()`, `_to_chain_status()`: Chuyển đổi từ objects nội bộ sang GraphQL types.
+
+### Kiến trúc
+
+* `schema.py`: Định nghĩa types, queries, mutations và schema GraphQL
+* Sử dụng `graphene` library cho Python
+* Tích hợp với `HierarchyManager` qua `get_hierarchy_manager()`
+
 ## Ví dụ curl
 
 ```bash
