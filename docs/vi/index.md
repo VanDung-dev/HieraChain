@@ -79,9 +79,8 @@ Lưu ý quan trọng về phạm vi:
     * [Tạo Sub-Chain](how-to/add-domain-chain.md)
     * [Thêm Endpoint](how-to/add-endpoint.md)
     * [Thêm/Tùy biến Consensus](how-to/add-consensus.md)
-    * [Tích hợp Web2](how-to/integrate-web2.md)
-    * [Triển khai an toàn](how-to/secure-deployment.md)
-    * [Xử lý sự cố](how-to/troubleshooting.md)
+    * [Sử dụng WebSocket](how-to/add-websocket.md) · [Tích hợp Web2](how-to/integrate-web2.md)
+    * [Triển khai an toàn](how-to/secure-deployment.md) · [Xử lý sự cố](how-to/troubleshooting.md)
 
 * :material-code-braces:{ .lg .middle } __Phát triển__
 
