@@ -128,6 +128,7 @@ class ChainOverviewComponent:
     
     def __init__(self, chain: Any):
         self.chain = chain
+        self.logger = logging.getLogger(__name__)
     
     def render_summary(self) -> dict[str, Any]:
         """Render chain summary"""
@@ -139,7 +140,8 @@ class ChainOverviewComponent:
             }
             return summary
         except Exception as e:
-            return {"error": str(e)}
+            self.logger.error(f"ChainOverviewComponent render_summary error: {e}")
+            return {"error": "An internal error occurred"}
     
     def _get_main_chain_stats(self) -> dict[str, Any]:
         """Get main chain statistics"""
@@ -191,6 +193,7 @@ class EntityTracerComponent:
     
     def __init__(self, chain: Any):
         self.chain = chain
+        self.logger = logging.getLogger(__name__)
     
     @staticmethod
     def render_input_form() -> dict[str, Any]:
@@ -239,7 +242,8 @@ class EntityTracerComponent:
                 "chains_found": list(set(e['chain'] for e in events))
             }
         except Exception as e:
-            return {"error": str(e)}
+            self.logger.error(f"EntityTracerComponent trace_entity error: {e}")
+            return {"error": "An internal error occurred"}
     
     def _search_main_chain(self, entity_id: str) -> list[dict[str, Any]]:
         """Search main chain for entity"""
@@ -288,6 +292,7 @@ class EventAnalyticsComponent:
     
     def __init__(self, chain: Any):
         self.chain = chain
+        self.logger = logging.getLogger(__name__)
     
     def render_summary(self) -> dict[str, Any]:
         """Render analytics summary"""
@@ -298,7 +303,8 @@ class EventAnalyticsComponent:
                 "chain_distribution": self._get_chain_distribution()
             }
         except Exception as e:
-            return {"error": str(e)}
+            self.logger.error(f"EventAnalyticsComponent render_summary error: {e}")
+            return {"error": "An internal error occurred"}
     
     def _get_event_type_stats(self) -> dict[str, int]:
         """Get event type statistics"""
@@ -374,6 +380,7 @@ class ProofVisualizerComponent:
     
     def __init__(self, chain: Any):
         self.chain = chain
+        self.logger = logging.getLogger(__name__)
     
     def render_proof_flow(self) -> dict[str, Any]:
         """Render proof submission flow"""
@@ -384,7 +391,8 @@ class ProofVisualizerComponent:
                 "hierarchy_view": self._get_hierarchy_view()
             }
         except Exception as e:
-            return {"error": str(e)}
+            self.logger.error(f"ProofVisualizerComponent render_proof_flow error: {e}")
+            return {"error": "An internal error occurred"}
     
     def _get_proof_submissions(self) -> list[dict[str, Any]]:
         """Get recent proof submissions"""

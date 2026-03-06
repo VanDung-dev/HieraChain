@@ -260,7 +260,7 @@ async def _message_loop(websocket: WebSocket, connection_id: str):
             logger.error(f"Error handling message: {e}")
             await ws_manager.send_to_connection(connection_id, {
                 "type": WebSocketMessageType.ERROR,
-                "message": str(e)
+                "message": "An internal error occurred"
             })
 
 
