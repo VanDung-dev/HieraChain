@@ -309,15 +309,9 @@ def _register_graphql_router(fast_app: FastAPI):
                 return {"data": result.data}
             except Exception as exc:
                 logger.error(f"GraphQL error: {exc}")
-                _settings = get_settings()
-                is_debug = (
-                    _settings.LOG_LEVEL == "DEBUG"
-                    and getattr(_settings, "ENV", "dev") != "product"
-                )
-                error_msg = str(exc) if is_debug else "An internal error occurred"
                 return JSONResponse(
                     status_code=400,
-                    content={"errors": [{"message": error_msg}]}
+                    content={"errors": [{"message": "An internal error occurred"}]}
                 )
         
         fast_app.include_router(graphql_router)
