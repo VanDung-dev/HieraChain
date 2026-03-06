@@ -289,9 +289,13 @@ class HierarchicalMSP:
             return True
             
         except Exception as e:
+            import logging as _logging
+            _logging.getLogger(__name__).error(
+                f"Entity registration failed for {entity_id}: {e}"
+            )
             self._log_event("entity_registration_failed", {
                 "entity_id": entity_id,
-                "error": str(e)
+                "error": "Registration failed due to an internal error"
             })
             return False
 
