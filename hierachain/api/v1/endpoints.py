@@ -104,7 +104,7 @@ async def list_chains(manager: HierarchyManager = Depends(get_hierarchy_manager)
         return chains
     except Exception as e:
         api_logger.error("Failed to list chains", error=str(e))
-        raise HTTPException(status_code=500, detail=f"Failed to list chains: {sanitize_error_message(e)}") from e
+        raise HTTPException(status_code=500, detail="Failed to list chains. An internal error has occurred.") from e
 
 @router.post(
     "/chains/{chain_name}/events", response_model=EventResponse, dependencies=[Depends(require_event_access)]
@@ -151,7 +151,7 @@ async def add_event(
         )
     except Exception as e:
         api_logger.error("Failed to add event", error=str(e), chain_name=chain_name)
-        raise HTTPException(status_code=500, detail=f"Failed to add event: {sanitize_error_message(e)}")
+        raise HTTPException(status_code=500, detail="Failed to add event. An internal error has occurred.")
 
 @router.post(
     "/chains/{chain_name}/submit-proof", response_model=ProofSubmissionResponse, dependencies=[Depends(require_proof_access)]
@@ -194,7 +194,7 @@ async def submit_proof(chain_name: str,manager: HierarchyManager = Depends(get_h
         )
     except Exception as e:
         api_logger.error("Failed to submit proof", error=str(e), chain_name=chain_name)
-        raise HTTPException(status_code=500, detail=f"Failed to submit proof: {sanitize_error_message(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit proof. An internal error has occurred.")
 
 @router.get(
     "/entities/{entity_id}/trace",
@@ -240,7 +240,7 @@ async def trace_entity(
         raise
     except Exception as e:
         api_logger.error("Failed to trace entity", error=str(e), entity_id=safe_entity_id)
-        raise HTTPException(status_code=500, detail=f"Failed to trace entity: {sanitize_error_message(e)}")
+        raise HTTPException(status_code=500, detail="Failed to trace entity. An internal error has occurred.")
 
 def _get_chain_by_name(manager: HierarchyManager, chain_name: str) -> Blockchain | None:
     """Helper to get main or sub chain by name"""
@@ -306,7 +306,7 @@ async def get_chain_stats(
         raise
     except Exception as e:
         api_logger.error("Failed to get chain stats", error=str(e), chain_name=chain_name)
-        raise HTTPException(status_code=500, detail=f"Failed to get chain stats: {sanitize_error_message(e)}") from e
+        raise HTTPException(status_code=500, detail="Failed to get chain stats. An internal error has occurred.") from e
 
 
 def _get_block_events_data(block: Any) -> list[dict[str, Any]]:
@@ -387,7 +387,7 @@ async def create_sub_chain(
         )
     except Exception as e:
         api_logger.error("Failed to create sub-chain", error=str(e), chain_name=chain_name)
-        raise HTTPException(status_code=500, detail=f"Failed to create sub-chain: {sanitize_error_message(e)}") from e
+        raise HTTPException(status_code=500, detail="Failed to create sub-chain. An internal error has occurred.") from e
 
 @router.get(
     "/chains/{chain_name}/blocks", dependencies=[Depends(require_chain_access)]
@@ -422,4 +422,4 @@ async def get_chain_blocks(
         raise
     except Exception as e:
         api_logger.error("Failed to get blocks", error=str(e), chain_name=chain_name)
-        raise HTTPException(status_code=500, detail=f"Failed to get blocks: {sanitize_error_message(e)}") from e
+        raise HTTPException(status_code=500, detail="Failed to get blocks. An internal error has occurred.") from e

@@ -60,9 +60,10 @@ async def verify_identity(
             challenge=request.challenge
         )
     except Exception as e:
+        logger.error("Identity verification failed", error=str(e))
         raise HTTPException(
             status_code=500,
-            detail=f"Identity verification failed: {sanitize_error_message(e)}"
+            detail="Identity verification failed. An internal error has occurred."
         )
 
 

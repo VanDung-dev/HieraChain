@@ -101,7 +101,7 @@ async def create_channel(channel_request: ChannelCreateRequest):
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create channel: {sanitize_error_message(e)}"
+            detail="Failed to create channel. An internal error has occurred."
         )
 
 @router.get("/channels/{channel_id}", response_model=ChannelResponse, dependencies=[Depends(require_chain_access)])
@@ -178,7 +178,7 @@ async def create_private_collection(channel_id: str, collection_request: Private
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create private collection: {sanitize_error_message(e)}"
+            detail="Failed to create private collection. An internal error has occurred."
         )
 
 @router.post(
@@ -224,7 +224,7 @@ async def add_private_data(data_request: PrivateDataRequest):
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to add private data: {sanitize_error_message(e)}"
+            detail="Failed to add private data. An internal error has occurred."
         )
 
 @router.post(
@@ -267,7 +267,7 @@ async def create_contract(contract_request: ContractCreateRequest):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create contract: {sanitize_error_message(e)}"
+            detail="Failed to create contract. An internal error has occurred."
         )
 
 @router.post(
@@ -327,7 +327,7 @@ async def execute_contract(execution_request: ContractExecuteRequest):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to execute contract: {sanitize_error_message(e)}"
+            detail="Failed to execute contract. An internal error has occurred."
         )
 
 @router.post(
@@ -372,7 +372,7 @@ async def register_organization(org_request: OrganizationRequest):
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to register organization: {sanitize_error_message(e)}"
+            detail="Failed to register organization. An internal error has occurred."
         )
 
 @router.get(
