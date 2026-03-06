@@ -286,11 +286,23 @@ def _register_graphql_router(fast_app: FastAPI):
                 )
                 
                 if result.errors:
+                    _settings = get_settings()
+                    is_debug = (
+                        _settings.LOG_LEVEL == "DEBUG"
+                        and getattr(_settings, "ENV", "dev") != "product"
+                    )
+                    for err in result.errors:
+                        logger.error(f"GraphQL schema error: {err.message}")
+                    error_messages = (
+                        [{"message": str(err.message)} for err in result.errors]
+                        if is_debug
+                        else [{"message": "An internal error occurred"}]
+                    )
                     return JSONResponse(
                         status_code=400,
                         content={
                             "data": result.data,
-                            "errors": [{"message": str(err.message)} for err in result.errors]
+                            "errors": error_messages
                         }
                     )
                 
