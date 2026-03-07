@@ -7,7 +7,7 @@ This module provides functions for managing and retrieving version information.
 from typing import Tuple
 import re
 
-VERSION: Tuple[int, int, int, str, int] = (0, 0, 1, "dev", 7)
+VERSION: Tuple[int, int, int, str, int] = (0, 0, 1, "dev", 8)
 
 _VERSION_PATTERN = r"(?P<major>\d+)\.(?P<minor>\d+)(?:\.(?P<micro>\d+))?(?:\.(?P<releaselevel>[a-z]+)(?P<serial>\d+)?)?"
 _RELEASE_LEVEL_ORDER: dict[str, int] = {"dev": 0, "alpha": 1, "beta": 2, "rc": 3, "final": 4}
