@@ -8,7 +8,7 @@
 #   - K8s cluster running with HieraChain nodes deployed
 #   - NodePort service exposed (default: localhost:32661)
 
-version: "3.8"
+# version: "3.8"
 
 services:
   stress-tester:
@@ -38,6 +38,7 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
+    entrypoint: ["sh", "/app/scripts/docker-stress-entrypoint.sh"]
     command: >
       python -m pytest tests/stress/ -v
       --html=/app/log/report/k8s_stress_test_report.html

@@ -10,6 +10,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libffi-dev \
+    iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -23,7 +24,11 @@ COPY hierachain/ ./hierachain/
 COPY tests/ ./tests/
 COPY scripts/ ./scripts/
 COPY config/ ./config/
-COPY pyproject.toml setup.py README.md ./
+COPY pyproject.toml README.md ./
+
+# Provide version for setuptools-scm since .git is not copied
+ARG VERSION=0.0.1.dev
+ENV SETUPTOOLS_SCM_PRETEND_VERSION=$VERSION
 
 # Install package
 RUN pip install --no-cache-dir .
