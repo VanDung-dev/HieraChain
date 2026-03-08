@@ -113,6 +113,7 @@ markers = [
     "integration: Integration tests",
     "recovery: Recovery testing",
     "stress: Stress and load testing",
+    "slow: Tests that take a long time to run",
 ]
 filterwarnings = ["ignore::pytest.PytestAssertRewriteWarning"]
 
