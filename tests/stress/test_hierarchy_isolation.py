@@ -61,6 +61,10 @@ class MockSubChain:
         return self.state_root
 
 
+def add_event(event: dict) -> bool:
+    return True
+
+
 @dataclass
 class MockMainChain:
     """Mock main chain for testing."""
@@ -71,10 +75,7 @@ class MockMainChain:
     def receive_proof(self, anchor_data: dict) -> bool:
         self.anchors.append(anchor_data)
         return True
-    
-    def add_event(self, event: dict) -> bool:
-        return True
-    
+
     def get_blocks(self, from_idx: int, to_idx: int) -> list:
         return self.blocks[from_idx:to_idx]
 
@@ -110,7 +111,7 @@ class HierarchyIsolationTest:
         )
         
         manager = K8sNamespaceManager(use_mock=self.use_mock)
-        results = {
+        _results: dict[str, Any] = {
             "namespaces_created": 0,
             "namespaces_deleted": 0,
             "status_checks": 0,
@@ -121,26 +122,26 @@ class HierarchyIsolationTest:
         for chain_id in self.subchains:
             success = manager.create_namespace(chain_id)
             if success:
-                results["namespaces_created"] += 1
+                _results["namespaces_created"] += 1
             else:
-                results["errors"].append(f"Failed to create {chain_id}")
+                _results["errors"].append(f"Failed to create {chain_id}")
         
         # Check statuses
         for chain_id in self.subchains:
             status = manager.get_namespace_status(chain_id)
             if status == NamespaceStatus.ACTIVE:
-                results["status_checks"] += 1
+                _results["status_checks"] += 1
         
         # Delete namespaces
         for chain_id in self.subchains:
             success = manager.delete_namespace(chain_id)
             if success:
-                results["namespaces_deleted"] += 1
+                _results["namespaces_deleted"] += 1
         
         stats = manager.get_stats()
-        results["manager_stats"] = stats
+        _results["manager_stats"] = stats
         
-        return results
+        return _results
     
     def test_proof_aggregation(self) -> dict:
         """Test proof aggregation under load."""
@@ -152,7 +153,7 @@ class HierarchyIsolationTest:
             use_mock=self.use_mock,
         )
         
-        results = {
+        _results: dict[str, Any] = {
             "proofs_added": 0,
             "aggregations": 0,
             "avg_compression_ratio": 0.0,
@@ -174,23 +175,23 @@ class HierarchyIsolationTest:
             )
             
             if success:
-                results["proofs_added"] += 1
+                _results["proofs_added"] += 1
         
         # Force aggregation
         agg_proof = aggregator.aggregate()
         if agg_proof:
-            results["aggregations"] += 1
-            results["avg_compression_ratio"] = agg_proof.compression_ratio
+            _results["aggregations"] += 1
+            _results["avg_compression_ratio"] = agg_proof.compression_ratio
         
         # Verify aggregated proof
         if agg_proof:
             valid = aggregator.verify_aggregated_proof(agg_proof)
-            results["verification_passed"] = valid
+            _results["verification_passed"] = valid
         
         stats = aggregator.get_stats()
-        results["aggregator_stats"] = stats
+        _results["aggregator_stats"] = stats
         
-        return results
+        return _results
     
     def test_cross_level_sync(self) -> dict:
         """Test cross-level state synchronization."""
@@ -201,7 +202,7 @@ class HierarchyIsolationTest:
             batch_size=self.config["sync_batch_size"],
         )
         
-        results = {
+        _results: dict[str, Any] = {
             "syncs_down": 0,
             "syncs_up": 0,
             "conflicts": 0,
@@ -215,21 +216,21 @@ class HierarchyIsolationTest:
         
         # Test sync down (MainChain -> SubChain)
         for chain_id in self.subchains:
-            result = sync_manager.sync_from_mainchain(chain_id)
-            if result.success:
-                results["syncs_down"] += 1
+            _result = sync_manager.sync_from_mainchain(chain_id)
+            if _result.success:
+                _results["syncs_down"] += 1
         
         # Test sync up (SubChain -> MainChain)
         for chain_id, chain in self.subchains.items():
             proof = hashlib.sha256(chain.get_state_root().encode()).digest()
-            result = sync_manager.sync_to_mainchain(chain_id, proof)
-            if result.success:
-                results["syncs_up"] += 1
+            _result = sync_manager.sync_to_mainchain(chain_id, proof)
+            if _result.success:
+                _results["syncs_up"] += 1
         
         stats = sync_manager.get_stats()
-        results["sync_stats"] = stats
+        _results["sync_stats"] = stats
         
-        return results
+        return _results
     
     def test_dynamic_rebalancing(self) -> dict:
         """Test dynamic sub-chain rebalancing."""
@@ -242,7 +243,7 @@ class HierarchyIsolationTest:
             cooldown_seconds=5.0,
         )
         
-        results = {
+        _results: dict[str, Any] = {
             "chains_monitored": 0,
             "thresholds_checked": 0,
             "splits_triggered": 0,
@@ -252,7 +253,7 @@ class HierarchyIsolationTest:
         # Register subchains
         for chain_id, chain in self.subchains.items():
             rebalancer.register_subchain(chain_id, chain)
-            results["chains_monitored"] += 1
+            _results["chains_monitored"] += 1
         
         # Add events to trigger threshold
         target_chain = list(self.subchains.values())[0]
@@ -266,18 +267,18 @@ class HierarchyIsolationTest:
         # Check threshold
         for chain_id in self.subchains:
             exceeded = rebalancer.check_threshold(chain_id)
-            results["thresholds_checked"] += 1
+            _results["thresholds_checked"] += 1
             if exceeded:
-                result = rebalancer.split_sub_chain(
+                _result = rebalancer.split_sub_chain(
                     self.subchains[chain_id]
                 )
-                if result.success:
-                    results["splits_triggered"] += 1
+                if _result.success:
+                    _results["splits_triggered"] += 1
         
         stats = rebalancer.get_stats()
-        results["rebalancer_stats"] = stats
+        _results["rebalancer_stats"] = stats
         
-        return results
+        return _results
     
     def test_full_hierarchy_stress(self) -> dict:
         """Full stress test combining all hierarchy features."""
@@ -288,7 +289,7 @@ class HierarchyIsolationTest:
         from hierachain.cluster.cross_level_sync import CrossLevelSyncManager
         from hierachain.hierarchical.rebalancer import SubChainRebalancer
         
-        results = {
+        _results = {
             "start_time": time.time(),
             "events_processed": 0,
             "proofs_aggregated": 0,
@@ -323,14 +324,14 @@ class HierarchyIsolationTest:
             chain = self.subchains[chain_id]
             
             chain.add_event({
-                "id": f"stress-{results['events_processed']}",
+                "id": f"stress-{_results['events_processed']}",
                 "timestamp": time.time(),
                 "chain": chain_id,
             })
-            results["events_processed"] += 1
+            _results["events_processed"] += 1
             
             # Periodically aggregate proofs
-            if results["events_processed"] % 10 == 0:
+            if _results["events_processed"] % 10 == 0:
                 proof = hashlib.sha256(
                     chain.get_state_root().encode()
                 ).digest()
@@ -342,22 +343,22 @@ class HierarchyIsolationTest:
                 )
             
             # Periodically sync
-            if results["events_processed"] % 50 == 0:
+            if _results["events_processed"] % 50 == 0:
                 sync_result = sync_mgr.sync_to_mainchain(chain_id)
                 if sync_result.success:
-                    results["syncs_completed"] += 1
+                    _results["syncs_completed"] += 1
         
         # Force final aggregation
         agg = aggregator.aggregate()
         if agg:
-            results["proofs_aggregated"] = len(agg.source_proofs)
+            _results["proofs_aggregated"] = len(agg.source_proofs)
         
-        results["duration_seconds"] = time.time() - results["start_time"]
-        results["events_per_second"] = (
-            results["events_processed"] / results["duration_seconds"]
+        _results["duration_seconds"] = time.time() - _results["start_time"]
+        _results["events_per_second"] = (
+                _results["events_processed"] / _results["duration_seconds"]
         )
         
-        return results
+        return _results
     
     def run_all_tests(self) -> dict:
         """Run all hierarchy stress tests."""
@@ -385,21 +386,21 @@ class HierarchyIsolationTest:
             ("full_hierarchy_stress", self.test_full_hierarchy_stress),
         ]
         
-        for name, test_fn in tests:
-            logger.info(f"Running test: {name}")
+        for _name, test_fn in tests:
+            logger.info(f"Running test: {_name}")
             try:
-                result = test_fn()
-                all_results["tests"][name] = {
+                _result = test_fn()
+                all_results["tests"][_name] = {
                     "status": "passed",
-                    "result": result,
+                    "result": _result,
                 }
             except Exception as e:
-                logger.error(f"Test {name} failed: {e}")
-                all_results["tests"][name] = {
+                logger.error(f"Test {_name} failed: {e}")
+                all_results["tests"][_name] = {
                     "status": "failed",
                     "error": str(e),
                 }
-                all_results["errors"].append(f"{name}: {e}")
+                all_results["errors"].append(f"{_name}: {e}")
         
         all_results["duration_seconds"] = (
             time.time() - all_results["start_time"]
@@ -422,6 +423,44 @@ class HierarchyIsolationTest:
 
 
 # Pytest test cases
+
+
+def print_subchain_metrics(metrics: dict) -> None:
+    """Print subchain metrics.
+
+    Args:
+        metrics: Dictionary of metrics to print.
+    """
+    print("\n" + "=" * 60)
+    print("  SUBCHAIN CONFIGURATION")
+    print("=" * 60)
+    if metrics:
+        print(f"  📦 Number of Subchains:        {metrics.get('num_subchains')}")
+        print(f"  📝 Events per Subchain:        {metrics.get('events_per_subchain')}")
+        print(f"  📊 Total Events Processed:     {metrics.get('total_events_processed')}")
+        print(f"  📈 Avg Events per Subchain:    {metrics.get('avg_events_per_subchain', 0):.2f}")
+        print(f"  🔗 Proof Batch Size:           {metrics.get('proof_batch_size')}")
+        print(f"  ⚡ Rebalance Threshold (EPS):  {metrics.get('rebalance_threshold_eps')}")
+        print(f"  🔄 Sync Batch Size:            {metrics.get('sync_batch_size')}")
+
+
+def print_performance_summary(_results: dict) -> None:
+    """Print performance summary.
+
+    Args:
+        _results: Test results dictionary.
+    """
+    print("\n" + "=" * 60)
+    print("  PERFORMANCE SUMMARY")
+    print("=" * 60)
+    if "full_hierarchy_stress" in _results["tests"]:
+        stress_result = _results["tests"]["full_hierarchy_stress"]
+        if stress_result["status"] == "passed":
+            r = stress_result["result"]
+            print(f"  🚀 Events/Second:     {r.get('events_per_second', 0):.2f}")
+            print(f"  🔗 Proofs Aggregated: {r.get('proofs_aggregated', 0)}")
+            print(f"  🔄 Syncs Completed:   {r.get('syncs_completed', 0)}")
+    print("=" * 60)
 
 
 class TestHierarchyIsolation:
@@ -462,10 +501,7 @@ class TestHierarchyIsolation:
     
     def test_proof_aggregator(self):
         """Test proof aggregation."""
-        from hierachain.hierarchical.proof_aggregation import (
-            ProofAggregator,
-            AggregationStatus,
-        )
+        from hierachain.hierarchical.proof_aggregation import ProofAggregator
         
         aggregator = ProofAggregator(batch_size=3, use_mock=True)
         
@@ -487,10 +523,7 @@ class TestHierarchyIsolation:
     
     def test_cross_level_sync_manager(self):
         """Test cross-level sync manager."""
-        from hierachain.cluster.cross_level_sync import (
-            CrossLevelSyncManager,
-            CrossLevelSyncStatus,
-        )
+        from hierachain.cluster.cross_level_sync import CrossLevelSyncManager
         
         manager = CrossLevelSyncManager(node_id="test")
         mainchain = MockMainChain()
@@ -500,15 +533,12 @@ class TestHierarchyIsolation:
         manager.connect_subchain("test-sub", subchain)
         
         # Test sync
-        result = manager.sync_to_mainchain("test-sub")
-        assert result.success
+        _result = manager.sync_to_mainchain("test-sub")
+        assert _result.success
     
     def test_rebalancer(self):
         """Test sub-chain rebalancer."""
-        from hierachain.hierarchical.rebalancer import (
-            SubChainRebalancer,
-            RebalanceStatus,
-        )
+        from hierachain.hierarchical.rebalancer import SubChainRebalancer
         
         rebalancer = SubChainRebalancer(
             threshold_eps=10,
@@ -527,14 +557,14 @@ class TestHierarchyIsolation:
     
     def test_quick_stress(self, quick_config):
         """Quick stress test."""
-        test = HierarchyIsolationTest(quick_config)
-        test.setup()
+        _test = HierarchyIsolationTest(quick_config)
+        _test.setup()
         
         # Run individual quick tests
-        k8s_result = test.test_k8s_namespace_isolation()
+        k8s_result = _test.test_k8s_namespace_isolation()
         assert k8s_result["namespaces_created"] == quick_config["num_subchains"]
         
-        proof_result = test.test_proof_aggregation()
+        proof_result = _test.test_proof_aggregation()
         assert proof_result["proofs_added"] == quick_config["num_subchains"]
     
     @pytest.mark.slow
@@ -549,38 +579,15 @@ class TestHierarchyIsolation:
             "sync_batch_size": 50,
         }
         
-        test = HierarchyIsolationTest(config)
-        results = test.run_all_tests()
+        _test = HierarchyIsolationTest(config)
+        _results = _test.run_all_tests()
         
-        # --- PRINT METRICS FOR PYTEST REPORT ---
-        print("\n" + "=" * 60)
-        print("  SUBCHAIN CONFIGURATION (Captured in Report)")
-        print("=" * 60)
-        metrics = results.get("subchain_metrics", {})
-        if metrics:
-            print(f"  📦 Number of Subchains:        {metrics.get('num_subchains')}")
-            print(f"  📝 Events per Subchain:        {metrics.get('events_per_subchain')}")
-            print(f"  📊 Total Events Processed:     {metrics.get('total_events_processed')}")
-            print(f"  📈 Avg Events per Subchain:    {metrics.get('avg_events_per_subchain', 0):.2f}")
-            print(f"  🔗 Proof Batch Size:           {metrics.get('proof_batch_size')}")
-            print(f"  ⚡ Rebalance Threshold (EPS):  {metrics.get('rebalance_threshold_eps')}")
-            print(f"  🔄 Sync Batch Size:            {metrics.get('sync_batch_size')}")
+        # Print metrics
+        print_subchain_metrics(_results.get("subchain_metrics", {}))
+        print_performance_summary(_results)
 
-        print("\n" + "=" * 60)
-        print("  PERFORMANCE SUMMARY")
-        print("=" * 60)
-        if "full_hierarchy_stress" in results["tests"]:
-            stress_result = results["tests"]["full_hierarchy_stress"]
-            if stress_result["status"] == "passed":
-                r = stress_result["result"]
-                print(f"  🚀 Events/Second:     {r.get('events_per_second', 0):.2f}")
-                print(f"  🔗 Proofs Aggregated: {r.get('proofs_aggregated', 0)}")
-                print(f"  🔄 Syncs Completed:   {r.get('syncs_completed', 0)}")
-        print("=" * 60)
-        # ---------------------------------------
-
-        assert results["tests_failed"] == 0
-        assert results["tests_passed"] >= 4
+        assert _results["tests_failed"] == 0
+        assert _results["tests_passed"] >= 4
 
 
 if __name__ == "__main__":
@@ -596,17 +603,7 @@ if __name__ == "__main__":
     results = test.run_all_tests()
     
     # Display subchain metrics prominently
-    print("\n" + "=" * 60)
-    print("  SUBCHAIN CONFIGURATION")
-    print("=" * 60)
-    metrics = results["subchain_metrics"]
-    print(f"  📦 Number of Subchains:        {metrics['num_subchains']}")
-    print(f"  📝 Events per Subchain:        {metrics['events_per_subchain']}")
-    print(f"  📊 Total Events Processed:     {metrics['total_events_processed']}")
-    print(f"  📈 Avg Events per Subchain:    {metrics['avg_events_per_subchain']:.2f}")
-    print(f"  🔗 Proof Batch Size:           {metrics['proof_batch_size']}")
-    print(f"  ⚡ Rebalance Threshold (EPS):  {metrics['rebalance_threshold_eps']}")
-    print(f"  🔄 Sync Batch Size:            {metrics['sync_batch_size']}")
+    test.print_subchain_metrics(results["subchain_metrics"])
     
     # Display test results
     print("\n" + "=" * 60)
@@ -627,14 +624,4 @@ if __name__ == "__main__":
             print(f"    Error: {result.get('error', 'Unknown')}")
     
     # Performance summary
-    print("\n" + "=" * 60)
-    print("  PERFORMANCE SUMMARY")
-    print("=" * 60)
-    if "full_hierarchy_stress" in results["tests"]:
-        stress_result = results["tests"]["full_hierarchy_stress"]
-        if stress_result["status"] == "passed":
-            r = stress_result["result"]
-            print(f"  🚀 Events/Second:     {r.get('events_per_second', 0):.2f}")
-            print(f"  🔗 Proofs Aggregated: {r.get('proofs_aggregated', 0)}")
-            print(f"  🔄 Syncs Completed:   {r.get('syncs_completed', 0)}")
-    print("=" * 60)
+    test.print_performance_summary(results)

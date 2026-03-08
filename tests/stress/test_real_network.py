@@ -12,6 +12,7 @@ from tests.stress.real_stress_client import (
     RealStressClient,
     run_real_stress_test,
     REAL_REQUESTS,
+    generate_event,
 )
 
 logger = logging.getLogger(__name__)
@@ -121,7 +122,7 @@ class TestEventSubmission:
     def test_generate_event(self):
         """Test event generation."""
         client = RealStressClient()
-        event = client.generate_event()
+        event = generate_event()
 
         # Match EventRequest schema from hierachain.api.v1.schemas
         assert "entity_id" in event
@@ -147,7 +148,7 @@ class TestEventSubmission:
             pytest.skip("No healthy nodes")
 
         node_id = healthy[0]
-        event = client.generate_event()
+        event = generate_event()
 
         result = client.submit_event(node_id, event)
         print(f"\nEvent submitted to {node_id}: {result}")
