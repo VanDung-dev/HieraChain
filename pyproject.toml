@@ -89,6 +89,9 @@ hrc = "hierachain.cli.__init__:hrc"
 "License-MIT" = "https://github.com/VanDung-dev/HieraChain/blob/main/LICENSE-MIT"
 "Security Policy" = "https://github.com/VanDung-dev/HieraChain/blob/main/SECURITY.md"
 
+[tool.setuptools]
+packages = { find = { include = ["hierachain*"] } }
+
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"
 local_scheme = "dirty-tag"
