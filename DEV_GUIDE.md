@@ -183,7 +183,7 @@ Run stress tests in Kubernetes
 ```bash
 # Build image & deploy
 docker build --no-cache -t hierachain:latest -f docker/Dockerfile .
-kind create cluster --name hiera-cluster
+kind create cluster --config docker/kind-config.yaml
 kind load docker-image hierachain:latest --name hiera-cluster
 kubectl apply -k docker/k8s/
 
