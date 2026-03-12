@@ -7,13 +7,14 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from hierachain.api.server import create_app
+from hierachain.config.settings import DevelopmentSettings, ProductionSettings
 
 
 def test_global_exception_handler_dev_debug():
     """Test exception handler in dev with DEBUG logging (shows details)"""
     with (
-        patch('hierachain.config.settings.DevelopmentSettings.LOG_LEVEL', 'DEBUG'),
-        patch('hierachain.config.settings.DevelopmentSettings.ENV', 'dev', create=True),
+        patch.object(DevelopmentSettings, 'LOG_LEVEL', 'DEBUG'),
+        patch.object(DevelopmentSettings, 'ENV', 'dev', create=True),
     ):
         app = create_app()
         
@@ -33,9 +34,9 @@ def test_global_exception_handler_dev_debug():
 def test_global_exception_handler_production():
     """Test exception handler in production (hides details)"""
     with (
-        patch('hierachain.config.settings.ProductionSettings.LOG_LEVEL', 'DEBUG'),
-        patch('hierachain.config.settings.ProductionSettings.ENV', 'product', create=True),
-        patch('hierachain.config.settings.ProductionSettings.AUTH_ENABLED', False),
+        patch.object(ProductionSettings, 'LOG_LEVEL', 'DEBUG'),
+        patch.object(ProductionSettings, 'ENV', 'product', create=True),
+        patch.object(ProductionSettings, 'AUTH_ENABLED', False),
         patch('os.getenv', side_effect=lambda k, d=None: 'product' if k == 'HRC_ENV' else d),
     ):
         app = create_app()
@@ -57,8 +58,8 @@ def test_global_exception_handler_production():
 def test_global_exception_handler_dev_info():
     """Test exception handler in dev with INFO logging (hides details)"""
     with (
-        patch('hierachain.config.settings.DevelopmentSettings.LOG_LEVEL', 'INFO'),
-        patch('hierachain.config.settings.DevelopmentSettings.ENV', 'dev', create=True),
+        patch.object(DevelopmentSettings, 'LOG_LEVEL', 'INFO'),
+        patch.object(DevelopmentSettings, 'ENV', 'dev', create=True),
     ):
         app = create_app()
         
@@ -79,8 +80,8 @@ def test_global_exception_handler_dev_info():
 def test_cors_middleware_dev_allow_all():
     """Test CORS in dev: wildcard origins, credentials=False"""
     with (
-        patch('hierachain.config.settings.DevelopmentSettings.CORS_ALLOW_ALL', True),
-        patch('hierachain.config.settings.DevelopmentSettings.ENV', 'dev', create=True),
+        patch.object(DevelopmentSettings, 'CORS_ALLOW_ALL', True),
+        patch.object(DevelopmentSettings, 'ENV', 'dev', create=True),
     ):
         app = create_app()
         client = TestClient(app)
@@ -103,10 +104,10 @@ def test_cors_middleware_prod_allow_origins():
     """Test CORS in production: only explicit origins allowed"""
     allowed = ['https://dashboard.hierachain.com']
     with (
-        patch('hierachain.config.settings.ProductionSettings.CORS_ALLOW_ALL', False),
-        patch('hierachain.config.settings.ProductionSettings.CORS_ORIGINS', allowed),
-        patch('hierachain.config.settings.ProductionSettings.ENV', 'product', create=True),
-        patch('hierachain.config.settings.ProductionSettings.AUTH_ENABLED', False),
+        patch.object(ProductionSettings, 'CORS_ALLOW_ALL', False),
+        patch.object(ProductionSettings, 'CORS_ORIGINS', allowed),
+        patch.object(ProductionSettings, 'ENV', 'product', create=True),
+        patch.object(ProductionSettings, 'AUTH_ENABLED', False),
         patch('os.getenv', side_effect=lambda k, d=None: 'product' if k == 'HRC_ENV' else d),
     ):
         app = create_app()
@@ -138,11 +139,11 @@ def test_cors_prod_restricted_methods():
     """Test CORS in production: only configured methods allowed"""
     allowed_methods = ["GET", "POST", "OPTIONS"]
     with (
-        patch('hierachain.config.settings.ProductionSettings.CORS_ALLOW_ALL', False),
-        patch('hierachain.config.settings.ProductionSettings.CORS_ORIGINS', ['https://dashboard.hierachain.com']),
-        patch('hierachain.config.settings.ProductionSettings.CORS_ALLOW_METHODS', allowed_methods),
-        patch('hierachain.config.settings.ProductionSettings.ENV', 'product', create=True),
-        patch('hierachain.config.settings.ProductionSettings.AUTH_ENABLED', False),
+        patch.object(ProductionSettings, 'CORS_ALLOW_ALL', False),
+        patch.object(ProductionSettings, 'CORS_ORIGINS', ['https://dashboard.hierachain.com']),
+        patch.object(ProductionSettings, 'CORS_ALLOW_METHODS', allowed_methods),
+        patch.object(ProductionSettings, 'ENV', 'product', create=True),
+        patch.object(ProductionSettings, 'AUTH_ENABLED', False),
         patch('os.getenv',side_effect=lambda k, d=None: 'product' if k == 'HRC_ENV' else d),
     ):
         app = create_app()
@@ -161,9 +162,9 @@ def test_cors_prod_restricted_methods():
 def test_cors_prod_wildcard_warning(caplog):
     """Test that production with CORS_ALLOW_ALL=True logs a warning"""
     with (
-        patch('hierachain.config.settings.ProductionSettings.CORS_ALLOW_ALL', True),
-        patch('hierachain.config.settings.ProductionSettings.ENV', 'product', create=True),
-        patch('hierachain.config.settings.ProductionSettings.AUTH_ENABLED', False),
+        patch.object(ProductionSettings, 'CORS_ALLOW_ALL', True),
+        patch.object(ProductionSettings, 'ENV', 'product', create=True),
+        patch.object(ProductionSettings, 'AUTH_ENABLED', False),
         patch('os.getenv', side_effect=lambda k, d=None: 'product' if k == 'HRC_ENV' else d),
     ):
         app = create_app()
@@ -181,10 +182,10 @@ def test_cors_prod_wildcard_warning(caplog):
 def test_cors_prod_empty_origins_warning(caplog):
     """Test that production with empty CORS_ORIGINS logs a warning"""
     with (
-        patch('hierachain.config.settings.ProductionSettings.CORS_ALLOW_ALL', False),
-        patch('hierachain.config.settings.ProductionSettings.CORS_ORIGINS', []),
-        patch('hierachain.config.settings.ProductionSettings.ENV', 'product', create=True),
-        patch('hierachain.config.settings.ProductionSettings.AUTH_ENABLED', False),
+        patch.object(ProductionSettings, 'CORS_ALLOW_ALL', False),
+        patch.object(ProductionSettings, 'CORS_ORIGINS', []),
+        patch.object(ProductionSettings, 'ENV', 'product', create=True),
+        patch.object(ProductionSettings, 'AUTH_ENABLED', False),
         patch('os.getenv',side_effect=lambda k, d=None: 'product' if k == 'HRC_ENV' else d),
     ):
         app = create_app()
