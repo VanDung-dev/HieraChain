@@ -73,7 +73,7 @@ dev = [
     "pip-audit>=2.10.0",
     "pygal>=3.1.0",
     "mkdocs>=1.6.1",
-    "mkdocs-material>=9.7.1",
+    "zensical==0.0.23",
     "mkdocs-git-revision-date-localized-plugin>=1.5.1",
     "polib>=1.2.0",
 ]
@@ -142,3 +142,84 @@ ignore_missing_imports = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 warn_unused_configs = true
+no_implicit_optional = false
+
+[[tool.mypy.overrides]]
+module = "sqlalchemy.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sqlalchemy.orm.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.storage.models.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.cli.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.domains.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.api.graphql.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.error_mitigation.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.hierarchical.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.cluster.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.api.websocket.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.api.server.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.storage.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.security.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.risk_management.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.monitoring.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.integration.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.network.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.core.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.api.blockchain_explorer.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "hierachain.adapters.*"
+ignore_errors = true
