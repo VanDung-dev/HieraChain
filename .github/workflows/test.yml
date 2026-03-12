@@ -70,7 +70,7 @@ jobs:
           pip install flake8
 
       - name: Run linting
-        run: flake8 hierachain tests --output-file=lint-results.txt
+        run: flake8 --config=.flake8 hierachain tests --output-file=lint-results.txt
 
       - name: Upload lint results
         uses: actions/upload-artifact@v4
