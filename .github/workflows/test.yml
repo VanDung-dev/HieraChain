@@ -27,7 +27,7 @@ jobs:
           pip install pytest pytest-asyncio pytest-benchmark pytest-html hypothesis
 
       - name: Run tests
-        run: pytest tests --ignore=tests/stress -v
+        run: pytest tests --ignore=tests/stress -v --junitxml=test-results.xml
 
       - name: Upload test results
         if: always()
@@ -35,7 +35,7 @@ jobs:
         with:
           name: test-results
           path: |
-            htmlcov/
+            test-results.xml
             .pytest_cache/
           retention-days: 7
 
