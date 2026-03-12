@@ -20,13 +20,14 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install tox
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install tox
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-benchmark pytest-html hypothesis
 
-      - name: Run tests with tox
-        run: tox -e py312
+      - name: Run tests
+        run: pytest tests --ignore=tests/stress -v
 
       - name: Upload test results
         if: always()
@@ -34,8 +35,8 @@ jobs:
         with:
           name: test-results
           path: |
-            .tox/**/logs/
-            .tox/**/.pytest_cache/
+            htmlcov/
+            .pytest_cache/
           retention-days: 7
 
   lint:
@@ -51,13 +52,13 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install tox
+      - name: Install flake8
         run: |
           python -m pip install --upgrade pip
-          pip install tox
+          pip install flake8
 
       - name: Run linting
-        run: tox -e lint
+        run: flake8 hierachain tests
 
   type-check:
     name: Type Check
@@ -72,10 +73,10 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install tox
+      - name: Install mypy
         run: |
           python -m pip install --upgrade pip
-          pip install tox
+          pip install mypy types-requests
 
       - name: Run type checking
-        run: tox -e type
+        run: mypy hierachain
