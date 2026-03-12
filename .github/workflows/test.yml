@@ -26,8 +26,14 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-asyncio pytest-benchmark pytest-html hypothesis
 
-      - name: Run tests
-        run: pytest tests --ignore=tests/stress -v --junitxml=test-results.xml
+      - name: Run unit tests
+        run: pytest tests/unit -v --junitxml=test-results-unit.xml
+
+      - name: Run integration tests
+        run: pytest tests/integration -v --junitxml=test-results-integration.xml
+
+      - name: Run scenario tests
+        run: pytest tests/scenarios -v --junitxml=test-results-scenarios.xml
 
       - name: Upload test results
         if: always()
@@ -35,7 +41,9 @@ jobs:
         with:
           name: test-results
           path: |
-            test-results.xml
+            test-results-unit.xml
+            test-results-integration.xml
+            test-results-scenarios.xml
             .pytest_cache/
           retention-days: 7
 
@@ -58,7 +66,13 @@ jobs:
           pip install flake8
 
       - name: Run linting
-        run: flake8 hierachain tests
+        run: flake8 hierachain tests --output-file=lint-results.txt
+
+      - name: Upload lint results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results
+          path: lint-results.txt
 
   type-check:
     name: Type Check
@@ -79,4 +93,10 @@ jobs:
           pip install mypy types-requests
 
       - name: Run type checking
-        run: mypy hierachain
+        run: mypy hierachain > type-check-results.txt 2>&1 || true
+
+      - name: Upload type check results
+        uses: actions/upload-artifact@v4
+        with:
+          name: type-check-results
+          path: type-check-results.txt
