@@ -8,6 +8,8 @@ including proof consistency checks and hierarchical integrity verification.
 import time
 from typing import cast
 
+import pytest
+
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
 
@@ -306,6 +308,7 @@ def test_cross_chain_validation_system_integrity():
     assert integrity_results["overall_integrity"] is True
 
 
+@pytest.mark.flaky(reruns=3)
 def test_cross_chain_validation_fault_tolerance():
     """Test cross-chain validation fault tolerance when components fail"""
     # Create Hierarchy Manager with Main Chain

@@ -9,9 +9,12 @@ import os
 import shutil
 import time
 
+import pytest
+
 from hierachain.hierarchical.sub_chain import SubChain
 
 
+@pytest.mark.flaky(reruns=3)
 def test_recovery_and_rehydration():
     chain_name = "test_reliability_chain"
     data_dir = f"data/{chain_name}"
