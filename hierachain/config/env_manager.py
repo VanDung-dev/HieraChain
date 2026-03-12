@@ -2,7 +2,7 @@
 Environment Manager for HieraChain
 
 This module provides automatic configuration management for the HieraChain system.
-It checks for existing .env files and suggests Product configuration via .env.example
+It checks for existing .env files and suggests Product configuration via .env.HRC.example
 if no HieraChain configuration is detected.
 
 Usage:
@@ -22,9 +22,12 @@ from dotenv import load_dotenv
 
 # Constants
 ENV_FILE = Path(".env")
-ENV_EXAMPLE_FILE = Path(".env.example")
+ENV_EXAMPLE_FILE = Path(".env.HRC.example")
 HRC_PREFIX = "HRC_"
 AUTO_CONFIG_MARKER = "# === HieraChain Product Auto-Configuration ==="
+
+# Environment variable to track if warning has been shown
+_WARNING_ENV_VAR = "HRC_WARNING_SHOWN"
 
 # Default Product configuration template
 # NOTE: SQLite is used as default for development ease.
@@ -179,18 +182,18 @@ def validate_no_conflict(env_file: Path) -> list[str]:
 
 def ensure_product_example(env_example_file: Path = ENV_EXAMPLE_FILE) -> bool:
     """
-    Ensure .env.example file exists with Product configuration.
+    Ensure .env.HRC.example file exists with Product configuration.
     
-    This function creates .env.example with Product configuration template
+    This function creates .env.HRC.example with Product configuration template
     if it doesn't exist or doesn't have HRC_ configuration.
     
     Args:
-        env_example_file: Path to .env.example file
+        env_example_file: Path to .env.HRC.example file
         
     Returns:
         True if example file was created/updated, False if already exists
     """
-    # Check if .env.example already has HRC_ config
+    # Check if .env.HRC.example already has HRC_ config
     if env_example_file.exists():
         with open(env_example_file, 'r') as f:
             content = f.read()
@@ -201,7 +204,7 @@ def ensure_product_example(env_example_file: Path = ENV_EXAMPLE_FILE) -> bool:
             if line and not line.startswith('#') and line.startswith(HRC_PREFIX):
                 return False  # Already has config
     
-    # Create/update .env.example with Product config
+    # Create/update .env.HRC.example with Product config
     with open(env_example_file, 'w') as f:
         f.write(PRODUCT_CONFIG_TEMPLATE)
     
@@ -252,13 +255,18 @@ def get_env_file_path() -> Path:
 
 def print_missing_config_warning():
     """Print warning message about missing configuration."""
+    # Only print warning once (using env var to work across uvicorn processes)
+    if os.getenv(_WARNING_ENV_VAR):
+        return
+    os.environ[_WARNING_ENV_VAR] = "1"
+    
     print("=" * 60, file=sys.stderr)
     print("WARNING: No HieraChain configuration found!", file=sys.stderr)
     print("=" * 60, file=sys.stderr)
     print(file=sys.stderr)
     print("To configure HieraChain for production, please:", file=sys.stderr)
-    print(f"  1. Copy '.env.example' to '.env':", file=sys.stderr)
-    print(f"     cp .env.example .env", file=sys.stderr)
+    print(f"  1. Copy '.env.HRC.example' to '.env':", file=sys.stderr)
+    print(f"     cp .env.HRC.example .env", file=sys.stderr)
     print(f"  2. Review and customize the configuration in '.env'", file=sys.stderr)
     print(f"  3. Restart the application", file=sys.stderr)
     print(file=sys.stderr)
@@ -276,16 +284,16 @@ def init_env_config(
     Initialize environment configuration.
     
     This is the main entry point for environment configuration.
-    It checks if configuration exists and suggests .env.example if needed.
+    It checks if configuration exists and suggests .env.HRC.example if needed.
     
     Args:
         env_file: Path to .env file (defaults to HRC_ENV_FILE or .env)
-        env_example_file: Path to .env.example file (defaults to .env.example)
+        env_example_file: Path to .env.HRC.example file (defaults to .env.HRC.example)
         auto_config: Override auto-config setting (defaults to HRC_AUTO_CONFIG)
         warn_only: If True, only warn about missing config instead of modifying files
         
     Returns:
-        True if .env.example was created/updated, False otherwise
+        True if .env.HRC.example was created/updated, False otherwise
     """
     # Determine settings
     if env_file is None:
@@ -310,7 +318,7 @@ def init_env_config(
         load_env(env_file)
         return False
     
-    # No config found - create .env.example (safe approach)
+    # No config found - create .env.HRC.example (safe approach)
     example_created = ensure_product_example(env_example_file)
     
     # Load existing .env if it exists
