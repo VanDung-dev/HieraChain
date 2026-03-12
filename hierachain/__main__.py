@@ -13,7 +13,7 @@ def main():
     """Main entry point function"""
     # Initialize environment configuration
     # This ensures .env has proper config if missing
-    # Creates .env.example if no HRC_ config found
+    # Creates .env.HRC.example if no HRC_ config found
     init_env_config(warn_only=True)
     
     # Continue with normal startup
