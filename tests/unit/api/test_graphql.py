@@ -28,7 +28,7 @@ def test_graphql_query_all_chains():
     mock_manager.get_main_chain.return_value = mock_main_chain
     mock_manager.get_all_sub_chains.return_value = {"TestChain": mock_sub_chain}
     
-    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager):
+    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager, create=True):
         # Execute query
         query = """
         {
@@ -62,7 +62,7 @@ def test_graphql_query_chain_status():
     mock_manager.get_main_chain.return_value = None
     mock_manager.get_all_sub_chains.return_value = {"TestChain": mock_chain}
     
-    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager):
+    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager, create=True):
         query = """
         {
             chainStatus(chainName: "TestChain") {
@@ -108,7 +108,7 @@ def test_graphql_query_block():
     mock_manager.get_main_chain.return_value = None
     mock_manager.get_all_sub_chains.return_value = {"TestChain": mock_chain}
     
-    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager):
+    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager, create=True):
         query = """
         {
             block(chainName: "TestChain", blockIndex: 1) {
@@ -161,7 +161,7 @@ def test_graphql_query_blocks():
     mock_manager.get_main_chain.return_value = None
     mock_manager.get_all_sub_chains.return_value = {"TestChain": mock_chain}
     
-    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager):
+    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager, create=True):
         query = """
         {
             blocks(chainName: "TestChain", limit: 10) {
@@ -213,7 +213,7 @@ def test_graphql_query_events():
     mock_manager.get_main_chain.return_value = None
     mock_manager.get_all_sub_chains.return_value = {"TestChain": mock_chain}
     
-    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager):
+    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager, create=True):
         query = """
         {
             events(chainName: "TestChain", limit: 10) {
@@ -245,7 +245,7 @@ def test_graphql_mutation_add_event():
     mock_manager.get_main_chain.return_value = mock_chain
     mock_manager.get_all_sub_chains.return_value = {}
     
-    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager):
+    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager, create=True):
         mutation = """
         mutation {
             addEvent(event: {
@@ -281,7 +281,7 @@ def test_graphql_mutation_add_event_invalid_chain():
     mock_manager.get_main_chain.return_value = None
     mock_manager.get_all_sub_chains.return_value = {}
     
-    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager):
+    with patch('hierachain.api.graphql.schema.get_hierarchy_manager', return_value=mock_manager, create=True):
         mutation = """
         mutation {
             addEvent(event: {
