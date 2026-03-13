@@ -27,7 +27,8 @@ class OrderingStorageHandler:
             "previous_hash": block.previous_hash,
             "timestamp": block.timestamp,
             "events": block.to_event_list(),
-            "metadata": {},
+            "metadata": {"merkle_root": block.merkle_root},
+            "merkle_root": block.merkle_root,
             "chain_name": chain_name
         }
         self.storage.save_block(block_data)
@@ -56,7 +57,12 @@ class OrderingStorageHandler:
             # We need to know which chain we are loading blocks for
             data = self.storage.get_block_by_index(current_index, chain_name=self.chain_name)
             if not data: break
-            block = Block(index=data["index"], events=data["events"], previous_hash=data["previous_hash"])
+            block = Block(
+                index=data["index"],
+                events=data["events"],
+                previous_hash=data["previous_hash"],
+                merkle_root=data.get("merkle_root")
+            )
             block.hash, block.timestamp = data["hash"], data["timestamp"]
             blocks.append(block)
             current_index += 1
@@ -67,7 +73,12 @@ class OrderingStorageHandler:
         data = self.storage.get_latest_block(chain_name=self.chain_name)
         if not data:
             return None
-        block = Block(index=data["index"], events=data["events"], previous_hash=data["previous_hash"])
+        block = Block(
+            index=data["index"],
+            events=data["events"],
+            previous_hash=data["previous_hash"],
+            merkle_root=data.get("merkle_root")
+        )
         block.hash, block.timestamp = data["hash"], data["timestamp"]
         return block
 
