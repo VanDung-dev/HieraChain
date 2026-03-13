@@ -19,14 +19,16 @@ logger = get_storage_logger()
 def _to_block_dict(block_model: BlockModel) -> dict[str, Any]:
     """Convert ORM model to dictionary format expected by HieraChain."""
     events_list = [e.data for e in block_model.events]
+    # Safely get merkle_root from metadata
+    metadata = block_model.metadata_json or {}
     return {
         "index": block_model.index,
         "hash": block_model.hash,
         "previous_hash": block_model.previous_hash,
         "timestamp": block_model.timestamp,
         "events": events_list,
-        "metadata": block_model.metadata_json,
-        "merkle_root": block_model.metadata_json.get("merkle_root") if block_model.metadata_json else None
+        "metadata": metadata,
+        "merkle_root": metadata.get("merkle_root")
     }
 
 
