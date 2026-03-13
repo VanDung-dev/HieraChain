@@ -68,8 +68,11 @@ class Block:
             else:
                 self.merkle_root = merkle_root
         else:
-            # Calculate Merkle Root from list
-            self.merkle_root = merkle_root or calculate_merkle_from_list(events)
+            # Calculate Merkle Root from list only if merkle_root is not provided
+            if merkle_root is not None:
+                self.merkle_root = merkle_root
+            else:
+                self.merkle_root = calculate_merkle_from_list(events)
             # Convert to Arrow Table for efficient storage
             self._events = convert_events_to_arrow(events)
             
