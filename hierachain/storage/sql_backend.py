@@ -25,18 +25,24 @@ def _to_block_dict(block_model: BlockModel) -> dict[str, Any]:
         "previous_hash": block_model.previous_hash,
         "timestamp": block_model.timestamp,
         "events": events_list,
-        "metadata": block_model.metadata_json
+        "metadata": block_model.metadata_json,
+        "merkle_root": block_model.metadata_json.get("merkle_root") if block_model.metadata_json else None
     }
 
 
 def _build_block_model(block_data: dict[str, Any]) -> BlockModel:
     """Create a BlockModel instance from block data dictionary."""
+    # Preserve existing merkle_root in metadata if not provided
+    metadata = block_data.get('metadata', {})
+    if 'merkle_root' not in metadata and block_data.get('merkle_root'):
+        metadata['merkle_root'] = block_data['merkle_root']
+    
     return BlockModel(
         index=block_data['index'],
         hash=block_data['hash'],
         previous_hash=block_data['previous_hash'],
         timestamp=block_data['timestamp'],
-        metadata_json=block_data.get('metadata', {}),
+        metadata_json=metadata,
         chain_name=block_data.get('chain_name')
     )
 
