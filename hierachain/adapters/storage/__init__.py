@@ -2,4 +2,6 @@
 Storage adapters for blockchain data storage.
 """
 
-__all__ = []
+from hierachain.adapters.storage.redis_storage import RedisStorageAdapter
+
+__all__ = ['RedisStorageAdapter']

@@ -2,4 +2,6 @@
 Database adapters for blockchain data persistence.
 """
 
-__all__ = []
+from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
+
+__all__ = ['SQLiteAdapter']

@@ -2,4 +2,8 @@
 Monitoring module for HieraChain Ledger.
 """
 
-__all__ = []
+from hierachain.monitoring.performance_monitor import PerformanceMonitor
+
+__all__ = [
+    "PerformanceMonitor"
+]
