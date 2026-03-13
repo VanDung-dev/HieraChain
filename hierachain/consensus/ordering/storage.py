@@ -5,9 +5,25 @@ Ordering storage handler for the HieraChain ordering service.
 import time
 from collections import deque
 from typing import Any
-from hierachain.core.block import Block
+from hierachain.core.block import Block, convert_events_to_arrow
 from hierachain.storage.sql_backend import SqlStorageBackend
 from hierachain.consensus.ordering.types import PendingEvent
+
+
+def _block_from_dict(data: dict[str, Any]) -> Block:
+    """Create a Block from dictionary data without recalculating hash."""
+    block = Block.__new__(Block)
+    block.index = data["index"]
+    block.timestamp = data["timestamp"]
+    block.previous_hash = data["previous_hash"]
+    block.nonce = data.get("nonce", 0)
+    block.creator_id = data.get("creator_id")
+    block.signature = data.get("signature")
+    block.hash = data["hash"]
+    block.merkle_root = data.get("merkle_root") or ""
+    block._events = convert_events_to_arrow(data["events"])
+    return block
+
 
 class OrderingStorageHandler:
     """Manages persistent storage and caching for blocks and events"""
@@ -57,14 +73,8 @@ class OrderingStorageHandler:
             # We need to know which chain we are loading blocks for
             data = self.storage.get_block_by_index(current_index, chain_name=self.chain_name)
             if not data: break
-            block = Block(
-                index=data["index"],
-                events=data["events"],
-                previous_hash=data["previous_hash"],
-                merkle_root=data.get("merkle_root")
-            )
-            block.hash, block.timestamp = data["hash"], data["timestamp"]
-            blocks.append(block)
+            # Create block directly to avoid recalculating hash
+            blocks.append(_block_from_dict(data))
             current_index += 1
         return blocks
 
@@ -73,14 +83,7 @@ class OrderingStorageHandler:
         data = self.storage.get_latest_block(chain_name=self.chain_name)
         if not data:
             return None
-        block = Block(
-            index=data["index"],
-            events=data["events"],
-            previous_hash=data["previous_hash"],
-            merkle_root=data.get("merkle_root")
-        )
-        block.hash, block.timestamp = data["hash"], data["timestamp"]
-        return block
+        return _block_from_dict(data)
 
     def close(self):
         self.storage.close()
