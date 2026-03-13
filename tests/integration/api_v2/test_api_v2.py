@@ -11,6 +11,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from hierachain.api.server import app
+from hierachain.config.settings import Settings
 
 
 @pytest.fixture
@@ -153,7 +154,7 @@ def test_register_organization(client, auth_headers):
 
 def test_rbac_forbidden_without_auth(client):
     """Test that requests fail with 401 when missing auth"""
-    with patch('hierachain.config.settings.Settings.AUTH_ENABLED', True):
+    with patch.object(Settings, 'AUTH_ENABLED', True):
         response = client.post("/api/v2/channels", json={"channel_id": "test", "organizations": [], "policy": {}})
         assert response.status_code == 401
         
