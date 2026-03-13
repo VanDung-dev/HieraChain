@@ -7,8 +7,7 @@ It includes tests for both successful and failed 2PC transactions.
 
 import pytest
 
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.hierarchical.transaction_manager import TransactionState
+from hierachain.hierarchical import HierarchyManager, TransactionState
 
 
 def _assert_2pc_outcome(hierarchy, tx_id, source_chain, dest_chain, expected_state):

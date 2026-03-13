@@ -9,7 +9,7 @@ import pytest
 import time
 import uuid
 
-from hierachain.network.zmq_transport import ZmqNode
+from hierachain.network import ZmqNode
 
 @pytest.fixture
 def node():

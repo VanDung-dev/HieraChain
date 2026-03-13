@@ -10,7 +10,7 @@ import time
 import pyarrow as pa
 import struct
 
-from hierachain.hierarchical.sub_chain import SubChain
+from hierachain.hierarchical import SubChain
 from hierachain.core import schemas
 
 

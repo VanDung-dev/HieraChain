@@ -12,7 +12,7 @@ import shutil
 import pytest
 from unittest.mock import Mock, patch
 
-from hierachain.security.key_backup_manager import (
+from hierachain.security import (
     KeyBackupManager, create_key_backup_manager, RestoreError
 )
 

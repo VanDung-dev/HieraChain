@@ -5,8 +5,8 @@ Integration tests for API v1 endpoints
 import pytest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
-from hierachain.api.server import app
-from hierachain.config.settings import Settings
+from hierachain.api import app
+from hierachain.config import Settings
 
 @pytest.fixture
 def client():

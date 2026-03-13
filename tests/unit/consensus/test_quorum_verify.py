@@ -1,7 +1,9 @@
-
+"""
+Unit tests for consensus quorum verification.
+"""
 import pytest
-from hierachain.core.consensus.proof_of_federation import ProofOfFederation
-from hierachain.security.security_utils import generate_key_pair_hex, KeyPair
+from hierachain.core.consensus import ProofOfFederation
+from hierachain.security import generate_key_pair_hex, KeyPair
 
 
 def _sign_message(private_key_hex, message):

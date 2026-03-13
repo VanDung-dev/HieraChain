@@ -9,8 +9,8 @@ import time
 import random
 import string
 
-from hierachain.core.block import Block
-from hierachain.core.blockchain import Blockchain
+from hierachain.core import Block
+from hierachain.core import Blockchain
 
 
 def test_block_with_multiple_events():

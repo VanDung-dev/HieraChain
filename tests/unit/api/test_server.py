@@ -6,8 +6,8 @@ import logging
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 
-from hierachain.api.server import create_app
-from hierachain.config.settings import DevelopmentSettings, ProductionSettings
+from hierachain.api import create_app
+from hierachain.config import DevelopmentSettings, ProductionSettings
 
 
 def test_global_exception_handler_dev_debug():

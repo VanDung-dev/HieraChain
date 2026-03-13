@@ -12,8 +12,8 @@ import sys
 import os
 import pyarrow as pa
 
-from hierachain.core.block import Block
-from hierachain.storage.world_state import WorldState
+from hierachain.core import Block
+from hierachain.storage import WorldState
 
 # Ensure project root is in path
 sys.path.append(os.getcwd())

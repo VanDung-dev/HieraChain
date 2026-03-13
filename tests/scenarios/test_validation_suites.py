@@ -10,17 +10,19 @@ import pytest
 import time
 from unittest.mock import Mock, patch, MagicMock
 
-from hierachain.error_mitigation.validator import (
+from hierachain.error_mitigation import (
     ConsensusValidator,
     SecurityError,
     ValidationError,
     validate_certificate
 )
-from hierachain.security.certificate import CertificateValidator
-from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
-from hierachain.security.key_backup_manager import KeyBackupManager
-from hierachain.security.key_manager import KeyManager
-from hierachain.security.verify.api_key_verifier import APIKeyVerifier
+from hierachain.error_mitigation import NetworkRecoveryEngine
+from hierachain.security import (
+    CertificateValidator,
+    KeyBackupManager,
+    KeyManager,
+    APIKeyVerifier
+)
 
 
 # Priority Level 1: Critical Risk Validation Tests

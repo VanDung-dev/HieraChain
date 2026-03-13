@@ -12,8 +12,8 @@ import asyncio
 from unittest.mock import Mock, patch
 from fastapi import HTTPException
 
-from hierachain.security.verify.api_key_verifier import APIKeyVerifier
-from hierachain.security.brute_force_protector import BruteForceProtector
+from hierachain.security.verify import APIKeyVerifier
+from hierachain.security import BruteForceProtector
 
 
 # --- Fixtures ---

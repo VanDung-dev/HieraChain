@@ -7,7 +7,7 @@ where the main chain stores proofs from registered sub-chains.
 
 from unittest.mock import Mock
 
-from hierachain.hierarchical.main_chain import MainChain
+from hierachain.hierarchical import MainChain
 
 
 def test_main_chain_creation():

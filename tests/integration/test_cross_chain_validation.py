@@ -10,8 +10,8 @@ from typing import cast
 
 import pytest
 
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
+from hierachain.hierarchical import HierarchyManager
+from hierachain.domains.generic.utils import CrossChainValidator
 
 
 def _iter_block_events(chain):

@@ -13,11 +13,12 @@ from unittest.mock import Mock, patch
 
 from fastapi import Request
 
-from hierachain.error_mitigation.validator import ConsensusValidator
-from hierachain.error_mitigation.recovery_engine import NetworkRecoveryEngine
-from hierachain.security.key_backup_manager import KeyBackupManager
-from hierachain.security.key_manager import KeyManager
-from hierachain.security.verify.api_key_verifier import APIKeyVerifier
+from hierachain.error_mitigation import (
+    ConsensusValidator, NetworkRecoveryEngine
+)
+from hierachain.security import (
+    KeyBackupManager, KeyManager, APIKeyVerifier
+)
 
 
 class RecoveryTestError(Exception):

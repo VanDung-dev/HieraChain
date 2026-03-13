@@ -8,9 +8,8 @@ security components including KeyManager, KeyBackupManager, and MSP.
 import json
 from unittest.mock import Mock, patch
 
-from hierachain.security.key_manager import KeyManager
-from hierachain.security.key_backup_manager import KeyBackupManager
-from hierachain.security.msp import HierarchicalMSP
+from hierachain.security import KeyManager, KeyBackupManager, HierarchicalMSP
+
 
 
 def test_end_to_end_key_lifecycle(benchmark):

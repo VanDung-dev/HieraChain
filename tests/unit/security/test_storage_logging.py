@@ -9,10 +9,9 @@ SQL echo behavior.
 import inspect
 from unittest.mock import patch, MagicMock
 
-from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
-from hierachain.adapters.database import sqlite_adapter
+from hierachain.adapters.database import SQLiteAdapter, sqlite_adapter
 from hierachain.storage import sql_backend
-from hierachain.security.secure_logging import (
+from hierachain.security import (
     SecureLogger,
     get_storage_logger,
 )

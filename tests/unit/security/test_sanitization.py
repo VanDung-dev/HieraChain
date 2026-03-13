@@ -7,7 +7,7 @@ neutralized before storage or rendering.
 """
 
 
-from hierachain.security.sanitization import (
+from hierachain.security import (
     sanitize_string,
     sanitize_dict,
     sanitize_list,

@@ -8,7 +8,7 @@ import pytest
 import json
 from unittest.mock import AsyncMock
 
-from hierachain.api.websocket.manager import (
+from hierachain.api import (
     WebSocketManager,
     WebSocketConnection,
     WebSocketSubscription,

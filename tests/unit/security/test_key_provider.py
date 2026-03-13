@@ -7,10 +7,8 @@ including key generation, signing, verification, and vault management.
 
 import pytest
 import os
-from hierachain.security.key_provider import (
-    LocalKeyProvider, FileVaultProvider, CryptoError
-)
-from hierachain.security.security_utils import (
+from hierachain.security import (
+    LocalKeyProvider, FileVaultProvider, CryptoError,
     KeyPair, verify_signature
 )
 

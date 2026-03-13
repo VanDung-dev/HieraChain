@@ -12,8 +12,8 @@ import pytest
 import logging
 from unittest.mock import MagicMock
 
-from hierachain.network.peer_trust_manager import PeerTrustManager
-from hierachain.security.identity import IdentityManager
+from hierachain.network import PeerTrustManager
+from hierachain.security import IdentityManager
 
 
 class TestPeerTrustManagerProduction:

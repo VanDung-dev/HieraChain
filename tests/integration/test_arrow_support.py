@@ -13,10 +13,9 @@ import pytest
 import pyarrow as pa
 from unittest.mock import patch
 
-from hierachain.security.policy_engine import PolicyCondition, ComparisonOperator, _hash_context
-from hierachain.risk_management.audit_logger import AuditEvent, AuditEventType, AuditSeverity
-from hierachain.error_mitigation.validator import APIValidator
-from hierachain.error_mitigation.error_classifier import ErrorClassifier
+from hierachain.security import PolicyCondition, ComparisonOperator, _hash_context
+from hierachain.risk_management import AuditEvent, AuditEventType, AuditSeverity
+from hierachain.error_mitigation import APIValidator, ErrorClassifier
 
 
 def test_policy_engine_arrow_evaluation():

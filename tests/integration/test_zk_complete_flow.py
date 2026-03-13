@@ -8,11 +8,11 @@ import pytest
 import time
 from types import SimpleNamespace
 
-from hierachain.core.block import Block
-from hierachain.core.consensus.proof_of_federation import ProofOfFederation
-from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
-from hierachain.security.zk_prover import get_zk_prover, ZKProvingError, reset_zk_prover
-from hierachain.security.verify.zk_verifier import (
+from hierachain.core import Block
+from hierachain.core.consensus import ProofOfFederation
+from hierachain.core.consensus import ProofOfAuthority
+from hierachain.security import get_zk_prover, ZKProvingError, reset_zk_prover
+from hierachain.security.verify import (
     get_zk_verifier, ZKVerificationError, reset_zk_verifier
 )
 from hierachain.config.settings import settings

@@ -11,14 +11,12 @@ Covers:
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from hierachain.network.secure_connection import SecureConnectionManager
-from hierachain.network.message_cryptographic import (
+from hierachain.network import SecureConnectionManager
+from hierachain.network import (
     sign_handshake_payload,
     verify_handshake_signature,
 )
-from hierachain.security.msp import HierarchicalMSP
-from hierachain.security.identity import IdentityManager
-from hierachain.security.security_utils import KeyPair
+from hierachain.security import HierarchicalMSP, IdentityManager, KeyPair
 
 
 @pytest.fixture

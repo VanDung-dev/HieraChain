@@ -4,7 +4,7 @@ Unit tests for ClusterManager.
 
 import time
 
-from hierachain.cluster.cluster_manager import (
+from hierachain.cluster import (
     ClusterManager,
     NodeHealthStatus,
     NodeStatus,

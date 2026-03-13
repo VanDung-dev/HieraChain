@@ -10,7 +10,7 @@ import base64
 import secrets
 import pytest
 
-from hierachain.security.master_key_provider import (
+from hierachain.security import (
     MasterKeyProvider,
     MasterKeyError,
 )

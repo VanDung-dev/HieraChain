@@ -6,7 +6,7 @@ Tests the "Resurrection" logic - syncing missing blocks from peers.
 
 from dataclasses import dataclass
 
-from hierachain.cluster.state_sync_manager import (
+from hierachain.cluster import (
     StateSyncManager,
     SyncRequest,
     SyncResponse,

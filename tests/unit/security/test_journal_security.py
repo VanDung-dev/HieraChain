@@ -4,8 +4,8 @@ Test suite for the TransactionJournal class.
 
 import pytest
 
-from hierachain.error_mitigation.journal import TransactionJournal
-from hierachain.hierarchical.sub_chain import SubChain
+from hierachain.error_mitigation import TransactionJournal
+from hierachain.hierarchical import SubChain
 
 
 def test_filename_validation_strict():

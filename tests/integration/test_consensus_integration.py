@@ -9,9 +9,9 @@ This includes:
 
 import time
 
-from hierachain.hierarchical.main_chain import MainChain
-from hierachain.hierarchical.sub_chain import SubChain
-from hierachain.core.block import Block
+from hierachain.hierarchical import MainChain
+from hierachain.hierarchical import SubChain
+from hierachain.core import Block
 
 
 def _build_valid_event_block(chain):

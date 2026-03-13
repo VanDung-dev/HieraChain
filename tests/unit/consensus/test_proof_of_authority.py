@@ -9,8 +9,8 @@ import time
 import hashlib
 from typing import Any
 
-from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
-from hierachain.core.block import Block
+from hierachain.core.consensus import ProofOfAuthority
+from hierachain.core import Block
 
 
 def test_poa_authority_management():

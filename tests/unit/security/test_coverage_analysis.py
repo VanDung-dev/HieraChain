@@ -9,11 +9,8 @@ import json
 import time
 from unittest.mock import Mock, patch
 
-from hierachain.security.key_manager import KeyManager
-from hierachain.security.key_backup_manager import (
-    KeyBackupManager, RestoreError, BackupError
-)
-from hierachain.security.msp import (
+from hierachain.security import (
+    KeyManager, KeyBackupManager, RestoreError, BackupError,
     HierarchicalMSP, CertificateAuthority, OrganizationPolicies
 )
 

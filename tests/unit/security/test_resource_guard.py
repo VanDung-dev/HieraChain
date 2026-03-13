@@ -10,8 +10,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from unittest.mock import MagicMock
 
-from hierachain.security.resource_guard import ResourceGuardMiddleware
-from hierachain.monitoring.performance_monitor import PerformanceMonitor
+from hierachain.security import ResourceGuardMiddleware
+from hierachain.monitoring import PerformanceMonitor
 
 # Mock Monitor
 @pytest.fixture

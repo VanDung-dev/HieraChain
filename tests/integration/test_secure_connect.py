@@ -11,9 +11,8 @@ import sys
 import os
 import pytest
 
-from hierachain.network.secure_connection import SecureConnectionManager
-from hierachain.security.msp import HierarchicalMSP
-from hierachain.security.identity import IdentityManager
+from hierachain.network import SecureConnectionManager
+from hierachain.security import HierarchicalMSP, IdentityManager
 
 # Ensure the project root is in python path
 sys.path.append(os.getcwd())

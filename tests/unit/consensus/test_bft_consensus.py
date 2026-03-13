@@ -7,7 +7,7 @@ including message handling, consensus phases, and node communication.
 
 import time
 
-from hierachain.hierarchical.consensus.bft_consensus import (
+from hierachain.hierarchical.consensus import (
     BFTConsensus,
     create_bft_network,
     ConsensusError,
@@ -17,11 +17,9 @@ from hierachain.hierarchical.consensus.bft_consensus import (
     verify_message_signature,
     validate_consensus_message,
 )
-from hierachain.security.security_utils import KeyPair
-from hierachain.error_mitigation.validator import ConsensusValidator
-from hierachain.error_mitigation.error_classifier import ErrorClassifier
-from hierachain.error_mitigation.recovery_engine import (
-    ConsensusRecoveryEngine, NetworkRecoveryEngine
+from hierachain.security import KeyPair
+from hierachain.error_mitigation import (
+    ConsensusValidator, ErrorClassifier, ConsensusRecoveryEngine, NetworkRecoveryEngine
 )
 
 # Create a BFT network

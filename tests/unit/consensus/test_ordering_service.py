@@ -9,16 +9,12 @@ import shutil
 from typing import Any
 
 from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
-from hierachain.core.block import Block
-from hierachain.error_mitigation.error_classifier import (
+from hierachain.core import Block
+from hierachain.error_mitigation import (
     ErrorClassifier, PriorityLevel, ErrorCategory,
-)
-from hierachain.error_mitigation.validator import (
     ConsensusValidator, EncryptionValidator,
     ResourceValidator, APIValidator,
-    ValidationError, SecurityError
-)
-from hierachain.error_mitigation.recovery_engine import (
+    ValidationError, SecurityError,
     NetworkRecoveryEngine, AutoScaler,
     ConsensusRecoveryEngine, BackupRecoveryEngine,
 )

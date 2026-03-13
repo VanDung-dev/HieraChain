@@ -11,7 +11,7 @@ import inspect
 from unittest.mock import Mock, patch, ANY
 from fastapi import HTTPException, Request
 
-from hierachain.security.verify.api_key_verifier import (
+from hierachain.security.verify import (
     APIKeyVerifier,
     ResourcePermissionChecker,
     create_verify_api_key

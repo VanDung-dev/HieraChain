@@ -12,14 +12,14 @@ Covers:
 import time
 import pytest
 
-from hierachain.network.message_cryptographic import (
+from hierachain.network import (
     sign_message,
     verify_message,
     create_signable_payload,
     sign_handshake_payload,
     verify_handshake_signature,
 )
-from hierachain.security.security_utils import KeyPair
+from hierachain.security import KeyPair
 
 
 class TestMessageSignVerify:

@@ -11,7 +11,7 @@ import string
 from typing import Any
 from hypothesis import given, strategies as st
 
-from hierachain.core.utils import (
+from hierachain.core import (
     generate_hash, generate_entity_id,
     generate_proof_hash, validate_proof_metadata
 )

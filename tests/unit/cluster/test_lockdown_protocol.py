@@ -6,7 +6,7 @@ Tests the quorum-based lockdown and recovery voting functionality.
 
 import time
 
-from hierachain.cluster.lockdown_protocol import (
+from hierachain.cluster import (
     ClusterLockdownManager,
     ClusterState,
     LockdownMessage,

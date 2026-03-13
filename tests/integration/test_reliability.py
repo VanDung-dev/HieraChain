@@ -11,7 +11,7 @@ import time
 
 import pytest
 
-from hierachain.hierarchical.sub_chain import SubChain
+from hierachain.hierarchical import SubChain
 
 
 @pytest.mark.flaky(reruns=3)

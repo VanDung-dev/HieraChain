@@ -3,7 +3,7 @@ Test suite for the Hierachain API v3 internal endpoints.
 """
 
 from fastapi.testclient import TestClient
-from hierachain.api.server import app
+from hierachain.api import app
 
 client = TestClient(app)
 

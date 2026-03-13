@@ -2,7 +2,7 @@
 Unit tests for Ed25519 security utilities.
 """
 
-from hierachain.security.security_utils import KeyPair, verify_signature
+from hierachain.security import KeyPair, verify_signature
 
 
 def test_keypair_generation():

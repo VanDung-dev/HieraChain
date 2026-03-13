@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 import pytest
 
-from hierachain.security.secure_logging import SecureLogger
+from hierachain.security import SecureLogger
 
 
 # ------------------------------------------------------------------ #

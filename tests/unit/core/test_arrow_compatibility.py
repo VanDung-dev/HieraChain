@@ -10,7 +10,7 @@ import sys
 import os
 import pyarrow as pa
 
-from hierachain.core.block import Block
+from hierachain.core import Block
 
 # Add project root to path
 sys.path.append(os.getcwd())

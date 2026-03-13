@@ -13,8 +13,8 @@ import random
 import string
 from typing import Any
 
-from hierachain.core.blockchain import Blockchain
-from hierachain.core.block import Block
+from hierachain.core import Blockchain
+from hierachain.core import Block
 
 
 def test_blockchain_creation():
