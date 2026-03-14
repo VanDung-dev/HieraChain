@@ -78,6 +78,16 @@ class OrderingStorageHandler:
             current_index += 1
         return blocks
 
+    def get_blocks_from_db(self, start_index: int) -> list[Block]:
+        """Always load from DB, bypassing in-memory cache.
+        
+        Used during rehydration to ensure we get the persisted state
+        rather than any in-memory blocks that may have diverged.
+        """
+        if start_index < 0:
+            start_index = 0
+        return self._load_from_db(start_index)
+
     def get_latest_block_from_db(self) -> Block | None:
         """Retrieve the latest block for this chain from DB."""
         data = self.storage.get_latest_block(chain_name=self.chain_name)

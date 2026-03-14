@@ -37,12 +37,16 @@ class OrderingService:
         self.should_stop = threading.Event()
         self.event_pool: Queue[PendingEvent] = Queue()
         self.pending_events: dict[str, PendingEvent] = {}
-        self.blocks_created = 0
         self.commit_queue: Queue[Block] = Queue()
         
         # Component Initialization
         self.metrics = OrderingMetrics()
         self.storage_handler = OrderingStorageHandler(config)
+        
+        # Initialize blocks_created from DB to ensure continuity after restart
+        latest_block = self.storage_handler.get_latest_block_from_db()
+        self.blocks_created = (latest_block.index + 1) if latest_block else 0
+        logger.info(f"Initialized ordering service state: blocks_created={self.blocks_created}")
         
         # Configure journal based on storage_dir and node_id for persistence
         storage_dir = config.get("storage_dir", "journal")
@@ -98,7 +102,9 @@ class OrderingService:
             status=EventStatus.PENDING
         )
         
-        self.journal.log_event(event_data)
+        logged_data = event_data.copy()
+        logged_data["channel_id"] = channel_id
+        self.journal.log_event(logged_data)
         self.pending_events[event_id] = pending_event
         self.event_pool.put(pending_event)
         
