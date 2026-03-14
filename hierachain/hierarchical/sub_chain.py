@@ -354,7 +354,7 @@ def _flush_pending_and_finalize_for_sub_chain(sub_chain: "SubChain", timeout: fl
 
 def _rehydrate_chain_from_ordering_service(sub_chain: "SubChain", _latest_block_os: Any) -> None:
     """Rehydrate the local chain from the Ordering Service."""
-    all_blocks = sub_chain.ordering_service.get_blocks(start_index=0)
+    all_blocks = sub_chain.ordering_service.storage_handler.get_blocks_from_db(start_index=0)
 
     if not all_blocks:
         return
@@ -374,6 +374,9 @@ def _rehydrate_chain_from_ordering_service(sub_chain: "SubChain", _latest_block_
 
     # Clear the locally created chain (including the newly created genesis block)
     sub_chain.chain.clear()
+    sub_chain.total_events = 0
+    sub_chain.event_type_counts.clear()
+    sub_chain.entity_event_index.clear()
 
     # Add all blocks from DB to the chain with proper indexing
     for block in all_blocks:
@@ -483,7 +486,13 @@ class SubChain(Blockchain):
         # Initialize Ordering Service
         self._init_ordering_service()
 
-        # Chain Synchronization (Rehydration)
+        if not self.ordering_service.get_latest_block():
+            self.ordering_service.storage_handler.save_block(self.chain[0], self.name)
+            logger.info(f"SubChain {self.name}: Persisted genesis block to storage.")
+
+        # Wait for ordering service to become ACTIVE
+        self.ordering_service.wait_for_active(timeout=10.0)
+
         self.sync_chain()
 
         # Start Block Consumer Thread
@@ -511,6 +520,13 @@ class SubChain(Blockchain):
 
     def stop(self):
         """Stop the background block consumer."""
+        try:
+            while not self.ordering_service.commit_queue.empty():
+                block = self.ordering_service.commit_queue.get_nowait()
+                _process_and_finalize_single_block(self, block)
+        except Exception as e:
+            logger.warning(f"Error draining commit_queue during stop: {e}")
+
         self.running = False
         if self.consumer_thread:
             self.consumer_thread.join(timeout=2.0)
