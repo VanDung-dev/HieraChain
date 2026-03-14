@@ -165,7 +165,7 @@ class Block:
         Returns:
             Block instance
         """
-        return cls(
+        block = cls(
             index=data["index"],
             events=data["events"],
             timestamp=data["timestamp"],
@@ -175,6 +175,10 @@ class Block:
             creator_id=data.get("creator_id"),
             signature=data.get("signature")
         )
+        # Preserve the hash from stored data to ensure deterministic rehydration
+        if "hash" in data:
+            block.hash = data["hash"]
+        return block
 
     def __str__(self) -> str:
         """String representation of the block."""
