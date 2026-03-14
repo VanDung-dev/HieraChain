@@ -26,23 +26,54 @@ async def run_node(node_id: str, consensus: BFTConsensus, zmq_node: ZmqNode):
     """Run a single node's main loop"""
     logger.info(f"Starting Node {node_id}")
     
-    # Define message handler
-    def msg_handler(msg, sender):
-        try:
-            # logger.info(f"{node_id} received from {sender}: {msg.keys()}")
-            if "message_type" in msg:
-                # It's a BFT message
-                consensus.handle_message(msg)
-            elif msg.get("type") == "client_request":
-                logger.info(f"{node_id} received client request")
-                consensus.request(msg["operation"])
-        except Exception as e:
-            logger.error(f"Error handling message in {node_id}: {e}")
-
+    msg_handler = create_message_handler(node_id, consensus)
     zmq_node.set_handler(msg_handler)
     await zmq_node.start()
     
-    # Keep running
+    await node_main_loop(node_id, zmq_node)
+
+
+def create_message_handler(node_id: str, consensus: BFTConsensus):
+    """Factory function to create message handler with dependencies"""
+    def msg_handler(msg, sender):
+        handle_node_message(node_id, consensus, msg)
+    return msg_handler
+
+
+def handle_node_message(node_id: str, consensus: BFTConsensus, msg: dict):
+    """Handle incoming message for a node"""
+    try:
+        message_type = get_message_type(msg)
+        if message_type == "bft":
+            process_bft_message(consensus, msg)
+        elif message_type == "client_request":
+            process_client_request(node_id, consensus, msg)
+    except Exception as e:
+        logger.error(f"Error handling message in {node_id}: {e}")
+
+
+def get_message_type(msg: dict) -> str:
+    """Determine the type of incoming message"""
+    if "message_type" in msg:
+        return "bft"
+    if msg.get("type") == "client_request":
+        return "client_request"
+    return "unknown"
+
+
+def process_bft_message(consensus: BFTConsensus, msg: dict):
+    """Process BFT consensus message"""
+    consensus.handle_message(msg)
+
+
+def process_client_request(node_id: str, consensus: BFTConsensus, msg: dict):
+    """Process client request message"""
+    logger.info(f"{node_id} received client request")
+    consensus.request(msg["operation"])
+
+
+async def node_main_loop(node_id: str, zmq_node: ZmqNode):
+    """Main loop for node - runs until cancelled"""
     try:
         while True:
             await asyncio.sleep(1)
@@ -117,26 +148,39 @@ def submit_client_request(consensus_map, client_request):
 
 
 async def monitor_consensus(consensus_map, timeout_seconds=15):
+    """
+    Monitor consensus state until supermajority is reached or timeout.
+    
+    Args:
+        consensus_map: Dict of node_id -> BFTConsensus
+        timeout_seconds: Maximum time to wait for consensus
+    
+    Returns:
+        bool: True if consensus reached, False if timeout
+    """
     logger.info("Monitoring consensus state...")
-    start_time = asyncio.get_running_loop().time()
-    success = False
-
-    while asyncio.get_running_loop().time() - start_time < timeout_seconds:
-        committed_count = 0
-        for nid, cons in consensus_map.items():
-            status = cons.get_consensus_status()
-            if status["state"] == "committed":
-                committed_count += 1
-
-        if committed_count >= 3:
-            logger.info("SUCCESS: Supermajority reached consensus!")
-            success = True
-            break
-
-        await asyncio.sleep(0.5)
-
-    if not success:
+    
+    # Calculate threshold based on node count: need > 2f nodes (Byzantine quorum)
+    threshold = len(consensus_map) - len(consensus_map) // 3
+    
+    async def check_consensus_reached() -> bool:
+        """Check if consensus has been reached"""
+        committed_count = sum(
+            1 for cons in consensus_map.values()
+            if cons.get_consensus_status()["state"] == "committed"
+        )
+        return committed_count >= threshold
+    
+    try:
+        async with asyncio.timeout(timeout_seconds):
+            while True:
+                if await check_consensus_reached():
+                    logger.info(f"SUCCESS: Supermajority ({threshold}/{len(consensus_map)}) reached consensus!")
+                    return True
+                await asyncio.sleep(0.5)
+    except asyncio.TimeoutError:
         logger.error("FAILED to reach consensus in time.")
+        return False
 
 
 async def cleanup_tasks(tasks):

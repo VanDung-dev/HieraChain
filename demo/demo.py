@@ -21,9 +21,8 @@ import atexit
 import os
 
 # Import Ledger components
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.domains.generic.utils.entity_tracer import EntityTracer
-from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
+from hierachain.hierarchical import HierarchyManager
+from hierachain.domains.generic.utils import EntityTracer, CrossChainValidator
 
 
 # Custom logger to capture all output
@@ -466,15 +465,15 @@ def demonstrate_cross_chain_validation(hierarchy_manager):
 def generate_system_statistics(hierarchy_manager):
     print("10. Generating System Statistics...")
 
-    system_stats = None
+    _system_stats = None
     try:
-        system_stats = hierarchy_manager.get_system_integrity_report()
+        _system_stats = hierarchy_manager.get_system_integrity_report()
 
-        if system_stats:
-            print_system_overview(system_stats)
+        if _system_stats:
+            print_system_overview(_system_stats)
 
         print("\n   Individual Chain Statistics:")
-        for chain_name, details in system_stats["sub_chain_details"].items():
+        for chain_name, details in _system_stats["sub_chain_details"].items():
             print(f"     {chain_name}:")
             print(f"       Domain: {details['domain_type']}")
             print(f"       Blocks: {details['blocks']}")

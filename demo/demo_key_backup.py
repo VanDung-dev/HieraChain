@@ -9,7 +9,7 @@ import json
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from hierachain.security.key_backup_manager import KeyBackupManager, BackupError, RestoreError
+from hierachain.security import KeyBackupManager, BackupError, RestoreError
 
 # Add parent directory to path to allow importing hierachain modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
