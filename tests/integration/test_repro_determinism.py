@@ -37,7 +37,8 @@ def test_determinism():
         "storage_dir": os.path.join(data_dir, "journal"),
         "block_size": 10,
         "batch_timeout": 0.5,
-        "worker_threads": 1
+        "worker_threads": 1,
+        "db_url": f"sqlite:///{os.path.join(data_dir, 'test.db')}"
     }
     
     node = OrderingNode("node1", "localhost", True, 1.0, OrderingStatus.ACTIVE, time.time())
