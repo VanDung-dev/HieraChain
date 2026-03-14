@@ -17,8 +17,6 @@ from hierachain.network.message_cryptographic import (
     sign_message,
     verify_message,
     create_signable_payload,
-    sign_handshake_payload,
-    verify_handshake_signature,
 )
 from hierachain.network.peer_trust_manager import PeerTrustManager
 
@@ -31,12 +29,8 @@ __all__ = [
     'NetworkStatus',
     'PeerInfo',
     'SecureConnectionManager',
-    'sign_handshake_payload',
-    'verify_handshake_signature',
     'sign_message',
     'verify_message',
     'create_signable_payload',
-    'sign_handshake_payload',
-    'verify_handshake_signature',
     'PeerTrustManager'
 ]
