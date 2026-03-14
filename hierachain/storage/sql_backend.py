@@ -210,6 +210,39 @@ class SqlStorageBackend:
         finally:
             session.close()
 
+    def delete_chain(self, chain_name: str) -> bool:
+        """Delete all blocks and events for a given chain from the database.
+        
+        Used for testing/cleanup to ensure a fresh state before test runs.
+        
+        Args:
+            chain_name: The name of the chain to delete.
+            
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        session = self.Session()
+        try:
+            # Delete events first (foreign key dependency)
+            events_deleted = session.query(EventModel).filter_by(chain_name=chain_name).delete()
+            blocks_deleted = session.query(BlockModel).filter_by(chain_name=chain_name).delete()
+            session.commit()
+            logger.info(
+                "Chain data deleted from DB",
+                chain_name=chain_name,
+                blocks_deleted=blocks_deleted,
+                events_deleted=events_deleted
+            )
+            return True
+        except Exception as e:
+            session.rollback()
+            logger.error("Failed to delete chain data", operation="delete_chain")
+            if getattr(settings, 'LOG_SQL_DETAIL', False):
+                logger.debug("Delete chain error detail", error_type=type(e).__name__)
+            return False
+        finally:
+            session.close()
+
     def close(self):
         """Close connection pool."""
         self.Session.remove()
