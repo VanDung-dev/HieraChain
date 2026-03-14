@@ -101,8 +101,13 @@ def test_proof_storage(adapter):
         "metadata": {"summary": "test proof"}
     }
     
-    result = adapter.store_proof(main_chain, sub_chain, proof_data["proof_hash"], 
-                                  proof_data["block_index"], proof_data["metadata"])
+    _result = adapter.store_proof(
+        main_chain,
+        sub_chain,
+        proof_data["proof_hash"],
+        proof_data["block_index"],
+        proof_data["metadata"]
+    )
     # This may return True or False depending on implementation
 
 
