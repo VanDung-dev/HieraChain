@@ -27,7 +27,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.24">
+      <meta name="generator" content="zensical-0.0.27">
     
     
       
@@ -38,7 +38,7 @@
       
         
       
-      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.28978c9b.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.50057488.min.css">
       
         
           
@@ -83,11 +83,11 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer"></label>
+    <label class="md-overlay" for="__drawer" aria-label="Thanh điều hướng"></label>
     <div data-md-component="skip">
       
         
-        <a href="#bft-consensus-hierachainhierarchicalconsensusbft" class="md-skip">
+        <a href="#bft-consensus-hierachainconsensusbft" class="md-skip">
           Bỏ qua
         </a>
       
@@ -107,7 +107,7 @@
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
 
     </a>
-    <label class="md-header__button md-icon" for="__drawer">
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Thanh điều hướng">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
@@ -191,7 +191,7 @@
     
       
       
-        <label class="md-header__button md-icon" for="__search">
+        <label class="md-header__button md-icon" for="__search" aria-label="Tìm kiếm">
           
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
         </label>
@@ -3116,7 +3116,7 @@
   
 
 
-<h1 id="bft-consensus-hierachainhierarchicalconsensusbft">BFT Consensus (<code>hierachain/hierarchical/consensus/bft/*</code>)</h1>
+<h1 id="bft-consensus-hierachainconsensusbft">BFT Consensus (<code>hierachain/consensus/bft/*</code>)</h1>
 <h2 id="muc-ich">Mục đích</h2>
 <p>BFT Consensus là cơ chế đồng thuận chịu lỗi Byzantine, cho phép hệ thống HieraChain hoạt động chính xác ngay cả khi có đến <code>f</code> nodes bị lỗi hoặc thực hiện hành vi độc hại, trong tổng số <code>3f + 1</code> nodes. Đoạn mã này tập trung cung cấp lõi bảo mật đồng thuận mạng ngang hàng.</p>
 <h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
@@ -3125,56 +3125,64 @@
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg></span> <strong>BFT Consensus</strong></p>
 <hr />
-<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/consensus.py</code></p>
-<ul>
-<li>Lớp giao tiếp chính (<code>BFTConsensus</code>) xử lý vòng đời của đồng thuận PBFT.</li>
+<p><strong>File</strong>: <code>hierachain/consensus/bft/consensus.py</code></p>
+</li>
+<li>
+<p>Lớp giao tiếp chính (<code>BFTConsensus</code>) xử lý vòng đời của đồng thuận PBFT.</p>
+</li>
 <li>Thực thi các pha: Pre-Prepare, Prepare, và Commit.</li>
-<li>Đầu mối lưu và tiếp nhận Operation từ hệ thống vào quá trình bỏ phiếu.</li>
-</ul>
+<li>
+<p>Đầu mối lưu và tiếp nhận Operation từ hệ thống vào quá trình bỏ phiếu.</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg></span> <strong>Cryptographic Operations</strong></p>
 <hr />
-<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/cryptographic.py</code></p>
-<ul>
-<li>Ký và xác minh chữ ký điện tử (<code>Ed25519</code>) cho Data payload.</li>
+<p><strong>File</strong>: <code>hierachain/consensus/bft/cryptographic.py</code></p>
+</li>
+<li>
+<p>Ký và xác minh chữ ký điện tử (<code>Ed25519</code>) cho Data payload.</p>
+</li>
 <li>Hash thông điệp nhằm tạo Proof xác thực dữ liệu bất biến.</li>
-<li>Tích hợp thuật toán Zero-Knowledge Proof (ZK).</li>
-</ul>
+<li>
+<p>Tích hợp thuật toán Zero-Knowledge Proof (ZK).</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4v2h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg></span> <strong>Network Transport</strong></p>
 <hr />
-<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/network.py</code></p>
-<ul>
-<li>Chịu trách nhiệm truyền thông tin sử dụng ZeroMQ (ZMQ).</li>
-<li>Hỗ trợ quảng bá <code>broadcast</code> P2P hoặc định tuyến <code>forward_to_primary</code>.</li>
-</ul>
+<p><strong>File</strong>: <code>hierachain/consensus/bft/network.py</code></p>
+</li>
+<li>
+<p>Chịu trách nhiệm truyền thông tin sử dụng ZeroMQ (ZMQ).</p>
+</li>
+<li>
+<p>Hỗ trợ quảng bá <code>broadcast</code> P2P hoặc định tuyến <code>forward_to_primary</code>.</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 4v12h18V4zm0-2h18a2 2 0 0 1 2 2v12c0 .53-.21 1.04-.59 1.41-.37.38-.88.59-1.41.59h-7v2h2v2H8v-2h2v-2H3c-.53 0-1.04-.21-1.41-.59C1.21 17.04 1 16.53 1 16V4c0-1.11.89-2 2-2m7.84 6.93c.31-.3.73-.48 1.16-.48.43.01.85.18 1.16.49.3.3.48.72.48 1.15 0 .44-.18.85-.48 1.16-.31.31-.73.48-1.16.48s-.85-.18-1.16-.48c-.3-.31-.48-.72-.48-1.16 0-.43.18-.85.48-1.16M10.07 12a2.68 2.68 0 0 0 3.86 0c.51-.5.8-1.19.8-1.91s-.29-1.42-.8-1.93-1.21-.8-1.93-.8-1.42.29-1.93.8-.8 1.21-.8 1.93.29 1.41.8 1.91M6 10.09A6.45 6.45 0 0 1 12 6c2.73 0 5.06 1.7 6 4.09a6.42 6.42 0 0 1-6 4.09c-2.73 0-5.06-1.68-6-4.09"/></svg></span> <strong>View Manager</strong></p>
 <hr />
-<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/view_manager.py</code></p>
-<ul>
-<li>Quản lý trạng thái Node và Timeout để kích hoạt luân chuyển Primary Node.</li>
-<li>Tiến hành xác thực <code>validate_view_change_proof</code>.</li>
-</ul>
+<p><strong>File</strong>: <code>hierachain/consensus/bft/view_manager.py</code></p>
+</li>
+<li>
+<p>Quản lý trạng thái Node và Timeout để kích hoạt luân chuyển Primary Node.</p>
+</li>
+<li>
+<p>Tiến hành xác thực <code>validate_view_change_proof</code>.</p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.6 16.6 4.6-4.6-4.6-4.6L16 6l6 6-6 6zm-5.2 0L4.8 12l4.6-4.6L8 6l-6 6 6 6z"/></svg></span> <strong>Types &amp; Enums</strong></p>
 <hr />
-<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/types.py</code></p>
-<ul>
-<li>Định nghĩa đối tượng lõi <code>BFTMessage</code> và enum trạng thái vòng đời BFT (<code>ConsensusState</code>, <code>MessageType</code>).</li>
-</ul>
+<p><strong>File</strong>: <code>hierachain/consensus/bft/types.py</code></p>
+</li>
+<li>
+<p>Định nghĩa đối tượng lõi <code>BFTMessage</code> và enum trạng thái vòng đời BFT (<code>ConsensusState</code>, <code>MessageType</code>).</p>
 </li>
 </ul>
 </div>
 <h2 id="cac-thanh-phan-chinh">Các thành phần chính</h2>
 <h3 id="1-bftconsensus-main-class">1. BFTConsensus (Main Class)</h3>
-<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/consensus.py</code></p>
+<p><strong>File</strong>: <code>hierachain/consensus/bft/consensus.py</code></p>
 <p>Lớp lõi thực thi chu trình BFT:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.consensus.bft.consensus</span><span class="w"> </span><span class="kn">import</span> <span class="n">BFTConsensus</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus</span><span class="w"> </span><span class="kn">import</span> <span class="n">BFTConsensus</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">bft</span> <span class="o">=</span> <span class="n">BFTConsensus</span><span class="p">(</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">node_id</span><span class="o">=</span><span class="s2">&quot;node_1&quot;</span><span class="p">,</span>
@@ -3191,8 +3199,8 @@
 </code></pre></div>
 <p>BFT chỉ commit operation khi đã thu được đủ <code>2f + 1</code> messages hợp lệ cho pha hiện tại.</p>
 <h3 id="2-bft-cryptographic-operations">2. BFT Cryptographic Operations</h3>
-<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/cryptographic.py</code></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.consensus.bft.cryptographic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<p><strong>File</strong>: <code>hierachain/consensus/bft/cryptographic.py</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.bft.cryptographic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">sign_message</span><span class="p">,</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">verify_message_signature</span><span class="p">,</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">hash_request</span><span class="p">,</span>
@@ -3206,27 +3214,28 @@
 <a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">is_valid</span> <span class="o">=</span> <span class="n">verify_message_signature</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">public_keys</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="3-network-transport">3. Network Transport</h3>
-<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/network.py</code></p>
+<p><strong>File</strong>: <code>hierachain/consensus/bft/network.py</code></p>
 <p>Giao tiếp với độ trễ cực thấp:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.consensus.bft.network</span><span class="w"> </span><span class="kn">import</span> <span class="n">broadcast</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.bft</span><span class="w"> </span><span class="kn">import</span> <span class="n">broadcast</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Quảng bá thông điệp BFT tới toàn bộ Endpoints cấu hình </span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">broadcast</span><span class="p">(</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">sender_node</span><span class="o">=</span><span class="n">zmq_node</span><span class="p">,</span> 
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">message</span><span class="o">=</span><span class="n">bft_message</span><span class="p">,</span> 
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">sender_node</span><span class="o">=</span><span class="n">zmq_node</span><span class="p">,</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">message</span><span class="o">=</span><span class="n">bft_message</span><span class="p">,</span>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">all_node_endpoints</span><span class="o">=</span><span class="n">endpoints</span>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">)</span>
 </code></pre></div>
 <h3 id="4-view-change-manager">4. View Change Manager</h3>
-<p><strong>File</strong>: <code>hierachain/hierarchical/consensus/bft/view_manager.py</code></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.consensus.bft.view_manager</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<p><strong>File</strong>: <code>hierachain/consensus/bft/view_manager.py</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.bft.view_manager</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">validate_view_change_proof</span><span class="p">,</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">start_view_change_timer</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">)</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Hệ thống tự động thiết lập view_change nếu time out xảy ra</span>
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># và đòi hỏi Proof bao hàm 2f+1 signatures</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">is_valid_proof</span> <span class="o">=</span> <span class="n">validate_view_change_proof</span><span class="p">(</span><span class="n">view</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">proof</span><span class="o">=</span><span class="n">proof_list</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">node_public_keys</span><span class="o">=</span><span class="n">keys</span><span class="p">,</span> <span class="n">verify_sig_func</span><span class="o">=</span><span class="n">verify_message_signature</span><span class="p">)</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">is_valid_proof</span> <span class="o">=</span> <span class="n">validate_view_change_proof</span><span class="p">(</span><span class="n">view</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">proof</span><span class="o">=</span><span class="n">proof_list</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">node_public_keys</span><span class="o">=</span><span class="n">keys</span><span class="p">,</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>                                            <span class="n">verify_sig_func</span><span class="o">=</span><span class="n">verify_message_signature</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="luong-xu-ly-protocol-flow">Luồng xử lý (Protocol Flow)</h2>
 <pre class="mermaid"><code>sequenceDiagram
@@ -3283,7 +3292,7 @@
 <summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
 <p><strong>FACT</strong></p>
 <ul>
-<li>Mã nguồn thực thi thuộc nhóm: <code>hierachain/hierarchical/consensus/bft/*.py</code> (consensus, cryptographic, network, view_manager, types).</li>
+<li>Mã nguồn thực thi thuộc nhóm: <code>hierachain/consensus/bft/*.py</code> (consensus, cryptographic, network, view_manager, types).</li>
 <li>Network implementation chạy qua ZeroMQ dựa trên các hàm <code>send_via_zmq</code> và <code>broadcast</code> thay vì HTTP phổ thông.</li>
 </ul>
 <p><strong>DECISION</strong></p>
@@ -3424,7 +3433,7 @@
       <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Đã sao chép","clipboard.copy":"Sao chép vào bộ nhớ tạm","search.result.more.one":"1 từ khác trong trang","search.result.more.other":"# từ khác trong trang","search.result.none":"Không tìm thấy tài liệu liên quan","search.result.one":"1 tài liệu liên quan","search.result.other":"# tài liệu liên quan","search.result.placeholder":"Nhập để bắt đầu tìm kiếm","search.result.term.missing":"Không","select.version":"Chọn phiên bản"},"version":null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.16f8adc2.min.js"></script>
+      <script src="../../assets/javascripts/bundle.5fd3284f.min.js"></script>
       
     
   </body>
