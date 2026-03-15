@@ -37,15 +37,15 @@ class ProcessPoolManager:
         
         Args:
             max_workers: Explicit override for number of processes.
-                         If None, uses 50% of CPU cores (min 1).
+                         If None, uses 75% of CPU cores for better concurrency.
         """
         if self._executor:
             return
 
         if max_workers is None:
             cpu_count = os.cpu_count() or 1
-            # Secure default: 50% of cores, at least 1, at most cpu_count
-            max_workers = max(1, cpu_count // 2)
+            # Use 75% of cores for better concurrency under load
+            max_workers = max(2, int(cpu_count * 0.75))
         
         self._executor = ProcessPoolExecutor(max_workers=max_workers)
         logger.info(f"ProcessPool initialized with {max_workers} worker(s) (Total CPU: {os.cpu_count()})")
