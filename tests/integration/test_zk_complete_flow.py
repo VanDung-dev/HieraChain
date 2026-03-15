@@ -9,8 +9,8 @@ import time
 from types import SimpleNamespace
 
 from hierachain.core import Block
-from hierachain.core.consensus import ProofOfFederation
-from hierachain.core.consensus import ProofOfAuthority
+from hierachain.consensus import ProofOfFederation
+from hierachain.consensus import ProofOfAuthority
 from hierachain.security import get_zk_prover, ZKProvingError, reset_zk_prover
 from hierachain.security.verify import (
     get_zk_verifier, ZKVerificationError, reset_zk_verifier

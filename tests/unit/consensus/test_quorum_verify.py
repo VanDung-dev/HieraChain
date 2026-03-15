@@ -2,7 +2,7 @@
 Unit tests for consensus quorum verification.
 """
 import pytest
-from hierachain.core.consensus import ProofOfFederation
+from hierachain.consensus import ProofOfFederation
 from hierachain.security import generate_key_pair_hex, KeyPair
 
 

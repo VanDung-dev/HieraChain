@@ -7,7 +7,7 @@ including message handling, consensus phases, and node communication.
 
 import time
 
-from hierachain.hierarchical.consensus import (
+from hierachain.consensus import (
     BFTConsensus,
     create_bft_network,
     ConsensusError,

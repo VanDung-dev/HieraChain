@@ -7,7 +7,7 @@ including validator management, round-robin leader selection, and block validati
 
 import time
 
-from hierachain.core.consensus import ProofOfFederation
+from hierachain.consensus import ProofOfFederation
 from hierachain.core import Block
 
 

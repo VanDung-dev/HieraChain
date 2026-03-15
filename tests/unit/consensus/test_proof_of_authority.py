@@ -9,7 +9,7 @@ import time
 import hashlib
 from typing import Any
 
-from hierachain.core.consensus import ProofOfAuthority
+from hierachain.consensus import ProofOfAuthority
 from hierachain.core import Block
 
 
