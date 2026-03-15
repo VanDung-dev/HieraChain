@@ -5,7 +5,7 @@ View change and timer logic for BFT consensus.
 import logging
 import threading
 from typing import Any, Callable
-from hierachain.hierarchical.consensus.bft.types import BFTMessage, MessageType
+from hierachain.consensus.bft.types import BFTMessage, MessageType
 
 logger = logging.getLogger(__name__)
 

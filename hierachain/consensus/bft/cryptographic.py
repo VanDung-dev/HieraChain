@@ -8,7 +8,7 @@ from typing import Any
 from hierachain.config.settings import settings
 from hierachain.security.security_utils import verify_signature
 from hierachain.security.verify.zk_verifier import ZKVerifier
-from hierachain.hierarchical.consensus.bft.types import BFTMessage
+from hierachain.consensus.bft.types import BFTMessage
 
 logger = logging.getLogger(__name__)
 

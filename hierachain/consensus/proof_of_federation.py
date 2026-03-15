@@ -14,7 +14,7 @@ import hashlib
 import logging
 from typing import Any
 
-from hierachain.core.consensus.base_consensus import (
+from hierachain.consensus.base_consensus import (
     BaseConsensus,
     _verify_block_zk_proof
 )

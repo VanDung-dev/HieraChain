@@ -5,7 +5,7 @@ Network and communication logic for BFT consensus.
 import logging
 import asyncio
 from typing import Any, Callable
-from hierachain.hierarchical.consensus.bft.types import BFTMessage
+from hierachain.consensus.bft.types import BFTMessage
 
 logger = logging.getLogger(__name__)
 

@@ -8,7 +8,7 @@ hierachain.hierarchical.consensus.bft package.
 import logging
 from typing import Any
 
-from hierachain.hierarchical.consensus.bft import (
+from hierachain.consensus.bft import (
     BFTConsensus,
     ConsensusError,
     BFTMessage,
