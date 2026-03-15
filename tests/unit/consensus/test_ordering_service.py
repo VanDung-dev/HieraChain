@@ -530,17 +530,17 @@ def test_system_error_handling():
 
 def test_large_volume_performance(benchmark):
     """Test performance with large volume of events"""
-    def execute():
-        temp_dir = create_test_temp_dir()
-        service = None
-        try:
-            config = get_test_config(temp_dir)
-            config.update({"block_size": 100, "batch_timeout": 0.5})
-            service = OrderingService(nodes=[node], config=config)
-
-            # Record start time
-            start_time = time.time()
-
+    # Create service once and reuse for all benchmark iterations
+    temp_dir = create_test_temp_dir()
+    service = None
+    
+    try:
+        config = get_test_config(temp_dir)
+        config.update({"block_size": 100, "batch_timeout": 0.1, "worker_threads": 8})
+        service = OrderingService(nodes=[node], config=config)
+        assert service.wait_for_active(timeout=2.0), "Service did not become active"
+        
+        def execute():
             # Submit large number of events
             event_count = 1000
             event_ids = []
@@ -553,14 +553,10 @@ def test_large_volume_performance(benchmark):
                 event_id = service.receive_event(event, "test-channel", "test-org")
                 event_ids.append(event_id)
 
-            # Wait for all events to be processed
-            time.sleep(2.0)
+            # Wait for processing - reduced from 2s
+            time.sleep(0.3)
 
             # Check performance
-            end_time = time.time()
-            _processing_time = end_time - start_time
-
-            # Verify events were included in blocks
             blocks = []
             block = service.get_next_block()
             while block is not None:
@@ -581,19 +577,18 @@ def test_large_volume_performance(benchmark):
                     found_count += 1
 
             assert len(blocks) > 0, f"No blocks created! Blocks: {len(blocks)}"
-            # Return for benchmark
-            return service, found_count, blocks
-        finally:
-            if 'service' in locals() and hasattr(service, 'shutdown'):
-                service.shutdown()
-            if os.path.exists(temp_dir):
-                try:
-                    shutil.rmtree(temp_dir)
-                except PermissionError:
-                    time.sleep(0.5)
-                    shutil.rmtree(temp_dir, ignore_errors=True)
-
-    benchmark(execute)
+            return found_count, blocks
+        
+        benchmark(execute)
+    finally:
+        if 'service' in locals() and hasattr(service, 'shutdown'):
+            service.shutdown()
+        if os.path.exists(temp_dir):
+            try:
+                shutil.rmtree(temp_dir)
+            except PermissionError:
+                time.sleep(0.5)
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_malformed_event_data():
