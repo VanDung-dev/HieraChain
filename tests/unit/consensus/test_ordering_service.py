@@ -185,22 +185,23 @@ def _cleanup_ordering_service(service: OrderingService | None, temp_dir: str | N
 
 def test_block_creation(benchmark: Any) -> None:
     """Test block creation when batch size is reached"""
-
-    def execute() -> tuple[OrderingService, Block]:
-        service: OrderingService | None = None
-        temp_dir: str | None = None
-        try:
-            service, temp_dir = _start_ordering_service_for_block_test(3, 0.1)
+    # Create service once and reuse for all benchmark iterations
+    temp_dir = create_test_temp_dir()
+    service = None
+    
+    try:
+        service, _ = _start_ordering_service_for_block_test(3, 0.1)
+        
+        def execute() -> Block:
             _submit_test_events(service, 3)
-            block = _wait_for_block(service, timeout=1.0)
-            assert service is not None
+            block = _wait_for_block(service, timeout=0.5)
             assert block is not None
             assert len(block.events) == 3
-            return service, block
-        finally:
-            _cleanup_ordering_service(service, temp_dir)
-
-    benchmark(execute)
+            return block
+        
+        benchmark(execute)
+    finally:
+        _cleanup_ordering_service(service, temp_dir)
 
 
 def test_invalid_event_handling():
