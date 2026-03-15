@@ -318,7 +318,7 @@ event_id = sub_chain.add_event({
 
 ```python
 from hierachain.hierarchical.sub_chain import SubChain
-from hierachain.hierarchical.consensus.bft.consensus import BFTConsensus
+from hierachain.consensus import BFTConsensus
 
 # Khởi tạo BFT
 bft = BFTConsensus(

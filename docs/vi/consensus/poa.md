@@ -4,7 +4,7 @@ description: Đồng thuận hiệu năng cao dành cho các tổ chức đượ
 icon: material/account-check-outline
 ---
 
-# Proof of Authority - PoA (`hierachain/core/consensus/proof_of_authority.py`)
+# Proof of Authority - PoA (`hierachain/consensus/proof_of_authority.py`)
 
 ## Mục đích
 
@@ -12,7 +12,7 @@ PoA trong HieraChain Ledger là cơ chế sinh khối cho mạng chính (`Main C
 
 ## Kiến trúc & khái niệm
 
-* Lớp `ProofOfAuthority` kế thừa `BaseConsensus` (`hierachain/core/consensus/proof_of_authority.py`).
+* Lớp `ProofOfAuthority` kế thừa `BaseConsensus` (`hierachain/consensus/proof_of_authority.py`).
 * Xác định Authorities thông qua định danh `authority_id` và Public Key (sở hữu mã xác minh chữ ký).
 * Phân bổ tạo khối theo lịch quy ước (`Round-Robin`) giữa các node để tối ưu công bằng tính toán.
 * Áp dụng Zero-Knowledge (ZK Proof) để đảm bảo thông tin nội bộ của khối thuộc Enterprise được bảo mật hoàn toàn.
@@ -29,11 +29,11 @@ PoA trong HieraChain Ledger là cơ chế sinh khối cho mạng chính (`Main C
 Ví dụ thêm Node sinh khối mới:
 
 ```python
-from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
+from hierachain.consensus import ProofOfAuthority
 
 poa = ProofOfAuthority()
 poa.add_authority("node_1", metadata={"public_key": "Bằng chứng..."})
-print(poa.is_authority("node_1")) # True
+print(poa.is_authority("node_1"))  # True
 ```
 
 ## Cấu hình
@@ -74,7 +74,7 @@ print(poa.is_authority("node_1")) # True
 
     **FACT**
     
-    * File `hierachain/core/consensus/proof_of_authority.py` triển khai Round-Robin cho thuật toán Proof-of-Authority bằng phương thức `get_next_authority`.
+    * File `hierachain/consensus/proof_of_authority.py` triển khai Round-Robin cho thuật toán Proof-of-Authority bằng phương thức `get_next_authority`.
     * Cấm các event type phục vụ tiền điện tử (`mining`, `transaction`).
     
     **DECISION**

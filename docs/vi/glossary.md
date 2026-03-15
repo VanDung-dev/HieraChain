@@ -22,9 +22,9 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | Recovery | Phục hồi | Cơ chế phục hồi lỗi; `hierachain/error_mitigation/recovery_engine.py`. |
 | Ordering | Sắp xếp | Xếp thứ tự Event; `hierachain/consensus/ordering/*`. |
 | Transport | Truyền tải | Giao tiếp mạng; `hierachain/network/zmq_transport.py`. |
-| Byzantine Fault Tolerance | BFT | Chịu lỗi Byzantine; `hierachain/hierarchical/consensus/bft/*`. |
-| Proof of Authority | PoA | Đồng thuận validator tĩnh; `hierachain/core/consensus/proof_of_authority.py`. |
-| Proof of Federation | PoF | Đồng thuận liên minh; `hierachain/core/consensus/proof_of_federation.py`. |
+| Byzantine Fault Tolerance | BFT | Chịu lỗi Byzantine; `hierachain/consensus/bft/*`. |
+| Proof of Authority | PoA | Đồng thuận validator tĩnh; `hierachain/consensus/proof_of_authority.py`. |
+| Proof of Federation | PoF | Đồng thuận liên minh; `hierachain/consensus/proof_of_federation.py`. |
 | API Key | API key | Khóa truy cập API; `hierachain/security/verify/api_key_verifier.py`. |
 | Resource Guard | Resource Guard | Middleware bảo vệ tài nguyên; `hierachain/security/resource_guard.py`. |
 | Entity Tracer | Truy vết thực thể | Truy vết Event theo thực thể; `hierachain/domains/generic/utils/entity_tracer.py`. |

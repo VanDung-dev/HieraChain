@@ -4,11 +4,11 @@ description: Giao thức xoay vòng lãnh đạo dành riêng cho mạng liên m
 icon: material/account-group-outline
 ---
 
-# Proof of Federation - PoF (`hierachain/core/consensus/proof_of_federation.py`)
+# Proof of Federation - PoF (`hierachain/consensus/proof_of_federation.py`)
 
 ## Mục đích
 
-PoF trong hệ thống HieraChain (nằm tại `hierachain/core/consensus/proof_of_federation.py`) là biến thể nâng cấp trên mô hình Authority, tập trung vào mô hình đa đối tác (Bệnh viện, Trường học, Ngân hàng) tham gia chia sẻ sổ cái mà không có tổ chức lãnh đạo đơn bộ nào (phi tập trung một phần).
+PoF trong hệ thống HieraChain (nằm tại `hierachain/consensus/proof_of_federation.py`) là biến thể nâng cấp trên mô hình Authority, tập trung vào mô hình đa đối tác (Bệnh viện, Trường học, Ngân hàng) tham gia chia sẻ sổ cái mà không có tổ chức lãnh đạo đơn bộ nào (phi tập trung một phần).
 
 ## Kiến trúc & khái niệm
 
@@ -26,13 +26,13 @@ PoF trong hệ thống HieraChain (nằm tại `hierachain/core/consensus/proof_
 Ví dụ xác nhận Leader:
 
 ```python
-from hierachain.core.consensus.proof_of_federation import ProofOfFederation
+from hierachain.consensus import ProofOfFederation
 
 pof = ProofOfFederation()
 pof.add_validator("Hospital_A")
 pof.add_validator("Hospital_B")
-print(pof.get_current_leader(0)) # Hospital_A
-print(pof.get_current_leader(1)) # Hospital_B
+print(pof.get_current_leader(0))  # Hospital_A
+print(pof.get_current_leader(1))  # Hospital_B
 ```
 
 ## Cấu hình

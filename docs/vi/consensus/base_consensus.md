@@ -4,7 +4,7 @@ description: Giao diện chuẩn (Abstract Base Class) cho tất cả các cơ c
 icon: material/puzzle-outline
 ---
 
-# Base Consensus (`hierachain/core/consensus/base_consensus.py`)
+# Base Consensus (`hierachain/consensus/base_consensus.py`)
 
 ## Mục đích
 
@@ -12,7 +12,7 @@ icon: material/puzzle-outline
 
 ## Kiến trúc & khái niệm
 
-* Lớp `BaseConsensus` (nằm tại `hierachain/core/consensus/base_consensus.py`) định nghĩa các abstract methods cơ bản.
+* Lớp `BaseConsensus` (nằm tại `hierachain/consensus/base_consensus.py`) định nghĩa các abstract methods cơ bản.
 * Nó hoạt động như một lớp lọc, kiểm tra sự kiện để loại bỏ các thuật ngữ tiền điện tử không phù hợp với ngữ cảnh doanh nghiệp (như `mining`, `coin`, `wallet`).
 * Tích hợp chuẩn giao tiếp mật mã Zero-Knowledge (ZK Proof) để xác thực tính hợp lệ của block mà không làm lộ dữ liệu nội bộ gốc.
 
@@ -28,7 +28,8 @@ icon: material/puzzle-outline
 Ví dụ sử dụng (tích hợp trong custom consensus):
 
 ```python
-from hierachain.core.consensus.base_consensus import BaseConsensus
+from hierachain.consensus import BaseConsensus
+
 
 class MyCustomConsensus(BaseConsensus):
     def validate_block(self, block, previous_block):
@@ -72,7 +73,7 @@ class MyCustomConsensus(BaseConsensus):
 
     **FACT**
     
-    * Mã nguồn hiện diện tại: `hierachain/core/consensus/base_consensus.py`.
+    * Mã nguồn hiện diện tại: `hierachain/consensus/base_consensus.py`.
     * Tự động gọi hàm `_is_event_structure_valid` để rà soát sự kiện block.
     
     **DECISION**

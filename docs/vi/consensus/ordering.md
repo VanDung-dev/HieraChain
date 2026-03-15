@@ -310,7 +310,7 @@ ORDERING_CONFIG = {
     **FACT**
 
     - Ordering Service: `hierachain/consensus/ordering/*.py` (service, block_builder, certifier, processor, storage, maintenance, metrics, types, utils)
-    - BFT Consensus: `hierachain/hierarchical/consensus/bft/*.py` (consensus, cryptographic, network, view_manager, types)
+    - BFT Consensus: `hierachain/consensus/bft/*.py` (consensus, cryptographic, network, view_manager, types)
     - Ordering Service sử dụng facade pattern với các thành phần chuyên biệt
     - BFT implementation theo PBFT protocol với 3-phase commit
 

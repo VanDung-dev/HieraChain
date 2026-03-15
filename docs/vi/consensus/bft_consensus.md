@@ -4,7 +4,7 @@ description: Byzantine Fault Tolerance — Cơ chế đồng thuận chịu lỗ
 icon: material/shield-key
 ---
 
-# BFT Consensus (`hierachain/hierarchical/consensus/bft/*`)
+# BFT Consensus (`hierachain/consensus/bft/*`)
 
 ## Mục đích
 
@@ -18,47 +18,47 @@ BFT Consensus là cơ chế đồng thuận chịu lỗi Byzantine, cho phép h�
 
     ---
 
-    __File__: `hierachain/hierarchical/consensus/bft/consensus.py`
+    __File__: `hierachain/consensus/bft/consensus.py`
 
-    * Lớp giao tiếp chính (`BFTConsensus`) xử lý vòng đời của đồng thuận PBFT.
-    * Thực thi các pha: Pre-Prepare, Prepare, và Commit.
-    * Đầu mối lưu và tiếp nhận Operation từ hệ thống vào quá trình bỏ phiếu.
+  * Lớp giao tiếp chính (`BFTConsensus`) xử lý vòng đời của đồng thuận PBFT.
+  * Thực thi các pha: Pre-Prepare, Prepare, và Commit.
+  * Đầu mối lưu và tiếp nhận Operation từ hệ thống vào quá trình bỏ phiếu.
 
 * :material-security:{ .lg .middle } __Cryptographic Operations__
 
     ---
 
-    __File__: `hierachain/hierarchical/consensus/bft/cryptographic.py`
+    __File__: `hierachain/consensus/bft/cryptographic.py`
 
-    * Ký và xác minh chữ ký điện tử (`Ed25519`) cho Data payload.
-    * Hash thông điệp nhằm tạo Proof xác thực dữ liệu bất biến.
-    * Tích hợp thuật toán Zero-Knowledge Proof (ZK).
+  * Ký và xác minh chữ ký điện tử (`Ed25519`) cho Data payload.
+  * Hash thông điệp nhằm tạo Proof xác thực dữ liệu bất biến.
+  * Tích hợp thuật toán Zero-Knowledge Proof (ZK).
 
 * :material-network:{ .lg .middle } __Network Transport__
 
     ---
 
-    __File__: `hierachain/hierarchical/consensus/bft/network.py`
+    __File__: `hierachain/consensus/bft/network.py`
 
-    * Chịu trách nhiệm truyền thông tin sử dụng ZeroMQ (ZMQ).
-    * Hỗ trợ quảng bá `broadcast` P2P hoặc định tuyến `forward_to_primary`.
+  * Chịu trách nhiệm truyền thông tin sử dụng ZeroMQ (ZMQ).
+  * Hỗ trợ quảng bá `broadcast` P2P hoặc định tuyến `forward_to_primary`.
 
 * :material-monitor-eye:{ .lg .middle } __View Manager__
 
     ---
 
-    __File__: `hierachain/hierarchical/consensus/bft/view_manager.py`
+    __File__: `hierachain/consensus/bft/view_manager.py`
 
-    * Quản lý trạng thái Node và Timeout để kích hoạt luân chuyển Primary Node.
-    * Tiến hành xác thực `validate_view_change_proof`.
+  * Quản lý trạng thái Node và Timeout để kích hoạt luân chuyển Primary Node.
+  * Tiến hành xác thực `validate_view_change_proof`.
 
 * :material-code-tags:{ .lg .middle } __Types & Enums__
 
     ---
 
-    __File__: `hierachain/hierarchical/consensus/bft/types.py`
+    __File__: `hierachain/consensus/bft/types.py`
 
-    * Định nghĩa đối tượng lõi `BFTMessage` và enum trạng thái vòng đời BFT (`ConsensusState`, `MessageType`).
+  * Định nghĩa đối tượng lõi `BFTMessage` và enum trạng thái vòng đời BFT (`ConsensusState`, `MessageType`).
 
 </div>
 
@@ -66,12 +66,12 @@ BFT Consensus là cơ chế đồng thuận chịu lỗi Byzantine, cho phép h�
 
 ### 1. BFTConsensus (Main Class)
 
-__File__: `hierachain/hierarchical/consensus/bft/consensus.py`
+__File__: `hierachain/consensus/bft/consensus.py`
 
 Lớp lõi thực thi chu trình BFT:
 
 ```python
-from hierachain.hierarchical.consensus.bft.consensus import BFTConsensus
+from hierachain.consensus import BFTConsensus
 
 bft = BFTConsensus(
     node_id="node_1",
@@ -91,10 +91,10 @@ BFT chỉ commit operation khi đã thu được đủ `2f + 1` messages hợp l
 
 ### 2. BFT Cryptographic Operations
 
-__File__: `hierachain/hierarchical/consensus/bft/cryptographic.py`
+__File__: `hierachain/consensus/bft/cryptographic.py`
 
 ```python
-from hierachain.hierarchical.consensus.bft.cryptographic import (
+from hierachain.consensus.bft.cryptographic import (
     sign_message,
     verify_message_signature,
     hash_request,
@@ -110,34 +110,35 @@ is_valid = verify_message_signature(message, public_keys)
 
 ### 3. Network Transport
 
-__File__: `hierachain/hierarchical/consensus/bft/network.py`
+__File__: `hierachain/consensus/bft/network.py`
 
 Giao tiếp với độ trễ cực thấp:
 
 ```python
-from hierachain.hierarchical.consensus.bft.network import broadcast
+from hierachain.consensus.bft import broadcast
 
 # Quảng bá thông điệp BFT tới toàn bộ Endpoints cấu hình 
 broadcast(
-    sender_node=zmq_node, 
-    message=bft_message, 
+    sender_node=zmq_node,
+    message=bft_message,
     all_node_endpoints=endpoints
 )
 ```
 
 ### 4. View Change Manager
 
-__File__: `hierachain/hierarchical/consensus/bft/view_manager.py`
+__File__: `hierachain/consensus/bft/view_manager.py`
 
 ```python
-from hierachain.hierarchical.consensus.bft.view_manager import (
+from hierachain.consensus.bft.view_manager import (
     validate_view_change_proof,
     start_view_change_timer
 )
 
 # Hệ thống tự động thiết lập view_change nếu time out xảy ra
 # và đòi hỏi Proof bao hàm 2f+1 signatures
-is_valid_proof = validate_view_change_proof(view=1, proof=proof_list, f=1, node_public_keys=keys, verify_sig_func=verify_message_signature)
+is_valid_proof = validate_view_change_proof(view=1, proof=proof_list, f=1, node_public_keys=keys,
+                                            verify_sig_func=verify_message_signature)
 ```
 
 ## Luồng xử lý (Protocol Flow)
@@ -204,7 +205,7 @@ BFT_CONFIG = {
 
     **FACT**
 
-    * Mã nguồn thực thi thuộc nhóm: `hierachain/hierarchical/consensus/bft/*.py` (consensus, cryptographic, network, view_manager, types).
+    * Mã nguồn thực thi thuộc nhóm: `hierachain/consensus/bft/*.py` (consensus, cryptographic, network, view_manager, types).
     * Network implementation chạy qua ZeroMQ dựa trên các hàm `send_via_zmq` và `broadcast` thay vì HTTP phổ thông.
 
     **DECISION**

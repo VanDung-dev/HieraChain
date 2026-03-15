@@ -47,10 +47,10 @@ curl -s -X POST http://localhost:2661/api/v1/chains/supply_chain/submit-proof
 
 1. Xem chuẩn giao diện và triển khai hiện có:
 
-* Base: `hierachain/core/consensus/base_consensus.py`
-* PoA: `hierachain/core/consensus/proof_of_authority.py`
-* PoF: `hierachain/core/consensus/proof_of_federation.py`
-* BFT (phân cấp): `hierachain/hierarchical/consensus/bft/`
+* Base: `hierachain/consensus/base_consensus.py`
+* PoA: `hierachain/consensus/proof_of_authority.py`
+* PoF: `hierachain/consensus/proof_of_federation.py`
+* BFT (phân cấp): `hierachain/consensus/bft/`
 
 1. Tạo lớp mới kế thừa `BaseConsensus` (ví dụ):
 

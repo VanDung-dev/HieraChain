@@ -25,8 +25,8 @@ Tài liệu này ánh xạ các khái niệm (Concepts) trong tài liệu kỹ t
 | **Ordering Service** | `hierachain/consensus/ordering/service.py` | Tiếp nhận Event, sắp xếp thứ tự trước khi đóng Block. |
 | **Block Builder** | `hierachain/consensus/ordering/block_builder.py` | Xây dựng block từ các transaction đã được sắp xếp. |
 | **Block Manager** | `hierachain/consensus/ordering/block_manager.py` | Quản lý lifecycle của block trong hệ thống ordering. |
-| **Proof of Authority** | `hierachain/core/consensus/proof_of_authority.py` | Cơ chế đồng thuận PoA (dùng cho Dev/Testnet). |
-| **Proof of Federation** | `hierachain/core/consensus/proof_of_federation.py` | Cơ chế đồng thuận PoF (đa tổ chức). |
+| **Proof of Authority** | `hierachain/consensus/proof_of_authority.py` | Cơ chế đồng thuận PoA (dùng cho Dev/Testnet). |
+| **Proof of Federation** | `hierachain/consensus/proof_of_federation.py` | Cơ chế đồng thuận PoF (đa tổ chức). |
 | **BFT Consensus** | `hierachain/hierarchical/consensus/bft_consensus.py` | Đồng thuận chịu lỗi Byzantine (cho môi trường Production). |
 
 ## API & Interfaces
