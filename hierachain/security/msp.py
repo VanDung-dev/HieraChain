@@ -78,6 +78,9 @@ class CertificateAuthority:
         self.issued_certificates: dict[str, Certificate] = {}
         self.revoked_certificates: set[str] = set()
         self.ca_key = KeyPair.generate()
+        # Cache for certificate verification
+        self._verification_cache: dict[str, bool] = {}
+        self._cache_max_size = 5000
         
     def issue_certificate(
         self,
@@ -144,13 +147,14 @@ class CertificateAuthority:
         Returns:
             True if certificate is valid and not revoked
         """
+        # Fast path: check revocation first (set lookup is O(1))
         if cert_id in self.revoked_certificates:
             return False
-            
+        
         certificate = self.issued_certificates.get(cert_id)
         if not certificate:
             return False
-            
+        
         return certificate.is_valid()
 
 
@@ -160,6 +164,9 @@ class OrganizationPolicies:
     def __init__(self):
         self.policies: dict[str, dict[str, Any]] = {}
         self.role_permissions: dict[str, list[str]] = {}
+        # Cache for permission checks to reduce lookup time
+        self._permission_cache: dict[tuple[str, str], bool] = {}
+        self._cache_enabled = True
     
     def define_policy(self, policy_id: str, policy_config: dict[str, Any]) -> None:
         """Define a new organizational policy"""
@@ -187,10 +194,23 @@ class OrganizationPolicies:
     def assign_role_permissions(self, role: str, permissions: list[str]) -> None:
         """Assign permissions to a role"""
         self.role_permissions[role] = permissions
+        # Clear cache when permissions change
+        self._permission_cache.clear()
     
     def check_permission(self, role: str, permission: str) -> bool:
-        """Check if role has specific permission"""
-        return permission in self.role_permissions.get(role, [])
+        """Check if role has specific permission (with caching)"""
+        if not self._cache_enabled:
+            return permission in self.role_permissions.get(role, [])
+        
+        cache_key = (role, permission)
+        if cache_key in self._permission_cache:
+            return self._permission_cache[cache_key]
+        
+        result = permission in self.role_permissions.get(role, [])
+        # Limit cache size to prevent memory bloat
+        if len(self._permission_cache) < 10000:
+            self._permission_cache[cache_key] = result
+        return result
 
 
 class HierarchicalMSP:
@@ -210,6 +230,7 @@ class HierarchicalMSP:
             ca_config: Certificate authority configuration with hierarchical trust chains
             config: Optional configuration dict with security settings.
                   - enforce_authorization: bool, default True. Set to False for testing only!
+                  - enable_audit_logging: bool, default True. Set to False for performance
         """
         import warnings
         
@@ -232,6 +253,9 @@ class HierarchicalMSP:
         self.policies = OrganizationPolicies()
         self.audit_log: list[dict[str, Any]] = []
         self.entities: dict[str, dict[str, Any]] = {}
+        # Performance optimization flags
+        self._audit_logging_enabled = config.get("enable_audit_logging", True)
+        self._last_activity: dict[str, float] = {}
         
         # Initialize default roles
         self._initialize_default_roles()
@@ -494,7 +518,9 @@ class HierarchicalMSP:
             self.policies.assign_role_permissions(role_name, role_config["permissions"])
     
     def _log_event(self, event_type: str, details: dict[str, Any]) -> None:
-        """Log an audit event"""
+        """Log an audit event (can be disabled for performance)"""
+        if not self._audit_logging_enabled:
+            return
         self.audit_log.append({
             "timestamp": time.time(),
             "event_type": event_type,
