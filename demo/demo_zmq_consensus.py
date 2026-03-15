@@ -14,9 +14,9 @@ import logging
 # Add parent directory to path to allow importing hierachain modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from hierachain.security.security_utils import KeyPair
-from hierachain.network.zmq_transport import ZmqNode
-from hierachain.hierarchical.consensus.bft_consensus import BFTConsensus
+from hierachain.security import KeyPair
+from hierachain.network import ZmqNode
+from hierachain.consensus import BFTConsensus
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
