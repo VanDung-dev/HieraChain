@@ -206,12 +206,20 @@ class OrderingProcessor:
             logger.error(f"Batch verification failed: {e}")
 
     async def _handle_processed_batch(self, batch: list[PendingEvent]) -> None:
-        """Process each event in the batch after verification is complete."""
+        """
+        Process each event in the batch after verification is complete.
+        Uses asyncio.gather for parallel processing of independent events.
+        """
+        # Process independent events in parallel using asyncio.gather
+        tasks = []
         for event in batch:
             if event.status == EventStatus.REJECTED:
-                _remove_pending(self.pending_events, event.event_id,)
+                _remove_pending(self.pending_events, event.event_id)
                 continue
-            await self.process_single_event(event)
+            tasks.append(self.process_single_event(event))
+        
+        if tasks:
+            await asyncio.gather(*tasks)
 
     async def process_single_event(self, pending_event: PendingEvent,) -> None:
         """Process a single event through certification and ordering"""

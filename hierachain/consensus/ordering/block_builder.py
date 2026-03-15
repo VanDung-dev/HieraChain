@@ -11,8 +11,8 @@ class BlockBuilder:
     
     def __init__(self, config: dict[str, Any]):
         self.config = config
-        self.block_size = config.get("block_size", 500)
-        self.batch_timeout = config.get("batch_timeout", 2.0)
+        self.block_size = config.get("block_size", 100)
+        self.batch_timeout = config.get("batch_timeout", 0.5)
         self.current_batch: list[PendingEvent] = []
         self.current_batch_ids: set[str] = set()
         self.batch_start_time = time.time()
