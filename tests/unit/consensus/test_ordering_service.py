@@ -138,9 +138,13 @@ def test_receive_valid_event():
 def _start_ordering_service_for_block_test(block_size: int, batch_timeout: float) -> tuple[OrderingService, str]:
     temp_dir = create_test_temp_dir()
     config = get_test_config(temp_dir)
-    config.update({"block_size": block_size, "batch_timeout": batch_timeout})
+    config.update({
+        "block_size": block_size, 
+        "batch_timeout": batch_timeout,
+        "worker_threads": 4
+    })
     service = OrderingService(nodes=[node], config=config)
-    assert service.wait_for_active(timeout=5.0), "Service did not become active"
+    assert service.wait_for_active(timeout=2.0), "Service did not become active"
     return service, temp_dir
 
 
@@ -186,9 +190,9 @@ def test_block_creation(benchmark: Any) -> None:
         service: OrderingService | None = None
         temp_dir: str | None = None
         try:
-            service, temp_dir = _start_ordering_service_for_block_test(3, 0.5)
+            service, temp_dir = _start_ordering_service_for_block_test(3, 0.1)
             _submit_test_events(service, 3)
-            block = _wait_for_block(service)
+            block = _wait_for_block(service, timeout=1.0)
             assert service is not None
             assert block is not None
             assert len(block.events) == 3
@@ -338,7 +342,7 @@ def test_concurrent_event_processing(benchmark: Any) -> None:
         service = None
         try:
             config = get_test_config(temp_dir)
-            config.update({"worker_threads": 4})
+            config.update({"worker_threads": 8, "batch_timeout": 0.1})
             service = OrderingService(
                 nodes=[node],
                 config=config
@@ -355,8 +359,8 @@ def test_concurrent_event_processing(benchmark: Any) -> None:
                 event_id = service.receive_event(event, "test-channel", "test-org")
                 event_ids.append(event_id)
 
-            # Wait for processing
-            time.sleep(2.0)  # Increase wait time for 100 events
+            # Wait for processing - reduced from 2s to 0.5s with faster batch processing
+            time.sleep(0.5)
 
             # Check that all events were processed
             certified_count = 0

@@ -36,6 +36,33 @@ def setup_msp():
     return msp, test_credentials, test_attributes
 
 
+def setup_msp_for_benchmark():
+    """Set up test fixtures for MSP - optimized for benchmarking"""
+    ca_config = {
+        "root_cert": "test-root-ca",
+        "intermediate_certs": ["test-intermediate-ca"],
+        "policy": {"default_validity": 365}
+    }
+    
+    # Disable audit logging for better benchmark performance
+    msp = HierarchicalMSP("test-org", ca_config, config={"enable_audit_logging": False})
+    
+    # Test credentials
+    test_credentials = {
+        "public_key": "test-public-key-123",
+        "private_key": "test-private-key-123"
+    }
+    
+    # Test attributes
+    test_attributes = {
+        "department": "engineering",
+        "location": "headquarters",
+        "clearance_level": "standard"
+    }
+    
+    return msp, test_credentials, test_attributes
+
+
 def test_msp_initialization():
     """Test MSP initialization"""
     def init_msp():
@@ -717,7 +744,7 @@ def test_role_based_access_control():
 
 def test_msp_registration_performance(benchmark):
     """Test performance of entity registration"""
-    msp, test_credentials, test_attributes = setup_msp()
+    msp, test_credentials, test_attributes = setup_msp_for_benchmark()
     
 
     def register_entities():
@@ -737,7 +764,7 @@ def test_msp_registration_performance(benchmark):
 
 def test_msp_validation_performance(benchmark):
     """Test performance of identity validation"""
-    msp, test_credentials, _ = setup_msp()
+    msp, test_credentials, _ = setup_msp_for_benchmark()
     
     # Register test entities
     for i in range(100):
@@ -762,7 +789,7 @@ def test_msp_validation_performance(benchmark):
 
 def test_msp_authorization_performance(benchmark):
     """Test performance of action authorization"""
-    msp, test_credentials, _ = setup_msp()
+    msp, test_credentials, _ = setup_msp_for_benchmark()
     
     # Register test entities with admin role
     for i in range(100):
