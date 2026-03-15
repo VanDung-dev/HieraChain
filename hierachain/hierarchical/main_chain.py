@@ -11,8 +11,8 @@ import logging
 from typing import Any
 
 from hierachain.core.blockchain import Blockchain
-from hierachain.core.consensus.proof_of_authority import ProofOfAuthority
-from hierachain.core.consensus.proof_of_federation import ProofOfFederation
+from hierachain.consensus.proof_of_authority import ProofOfAuthority
+from hierachain.consensus.proof_of_federation import ProofOfFederation
 from hierachain.core.utils import (
     sanitize_metadata_for_main_chain,
     validate_proof_metadata,
