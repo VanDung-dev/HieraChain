@@ -342,7 +342,7 @@ flowchart BT
 |:----------|:---------|:---------------|
 | `ZKProver` | `hierachain/security/zk_prover.py` | Generate proofs for block state transitions |
 | `ZKVerifier` | `hierachain/security/zk_verifier.py` | Verify ZK proofs from SubChains |
-| `BaseConsensus._verify_block_zk_proof()` | `hierachain/core/consensus/base_consensus.py` | Shared ZK verification logic |
+| `BaseConsensus._verify_block_zk_proof()` | `hierachain/consensus/base_consensus.py` | Shared ZK verification logic |
 
 ### ZK State Transition Model
 
