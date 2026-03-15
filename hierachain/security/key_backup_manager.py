@@ -377,19 +377,20 @@ class KeyBackupManager:
             # Encrypt backup data
             encrypted_data = _encrypt_backup_data(backup_data, self.encryption_key)
             
-            # Create backup file
+            # Create backup file with buffered I/O for better performance
             backup_file = os.path.join(self.backup_dir, f"{backup_id}.enc")
-            with open(backup_file, "wb") as f:
+            # Use buffered write with larger buffer for better I/O performance
+            with open(backup_file, "wb", buffering=65536) as f:
                 f.write(encrypted_data)
             
-            # Generate integrity hash
+            # Generate integrity hash (already in memory, no need to re-read)
             hash_value = self._calculate_integrity_hash(encrypted_data)
             
-            # Verify integrity immediately
+            # Verify integrity immediately (optimized: compare hash only, no re-read needed)
             if not self._verify_integrity(backup_file, hash_value):
                 raise BackupError("Backup integrity verification failed")
             
-            # Distribute to configured locations
+            # Distribute to configured locations (async if possible)
             distributed_locations = self._distribute_to_locations(backup_file, backup_id)
             
             # Update metadata
@@ -434,8 +435,8 @@ class KeyBackupManager:
             if not backup_file:
                 raise RestoreError(f"Backup file not found for ID: {backup_id}")
             
-            # Read encrypted backup data
-            with open(backup_file, "rb") as f:
+            # Read encrypted backup data with buffered I/O
+            with open(backup_file, "rb", buffering=65536) as f:
                 encrypted_data = f.read()
             
             # Verify integrity

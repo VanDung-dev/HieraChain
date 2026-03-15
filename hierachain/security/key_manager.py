@@ -45,6 +45,7 @@ class KeyManager:
         self.storage = storage_backend or {}  # In-memory fallback
         self.revoked_keys: set[str] = set()
         self.key_cache: dict[str, dict] = {}
+        self.permission_cache: dict[str, dict] = {}  # Cache cho permissions
         self.cache_ttl = 300  # 5 minutes default TTL
         
     def is_valid(self, api_key: str | None) -> bool:
@@ -86,6 +87,7 @@ class KeyManager:
     def has_permission(self, api_key: str, resource: str) -> bool:
         """
         Check if API key has permission for specific resource.
+        Uses permission cache for performance optimization.
         
         Args:
             api_key: The API key to check
@@ -94,14 +96,31 @@ class KeyManager:
         Returns:
             bool: True if key has permission, False otherwise
         """
+        cache_key = f"{api_key}:{resource}"
+        
+        # Check permission cache first - optimized with direct dict access
+        cached = self.permission_cache.get(cache_key)
+        if cached is not None:
+            cached_at, result = cached
+            if (time.time() - cached_at) < self.cache_ttl:
+                return result
+        
+        # Get key data if not in cache
         key_data = self._get_key_data(api_key)
         if not key_data:
+            # Cache negative result
+            self.permission_cache[cache_key] = (time.time(), False)
             return False
             
         permissions = key_data.get('permissions', [])
         
         # Check for wildcard permission or specific resource permission
-        return 'all' in permissions or resource in permissions
+        result = 'all' in permissions or resource in permissions
+        
+        # Cache the result as tuple (cached_at, result) for efficiency
+        self.permission_cache[cache_key] = (time.time(), result)
+        
+        return result
     
     def get_user(self, api_key: str) -> str | None:
         """
@@ -202,6 +221,11 @@ class KeyManager:
         # Remove from cache
         if api_key in self.key_cache:
             del self.key_cache[api_key]
+        
+        # Clear permission cache for this key
+        keys_to_remove = [k for k in self.permission_cache if k.startswith(f"{api_key}:")]
+        for key in keys_to_remove:
+            del self.permission_cache[key]
 
         key_prefix = api_key[:8] if len(api_key) >= 8 else "short"
         logger.security_event(
