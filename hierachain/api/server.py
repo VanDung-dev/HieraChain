@@ -15,7 +15,10 @@ import time
 from fastapi import FastAPI, HTTPException, Depends, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import warnings
 from contextlib import asynccontextmanager
+
+from hierachain.config.logging import LOGGING_CONFIG
 
 from hierachain.api.v1.endpoints import router as v1_router
 from hierachain.api.v2.endpoints import router as v2_router
@@ -394,6 +397,9 @@ def create_app() -> FastAPI:
     return fast_app
 
 
+# Suppress RequestsDependencyWarning
+warnings.filterwarnings("ignore", category=UserWarning, module="requests")
+
 # Create app instance
 app = create_app()
 
@@ -410,6 +416,7 @@ def run_server():
         port=api_config["port"],
         reload=is_debug,
         log_level="info" if not is_debug else "debug",
+        log_config=LOGGING_CONFIG,
         server_header=False,
         timeout_keep_alive=5,  # Mitigate Slowloris: low keep-alive timeout
         limit_concurrency=100, # Limit concurrent connections
