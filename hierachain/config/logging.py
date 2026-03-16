@@ -11,7 +11,7 @@ LOGGING_CONFIG = {
     "formatters": {
         "default": {
             "()": "uvicorn.logging.DefaultFormatter",
-            "fmt": "%(levelprefix)s %(message)s",
+            "fmt": "%(levelprefix)s %(name)-30s %(message)s",
             "use_colors": None,
         },
         "access": {
@@ -19,7 +19,7 @@ LOGGING_CONFIG = {
             "fmt": '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s',
         },
         "standard": {
-            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            "format": "%(asctime)s [%(levelname)s] %(name)-30s: %(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
     },
