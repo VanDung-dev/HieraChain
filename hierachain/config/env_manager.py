@@ -2,8 +2,8 @@
 Environment Manager for HieraChain
 
 This module provides automatic configuration management for the HieraChain system.
-It checks for existing .env files and suggests Product configuration via .env.HRC.example
-if no HieraChain configuration is detected.
+It checks for existing .env files and suggests Product configuration via
+.env.HRC.example if no HieraChain configuration is detected.
 
 Usage:
     from hierachain.config.env_manager import init_env_config, ensure_product_config
@@ -265,12 +265,12 @@ def print_missing_config_warning():
     print("=" * 60, file=sys.stderr)
     print(file=sys.stderr)
     print("To configure HieraChain for production, please:", file=sys.stderr)
-    print(f"  1. Copy '.env.HRC.example' to '.env':", file=sys.stderr)
-    print(f"     cp .env.HRC.example .env", file=sys.stderr)
-    print(f"  2. Review and customize the configuration in '.env'", file=sys.stderr)
-    print(f"  3. Restart the application", file=sys.stderr)
+    print("  1. Copy '.env.HRC.example' to '.env':", file=sys.stderr)
+    print("     cp .env.HRC.example .env", file=sys.stderr)
+    print("  2. Review and customize the configuration in '.env'", file=sys.stderr)
+    print("  3. Restart the application", file=sys.stderr)
     print(file=sys.stderr)
-    print(f"Alternatively, set HRC_ENV=dev for development mode.", file=sys.stderr)
+    print("Alternatively, set HRC_ENV=dev for development mode.", file=sys.stderr)
     print("=" * 60, file=sys.stderr)
 
 

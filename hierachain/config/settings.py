@@ -2,7 +2,7 @@
 Configuration settings for HieraChain Ledger
 
 This module provides the configuration management for the HieraChain system.
-It defines settings for various components including blockchain parameters, consensus 
+It defines settings for various components including blockchain parameters, consensus
 mechanisms, storage backends, security features, and integration capabilities.
 
 The configuration supports multiple environments (development, production, testing) and
@@ -41,8 +41,10 @@ class Settings:
     PROOF_SUBMISSION_INTERVAL = 300  # 5 minutes in seconds
     
     # Consensus settings
-    # Options: "proof_of_authority" (Static/Centralized) or "proof_of_federation" (Dynamic/Consortium)
-    CONSENSUS_TYPE = os.getenv("HRC_CONSENSUS_TYPE", "proof_of_authority") 
+    # Options:
+    # - "proof_of_authority" (Static/Centralized)
+    # - "proof_of_federation" (Dynamic/Consortium)
+    CONSENSUS_TYPE = os.getenv("HRC_CONSENSUS_TYPE", "proof_of_authority")
     CONSENSUS_FEDERATION_CONFIG: dict[str, Any] = {
         "min_validators": 3,
         "block_interval": 5.0
@@ -52,8 +54,8 @@ class Settings:
     BFT_FAULT_TOLERANCE = 1  # Number of Byzantine faults to tolerate (f)
     BFT_NODE_COUNT = 4  # Total number of nodes (must be >= 3f + 1)
     
-    # Storage settings
-    DEFAULT_STORAGE_BACKEND = os.getenv("HRC_STORAGE_BACKEND", "sqlite")  # memory, redis, sqlite
+    # Storage settings - memory, redis, sqlite
+    DEFAULT_STORAGE_BACKEND = os.getenv("HRC_STORAGE_BACKEND", "sqlite")
     WORLD_STATE_CACHE_SIZE = 1000
     
     # Advanced Caching settings
@@ -70,8 +72,12 @@ class Settings:
     PARALLEL_PROCESSING_ENABLED = True
     MAX_WORKERS = None  # Auto-detect based on CPU count (defaults to 50%)
     PROCESSING_CHUNK_SIZE = 100
-    EVENT_POOL_MAX_SIZE = int(os.getenv("HRC_EVENT_POOL_MAX_SIZE", "10000"))  # Hard limit for DoS protection
-    RAM_CRITICAL_THRESHOLD = float(os.getenv("HRC_RAM_CRITICAL_THRESHOLD", "95.0"))  # % RAM usage for emergency flush
+
+    # Hard limit for DoS protection
+    EVENT_POOL_MAX_SIZE = int(os.getenv("HRC_EVENT_POOL_MAX_SIZE", "10000"))
+
+    # % RAM usage for emergency flush (e.g., 95.0 for 95%)
+    RAM_CRITICAL_THRESHOLD = float(os.getenv("HRC_RAM_CRITICAL_THRESHOLD", "95.0"))
     
     # Security settings
     IDENTITY_MANAGER_ENABLED = True
@@ -83,7 +89,9 @@ class Settings:
     # Master key management
     # Source: "auto" (env → file → generate), "env" (env var only), "file" (file only)
     MASTER_KEY_SOURCE = os.getenv("HRC_MASTER_KEY_SOURCE", "auto")
-    MASTER_KEY_FILE = os.getenv("HRC_MASTER_KEY_FILE", os.path.join("config", "master_backup_key.key"))
+    MASTER_KEY_FILE = os.getenv(
+        "HRC_MASTER_KEY_FILE", os.path.join("config", "master_backup_key.key")
+    )
     
     # Brute-force protection for API key verification
     AUTH_BRUTE_FORCE_MAX_FAILURES = int(os.getenv("HRC_BF_MAX_FAILURES", "5"))
@@ -103,11 +111,16 @@ class Settings:
         else []
     )
     # Require cryptographic signature verification on P2P messages
-    P2P_REQUIRE_SIGNATURES = os.getenv("HRC_P2P_REQUIRE_SIGNATURES", "false").lower() == "true"
+    P2P_REQUIRE_SIGNATURES = (
+        os.getenv("HRC_P2P_REQUIRE_SIGNATURES", "false").lower() == "true"
+    )
 
     # CORS settings (defaults allow all for development)
     CORS_ALLOW_ALL = os.getenv("HRC_CORS_ALLOW_ALL", "true").lower() == "true"
-    CORS_ORIGINS: list[str] = os.getenv("HRC_CORS_ORIGINS", "").split(",") if os.getenv("HRC_CORS_ORIGINS") else []
+    CORS_ORIGINS: list[str] = (
+        os.getenv("HRC_CORS_ORIGINS", "").split(",")
+        if os.getenv("HRC_CORS_ORIGINS") else []
+    )
     CORS_ALLOW_METHODS: list[str] = ["*"]
     CORS_ALLOW_HEADERS: list[str] = ["*"]
 
@@ -161,32 +174,49 @@ class Settings:
     ZK_VERIFICATION_KEY_PATH = os.getenv("HRC_ZK_VERIFICATION_KEY", "")
     ZK_PROVING_KEY_PATH = os.getenv("HRC_ZK_PROVING_KEY", "")
     ZK_CIRCUIT_PATH = os.getenv("HRC_ZK_CIRCUIT", "")
-    ZK_PROOF_REQUIRED_FOR_MAINCHAIN = os.getenv("HRC_ZK_REQUIRED_MAINCHAIN", "false").lower() == "true"
+    ZK_PROOF_REQUIRED_FOR_MAINCHAIN = (
+        os.getenv("HRC_ZK_REQUIRED_MAINCHAIN", "false").lower() == "true"
+    )
 
     # K8s Namespace Isolation settings (for Sub-chain isolation)
     K8S_ENABLED = os.getenv("HRC_K8S_ENABLED", "false").lower() == "true"
     K8S_NAMESPACE_PREFIX = os.getenv("HRC_K8S_NAMESPACE_PREFIX", "hrc-subchain-")
-    K8S_CONFIG_PATH = os.getenv("HRC_K8S_CONFIG", "")  # Path to kubeconfig, empty for in-cluster
+
+    # Path to kubeconfig, empty for in-cluster
+    K8S_CONFIG_PATH = os.getenv("HRC_K8S_CONFIG", "")
+
     K8S_RESOURCE_LIMITS_CPU = os.getenv("HRC_K8S_CPU_LIMIT", "1000m")
     K8S_RESOURCE_LIMITS_MEMORY = os.getenv("HRC_K8S_MEMORY_LIMIT", "1Gi")
     K8S_RESOURCE_REQUESTS_CPU = os.getenv("HRC_K8S_CPU_REQUEST", "250m")
     K8S_RESOURCE_REQUESTS_MEMORY = os.getenv("HRC_K8S_MEMORY_REQUEST", "256Mi")
 
     # Proof Aggregation Engine settings
-    PROOF_AGGREGATION_ENABLED = os.getenv("HRC_PROOF_AGGREGATION", "true").lower() == "true"
+    PROOF_AGGREGATION_ENABLED = (
+        os.getenv("HRC_PROOF_AGGREGATION", "true").lower() == "true"
+    )
     PROOF_BATCH_SIZE = int(os.getenv("HRC_PROOF_BATCH_SIZE", "10"))
     PROOF_BATCH_TIMEOUT = float(os.getenv("HRC_PROOF_BATCH_TIMEOUT", "30.0"))  # seconds
-    PROOF_COMPRESSION_ENABLED = os.getenv("HRC_PROOF_COMPRESSION", "true").lower() == "true"
+    PROOF_COMPRESSION_ENABLED = (
+        os.getenv("HRC_PROOF_COMPRESSION", "true").lower() == "true"
+    )
 
     # Sub-chain Rebalancing settings (Auto-splitting)
     REBALANCE_ENABLED = os.getenv("HRC_REBALANCE_ENABLED", "true").lower() == "true"
-    REBALANCE_THRESHOLD_EPS = int(os.getenv("HRC_REBALANCE_THRESHOLD_EPS", "1000"))  # events/sec
-    REBALANCE_CHECK_INTERVAL = float(os.getenv("HRC_REBALANCE_CHECK_INTERVAL", "60.0"))  # seconds
+
+    # events/sec
+    REBALANCE_THRESHOLD_EPS = int(os.getenv("HRC_REBALANCE_THRESHOLD_EPS", "1000"))
+
+    # seconds
+    REBALANCE_CHECK_INTERVAL = float(os.getenv("HRC_REBALANCE_CHECK_INTERVAL", "60.0"))
     REBALANCE_MIN_EVENTS_FOR_SPLIT = int(os.getenv("HRC_REBALANCE_MIN_EVENTS", "5000"))
-    REBALANCE_COOLDOWN = float(os.getenv("HRC_REBALANCE_COOLDOWN", "300.0"))  # 5 min cooldown
+
+    # 5 min cooldown
+    REBALANCE_COOLDOWN = float(os.getenv("HRC_REBALANCE_COOLDOWN", "300.0"))
 
     # Cross-level State Sync settings
-    CROSS_LEVEL_SYNC_ENABLED = os.getenv("HRC_CROSS_LEVEL_SYNC", "true").lower() == "true"
+    CROSS_LEVEL_SYNC_ENABLED = (
+        os.getenv("HRC_CROSS_LEVEL_SYNC", "true").lower() == "true"
+    )
     CROSS_LEVEL_SYNC_BATCH_SIZE = int(os.getenv("HRC_CROSS_LEVEL_BATCH", "100"))
     CROSS_LEVEL_SYNC_TIMEOUT = float(os.getenv("HRC_CROSS_LEVEL_TIMEOUT", "30.0"))
 
@@ -295,7 +325,9 @@ class Settings:
             errors.append("VALIDATOR_TIMEOUT must be positive")
 
         if cls.DEFAULT_STORAGE_BACKEND not in ["memory", "redis", "sqlite"]:
-            errors.append("DEFAULT_STORAGE_BACKEND must be one of: memory, redis, sqlite")
+            errors.append(
+                "DEFAULT_STORAGE_BACKEND must be one of: memory, redis, sqlite"
+            )
 
         if cls.API_PORT <= 0 or cls.API_PORT > 65535:
             errors.append("API_PORT must be between 1 and 65535")
@@ -308,6 +340,7 @@ class DevelopmentSettings(Settings):
     """Development environment settings"""
     LOG_LEVEL = "DEBUG"
     API_HOST = os.getenv("HRC_API_HOST", "localhost")  # Allow override for Docker
+
 
 class ProductionSettings(Settings):
     """Production environment settings - Security hardened by default"""
@@ -337,9 +370,14 @@ class ProductionSettings(Settings):
     # === CORS: Restricted in production ===
     # Override with env var HRC_CORS_ORIGINS for specific domains
     CORS_ALLOW_ALL = False
-    CORS_ORIGINS: list[str] = os.getenv("HRC_CORS_ORIGINS", "").split(",") if os.getenv("HRC_CORS_ORIGINS") else []
+    CORS_ORIGINS: list[str] = (
+        os.getenv("HRC_CORS_ORIGINS", "").split(",")
+        if os.getenv("HRC_CORS_ORIGINS") else []
+    )
     CORS_ALLOW_METHODS: list[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    CORS_ALLOW_HEADERS: list[str] = ["Authorization", "Content-Type", "X-API-Key", "X-Request-ID"]
+    CORS_ALLOW_HEADERS: list[str] = [
+        "Authorization", "Content-Type", "X-API-Key", "X-Request-ID"
+    ]
     
     # === HTTPS: Headers enabled ===
     HSTS_ENABLED = True
@@ -367,6 +405,7 @@ class TestingSettings(Settings):
     BLOCK_SIZE_LIMIT = 10  # Smaller blocks for testing
     PROOF_SUBMISSION_INTERVAL = 10  # Faster submissions for testing
 
+
 # Get settings based on environment
 def get_settings() -> Settings:
     """Get settings based on environment variable"""
@@ -390,17 +429,20 @@ def _check_auth_enabled(s) -> str | None:
         return "AUTH_ENABLED should be True in production"
     return None
 
+
 def _check_cors_all(s) -> str | None:
     """Check CORS_ALLOW_ALL setting."""
     if getattr(s, 'CORS_ALLOW_ALL', False):
         return "CORS_ALLOW_ALL should be False in production"
     return None
 
+
 def _check_p2p_trust(s) -> str | None:
     """Check P2P_TRUST_POLICY setting."""
     if not getattr(s, 'P2P_TRUST_POLICY', None):
         return "P2P_TRUST_POLICY not set"
     return None
+
 
 def _check_hsts_enabled(s) -> str | None:
     """Check HSTS_ENABLED setting."""
