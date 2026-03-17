@@ -68,7 +68,7 @@ class ConsensusMitigationStrategies:
             node_configs = params.get('node_configs', [])
             
             # Simulate node addition process
-            logging.info(f"Adding {required_count} validator nodes")
+            logging.info("Adding %d validator nodes", required_count)
             
             for i in range(required_count):
                 if i < len(node_configs):
@@ -80,12 +80,12 @@ class ConsensusMitigationStrategies:
                         'public_key': f'generated_key_{i}'
                     }
 
-                logging.info(f"Added validator node: {config['node_id']}")
+                logging.info("Added validator node: %s", config['node_id'])
             
             return True
             
         except Exception as e:
-            logging.error(f"Failed to add validator nodes: {str(e)}")
+            logging.error("Failed to add validator nodes: %s", str(e))
             return False
     
     @staticmethod
@@ -106,12 +106,12 @@ class ConsensusMitigationStrategies:
             # Calculate optimal timeout based on network conditions
             optimal_timeout = max(float(target_timeout), network_latency * 3)
             
-            logging.info(f"Updating leader timeout to {optimal_timeout}s")
+            logging.info("Updating leader timeout to %.2fs", optimal_timeout)
 
             return True
             
         except Exception as e:
-            logging.error(f"Failed to optimize leader timeout: {str(e)}")
+            logging.error("Failed to optimize leader timeout: %s", str(e))
             return False
     
     @staticmethod
@@ -127,11 +127,11 @@ class ConsensusMitigationStrategies:
         """
         try:
             algorithm = params.get('signature_algorithm', 'ECDSA-SHA256')
-            logging.info(f"Strengthening message verification with {algorithm}")
+            logging.info("Strengthening message verification with %s", algorithm)
             return True
             
         except Exception as e:
-            logging.error(f"Failed to strengthen message verification: {str(e)}")
+            logging.error("Failed to strengthen message verification: %s", str(e))
             return False
 
 
@@ -147,17 +147,16 @@ def renew_certificates(params: dict[str, Any]) -> bool:
     """
     try:
         cert_ids = params.get('certificate_ids', [])
-        _ca_config = params.get('ca_config', {})
 
-        logging.info(f"Renewing {len(cert_ids)} certificates")
+        logging.info("Renewing %d certificates", len(cert_ids))
 
         for cert_id in cert_ids:
-            logging.info(f"Renewed certificate: {cert_id}")
+            logging.info("Renewed certificate: %s", cert_id)
 
         return True
 
     except Exception as e:
-        logging.error(f"Failed to renew certificates: {str(e)}")
+        logging.error("Failed to renew certificates: %s", str(e))
         return False
 
 
@@ -175,7 +174,9 @@ def implement_rate_limiting(params: dict[str, Any]) -> bool:
         max_attempts = params.get('max_attempts', 5)
         time_window = params.get('time_window', 300)  # 5 minutes
 
-        logging.info(f"Implementing rate limiting: {max_attempts} attempts per {time_window}s")
+        logging.info(
+            "Implementing rate limiting: %d attempts per %ds", max_attempts, time_window
+        )
 
         # In real implementation, this would:
         # 1. Configure authentication middleware
@@ -186,7 +187,7 @@ def implement_rate_limiting(params: dict[str, Any]) -> bool:
         return True
 
     except Exception as e:
-        logging.error(f"Failed to implement rate limiting: {str(e)}")
+        logging.error("Failed to implement rate limiting: %s", str(e))
         return False
 
 
@@ -204,12 +205,14 @@ def upgrade_encryption(params: dict[str, Any]) -> bool:
         algorithm = params.get('target_algorithm', 'AES-256-GCM')
         key_size = params.get('key_size', 256)
 
-        logging.info(f"Upgrading encryption to {algorithm} with {key_size}-bit keys")
+        logging.info(
+            "Upgrading encryption to %s with %d-bit keys", algorithm, key_size
+        )
 
         return True
 
     except Exception as e:
-        logging.error(f"Failed to upgrade encryption: {str(e)}")
+        logging.error("Failed to upgrade encryption: %s", str(e))
         return False
 
 
@@ -231,7 +234,9 @@ def scale_processing_capacity(params: dict[str, Any]) -> bool:
         target_capacity = params.get('target_capacity', 2)
         scaling_type = params.get('scaling_type', 'horizontal')
 
-        logging.info(f"Scaling processing capacity: {scaling_type} to {target_capacity}x")
+        logging.info(
+            "Scaling processing capacity: %s to %dx", scaling_type, target_capacity
+        )
 
         if scaling_type == 'horizontal':
             pass
@@ -241,7 +246,7 @@ def scale_processing_capacity(params: dict[str, Any]) -> bool:
         return True
 
     except Exception as e:
-        logging.error(f"Failed to scale processing capacity: {str(e)}")
+        logging.error("Failed to scale processing capacity: %s", str(e))
         return False
 
 
@@ -259,7 +264,9 @@ def optimize_memory_usage(params: dict[str, Any]) -> bool:
         targets = params.get('optimization_targets', ['caching', 'garbage_collection'])
         memory_limit = params.get('memory_limit', '2GB')
 
-        logging.info(f"Optimizing memory usage: targets={targets}, limit={memory_limit}")
+        logging.info(
+            "Optimizing memory usage: targets=%s, limit=%s", targets, memory_limit
+        )
 
         for target in targets:
             _apply_memory_optimization(target)
@@ -267,7 +274,7 @@ def optimize_memory_usage(params: dict[str, Any]) -> bool:
         return True
 
     except Exception as e:
-        logging.error(f"Failed to optimize memory usage: {str(e)}")
+        logging.error("Failed to optimize memory usage: %s", str(e))
         return False
 
 
@@ -281,7 +288,7 @@ def _apply_memory_optimization(target: str) -> None:
         case "buffer_sizes":
             logging.info("Optimized buffer sizes")
         case _:
-            logging.warning(f"Unknown memory optimization target: {target}")
+            logging.warning("Unknown memory optimization target: %s", target)
 
 
 def optimize_event_processing(params: dict[str, Any]) -> bool:
@@ -298,12 +305,15 @@ def optimize_event_processing(params: dict[str, Any]) -> bool:
         batch_size = params.get('batch_size', 100)
         parallel_workers = params.get('parallel_workers', 4)
 
-        logging.info(f"Optimizing event processing: batch_size={batch_size}, workers={parallel_workers}")
+        logging.info(
+            "Optimizing event processing: batch_size=%d, workers=%d",
+            batch_size, parallel_workers
+        )
 
         return True
 
     except Exception as e:
-        logging.error(f"Failed to optimize event processing: {str(e)}")
+        logging.error("Failed to optimize event processing: %s", str(e))
         return False
 
 
@@ -325,12 +335,16 @@ def implement_state_pruning(params: dict[str, Any]) -> bool:
         retention_days = params.get('retention_days', 90)
         pruning_interval = params.get('pruning_interval', 86400)  # daily
 
-        logging.info(f"Implementing state pruning: retain {retention_days} days, interval {pruning_interval}s")
+        logging.info(
+            "Implementing state pruning: retain %d days, interval %ds",
+            retention_days,
+            pruning_interval,
+        )
 
         return True
 
     except Exception as e:
-        logging.error(f"Failed to implement state pruning: {str(e)}")
+        logging.error("Failed to implement state pruning: %s", str(e))
         return False
 
 
@@ -348,12 +362,14 @@ def execute_backup(params: dict[str, Any]) -> bool:
         backup_target = params.get('backup_target', '/backup/blockchain')
         compression = params.get('compression', True)
 
-        logging.info(f"Executing backup to {backup_target}, compression={compression}")
+        logging.info(
+            "Executing backup to %s, compression=%s", backup_target, compression
+        )
 
         return True
 
     except Exception as e:
-        logging.error(f"Failed to execute backup: {str(e)}")
+        logging.error("Failed to execute backup: %s", str(e))
         return False
 
 
@@ -371,15 +387,18 @@ def optimize_storage_indices(params: dict[str, Any]) -> bool:
         index_types = params.get('index_types', ['entity_id', 'timestamp'])
         rebuild_existing = params.get('rebuild_existing', False)
 
-        logging.info(f"Optimizing storage indices: types={index_types}, rebuild={rebuild_existing}")
+        logging.info(
+            "Optimizing storage indices: types=%s, rebuild=%s",
+            index_types, rebuild_existing
+        )
 
         for index_type in index_types:
-            logging.info(f"Optimized index: {index_type}")
+            logging.info("Optimized index: %s", index_type)
 
         return True
 
     except Exception as e:
-        logging.error(f"Failed to optimize storage indices: {str(e)}")
+        logging.error("Failed to optimize storage indices: %s", str(e))
         return False
 
 
@@ -412,7 +431,9 @@ def _initialize_actions() -> dict[str, MitigationAction]:
         'strengthen_message_verification': MitigationAction(
             action_id='strengthen_message_verification',
             description='Strengthen message verification mechanisms',
-            execution_function=ConsensusMitigationStrategies.strengthen_message_verification,
+            execution_function=(
+                ConsensusMitigationStrategies.strengthen_message_verification
+            ),
             priority=2,
             estimated_duration=120,
             requires_downtime=True
@@ -508,14 +529,18 @@ class MitigationManager:
         # Ensure log directory exists
         os.makedirs('log/risk_management', exist_ok=True)
         handler = logging.FileHandler('log/risk_management/mitigation_strategies.log')
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         self.mitigation_actions = _initialize_actions()
         self.execution_history: list[MitigationResult] = []
         self.active_mitigations: dict[str, threading.Thread] = {}
 
-    def create_mitigation_plan(self, risks: list[RiskAssessment]) -> list[Tuple[MitigationAction, dict[str, Any]]]:
+    def create_mitigation_plan(
+        self, risks: list[RiskAssessment]
+    ) -> list[Tuple[MitigationAction, dict[str, Any]]]:
         return _create_mitigation_plan(self, risks)
     
     def execute_mitigation_plan(
@@ -526,7 +551,9 @@ class MitigationManager:
         """Execute mitigation plan, optionally asynchronously."""
         return _execute_mitigation_plan(self, plan, async_execution)
     
-    def _execute_action(self, action: MitigationAction, params: dict[str, Any]) -> MitigationResult:
+    def _execute_action(
+        self, action: MitigationAction, params: dict[str, Any]
+    ) -> MitigationResult:
         """Execute a single mitigation action."""
         return _execute_action(self, action, params)
     
@@ -553,8 +580,7 @@ class MitigationManager:
 
 
 def _create_mitigation_plan(
-    manager: MitigationManager,
-    risks: list[RiskAssessment]
+    manager: MitigationManager, risks: list[RiskAssessment]
 ) -> list[Tuple[MitigationAction, dict[str, Any]]]:
     """Create mitigation plan based on identified risks."""
     planned_actions: list[Tuple[MitigationAction, dict[str, Any]]] = []
@@ -569,26 +595,19 @@ def _create_mitigation_plan(
 
 
 def _map_risk_to_action(
-    manager: MitigationManager,
-    risk: RiskAssessment
+    manager: MitigationManager, risk: RiskAssessment
 ) -> Tuple[MitigationAction | None, dict[str, Any]]:
     """Map risk to mitigation action."""
     risk_id = risk.risk_id
 
     if risk_id.startswith('CONSENSUS_001'):
         action = manager.mitigation_actions.get('add_validator_nodes')
-        params = {
-            'required_count': 1,
-            'node_configs': []
-        }
+        params = {'required_count': 1, 'node_configs': []}
         return action, params
 
     if risk_id.startswith('CONSENSUS_002'):
         action = manager.mitigation_actions.get('optimize_leader_timeout')
-        params = {
-            'target_timeout': 10,
-            'network_latency': 1.0
-        }
+        params = {'target_timeout': 10, 'network_latency': 1.0}
         return action, params
 
     if risk_id.startswith('SECURITY_001'):
@@ -601,18 +620,12 @@ def _map_risk_to_action(
 
     if risk_id.startswith('SECURITY_002'):
         action = manager.mitigation_actions.get('implement_rate_limiting')
-        params = {
-            'max_attempts': 5,
-            'time_window': 300
-        }
+        params = {'max_attempts': 5, 'time_window': 300}
         return action, params
 
     if risk_id.startswith('PERFORMANCE_001'):
         action = manager.mitigation_actions.get('scale_processing_capacity')
-        params = {
-            'target_capacity': 2,
-            'scaling_type': 'horizontal'
-        }
+        params = {'target_capacity': 2, 'scaling_type': 'horizontal'}
         return action, params
 
     if risk_id.startswith('PERFORMANCE_002'):
@@ -626,8 +639,7 @@ def _map_risk_to_action(
     if risk_id.startswith('STORAGE_002'):
         action = manager.mitigation_actions.get('execute_backup')
         params = {
-            'backup_target': '/backup/blockchain',
-            'compression': True
+            'backup_target': '/backup/blockchain', 'compression': True
         }
         return action, params
 
@@ -659,9 +671,7 @@ def _execute_mitigation_plan(
 
 
 def _execute_action(
-    manager: MitigationManager,
-    action: MitigationAction,
-    params: dict[str, Any]
+    manager: MitigationManager, action: MitigationAction, params: dict[str, Any]
 ) -> MitigationResult:
     """Execute a single mitigation action."""
     start_time = time.time()

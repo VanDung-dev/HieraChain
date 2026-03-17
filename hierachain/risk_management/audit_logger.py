@@ -107,7 +107,9 @@ class AuditEvent:
     
     def calculate_hash(self) -> str:
         """Calculate hash for integrity verification."""
-        content = f"{self.event_id}{self.timestamp}{self.source_component}{self.description}"
+        content = (
+            f"{self.event_id}{self.timestamp}{self.source_component}{self.description}"
+        )
         return hashlib.sha256(content.encode()).hexdigest()
 
 
@@ -121,7 +123,7 @@ class AuditFilter:
         source_components: list[str] | None = None,
         time_range: tuple | None = None,
         user_ids: list[str] | None = None
-    ):
+    ) -> None:
         """
         Initialize audit filter.
         
@@ -143,9 +145,15 @@ class AuditFilter:
         criteria = [
             (self.event_types, lambda: event.event_type in self.event_types),
             (self.severity_levels, lambda: event.severity in self.severity_levels),
-            (self.source_components, lambda: event.source_component in self.source_components),
+            (
+                self.source_components,
+                lambda: event.source_component in self.source_components
+            ),
             (self.user_ids, lambda: event.user_id in self.user_ids),
-            (self.time_range, lambda: self.time_range[0] <= event.timestamp <= self.time_range[1])
+            (
+                self.time_range,
+                lambda: self.time_range[0] <= event.timestamp <= self.time_range[1]
+            )
         ]
         
         return all(condition() for field, condition in criteria if field is not None)
@@ -158,7 +166,9 @@ class AuditStorage:
         """Store audit event."""
         raise NotImplementedError
     
-    def retrieve_events(self, filter_criteria: AuditFilter, limit: int | None = None) -> list[AuditEvent]:
+    def retrieve_events(
+        self, filter_criteria: AuditFilter, limit: int | None = None
+    ) -> list[AuditEvent]:
         """Retrieve audit events matching filter criteria."""
         raise NotImplementedError
     
@@ -172,7 +182,7 @@ def _parse_event_line(line: str) -> AuditEvent | None:
     try:
         return AuditEvent.from_dict(json.loads(line.strip()))
     except (json.JSONDecodeError, KeyError, ValueError) as e:
-        logging.warning(f"Failed to parse audit event: {str(e)}")
+        logging.warning("Failed to parse audit event: %s", str(e))
         return None
 
 
@@ -186,7 +196,7 @@ def _iter_events_from_file(log_file: Path):
 
 
 def _read_and_filter_file(
-        log_file: Path,
+    log_file: Path,
     filter_criteria: AuditFilter,
     events: list[AuditEvent],
     limit: int | None
@@ -236,13 +246,11 @@ class FileAuditStorage(AuditStorage):
                 return True
                 
         except Exception as e:
-            logging.error(f"Failed to store audit event: {str(e)}")
+            logging.error("Failed to store audit event: %s", str(e))
             return False
     
     def retrieve_events(
-        self,
-        filter_criteria: AuditFilter,
-        limit: int | None = None
+        self, filter_criteria: AuditFilter, limit: int | None = None
     ) -> list[AuditEvent]:
         """Retrieve audit events from files."""
         events = []
@@ -255,13 +263,15 @@ class FileAuditStorage(AuditStorage):
             
             return events
         except Exception as e:
-            logging.error(f"Failed to retrieve audit events: {str(e)}")
+            logging.error("Failed to retrieve audit events: %s", str(e))
             return []
 
     def _get_files_to_search(self, time_range: tuple | None) -> list[Path]:
         """Determine which log files to search based on time range."""
         if not time_range:
-            return sorted(list(self.audit_directory.glob("audit_*.jsonl")), reverse=True)
+            return sorted(
+                list(self.audit_directory.glob("audit_*.jsonl")), reverse=True
+            )
             
         start_time, end_time = time_range
         log_files = []
@@ -286,7 +296,7 @@ class RotatingAuditStorage(FileAuditStorage):
         audit_directory: str = "log/risk_management/audit_logs",
         max_file_size: int = 100 * 1024 * 1024,  # 100MB
         retention_days: int = 90
-    ):
+    ) -> None:
         """
         Initialize rotating audit storage.
         
@@ -309,7 +319,7 @@ class RotatingAuditStorage(FileAuditStorage):
         
         return result
     
-    def _check_rotation(self, timestamp: float):
+    def _check_rotation(self, timestamp: float) -> None:
         """Check if log rotation is needed."""
         log_file = self._get_log_file(timestamp)
         
@@ -319,7 +329,7 @@ class RotatingAuditStorage(FileAuditStorage):
             rotated_path = log_file.parent / rotated_name
             log_file.rename(rotated_path)
     
-    def _cleanup_old_files(self):
+    def _cleanup_old_files(self) -> None:
         """Remove old audit files beyond retention period."""
         cutoff_time = time.time() - (self.retention_days * 86400)
         
@@ -351,7 +361,7 @@ class AuditLogger:
         self,
         storage: AuditStorage | None = None,
         enable_real_time_alerts: bool = True
-    ):
+    ) -> None:
         """
         Initialize audit logger.
         
@@ -370,11 +380,13 @@ class AuditLogger:
             'events_by_severity': {}
         }
     
-    def add_alert_handler(self, handler: Callable[[AuditEvent], None]):
+    def add_alert_handler(self, handler: Callable[[AuditEvent], None]) -> None:
         """Add real-time alert handler."""
         self.alert_handlers.append(handler)
     
-    def add_event_processor(self, processor: Callable[[AuditEvent], AuditEvent]):
+    def add_event_processor(
+        self, processor: Callable[[AuditEvent], AuditEvent]
+    ) -> None:
         """Add event processor for enrichment/transformation."""
         self.event_processors.append(processor)
     
@@ -385,7 +397,7 @@ class AuditLogger:
         affected_components: list[str],
         details: dict[str, Any],
         correlation_id: str | None = None
-    ):
+    ) -> None:
         """Log risk detection event."""
         event = AuditEvent(
             event_id=str(uuid.uuid4()),
@@ -405,7 +417,7 @@ class AuditLogger:
         self, action_id: str, status: str,
         description: str, details: dict[str, Any],
         correlation_id: str | None = None
-    ):
+    ) -> None:
         """Log mitigation action event."""
         if status == "started":
             event_type = AuditEventType.MITIGATION_STARTED
@@ -439,7 +451,7 @@ class AuditLogger:
         description: str,
         details: dict[str, Any],
         severity: str = "info"
-    ):
+    ) -> None:
         """Log consensus-related event."""
         event = AuditEvent(
             event_id=str(uuid.uuid4()),
@@ -461,7 +473,7 @@ class AuditLogger:
         user_id: str | None = None,
         ip_address: str | None = None,
         severity: str = "warning"
-    ):
+    ) -> None:
         """Log security-related event."""
         event = AuditEvent(
             event_id=str(uuid.uuid4()),
@@ -485,7 +497,7 @@ class AuditLogger:
         description: str,
         details: dict[str, Any],
         severity: str = "warning"
-    ):
+    ) -> None:
         """Log performance-related event."""
         event = AuditEvent(
             event_id=str(uuid.uuid4()),
@@ -512,7 +524,7 @@ class AuditLogger:
         details: dict[str, Any],
         session_id: str | None = None,
         ip_address: str | None = None
-    ):
+    ) -> None:
         """Log user action event."""
         event = AuditEvent(
             event_id=str(uuid.uuid4()),
@@ -537,7 +549,7 @@ class AuditLogger:
         new_value: Any,
         user_id: str | None = None,
         description: str | None = None
-    ):
+    ) -> None:
         """Log configuration change event."""
         desc = description or f"Configuration changed: {component}.{parameter}"
         
@@ -559,7 +571,7 @@ class AuditLogger:
         
         self._log_event(event)
     
-    def _log_event(self, event: AuditEvent):
+    def _log_event(self, event: AuditEvent) -> None:
         """Internal method to log an event."""
         try:
             # Process event through processors
@@ -578,12 +590,12 @@ class AuditLogger:
                 if self.enable_real_time_alerts:
                     self._process_alerts(processed_event)
             else:
-                self.logger.error(f"Failed to store audit event: {event.event_id}")
+                self.logger.error("Failed to store audit event: %s", event.event_id)
                 
         except Exception as e:
-            self.logger.error(f"Error logging audit event: {str(e)}")
+            self.logger.error("Error logging audit event: %s", str(e))
     
-    def _update_stats(self, event: AuditEvent):
+    def _update_stats(self, event: AuditEvent) -> None:
         """Update audit statistics."""
         self._stats['total_events'] += 1
         
@@ -606,9 +618,7 @@ class AuditLogger:
                     self.logger.error(f"Alert handler failed: {str(e)}")
     
     def query_events(
-        self,
-        filter_criteria: AuditFilter,
-        limit: int | None = None
+        self, filter_criteria: AuditFilter, limit: int | None = None
     ) -> list[AuditEvent]:
         """Query audit events with filter criteria."""
         return self.storage.retrieve_events(filter_criteria, limit)
@@ -626,10 +636,14 @@ class AuditLogger:
         events = self.storage.retrieve_events(filter_criteria)
         
         if output_format.lower() == "json":
-            return json.dumps([event.to_dict() for event in events], indent=2, default=str)
+            return json.dumps(
+                [event.to_dict() for event in events], indent=2, default=str
+            )
         elif output_format.lower() == "csv":
             # Simple CSV format
-            lines = ["event_id,event_type,severity,timestamp,source_component,description"]
+            lines = [
+                "event_id,event_type,severity,timestamp,source_component,description"
+            ]
             for event in events:
                 lines.append(
                     f"{event.event_id},{event.event_type.value},"

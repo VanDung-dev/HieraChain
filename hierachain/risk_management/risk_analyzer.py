@@ -65,7 +65,9 @@ class RiskAnalyzer:
         # Ensure log directory exists
         os.makedirs('log/risk_management', exist_ok=True)
         handler = logging.FileHandler('log/risk_management/risk_analyzer.log')
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         self.risk_history: list[RiskAssessment] = []
@@ -96,7 +98,9 @@ class RiskAnalyzer:
             }
         })
     
-    def analyze_consensus_risks(self, consensus_data: dict[str, Any]) -> list[RiskAssessment]:
+    def analyze_consensus_risks(
+        self, consensus_data: dict[str, Any]
+    ) -> list[RiskAssessment]:
         """
         Analyze consensus mechanism risks.
         
@@ -118,7 +122,10 @@ class RiskAnalyzer:
                 risk_id="CONSENSUS_001",
                 category=RiskCategory.CONSENSUS,
                 severity=RiskSeverity.CRITICAL,
-                description=f"Insufficient nodes for BFT consensus: {node_count} < {min_required}",
+                description=(
+                    "Insufficient nodes for BFT consensus: "
+                    f"{node_count} < {min_required}"
+                ),
                 impact="Consensus failure, potential network partition",
                 likelihood=0.9,
                 mitigation_recommendations=[
@@ -159,7 +166,8 @@ class RiskAnalyzer:
                 risk_id="CONSENSUS_003",
                 category=RiskCategory.CONSENSUS,
                 severity=RiskSeverity.HIGH,
-                description=f"High message verification failure rate: {failure_rate:.2%}",
+                description=(
+                    f"High message verification failure rate: {failure_rate:.2%}"),
                 impact="Potential security compromise, consensus instability",
                 likelihood=0.8,
                 mitigation_recommendations=[
@@ -172,8 +180,10 @@ class RiskAnalyzer:
             ))
         
         return risks
-    
-    def analyze_security_risks(self, security_data: dict[str, Any]) -> list[RiskAssessment]:
+        
+    def analyze_security_risks(
+        self, security_data: dict[str, Any]
+    ) -> list[RiskAssessment]:
         """
         Analyze security-related risks.
         
@@ -188,17 +198,24 @@ class RiskAnalyzer:
         # Certificate expiry risks
         certificates = security_data.get('certificates', [])
         current_time = time.time()
-        warning_threshold = self.thresholds['security']['certificate_expiry_warning'] * 24 * 3600
+        warning_threshold = (
+            self.thresholds['security']['certificate_expiry_warning'] * 24 * 3600
+        )
         
         for cert in certificates:
             expiry_time = cert.get('expires_at', 0)
             if expiry_time - current_time < warning_threshold:
-                severity = RiskSeverity.CRITICAL if expiry_time < current_time else RiskSeverity.HIGH
+                severity = (
+                    RiskSeverity.CRITICAL
+                    if expiry_time < current_time else RiskSeverity.HIGH
+                )
                 risks.append(RiskAssessment(
                     risk_id=f"SECURITY_001_{cert.get('id', 'unknown')}",
                     category=RiskCategory.SECURITY,
                     severity=severity,
-                    description=f"Certificate {cert.get('id')} expires soon or has expired",
+                    description=(
+                        f"Certificate {cert.get('id')} expires soon or has expired"
+                    ),
                     impact="Authentication failures, access denial",
                     likelihood=1.0 if expiry_time < current_time else 0.9,
                     mitigation_recommendations=[
@@ -251,8 +268,10 @@ class RiskAnalyzer:
                 ))
         
         return risks
-    
-    def analyze_performance_risks(self, performance_data: dict[str, Any]) -> list[RiskAssessment]:
+        
+    def analyze_performance_risks(
+        self, performance_data: dict[str, Any]
+    ) -> list[RiskAssessment]:
         """
         Analyze performance-related risks.
         
@@ -322,8 +341,10 @@ class RiskAnalyzer:
             ))
         
         return risks
-    
-    def analyze_storage_risks(self, storage_data: dict[str, Any]) -> list[RiskAssessment]:
+        
+    def analyze_storage_risks(
+        self, storage_data: dict[str, Any]
+    ) -> list[RiskAssessment]:
         """
         Analyze storage-related risks.
         
@@ -364,7 +385,9 @@ class RiskAnalyzer:
                 risk_id="STORAGE_002",
                 category=RiskCategory.STORAGE,
                 severity=RiskSeverity.HIGH,
-                description=f"Backup overdue: {backup_age / 3600:.1f} hours since last backup",
+                description=(
+                    f"Backup overdue: {backup_age / 3600:.1f} hours since last backup"
+                ),
                 impact="Data loss risk, recovery difficulties",
                 likelihood=0.8,
                 mitigation_recommendations=[
@@ -378,7 +401,9 @@ class RiskAnalyzer:
         
         return risks
     
-    def perform_comprehensive_analysis(self, system_data: dict[str, Any]) -> dict[str, list[RiskAssessment]]:
+    def perform_comprehensive_analysis(
+        self, system_data: dict[str, Any]
+    ) -> dict[str, list[RiskAssessment]]:
         """
         Perform comprehensive risk analysis across all categories.
         
@@ -391,7 +416,9 @@ class RiskAnalyzer:
         all_risks = {
             'consensus': self.analyze_consensus_risks(system_data.get('consensus', {})),
             'security': self.analyze_security_risks(system_data.get('security', {})),
-            'performance': self.analyze_performance_risks(system_data.get('performance', {})),
+            'performance': self.analyze_performance_risks(
+                system_data.get('performance', {})
+            ),
             'storage': self.analyze_storage_risks(system_data.get('storage', {}))
         }
         
@@ -405,7 +432,10 @@ class RiskAnalyzer:
         for category, risks in all_risks.items():
             critical_risks = [r for r in risks if r.severity == RiskSeverity.CRITICAL]
             if critical_risks:
-                self.logger.critical(f"Found {len(critical_risks)} critical risks in {category}")
+                self.logger.critical(
+                    "Found %d critical risks in %s",
+                    len(critical_risks), category
+                )
         
         return all_risks
     
@@ -429,11 +459,18 @@ class RiskAnalyzer:
         category_counts = {}
         
         for risk in risks:
-            severity_counts[risk.severity.value] = severity_counts.get(risk.severity.value, 0) + 1
-            category_counts[risk.category.value] = category_counts.get(risk.category.value, 0) + 1
+            severity_counts[risk.severity.value] = (
+                severity_counts.get(risk.severity.value, 0) + 1
+            )
+            category_counts[risk.category.value] = (
+                category_counts.get(risk.category.value, 0) + 1
+            )
         
         # Find highest severity
-        severity_order = [RiskSeverity.CRITICAL, RiskSeverity.HIGH, RiskSeverity.MEDIUM, RiskSeverity.LOW]
+        severity_order = [
+            RiskSeverity.CRITICAL, RiskSeverity.HIGH,
+            RiskSeverity.MEDIUM, RiskSeverity.LOW
+        ]
         highest_severity = None
         for severity in severity_order:
             if severity.value in severity_counts:
@@ -460,7 +497,8 @@ class RiskAnalyzer:
             True if risk was found and resolved
         """
         if risk_id in self.active_risks:
-            _risk = self.active_risks.pop(risk_id)
-            self.logger.info(f"Risk {risk_id} resolved: {resolution_notes}")
+            self.logger.info(
+                "Risk %s resolved: %s", risk_id, resolution_notes
+            )
             return True
         return False
