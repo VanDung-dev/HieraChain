@@ -15,10 +15,11 @@ from datetime import datetime
 
 def compute_hash_standalone(data_string: str) -> str:
     """
-    Pure function to compute SHA-256 hash. 
+    Pure function to compute SHA-256 hash.
     This is top-level to be picklable for multiprocessing.
     """
     return hashlib.sha256(data_string.encode()).hexdigest()
+
 
 def compute_merkle_leaves_standalone(data_list_strings: list[str]) -> list[str]:
     """
@@ -26,6 +27,7 @@ def compute_merkle_leaves_standalone(data_list_strings: list[str]) -> list[str]:
     Designed for running in a worker process to amortize IPC cost.
     """
     return [hashlib.sha256(s.encode()).hexdigest() for s in data_list_strings]
+
 
 def compute_leaves_from_events_standalone(events: list[dict[str, Any]]) -> list[str]:
     """
@@ -38,6 +40,7 @@ def compute_leaves_from_events_standalone(events: list[dict[str, Any]]) -> list[
         data_string = json.dumps(event, sort_keys=True, separators=(',', ':'))
         leaves.append(hashlib.sha256(data_string.encode()).hexdigest())
     return leaves
+
 
 def generate_hash(data: str | dict[str, Any]) -> str:
     """
@@ -187,8 +190,11 @@ def validate_proof_metadata(metadata: Any) -> bool:
     return True
 
 
-def create_event(entity_id: str, event_type: str, details: dict[str, Any] | None = None,
-                timestamp: float | None = None) -> dict[str, Any]:
+def create_event(
+    entity_id: str, event_type: str,
+    details: dict[str, Any] | None = None,
+    timestamp: float | None = None
+) -> dict[str, Any]:
     """
     Create a properly structured event following Ledger guidelines.
     
@@ -214,9 +220,7 @@ def create_event(entity_id: str, event_type: str, details: dict[str, Any] | None
 
 
 def filter_events_by_timerange(
-    events: list[dict[str, Any]],
-    start_time: float,
-    end_time: float
+    events: list[dict[str, Any]], start_time: float, end_time: float
 ) -> list[dict[str, Any]]:
     """
     Filter events by timestamp range.
@@ -235,7 +239,9 @@ def filter_events_by_timerange(
     ]
 
 
-def group_events_by_entity(events: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+def group_events_by_entity(
+    events: list[dict[str, Any]]
+) -> dict[str, list[dict[str, Any]]]:
     """
     Group events by entity_id.
     
@@ -255,7 +261,9 @@ def group_events_by_entity(events: list[dict[str, Any]]) -> dict[str, list[dict[
     return grouped
 
 
-def group_events_by_type(events: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+def group_events_by_type(
+    events: list[dict[str, Any]]
+) -> dict[str, list[dict[str, Any]]]:
     """
     Group events by event type.
     
@@ -383,7 +391,9 @@ def create_domain_event_template(domain_type: str) -> dict[str, Any]:
         Event template dictionary
     """
     return {
-        "entity_id": f"{domain_type.upper()}-{int(time.time())}-{str(uuid.uuid4())[:8]}",
+        "entity_id": (
+            f"{domain_type.upper()}-{int(time.time())}-{str(uuid.uuid4())[:8]}"
+        ),
         "event": "template_event",
         "timestamp": time.time(),
         "details": {
@@ -437,8 +447,10 @@ class MerkleTree:
         Initialize Merkle Tree.
         
         Args:
-            data_list: List of data items (strings or dicts) to include in the tree (will be hashed)
-            leaves: List of pre-calculated hashes (hex strings). If provided, data_list is ignored.
+            data_list: List of data items (strings or dicts) to include
+                       in the tree (will be hashed)
+            leaves: List of pre-calculated hashes (hex strings). If provided,
+                    data_list is ignored.
         """
         if leaves is not None:
             self.leaves = leaves
@@ -460,7 +472,8 @@ class MerkleTree:
             Root hash of the tree
         """
         if not nodes:
-            return hashlib.sha256(b"").hexdigest() # Empty tree hash
+            # Empty tree hash
+            return hashlib.sha256(b"").hexdigest()
             
         if len(nodes) == 1:
             return nodes[0]

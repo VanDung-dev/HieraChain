@@ -151,7 +151,7 @@ class CacheEntry:
 class AdvancedCache:
     """Advanced caching system with multiple eviction policies"""
     
-    def __init__(self, max_size: int = 10000, eviction_policy: str = "lru"):
+    def __init__(self, max_size: int = 10000, eviction_policy: str = "lru") -> None:
         """
         Initialize advanced cache
         
@@ -194,7 +194,7 @@ class AdvancedCache:
             self.hits += 1
             return entry.value
     
-    def set(self, key: str, value: Any, ttl: float | None = None):
+    def set(self, key: str, value: Any, ttl: float | None = None) -> None:
         """Set item in cache with optional TTL"""
         with self.lock:
             # Check if we need to evict
@@ -233,7 +233,7 @@ class AdvancedCache:
             self.misses = 0
             self.evictions = 0
     
-    def _update_access(self, key: str):
+    def _update_access(self, key: str) -> None:
         """Update access information for the key"""
         entry = self.cache[key]
         entry.access_time = time.time()
@@ -244,7 +244,7 @@ class AdvancedCache:
             self.access_order.remove(key)
         self.access_order.append(key)
     
-    def _evict(self):
+    def _evict(self) -> None:
         """Evict an item based on the eviction policy"""
         if not self.cache:
             return
@@ -294,14 +294,14 @@ class AdvancedCache:
         # No expired entries - reuse LRU logic
         return self._evict_lru()
 
-    def _remove_key(self, key: str):
+    def _remove_key(self, key: str) -> None:
         """Remove a key from the cache"""
         if key in self.cache:
             del self.cache[key]
         if key in self.access_order:
             self.access_order.remove(key)
     
-    def _start_ttl_cleanup_thread(self):
+    def _start_ttl_cleanup_thread(self) -> None:
         """Start background thread for TTL cleanup"""
         def cleanup_loop():
             while True:
@@ -317,7 +317,9 @@ class AdvancedCache:
     def cleanup_ttl(self):
         """Manual cleanup of expired TTL entries"""
         with self.lock:
-            expired_keys = [key for key, entry in self.cache.items() if entry.is_expired]
+            expired_keys = [
+                key for key, entry in self.cache.items() if entry.is_expired
+            ]
             
             for key in expired_keys:
                 self._remove_key(key)
@@ -373,16 +375,16 @@ DEFAULT_CACHE_CONFIG: dict[str, Any] = {
 class CachePerformanceTracker:
     """Tracks cache performance metrics (hits, misses, time saved)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.block_retrievals = 0
         self.cache_hits = 0
         self.total_time_saved = 0.0
 
-    def record_miss(self):
+    def record_miss(self) -> None:
         """Record a cache miss (block retrieval from chain)."""
         self.block_retrievals += 1
 
-    def record_hit(self, estimated_time_saved: float = 0.002):
+    def record_hit(self, estimated_time_saved: float = 0.002) -> None:
         """Record a cache hit."""
         self.cache_hits += 1
         self.total_time_saved += estimated_time_saved
@@ -414,12 +416,12 @@ class CacheInvalidator:
         block_cache: AdvancedCache,
         event_cache: AdvancedCache,
         entity_cache: AdvancedCache,
-    ):
+    ) -> None:
         self.block_cache = block_cache
         self.event_cache = event_cache
         self.entity_cache = entity_cache
 
-    def invalidate_entity(self, entity_id: str):
+    def invalidate_entity(self, entity_id: str) -> None:
         """Invalidate all cached data for a specific entity."""
         keys_to_remove = [
             key
@@ -429,27 +431,27 @@ class CacheInvalidator:
         for key in keys_to_remove:
             self.entity_cache.delete(key)
 
-    def invalidate_block(self, chain_name: str, index: int | None = None):
+    def invalidate_block(self, chain_name: str, index: int | None = None) -> None:
         """Invalidate cached blocks (and related events) for a chain."""
         if index is not None:
             self._invalidate_specific_block(chain_name, index)
         else:
             self._invalidate_chain_blocks(chain_name)
 
-    def _invalidate_specific_block(self, chain_name: str, index: int):
+    def _invalidate_specific_block(self, chain_name: str, index: int) -> None:
         """Invalidate a single block and its related event cache."""
         self.block_cache.delete(f"{chain_name}:{index}")
         self.event_cache.delete(
             f"events:{chain_name}:{index}"
         )
 
-    def _invalidate_chain_blocks(self, chain_name: str):
+    def _invalidate_chain_blocks(self, chain_name: str) -> None:
         """Invalidate all blocks and event caches for a chain."""
         self._delete_keys_with_prefix(self.block_cache, f"{chain_name}:")
         self._delete_keys_with_prefix(self.event_cache, f"events:{chain_name}:")
 
     @staticmethod
-    def _delete_keys_with_prefix(cache: AdvancedCache, prefix: str):
+    def _delete_keys_with_prefix(cache: AdvancedCache, prefix: str) -> None:
         """Delete all keys from cache that match the prefix."""
         keys = [
             k for k in cache.get_keys()
@@ -462,7 +464,7 @@ class CacheInvalidator:
 class EntityEventFetcher:
     """Fetches entity-related events from the blockchain."""
 
-    def __init__(self, chain: Any):
+    def __init__(self, chain: Any) -> None:
         self.chain = chain
         self.logger = logging.getLogger(__name__)
 
@@ -519,12 +521,12 @@ class BlockchainCacheManager:
     """Cache manager specifically for blockchain data.
 
     Delegates to specialised helpers:
-      - CachePerformanceTracker  - metrics
-      - CacheInvalidator         - cache invalidation
-      - EntityEventFetcher       - blockchain data retrieval
+        - CachePerformanceTracker  - metrics
+        - CacheInvalidator         - cache invalidation
+        - EntityEventFetcher       - blockchain data retrieval
     """
 
-    def __init__(self, chain: Any, config: dict[str, Any] | None = None):
+    def __init__(self, chain: Any, config: dict[str, Any] | None = None) -> None:
         """
         Initialize blockchain cache manager.
 
@@ -601,11 +603,13 @@ class BlockchainCacheManager:
         self.perf_tracker.record_miss()
         return block
 
-    def _log_slow_query(self, cache_key: str, start_time: float):
+    def _log_slow_query(self, cache_key: str, start_time: float) -> None:
         """Log queries that take longer than 1 ms."""
         query_time = time.time() - start_time
         if query_time > 0.001:
-            self.logger.debug(f"Block retrieval for {cache_key}: {query_time}",)
+            self.logger.debug(
+                "Block retrieval for %s: %.3f", cache_key, query_time
+            )
 
     # ----- event retrieval --------------------------------------------
 
@@ -620,10 +624,14 @@ class BlockchainCacheManager:
                 if block:
                     events = block.events
                     # Cache with TTL
-                    self.event_cache.set(cache_key, events, ttl=self.config.get("event_ttl", 300))
+                    self.event_cache.set(
+                        cache_key, events, ttl=self.config.get("event_ttl", 300)
+                    )
             return events
 
-    def get_entity_events(self, entity_id: str, chain_type: str = "all") -> list[dict[str, Any]]:
+    def get_entity_events(
+        self, entity_id: str, chain_type: str = "all"
+    ) -> list[dict[str, Any]]:
         """
         Get all events for an entity (18.9x faster when cached).
 
@@ -646,11 +654,16 @@ class BlockchainCacheManager:
                 self._log_slow_entity_query(entity_id, start_time, len(events))
             return events
 
-    def _log_slow_entity_query(self, entity_id: str, start_time: float, event_count: int):
+    def _log_slow_entity_query(
+        self, entity_id: str, start_time: float, event_count: int
+    ) -> None:
         """Log entity queries that take longer than 50 ms."""
         query_time = time.time() - start_time
         if query_time > 0.05:
-            self.logger.info(f"Entity query for {entity_id}: {query_time}, {event_count} events")
+            self.logger.info(
+                "Entity query for %s: %.3f, %d events",
+                entity_id, query_time, event_count
+            )
 
     # ----- chain lookup -----------------------------------------------
 
@@ -669,7 +682,7 @@ class BlockchainCacheManager:
         with self.lock:
             self.invalidator.invalidate_entity(entity_id)
 
-    def invalidate_block_cache(self, chain_name: str, index: int | None = None):
+    def invalidate_block_cache(self, chain_name: str, index: int | None = None) -> None:
         """Invalidate cached blocks for a chain."""
         with self.lock:
             self.invalidator.invalidate_block(chain_name, index)
@@ -699,13 +712,13 @@ class BlockchainCacheManager:
     
     def warm_cache(self, entity_ids: list[str]):
         """Warm up cache with frequently accessed entities."""
-        self.logger.info(f"Warming cache for {len(entity_ids)} entities")
+        self.logger.info("Warming cache for %d entities", len(entity_ids))
         
         for entity_id in entity_ids:
             try:
                 self.get_entity_events(entity_id, "all")
             except Exception as e:
-                self.logger.warning(f"Failed to warm cache for {entity_id}: {e}")
+                self.logger.warning("Failed to warm cache for %s: %s", entity_id, e)
         
         self.logger.info("Cache warming completed")
     
@@ -722,7 +735,9 @@ class BlockchainCacheManager:
 
 
 # Factory functions
-def create_blockchain_cache(chain: Any, config: dict[str, Any] | None = None) -> BlockchainCacheManager:
+def create_blockchain_cache(
+    chain: Any, config: dict[str, Any] | None = None
+) -> BlockchainCacheManager:
     """Create blockchain cache manager with default configuration."""
     return BlockchainCacheManager(chain, config)
 

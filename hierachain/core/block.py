@@ -279,7 +279,7 @@ def _recover_from_data_column(row: dict[str, Any]) -> dict[str, Any] | None:
     try:
         return json.loads(data)
     except (json.JSONDecodeError, TypeError) as e:
-        logger.debug(f"JSON decode fallback: {e}")
+        logger.debug("JSON decode fallback: %s", e)
         return None
 
 

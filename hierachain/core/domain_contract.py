@@ -45,19 +45,34 @@ class ContractVersion:
         return f"{self.major}.{self.minor}.{self.patch}"
     
     def __lt__(self, other: 'ContractVersion') -> bool:
-        return (self.major, self.minor, self.patch) < (other.major, other.minor, other.patch)
+        return (
+            (self.major, self.minor, self.patch) <
+            (other.major, other.minor, other.patch)
+        )
     
     def __le__(self, other: 'ContractVersion') -> bool:
-        return (self.major, self.minor, self.patch) <= (other.major, other.minor, other.patch)
+        return (
+            (self.major, self.minor, self.patch) <=
+            (other.major, other.minor, other.patch)
+        )
     
     def __gt__(self, other: 'ContractVersion') -> bool:
-        return (self.major, self.minor, self.patch) > (other.major, other.minor, other.patch)
+        return (
+            (self.major, self.minor, self.patch) >
+            (other.major, other.minor, other.patch)
+        )
     
     def __ge__(self, other: 'ContractVersion') -> bool:
-        return (self.major, self.minor, self.patch) >= (other.major, other.minor, other.patch)
+        return (
+            (self.major, self.minor, self.patch) >=
+            (other.major, other.minor, other.patch)
+        )
     
     def __eq__(self, other: 'ContractVersion') -> bool:
-        return (self.major, self.minor, self.patch) == (other.major, other.minor, other.patch)
+        return (
+            (self.major, self.minor, self.patch) ==
+            (other.major, other.minor, other.patch)
+        )
     
     @classmethod
     def from_string(cls, version_str: str) -> 'ContractVersion':
@@ -131,7 +146,7 @@ class ContractStorage:
 class ContractLifecycle:
     """Contract lifecycle management"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.status = ContractStatus.DEVELOPMENT
         self.status_history: list[dict[str, Any]] = []
         self.deployment_info: dict[str, Any] | None = None
@@ -212,7 +227,7 @@ class DomainContract:
         version: str | ContractVersion,
         implementation: Callable | None = None,
         metadata: dict[str, Any] | None = None
-    ):
+    ) -> None:
         """
         Initialize domain contract.
         
@@ -223,7 +238,11 @@ class DomainContract:
             metadata: Contract governance and configuration metadata
         """
         self.contract_id = contract_id
-        self.version = version if isinstance(version, ContractVersion) else ContractVersion.from_string(version)
+        self.version = (
+            version
+            if isinstance(version, ContractVersion)
+            else ContractVersion.from_string(version)
+        )
         self.implementation = implementation
         self.metadata = metadata or {}
         
@@ -266,7 +285,9 @@ class DomainContract:
         self._log_contract_event(ContractEventType.DEPLOYED, {
             "action": "handler_registered",
             "event_type": event_type,
-            "handler": handler.__name__ if hasattr(handler, '__name__') else str(handler)
+            "handler": (
+                handler.__name__ if hasattr(handler, '__name__') else str(handler)
+            )
         })
     
     def unregister_event_handler(self, event_type: str, handler: Callable) -> bool:
@@ -288,7 +309,9 @@ class DomainContract:
                 pass
         return False
     
-    def execute(self, event: dict[str, Any], context: dict[str, Any] | None = None) -> dict[str, Any]:
+    def execute(
+        self, event: dict[str, Any], context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         Execute contract logic based on domain event.
         
@@ -303,7 +326,9 @@ class DomainContract:
         if self.lifecycle.status != ContractStatus.ACTIVE:
             return {
                 "success": False,
-                "error": f"Contract is not active (status: {self.lifecycle.status.value})",
+                "error": (
+                    f"Contract is not active (status: {self.lifecycle.status.value})"
+                ),
                 "contract_id": self.contract_id,
                 "version": str(self.version)
             }
@@ -344,7 +369,9 @@ class DomainContract:
         
         return execution_result
 
-    def _initialize_execution_result(self, event: dict[str, Any], start_time: float) -> dict[str, Any]:
+    def _initialize_execution_result(
+        self, event: dict[str, Any], start_time: float
+    ) -> dict[str, Any]:
         """Initialize the execution result dictionary."""
         return {
             "success": False,
@@ -382,7 +409,8 @@ class DomainContract:
                     handler_result = handler(event, ctx, self.storage)
                     handler_results.append({
                         "handler": (
-                            handler.__name__ if hasattr(handler, '__name__') else str(handler)
+                            handler.__name__
+                            if hasattr(handler, '__name__') else str(handler)
                         ),
                         "result": handler_result,
                         "success": True
@@ -390,7 +418,8 @@ class DomainContract:
                 except Exception as handler_error:
                     handler_results.append({
                         "handler": (
-                            handler.__name__ if hasattr(handler, '__name__') else str(handler)
+                            handler.__name__
+                            if hasattr(handler, '__name__') else str(handler)
                         ),
                         "error": str(handler_error),
                         "success": False
@@ -445,8 +474,11 @@ class DomainContract:
         Returns:
             True if upgrade was successful
         """
-        new_version_obj = new_version \
-            if isinstance(new_version, ContractVersion) else ContractVersion.from_string(new_version)
+        new_version_obj = (
+            new_version
+            if isinstance(new_version, ContractVersion)
+            else ContractVersion.from_string(new_version)
+        )
         
         # Validate version is newer
         if new_version_obj <= self.version:
@@ -494,7 +526,9 @@ class DomainContract:
         
         return True
     
-    def deprecate(self, reason: str = "", end_of_life_date: float | None = None) -> bool:
+    def deprecate(
+        self, reason: str = "", end_of_life_date: float | None = None
+    ) -> bool:
         """
         Mark contract as deprecated.
         
@@ -509,12 +543,16 @@ class DomainContract:
         if end_of_life_date:
             metadata["end_of_life_date"] = str(end_of_life_date)
         
-        success = self.lifecycle.transition_to(ContractStatus.DEPRECATED, reason, metadata)
+        success = self.lifecycle.transition_to(
+            ContractStatus.DEPRECATED, reason, metadata
+        )
         
         if success:
             self._log_contract_event(ContractEventType.DEPRECATED, {
                 "reason": reason,
-                "end_of_life_date": str(end_of_life_date) if end_of_life_date is not None else None
+                "end_of_life_date": (
+                    str(end_of_life_date) if end_of_life_date is not None else None
+                )
             })
         
         return success
@@ -522,7 +560,9 @@ class DomainContract:
     def activate(self, deployed_by: str = "system") -> bool:
         """Activate the contract for production use"""
         metadata = {"deployed_by": deployed_by}
-        success = self.lifecycle.transition_to(ContractStatus.ACTIVE, "Contract activated", metadata)
+        success = self.lifecycle.transition_to(
+            ContractStatus.ACTIVE, "Contract activated", metadata
+        )
         
         if success:
             self._log_contract_event(ContractEventType.ACTIVATED, {
@@ -560,7 +600,7 @@ class DomainContract:
             },
             "lifecycle_info": self.lifecycle.get_status_info(),
             "event_handlers": {
-                event_type: len(handlers) 
+                event_type: len(handlers)
                 for event_type, handlers in self.event_handlers.items()
             },
             "version_history": [str(v.version) for v in self.previous_versions],
@@ -573,7 +613,9 @@ class DomainContract:
     
     def _setup_default_handlers(self) -> None:
         """Setup default event handlers"""
-        def default_logging_handler(event: dict[str, Any], context: dict[str, Any], storage: ContractStorage):
+        def default_logging_handler(
+            event: dict[str, Any], context: dict[str, Any], storage: ContractStorage
+        ) -> None:
             """Default handler that logs all events"""
             log_entry = {
                 "timestamp": time.time(),
@@ -593,7 +635,9 @@ class DomainContract:
         # Register default handler for all event types if no specific handlers exist
         self.default_handler = default_logging_handler
     
-    def _log_contract_event(self, event_type: ContractEventType, details: dict[str, Any]) -> None:
+    def _log_contract_event(
+        self, event_type: ContractEventType, details: dict[str, Any]
+    ) -> None:
         """Log contract lifecycle events"""
         log_entry = {
             "timestamp": time.time(),
@@ -609,16 +653,23 @@ class DomainContract:
     
     def __str__(self) -> str:
         """String representation of contract"""
-        return f"DomainContract(id={self.contract_id}, version={self.version}, status={self.lifecycle.status.value})"
+        return (
+            f"DomainContract(id={self.contract_id}, "
+            f"version={self.version}, status={self.lifecycle.status.value})"
+        )
     
     def __repr__(self) -> str:
         """Detailed string representation"""
-        return (f"DomainContract(contract_id='{self.contract_id}', "
-                f"version='{self.version}', status='{self.lifecycle.status.value}', "
-                f"handlers={len(self.event_handlers)}, executions={self.execution_count})")
+        return (
+            f"DomainContract(contract_id='{self.contract_id}', "
+            f"version='{self.version}', status='{self.lifecycle.status.value}', "
+            f"handlers={len(self.event_handlers)}, executions={self.execution_count})"
+        )
 
 
-def is_valid_status_transition(from_status: ContractStatus, to_status: ContractStatus) -> bool:
+def is_valid_status_transition(
+    from_status: ContractStatus, to_status: ContractStatus
+) -> bool:
     """Check if status transition is valid."""
     valid_transitions = {
         ContractStatus.DEVELOPMENT: [ContractStatus.TESTING, ContractStatus.DISABLED],

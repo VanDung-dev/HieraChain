@@ -41,7 +41,7 @@ class Blockchain:
     events per block.
     """
 
-    def __init__(self, name: str = "Blockchain"):
+    def __init__(self, name: str = "Blockchain") -> None:
         """
         Initialize a new blockchain.
         
@@ -217,10 +217,10 @@ class Blockchain:
         
         # Additional structure validation
         if hasattr(block, 'validate_structure') and not block.validate_structure():
-            logger.warning(f"Block {block.index} structure validation failed")
+            logger.warning("Block %d structure validation failed", block.index)
             return False
         
-        logger.debug(f"Block {block.index} validated successfully")
+        logger.debug("Block %d validated successfully", block.index)
         return True
     
     def is_chain_valid(self) -> bool:
@@ -369,5 +369,7 @@ class Blockchain:
     
     def __repr__(self) -> str:
         """Detailed string representation of the blockchain."""
-        return (f"Blockchain(name={self.name}, blocks={len(self.chain)}, "
-                f"pending_events={len(self.pending_events)}, valid={self.is_chain_valid()})")
+        return (
+            f"Blockchain(name={self.name}, blocks={len(self.chain)}, "
+            f"pending_events={len(self.pending_events)}, valid={self.is_chain_valid()})"
+        )

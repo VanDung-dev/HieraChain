@@ -40,7 +40,7 @@ TRANSACTION_SCHEMA = pa.schema([
     ('arrow_payload', pa.binary()),  # Optional (nullable=True by default in pyarrow)
     ('signature', pa.string()),      # Optional
     ('timestamp', pa.float64()),     # Mandatory
-    ('details', pa.map_(pa.string(), pa.string())), # Optional
+    ('details', pa.map_(pa.string(), pa.string())),  # Optional
     # ZK Proof fields (optional) - for trustless state verification
     ('zk_proof', pa.binary()),           # Serialized ZK proof bytes
     ('zk_public_inputs', pa.binary()),   # Serialized public inputs (JSON)
@@ -82,6 +82,7 @@ def get_block_schema() -> pa.Schema:
         ('zk_proof', pa.binary()),
         ('zk_public_inputs', pa.binary()),
     ])
+
 
 # Constants for conversion
 SERIALIZATION_METADATA_KEY = b'hiera_metadata'

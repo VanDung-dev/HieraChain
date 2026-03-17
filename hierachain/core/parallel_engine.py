@@ -15,7 +15,9 @@ import logging
 from typing import Any, Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, Future, as_completed
+from concurrent.futures import (
+    ThreadPoolExecutor, ProcessPoolExecutor, Future, as_completed
+)
 
 
 class ProcessingError(Exception):
@@ -57,7 +59,9 @@ class ProcessingResult:
 class WorkerPool:
     """Configurable worker pool for parallel processing"""
     
-    def __init__(self, pool_name: str, max_workers: int, pool_type: str = "thread"):
+    def __init__(
+        self, pool_name: str, max_workers: int, pool_type: str = "thread"
+    ) -> None:
         """
         Initialize worker pool
         
@@ -131,8 +135,9 @@ class WorkerPool:
         """Get worker pool statistics"""
         with self.lock:
             total_tasks = self.completed_tasks + self.failed_tasks
-            success_rate = (self.completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
-            
+            success_rate = (
+                (self.completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+            )
             return {
                 "pool_name": self.pool_name,
                 "pool_type": self.pool_type,
@@ -143,7 +148,7 @@ class WorkerPool:
                 "success_rate": round(success_rate, 2)
             }
     
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown the worker pool"""
         self.executor.shutdown(wait=True)
         self.logger.info(f"Worker pool {self.pool_name} shutdown complete")
@@ -152,7 +157,7 @@ class WorkerPool:
 class ParallelProcessingEngine:
     """Parallel processing engine for blockchain operations"""
     
-    def __init__(self, max_workers: int | None = None, chunk_size: int = 100):
+    def __init__(self, max_workers: int | None = None, chunk_size: int = 100) -> None:
         """
         Initialize parallel processing engine
         
@@ -202,16 +207,21 @@ class ParallelProcessingEngine:
         """Create a new worker pool"""
         with self.lock:
             if pool_name in self.worker_pools:
-                self.logger.warning(f"Worker pool {pool_name} already exists, replacing")
+                self.logger.warning(
+                    "Worker pool %s already exists, replacing", pool_name
+                )
                 self.worker_pools[pool_name].shutdown()
             
             pool = WorkerPool(pool_name, max_workers, pool_type)
             self.worker_pools[pool_name] = pool
             
-            self.logger.info(f"Created worker pool '{pool_name}' with {max_workers} {pool_type} workers")
+            self.logger.info(
+                "Created worker pool '%s' with %d %s workers",
+                pool_name, max_workers, pool_type
+            )
             return pool
     
-    def register_default_policies(self):
+    def register_default_policies(self) -> None:
         """Register default processing policies"""
         self.register_policy("default", default_processing_policy)
         self.register_policy("validation", validation_policy)
@@ -286,7 +296,9 @@ class ParallelProcessingEngine:
             return []
         
         # Split data into chunks
-        chunks = [data[i:i + self.chunk_size] for i in range(0, len(data), self.chunk_size)]
+        chunks = [
+            data[i:i + self.chunk_size] for i in range(0, len(data), self.chunk_size)
+        ]
         
         # Process each chunk
         all_results = []
@@ -309,7 +321,9 @@ class ParallelProcessingEngine:
         worker_pool = self.worker_pools.get(pool_name)
         
         if not worker_pool:
-            self.logger.error(f"Worker pool {pool_name} not found, using general pool")
+            self.logger.error(
+                "Worker pool %s not found, using general pool", pool_name
+            )
             worker_pool = self.worker_pools["general"]
         
         # Submit all tasks
@@ -330,7 +344,10 @@ class ParallelProcessingEngine:
                     self.results_cache[result.task_id] = result
                     
             except Exception as e:
-                self.logger.error(f"Failed to get task result: {e}")
+                self.logger.error(
+                    "Failed to get task result %s: %s",
+                    task.task_id, e
+                )
                 results.append(ProcessingResult(
                     task_id="unknown",
                     success=False,
@@ -339,12 +356,12 @@ class ParallelProcessingEngine:
         
         return results
     
-    def _start_task_dispatcher(self):
+    def _start_task_dispatcher(self) -> None:
         """Start background task dispatcher for priority queue"""
         dispatcher_thread = threading.Thread(target=self._dispatch_loop, daemon=True)
         dispatcher_thread.start()
 
-    def _dispatch_loop(self):
+    def _dispatch_loop(self) -> None:
         """Background loop for dispatching tasks from the priority queue."""
         while True:
             try:
@@ -360,7 +377,7 @@ class ParallelProcessingEngine:
             except Exception as e:
                 self.logger.error(f"Task dispatcher error: {e}")
 
-    def _process_queued_task(self, task: ProcessingTask):
+    def _process_queued_task(self, task: ProcessingTask) -> None:
         """Process a single task from the priority queue."""
         try:
             # Process task with appropriate policy
@@ -384,33 +401,46 @@ class ParallelProcessingEngine:
     
     # Specialized blockchain processing methods
     
-    def validate_blocks_parallel(self, blocks: list[Any], validator_func: Callable) -> list[ProcessingResult]:
+    def validate_blocks_parallel(
+        self, blocks: list[Any], validator_func: Callable
+    ) -> list[ProcessingResult]:
         """Validate multiple blocks in parallel"""
         return self.process_batch(blocks, validator_func, "validation")
     
-    def index_events_parallel(self, events: list[Any], indexer_func: Callable) -> list[ProcessingResult]:
+    def index_events_parallel(
+        self, events: list[Any], indexer_func: Callable
+    ) -> list[ProcessingResult]:
         """Index multiple events in parallel"""
         return self.process_chunks(events, indexer_func, "indexing")
     
-    def process_entity_batch(self, entities: list[str], processor_func: Callable) -> list[ProcessingResult]:
+    def process_entity_batch(
+        self, entities: list[str], processor_func: Callable
+    ) -> list[ProcessingResult]:
         """Process entity batch with optimized settings"""
         return self.process_batch(entities, processor_func, "batch", cache=True)
     
     def priority_process(self, data: Any, processor_func: Callable) -> ProcessingResult:
         """Process single item with high priority"""
         results = self.process_batch([data], processor_func, "priority")
-        return results[0] if results else ProcessingResult("failed", False, error="No result")
+        return (
+            results[0]
+            if results else ProcessingResult("failed", False, error="No result")
+        )
     
     # Monitoring and Management
     
     def get_engine_stats(self) -> dict[str, Any]:
         """Get comprehensive engine statistics"""
         with self.lock:
-            pool_stats = {name: pool.get_stats() for name, pool in self.worker_pools.items()}
+            pool_stats = {
+                name: pool.get_stats() for name, pool in self.worker_pools.items()
+            }
             
             # Calculate totals
             total_active = sum(stats["active_tasks"] for stats in pool_stats.values())
-            total_completed = sum(stats["completed_tasks"] for stats in pool_stats.values())
+            total_completed = sum(
+                stats["completed_tasks"] for stats in pool_stats.values()
+            )
             total_failed = sum(stats["failed_tasks"] for stats in pool_stats.values())
             
             return {
@@ -428,7 +458,7 @@ class ParallelProcessingEngine:
                     "failed_tasks": total_failed,
                     "total_tasks": total_completed + total_failed,
                     "overall_success_rate": round(
-                        (total_completed / (total_completed + total_failed) * 100) 
+                        (total_completed / (total_completed + total_failed) * 100)
                         if (total_completed + total_failed) > 0 else 0, 2
                     )
                 },
@@ -442,7 +472,7 @@ class ParallelProcessingEngine:
             if len(self.results_cache) > 10000:
                 # Keep only recent results
                 sorted_results = sorted(
-                    self.results_cache.items(), 
+                    self.results_cache.items(),
                     key=lambda x: x[1].processing_time,
                     reverse=True
                 )
@@ -457,12 +487,15 @@ class ParallelProcessingEngine:
         with self.lock:
             for name, pool in self.worker_pools.items():
                 with pool.lock:
-                    util_pct = (pool.active_tasks / pool.max_workers * 100) if pool.max_workers > 0 else 0
+                    util_pct = (
+                        (pool.active_tasks / pool.max_workers * 100)
+                        if pool.max_workers > 0 else 0
+                    )
                     utilization[name] = round(util_pct, 2)
         
         return utilization
     
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown all worker pools and engine"""
         self.logger.info("Shutting down parallel processing engine")
         
@@ -488,8 +521,7 @@ class ParallelProcessingEngine:
 # Factory functions and utilities
 
 def create_parallel_engine(
-    max_workers: int | None = None,
-    chunk_size: int = 100
+    max_workers: int | None = None, chunk_size: int = 100
 ) -> ParallelProcessingEngine:
     """Create parallel processing engine with default configuration"""
     return ParallelProcessingEngine(max_workers, chunk_size)
@@ -507,7 +539,9 @@ def create_high_performance_engine() -> ParallelProcessingEngine:
     return engine
 
 
-def parallel_map(data: list[Any], func: Callable, max_workers: int | None = None) -> list[Any]:
+def parallel_map(
+    data: list[Any], func: Callable, max_workers: int | None = None
+) -> list[Any]:
     """Simple parallel map function"""
     engine = create_parallel_engine(max_workers)
     
@@ -519,9 +553,7 @@ def parallel_map(data: list[Any], func: Callable, max_workers: int | None = None
 
 
 def parallel_filter(
-    data: list[Any],
-    predicate: Callable,
-    max_workers: int | None = None
+    data: list[Any], predicate: Callable, max_workers: int | None = None
 ) -> list[Any]:
     """Parallel filter function"""
     def filter_func(item):
@@ -537,9 +569,7 @@ def parallel_filter(
 
 
 def default_processing_policy(
-    data_batch: list[Any],
-    processor_func: Callable,
-    **kwargs
+    data_batch: list[Any], processor_func: Callable, **kwargs
 ) -> dict[str, Any]:
     """Default processing policy"""
     # Access parameters to avoid unused parameter warnings
@@ -564,9 +594,7 @@ def default_processing_policy(
 
 
 def validation_policy(
-    data_batch: list[Any],
-    processor_func: Callable,
-    **kwargs
+    data_batch: list[Any], processor_func: Callable, **kwargs
 ) -> dict[str, Any]:
     """Validation processing policy"""
     # Access parameters to avoid unused parameter warnings
@@ -584,9 +612,7 @@ def validation_policy(
 
 
 def indexing_policy(
-    data_batch: list[Any],
-    processor_func: Callable,
-    **kwargs
+    data_batch: list[Any], processor_func: Callable, **kwargs
 ) -> dict[str, Any]:
     """Indexing processing policy"""
     batch_size = len(data_batch)
@@ -605,9 +631,7 @@ def indexing_policy(
 
 
 def batch_policy(
-    data_batch: list[Any],
-    processor_func: Callable,
-    **kwargs
+    data_batch: list[Any], processor_func: Callable, **kwargs
 ) -> dict[str, Any]:
     """Batch processing policy"""
     # Access parameters to avoid unused parameter warnings
@@ -624,9 +648,7 @@ def batch_policy(
 
 
 def priority_policy(
-    data_batch: list[Any],
-    processor_func: Callable,
-    **kwargs
+    data_batch: list[Any], processor_func: Callable, **kwargs
 ) -> dict[str, Any]:
     """Priority processing policy"""
     # Access parameters to avoid unused parameter warnings

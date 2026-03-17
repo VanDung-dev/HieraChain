@@ -14,6 +14,7 @@ from typing import Callable, Any, Optional
 
 logger = logging.getLogger(__name__)
 
+
 class ProcessPoolManager:
     """
     Singleton manager for a ProcessPoolExecutor (multiprocessing).
@@ -48,7 +49,10 @@ class ProcessPoolManager:
             max_workers = max(2, int(cpu_count * 0.75))
         
         self._executor = ProcessPoolExecutor(max_workers=max_workers)
-        logger.info(f"ProcessPool initialized with {max_workers} worker(s) (Total CPU: {os.cpu_count()})")
+        logger.info(
+            "ProcessPool initialized with %d worker(s) (Total CPU: %d)",
+            max_workers, os.cpu_count()
+        )
 
     async def run_task(self, func: Callable, *args) -> Any:
         """
@@ -71,6 +75,7 @@ class ProcessPoolManager:
             self._executor.shutdown(wait=True)
             self._executor = None
             logger.info("ProcessPool shutdown.")
+
 
 # Global instance
 process_pool = ProcessPoolManager()
