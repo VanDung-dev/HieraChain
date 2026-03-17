@@ -158,7 +158,7 @@ def _collect_network_psutil() -> dict[str, float]:
 class SystemMetricsCollector:
     """Collector for system-level performance metrics"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize system metrics collector"""
         self.logger = logging.getLogger(__name__)
         self.process = psutil.Process()
@@ -170,10 +170,12 @@ class SystemMetricsCollector:
                 'cpu_usage_total': psutil.cpu_percent(interval=0.1),
                 'cpu_usage_process': self.process.cpu_percent(),
                 'cpu_count': psutil.cpu_count(),
-                'load_average_1m': psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0.0
+                'load_average_1m': (
+                    psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0.0
+                )
             }
         except Exception as e:
-            self.logger.error(f"Error collecting CPU metrics: {str(e)}")
+            self.logger.error("Error collecting CPU metrics: %s", str(e))
             return {}
     
     def collect_memory_metrics(self) -> dict[str, float]:
@@ -181,7 +183,7 @@ class SystemMetricsCollector:
         try:
             return self._collect_memory_psutil()
         except Exception as e:
-            self.logger.error(f"Error collecting memory metrics: {str(e)}")
+            self.logger.error("Error collecting memory metrics: %s", str(e))
             return {}
 
     def _collect_memory_psutil(self) -> dict[str, float]:
@@ -203,7 +205,7 @@ class SystemMetricsCollector:
         try:
             return _collect_disk_psutil()
         except Exception as e:
-            self.logger.error(f"Error collecting disk metrics: {str(e)}")
+            self.logger.error("Error collecting disk metrics: %s", str(e))
             return {}
 
     def collect_network_metrics(self) -> dict[str, float]:
@@ -211,14 +213,14 @@ class SystemMetricsCollector:
         try:
             return _collect_network_psutil()
         except Exception as e:
-            self.logger.error(f"Error collecting network metrics: {str(e)}")
+            self.logger.error("Error collecting network metrics: %s", str(e))
             return {}
 
 
 class BlockchainMetricsCollector:
     """Collector for blockchain-specific performance metrics"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize blockchain metrics collector"""
         self.logger = logging.getLogger(__name__)
         self.event_counts = defaultdict(int)
@@ -255,8 +257,12 @@ class BlockchainMetricsCollector:
             self.consensus_metrics['failures'] += 1
         
         # Update average time
-        total_time = self.consensus_metrics['avg_time'] * (self.consensus_metrics['rounds'] - 1)
-        self.consensus_metrics['avg_time'] = (total_time + duration) / self.consensus_metrics['rounds']
+        total_time = (
+            self.consensus_metrics['avg_time'] * (self.consensus_metrics['rounds'] - 1)
+        )
+        self.consensus_metrics['avg_time'] = (
+            (total_time + duration) / self.consensus_metrics['rounds']
+        )
     
     def collect_metrics(self) -> dict[str, float]:
         """Collect blockchain performance metrics"""
@@ -269,7 +275,9 @@ class BlockchainMetricsCollector:
             # Event processing metrics
             if self.event_processing_times:
                 metrics.update({
-                    'event_processing_avg_time': statistics.mean(self.event_processing_times),
+                    'event_processing_avg_time': statistics.mean(
+                        self.event_processing_times
+                    ),
                     'event_processing_max_time': max(self.event_processing_times),
                     'event_processing_min_time': min(self.event_processing_times)
                 })
@@ -277,7 +285,8 @@ class BlockchainMetricsCollector:
             # Block creation metrics
             if self.block_creation_times:
                 recent_blocks = [
-                    b for b in self.block_creation_times if current_time - b['timestamp'] <= 300
+                    b for b in self.block_creation_times
+                    if current_time - b['timestamp'] <= 300
                 ]  # Last 5 minutes
                 
                 if recent_blocks:
@@ -286,7 +295,7 @@ class BlockchainMetricsCollector:
                     
                     metrics.update({
                         'block_creation_avg_time': statistics.mean(creation_times),
-                        'block_creation_rate': len(recent_blocks) / 300.0,  # blocks per second
+                        'block_creation_rate': len(recent_blocks) / 300.0,
                         'block_avg_size': statistics.mean(block_sizes)
                     })
             
@@ -303,8 +312,10 @@ class BlockchainMetricsCollector:
                 'consensus_failures_total': self.consensus_metrics['failures'],
                 'consensus_avg_time': self.consensus_metrics['avg_time'],
                 'consensus_success_rate': (
-                    (self.consensus_metrics['rounds'] - self.consensus_metrics['failures']) / 
-                    max(self.consensus_metrics['rounds'], 1)
+                    (
+                        self.consensus_metrics['rounds'] -
+                        self.consensus_metrics['failures']
+                    ) / max(self.consensus_metrics['rounds'], 1)
                 ) * 100
             })
             
@@ -320,9 +331,15 @@ def _calculate_report_summary(current_metrics: dict[str, Any]) -> dict[str, int]
     """Calculate summary counts for the report"""
     return {
         'total_metrics': len(current_metrics),
-        'critical_alerts': len([m for m in current_metrics.values() if m['status'] == 'critical']),
-        'warning_alerts': len([m for m in current_metrics.values() if m['status'] == 'warning']),
-        'normal_metrics': len([m for m in current_metrics.values() if m['status'] == 'normal'])
+        'critical_alerts': len(
+            [m for m in current_metrics.values() if m['status'] == 'critical']
+        ),
+        'warning_alerts': len(
+            [m for m in current_metrics.values() if m['status'] == 'warning']
+        ),
+        'normal_metrics': len(
+            [m for m in current_metrics.values() if m['status'] == 'normal']
+        )
     }
 
 
@@ -351,7 +368,9 @@ def _add_type_section_to_report(lines: list[str], metric_type: str, metrics: lis
 
     for name, data in metrics:
         status_symbol = _get_status_symbol(data['status'])
-        lines.append(f"  {status_symbol} {name}: {data['current_value']} {data['unit']}")
+        lines.append(
+            f"  {status_symbol} {name}: {data['current_value']} {data['unit']}"
+        )
 
         if data['status'] in ['warning', 'critical']:
             threshold = data.get(f"threshold_{data['status']}")
@@ -359,7 +378,9 @@ def _add_type_section_to_report(lines: list[str], metric_type: str, metrics: lis
                 lines.append(f"    ({data['status']} threshold: {threshold})")
 
 
-def _determine_health_status(avg_score: float, critical_issues: int, warning_issues: int) -> str:
+def _determine_health_status(
+    avg_score: float, critical_issues: int, warning_issues: int
+) -> str:
     """Determine health status string based on score and issues"""
     if critical_issues > 0:
         return "critical"
@@ -399,7 +420,7 @@ class PerformanceMonitor:
         self._initialize_default_metrics()
         
         # Monitoring configuration
-        self.collection_interval = self.config.get('collection_interval', 5.0)  # seconds
+        self.collection_interval = self.config.get('collection_interval', 5.0)  # sec
         self.enable_alerts = self.config.get('enable_alerts', True)
         self.alert_handlers: list[Callable[[str, PerformanceMetric, float], None]] = []
         
@@ -507,9 +528,11 @@ class PerformanceMonitor:
         if callback:
             self.custom_metrics_callbacks[name] = lambda: {name: callback()}
         
-        self.logger.info(f"Added custom metric: {name}")
+        self.logger.info("Added custom metric: %s", name)
     
-    def add_alert_handler(self, handler: Callable[[str, PerformanceMetric, float], None]):
+    def add_alert_handler(
+        self, handler: Callable[[str, PerformanceMetric, float], None]
+    ) -> None:
         """Add alert handler for threshold violations"""
         self.alert_handlers.append(handler)
     
@@ -599,7 +622,7 @@ def _execute_monitoring_cycle(monitor: "PerformanceMonitor") -> None:
         _collect_all_metrics(monitor)
         _check_thresholds(monitor)
     except Exception as cycle_error:
-        monitor.logger.error(f"Error in monitoring cycle: {str(cycle_error)}")
+        monitor.logger.error("Error in monitoring cycle: %s", str(cycle_error))
 
 
 def _collect_all_metrics(monitor: "PerformanceMonitor") -> None:
@@ -609,7 +632,7 @@ def _collect_all_metrics(monitor: "PerformanceMonitor") -> None:
         _collect_blockchain_metrics(monitor)
         _collect_custom_metrics(monitor)
     except Exception as collect_error:
-        monitor.logger.error(f"Error collecting all metrics: {str(collect_error)}")
+        monitor.logger.error("Error collecting all metrics: %s", str(collect_error))
 
 
 def _collect_system_metrics(monitor: "PerformanceMonitor") -> None:
@@ -657,7 +680,10 @@ def _process_custom_callback(
             if metric_name in monitor.metrics:
                 monitor.metrics[metric_name].add_value(value)
     except Exception as e:
-        monitor.logger.error(f"Error collecting custom metric {callback_name}: {str(e)}")
+        monitor.logger.error(
+            "Error collecting custom metric %s: %s",
+            callback_name, str(e)
+        )
 
 
 def _apply_metric_mapping(
@@ -692,7 +718,10 @@ def _process_threshold_check(
             _trigger_alerts(monitor, level, metric, current_value)
             _log_alert(monitor, metric_name, level, metric, current_value)
     except Exception as e:
-        monitor.logger.error(f"Error checking threshold for {metric_name}: {str(e)}")
+        monitor.logger.error(
+            "Error checking threshold for %s: %s",
+            metric_name, str(e)
+        )
 
 
 def _trigger_alerts(
@@ -708,7 +737,7 @@ def _trigger_alerts(
         try:
             handler(level, metric, current_value)
         except Exception as e:
-            monitor.logger.error(f"Alert handler error: {str(e)}")
+            monitor.logger.error("Alert handler error: %s", str(e))
 
 
 def _log_alert(
@@ -721,10 +750,12 @@ def _log_alert(
     """Log an alert for a metric"""
     if current_value is None:
         return
-    threshold = metric.threshold_critical if level == 'critical' else metric.threshold_warning
+    threshold = (
+        metric.threshold_critical if level == 'critical' else metric.threshold_warning
+    )
     monitor.logger.warning(
-        f"Performance alert: {metric_name} = {current_value} "
-        f"({level} threshold: {threshold})"
+        "Performance alert: %s = %s (%s threshold: %s)",
+        metric_name, current_value, level, threshold
     )
 
 
@@ -762,7 +793,10 @@ def _get_metric_history(
         values = list(metric.values) if metric.values else []
     else:
         cutoff_time = time.time() - duration_seconds
-        values = [v for v in metric.values if v.timestamp >= cutoff_time] if metric.values else []
+        values = (
+            [v for v in metric.values if v.timestamp >= cutoff_time]
+            if metric.values else []
+        )
     return [asdict(v) for v in values]
 
 
@@ -810,7 +844,9 @@ def _get_health_score(monitor: "PerformanceMonitor") -> Tuple[float, str]:
     return avg_score, status
 
 
-def _calculate_issue_counts(monitor: "PerformanceMonitor") -> Tuple[list[float], int, int]:
+def _calculate_issue_counts(
+    monitor: "PerformanceMonitor"
+) -> Tuple[list[float], int, int]:
     """Calculate issue counts for each metric"""
     scores: list[float] = []
     critical_issues = 0
@@ -833,9 +869,10 @@ def create_default_alert_handler() -> Callable[[str, PerformanceMetric, float], 
     def alert_handler(level: str, metric: PerformanceMetric, value: float):
         logger = logging.getLogger("PerformanceMonitor.Alerts")
         logger.warning(
-            f"PERFORMANCE ALERT: {metric.name} = {value} {metric.unit.value} "
-            f"(threshold: {getattr(metric, f'threshold_{level}', 'unknown')}) "
-            f"- {metric.description}"
+            "Performance alert: %s = %s %s (threshold: %s) - %s",
+            metric.name, value, metric.unit.value,
+            getattr(metric, f"threshold_{level}", "unknown"),
+            metric.description
         )
     
     return alert_handler

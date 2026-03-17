@@ -332,8 +332,8 @@ class PerformanceMetrics:
         summary = self.get_summary()
         
         logger.info("=== Performance Metrics Summary ===")
-        logger.info(f"Operations tracked: {summary['operations_tracked']}")
-        logger.info(f"Total samples: {summary['total_samples']}")
+        logger.info("Operations tracked: %d", summary['operations_tracked'])
+        logger.info("Total samples: %d", summary['total_samples'])
         
         for name, metrics in summary.get('metrics', {}).items():
             logger.info(
