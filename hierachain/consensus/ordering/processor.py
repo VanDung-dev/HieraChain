@@ -10,7 +10,9 @@ from queue import Empty
 
 from hierachain.core.performance import process_pool
 from hierachain.security.security_utils import verify_batch_signatures
-from hierachain.consensus.ordering.types import PendingEvent, EventStatus, OrderingStatus
+from hierachain.consensus.ordering.types import (
+    PendingEvent, EventStatus, OrderingStatus
+)
 from hierachain.consensus.ordering.block_manager import OrderingBlockManager
 from hierachain.consensus.ordering.recovery import OrderingRecovery
 
@@ -32,7 +34,9 @@ def _should_process_batch(
     return False
 
 
-def _extract_verification_items(batch: list[PendingEvent]) -> tuple[list[dict], list[PendingEvent]]:
+def _extract_verification_items(
+    batch: list[PendingEvent]
+) -> tuple[list[dict], list[PendingEvent]]:
     """Extract public keys, messages, and signatures for batch verification."""
     verification_items: list[dict] = []
     events_to_verify: list[PendingEvent] = []
@@ -58,7 +62,7 @@ def _extract_verification_items(batch: list[PendingEvent]) -> tuple[list[dict], 
     return verification_items, events_to_verify
 
 
-def _remove_pending(pending_events: dict,event_id: str) -> None:
+def _remove_pending(pending_events: dict, event_id: str) -> None:
     """Remove an event from pending_events if present."""
     pending_events.pop(event_id, None)
 
@@ -83,7 +87,7 @@ def _handle_certified_event(
     return raw_block_data
 
 
-def _handle_rejected_event(pending_event: PendingEvent,metrics) -> None:
+def _handle_rejected_event(pending_event: PendingEvent, metrics) -> None:
     """Mark event as rejected and record metric."""
     pending_event.status = EventStatus.REJECTED
     metrics.record_rejected()
@@ -93,7 +97,7 @@ def _handle_rejected_event(pending_event: PendingEvent,metrics) -> None:
 class OrderingProcessor:
     """Handles background event processing and loop coordination"""
 
-    def __init__(self, service):
+    def __init__(self, service) -> None:
         self.service = service
         self.should_stop = service.should_stop
         self.event_pool = service.event_pool
@@ -118,7 +122,9 @@ class OrderingProcessor:
         await self._initialize_service()
 
         # Use block_size as fallback for batch_size to maintain consistency
-        batch_size = self.config.get("batch_size") or self.config.get("block_size") or 100
+        batch_size = (
+            self.config.get("batch_size") or self.config.get("block_size") or 100
+        )
         
         while not self.should_stop.is_set():
             try:
@@ -153,7 +159,9 @@ class OrderingProcessor:
         last_batch_time: float,
         batch_size: int,
     ) -> float:
-        """Decide if a batch should be processed or if timeout blocks should be checked."""
+        """
+        Decide if a batch should be processed or if timeout blocks should be checked.
+        """
         is_full = len(batch) >= batch_size
         batch_timeout = self.config.get("batch_timeout", 0.1)
         is_timeout = (time.time() - last_batch_time) > batch_timeout
@@ -185,7 +193,9 @@ class OrderingProcessor:
         verification_items, events_to_verify = (_extract_verification_items(batch))
 
         if verification_items:
-            await self._verify_batch_signatures_async(verification_items, events_to_verify)
+            await self._verify_batch_signatures_async(
+                verification_items, events_to_verify
+            )
 
         await self._handle_processed_batch(batch)
 
@@ -196,14 +206,18 @@ class OrderingProcessor:
     ) -> None:
         """Execute parallel batch signature verification using the process pool."""
         try:
-            results = await process_pool.run_task(verify_batch_signatures, verification_items)
+            results = await process_pool.run_task(
+                verify_batch_signatures, verification_items
+            )
             for event, is_valid in zip(events_to_verify, results):
                 if not is_valid:
                     event.status = EventStatus.REJECTED
                     self.metrics.record_rejected()
-                    logger.warning(f"Event {event.event_id} rejected (invalid signature)")
+                    logger.warning(
+                        "Event %s rejected (invalid signature)", event.event_id
+                    )
         except Exception as e:
-            logger.error(f"Batch verification failed: {e}")
+            logger.error("Batch verification failed: %s", e)
 
     async def _handle_processed_batch(self, batch: list[PendingEvent]) -> None:
         """
@@ -239,10 +253,10 @@ class OrderingProcessor:
                 if raw_block_data:
                     await self.block_manager.create_block_async(raw_block_data)
             else:
-                _handle_rejected_event(pending_event, self.metrics,)
+                _handle_rejected_event(pending_event, self.metrics)
 
         except Exception as e:
-            logger.error(f"Error processing event {pending_event.event_id}: {e}")
+            logger.error("Error processing event %s: %s", pending_event.event_id, e)
 
     async def force_process_batch_async(self) -> None:
         """Force immediate processing of current batch and block creation"""

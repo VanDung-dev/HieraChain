@@ -11,10 +11,10 @@ import logging
 from typing import Any
 
 from hierachain.consensus.base_consensus import (
-    BaseConsensus,
-    _verify_block_zk_proof
+    BaseConsensus, _verify_block_zk_proof
 )
 from hierachain.core.block import Block
+from hierachain.security.security_utils import KeyPair
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +136,12 @@ class ProofOfAuthority(BaseConsensus):
             _verify_block_zk_proof(block)
         )
 
-    def finalize_block(self, block: Block, authority_id: str | None = None, private_key: str | None = None) -> Block:
+    def finalize_block(
+        self,
+        block: Block,
+        authority_id: str | None = None,
+        private_key: str | None = None
+    ) -> Block:
         """
         Finalize a block according to PoA consensus.
 
@@ -144,7 +149,9 @@ class ProofOfAuthority(BaseConsensus):
             Finalized block with PoA consensus data
         """
         if authority_id and self.is_authority(authority_id):
-            authority_signature = _create_authority_signature(block, authority_id, private_key)
+            authority_signature = _create_authority_signature(
+                block, authority_id, private_key
+            )
             consensus_event = {
                 "event": "consensus_finalization",
                 "entity_id": "system_consensus",
@@ -170,7 +177,10 @@ class ProofOfAuthority(BaseConsensus):
     def _has_valid_authority_signature(self, block: Block) -> bool:
         """Check if block has a valid authority signature."""
         consensus_event = next(
-            (e for e in block.to_event_list() if e.get("event") == "consensus_finalization"),
+            (
+                e for e in block.to_event_list()
+                if e.get("event") == "consensus_finalization"
+            ),
             None
         )
 
@@ -187,7 +197,6 @@ class ProofOfAuthority(BaseConsensus):
         public_key = self.authority_metadata.get(authority_id, {}).get("public_key")
 
         if not public_key or not signature:
-            # Allow without verification only if public_key not configured (for legacy tests)
             return True
 
         from hierachain.security.security_utils import verify_signature
@@ -255,7 +264,9 @@ class ProofOfAuthority(BaseConsensus):
                 f"block_interval={self.config['block_interval']})")
 
 
-def _create_authority_signature(block: Block, authority_id: str, private_key: str | None = None) -> str:
+def _create_authority_signature(
+    block: Block, authority_id: str, private_key: str | None = None
+) -> str:
     """Create an authority signature for the block."""
     signature_data = {
         "block_hash": block.hash,
@@ -269,14 +280,13 @@ def _create_authority_signature(block: Block, authority_id: str, private_key: st
         f"{authority_id}"
         f"{signature_data['timestamp']}"
     )
-    from hierachain.security.security_utils import KeyPair
     
     if private_key:
         try:
             kp = KeyPair.from_private_key(private_key)
             return kp.sign(sig_str.encode())
         except Exception as e:
-            logger.error(f"Failed to sign block with private key: {e}")
+            logger.error("Failed to sign block with private key: %s", e)
             
     # Fallback to random signature for tests running without proper keys setup
     return KeyPair().sign(sig_str.encode())

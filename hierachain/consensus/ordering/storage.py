@@ -53,13 +53,16 @@ class OrderingStorageHandler:
         
         # Calculate block latency for metrics before clearing
         current_time = time.time()
-        block_latency = sum(current_time - e.received_at for e in self.processed_events.values())
+        block_latency = sum(
+            current_time - e.received_at for e in self.processed_events.values()
+        )
         event_count = len(self.processed_events)
         self.processed_events.clear()
         return event_count, block_latency
 
     def get_blocks(self, start_index: int) -> list[Block]:
-        if start_index < 0: start_index = 0
+        if start_index < 0:
+            start_index = 0
         if self.block_history and start_index >= self.block_history[0].index:
             offset = start_index - self.block_history[0].index
             return list(self.block_history)[offset:]
@@ -71,8 +74,11 @@ class OrderingStorageHandler:
         
         while True:
             # We need to know which chain we are loading blocks for
-            data = self.storage.get_block_by_index(current_index, chain_name=self.chain_name)
-            if not data: break
+            data = self.storage.get_block_by_index(
+                current_index, chain_name=self.chain_name
+            )
+            if not data:
+                break
             # Create block directly to avoid recalculating hash
             blocks.append(_block_from_dict(data))
             current_index += 1
@@ -95,5 +101,5 @@ class OrderingStorageHandler:
             return None
         return _block_from_dict(data)
 
-    def close(self):
+    def close(self) -> None:
         self.storage.close()

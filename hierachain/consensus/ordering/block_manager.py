@@ -12,6 +12,7 @@ from hierachain.consensus.ordering.types import OrderingStatus
 
 logger = logging.getLogger(__name__)
 
+
 class OrderingBlockManager:
     """Manages block creation, hashing, and committing to storage"""
     def __init__(self, service):
@@ -34,16 +35,19 @@ class OrderingBlockManager:
             )
             merkle_tree = MerkleTree(leaves=merkle_leaves)
             
-            previous_hash = self.storage_handler.last_block.hash if self.storage_handler.last_block else "0"
+            previous_hash = (
+                self.storage_handler.last_block.hash
+                if self.storage_handler.last_block else "0"
+            )
             block = Block(
-                index=self.service.blocks_created, 
+                index=self.service.blocks_created,
                 events=events,
                 previous_hash=previous_hash,
                 merkle_root=merkle_tree.root
             )
             self.commit_block(block)
         except Exception as e:
-            logger.error(f"Error creating block asynchronously: {e}")
+            logger.error("Error creating block asynchronously: %s", e)
 
     def commit_block(self, block: Block) -> None:
         """Commit a completed block to the commit queue and persistent storage"""
@@ -52,7 +56,9 @@ class OrderingBlockManager:
 
         try:
             chain_name = self.config.get("chain_name")
-            event_count, block_latency = self.storage_handler.save_block(block, chain_name)
+            event_count, block_latency = self.storage_handler.save_block(
+                block, chain_name
+            )
             self.metrics.record_block_created(event_count, block_latency)
             
             if self.service.status == OrderingStatus.ACTIVE:
@@ -66,9 +72,9 @@ class OrderingBlockManager:
 
             self.service.blocks_created += 1
             self.commit_queue.put(block)
-            logger.info(f"Block #{block.index} committed with {event_count} events")
+            logger.info("Block #%d committed with %d events", block.index, event_count)
         except Exception as e:
-            logger.error(f"Failed to commit block #{block.index}: {e}")
+            logger.error("Failed to commit block #%d: %s", block.index, e)
             self.service.status = OrderingStatus.MAINTENANCE
 
     async def check_timeout_block_creation(self, force: bool = False) -> None:

@@ -21,7 +21,7 @@ class OrderingMaintenance:
         if self.service.status == OrderingStatus.LOCKDOWN:
             return True
 
-        logger.critical(f"SYSTEM LOCKDOWN INITIATED: {reason}")
+        logger.critical("SYSTEM LOCKDOWN INITIATED: %s", reason)
         self.service.status = OrderingStatus.LOCKDOWN
         
         # Capture current state for forensic analysis
@@ -48,5 +48,5 @@ class OrderingMaintenance:
                 break
         
         self.service.pending_events.clear()
-        logger.warning(f"Event pool flushed. {count} events discarded.")
+        logger.warning("Event pool flushed. %d events discarded.", count)
         return count

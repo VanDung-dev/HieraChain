@@ -22,7 +22,10 @@ from hierachain.consensus.bft import (
 
 logger = logging.getLogger(__name__)
 
-def create_bft_network(node_configs: list[dict[str, Any]], fault_tolerance: int = 1) -> dict[str, BFTConsensus]:
+
+def create_bft_network(
+    node_configs: list[dict[str, Any]], fault_tolerance: int = 1
+) -> dict[str, BFTConsensus]:
     """
     Create a BFT consensus network (Factory function)
     
@@ -50,6 +53,7 @@ def create_bft_network(node_configs: list[dict[str, Any]], fault_tolerance: int 
         )
     
     return network
+
 
 _validate_consensus_message = validate_consensus_message
 

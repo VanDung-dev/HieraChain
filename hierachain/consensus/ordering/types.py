@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
+
 class OrderingStatus(Enum):
     """Ordering service status enumeration"""
     ACTIVE = "active"
@@ -14,6 +15,7 @@ class OrderingStatus(Enum):
     SHUTDOWN = "shutdown"
     ERROR = "error"
 
+
 class EventStatus(Enum):
     """Event processing status"""
     PENDING = "pending"
@@ -21,6 +23,7 @@ class EventStatus(Enum):
     ORDERED = "ordered"
     CERTIFIED = "certified"
     REJECTED = "rejected"
+
 
 @dataclass
 class PendingEvent:
@@ -44,6 +47,7 @@ class PendingEvent:
             "status": self.status.value,
             "certification_result": self.certification_result
         }
+
 
 @dataclass
 class OrderingNode:

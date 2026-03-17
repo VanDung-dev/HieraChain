@@ -262,10 +262,8 @@ def _verify_block_zk_proof(block: Block, previous_block: Block | None = None) ->
             block, previous_block, details
         )
 
-        if isinstance(zk_proof, str):
-            zk_proof = bytes.fromhex(zk_proof)
-
-        return verifier.verify(zk_proof, public_inputs)
+        zk_proof_bytes = bytes.fromhex(zk_proof)
+        return verifier.verify(zk_proof_bytes, public_inputs)
 
     except Exception as e:
         logger.error("ZK verification error in block %s: %s", block.index, e)

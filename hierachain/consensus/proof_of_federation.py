@@ -1,8 +1,8 @@
 """
 Proof of Federation (PoF) consensus mechanism.
 
-This module implements a Federated consensus mechanism designed for 
-consortium blockchains (e.g., Healthcare, Education, Supply Chain Consortia).
+This module implements a Federated consensus mechanism designed for consortium
+blockchains (e.g., Healthcare, Education, Supply Chain Consortia).
 It replaces the static authority model with a rotating leader schedule,
 ensuring fair participation and removing single points of failure.
 
@@ -15,8 +15,7 @@ import logging
 from typing import Any
 
 from hierachain.consensus.base_consensus import (
-    BaseConsensus,
-    _verify_block_zk_proof
+    BaseConsensus, _verify_block_zk_proof
 )
 from hierachain.core.block import Block
 
@@ -60,7 +59,9 @@ class ProofOfFederation(BaseConsensus):
         """Get the number of active validators."""
         return len(self.validators)
 
-    def add_validator(self, validator_id: str, metadata: dict[str, Any] | None = None) -> bool:
+    def add_validator(
+        self, validator_id: str, metadata: dict[str, Any] | None = None
+    ) -> bool:
         """
         Add a validator to the federation.
     
@@ -97,7 +98,9 @@ class ProofOfFederation(BaseConsensus):
             return True
         return False
 
-    def add_authority(self, authority_id: str, metadata: dict[str, Any] | None = None) -> bool:
+    def add_authority(
+        self, authority_id: str, metadata: dict[str, Any] | None = None
+    ) -> bool:
         """Alias for add_validator for compatibility."""
         return self.add_validator(authority_id, metadata)
 
@@ -197,9 +200,9 @@ class ProofOfFederation(BaseConsensus):
         # Uses shared implementation from BaseConsensus
         zk_valid = _verify_block_zk_proof(block, previous_block)
         if not zk_valid:
-            logger.error(f"Block {block.index} ZK proof verification FAILED")
+            logger.error("Block %d ZK proof verification FAILED", block.index)
             return False
-        logger.debug(f"Block {block.index} ZK proof verified")
+        logger.debug("Block %d ZK proof verified", block.index)
 
         return True
 
@@ -263,7 +266,7 @@ class ProofOfFederation(BaseConsensus):
             return False
 
         valid_count = 0
-        seen_validators = set()
+        seen_validators: set[str] = set()
 
         for sig_entry in signatures:
             validator_id = sig_entry.get("validator_id")
@@ -272,7 +275,7 @@ class ProofOfFederation(BaseConsensus):
                 self.validator_metadata, seen_validators
             ):
                 valid_count += 1
-                seen_validators.add(validator_id)
+                seen_validators.add(validator_id or "")
 
             if valid_count >= required_count:
                 return True
@@ -296,7 +299,9 @@ def _create_federation_signature(block: Block, leader_id: str) -> str:
     return hashlib.sha256(signature_data.encode()).hexdigest()
 
 
-def _get_required_quorum_count(total_validators: int, manually_required: int | None) -> int:
+def _get_required_quorum_count(
+    total_validators: int, manually_required: int | None
+) -> int:
     """Calculate the required number of signatures for a quorum."""
     if manually_required is not None:
         return manually_required

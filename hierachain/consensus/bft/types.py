@@ -60,7 +60,10 @@ class BFTMessage:
         digest = self.data.get("digest") if self.data else None
 
         # Base payload: Type:View:Seq:Nonce
-        payload = f"{self.message_type.value}:{self.view}:{self.sequence_number}:{self.nonce}"
+        payload = (
+            f"{self.message_type.value}:"
+            f"{self.view}:{self.sequence_number}:{self.nonce}"
+        )
 
         # Add digest if relevant for the message type
         if digest:

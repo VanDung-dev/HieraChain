@@ -6,6 +6,7 @@ import time
 from typing import Any
 from hierachain.consensus.ordering.types import PendingEvent
 
+
 class BlockBuilder:
     """Builds blocks from ordered events"""
     

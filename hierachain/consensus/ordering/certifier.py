@@ -93,8 +93,7 @@ def _run_custom_rules(
 
 
 def _check_structure_and_fields(
-    event_data: dict[str, Any],
-    certification: dict[str, Any],
+    event_data: dict[str, Any], certification: dict[str, Any],
 ) -> None:
     """Validate event structure and required fields."""
     if not certification["valid"]:
@@ -116,8 +115,7 @@ def _check_structure_and_fields(
 
 
 def _check_zk_proof(
-    event: PendingEvent,
-    certification: dict[str, Any],
+    event: PendingEvent, certification: dict[str, Any],
 ) -> None:
     """Run ZK proof verification if enabled and still valid."""
     if not certification["valid"]:
@@ -138,7 +136,7 @@ def _check_zk_proof(
 class EventCertifier:
     """Event certification and validation"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.validation_rules: list[Callable] = []
         self.certified_events: dict[str, dict[str, Any]] = {}
         self._setup_default_rules()

@@ -1,5 +1,6 @@
 """
-Ordering state recovery from the transaction journal for the HieraChain ordering service.
+Ordering state recovery from the transaction journal for the HieraChain
+ordering service.
 """
 
 import time
@@ -8,6 +9,7 @@ from hierachain.consensus.ordering.types import PendingEvent, EventStatus
 from hierachain.consensus.ordering.utils import make_serializable, generate_event_id
 
 logger = logging.getLogger(__name__)
+
 
 class OrderingRecovery:
     """Handles state recovery from the transaction journal"""
@@ -20,7 +22,8 @@ class OrderingRecovery:
     async def recover_state_async(self):
         """Recover state from transaction journal by replaying events"""
         logger.info(
-            f"Recovering state from Transaction Journal... Skipping blocks < {self.service.blocks_created}"
+            "Recovering state from Transaction Journal... Skipping blocks < %s",
+            self.service.blocks_created
         )
         count = 0
         skipped_events = 0
@@ -28,22 +31,34 @@ class OrderingRecovery:
             try:
                 event_data = make_serializable(event_data)
                 
-                # Check for block cut markers to track which events are already in blocks
                 if event_data.get("event") == "$SYSTEM_BLOCK_CUT":
                     details = event_data.get("details", {})
                     block_index_raw = details.get("block_index")
-                    block_index = int(block_index_raw) if block_index_raw is not None else None
+                    block_index = (
+                        int(block_index_raw) if block_index_raw is not None else None
+                    )
                     
-                    if block_index is not None and block_index < self.service.blocks_created:
+                    if (
+                        block_index is not None and
+                        block_index < self.service.blocks_created
+                    ):
                         # This block and all its events are already in the DB
-                        logger.debug(f"Recovery: Skipping already committed block #{block_index}")
+                        logger.debug(
+                            "Recovery: Skipping already committed block #%s",
+                            block_index
+                        )
                         # Clear block builder as if they were processed
-                        self.service.block_builder.force_create_block() 
+                        self.service.block_builder.force_create_block()
                         continue
                     
-                    if block_index is not None and block_index >= self.service.blocks_created:
+                    if (
+                        block_index is not None and
+                        block_index >= self.service.blocks_created
+                    ):
                         # We've reached events that are NOT in the DB yet
-                        await self.block_manager.check_timeout_block_creation(force=True)
+                        await self.block_manager.check_timeout_block_creation(
+                            force=True
+                        )
                         continue
 
                 channel_id = event_data.get("channel_id", "recovery")
@@ -65,9 +80,14 @@ class OrderingRecovery:
                 await self.processor.process_single_event(pending_event)
                 count += 1
             except Exception as e:
-                logger.error(f"Failed to recover event: {e}")
+                logger.error(
+                    "Failed to recover event %s: %s",
+                    event_id, e
+                )
         
         await self.block_manager.check_timeout_block_creation()
         logger.info(
-            f"Journal recovery complete. Restored {count} events, skipped {skipped_events} already committed."
+            "Journal recovery complete. Restored %s events, "
+            "skipped %s already committed.",
+            count, skipped_events
         )

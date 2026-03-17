@@ -14,7 +14,9 @@ from typing import Any, Callable
 
 from hierachain.core.block import Block
 from hierachain.error_mitigation.journal import TransactionJournal
-from hierachain.consensus.ordering.types import PendingEvent, EventStatus, OrderingStatus
+from hierachain.consensus.ordering.types import (
+    PendingEvent, EventStatus, OrderingStatus
+)
 from hierachain.consensus.ordering.utils import generate_event_id
 from hierachain.consensus.ordering.metrics import OrderingMetrics
 from hierachain.consensus.ordering.storage import OrderingStorageHandler
@@ -24,6 +26,7 @@ from hierachain.consensus.ordering.processor import OrderingProcessor
 from hierachain.consensus.ordering.maintenance import OrderingMaintenance
 
 logger = logging.getLogger(__name__)
+
 
 class OrderingService:
     """
@@ -46,13 +49,18 @@ class OrderingService:
         # Initialize blocks_created from DB to ensure continuity after restart
         latest_block = self.storage_handler.get_latest_block_from_db()
         self.blocks_created = (latest_block.index + 1) if latest_block else 0
-        logger.info(f"Initialized ordering service state: blocks_created={self.blocks_created}")
+        logger.info(
+            "Initialized ordering service state: blocks_created=%s",
+            self.blocks_created
+        )
         
         # Configure journal based on storage_dir and node_id for persistence
         storage_dir = config.get("storage_dir", "journal")
         node_id = nodes[0].node_id if nodes else "unknown"
         active_log_name = f"node_{node_id}_journal.log"
-        self.journal = TransactionJournal(storage_dir=storage_dir, active_log_name=active_log_name)
+        self.journal = TransactionJournal(
+            storage_dir=storage_dir, active_log_name=active_log_name
+        )
         
         self.certifier = EventCertifier()
         self.block_builder = BlockBuilder(config)
@@ -63,7 +71,7 @@ class OrderingService:
         
         # Thread Management
         self.processing_thread = threading.Thread(
-            target=self._init_processing_thread, 
+            target=self._init_processing_thread,
             daemon=True,
             name="OrderingProcessor"
         )
@@ -78,14 +86,19 @@ class OrderingService:
         finally:
             self.loop.close()
 
-    def receive_event(self, event_data: dict[str, Any], channel_id: str, submitter_org: str) -> str:
+    def receive_event(
+        self, event_data: dict[str, Any], channel_id: str, submitter_org: str
+    ) -> str:
         """Submit a new event for ordering"""
         if self.status in [OrderingStatus.LOCKDOWN, OrderingStatus.SHUTDOWN]:
             raise Exception(f"Ordering service is in {self.status.value} mode")
 
         # Validate event_data is a dictionary
         if not isinstance(event_data, dict):
-            raise ValueError(f"event_data must be a dictionary, got {type(event_data).__name__}")
+            raise ValueError(
+                "event_data must be a dictionary, got %s",
+                type(event_data).__name__
+            )
 
         self.metrics.record_received()
         event_id = generate_event_id(event_data, channel_id)
@@ -121,7 +134,10 @@ class OrderingService:
     def get_next_block(self, timeout: float | None = None) -> Block | None:
         """Get next committed block from queue"""
         try:
-            return self.commit_queue.get(timeout=timeout) if timeout else self.commit_queue.get_nowait()
+            return (
+                self.commit_queue.get(timeout=timeout)
+                if timeout else self.commit_queue.get_nowait()
+            )
         except Empty:
             return None
 
@@ -145,16 +161,22 @@ class OrderingService:
             timeout: Maximum time to wait for completion.
         """
         if not hasattr(self, "loop") or not self.loop.is_running():
-            logger.warning("Ordering service loop NOT running. Cannot force block creation.")
+            logger.warning(
+                "Ordering service loop NOT running. Cannot force block creation."
+            )
             return
 
         future = asyncio.run_coroutine_threadsafe(
-            self.processor.force_process_batch_async(), 
+            self.processor.force_process_batch_async(),
             self.loop
         )
         try:
             future.result(timeout=timeout)
-            logger.debug(f"Forced block creation completed. QM={self.commit_queue.qsize()} BC={self.blocks_created}")
+            logger.debug(
+                "Forced block creation completed. QM=%s BC=%s",
+                self.commit_queue.qsize(),
+                self.blocks_created
+            )
         except Exception as e:
             logger.error(f"Error forcing block creation: {e}")
 

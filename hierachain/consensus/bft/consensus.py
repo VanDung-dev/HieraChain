@@ -37,7 +37,10 @@ logger = logging.getLogger(__name__)
 
 # --- Helper Functions (Moved to Module Level to Reduce Class Complexity) ---
 
-def _execute_consensus_operation(chain: Any, operation: dict[str, Any], seq: int, view: int):
+
+def _execute_consensus_operation(
+    chain: Any, operation: dict[str, Any], seq: int, view: int
+) -> None:
     """Execute operation by adding it to the chain reference."""
     try:
         event = {
@@ -45,12 +48,13 @@ def _execute_consensus_operation(chain: Any, operation: dict[str, Any], seq: int
             "event": operation.get("event_type", "consensus_operation"),
             "timestamp": time.time(),
             "details": operation.get("details", {}),
-            "consensus": {"sequence": seq,"view": view,"committed_at": time.time()}
+            "consensus": {"sequence": seq, "view": view, "committed_at": time.time()}
         }
         if chain:
             chain.add_event(event)
     except Exception as e:
         logger.error("Error executing operation: %s", e)
+
 
 def _log_behavior(
     error_classifier: Any,
@@ -62,7 +66,7 @@ def _log_behavior(
     view: int,
     seq: int,
     recovery_callback: Callable[[int], None]
-):
+) -> None:
     """Log node behavior and optionally initiate recovery."""
     if not error_classifier:
         return
@@ -82,6 +86,7 @@ def _log_behavior(
     failure_counts[node_id] = failure_counts.get(node_id, 0) + 1
     if failure_counts[node_id] >= max_failures and auto_recovery:
         recovery_callback(view + 1)
+
 
 def _validate_consensus_message(
     message: BFTMessage,
@@ -128,12 +133,13 @@ def validate_consensus_message(
         log_func,
     )
 
+
 def _cleanup_messages(
     pre_prep: dict[int, BFTMessage],
     prep: dict[int, list[BFTMessage]],
     commit: dict[int, list[BFTMessage]],
     committed_seq: int
-):
+) -> None:
     """Cleanup message storage for old sequences."""
     threshold = committed_seq - 100
     for seq in list(pre_prep.keys()):
@@ -141,6 +147,7 @@ def _cleanup_messages(
             pre_prep.pop(seq, None)
             prep.pop(seq, None)
             commit.pop(seq, None)
+
 
 def _create_signed_bft_message(
     msg_type: MessageType,
@@ -156,12 +163,14 @@ def _create_signed_bft_message(
         msg.signature = sign_message(key_provider, msg.get_signable_payload())
     return msg
 
+
 def _add_to_votes(votes: list[BFTMessage], message: BFTMessage) -> bool:
     """Add message to votes list avoiding duplicates from same sender."""
     if any(m.sender_id == message.sender_id for m in votes):
         return False
     votes.append(message)
     return True
+
 
 def _validate_prepare_msg(
     message: BFTMessage,
@@ -185,6 +194,7 @@ def _validate_prepare_msg(
         return False
         
     return True
+
 
 def _validate_commit_msg(
     message: BFTMessage,
@@ -335,9 +345,14 @@ class BFTViewChangeManager:
     def _process_view_change_quorum(self, new_view: int) -> bool:
         """Check if view change quorum is reached."""
         if len(self.consensus.view_change_votes[new_view]) >= 2 * self.consensus.f + 1:
-            is_new_primary = self.consensus.node_id == self.consensus.all_nodes[new_view % self.consensus.n]
+            is_new_primary = (
+                self.consensus.node_id ==
+                self.consensus.all_nodes[new_view % self.consensus.n]
+            )
             if is_new_primary and self.consensus.state == ConsensusState.VIEW_CHANGE:
-                self._broadcast_new_view(new_view, self.consensus.view_change_votes[new_view])
+                self._broadcast_new_view(
+                    new_view, self.consensus.view_change_votes[new_view]
+                )
         return True
 
     def handle_new_view(self, message: BFTMessage) -> bool:
@@ -357,7 +372,9 @@ class BFTViewChangeManager:
                 self.consensus.node_public_keys,
                 self._verify_sig
             ):
-                self.consensus.log_node_behavior(message.sender_id, "invalid_view_change_proof")
+                self.consensus.log_node_behavior(
+                    message.sender_id, "invalid_view_change_proof"
+                )
                 return False
 
             self.consensus.view = new_view
@@ -424,14 +441,17 @@ class BFTConsensus:
         """Initiate a new view change."""
         self.view_change_manager.initiate_view_change(new_view)
 
-    def _configure_network(self):
+    def _configure_network(self) -> None:
         """Configure network send function."""
         if self.zmq_node:
             if self.zmq_node.node_id != self.node_id:
-                logger.warning("ZmqNode ID %s mismatch with %s", self.zmq_node.node_id, self.node_id)
+                logger.warning(
+                    "ZmqNode ID %s mismatch with %s",
+                    self.zmq_node.node_id, self.node_id
+                )
             self.network_send_function = self._direct_send
 
-    def _validate_initial_requirements(self):
+    def _validate_initial_requirements(self) -> None:
         """Validate initial consensus requirements."""
         if not self.key_provider:
             raise ConsensusError("Cryptographic keys are required for BFT consensus")
@@ -461,15 +481,15 @@ class BFTConsensus:
             MessageType.NEW_VIEW: self.view_change_manager.handle_new_view
         }
 
-    def _direct_send(self, target_node: str, message: dict[str, Any]):
+    def _direct_send(self, target_node: str, message: dict[str, Any]) -> None:
         """Directly send a message to a node using ZMQ."""
         send_via_zmq(self.zmq_node, target_node, message)
 
-    def set_network_send_function(self, send_func: Callable):
+    def set_network_send_function(self, send_func: Callable) -> None:
         """Set custom network send function."""
         self.network_send_function = send_func
 
-    def set_chain_reference(self, chain: Any):
+    def set_chain_reference(self, chain: Any) -> None:
         """Set blockchain reference for operation execution."""
         self.chain = chain
     
@@ -581,7 +601,10 @@ class BFTConsensus:
             ):
                 return False
 
-            if settings.ENABLE_ZK_PROOFS and not verify_operation_zk_proof(message.data):
+            if (
+                settings.ENABLE_ZK_PROOFS and
+                not verify_operation_zk_proof(message.data)
+            ):
                 return False
 
             self.pre_prepare_messages[message.sequence_number] = message
@@ -621,7 +644,6 @@ class BFTConsensus:
             
             return self._check_prepare_quorum(seq, message.data.get("digest"))
 
-
     def _check_prepare_quorum(self, seq: int, digest: str | None) -> bool:
         """Check if 2f PREPARE messages received."""
         self.state, commit_msg = _process_prepare_quorum_logic(
@@ -660,7 +682,6 @@ class BFTConsensus:
                 return False
             
             return self._process_commit_quorum(seq)
-
 
     def _process_commit_quorum(self, seq: int) -> bool:
         """Check if commit quorum is reached and execute."""

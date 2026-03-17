@@ -13,6 +13,7 @@ from hierachain.consensus.ordering.types import PendingEvent
 
 logger = logging.getLogger(__name__)
 
+
 def make_serializable(obj: Any) -> Any:
     """Recursively make object JSON serializable"""
     if isinstance(obj, bytes):
@@ -27,12 +28,14 @@ def make_serializable(obj: Any) -> Any:
     # Fallback
     return str(obj)
 
+
 def generate_event_id(event_data: dict[str, Any], channel_id: str) -> str:
     """Generate unique event ID"""
     clean_data = make_serializable(event_data)
     json_str = json.dumps(clean_data, sort_keys=True, separators=(',', ':'))
     data = f"{channel_id}:{json_str}:{time.time()}"
     return hashlib.sha256(data.encode()).hexdigest()[:16]
+
 
 def verify_event_signature(event: PendingEvent, certification: dict[str, Any]) -> None:
     """Verify event signature if sender and signature are provided."""
@@ -48,7 +51,10 @@ def verify_event_signature(event: PendingEvent, certification: dict[str, Any]) -
             certification["valid"] = False
             certification["validation_errors"].append("Invalid signature")
 
-def dump_forensic_data(pending_events: dict[str, PendingEvent], event_pool: Queue) -> None:
+
+def dump_forensic_data(
+    pending_events: dict[str, PendingEvent], event_pool: Queue
+) -> None:
     """Dump event pool summary for forensic analysis."""
     try:
         os.makedirs("log", exist_ok=True)
@@ -66,6 +72,6 @@ def dump_forensic_data(pending_events: dict[str, PendingEvent], event_pool: Queu
         with open(dump_path, "w") as f:
             json.dump(dump_data, f, indent=2)
 
-        logger.info(f"Forensic data dumped to {dump_path}")
+        logger.info("Forensic data dumped to %s", dump_path)
     except Exception as e:
-        logger.error(f"Failed to dump forensic data: {e}")
+        logger.error("Failed to dump forensic data: %s", e)

@@ -12,13 +12,17 @@ from hierachain.consensus.bft.types import BFTMessage
 
 logger = logging.getLogger(__name__)
 
+
 def sign_message(key_provider, data: bytes) -> str:
     """Sign message data using Ed25519."""
     if not key_provider:
         return ""
     return key_provider.sign(data)
 
-def verify_message_signature(message: BFTMessage, node_public_keys: dict[str, str]) -> bool:
+
+def verify_message_signature(
+    message: BFTMessage, node_public_keys: dict[str, str]
+) -> bool:
     """Verify message signature using Ed25519."""
     if message.sender_id not in node_public_keys:
         logger.warning(f"No public key for node {message.sender_id}")
@@ -33,11 +37,17 @@ def verify_message_signature(message: BFTMessage, node_public_keys: dict[str, st
         logger.error(f"Signature verification error: {e}")
         return False
 
+
 def hash_request(request: dict[str, Any]) -> str:
     """Create hash of request"""
     # Simple JSON-like stable hash
-    req_str = f"{request.get('client_id')}:{request.get('timestamp')}:{request.get('operation')}"
+    req_str = (
+        f"{request.get('client_id')}:"
+        f"{request.get('timestamp')}:"
+        f"{request.get('operation')}"
+    )
     return hashlib.sha256(req_str.encode()).hexdigest()
+
 
 def verify_operation_zk_proof(data: dict[str, Any]) -> bool:
     """

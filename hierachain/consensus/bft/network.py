@@ -9,7 +9,8 @@ from hierachain.consensus.bft.types import BFTMessage
 
 logger = logging.getLogger(__name__)
 
-def send_via_zmq(zmq_node: Any, target_id: str, message: dict[str, Any]):
+
+def send_via_zmq(zmq_node: Any, target_id: str, message: dict[str, Any]) -> None:
     """Send message using ZeroMQ transport (sync wrapper for async)."""
     if zmq_node:
         try:
@@ -23,7 +24,8 @@ def send_via_zmq(zmq_node: Any, target_id: str, message: dict[str, Any]):
     else:
         logger.warning("No ZMQ node configured for direct send")
 
-def _broadcast_via_zmq(zmq_node: Any, msg_dict: dict[str, Any]):
+
+def _broadcast_via_zmq(zmq_node: Any, msg_dict: dict[str, Any]) -> None:
     """Internal helper to handle ZMQ broadcast with async/sync detection."""
     try:
         loop = asyncio.get_event_loop()
@@ -35,6 +37,7 @@ def _broadcast_via_zmq(zmq_node: Any, msg_dict: dict[str, Any]):
         asyncio.run(zmq_node.broadcast(msg_dict))
     except Exception as e:
         logger.error("ZMQ Broadcast error: %s", e)
+
 
 def _send_node_message(
     send_func: Callable,
@@ -51,6 +54,7 @@ def _send_node_message(
         log_behavior_func(node_id, "network_send_failure")
         return 1
 
+
 def _broadcast_manually(
     send_func: Callable,
     all_nodes: list[str],
@@ -66,6 +70,7 @@ def _broadcast_manually(
                 send_func, node_id, msg_dict, log_behavior_func
             )
     return failed_sends
+
 
 def broadcast(
     zmq_node: Any,
@@ -84,17 +89,19 @@ def broadcast(
     
     if network_send_function:
         return _broadcast_manually(
-            network_send_function, all_nodes, current_node_id, msg_dict, log_behavior_func
+            network_send_function, all_nodes,
+            current_node_id, msg_dict, log_behavior_func
         )
         
     return 0
+
 
 def forward_to_primary(
     network_send_function: Callable | None,
     primary_id: str,
     current_node_id: str,
     operation: dict[str, Any]
-):
+) -> None:
     """Forward request to primary node"""
     if network_send_function and primary_id != current_node_id:
         try:

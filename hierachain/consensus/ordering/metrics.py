@@ -4,6 +4,7 @@ Ordering metrics and statistics for the HieraChain ordering service.
 
 from typing import Any
 
+
 class OrderingMetrics:
     """Collector for ordering service statistics and metrics"""
     def __init__(self):
@@ -18,16 +19,16 @@ class OrderingMetrics:
             "events_committed": 0
         }
 
-    def record_received(self):
+    def record_received(self) -> None:
         self.statistics["events_received"] += 1
 
-    def record_certified(self):
+    def record_certified(self) -> None:
         self.statistics["events_certified"] += 1
 
-    def record_rejected(self):
+    def record_rejected(self) -> None:
         self.statistics["events_rejected"] += 1
 
-    def record_block_created(self, event_count: int, block_latency: float):
+    def record_block_created(self, event_count: int, block_latency: float) -> None:
         self.statistics["blocks_created"] += 1
         self.statistics["total_latency"] += block_latency
         self.statistics["events_committed"] += event_count
