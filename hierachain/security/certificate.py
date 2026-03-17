@@ -1,10 +1,10 @@
 """
 Certificate Management Utilities for HieraChain Ledger.
 
-This module provides certificate management utilities that support the advanced MSP 
-implementation and enhance enterprise security capabilities. It includes certificate 
-validation, chain verification, and certificate lifecycle management for enterprise 
-blockchain deployments.
+This module provides certificate management utilities that support the
+advanced MSP implementation and enhance enterprise security capabilities.
+It includes certificate validation, chain verification, and certificate
+lifecycle management for enterprise blockchain deployments.
 """
 
 import time
@@ -215,8 +215,14 @@ class CertificateValidator:
             validation_result["errors"].append("Certificate has been revoked")
             revocation_info = self.crl.get_revocation_info(cert.serial_number)
             if revocation_info:
-                validation_result["errors"].append(f"Revoked on: {revocation_info.get('revocation_date', 'Unknown date')}")
-                validation_result["errors"].append(f"Reason: {revocation_info.get('reason', 'Unspecified')}")
+                validation_result["errors"].append(
+                    f"Revoked on: {
+                        revocation_info.get('revocation_date', 'Unknown date')
+                    }"
+                )
+                validation_result["errors"].append(
+                    f"Reason: {revocation_info.get('reason', 'Unspecified')}"
+                )
         
         # Validate certificate chain
         chain_validation = self.validate_certificate_chain(cert)
@@ -290,13 +296,17 @@ class CertificateValidator:
         # 5. Recurse to issuer
         return self._recursive_validate_chain(issuer_cert, visited, result)
 
-    def _finalize_root_validation(self, cert: CertificateInfo, result: dict[str, Any]) -> dict[str, Any]:
+    def _finalize_root_validation(
+        self, cert: CertificateInfo, result: dict[str, Any]
+    ) -> dict[str, Any]:
         """Finalize validation when a self-signed certificate is reached."""
         if cert.subject in self.trusted_cas:
             result["valid"] = True
             result["trust_anchor"] = cert.subject
         else:
-            result["errors"].append(f"Self-signed certificate {cert.subject} is not in trusted CA list")
+            result["errors"].append(
+                f"Self-signed certificate {cert.subject} is not in trusted CA list"
+            )
         return result
 
 
@@ -420,7 +430,9 @@ class CertificateManager:
             "certificates_by_type": {}
         }
 
-    def store_certificate(self, cert: CertificateInfo, metadata: dict[str, Any] | None = None) -> str:
+    def store_certificate(
+        self, cert: CertificateInfo, metadata: dict[str, Any] | None = None
+    ) -> str:
         """
         Store certificate with metadata.
         
@@ -471,7 +483,9 @@ class CertificateManager:
                 matching_certs.append(entry["certificate"])
         return matching_certs
     
-    def get_expiring_certificates(self, days_threshold: int = 30) -> list[CertificateInfo]:
+    def get_expiring_certificates(
+        self, days_threshold: int = 30
+    ) -> list[CertificateInfo]:
         """Get certificates expiring within threshold"""
         expiring_certs = []
         for entry in self.certificate_store.values():
@@ -489,8 +503,12 @@ class CertificateManager:
             # Update metadata
             if storage_id in self.certificate_store:
                 self.certificate_store[storage_id]["metadata"]["revoked"] = True
-                self.certificate_store[storage_id]["metadata"]["revocation_reason"] = reason
-                self.certificate_store[storage_id]["metadata"]["revoked_at"] = time.time()
+                self.certificate_store[storage_id]["metadata"]["revocation_reason"] = (
+                    reason
+                )
+                self.certificate_store[storage_id]["metadata"]["revoked_at"] = (
+                    time.time()
+                )
             
             self._update_statistics()
             return True
@@ -573,5 +591,7 @@ class CertificateManager:
     
     def __repr__(self) -> str:
         """Detailed string representation"""
-        return (f"CertificateManager(total={len(self.certificates)}, "
-                f"active={self.statistics.get('active_certificates', 0)})")
+        return (
+            f"CertificateManager(total={len(self.certificates)}, "
+            f"active={self.statistics.get('active_certificates', 0)})"
+        )

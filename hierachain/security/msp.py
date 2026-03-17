@@ -1,9 +1,9 @@
 """
 Advanced Membership Service Provider (MSP) for HieraChain Ledger.
 
-This module implements enterprise-grade identity management with hierarchical certificate 
-management, role-based access control, and attribute-based policies for large-scale 
-business applications.
+This module implements enterprise-grade identity management withhierarchical
+certificate management, role-based access control, and attribute-based policies
+for large-scale business applications.
 """
 
 import time
@@ -54,7 +54,9 @@ def _generate_cert_id(subject: str, public_key: str) -> str:
     return hashlib.sha256(data.encode()).hexdigest()[:16]
 
 
-def _sign_certificate(cert_id: str, subject: str, public_key: str, ca_key: KeyPair) -> str:
+def _sign_certificate(
+    cert_id: str, subject: str, public_key: str, ca_key: KeyPair
+) -> str:
     """Generate certificate signature"""
     data = f"{cert_id}:{subject}:{public_key}"
     return ca_key.sign(data.encode())
@@ -63,7 +65,9 @@ def _sign_certificate(cert_id: str, subject: str, public_key: str, ca_key: KeyPa
 class CertificateAuthority:
     """Hierarchical Certificate Authority for enterprise environments"""
     
-    def __init__(self, root_cert: str, intermediate_certs: list[str], policy: dict[str, Any]):
+    def __init__(
+        self, root_cert: str, intermediate_certs: list[str], policy: dict[str, Any]
+    ) -> None:
         """
         Initialize Certificate Authority.
         
@@ -215,10 +219,12 @@ class OrganizationPolicies:
 
 class HierarchicalMSP:
     """
-    Enterprise-grade Membership Service Provider with hierarchical certificate management.
+    Enterprise-grade Membership Service Provider with hierarchical certificate
+    management.
     
-    This class provides comprehensive identity management for enterprise blockchain applications,
-    including certificate management, role-based access control, and audit logging.
+    This class provides comprehensive identity management for enterprise blockchain
+    applications, including certificate management, role-based access control, and
+    audit logging.
     """
     
     def __init__(self, organization_id: str, ca_config: dict[str, Any], config=None):
@@ -227,10 +233,13 @@ class HierarchicalMSP:
         
         Args:
             organization_id: Unique enterprise organization identifier
-            ca_config: Certificate authority configuration with hierarchical trust chains
+            ca_config: Certificate authority configuration with hierarchical trust
+                       chains
             config: Optional configuration dict with security settings.
-                  - enforce_authorization: bool, default True. Set to False for testing only!
-                  - enable_audit_logging: bool, default True. Set to False for performance
+                    - enforce_authorization: bool, default True. Set to False for
+                      testing only!
+                    - enable_audit_logging: bool, default True. Set to False for
+                      performance
         """
         import warnings
         
@@ -239,7 +248,8 @@ class HierarchicalMSP:
         
         if not config.get("enforce_authorization", True):
             warnings.warn(
-                "HierarchicalMSP: enforce_authorization=False - disable only for testing!",
+                "HierarchicalMSP: enforce_authorization=False - "
+                "disable only for testing!",
                 category=UserWarning
             )
         
@@ -323,7 +333,9 @@ class HierarchicalMSP:
             })
             return False
 
-    def validate_identity(self, entity_id: str | None, credentials: dict[str, Any] | None) -> bool:
+    def validate_identity(
+        self, entity_id: str | None, credentials: dict[str, Any] | None
+    ) -> bool:
         """
         Validate entity identity and credentials.
 
@@ -357,7 +369,9 @@ class HierarchicalMSP:
         self._log_event("identity_validated", {"entity_id": entity_id})
         return True
     
-    def authorize_action(self, entity_id: str | None, action: str | None, resource: str | None = None) -> bool:
+    def authorize_action(
+        self, entity_id: str | None, action: str | None, resource: str | None = None
+    ) -> bool:
         """
         Authorize entity action based on role and policies.
         
@@ -476,7 +490,9 @@ class HierarchicalMSP:
             "status": entity["status"],
             "registered_at": entity["registered_at"],
             "last_activity": entity["last_activity"],
-            "certificate_valid": self.ca.verify_certificate(entity["certificate"].cert_id),
+            "certificate_valid": self.ca.verify_certificate(
+                entity["certificate"].cert_id
+            ),
             "attributes": entity["attributes"]
         }
     
@@ -530,7 +546,10 @@ class HierarchicalMSP:
     
     def __str__(self) -> str:
         """String representation of MSP"""
-        return f"HierarchicalMSP(org={self.organization_id}, entities={len(self.entities)})"
+        return (
+            f"HierarchicalMSP(org={self.organization_id}, "
+            "entities={len(self.entities)})"
+        )
     
     def __repr__(self) -> str:
         """Detailed string representation"""

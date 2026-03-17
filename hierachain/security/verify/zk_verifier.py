@@ -119,17 +119,17 @@ def _validate_public_inputs(inputs: ZKPublicInputs) -> bool:
     """
     # Check old_state_root is a valid hash (64 hex chars for SHA-256)
     if not inputs.old_state_root or len(inputs.old_state_root) < 16:
-        logger.debug(f"Invalid old_state_root: {inputs.old_state_root}")
+        logger.debug("Invalid old_state_root: %s", inputs.old_state_root)
         return False
 
     # Check new_state_root is a valid hash
     if not inputs.new_state_root or len(inputs.new_state_root) < 16:
-        logger.debug(f"Invalid new_state_root: {inputs.new_state_root}")
+        logger.debug("Invalid new_state_root: %s", inputs.new_state_root)
         return False
 
     # Check block_index is non-negative
     if inputs.block_index < 0:
-        logger.debug(f"Invalid block_index: {inputs.block_index}")
+        logger.debug("Invalid block_index: %d", inputs.block_index)
         return False
 
     return True
@@ -176,9 +176,11 @@ class ZKVerifier:
         if self.mode == "production":
             self._load_verification_key()
         
-        logger.info(f"ZKVerifier initialized in '{self.mode}' mode")
+        logger.info("ZKVerifier initialized in '%s' mode", self.mode)
     
-    def verify(self, proof: bytes, public_inputs: dict[str, Any] | ZKPublicInputs) -> bool:
+    def verify(
+        self, proof: bytes, public_inputs: dict[str, Any] | ZKPublicInputs
+    ) -> bool:
         """
         Verify a ZK proof.
         
@@ -200,7 +202,9 @@ class ZKVerifier:
         # 1. Normalize and validate inputs
         inputs = _normalize_inputs(public_inputs)
         if not _validate_public_inputs(inputs):
-            return self._handle_verification_failure(inputs, "Invalid public inputs provided")
+            return self._handle_verification_failure(
+                inputs, "Invalid public inputs provided"
+            )
         
         try:
             # 2. Perform verification based on mode
@@ -220,19 +224,29 @@ class ZKVerifier:
             return self._verify_production(proof, inputs)
         raise ValueError(f"Unknown verification mode: {self.mode}")
 
-    def _process_verification_result(self, result: bool, inputs: ZKPublicInputs) -> bool:
+    def _process_verification_result(
+        self, result: bool, inputs: ZKPublicInputs
+    ) -> bool:
         """Update stats and log result."""
         if result:
             self.stats["successful_verifications"] += 1
-            logger.debug(f"ZK Proof verified successfully for block {inputs.block_index}")
+            logger.debug(
+                "ZK Proof verified successfully for block %d", inputs.block_index
+            )
         else:
             self.stats["failed_verifications"] += 1
-            logger.warning(f"ZK Proof verification FAILED for block {inputs.block_index}")
+            logger.warning(
+                "ZK Proof verification FAILED for block %d", inputs.block_index
+            )
         return result
 
-    def _handle_verification_failure(self, inputs: ZKPublicInputs, message: str) -> bool:
+    def _handle_verification_failure(
+        self, inputs: ZKPublicInputs, message: str
+    ) -> bool:
         """Handle pre-verification validation failures."""
-        logger.warning(f"{message} for block {inputs.block_index}")
+        logger.warning(
+            "%s for block %d", message, inputs.block_index
+        )
         self.stats["failed_verifications"] += 1
         return False
 
@@ -240,10 +254,10 @@ class ZKVerifier:
         """Handle exceptions during verification process."""
         self.stats["failed_verifications"] += 1
         if isinstance(e, ZKVerificationError):
-            logger.error(f"ZK Verification error: {e}")
+            logger.error("ZK Verification error: %s", e)
             raise e
         
-        error_msg = f"Verification failed: {e}"
+        error_msg = "Verification failed: %s" % str(e)
         logger.error(error_msg, error=str(e))
         raise ZKVerificationError(error_msg) from e
 
@@ -277,11 +291,17 @@ class ZKVerifier:
         try:
             with open(key_path, 'rb') as f:
                 self.verification_key = f.read()
-            logger.info(f"Loaded verification key from {key_path}")
+            logger.info(
+                "Loaded verification key from %s", key_path
+            )
         except FileNotFoundError:
-            logger.error(f"Verification key not found at {key_path}")
+            logger.error(
+                "Verification key not found at %s", key_path
+            )
         except Exception as e:
-            logger.error(f"Error loading verification key: {e}")
+            logger.error(
+                "Error loading verification key: %s", e
+            )
     
     def get_stats(self) -> dict[str, int]:
         """

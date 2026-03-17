@@ -13,6 +13,7 @@ from hierachain.security.secure_logging import get_security_logger
 
 logger = get_security_logger()
 
+
 class SignatureVerifier:
     """
     Verifies signatures for Events and Transactions.
@@ -28,7 +29,8 @@ class SignatureVerifier:
         
         The event dict must contain a 'signature' field.
         The signature is verified against the canonical JSON representation of the event
-        WITHOUT the 'signature' and 'data' (if strictly binary) fields, depending on signing spec.
+        WITHOUT the 'signature' and 'data' (if strictly binary) fields, depending on
+        signing spec.
         
         Assumes the signed content is the JSON dump of the event excluding 'signature'.
         
@@ -92,7 +94,9 @@ class SignatureVerifier:
         Each item must have 'item' (the dict) and 'public_key'.
         
         Args:
-            items: List of dicts -> [{'item': event_dict, 'public_key': hex_key, 'type': 'event'|'tx'}]
+            items: List of dicts -> [
+                {'item': event_dict, 'public_key': hex_key, 'type': 'event'|'tx'}
+            ]
             
         Returns:
             List of booleans.
@@ -182,10 +186,12 @@ class SignatureVerifier:
         except InvalidSignature:
             return False
         except (ValueError, TypeError) as e:
-            logger.debug(f"ECDSA verification format error: {e}")
+            logger.debug("ECDSA verification format error: %s", e)
             return False
         except Exception as e:
-            logger.error(f"Unexpected error during ECDSA verification: {e}", error=str(e))
+            logger.error(
+                "Unexpected error during ECDSA verification: %s", e, error=str(e)
+            )
             return False
 
     @staticmethod
@@ -200,7 +206,9 @@ class SignatureVerifier:
         
         # Use simple JSON dump with sort_keys for determinism
         # Ensure separators are compact to match most signing implementations
-        return json.dumps(event_copy, sort_keys=True, separators=(',', ':')).encode('utf-8')
+        return json.dumps(
+            event_copy, sort_keys=True, separators=(',', ':')
+        ).encode('utf-8')
 
     @staticmethod
     def _get_signable_transaction_content(tx: dict[str, Any]) -> bytes:
@@ -212,4 +220,6 @@ class SignatureVerifier:
         if 'signature' in tx_copy:
             del tx_copy['signature']
         
-        return json.dumps(tx_copy, sort_keys=True, separators=(',', ':')).encode('utf-8')
+        return json.dumps(
+            tx_copy, sort_keys=True, separators=(',', ':')
+        ).encode('utf-8')

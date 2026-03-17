@@ -30,7 +30,8 @@ class IdentityManager:
         
         Args:
             config: Optional configuration dict with security settings.
-                  - validate_signatures: bool, default True. Set to False for testing only!
+                    - Validate_signatures: bool, default True.
+                      Set to False for testing only!
         """
         import warnings
         
@@ -39,7 +40,8 @@ class IdentityManager:
         
         if not config.get("validate_signatures", True):
             warnings.warn(
-                "IdentityManager: validate_signatures=False is insecure! Use only for testing!",
+                "IdentityManager: "
+                "validate_signatures=False is insecure! Use only for testing!",
                 category=UserWarning
             )
         
@@ -47,7 +49,9 @@ class IdentityManager:
         self.users: dict[str, dict[str, Any]] = {}
         self.roles: dict[str, list[str]] = {}
     
-    def register_organization(self, org_id: str, name: str, participants: list[str] | None = None) -> str:
+    def register_organization(
+        self, org_id: str, name: str, participants: list[str] | None = None
+    ) -> str:
         """Register new organization"""
         self.organizations[org_id] = {
             "name": name,
@@ -56,7 +60,9 @@ class IdentityManager:
         }
         return org_id
     
-    def register_user(self, user_id: str, org_id: str, role: str, public_key: str | None = None) -> str:
+    def register_user(
+        self, user_id: str, org_id: str, role: str, public_key: str | None = None
+    ) -> str:
         """Register new user with Ed25519 public key validation."""
         if org_id not in self.organizations:
             raise IdentityError(f"Organization {org_id} does not exist")
@@ -64,7 +70,9 @@ class IdentityManager:
         # Validate Public Key
         if public_key:
             if len(public_key) != 64:
-                raise IdentityError("Public key must be a 64-character hex string (Ed25519)")
+                raise IdentityError(
+                    "Public key must be a 64-character hex string (Ed25519)"
+                )
             try:
                 # Try decoding to ensure it's valid hex
                 HexEncoder.decode(public_key.encode('utf-8'))
@@ -106,7 +114,9 @@ class IdentityManager:
             
         return True
 
-    def verify_user_signature(self, user_id: str, message: bytes, signature: str) -> bool:
+    def verify_user_signature(
+        self, user_id: str, message: bytes, signature: str
+    ) -> bool:
         """
         Verify that a message was signed by the specific user.
         

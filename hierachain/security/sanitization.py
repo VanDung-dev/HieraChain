@@ -109,7 +109,8 @@ def sanitize_dict(data: dict[str, Any], context: str = "general") -> dict[str, A
         Sanitized dictionary
     """
     return {
-        sanitize_string(str(key), context) if isinstance(key, str) else key: _sanitize_value(value, context)
+        sanitize_string(str(key), context)
+        if isinstance(key, str) else key: _sanitize_value(value, context)
         for key, value in data.items()
     }
 
@@ -207,7 +208,7 @@ def is_safe_input(value: str, max_length: int = 10000) -> tuple[bool, str]:
     
     for pattern, reason in dangerous_patterns:
         if re.search(pattern, value, re.IGNORECASE):
-            logger.warning(f"Potentially dangerous input detected: {reason}")
+            logger.warning("Potentially dangerous input detected: %s", reason)
             # Don't reject, just log - sanitization will handle it
     
     return True, "Input accepted"
@@ -259,7 +260,9 @@ def validate_numeric_bounds(
         ValidationError: If value is outside bounds or not a number.
     """
     if not isinstance(value, (int, float)):
-        raise ValidationError(f"{field_name} must be numeric, got {type(value).__name__}")
+        raise ValidationError(
+            f"{field_name} must be numeric, got {type(value).__name__}"
+        )
 
     if min_val is not None and value < min_val:
         raise ValidationError(f"{field_name} must be >= {min_val}, got {value}")
@@ -270,7 +273,9 @@ def validate_numeric_bounds(
     return value
 
 
-def validate_timestamp(timestamp: float,max_drift_seconds: float = 300.0) -> float:
+def validate_timestamp(
+    timestamp: float, max_drift_seconds: float = 300.0
+) -> float:
     """
     Validate that a timestamp is within acceptable drift from current time.
 
@@ -294,7 +299,9 @@ def validate_timestamp(timestamp: float,max_drift_seconds: float = 300.0) -> flo
 
     drift = abs(current_time - timestamp)
     if drift > max_drift_seconds:
-        raise ValidationError(f"Timestamp drift {drift:.1f}s exceeds max {max_drift_seconds}s")
+        raise ValidationError(
+            f"Timestamp drift {drift:.1f}s exceeds max {max_drift_seconds}s"
+        )
 
     return timestamp
 
@@ -314,13 +321,17 @@ def validate_block_index(block_index: int, max_index: int | None = None) -> int:
         ValidationError: If block index is invalid.
     """
     if not isinstance(block_index, int):
-        raise ValidationError(f"block_index must be int, got {type(block_index).__name__}")
+        raise ValidationError(
+            f"block_index must be int, got {type(block_index).__name__}"
+        )
 
     if block_index < 0:
         raise ValidationError(f"block_index must be >= 0, got {block_index}")
 
     if max_index is not None and block_index > max_index:
-        raise ValidationError(f"block_index {block_index} exceeds max allowed {max_index}")
+        raise ValidationError(
+            f"block_index {block_index} exceeds max allowed {max_index}"
+        )
 
     return block_index
 

@@ -34,7 +34,8 @@ class BruteForceProtector:
             config: Optional configuration dictionary containing:
                 - max_failures: Max failed attempts before lockout (default: 5)
                 - lockout_duration: Seconds to lock out (default: 900 = 15 min)
-                - tracking_window: Seconds window for counting failures (default: 300 = 5 min)
+                - tracking_window: Seconds window for counting failures
+                                   (default: 300 = 5 min)
         """
         config = config or {}
         self.max_failures = config.get("max_failures", 5)
@@ -96,8 +97,11 @@ class BruteForceProtector:
 
             # Log individual failure (at debug level to avoid log spam)
             logger.debug(
-                f"Auth failure recorded for IP {ip} "
-                f"(attempt {failure_count}/{self.max_failures})",
+                "Auth failure recorded for IP %s "
+                "(attempt %d/%d)",
+                ip,
+                failure_count,
+                self.max_failures,
                 extra={
                     "event_type": "auth_failure_recorded",
                     "ip": ip,
@@ -163,7 +167,8 @@ class BruteForceProtector:
             self._lockouts.pop(ip, None)
 
         logger.info(
-            f"Brute-force lockout reset for IP {ip}",
+            "Brute-force lockout reset for IP %s",
+            ip,
             extra={
                 "event_type": "brute_force_reset",
                 "ip": ip,
@@ -223,8 +228,10 @@ class BruteForceProtector:
     def _log_brute_force_detected(ip: str, key_prefix: str, failure_count: int):
         """Log a security event when brute-force pattern is detected."""
         logger.warning(
-            f"Brute-force attack detected from IP {ip}: "
-            f"{failure_count} failed attempts",
+            "Brute-force attack detected from IP %s: "
+            "%d failed attempts",
+            ip,
+            failure_count,
             extra={
                 "event_type": "brute_force_detected",
                 "ip": ip,

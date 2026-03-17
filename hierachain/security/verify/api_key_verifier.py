@@ -1,8 +1,10 @@
 """
 API Key Verification module for HieraChain Ledger.
 
-Implements APIKeyVerifier dependency inspired by Google's Apigee for securing API endpoints.
-Ensures only authorized clients with valid, non-revoked API keys can access protected resources.
+Implements APIKeyVerifier dependency inspired by Google's Apigee for securing
+API endpoints.
+Ensures only authorized clients with valid, non-revoked API keys can access
+protected resources.
 """
 
 import time
@@ -110,7 +112,8 @@ class APIKeyVerifier:
             Dict: Context variables including user_id and app_details
             
         Raises:
-            HTTPException: 401 for missing/invalid keys, 403 for insufficient permissions
+            HTTPException: 401 for missing/invalid keys, 403 for insufficient
+                           permissions
         """
         if not self.enabled:
             return _get_system_context()
@@ -142,7 +145,9 @@ class APIKeyVerifier:
             detail="Too many failed authentication attempts. Please try again later."
         )
 
-    async def _extract_api_key(self, request: Request, api_key: str | None) -> str | None:
+    async def _extract_api_key(
+        self, request: Request, api_key: str | None
+    ) -> str | None:
         """Extract API key from request if not provided directly."""
         if api_key or not request:
             return api_key
@@ -160,7 +165,9 @@ class APIKeyVerifier:
             detail="API key missing. Please provide a valid API key."
         )
 
-    async def _verify_key_validity(self, api_key: str, key_prefix: str, client_ip: str) -> None:
+    async def _verify_key_validity(
+        self, api_key: str, key_prefix: str, client_ip: str
+    ) -> None:
         """Verify API key validity and revocation status."""
         if not self.key_manager.is_valid(api_key):
             await self._handle_invalid_key(key_prefix, client_ip)
@@ -210,7 +217,9 @@ class APIKeyVerifier:
 
         self._log_security_event("successful_verification", {
             "user_id": user_id,
-            "app_name": app_details.get('name', 'Unknown') if app_details else 'Unknown',
+            "app_name": (
+                app_details.get('name', 'Unknown') if app_details else 'Unknown'
+            ),
             "timestamp": time.time()
         })
 
@@ -240,13 +249,16 @@ class APIKeyVerifier:
             Decorator function that checks permissions
         """
         def permission_dependency(context: dict = Depends(self)) -> dict:
-            # Extract API key from context (would need to be passed differently in real implementation)
+            # Extract API key from context
             api_key = getattr(context, '_api_key', None)
             
             if api_key and not self.check_resource_permission(api_key, resource):
                 raise HTTPException(
                     status_code=403,
-                    detail=f"Insufficient permissions. Access to '{resource}' requires additional permissions."
+                    detail=(
+                        "Insufficient permissions. "
+                        f"Access to '{resource}' requires additional permissions."
+                    )
                 )
             
             return context
@@ -263,11 +275,11 @@ class APIKeyVerifier:
             details: Event details
         """
         logger.info(
-            f"Security event: {event_type}",
-            event_type=event_type,
-            details=details,
-            source="APIKeyVerifier",
-            Ledger="hierachain"
+            "Security event: %s",
+            event_type,
+            extra={
+                "details": details, "source": "APIKeyVerifier", "Ledger": "hierachain"
+            }
         )
 
 
@@ -281,13 +293,14 @@ def get_auth_dependency() -> Any:
         return APIKeyVerifier(settings.get_auth_config())
     return None
 
+
 def _get_active_verifier() -> Any:
     """Helper to get an instance for Depends"""
     return get_auth_dependency()
 
+
 async def require_event_access(
-    request: Request,
-    context: dict | None = Depends(_get_active_verifier)
+    request: Request, context: dict | None = Depends(_get_active_verifier)
 ) -> dict:
     """
     Require permission to access event-related endpoints.
@@ -411,7 +424,7 @@ class ResourcePermissionChecker:
         self.verify_api_key = verify_api_key
 
 
-#Factoryfunction for creating configured APIKeyVerifier instances
+# Factoryfunction for creating configured APIKeyVerifier instances
 def create_verify_api_key(config: dict) -> APIKeyVerifier:
     """
     Factory function to create configured VerifyAPIKey instance.

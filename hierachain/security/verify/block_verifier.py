@@ -94,11 +94,13 @@ def _verify_signature(message: bytes, signature: str, public_key: bytes) -> bool
     except InvalidSignature:
         return False
     except Exception as e:
-        logger.warning(f"Signature verification failed: {e}")
+        logger.warning("Signature verification failed: %s", e)
         return False
 
 
-def _perform_crypto_verification(message: bytes, signature: str, public_key: bytes | None) -> bool:
+def _perform_crypto_verification(
+    message: bytes, signature: str, public_key: bytes | None
+) -> bool:
     """Route to appropriate signature verification method."""
     if public_key:
         return _verify_signature(message, signature, public_key)
@@ -142,7 +144,9 @@ class BlockVerifier:
             "signature_failures": 0,
         }
 
-    def verify_block(self, block: Any, previous_block: Any | None = None) -> VerificationResult:
+    def verify_block(
+        self, block: Any, previous_block: Any | None = None
+    ) -> VerificationResult:
         """
         Perform full verification of a block.
 
@@ -163,10 +167,18 @@ class BlockVerifier:
         ]
 
         if previous_block is not None:
-            steps.append(("chain_link", lambda: self.verify_chain_link(block, previous_block), "chain_link_failures"))
+            steps.append((
+                "chain_link",
+                lambda: self.verify_chain_link(block, previous_block),
+                "chain_link_failures"
+            ))
 
-        if hasattr(block, 'signature') and block.signature:
-            steps.append(("signature", lambda: self.verify_block_signature(block), "signature_failures"))
+        if _has_valid_signature_field(block):
+            steps.append((
+                "signature",
+                lambda: self.verify_block_signature(block),
+                "signature_failures"
+            ))
 
         # Execute all steps and track statistics
         for name, verify_func, stat_key in steps:
@@ -190,7 +202,10 @@ class BlockVerifier:
             self._stats["invalid_blocks"] += 1
             return VerificationResult(
                 status=VerificationStatus.INVALID,
-                message=f"Block {block.index} verification failed: {', '.join(failed_steps)}",
+                message=(
+                    f"Block {block.index} verification failed: "
+                    f"{', '.join(failed_steps)}"
+                ),
                 details={name: res.message for name, res in results.items()}
             )
 
@@ -232,7 +247,7 @@ class BlockVerifier:
             )
 
         except Exception as e:
-            logger.error(f"Error verifying block hash: {e}")
+            logger.error("Error verifying block hash: %s", e)
             return VerificationResult(
                 status=VerificationStatus.ERROR,
                 message=f"Hash verification error: {e}"
@@ -269,7 +284,7 @@ class BlockVerifier:
             )
 
         except Exception as e:
-            logger.error(f"Error verifying merkle root: {e}")
+            logger.error("Error verifying merkle root: %s", e)
             return VerificationResult(
                 status=VerificationStatus.ERROR,
                 message=f"Merkle verification error: {e}"
@@ -316,13 +331,15 @@ class BlockVerifier:
             )
 
         except Exception as e:
-            logger.error(f"Error verifying chain link: {e}")
+            logger.error("Error verifying chain link: %s", e)
             return VerificationResult(
                 status=VerificationStatus.ERROR,
                 message=f"Chain link verification error: {e}"
             )
 
-    def verify_block_signature(self, block: Any, public_key: bytes | None = None) -> VerificationResult:
+    def verify_block_signature(
+        self, block: Any, public_key: bytes | None = None
+    ) -> VerificationResult:
         """
         Verify block creator's signature.
 
@@ -348,7 +365,9 @@ class BlockVerifier:
 
             # 3. Cryptographic verification
             message = self._get_signable_content(block)
-            is_valid = _perform_crypto_verification(message, block.signature, public_key)
+            is_valid = _perform_crypto_verification(
+                message, block.signature, public_key
+            )
 
             if is_valid:
                 return VerificationResult(
@@ -362,7 +381,7 @@ class BlockVerifier:
             )
 
         except Exception as e:
-            logger.error(f"Error verifying block signature: {e}", error=str(e))
+            logger.error("Error verifying block signature: %s", e)
             return VerificationResult(
                 status=VerificationStatus.ERROR,
                 message=f"Signature verification error: {e}"
@@ -425,7 +444,9 @@ class BlockVerifier:
         if invalid_blocks:
             return VerificationResult(
                 status=VerificationStatus.INVALID,
-                message=f"Chain verification failed: {len(invalid_blocks)} invalid blocks",
+                message=(
+                    f"Chain verification failed: {len(invalid_blocks)} invalid blocks"
+                ),
                 details={"invalid_blocks": invalid_blocks}
             )
 

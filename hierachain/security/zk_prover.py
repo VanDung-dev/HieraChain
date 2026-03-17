@@ -55,7 +55,9 @@ class ZKProvingError(Exception):
     pass
 
 
-def _generate_mock_proof(old_state_root: str, new_state_root: str, block_index: int) -> bytes:
+def _generate_mock_proof(
+    old_state_root: str, new_state_root: str, block_index: int
+) -> bytes:
     """
     Generate mock proof simulating Groth16/Plonk ZK-SNARK proofs.
 
@@ -99,7 +101,7 @@ def _generate_mock_proof(old_state_root: str, new_state_root: str, block_index: 
 
     # 5. Generate random proof body (simulating curve points and field elements)
     # Keep deterministic header but random body for pressure testing
-    header = magic_bytes + version_bytes + size_bytes + commitment  # 12+4+4+32 = 52 bytes
+    header = magic_bytes + version_bytes + size_bytes + commitment
     random_body = os.urandom(proof_size - len(header))
 
     return header + random_body
@@ -176,7 +178,7 @@ class ZKProver:
             self._load_proving_key()
             self._load_circuit()
         
-        logger.info(f"ZKProver initialized in '{self.mode}' mode")
+        logger.info("ZKProver initialized in '%s' mode", self.mode)
     
     def generate_proof(
         self,
@@ -214,7 +216,9 @@ class ZKProver:
         
         try:
             if self.mode == "mock":
-                proof = _generate_mock_proof(old_state_root, new_state_root, block_index)
+                proof = _generate_mock_proof(
+                    old_state_root, new_state_root, block_index
+                )
             elif self.mode == "production":
                 proof = self._generate_production_proof(
                     old_state_root, new_state_root, block_index, events or []
@@ -227,7 +231,8 @@ class ZKProver:
             self.stats["total_generation_time_ms"] += generation_time
             
             logger.debug(
-                f"Generated ZK proof for block {block_index} in {generation_time:.2f}ms"
+                "Generated ZK proof for block %d in %.2fms",
+                block_index, generation_time
             )
             
             return ZKProofResult(
@@ -275,7 +280,9 @@ class ZKProver:
         Raises:
             ZKProvingError: If proof generation fails.
         """
-        result = self.generate_proof(old_state_root, new_state_root, block_index, events)
+        result = self.generate_proof(
+            old_state_root, new_state_root, block_index, events
+        )
 
         if not result.success:
             raise ZKProvingError(f"Proof generation failed: {result.error}")
@@ -315,7 +322,9 @@ class ZKProver:
             old_state_root, new_state_root, block_index, events, sub_chain_name
         )
 
-    async def verify_proof_async(self, proof: bytes, _public_inputs: dict[str, Any]) -> bool:
+    async def verify_proof_async(
+        self, proof: bytes, _public_inputs: dict[str, Any]
+    ) -> bool:
         """
         Async proof verification with realistic latency simulation.
 
@@ -376,11 +385,11 @@ class ZKProver:
         try:
             with open(key_path, 'rb') as f:
                 self.proving_key = f.read()
-            logger.info(f"Loaded proving key from {key_path}")
+            logger.info("Loaded proving key from %s", key_path)
         except FileNotFoundError:
-            logger.error(f"Proving key not found at {key_path}")
+            logger.error("Proving key not found at %s", key_path)
         except Exception as e:
-            logger.error(f"Error loading proving key: {e}")
+            logger.error("Error loading proving key: %s", e)
     
     def _load_circuit(self) -> None:
         """Load compiled circuit from configured path."""
@@ -476,4 +485,6 @@ def generate_zk_proof(
         ZKProvingError: If proof generation fails.
     """
     prover = get_zk_prover()
-    return prover.generate_proof_bytes(old_state_root, new_state_root, block_index, events)
+    return prover.generate_proof_bytes(
+        old_state_root, new_state_root, block_index, events
+    )

@@ -47,7 +47,9 @@ def _report_integrity_results(result: dict[str, list[str]]) -> dict[str, list[st
         raise IntegrityError(error_msg)
 
     if result["new"]:
-        logger.warning(f"New files detected (not in manifest): {result['new']}")
+        logger.warning(
+            "New files detected (not in manifest): %s", result["new"]
+        )
 
     logger.info("Integrity check PASSED")
     return result
@@ -100,7 +102,7 @@ class ChecksumValidator:
         hashes: dict[str, str] = {}
 
         if not full_path.exists():
-            logger.warning(f"Directory not found: {full_path}")
+            logger.warning("Directory not found: %s", full_path)
             return hashes
 
         for py_file in full_path.rglob("*.py"):
@@ -126,7 +128,9 @@ class ChecksumValidator:
             dir_hashes = self.calculate_directory_hash(dir_path)
             manifest["files"].update(dir_hashes)
 
-        logger.info(f"Generated manifest with {len(manifest['files'])} files")
+        logger.info(
+            "Generated manifest with %d files", len(manifest["files"])
+        )
         return manifest
 
     def save_manifest(self, manifest: dict[str, Any] | None = None) -> None:
@@ -137,7 +141,7 @@ class ChecksumValidator:
         with open(self.manifest_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
 
-        logger.info(f"Manifest saved to {self.manifest_path}")
+        logger.info("Manifest saved to %s", self.manifest_path)
 
     def load_manifest(self) -> dict[str, Any]:
         """Load manifest from file."""
@@ -178,7 +182,9 @@ class ChecksumValidator:
         # 3. Handle and report results
         return _report_integrity_results(result)
 
-    def _check_manifest_files(self, expected_hashes: dict[str, str], result: dict[str, list[str]]) -> None:
+    def _check_manifest_files(
+        self, expected_hashes: dict[str, str], result: dict[str, list[str]]
+    ) -> None:
         """Check each file in manifest for existence and hash match."""
         for file_path, expected_hash in expected_hashes.items():
             full_path = self.base_path / file_path
@@ -190,7 +196,9 @@ class ChecksumValidator:
             if calculate_file_hash(full_path) != expected_hash:
                 result["modified"].append(file_path)
 
-    def _check_for_new_files(self, expected_hashes: dict[str, str], result: dict[str, list[str]]) -> None:
+    def _check_for_new_files(
+        self, expected_hashes: dict[str, str], result: dict[str, list[str]]
+    ) -> None:
         """Scan protected directories for files not present in manifest."""
         for dir_path in self.protected_dirs:
             current_hashes = self.calculate_directory_hash(dir_path)
@@ -216,7 +224,7 @@ def verify_startup_integrity(abort_on_failure: bool = True) -> bool:
     except IntegrityError as e:
         if abort_on_failure:
             raise
-        logger.error(f"Integrity check failed: {e}")
+        logger.error("Integrity check failed: %s", e)
         return False
     except FileNotFoundError:
         # Manifest doesn't exist - first run or dev mode

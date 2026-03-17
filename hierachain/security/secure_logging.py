@@ -69,15 +69,15 @@ class SecureLogger:
     Uses structured logging format for better security and parseability.
     """
     
-    def __init__(self, name: str, level: int = logging.INFO):
+    def __init__(self, name: str, level: int = logging.INFO) -> None:
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
         self.name = name
     
     def _format_structured(
-        self, 
-        level: str, 
-        message: str, 
+        self,
+        level: str,
+        message: str,
         **kwargs: Any
     ) -> str:
         """Create a structured log entry in JSON format."""
@@ -120,12 +120,12 @@ class SecureLogger:
         self.logger.critical(structured)
     
     def security_event(
-        self, 
-        event_type: str, 
-        message: str, 
+        self,
+        event_type: str,
+        message: str,
         severity: str = "medium",
         **kwargs: Any
-    ):
+    ) -> None:
         """
         Log a security-related event with full context.
         
@@ -167,7 +167,7 @@ class SecureLogger:
         org_id: str = None,
         success: bool = True,
         **kwargs: Any
-    ):
+    ) -> None:
         """
         Log an audit event for compliance and tracking.
         
@@ -227,7 +227,7 @@ def log_user_action(
     message: str,
     user_input: Any = None,
     **kwargs: Any
-):
+) -> None:
     """
     Log a message with user input safely sanitized.
     
@@ -242,9 +242,7 @@ def log_user_action(
     safe_kwargs = {k: sanitize_for_log(v) for k, v in kwargs.items()}
     
     log_data = {
-        "message": message,
-        "user_input": safe_input,
-        **safe_kwargs
+        "message": message, "user_input": safe_input, **safe_kwargs
     }
     
     logger.log(level, json.dumps(log_data, ensure_ascii=True))

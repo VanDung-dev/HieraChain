@@ -29,7 +29,8 @@ class KeyManager:
         Args:
             storage_backend: Optional storage backend (Redis, database, etc.)
             config: Optional configuration dict with security settings.
-                   - verify_signatures: bool, default True. Set to False for testing only!
+                    - Verify_signatures: bool, default True.
+                      Set to False for testing only!
         """
         import warnings
         
@@ -223,7 +224,9 @@ class KeyManager:
             del self.key_cache[api_key]
         
         # Clear permission cache for this key
-        keys_to_remove = [k for k in self.permission_cache if k.startswith(f"{api_key}:")]
+        keys_to_remove = [
+            k for k in self.permission_cache if k.startswith(f"{api_key}:")
+        ]
         for key in keys_to_remove:
             del self.permission_cache[key]
 
@@ -335,7 +338,7 @@ def initialize_default_keys():
     )
     
     admin_key = key_manager.create_key(
-        user_id="admin_user", 
+        user_id="admin_user",
         permissions=["all"],
         app_details={"name": "Admin Console", "version": "1.0"}
     )

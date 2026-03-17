@@ -199,15 +199,19 @@ class MasterKeyProvider:
             key = base64.b64decode(env_value)
         except (ValueError, binascii.Error):
             logger.warning(
-                f"Environment variable '{self.env_var}' contains invalid "
-                f"base64 data, skipping"
+                "Environment variable '%s' contains invalid "
+                "base64 data, skipping",
+                self.env_var
             )
             return None
 
         if len(key) != _MASTER_KEY_LENGTH:
             logger.warning(
-                f"Environment variable '{self.env_var}' contains key of "
-                f"invalid length ({len(key)} bytes, expected {_MASTER_KEY_LENGTH})"
+                "Environment variable '%s' contains key of "
+                "invalid length (%d bytes, expected %d)",
+                self.env_var,
+                len(key),
+                _MASTER_KEY_LENGTH
             )
             return None
 
@@ -218,8 +222,9 @@ class MasterKeyProvider:
         key = self._try_load_from_file()
         if key is None:
             raise MasterKeyError(
-                f"Master key file '{self.key_file}' not found or contains "
-                f"invalid key data."
+                "Master key file '%s' not found or contains "
+                "invalid key data.",
+                self.key_file
             )
 
         # Run security checks
@@ -249,7 +254,11 @@ class MasterKeyProvider:
             with open(self.key_file, "rb") as f:
                 key_data = f.read()
         except (IOError, OSError) as e:
-            logger.error(f"Failed to read master key file: {e}")
+            logger.error(
+                "Failed to read master key file '%s': %s",
+                self.key_file,
+                e
+            )
             return None
 
         return self._decode_and_validate_key(key_data)
@@ -312,7 +321,8 @@ class MasterKeyProvider:
             logger.warning(
                 "SECURITY WARNING: Master key stored as file in production. "
                 "Consider using environment variable or a secret manager/KMS "
-                f"(set {self.env_var} with base64-encoded 32-byte key)."
+                "(%s with base64-encoded 32-byte key).",
+                self.env_var
             )
 
         return key

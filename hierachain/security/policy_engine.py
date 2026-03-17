@@ -1,10 +1,10 @@
 """
 Policy Evaluation Engine for HieraChain Ledger.
 
-This module implements a comprehensive policy evaluation engine that works with the 
-MSP system for complex organizational policies and access control decisions. It 
-provides flexible policy definition, evaluation, and enforcement capabilities for 
-enterprise blockchain applications.
+This module implements a comprehensive policy evaluation engine that works
+with the MSP system for complex organizational policies and access control
+decisions. It provides flexible policy definition, evaluation, and
+enforcement capabilities for enterprise blockchain applications.
 """
 
 import time
@@ -96,7 +96,10 @@ def _resolve_value(current: Any, part: str) -> Any:
 
 
 def _get_attribute_value(context: dict[str, Any], attribute_path: str) -> Any:
-    """Get attribute value from context using dot notation, supporting Dict and Arrow objects."""
+    """
+    Get attribute value from context using dot notation, supporting Dict and
+    Arrow objects.
+    """
     current = context
 
     for part in attribute_path.split('.'):
@@ -200,7 +203,9 @@ class PolicyRule:
             return self.effect
         
         # Evaluate all conditions
-        condition_results = [condition.evaluate(context) for condition in self.conditions]
+        condition_results = [
+            condition.evaluate(context) for condition in self.conditions
+        ]
         
         # Apply logical operator
         if self.logical_operator == LogicalOperator.AND:
@@ -209,7 +214,10 @@ class PolicyRule:
             rule_applies = any(condition_results)
         elif self.logical_operator == LogicalOperator.NOT:
             # For NOT, we expect exactly one condition
-            rule_applies = not condition_results[0] if len(condition_results) == 1 else False
+            rule_applies = (
+                not condition_results[0]
+                if len(condition_results) == 1 else False
+            )
         else:
             rule_applies = False
         
@@ -248,7 +256,9 @@ def _hash_context(context: dict[str, Any]) -> str:
             return str(obj)
         return str(obj)
 
-    context_str = json.dumps(context, sort_keys=True, separators=(',', ':'), default=_default_serializer)
+    context_str = json.dumps(
+        context, sort_keys=True, separators=(',', ':'), default=_default_serializer
+    )
     return hashlib.sha256(context_str.encode()).hexdigest()[:8]
 
 
@@ -340,7 +350,9 @@ class Policy:
         rule_effect: PolicyEffect,
         evaluation_result: dict[str, Any]
     ) -> bool:
-        """Process rule effect and update evaluation result. Returns True if should break."""
+        """
+        Process rule effect and update evaluation result. Returns True if should break.
+        """
         evaluation_result["applicable_rules"].append({
             "rule_id": rule.rule_id,
             "effect": rule_effect.value,
@@ -349,19 +361,30 @@ class Policy:
         })
 
         if rule_effect != self.default_effect:
-            effect_value = rule_effect.value if isinstance(rule_effect, PolicyEffect) else str(rule_effect)
+            effect_value = (
+                rule_effect.value
+                if isinstance(rule_effect, PolicyEffect) else str(rule_effect)
+            )
             evaluation_result["effect"] = effect_value
-            evaluation_result["decision_path"].append(f"Rule {rule.rule_id} applied with effect {effect_value}")
+            evaluation_result["decision_path"].append(
+                f"Rule {rule.rule_id} applied with effect {effect_value}"
+            )
             return True
 
-        evaluation_result["decision_path"].append(f"Rule {rule.rule_id} confirmed default effect")
+        evaluation_result["decision_path"].append(
+            f"Rule {rule.rule_id} confirmed default effect"
+        )
         return False
 
-    def _evaluate_rules(self, context: dict[str, Any], evaluation_result: dict[str, Any]) -> None:
+    def _evaluate_rules(
+        self, context: dict[str, Any], evaluation_result: dict[str, Any]
+    ) -> None:
         """Evaluate all rules and update evaluation result."""
         for rule in self.rules:
             rule_effect = rule.evaluate(context)
-            if rule_effect is not None and self._process_rule_effect(rule, rule_effect, evaluation_result):
+            if rule_effect is not None and self._process_rule_effect(
+                rule, rule_effect, evaluation_result
+            ):
                 break
 
     def _finalize_result(self, evaluation_result: dict[str, Any]) -> None:
@@ -539,7 +562,9 @@ class PolicyEngine:
         else:
             self.statistics["deny_decisions"] += 1
 
-    def evaluate_policy(self, policy_id: str, context: dict[str, Any]) -> dict[str, Any]:
+    def evaluate_policy(
+        self, policy_id: str, context: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Evaluate single policy against context.
         
@@ -559,7 +584,10 @@ class PolicyEngine:
         
         # Get policy and evaluate
         policy = self.policies.get(policy_id)
-        result = policy.evaluate(context) if policy else _create_not_found_result(policy_id)
+        result = (
+            policy.evaluate(context)
+            if policy else _create_not_found_result(policy_id)
+        )
         
         # Update statistics and cache
         self._update_statistics(result["effect"])
@@ -589,7 +617,8 @@ class PolicyEngine:
         Args:
             set_name: Name of policy set
             context: Evaluation context
-            combination_logic: How to combine results ("all_allow", "any_allow", "majority_allow")
+            combination_logic: How to combine results
+                               ("all_allow", "any_allow", "majority_allow")
             
         Returns:
             Combined evaluation result
@@ -621,16 +650,21 @@ class PolicyEngine:
         if combination_logic == "all_allow":
             # All policies must allow
             combined_result["effect"] = PolicyEffect.ALLOW.value if all(
-                result["effect"] == PolicyEffect.ALLOW.value for result in policy_results
+                result["effect"] == PolicyEffect.ALLOW.value
+                for result in policy_results
             ) else PolicyEffect.DENY.value
         elif combination_logic == "any_allow":
             # At least one policy must allow
             combined_result["effect"] = PolicyEffect.ALLOW.value if any(
-                result["effect"] == PolicyEffect.ALLOW.value for result in policy_results
+                result["effect"] == PolicyEffect.ALLOW.value
+                for result in policy_results
             ) else PolicyEffect.DENY.value
         elif combination_logic == "majority_allow":
             # Majority of policies must allow
-            allow_count = sum(1 for result in policy_results if result["effect"] == PolicyEffect.ALLOW.value)
+            allow_count = sum(
+                1 for result in policy_results
+                if result["effect"] == PolicyEffect.ALLOW.value
+            )
             combined_result["effect"] = PolicyEffect.ALLOW.value \
                 if allow_count > len(policy_results) / 2 else PolicyEffect.DENY.value
         else:
@@ -652,7 +686,6 @@ class PolicyEngine:
                 continue
             
             # Quick check if policy might be applicable
-            # This is a simplified check - in practice, you might want more sophisticated logic
             if policy.metadata.get("enabled", True):
                 applicable_policies.append(policy_id)
         
@@ -672,7 +705,8 @@ class PolicyEngine:
             "enabled": self.cache_enabled,
             "entries": len(self.evaluation_cache),
             "hit_rate": (
-                self.statistics["cached_evaluations"] / max(self.statistics["total_evaluations"], 1)
+                self.statistics["cached_evaluations"] /
+                max(self.statistics["total_evaluations"], 1)
             ) * 100
         }
         
@@ -696,7 +730,10 @@ class PolicyEngine:
         """Cache evaluation result"""
         # Implement LRU eviction if cache is full
         if len(self.evaluation_cache) >= self.max_cache_entries:
-            oldest_key = min(self.evaluation_cache.keys(), key=lambda k: self.evaluation_cache[k]["cached_at"])
+            oldest_key = min(
+                self.evaluation_cache.keys(),
+                key=lambda k: self.evaluation_cache[k]["cached_at"]
+            )
             del self.evaluation_cache[oldest_key]
         
         self.evaluation_cache[cache_key] = {
@@ -723,7 +760,10 @@ class PolicyEngine:
     
     def __str__(self) -> str:
         """String representation"""
-        return f"PolicyEngine(policies={len(self.policies)}, sets={len(self.policy_sets)})"
+        return (
+            f"PolicyEngine(policies={len(self.policies)}, "
+            f"sets={len(self.policy_sets)})"
+            )
     
     def __repr__(self) -> str:
         """Detailed string representation"""

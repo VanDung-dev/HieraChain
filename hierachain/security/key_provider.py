@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from hierachain.security.security_utils import KeyPair, CryptoError
 
+
 class KeyProvider(ABC):
     """
     Abstract interface for key operations.
@@ -40,6 +41,7 @@ class KeyProvider(ABC):
             Hex-encoded signature.
         """
         pass
+
 
 class LocalKeyProvider(KeyProvider):
     """
@@ -154,7 +156,7 @@ class FileVaultProvider(KeyProvider):
     def public_key_hex(self) -> str:
         if not self._public_key:
             self._load_public_key()
-        return self._public_key # type: ignore
+        return self._public_key  # type: ignore
 
     def sign(self, data: bytes) -> str:
         """

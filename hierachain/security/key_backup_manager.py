@@ -1,8 +1,9 @@
 """
 Key Backup Manager for cryptographic key backup and recovery mechanisms.
 
-This module handles backup and restoration of public and private keys to enhance 
-fault tolerance in the HieraChain Ledger without cryptocurrency concepts.
+This module handles backup and restoration of public and private keys to
+enhance fault tolerance in the HieraChain Ledger without cryptocurrency
+concepts.
 """
 
 import os
@@ -121,7 +122,7 @@ def _validate_keys(public_key: bytes, private_key: bytes, _key_type: str) -> boo
         return True
 
     except Exception as e:
-        logger.error(f"Key validation failed: {str(e)}")
+        logger.error("Key validation failed: %s", str(e))
         return False
 
 
@@ -134,7 +135,10 @@ def _apply_restored_keys(public_key: bytes, private_key: bytes, key_type: str):
     """
     # Implementation depends on key type and system architecture
     # For now, this is a placeholder for system integration
-    logger.info(f"Applied restored {key_type} keys to system (public: {len(public_key)}b, private: {len(private_key)}b)")
+    logger.info(
+        "Applied restored %s keys to system (public: %db, private: %db)",
+        key_type, len(public_key), len(private_key)
+    )
 
 
 def _log_backup_success(backup_id: str, hash_value: str, locations: list[str]):
@@ -188,7 +192,9 @@ def _verify_integrity(file_path: str, expected_hash: str, integrity_check: str) 
         return False
 
 
-def _distribute_to_locations(file_path: str, backup_id: str, locations: list[str]) -> list[str]:
+def _distribute_to_locations(
+    file_path: str, backup_id: str, locations: list[str]
+) -> list[str]:
     """Distribute encrypted backup to secure locations."""
     distributed_locations: list[str] = []
     filename = f"{backup_id}.enc"
@@ -201,7 +207,7 @@ def _distribute_to_locations(file_path: str, backup_id: str, locations: list[str
             shutil.copy2(file_path, dest_path)
             distributed_locations.append(location)
         except Exception as e:
-            logger.error(f"Failed to distribute backup to {location}: {str(e)}")
+            logger.error("Failed to distribute backup to %s: %s", location, str(e))
 
     return distributed_locations
 
@@ -219,9 +225,9 @@ def _cleanup_old_backups(metadata: dict, retention_period: int, remove_backup):
     for backup_id in backups_to_remove:
         try:
             remove_backup(backup_id)
-            logger.info(f"Removed expired backup: {backup_id}")
+            logger.info("Removed expired backup: %s", backup_id)
         except Exception as e:
-            logger.error(f"Failed to remove expired backup {backup_id}: {str(e)}")
+            logger.error("Failed to remove expired backup %s: %s", backup_id, str(e))
 
 
 def _find_backup_file(backup_id: str, metadata: dict) -> str | None:
@@ -255,7 +261,7 @@ def _load_metadata(metadata_file: str) -> dict:
             with open(metadata_file, "r") as f:
                 return json.load(f)
         except Exception as e:
-            logger.error(f"Failed to load backup metadata: {str(e)}")
+            logger.error("Failed to load backup metadata: %s", str(e))
             return {}
     return {}
 
@@ -266,7 +272,7 @@ def _save_metadata(metadata_file: str, metadata: dict):
         with open(metadata_file, "w") as f:
             json.dump(metadata, f, indent=2)
     except Exception as e:
-        logger.error(f"Failed to save backup metadata: {str(e)}")
+        logger.error("Failed to save backup metadata: %s", str(e))
 
 
 def _update_metadata(metadata_file: str, metadata: dict, backup_id: str, entry: dict):
@@ -301,7 +307,9 @@ class KeyBackupManager:
         self.config = configuration
         self.enabled = self.config.get('enabled', True)
         self.frequency = self.config.get('frequency', 'daily')
-        self.encryption_algorithm = self.config.get('encryption_algorithm', 'AES-256-GCM')
+        self.encryption_algorithm = self.config.get(
+            'encryption_algorithm', 'AES-256-GCM'
+        )
         self.locations = self.config.get('locations', ['primary_vault'])
         self.integrity_check = self.config.get('integrity_check', 'sha512')
         self.retention_period = self.config.get('retention_period', 365)
@@ -336,7 +344,9 @@ class KeyBackupManager:
         """Log successful backup operation."""
         _log_backup_success(backup_id, hash_value, locations)
 
-    def backup_keys(self, public_key: bytes, private_key: bytes, key_type: str = "default") -> str:
+    def backup_keys(
+        self, public_key: bytes, private_key: bytes, key_type: str = "default"
+    ) -> str:
         """
         Backup keys with encryption and distribution.
         
@@ -359,7 +369,9 @@ class KeyBackupManager:
             timestamp = datetime.now().isoformat()
             
             # Sanitize key_type to prevent injection attacks
-            sanitized_key_type = "".join(c for c in key_type if c.isalnum() or c in (' ', '-', '_')).rstrip()
+            sanitized_key_type = "".join(
+                c for c in key_type if c.isalnum() or c in (' ', '-', '_')
+            ).rstrip()
             sanitized_key_type = sanitized_key_type.replace(' ', '_')
             
             backup_id = f"{sanitized_key_type}_{timestamp.replace(':', '-')}"
@@ -386,12 +398,14 @@ class KeyBackupManager:
             # Generate integrity hash (already in memory, no need to re-read)
             hash_value = self._calculate_integrity_hash(encrypted_data)
             
-            # Verify integrity immediately (optimized: compare hash only, no re-read needed)
+            # Verify integrity immediately
             if not self._verify_integrity(backup_file, hash_value):
                 raise BackupError("Backup integrity verification failed")
             
             # Distribute to configured locations (async if possible)
-            distributed_locations = self._distribute_to_locations(backup_file, backup_id)
+            distributed_locations = self._distribute_to_locations(
+                backup_file, backup_id
+            )
             
             # Update metadata
             self._update_metadata(backup_id, {
@@ -406,12 +420,14 @@ class KeyBackupManager:
             self._cleanup_old_backups()
             
             self._log_backup_success(backup_id, hash_value, distributed_locations)
-            logger.info(f"Successfully backed up {key_type} keys with ID: {backup_id}")
+            logger.info(
+                "Successfully backed up %s keys with ID: %s", key_type, backup_id
+            )
             
             return backup_id
             
         except Exception as e:
-            logger.error(f"Key backup failed: {str(e)}")
+            logger.error("Key backup failed: %s", str(e))
             raise BackupError(f"Failed to backup keys: {str(e)}")
     
     def restore_keys(self, backup_id: str) -> dict[str, bytes]:
@@ -453,17 +469,21 @@ class KeyBackupManager:
             private_key = bytes.fromhex(backup_data["private_key"])
             
             # Validate restored keys
-            if not _validate_keys(public_key, private_key, backup_data.get("key_type", "default")):
+            if not _validate_keys(
+                public_key, private_key, backup_data.get("key_type", "default")
+            ):
                 raise ValidationError("Restored keys failed validation")
             
             # Apply restored keys to system
-            _apply_restored_keys(public_key, private_key, backup_data.get("key_type", "default"))
+            _apply_restored_keys(
+                public_key, private_key, backup_data.get("key_type", "default")
+            )
             
-            logger.info(f"Successfully restored keys from backup: {backup_id}")
+            logger.info("Successfully restored keys from backup: %s", backup_id)
             return {"public_key": public_key, "private_key": private_key}
             
         except Exception as e:
-            logger.error(f"Key restore failed for {backup_id}: {str(e)}")
+            logger.error("Key restore failed for %s: %s", backup_id, str(e))
             raise RestoreError(f"Failed to restore keys: {str(e)}")
     
     def list_backups(self, key_type: str | None = None) -> list[dict]:
@@ -509,7 +529,9 @@ class KeyBackupManager:
             return self._verify_integrity(backup_file, expected_hash)
             
         except Exception as e:
-            logger.error(f"Backup integrity verification failed for {backup_id}: {str(e)}")
+            logger.error(
+                "Backup integrity verification failed for %s: %s", backup_id, str(e)
+            )
             return False
 
     def _cleanup_old_backups(self):
@@ -527,7 +549,9 @@ class KeyBackupManager:
                 if os.path.exists(file_path):
                     os.remove(file_path)
             except Exception as e:
-                logger.error(f"Failed to remove backup file from {location}: {str(e)}")
+                logger.error(
+                    "Failed to remove backup file from %s: %s", location, str(e)
+                )
         
         # Remove from primary backup directory
         primary_file = metadata.get("file_path")

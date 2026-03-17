@@ -14,9 +14,11 @@ from nacl.exceptions import BadSignatureError
 
 logger = logging.getLogger(__name__)
 
+
 class CryptoError(Exception):
     """Base exception for cryptographic errors."""
     pass
+
 
 class KeyPair:
     """
@@ -70,7 +72,10 @@ class KeyPair:
         except Exception as e:
             raise CryptoError(f"Signing failed: {str(e)}")
 
-def verify_signature_standalone(public_key_hex: str, message: bytes, signature_hex: str) -> bool:
+
+def verify_signature_standalone(
+    public_key_hex: str, message: bytes, signature_hex: str
+) -> bool:
     """
     Pure function to verify an Ed25519 signature.
     Designed to be picklable for multiprocessing.
@@ -97,8 +102,9 @@ def verify_signature_standalone(public_key_hex: str, message: bytes, signature_h
         return False
     except Exception as e:
         # Logger might not work well in subprocess without config, but we try
-        logger.error(f"Unexpected error during verification: {e}")
+        logger.error("Unexpected error during verification: %s", str(e))
         return False
+
 
 def verify_signature(public_key_hex: str, message: bytes, signature_hex: str) -> bool:
     """
@@ -114,6 +120,7 @@ def verify_signature(public_key_hex: str, message: bytes, signature_hex: str) ->
     """
     return verify_signature_standalone(public_key_hex, message, signature_hex)
 
+
 def generate_key_pair_hex() -> Tuple[str, str]:
     """
     Helper to generate a raw public/private key pair in hex.
@@ -123,6 +130,7 @@ def generate_key_pair_hex() -> Tuple[str, str]:
     """
     kp = KeyPair.generate()
     return kp.public_key, kp.private_key
+
 
 def _verify_single_item(item: dict[str, Any]) -> bool:
     """Verify a single signature item. Returns False on any error."""
