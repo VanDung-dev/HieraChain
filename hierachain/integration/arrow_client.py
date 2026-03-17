@@ -24,8 +24,9 @@ def _transactions_to_arrow(transactions: list[Transaction]) -> pa.Table:
     """
     Convert the list of Transaction objects into an Apache Arrow Table.
 
-    This function normalizes the transaction data to match the schema required by the HieraChain Engine,
-    including the metadata (details) fields and newly added ZK Proof fields.
+    This function normalizes the transaction data to match the schema required
+    by the HieraChain Engine, including the metadata (details) fields and newly
+    added ZK Proof fields.
 
     Args:
         transactions: A list of transactions that need to be converted.
@@ -69,9 +70,9 @@ class ArrowClient:
 
         try:
             self.sock = socket.create_connection((self.host, self.port))
-            logger.info(f"Connected to Arrow Server at {self.host}:{self.port}")
+            logger.info("Connected to Arrow Server at %s:%d", self.host, self.port)
         except Exception as e:
-            logger.error(f"Failed to connect to {self.host}:{self.port}: {e}")
+            logger.error("Failed to connect to %s:%d: %s", self.host, self.port, e)
             raise
 
     def close(self):
@@ -143,5 +144,5 @@ class ArrowClient:
         self.connect()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()

@@ -14,7 +14,6 @@ from typing import Any
 @dataclass
 class Transaction:
     """Transaction to submit to Engine."""
-    
     tx_id: str
     entity_id: str
     event_type: str
@@ -27,7 +26,6 @@ class Transaction:
 @dataclass
 class BatchResult:
     """Result of batch transaction processing."""
-    
     success: bool
     message: str
     processed_tx_ids: list[str]
@@ -38,7 +36,6 @@ class BatchResult:
 @dataclass
 class TxStatus:
     """Status of a transaction."""
-    
     tx_id: str
     status: str  # "PENDING", "CONFIRMED", "FAILED"
     timestamp: int
@@ -48,7 +45,6 @@ class TxStatus:
 @dataclass
 class HealthResponse:
     """Health status of the Engine."""
-    
     healthy: bool
     version: str
     uptime_seconds: int

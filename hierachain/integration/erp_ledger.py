@@ -77,7 +77,9 @@ def transform_status(value: Any, params: dict[str, Any] | None = None) -> str:
     return str(value)
 
 
-def transform_currency(value: Any, params: dict[str, Any] | None = None) -> dict[str, Any]:
+def transform_currency(
+    value: Any, params: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Transform currency values"""
     return {
         "amount": float(value),
@@ -106,7 +108,9 @@ def get_entity_key(erp_event: dict[str, Any], profile: dict[str, Any]) -> str:
     return ":".join(key_values)
 
 
-def compare_states(old_state: dict[str, Any], new_state: dict[str, Any]) -> dict[str, Any]:
+def compare_states(
+    old_state: dict[str, Any], new_state: dict[str, Any]
+) -> dict[str, Any]:
     """Compare two states and return differences"""
     changes = {}
     
@@ -119,7 +123,9 @@ def compare_states(old_state: dict[str, Any], new_state: dict[str, Any]) -> dict
     return changes
 
 
-def _process_new_and_modified_fields(old_state: dict[str, Any], new_state: dict[str, Any], changes: dict[str, Any]):
+def _process_new_and_modified_fields(
+    old_state: dict[str, Any], new_state: dict[str, Any], changes: dict[str, Any]
+) -> None:
     """Helper to detect added or modified fields"""
     for key, new_value in new_state.items():
         if key in old_state:
@@ -128,24 +134,21 @@ def _process_new_and_modified_fields(old_state: dict[str, Any], new_state: dict[
             changes[key] = {"new": new_value, "type": "added"}
 
 
-def _check_for_modification(key: str, old_value: Any, new_value: Any, changes: dict[str, Any]):
+def _check_for_modification(
+    key: str, old_value: Any, new_value: Any, changes: dict[str, Any]
+) -> None:
     """Helper to check if a specific field has been modified"""
     if old_value != new_value:
-        changes[key] = {
-            "old": old_value,
-            "new": new_value,
-            "type": "modified"
-        }
+        changes[key] = {"old": old_value, "new": new_value, "type": "modified"}
 
 
-def _process_removed_fields(old_state: dict[str, Any], new_state: dict[str, Any], changes: dict[str, Any]):
+def _process_removed_fields(
+    old_state: dict[str, Any], new_state: dict[str, Any], changes: dict[str, Any]
+) -> None:
     """Helper to detect removed fields"""
     for key, old_value in old_state.items():
         if key not in new_state:
-            changes[key] = {
-                "old": old_value,
-                "type": "removed"
-            }
+            changes[key] = {"old": old_value, "type": "removed"}
 
 
 class IntegrationError(Exception):
@@ -215,7 +218,7 @@ class ERPIntegrationLedger:
         """Register ERP adapter"""
         with self.lock:
             self.adapters[erp_system] = adapter_class
-            self.logger.info(f"Registered adapter for {erp_system}")
+            self.logger.info("Registered adapter for %s", erp_system)
     
     def create_mapping_profile(
         self,
@@ -231,7 +234,9 @@ class ERPIntegrationLedger:
                 mapping_rules
             )
         except Exception as e:
-            self.logger.error(f"Failed to create mapping profile {profile_name}: {e}")
+            self.logger.error(
+                "Failed to create mapping profile %s: %s", profile_name, e
+            )
             raise IntegrationError(f"Profile creation failed: {e}")
     
     def translate_erp_to_blockchain(
@@ -259,7 +264,9 @@ class ERPIntegrationLedger:
             return blockchain_event
             
         except Exception as e:
-            self.logger.error(f"Translation failed for profile {profile_name}: {e}")
+            self.logger.error(
+                "Translation failed for profile %s: %s", profile_name, e
+            )
             raise IntegrationError(f"Translation failed: {e}")
     
     def start_scheduled_sync(
@@ -291,11 +298,20 @@ class ERPIntegrationLedger:
                 interval_seconds
             )
             
-            self.logger.info(f"Scheduled sync for {profile_name} every {interval_seconds} seconds")
-            return f"Scheduled sync for {profile_name} every {interval_seconds} seconds (Task ID: {task_id})"
+            self.logger.info(
+                "Scheduled sync for %s every %d seconds (Task ID: %s)",
+                profile_name, interval_seconds, task_id
+            )
+            return (
+                f"Scheduled sync for {profile_name} every {interval_seconds} seconds "
+                f"(Task ID: {task_id})"
+            )
             
         except Exception as e:
-            self.logger.error(f"Failed to start scheduled sync for {profile_name}: {e}")
+            self.logger.error(
+                "Failed to start scheduled sync for %s: %s",
+                profile_name, e
+            )
             raise IntegrationError(f"Scheduling failed: {e}")
     
     def _execute_sync(
@@ -325,7 +341,9 @@ class ERPIntegrationLedger:
                     result.events_processed += 1
                     
                 except Exception as e:
-                    error_msg = f"Failed to process event {erp_event.get('id', 'unknown')}: {e}"
+                    error_msg = (
+                        f"Failed to process event {erp_event.get('id', 'unknown')}: {e}"
+                    )
                     result.errors.append(error_msg)
                     self.logger.warning(error_msg)
             
@@ -334,7 +352,11 @@ class ERPIntegrationLedger:
             result.status = SyncStatus.COMPLETED
             result.end_time = time.time()
             
-            self.logger.info(f"Sync completed for {profile_name}: {result.events_processed} events processed")
+            # Log success
+            self.logger.info(
+                "Sync completed for %s: %d events processed",
+                profile_name, result.events_processed
+            )
             
         except Exception as e:
             result.status = SyncStatus.FAILED
@@ -363,11 +385,13 @@ class ERPIntegrationLedger:
             try:
                 return datetime.strptime(str(value), params["format"]).isoformat()
             except ValueError:
-                self.logger.warning(f"Invalid date format: {value}")
+                self.logger.warning("Invalid date format: %s", value)
                 return str(value)
         return str(value)
     
-    def _transform_amount(self, value: Any, params: dict[str, Any] | None = None) -> float:
+    def _transform_amount(
+        self, value: Any, params: dict[str, Any] | None = None
+    ) -> float:
         """Transform amount values"""
         try:
             if params and "currency_conversion" in params:
@@ -375,7 +399,7 @@ class ERPIntegrationLedger:
                 pass
             return float(value)
         except (ValueError, TypeError):
-            self.logger.warning(f"Invalid amount value: {value}")
+            self.logger.warning("Invalid amount value: %s", value)
             return 0.0
 
 
@@ -387,7 +411,7 @@ class MappingEngine:
         self.transformers: dict[str, Callable] = {}
         self.lock = threading.Lock()
     
-    def register_transformer(self, name: str, transformer_func: Callable):
+    def register_transformer(self, name: str, transformer_func: Callable) -> None:
         """Register a field transformer function"""
         with self.lock:
             self.transformers[name] = transformer_func
@@ -440,12 +464,12 @@ class MappingEngine:
         with self.lock:
             return list(self.profiles.keys())
     
-    def _validate_mapping_rules(self, mapping_rules: dict[str, Any]):
+    def _validate_mapping_rules(self, mapping_rules: dict[str, Any]) -> None:
         """Validate mapping rule structure"""
         for bc_field, rule in mapping_rules.items():
             self._validate_single_rule(bc_field, rule)
 
-    def _validate_single_rule(self, bc_field: str, rule: Any):
+    def _validate_single_rule(self, bc_field: str, rule: Any) -> None:
         """Validate a single mapping rule"""
         if isinstance(rule, str):
             # Simple path mapping
@@ -466,10 +490,12 @@ class MappingEngine:
 class EventTranslator:
     """Translates ERP events to blockchain events"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
     
-    def translate(self, erp_event: dict[str, Any], mapping_rules: dict[str, Any]) -> dict[str, Any]:
+    def translate(
+        self, erp_event: dict[str, Any], mapping_rules: dict[str, Any]
+    ) -> dict[str, Any]:
         """Translate ERP event using mapping rules"""
         blockchain_event = {}
         
@@ -479,7 +505,9 @@ class EventTranslator:
                 if value is not None:
                     set_nested_value(blockchain_event, bc_field, value)
             except Exception as e:
-                self.logger.warning(f"Failed to map field {bc_field}: {e}")
+                self.logger.warning(
+                    "Failed to map field %s: %s", bc_field, e
+                )
         
         add_blockchain_metadata(blockchain_event)
         return blockchain_event
@@ -506,24 +534,23 @@ def _handle_complex_rule(erp_event: dict[str, Any], rule: dict[str, Any]) -> Any
     
     transformer_name = rule.get("transformer")
     if transformer_name:
-        # Simple identity function for now
-        transformer = lambda v, p: v
-        return transformer(value, rule.get("params"))
+        # Identity transformer (no transformation)
+        def identity_transform(v, p):
+            return v
+        return identity_transform(value, rule.get("params"))
     return value
 
 
 class ChangeDetector:
     """Detects meaningful changes in ERP data"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.previous_states: dict[str, dict[str, Any]] = {}
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
     
     def detect_changes(
-        self,
-        erp_event: dict[str, Any],
-        profile: dict[str, Any]
+        self, erp_event: dict[str, Any], profile: dict[str, Any]
     ) -> dict[str, Any]:
         """Detect changes in ERP event and add change metadata"""
         entity_key = get_entity_key(erp_event, profile)
@@ -551,7 +578,7 @@ class ChangeDetector:
 class SyncScheduler:
     """Schedules and manages synchronization tasks"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.tasks: dict[str, dict[str, Any]] = {}
         self.executor = ThreadPoolExecutor(max_workers=5)
         self.lock = threading.Lock()
@@ -654,7 +681,9 @@ class SyncScheduler:
         task_info["status"] = SyncStatus.FAILED
         task_info["retry_count"] += 1
         task_info["last_sync"] = time.time()
-        self.logger.error(f"Task execution failed for {profile_name}: {error}")
+        self.logger.error(
+            "Task execution failed for %s: %s", profile_name, error
+        )
 
     def _reschedule_if_active(self, profile_name: str):
         """Reschedule the next execution if the scheduler is still active"""
@@ -672,17 +701,17 @@ class SyncScheduler:
         """Internal method to stop a task"""
         if profile_name in self.tasks:
             del self.tasks[profile_name]
-            self.logger.info(f"Stopped sync task for {profile_name}")
+            self.logger.info("Stopped sync task for %s", profile_name)
             return True
         return False
     
-    def update_last_sync(self, profile_name: str, timestamp: float):
+    def update_last_sync(self, profile_name: str, timestamp: float) -> None:
         """Update last sync timestamp"""
         with self.lock:
             if profile_name in self.tasks:
                 self.tasks[profile_name]["last_sync"] = timestamp
     
-    def schedule_retry(self, profile_name: str):
+    def schedule_retry(self, profile_name: str) -> None:
         """Schedule retry for failed sync"""
         with self.lock:
             if profile_name not in self.tasks:
@@ -693,7 +722,9 @@ class SyncScheduler:
                 # Exponential backoff
                 delay = min(300, 30 * (2 ** task_info["retry_count"]))
                 task_info["next_sync"] = time.time() + delay
-                self.logger.info(f"Scheduling retry for {profile_name} in {delay} seconds")
+                self.logger.info(
+                    "Scheduling retry for %s in %d seconds", profile_name, delay
+                )
     
     def get_status(self, profile_name: str) -> dict[str, Any]:
         """Get task status"""
@@ -735,7 +766,9 @@ def create_erp_integration() -> ERPIntegrationLedger:
     return ERPIntegrationLedger()
 
 
-def create_sap_integration_profile(profile_name: str, sap_config: dict[str, Any]) -> dict[str, Any]:
+def create_sap_integration_profile(
+    profile_name: str, sap_config: dict[str, Any]
+) -> dict[str, Any]:
     """Create SAP integration profile template"""
     return {
         "profile_name": profile_name,

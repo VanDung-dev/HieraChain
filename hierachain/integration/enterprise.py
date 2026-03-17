@@ -1,10 +1,11 @@
 """
 Enterprise Integration Module
 
-This module provides integration capabilities with major ERP systems including SAP, Oracle, 
-and Microsoft Dynamics. It handles the conversion of enterprise business events into 
-blockchain-compatible events while maintaining the hierarchical structure where sub-chain 
-events are later summarized on the main chain.
+This module provides integration capabilities with major ERP systems including
+SAP, Oracle, and Microsoft Dynamics. It handles the conversion of enterprise
+business events into blockchain-compatible events while maintaining the
+hierarchical structure where sub-chain events are later summarized on the
+main chain.
 """
 
 import os
@@ -35,7 +36,7 @@ def _get_nested_value(data: dict[str, Any], path: str) -> Any:
 class BaseERPIntegration:
     """Base class for ERP system integrations"""
     
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
         self.connected = False
     
@@ -185,7 +186,9 @@ class EnterpriseIntegration:
         return integration
     
     @staticmethod
-    def erp_to_blockchain_event(erp_event: dict[str, Any], mapping_rules: dict[str, str]) -> dict[str, Any]:
+    def erp_to_blockchain_event(
+        erp_event: dict[str, Any], mapping_rules: dict[str, str]
+    ) -> dict[str, Any]:
         """Convert ERP event to blockchain event"""
         # Map fields according to rules
         blockchain_event = {}
@@ -237,12 +240,16 @@ class EnterpriseIntegration:
             raise IntegrationError(f"No default mapping available for {erp_system}")
     
     @staticmethod
-    def batch_convert_events(erp_events: list[dict[str, Any]], mapping_rules: dict[str, str]) -> list[dict[str, Any]]:
+    def batch_convert_events(
+        erp_events: list[dict[str, Any]], mapping_rules: dict[str, str]
+    ) -> list[dict[str, Any]]:
         """Convert multiple ERP events to blockchain events"""
         blockchain_events = []
         for erp_event in erp_events:
             try:
-                bc_event = EnterpriseIntegration.erp_to_blockchain_event(erp_event, mapping_rules)
+                bc_event = EnterpriseIntegration.erp_to_blockchain_event(
+                    erp_event, mapping_rules
+                )
                 blockchain_events.append(bc_event)
             except Exception as e:
                 # Log error but continue processing other events
