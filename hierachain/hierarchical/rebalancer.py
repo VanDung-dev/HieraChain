@@ -65,7 +65,7 @@ def _add_event_to_chain(chain: Any, event: Any) -> bool:
             return chain.add_event(event)
         return True
     except Exception as e:  # pylint: disable=broad-except
-        logger.error(f"Failed to add event to chain: {e}")
+        logger.error("Failed to add event to chain: %s", e)
         return False
 
 
@@ -151,7 +151,9 @@ def _should_split_for_rebalancer(
     return False
 
 
-def _split_sub_chain_for_rebalancer(rebalancer: "SubChainRebalancer", sub_chain: Any) -> "SplitResult":
+def _split_sub_chain_for_rebalancer(
+    rebalancer: "SubChainRebalancer", sub_chain: Any
+) -> "SplitResult":
     """Split a sub-chain into two child branches."""
     start_time = time.time()
     rebalancer.stats["splits_initiated"] += 1
@@ -166,7 +168,9 @@ def _split_sub_chain_for_rebalancer(rebalancer: "SubChainRebalancer", sub_chain:
             raise RuntimeError("Failed to create child chains")
 
         rebalancer.status = RebalanceStatus.MIGRATING
-        events_migrated, blocks_migrated = _migrate_state_for_rebalancer(rebalancer, sub_chain, children)
+        events_migrated, blocks_migrated = _migrate_state_for_rebalancer(
+            rebalancer, sub_chain, children
+        )
 
         rebalancer.stats["events_migrated"] += events_migrated
         rebalancer.stats["splits_completed"] += 1
@@ -184,14 +188,17 @@ def _split_sub_chain_for_rebalancer(rebalancer: "SubChainRebalancer", sub_chain:
         if rebalancer.on_split_complete:
             rebalancer.on_split_complete(result)
 
-        logger.info(f"Split complete: {parent_id} -> {child_ids}, {events_migrated} events migrated")
+        logger.info(
+            "Split complete: %s -> %s, %d events migrated",
+            parent_id, child_ids, events_migrated
+        )
 
         rebalancer.status = RebalanceStatus.COOLDOWN
 
         return result
 
     except Exception as e:  # pylint: disable=broad-except
-        logger.error(f"Split failed for {parent_id}: {e}")
+        logger.error("Split failed for %s: %s", parent_id, e)
         rebalancer.stats["splits_failed"] += 1
         rebalancer.status = RebalanceStatus.FAILED
         return SplitResult(
@@ -229,7 +236,10 @@ def _migrate_state_for_rebalancer(
 
     _mark_chain_as_split(parent, [c for c in children])
 
-    logger.info(f"Migrated {events_migrated} events from parent to {len(children)} children")
+    logger.info(
+        "Migrated %d events from parent %s to %d children",
+        events_migrated, parent, len(children)
+    )
 
     return events_migrated, blocks_migrated
 
@@ -382,7 +392,9 @@ class SubChainRebalancer:
         self._hierarchy_manager: Any = None
 
         # Callbacks
-        self._on_threshold_exceeded: Callable[[str, RebalanceMetrics], bool] | None = None
+        self._on_threshold_exceeded: Callable[
+            [str, RebalanceMetrics], bool
+        ] | None = None
         self._on_split_complete: Callable[[SplitResult], None] | None = None
 
         # Stats
@@ -396,13 +408,11 @@ class SubChainRebalancer:
         }
 
         logger.info(
-            f"SubChainRebalancer initialized (threshold={threshold_eps} eps, "
-            f"interval={check_interval}s)"
+            "SubChainRebalancer initialized (threshold=%d eps, interval=%.2fs)",
+            threshold_eps, check_interval
         )
 
-    def register_subchain(
-        self, sub_chain_id: str, subchain: Any
-    ) -> None:
+    def register_subchain(self, sub_chain_id: str, subchain: Any) -> None:
         """
         Register a sub-chain for monitoring.
 
@@ -411,7 +421,9 @@ class SubChainRebalancer:
             subchain: Sub-chain instance reference.
         """
         self._subchains[sub_chain_id] = subchain
-        self._monitored_chains[sub_chain_id] = RebalanceMetrics(sub_chain_id=sub_chain_id)
+        self._monitored_chains[sub_chain_id] = RebalanceMetrics(
+            sub_chain_id=sub_chain_id
+        )
         self._event_counts[sub_chain_id] = []
         logger.info(f"Registered sub-chain for monitoring: {sub_chain_id}")
 
@@ -420,7 +432,7 @@ class SubChainRebalancer:
         self._subchains.pop(sub_chain_id, None)
         self._monitored_chains.pop(sub_chain_id, None)
         self._event_counts.pop(sub_chain_id, None)
-        logger.info(f"Unregistered sub-chain: {sub_chain_id}")
+        logger.info("Unregistered sub-chain: %s", sub_chain_id)
 
     def set_hierarchy_manager(self, manager: Any) -> None:
         """Set reference to HierarchyManager for creating new sub-chains."""
@@ -453,7 +465,7 @@ class SubChainRebalancer:
             try:
                 self._check_all_thresholds()
             except Exception as e:
-                logger.error(f"Monitoring loop error: {e}")
+                logger.error("Monitoring loop error: %s", e)
 
             self._stop_monitoring.wait(timeout=self.check_interval)
 
@@ -472,7 +484,9 @@ class SubChainRebalancer:
         if self._should_split(metrics):
             self._handle_threshold_exceedance(sub_chain_id, subchain, metrics)
 
-    def _handle_threshold_exceedance(self, sub_chain_id: str, subchain: Any, metrics: "RebalanceMetrics") -> None:
+    def _handle_threshold_exceedance(
+        self, sub_chain_id: str, subchain: Any, metrics: "RebalanceMetrics"
+    ) -> None:
         """Handle the situation where a threshold is exceeded."""
         self._stats["thresholds_exceeded"] += 1
         self._status = RebalanceStatus.THRESHOLD_EXCEEDED
@@ -480,13 +494,17 @@ class SubChainRebalancer:
         if self._is_split_authorized(sub_chain_id, metrics):
             self._execute_split_operation(subchain, metrics)
 
-    def _is_split_authorized(self, sub_chain_id: str, metrics: "RebalanceMetrics") -> bool:
+    def _is_split_authorized(
+        self, sub_chain_id: str, metrics: "RebalanceMetrics"
+    ) -> bool:
         """Check with optional callback if split is authorized to proceed."""
         if self._on_threshold_exceeded:
             return self._on_threshold_exceeded(sub_chain_id, metrics)
         return True
 
-    def _execute_split_operation(self, subchain: Any, metrics: "RebalanceMetrics") -> None:
+    def _execute_split_operation(
+        self, subchain: Any, metrics: "RebalanceMetrics"
+    ) -> None:
         """Execute the sub-chain split and update statistics on success."""
         result = self.split_sub_chain(subchain)
         if result.success:
@@ -495,12 +513,19 @@ class SubChainRebalancer:
 
     def _collect_metrics(self, sub_chain_id: str, subchain: Any) -> RebalanceMetrics:
         """Collect current metrics for a sub-chain."""
-        metrics = self._monitored_chains.get(sub_chain_id, RebalanceMetrics(sub_chain_id=sub_chain_id))
-        return _update_rebalance_metrics_for_subchain(metrics, sub_chain_id, subchain,self._event_counts)
+        metrics = self._monitored_chains.get(
+            sub_chain_id, RebalanceMetrics(sub_chain_id=sub_chain_id)
+        )
+        return _update_rebalance_metrics_for_subchain(
+            metrics, sub_chain_id, subchain, self._event_counts
+        )
 
     def _should_split(self, metrics: RebalanceMetrics) -> bool:
         """Determine if a sub-chain should be split."""
-        return _should_split_for_rebalancer(metrics, self.threshold_eps, self.min_events_for_split, self.cooldown_seconds)
+        return _should_split_for_rebalancer(
+            metrics, self.threshold_eps,
+            self.min_events_for_split, self.cooldown_seconds
+        )
 
     def check_threshold(self, sub_chain_id: str) -> bool:
         """

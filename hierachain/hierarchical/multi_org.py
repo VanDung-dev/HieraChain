@@ -2,7 +2,7 @@
 Multi-Organization Architecture for HieraChain Ledger
 
 This module implements the multi-organization architecture with MSP integration,
-designed for enterprise applications. Provides support for multiple organizations, 
+designed for enterprise applications. Provides support for multiple organizations,
 affiliation hierarchies, and channel management across organizational boundaries.
 """
 
@@ -59,10 +59,14 @@ class OrganizationPolicy:
     admin_threshold: int
     voting_policy: str = "majority"  # majority, unanimous, admin_only
     
-    def evaluate_proposal(self, votes: dict[str, bool], voter_roles: dict[str, str]) -> bool:
+    def evaluate_proposal(
+        self, votes: dict[str, bool], voter_roles: dict[str, str]
+    ) -> bool:
         """Evaluate a proposal based on organization policy"""
-        admin_votes = {user_id: vote for user_id, vote in votes.items() 
-                      if voter_roles.get(user_id) == "admin"}
+        admin_votes = {
+            user_id: vote for user_id,
+            vote in votes.items() if voter_roles.get(user_id) == "admin"
+        }
         
         if self.voting_policy == "admin_only":
             if len(admin_votes) < self.admin_threshold:
@@ -80,7 +84,7 @@ class OrganizationPolicy:
 class Organization:
     """Enterprise organization with MSP integration"""
     
-    def __init__(self, org_id: str, msp_config: dict[str, Any]):
+    def __init__(self, org_id: str, msp_config: dict[str, Any]) -> None:
         """
         Initialize organization with MSP configuration
         
@@ -100,7 +104,9 @@ class Organization:
         self.affiliations: dict[str, Any] = {}
         self.lock = threading.Lock()
     
-    def register_member(self, member_id: str, identity: dict[str, Any], role: str) -> str:
+    def register_member(
+        self, member_id: str, identity: dict[str, Any], role: str
+    ) -> str:
         """Register a member with organization"""
         with self.lock:
             if not self.msp.validate_identity(identity):
@@ -142,7 +148,9 @@ class Organization:
             current = self.affiliations
             for part in parts:
                 if part not in current:
-                    raise OrganizationError(f"Affiliation {affiliation_path} does not exist")
+                    raise OrganizationError(
+                        f"Affiliation {affiliation_path} does not exist"
+                    )
                 current = current[part]["sub_affiliations"]
             
             # Remove from old affiliation if any
@@ -305,8 +313,9 @@ class MultiOrgNetwork:
             )
             return self.system_channel
     
-    def create_application_channel(self, channel_id: str, participating_orgs: list[str], 
-                                 config: dict[str, Any]) -> ApplicationChannel:
+    def create_application_channel(
+        self, channel_id: str, participating_orgs: list[str], config: dict[str, Any]
+    ) -> ApplicationChannel:
         """
         Create application channel with participating organizations
         
@@ -352,10 +361,14 @@ class MultiOrgNetwork:
             "organizations": len(self.organizations),
             "application_channels": len(self.application_channels),
             "system_channel_exists": self.system_channel is not None,
-            "total_members": sum(len(org.members) for org in self.organizations.values())
+            "total_members": sum(
+                len(org.members) for org in self.organizations.values()
+            )
         }
     
-    def validate_cross_org_operation(self, operation: dict[str, Any], channel_id: str) -> bool:
+    def validate_cross_org_operation(
+        self, operation: dict[str, Any], channel_id: str
+    ) -> bool:
         """Validate cross-organizational operation"""
         channel = self.get_channel(channel_id)
         if not channel:
@@ -379,12 +392,17 @@ class MultiOrgNetwork:
 
 
 # Factory functions for easy setup
-def create_organization(org_id: str, _name: str, admin_users: list[str] = None) -> Organization:
+def create_organization(
+    org_id: str, _name: str, admin_users: list[str] = None
+) -> Organization:
     """Factory function to create an organization with default MSP config"""
     msp_config = {
-        "ca_cert": f"-----BEGIN CERTIFICATE-----\n{org_id}_ca_cert\n-----END CERTIFICATE-----",
-        "tls_ca_cert": f"-----BEGIN CERTIFICATE-----\n{org_id}_tls_ca_cert\n-----END CERTIFICATE-----",
-        "admin_certs": [f"{admin}_admin_cert" for admin in (admin_users or [f"{org_id}_admin"])]
+        "ca_cert":
+        f"-----BEGIN CERTIFICATE-----\n{org_id}_ca_cert\n-----END CERTIFICATE-----",
+        "tls_ca_cert":
+        f"-----BEGIN CERTIFICATE-----\n{org_id}_tls_ca_cert\n-----END CERTIFICATE-----",
+        "admin_certs":
+        [f"{admin}_admin_cert" for admin in (admin_users or [f"{org_id}_admin"])]
     }
     
     org = Organization(org_id, msp_config)

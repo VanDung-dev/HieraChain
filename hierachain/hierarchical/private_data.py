@@ -18,23 +18,33 @@ from cryptography.fernet import Fernet, InvalidToken
 def _check_submitter(entry: "PrivateDataEntry", query_params: dict[str, Any]) -> bool:
     """Check if the submitter organization matches query parameters."""
     return (
-        "submitter_org" not in query_params or entry.metadata.get("submitter_org") == query_params["submitter_org"]
+        "submitter_org" not in query_params or
+        entry.metadata.get("submitter_org") == query_params["submitter_org"]
     )
 
 
 def _check_timestamp(entry: "PrivateDataEntry", query_params: dict[str, Any]) -> bool:
     """Check if the entry timestamp falls within query ranges."""
-    if "min_timestamp" in query_params and entry.timestamp < query_params["min_timestamp"]:
+    if (
+        "min_timestamp" in query_params and
+        entry.timestamp < query_params["min_timestamp"]
+    ):
         return False
-    if "max_timestamp" in query_params and entry.timestamp > query_params["max_timestamp"]:
+    if (
+        "max_timestamp" in query_params and
+        entry.timestamp > query_params["max_timestamp"]
+    ):
         return False
     return True
 
 
-def _check_block_height(entry: "PrivateDataEntry", query_params: dict[str, Any]) -> bool:
+def _check_block_height(
+    entry: "PrivateDataEntry", query_params: dict[str, Any]
+) -> bool:
     """Check if the entry block height meets query criteria."""
     return (
-        "min_block_height" not in query_params or entry.block_height >= query_params["min_block_height"]
+        "min_block_height" not in query_params or
+        entry.block_height >= query_params["min_block_height"]
     )
 
 
@@ -110,7 +120,9 @@ class PrivateCollection:
     policies, and automatic data purging.
     """
 
-    def __init__(self, name: str, organizations: dict[str, Any], config: dict[str, Any]):
+    def __init__(
+        self, name: str, organizations: dict[str, Any], config: dict[str, Any]
+    ) -> None:
         """
         Initialize private data collection.
 
@@ -320,7 +332,9 @@ class PrivateCollection:
 
         return filtered_metadata
 
-    def query_keys(self, query_params: dict[str, Any], requester_org_id: str) -> list[str]:
+    def query_keys(
+        self, query_params: dict[str, Any], requester_org_id: str
+    ) -> list[str]:
         """
         Query private data keys based on criteria.
 
@@ -418,7 +432,9 @@ class PrivateCollection:
             True if endorsements are sufficient
         """
         # Filter to only valid member endorsements
-        valid_endorsements = [org_id for org_id in endorsements if org_id in self.organizations]
+        valid_endorsements = [
+            org_id for org_id in endorsements if org_id in self.organizations
+        ]
 
         policy = self.metadata["endorsement_policy"]
         total_members = len(self.organizations)

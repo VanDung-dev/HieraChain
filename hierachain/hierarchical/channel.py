@@ -42,7 +42,7 @@ def _filter_block_events(
             filtered_events = table_to_list_of_dicts(filtered_table)
             return [e for e in filtered_events if filter_func(e)]
         except (pa.ArrowInvalid, pa.ArrowTypeError, ValueError) as e:
-            logger.error(f"Failed to filter block with Arrow: {e}")
+            logger.error("Failed to filter block with Arrow: %s", e)
 
     # LEGACY / FALLBACK PATH
     if hasattr(block, "to_event_list"):
@@ -189,7 +189,9 @@ class ChannelPolicy:
         self.write_policy = policy_config.get("write", "ADMIN")
         self.endorsement_policy = policy_config.get("endorsement", "MAJORITY")
         self.admin_policy = policy_config.get("admin", "UNANIMOUS")
-        self.lifecycle_endorsement = policy_config.get("lifecycle_endorsement", "MAJORITY")
+        self.lifecycle_endorsement = policy_config.get(
+            "lifecycle_endorsement", "MAJORITY"
+        )
 
         # Custom policy expressions
         self.custom_policies = policy_config.get("custom_policies", {})
@@ -496,7 +498,9 @@ class Channel:
         self.last_activity = time.time()
         return True
 
-    def query_events(self, query_params: dict[str, Any], requester_org_id: str) -> list[dict[str, Any]] | None:
+    def query_events(
+        self, query_params: dict[str, Any], requester_org_id: str
+    ) -> list[dict[str, Any]] | None:
         """
         Query events from the channel.
 
@@ -552,7 +556,9 @@ class Channel:
             "events_submitted": self.event_statistics["events_by_org"].get(org_id, 0),
         }
 
-    def update_channel_policy(self, new_policy_config: dict[str, Any], endorsements: list[str]) -> bool:
+    def update_channel_policy(
+        self, new_policy_config: dict[str, Any], endorsements: list[str]
+    ) -> bool:
         """
         Update channel governance policy.
 

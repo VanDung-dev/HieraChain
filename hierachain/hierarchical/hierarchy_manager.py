@@ -59,7 +59,9 @@ def _verify_chain_blocks(verifier: Any, _name: str, chain_data: Any) -> dict[str
     return {"valid": result.is_valid, "message": result.message}
 
 
-def _trace_entity_history(sub_chains: dict[str, DomainChain], entity_id: str) -> dict[str, list[dict[str, Any]]]:
+def _trace_entity_history(
+    sub_chains: dict[str, DomainChain], entity_id: str
+) -> dict[str, list[dict[str, Any]]]:
     """Trace an entity across all sub-chains."""
     trace_result = {}
     for name, chain in sub_chains.items():
@@ -72,7 +74,9 @@ def _trace_entity_history(sub_chains: dict[str, DomainChain], entity_id: str) ->
     return trace_result
 
 
-def _init_organization_msp(org_id: str, name: str, admin_users: list[str] | None) -> Any:
+def _init_organization_msp(
+    org_id: str, name: str, admin_users: list[str] | None
+) -> Any:
     """Initialize organization and its network integration."""
     org = create_organization(org_id, name, admin_users or [])
     return org
@@ -99,7 +103,9 @@ def _build_channel_orgs(org_ids: list[str], manager: Any) -> list[ChannelOrganiz
     return organizations
 
 
-def _validate_all_sub_chains(sub_chains: dict[str, DomainChain], verifier: Any) -> tuple[dict, dict, bool]:
+def _validate_all_sub_chains(
+    sub_chains: dict[str, DomainChain], verifier: Any
+) -> tuple[dict, dict, bool]:
     """Perform validation for all sub-chains."""
     sub_validation = {}
     block_verification = {}
@@ -182,7 +188,9 @@ def _compute_system_integrity_report(manager: Any) -> dict[str, Any]:
     }
 
 
-def _compute_proof_consistency(main_chain: MainChain, sub_chains: dict[str, DomainChain]) -> dict[str, Any]:
+def _compute_proof_consistency(
+    main_chain: MainChain, sub_chains: dict[str, DomainChain]
+) -> dict[str, Any]:
     """Compute proof consistency between main chain and sub-chains."""
     consistency_report: dict[str, Any] = {}
     for name, chain in sub_chains.items():
@@ -268,12 +276,17 @@ class HierarchyManager:
         self.private_collections: dict[str, PrivateCollection] = {}
 
         # Initialize Cross-Chain Transaction Manager
-        self.transaction_manager: CrossChainTransactionManager = CrossChainTransactionManager(self)
+        self.transaction_manager: CrossChainTransactionManager = (
+            CrossChainTransactionManager(self)
+        )
 
         # Initialize storage if enabled
         self.storage = None
         # Always initialize storage if backend is sqlite
-        if settings.DEFAULT_STORAGE_BACKEND == "sqlite"or "sqlite" in settings.DATABASE_URL:
+        if (
+            settings.DEFAULT_STORAGE_BACKEND == "sqlite" or
+            "sqlite" in settings.DATABASE_URL
+        ):
             try:
                 # Extract path from DATABASE_URL if possible, else default
                 db_path = "hierachain.db"
@@ -286,7 +299,9 @@ class HierarchyManager:
             except (IOError, ValueError, RuntimeError) as e:
                 logger.error("Failed to initialize storage: %s", e)
 
-    def create_sub_chain(self, name: str, domain_type: str, metadata: dict[str, Any] | None = None) -> bool:
+    def create_sub_chain(
+        self, name: str, domain_type: str, metadata: dict[str, Any] | None = None
+    ) -> bool:
         """
         Create and register a new sub-chain (DomainChain).
 
@@ -306,10 +321,6 @@ class HierarchyManager:
         # Connect to main chain (simulated logical connection)
         if sub_chain.connect_to_main_chain(self.main_chain):
             self.sub_chains[name] = sub_chain
-
-            # Record creation event on Main Chain
-            _connection_metadata = metadata or {}
-
             return True
 
         return False
@@ -327,10 +338,7 @@ class HierarchyManager:
         return self.main_chain
 
     def initiate_cross_chain_transaction(
-        self,
-        source_chain_name: str,
-        dest_chain_name: str,
-        payload: dict[str, Any],
+        self, source_chain_name: str, dest_chain_name: str, payload: dict[str, Any],
     ) -> str | None:
         """
         Initiate a cross-chain 2PC transaction.
@@ -343,7 +351,9 @@ class HierarchyManager:
         Returns:
             Transaction ID if successful, None otherwise.
         """
-        return self.transaction_manager.initiate_transaction(source_chain_name, dest_chain_name, payload)
+        return self.transaction_manager.initiate_transaction(
+            source_chain_name, dest_chain_name, payload
+        )
 
     def start_operation(
         self,
@@ -434,7 +444,9 @@ class HierarchyManager:
             "domain_distribution": domain_distribution,
         }
 
-    def trace_entity_across_chains(self, entity_id: str) -> dict[str, list[dict[str, Any]]]:
+    def trace_entity_across_chains(
+        self, entity_id: str
+    ) -> dict[str, list[dict[str, Any]]]:
         """Trace an entity's history across all chains."""
         return _trace_entity_history(self.sub_chains, entity_id)
 
@@ -480,7 +492,9 @@ class HierarchyManager:
             "domain_distribution": domain_dist,
         }
 
-    def configure_auto_proof_submission(self, enabled: bool, interval: float = 60.0) -> None:
+    def configure_auto_proof_submission(
+        self, enabled: bool, interval: float = 60.0
+    ) -> None:
         """
         Configure automatic proof submission for all Sub-Chains.
 
@@ -502,7 +516,9 @@ class HierarchyManager:
         Returns:
             Results of maintenance operations
         """
-        maintenance_results: dict[str, Any] = {"timestamp": time.time(),"operations": []}
+        maintenance_results: dict[str, Any] = {
+            "timestamp": time.time(), "operations": []
+        }
         operations: list[dict[str, Any]] = maintenance_results["operations"]
 
         # Submit pending proofs
@@ -512,7 +528,9 @@ class HierarchyManager:
         # Finalize Main Chain block if needed
         main_chain_result = self.finalize_main_chain_block()
         if main_chain_result:
-            operations.append({"operation": "main_chain_finalization", "result": main_chain_result})
+            operations.append(
+                {"operation": "main_chain_finalization", "result": main_chain_result}
+            )
 
         # Update system stats
         self.system_stats["system_uptime"] = time.time() - self.system_started_at
@@ -671,7 +689,10 @@ class HierarchyManager:
 
     def __str__(self) -> str:
         """String representation of the Hierarchy Manager."""
-        return f"HierarchyManager(main_chain={self.main_chain.name}, sub_chains={len(self.sub_chains)})"
+        return (
+            f"HierarchyManager(main_chain={self.main_chain.name}, "
+            f"sub_chains={len(self.sub_chains)})"
+        )
 
     def __repr__(self) -> str:
         """Detailed string representation of the Hierarchy Manager."""

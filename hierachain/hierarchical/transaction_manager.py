@@ -39,7 +39,9 @@ class CrossChainTransaction:
     error_message: str | None = None
 
 
-def _rollback(transaction: CrossChainTransaction, source_chain: Any, dest_chain: Any) -> None:
+def _rollback(
+    transaction: CrossChainTransaction, source_chain: Any, dest_chain: Any
+) -> None:
     """Rollback the transaction on both chains."""
     transaction.state = TransactionState.ROLLED_BACK
     transaction.updated_at = time.time()
@@ -51,7 +53,9 @@ def _rollback(transaction: CrossChainTransaction, source_chain: Any, dest_chain:
         dest_chain.rollback_transaction(transaction.transaction_id)
 
 
-def _run_prepare_phase(transaction: CrossChainTransaction, source_chain: Any, dest_chain: Any) -> bool:
+def _run_prepare_phase(
+    transaction: CrossChainTransaction, source_chain: Any, dest_chain: Any
+) -> bool:
     """Execute Phase 1: Prepare."""
     tx_id = transaction.transaction_id
     try:
@@ -83,7 +87,9 @@ def _run_prepare_phase(transaction: CrossChainTransaction, source_chain: Any, de
         return False
 
 
-def _run_commit_phase(transaction: CrossChainTransaction, source_chain: Any, dest_chain: Any) -> bool:
+def _run_commit_phase(
+    transaction: CrossChainTransaction, source_chain: Any, dest_chain: Any
+) -> bool:
     """Execute Phase 2: Commit."""
     tx_id = transaction.transaction_id
     try:
@@ -127,7 +133,9 @@ class CrossChainTransactionManager:
         self.hierarchy_manager = hierarchy_manager
         self.transactions: dict[str, CrossChainTransaction] = {}
 
-    def initiate_transaction(self, source_chain_name: str, dest_chain_name: str, payload: dict[str, Any]) -> str:
+    def initiate_transaction(
+        self, source_chain_name: str, dest_chain_name: str, payload: dict[str, Any]
+    ) -> str:
         """
         Start a new cross-chain transaction.
 

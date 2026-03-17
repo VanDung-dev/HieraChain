@@ -47,14 +47,23 @@ def _generate_zk_proof(name: str, chain: list[Any], latest_block: Any) -> bytes 
         )
 
         if result.success:
-            logger.info(f"Generated ZK proof for block {latest_block.index} in {result.generation_time_ms:.2f}ms")
+            logger.info(
+                "Generated ZK proof for block %d in %.2fms",
+                latest_block.index, result.generation_time_ms,
+            )
             return result.proof
 
-        logger.warning(f"ZK proof generation failed: {result.error}")
+        logger.warning(
+            "ZK proof generation failed for block %d: %s",
+            latest_block.index, result.error,
+        )
         return None
 
     except Exception as e:
-        logger.error(f"ZK proof generation error: {e}")
+        logger.error(
+            "ZK proof generation error for block %d: %s",
+            latest_block.index, e,
+        )
         return None
 
 
@@ -141,7 +150,7 @@ def _force_block_creation(ordering_service: Any, timeout: float) -> None:
     try:
         ordering_service.force_block_creation(timeout=timeout)
     except Exception as e:
-        logger.error(f"Error forcing block creation: {e}")
+        logger.error("Error forcing block creation: %s", e)
 
 
 def _consumer_loop(sub_chain: Any) -> None:
@@ -152,7 +161,7 @@ def _consumer_loop(sub_chain: Any) -> None:
             sub_chain.finalize_sub_chain_block()
             time.sleep(0.5)
         except Exception as e:
-            logger.error(f"Error in block consumer loop: {e}")
+            logger.error("Error in block consumer loop: %s", e)
             time.sleep(1.0)
 
 
@@ -233,8 +242,9 @@ def _submit_proof_for_sub_chain(
     """Submit a cryptographic proof to the Main Chain."""
     latest_block = sub_chain.get_latest_block()
     logger.debug(
-        f"SubChain {sub_chain.name} submitting proof. "
-        f"Chain length: {len(sub_chain.chain)}. Block index: {latest_block.index}"
+        "SubChain %s submitting proof. "
+        "Chain length: %d. Block index: %d",
+        sub_chain.name, len(sub_chain.chain), latest_block.index,
     )
 
     if not sub_chain.chain or len(sub_chain.chain) <= 1:
@@ -262,7 +272,7 @@ def _submit_proof_for_sub_chain(
         metadata=metadata,
         zk_proof=zk_proof,
     )
-    logger.debug(f"MainChain.add_proof returned: {success}")
+    logger.debug("MainChain.add_proof returned: %s", success,)
 
     if success:
         _update_local_state_after_proof(sub_chain, main_chain, latest_block, zk_proof)
@@ -285,7 +295,7 @@ def _process_and_finalize_single_block(sub_chain: "SubChain", block: Any) -> boo
         sub_chain.auto_submit_proof_if_needed()
         return True
 
-    logger.error(f"Failed to add ordered block {block.index}")
+    logger.error("Failed to add ordered block %d", block.index)
     return False
 
 
@@ -297,8 +307,8 @@ def _finalize_sub_chain_block_for_chain(sub_chain: "SubChain") -> dict[str, Any]
         block = sub_chain.ordering_service.get_next_block()
         if not block:
             logger.debug(
-                f"No block from get_next_block. "
-                f"Queue {id(sub_chain.ordering_service.commit_queue)} empty."
+                "No block from get_next_block. Queue %d empty.",
+                id(sub_chain.ordering_service.commit_queue),
             )
             break
 
@@ -323,9 +333,11 @@ def _finalize_sub_chain_block_for_chain(sub_chain: "SubChain") -> dict[str, Any]
     }
 
 
-def _flush_pending_and_finalize_for_sub_chain(sub_chain: "SubChain", timeout: float) -> dict[str, Any] | None:
+def _flush_pending_and_finalize_for_sub_chain(
+    sub_chain: "SubChain", timeout: float
+) -> dict[str, Any] | None:
     """Flush pending events and finalize the block."""
-    logger.debug(f"flush_pending_and_finalize for {sub_chain.name}")
+    logger.debug("flush_pending_and_finalize for %s", sub_chain.name)
     start_time = time.time()
 
     while not sub_chain.ordering_service.event_pool.empty():
@@ -352,9 +364,13 @@ def _flush_pending_and_finalize_for_sub_chain(sub_chain: "SubChain", timeout: fl
     return None
 
 
-def _rehydrate_chain_from_ordering_service(sub_chain: "SubChain", _latest_block_os: Any) -> None:
+def _rehydrate_chain_from_ordering_service(
+    sub_chain: "SubChain", _latest_block_os: Any
+) -> None:
     """Rehydrate the local chain from the Ordering Service."""
-    all_blocks = sub_chain.ordering_service.storage_handler.get_blocks_from_db(start_index=0)
+    all_blocks = (
+        sub_chain.ordering_service.storage_handler.get_blocks_from_db(start_index=0)
+    )
 
     if not all_blocks:
         return
@@ -365,12 +381,15 @@ def _rehydrate_chain_from_ordering_service(sub_chain: "SubChain", _latest_block_
     # If local chain already has more or equal blocks, skip rehydration
     if latest_local.index >= all_blocks[-1].index:
         logger.info(
-            f"Chain {sub_chain.name} already up to date. Local index: {latest_local.index}, "
-            f"DB index: {all_blocks[-1].index}"
+            "Chain %s already up to date. Local index: %d, DB index: %d",
+            sub_chain.name, latest_local.index, all_blocks[-1].index,
         )
         return
 
-    logger.info(f"Rehydrating chain {sub_chain.name} from index {latest_local.index} to {all_blocks[-1].index}")
+    logger.info(
+        "Rehydrating chain %s from index %d to %d",
+        sub_chain.name, latest_local.index, all_blocks[-1].index,
+    )
 
     # Clear the locally created chain (including the newly created genesis block)
     sub_chain.chain.clear()
@@ -388,8 +407,8 @@ def _rehydrate_chain_from_ordering_service(sub_chain: "SubChain", _latest_block_
     sub_chain.ordering_service.blocks_created = all_blocks[-1].index + 1
 
     logger.info(
-        f"Rehydrated {len(all_blocks)} blocks from Ordering Service. "
-        f"Latest index: {all_blocks[-1].index if all_blocks else 0}"
+        "Rehydrated %d blocks from Ordering Service. Latest index: %d",
+        len(all_blocks), all_blocks[-1].index if all_blocks else 0,
     )
 
 
@@ -404,7 +423,9 @@ def _update_event_statistics(sub_chain: "SubChain", block: Any) -> None:
 
     for event in events:
         etype = event.get("event", "unknown")
-        sub_chain.event_type_counts[etype] = sub_chain.event_type_counts.get(etype, 0) + 1
+        sub_chain.event_type_counts[etype] = (
+            sub_chain.event_type_counts.get(etype, 0) + 1
+        )
 
         entity_id = event.get("entity_id")
         if entity_id:
@@ -421,7 +442,10 @@ def _reset_ordering_service_state(sub_chain: "SubChain") -> None:
     latest_local = sub_chain.get_latest_block()
     sub_chain.ordering_service.block_history = list(sub_chain.chain)
     sub_chain.ordering_service.blocks_created = latest_local.index + 1
-    logger.info(f"Reset ordering service state: blocks_created = {sub_chain.ordering_service.blocks_created}")
+    logger.info(
+        "Reset ordering service state: blocks_created = %d",
+        sub_chain.ordering_service.blocks_created,
+    )
 
 
 def _sync_chain_for_sub_chain(sub_chain: "SubChain") -> None:
@@ -431,7 +455,7 @@ def _sync_chain_for_sub_chain(sub_chain: "SubChain") -> None:
         _rehydrate_chain_from_ordering_service(sub_chain, latest_block_os)
         _reset_ordering_service_state(sub_chain)
     except Exception as e:
-        logger.error(f"Sync failed: {e}")
+        logger.error("Sync failed: %s", e)
 
 
 class SubChain(Blockchain):
@@ -453,7 +477,10 @@ class SubChain(Blockchain):
     ):
         """Initialize a Sub-Chain."""
         if not re.match(r"^[a-zA-Z0-9_\-]+$", name):
-            raise ValueError(f"Invalid SubChain name '{name}'. Allowed: alphanumeric, underscore, hyphen.")
+            raise ValueError(
+                f"Invalid SubChain name '{name}'. "
+                "Allowed: alphanumeric, underscore, hyphen."
+            )
 
         super().__init__(name)
         self.domain_type = domain_type
@@ -488,7 +515,7 @@ class SubChain(Blockchain):
 
         if not self.ordering_service.get_latest_block():
             self.ordering_service.storage_handler.save_block(self.chain[0], self.name)
-            logger.info(f"SubChain {self.name}: Persisted genesis block to storage.")
+            logger.info("SubChain %s: Persisted genesis block to storage.", self.name)
 
         # Wait for ordering service to become ACTIVE
         self.ordering_service.wait_for_active(timeout=10.0)
@@ -497,7 +524,9 @@ class SubChain(Blockchain):
 
         # Start Block Consumer Thread
         self.running = True
-        self.consumer_thread = threading.Thread(target=_consumer_loop, args=(self,), daemon=True)
+        self.consumer_thread = threading.Thread(
+            target=_consumer_loop, args=(self,), daemon=True
+        )
         self.consumer_thread.start()
 
     def is_valid_new_block(self, block) -> bool:
@@ -513,7 +542,7 @@ class SubChain(Blockchain):
 
         if not self.consensus.validate_block(block, previous_block):
             # Log warning but don't crash - useful for debugging consensus failures
-            logger.warning(f"Consensus validation failed for block {block.index}")
+            logger.warning("Consensus validation failed for block %d", block.index)
             return False
 
         return True
@@ -525,7 +554,7 @@ class SubChain(Blockchain):
                 block = self.ordering_service.commit_queue.get_nowait()
                 _process_and_finalize_single_block(self, block)
         except Exception as e:
-            logger.warning(f"Error draining commit_queue during stop: {e}")
+            logger.warning("Error draining commit_queue during stop: %s", e)
 
         self.running = False
         if self.consumer_thread:
@@ -576,8 +605,10 @@ class SubChain(Blockchain):
         if "event" not in event:
             event["event"] = event.get("type", "generic_event")
 
-        logger.debug(f"SubChain {self.name} adding event: {event.get('event')}")
-        self.ordering_service.receive_event(event_data=event, channel_id=self.name, submitter_org=self.name)
+        logger.debug("SubChain %s adding event: %s", self.name, event.get("event"))
+        self.ordering_service.receive_event(
+            event_data=event, channel_id=self.name, submitter_org=self.name
+        )
 
         return f"tx-{hash(str(event))}"
 
@@ -746,7 +777,9 @@ class SubChain(Blockchain):
     def get_domain_statistics(self) -> dict[str, Any]:
         """Get comprehensive statistics about this Sub-Chain's domain operations."""
         base_stats = self.get_chain_stats()
-        domain_summary = _get_domain_stats_summary(self.chain, self.domain_type, self.completed_operations)
+        domain_summary = _get_domain_stats_summary(
+            self.chain, self.domain_type, self.completed_operations
+        )
 
         return {
             **base_stats,

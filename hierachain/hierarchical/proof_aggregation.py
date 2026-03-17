@@ -83,7 +83,7 @@ def _run_zk_verification_flow(agg_proof: "AggregatedProof") -> bool:
     try:
         return _zk_verify(agg_proof)
     except Exception as e:
-        logger.error(f"Proof verification failed: {e}")
+        logger.error("Proof verification failed: %s", e)
         return False
 
 
@@ -199,7 +199,10 @@ class ProofAggregator:
         }
 
         self._reset_batch()
-        logger.info(f"ProofAggregator initialized (batch_size={batch_size}, mock={use_mock})")
+        logger.info(
+            "ProofAggregator initialized (batch_size=%d, mock=%s)",
+            batch_size, use_mock,
+        )
 
     def _reset_batch(self) -> None:
         """Reset batch state for new collection cycle."""
@@ -234,7 +237,9 @@ class ProofAggregator:
             True if proof was added successfully.
         """
         if self._status not in (AggregationStatus.COLLECTING, AggregationStatus.READY,):
-            logger.warning(f"Cannot add proof, aggregator status: {self._status}")
+            logger.warning(
+                "Cannot add proof, aggregator status: %s", self._status
+            )
             return False
 
         entry = ProofEntry(
@@ -249,8 +254,8 @@ class ProofAggregator:
         self._stats["proofs_received"] += 1
 
         logger.debug(
-            f"Added proof from {sub_chain_id}, "
-            f"batch size: {len(self._pending_proofs)}/{self.batch_size}"
+            "Added proof from %s, batch size: %d/%d",
+            sub_chain_id, len(self._pending_proofs), self.batch_size,
         )
 
         # Check if batch is ready
@@ -264,7 +269,10 @@ class ProofAggregator:
         if len(self._pending_proofs) >= self.batch_size:
             return True
 
-        if len(self._pending_proofs) > 0 and (time.time() - self._batch_start_time) >= self.batch_timeout:
+        if (
+            len(self._pending_proofs) > 0 and
+            (time.time() - self._batch_start_time) >= self.batch_timeout
+        ):
             return True
 
         return False
@@ -291,15 +299,15 @@ class ProofAggregator:
                 self._on_aggregation_complete(aggregated)
 
             logger.info(
-                f"Aggregated {len(self._pending_proofs)} proofs, "
-                f"compression ratio: {aggregated.compression_ratio:.2f}"
+                "Aggregated %d proofs, compression ratio: %.2f",
+                len(self._pending_proofs), aggregated.compression_ratio,
             )
 
             self._reset_batch()
             return True
 
         except Exception as e:
-            logger.error(f"Aggregation failed: {e}")
+            logger.error("Aggregation failed: %s", e)
             self._status = AggregationStatus.FAILED
             self._stats["errors"] += 1
             return False
@@ -308,7 +316,9 @@ class ProofAggregator:
         """Update the average compression ratio statistic."""
         prev_ratio = self._stats["total_compression_ratio"]
         count = self._stats["aggregations_completed"]
-        self._stats["total_compression_ratio"] = ((prev_ratio * (count - 1) + current_ratio) / count)
+        self._stats["total_compression_ratio"] = (
+            (prev_ratio * (count - 1) + current_ratio) / count
+        )
 
     def _aggregate_proofs(self) -> AggregatedProof:
         """
@@ -337,10 +347,14 @@ class ProofAggregator:
             block_indices=block_indices,
             merkle_root=merkle_root,
             compression_ratio=ratio,
-            metadata={"batch_id": self._current_batch_id, "aggregation_time": time.time()},
+            metadata={
+                "batch_id": self._current_batch_id, "aggregation_time": time.time()
+            },
         )
 
-    def _perform_mock_aggregation(self, proofs: list[ProofEntry]) -> tuple[bytes, float]:
+    def _perform_mock_aggregation(
+        self, proofs: list[ProofEntry]
+    ) -> tuple[bytes, float]:
         """Perform mock proof aggregation."""
         combined = b"".join(p.proof for p in proofs)
         proof_data = hashlib.sha256(combined).digest()
@@ -348,7 +362,9 @@ class ProofAggregator:
         compression_ratio = 1.0
         if self.compression_enabled:
             original_size = sum(len(p.proof) for p in proofs)
-            compression_ratio = _calculate_compression_ratio(original_size, len(proof_data))
+            compression_ratio = _calculate_compression_ratio(
+                original_size, len(proof_data)
+            )
 
         return proof_data, compression_ratio
 
@@ -415,7 +431,9 @@ class ProofAggregator:
             "batch_size": self.batch_size,
         }
 
-    def set_callback(self, on_complete: Callable[[AggregatedProof], None] | None) -> None:
+    def set_callback(
+        self, on_complete: Callable[[AggregatedProof], None] | None
+    ) -> None:
         """Set callback for aggregation completion."""
         self._on_aggregation_complete = on_complete
 

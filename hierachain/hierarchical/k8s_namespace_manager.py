@@ -11,12 +11,8 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable
+from kubernetes import client, config
 
-try:
-    from kubernetes import client, config
-except ImportError:
-    client = None
-    config = None
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +67,9 @@ class DeploymentConfig:
     environment: dict[str, str] = field(default_factory=dict)
 
 
-def _prepare_namespace_labels(sub_chain_id: str, labels: dict[str, str] | None = None) -> dict[str, str]:
+def _prepare_namespace_labels(
+    sub_chain_id: str, labels: dict[str, str] | None = None
+) -> dict[str, str]:
     """Prepare default and custom labels for a namespace."""
     full_labels = {
         "app": "hierachain",
@@ -84,7 +82,9 @@ def _prepare_namespace_labels(sub_chain_id: str, labels: dict[str, str] | None =
     return full_labels
 
 
-def _get_namespace_resources_mock(namespace_name: str, ns_info: NamespaceInfo) -> dict[str, Any]:
+def _get_namespace_resources_mock(
+    namespace_name: str, ns_info: NamespaceInfo
+) -> dict[str, Any]:
     """Get mock resource information for a namespace."""
     return {
         "namespace": namespace_name,
@@ -123,7 +123,9 @@ def _init_k8s_client_impl(manager: Any) -> bool:
         manager.use_mock = True
         return True
     except Exception as e:
-        logger.warning(f"Failed to initialize K8s client ({e}), falling back to mock mode")
+        logger.warning(
+            "Failed to initialize K8s client (%s), falling back to mock mode", e
+        )
         manager.use_mock = True
         manager.stats["errors"] += 1
         return True
@@ -139,7 +141,9 @@ def _create_namespace_real_impl(
     k8s = manager.k8s_client
     assert k8s is not None
     try:
-        manifest = client.V1Namespace(metadata=client.V1ObjectMeta(name=name, labels=labels))
+        manifest = client.V1Namespace(
+            metadata=client.V1ObjectMeta(name=name, labels=labels)
+        )
         k8s.create_namespace(body=manifest)
         manager.record_namespace_active(name, ns_info)
         logger.info(f"Created K8s namespace: {name}")
@@ -163,14 +167,14 @@ def _delete_namespace_real_impl(manager: Any, name: str) -> bool:
     try:
         k8s.delete_namespace(name=name)
         manager.delete_namespace_local(name)
-        logger.info(f"Deleted K8s namespace: {name}")
+        logger.info("Deleted K8s namespace: %s", name)
         return True
     except (RuntimeError, ValueError) as e:
-        logger.error(f"Failed to delete namespace {name}: {e}")
+        logger.error("Failed to delete namespace %s: %s", name, e)
         manager.stats["errors"] += 1
         return False
     except Exception as e:
-        logger.error(f"Unexpected error deleting namespace {name}: {e}")
+        logger.error("Unexpected error deleting namespace %s: %s", name, e)
         manager.stats["errors"] += 1
         return False
 
@@ -191,10 +195,10 @@ def _get_k8s_status_real_impl(manager: Any, name: str) -> NamespaceStatus:
         manager.namespaces[name].status = status
         return status
     except (RuntimeError, ValueError) as e:
-        logger.error(f"Failed to get namespace status for {name}: {e}")
+        logger.error("Failed to get namespace status for %s: %s", name, e)
         return NamespaceStatus.UNKNOWN
     except Exception as e:
-        logger.error(f"Unexpected error getting status for {name}: {e}")
+        logger.error("Unexpected error getting status for %s: %s", name, e)
         return NamespaceStatus.UNKNOWN
 
 
@@ -230,18 +234,20 @@ def _get_k8s_resources_real_impl(
         return {"error": str(e)}
 
 
-def _provision_sub_chain_deployment_impl(manager: Any,deploy_config: DeploymentConfig) -> bool:
+def _provision_sub_chain_deployment_impl(
+    manager: Any, deploy_config: DeploymentConfig
+) -> bool:
     """Provision a sub-chain deployment in the namespace."""
     namespace_name = manager.get_namespace_name(deploy_config.sub_chain_id)
 
     if namespace_name not in manager.namespaces:
-        logger.error(f"Namespace {namespace_name} does not exist, create it first")
+        logger.error("Namespace %s does not exist, create it first", namespace_name)
         return False
 
     if manager.use_mock:
         manager.namespaces[namespace_name].pod_count = deploy_config.replicas
         manager.stats["deployments_created"] += 1
-        logger.info(f"[MOCK] Created deployment in {namespace_name}")
+        logger.info("[MOCK] Created deployment in %s", namespace_name)
         return True
 
     if not manager.apps_client and not manager.init_k8s_client():
@@ -250,7 +256,7 @@ def _provision_sub_chain_deployment_impl(manager: Any,deploy_config: DeploymentC
     if manager.use_mock:
         manager.namespaces[namespace_name].pod_count = deploy_config.replicas
         manager.stats["deployments_created"] += 1
-        logger.info(f"[MOCK] Created deployment (fallback) in {namespace_name}")
+        logger.info("[MOCK] Created deployment (fallback) in %s", namespace_name)
         return True
 
     apps = manager.apps_client
@@ -261,31 +267,23 @@ def _provision_sub_chain_deployment_impl(manager: Any,deploy_config: DeploymentC
             image=deploy_config.image,
             ports=[
                 client.V1ContainerPort(
-                    container_port=deploy_config.node_port,
-                    name="node-port",
+                    container_port=deploy_config.node_port, name="node-port",
                 ),
                 client.V1ContainerPort(
-                    container_port=deploy_config.api_port,
-                    name="api-port",
+                    container_port=deploy_config.api_port, name="api-port",
                 ),
             ],
             command=[
-                "hrc",
-                "start",
-                "--host",
-                "0.0.0.0",
-                "--port",
+                "hrc", "start", "--host", "0.0.0.0", "--port",
                 str(deploy_config.api_port),
             ],
             env=[
                 client.V1EnvVar(name="NODE_ID", value=deploy_config.sub_chain_id),
                 client.V1EnvVar(
-                    name="NODE_PORT",
-                    value=str(deploy_config.node_port),
+                    name="NODE_PORT", value=str(deploy_config.node_port),
                 ),
                 client.V1EnvVar(
-                    name="PEERS",
-                    value=",".join(deploy_config.peers),
+                    name="PEERS", value=",".join(deploy_config.peers),
                 ),
             ]
             + [
@@ -341,15 +339,22 @@ def _provision_sub_chain_deployment_impl(manager: Any,deploy_config: DeploymentC
         manager.namespaces[namespace_name].pod_count = deploy_config.replicas
         manager.stats["deployments_created"] += 1
         logger.info(
-            f"Created deployment {deploy_config.sub_chain_id} in {namespace_name}"
+            "Created deployment %s in namespace %s",
+            deploy_config.sub_chain_id, namespace_name
         )
         return True
     except (ImportError, RuntimeError, ValueError) as e:
-        logger.error(f"Failed to create deployment: {e}")
+        logger.error(
+            "Failed to create deployment %s: %s",
+            deploy_config.sub_chain_id, e
+        )
         manager.stats["errors"] += 1
         return False
     except Exception as e:
-        logger.error(f"Unexpected error creating deployment: {e}")
+        logger.error(
+            "Unexpected error creating deployment %s: %s",
+            deploy_config.sub_chain_id, e
+        )
         manager.stats["errors"] += 1
         return False
 
@@ -365,7 +370,10 @@ class K8sNamespaceManager:
     - Easier monitoring and management
     """
 
-    def __init__(self, prefix: str = "hrc-subchain-", kubeconfig_path: str = "", use_mock: bool = True):
+    def __init__(
+        self, prefix: str = "hrc-subchain-",
+        kubeconfig_path: str = "", use_mock: bool = True
+    ) -> None:
         """
         Initialize K8sNamespaceManager.
 
@@ -397,7 +405,7 @@ class K8sNamespaceManager:
             "errors": 0,
         }
 
-        logger.info(f"K8sNamespaceManager initialized (mock={use_mock})")
+        logger.info("K8sNamespaceManager initialized (mock=%s)", use_mock)
 
     def get_namespace_name(self, sub_chain_id: str) -> str:
         """Generate namespace name from sub-chain ID."""
@@ -425,10 +433,12 @@ class K8sNamespaceManager:
     def _create_namespace_mock(self, name: str, ns_info: NamespaceInfo) -> bool:
         """Handle namespace creation in mock mode."""
         self.record_namespace_active(name, ns_info)
-        logger.info(f"[MOCK] Created namespace: {name}")
+        logger.info("[MOCK] Created namespace: %s", name)
         return True
 
-    def _create_namespace_real(self, name: str, labels: dict[str, str], ns_info: NamespaceInfo) -> bool:
+    def _create_namespace_real(
+        self, name: str, labels: dict[str, str], ns_info: NamespaceInfo
+    ) -> bool:
         """Handle real K8s namespace creation."""
         return _create_namespace_real_impl(self, name, labels, ns_info)
 
@@ -443,19 +453,21 @@ class K8sNamespaceManager:
     def _delete_namespace_mock(self, name: str) -> bool:
         """Handle namespace deletion in mock mode."""
         self.delete_namespace_local(name)
-        logger.info(f"[MOCK] Deleted namespace: {name}")
+        logger.info("[MOCK] Deleted namespace: %s", name)
         return True
 
     def _delete_namespace_real(self, name: str) -> bool:
         """Handle real K8s namespace deletion."""
         return _delete_namespace_real_impl(self, name)
 
-    def create_namespace(self, sub_chain_id: str, labels: dict[str, str] | None = None) -> bool:
+    def create_namespace(
+        self, sub_chain_id: str, labels: dict[str, str] | None = None
+    ) -> bool:
         """Create a new K8s namespace for a sub-chain."""
         namespace_name = self.get_namespace_name(sub_chain_id)
 
         if namespace_name in self.namespaces:
-            logger.warning(f"Namespace {namespace_name} already exists")
+            logger.warning("Namespace %s already exists", namespace_name)
             return True
 
         ns_info = NamespaceInfo(
@@ -475,7 +487,7 @@ class K8sNamespaceManager:
         namespace_name = self.get_namespace_name(sub_chain_id)
 
         if namespace_name not in self.namespaces:
-            logger.warning(f"Namespace {namespace_name} not found")
+            logger.warning("Namespace %s not found", namespace_name)
             return False
 
         self.namespaces[namespace_name].status = NamespaceStatus.TERMINATING
@@ -523,11 +535,15 @@ class K8sNamespaceManager:
 
         return self._get_k8s_resources_real(namespace_name, ns_info)
 
-    def _get_k8s_resources_real(self, namespace_name: str, ns_info: NamespaceInfo) -> dict[str, Any]:
+    def _get_k8s_resources_real(
+        self, namespace_name: str, ns_info: NamespaceInfo
+    ) -> dict[str, Any]:
         """Get real K8s resource information for a namespace."""
         return _get_k8s_resources_real_impl(self, namespace_name, ns_info)
 
-    def provision_sub_chain_deployment(self,deploy_config: DeploymentConfig,) -> bool:
+    def provision_sub_chain_deployment(
+        self, deploy_config: DeploymentConfig
+    ) -> bool:
         """
         Create a sub-chain node deployment in the namespace.
 
