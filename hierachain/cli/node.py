@@ -8,16 +8,18 @@ import uvicorn
 
 from hierachain.config.settings import settings
 
+
 @click.group(name="node")
-def node_group():
+def node_group() -> None:
     """Node management commands."""
     pass
+
 
 @node_group.command(name="start")
 @click.option('--host', default=settings.API_HOST, help='Bind socket to this host.')
 @click.option('--port', default=settings.API_PORT, help='Bind socket to this port.')
 @click.option('--reload', is_flag=True, help='Enable auto-reload.')
-def start_node(host, port, reload):
+def start_node(host, port, reload) -> None:
     """Start the HieraChain API node."""
     click.echo(f"Starting HieraChain Node on {host}:{port}...")
     
@@ -33,9 +35,10 @@ def start_node(host, port, reload):
         log_config=LOGGING_CONFIG
     )
 
+
 @node_group.command(name="init")
 @click.option('--data-dir', default="./data", help='Directory to store chain data.')
-def init_node(data_dir):
+def init_node(data_dir) -> None:
     """Initialize node configuration and directories."""
     click.echo(f"Initializing node at {os.path.abspath(data_dir)}...")
     

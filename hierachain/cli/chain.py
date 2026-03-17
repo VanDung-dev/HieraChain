@@ -6,33 +6,22 @@ import click
 import time
 
 from hierachain.cli.store import (
-    get_main_chain, get_sub_chain, save_chain_to_memory, 
+    get_main_chain, get_sub_chain, save_chain_to_memory,
     save_chains_to_file, get_all_chains
 )
+from hierachain.domains.generic.chains.domain_chain import DomainChain
 
-# Need to import classes for instantiation
-try:
-    from hierachain.hierarchical.main_chain import MainChain
-    from hierachain.hierarchical.sub_chain import SubChain
-    from hierachain.domains.generic.chains.domain_chain import DomainChain
-except ImportError:
-    # Fallback if Ledger not fully installed/available
-    class MainChain: pass
-    class SubChain: pass
-    class DomainChain:
-        def __init__(self, name, parent):
-            self.name = name
-            self.parent = parent
-            self.chain = []
 
 @click.group()
 def chain_group():
     """Chain management commands."""
     pass
 
+
 @chain_group.command()
 @click.argument(
-    'chain_type', type=click.Choice(['supply_chain', 'healthcare', 'finance', 'manufacturing'])
+    'chain_type',
+    type=click.Choice(['supply_chain', 'healthcare', 'finance', 'manufacturing'])
 )
 @click.option('--name', required=True, help='Chain name')
 @click.option('--parent', default='main', help='Parent chain')
@@ -66,6 +55,7 @@ def create(ctx, chain_type, name, parent):
     except Exception as e:
         click.echo(f"Error creating chain: {e}")
 
+
 @chain_group.command()
 @click.argument('chain_name')
 def submit_proof(chain_name):
@@ -88,15 +78,20 @@ def submit_proof(chain_name):
                 "block_count": len(getattr(c, 'chain', [])),
                 "timestamp": time.time()
             })
-            click.echo(f"Successfully submitted proof from chain '{chain_name}' to main chain")
+            click.echo(
+                f"Successfully submitted proof from chain '{chain_name}' to main chain"
+            )
         else:
-            click.echo(f"Chain object does not support proof submission (Mock Mode)")
+            click.echo(
+                "Chain object does not support proof submission (Mock Mode)"
+            )
         
         # Save to file
         save_chains_to_file('chains.json')
         
     except Exception as e:
         click.echo(f"Error submitting proof: {e}")
+
 
 @chain_group.command(name="list")
 def list_chains():

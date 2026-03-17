@@ -8,15 +8,20 @@ import json
 
 from hierachain.cli.store import get_sub_chain, save_chains_to_file
 
+
 @click.group()
 def event_group():
     """Event management commands."""
     pass
 
+
 @event_group.command(name="add")
 @click.argument('chain_name')
 @click.argument(
-    'event_type', type=click.Choice(['start_operation', 'complete_operation', 'quality_check', 'status_change'])
+    'event_type',
+    type=click.Choice(
+        ['start_operation', 'complete_operation', 'quality_check', 'status_change']
+    )
 )
 @click.option('--entity-id', required=True, help='Entity ID')
 @click.option('--details', help='Additional details as JSON string')
@@ -51,10 +56,13 @@ def add_event(ctx, chain_name, event_type, entity_id, details):
         config_file = ctx.obj.get('config_file', 'chains.json')
         save_chains_to_file(config_file)
         
-        click.echo(f"Added '{event_type}' event for entity {entity_id} to chain {chain_name}")
+        click.echo(
+            f"Added '{event_type}' event for entity {entity_id} to chain {chain_name}"
+            )
         
     except Exception as e:
         click.echo(f"Error adding event: {e}")
+
 
 def _create_event_payload(event_type, entity_id, event_details):
     """Helper to create event payload based on type"""
@@ -91,7 +99,8 @@ def _create_event_payload(event_type, entity_id, event_details):
         return None
     return event
 
-def _append_event_to_chain(chain, event):
+
+def _append_event_to_chain(chain, event) -> None:
     """Helper to append event to chain object"""
     if hasattr(chain, 'add_event'):
         chain.add_event(event)
@@ -105,6 +114,7 @@ def _append_event_to_chain(chain, event):
         block = chain.chain[-1]
         if hasattr(block, 'events'):
             block.events.append(event)
+
 
 @event_group.command(name="show")
 @click.argument('chain_name')
@@ -127,11 +137,14 @@ def show_events(chain_name, entity_id):
         click.echo(f"Events in chain {chain_name}:")
         for event in events:
             click.echo(
-                f"  - {event.get('event', 'unknown')} | Entity: {event.get('entity_id', 'N/A')} | Time: {event.get('timestamp', 'N/A')}"
+                f"  - {event.get('event', 'unknown')} | "
+                f" Entity: {event.get('entity_id', 'N/A')} | "
+                f" Time: {event.get('timestamp', 'N/A')}"
             )
         
     except Exception as e:
         click.echo(f"Error showing events: {e}")
+
 
 def _get_events_from_chain(chain, entity_id=None):
     """Helper to retrieve and filter events from chain"""

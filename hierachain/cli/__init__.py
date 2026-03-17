@@ -21,15 +21,14 @@ from hierachain.cli.chain import (
     submit_proof as submit_proof_cmd
 )
 from hierachain.cli.node import (
-    node_group,
-    start_node,
-    init_node
+    node_group, start_node, init_node
 )
 from hierachain.cli.event import (
     event_group,
     add_event as add_event_cmd,
     show_events as show_events_cmd
 )
+
 
 @click.group()
 @click.option('--config', default='chains.json', help='Configuration file path')
