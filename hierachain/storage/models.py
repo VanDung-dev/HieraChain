@@ -11,6 +11,7 @@ from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
+
 class ChainModel(Base):
     """
     Represents a blockchain (Main or Sub-chain).
@@ -19,7 +20,7 @@ class ChainModel(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64), unique=True, nullable=False, index=True)
-    chain_type = Column(String(20), nullable=False) # 'main' or 'sub'
+    chain_type = Column(String(20), nullable=False)
     domain_type = Column(String(64), nullable=True)
     created_at = Column(Float, default=time.time)
     updated_at = Column(Float, default=time.time)
@@ -27,13 +28,13 @@ class ChainModel(Base):
     def __repr__(self):
         return f"<Chain(name='{self.name}', type='{self.chain_type}')>"
 
+
 class BlockModel(Base):
     """
     Represents a block in the blockchain.
     """
     __tablename__ = 'blocks'
 
-    # Primary Key is usually the hash or index, but we use a dedicated ID for DB efficiency
     id = Column(Integer, primary_key=True, autoincrement=True)
     
     # Block Header Data
@@ -47,7 +48,9 @@ class BlockModel(Base):
     chain_name = Column(String(64), nullable=True, index=True)
     
     # Relationship to Events
-    events = relationship("EventModel", back_populates="block", cascade="all, delete-orphan")
+    events = relationship(
+        "EventModel", back_populates="block", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Block(index={self.index}, hash='{self.hash[:8]}...')>"

@@ -8,7 +8,9 @@ It supports key-value storage with indexing capabilities for efficient data retr
 from typing import Any
 
 
-def _remove_key_from_single_index(index: dict[Any, list[str]],field_value: Any,key: str):
+def _remove_key_from_single_index(
+    index: dict[Any, list[str]], field_value: Any, key: str
+) -> None:
     """Remove a key from a single index value entry."""
     if field_value not in index:
         return
@@ -38,7 +40,7 @@ class MemoryStorage:
         """Get value by key"""
         return self.data.get(key)
     
-    def _update_index_for_key(self, key: str, value: dict[str, Any]):
+    def _update_index_for_key(self, key: str, value: dict[str, Any]) -> None:
         """Update all indexes for a given key-value pair."""
         for field_name, index in self.indexes.items():
             if field_name in value:
@@ -81,7 +83,7 @@ class MemoryStorage:
         """Get all values in storage"""
         return list(self.data.values())
     
-    def clear(self):
+    def clear(self) -> None:
         """Clear all data and indexes"""
         self.data.clear()
         self.indexes.clear()

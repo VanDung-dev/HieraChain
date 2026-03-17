@@ -118,9 +118,11 @@ class SqlStorageBackend:
             session.commit()
             
             if getattr(settings, 'LOG_SQL_DETAIL', False):
-                logger.debug("Block saved to DB",
-                            block_index=new_block.index,
-                            events_count=len(new_block.events))
+                logger.debug(
+                    "Block saved to DB",
+                    block_index=new_block.index,
+                    events_count=len(new_block.events)
+                )
             return True
 
         except Exception as e:
@@ -178,7 +180,9 @@ class SqlStorageBackend:
         finally:
             session.close()
 
-    def get_block_by_index(self, index: int, chain_name: str | None = None) -> dict[str, Any] | None:
+    def get_block_by_index(
+        self, index: int, chain_name: str | None = None
+    ) -> dict[str, Any] | None:
         """Retrieve block by index."""
         session = self.Session()
         try:
@@ -224,8 +228,12 @@ class SqlStorageBackend:
         session = self.Session()
         try:
             # Delete events first (foreign key dependency)
-            events_deleted = session.query(EventModel).filter_by(chain_name=chain_name).delete()
-            blocks_deleted = session.query(BlockModel).filter_by(chain_name=chain_name).delete()
+            events_deleted = session.query(EventModel).filter_by(
+                chain_name=chain_name
+            ).delete()
+            blocks_deleted = session.query(BlockModel).filter_by(
+                chain_name=chain_name
+            ).delete()
             session.commit()
             logger.info(
                 "Chain data deleted from DB",

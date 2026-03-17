@@ -1,12 +1,13 @@
 """
 World State Management Module
 
-This module implements a simplified world state mechanism adapted for the hierarchical 
-blockchain structure. The world state represents the current values of all ledger states, 
-enabling efficient read/write operations without traversing the entire blockchain.
+This module implements a simplified world state mechanism adapted for the
+hierarchical blockchain structure. The world state represents the current
+values of all ledger states, enabling efficient read/write operations
+without traversing the entire blockchain.
 
-The world state is updated through events processed from blocks, maintaining entity states
-with efficient indexing for common query patterns.
+The world state is updated through events processed from blocks, maintaining
+entity states with efficient indexing for common query patterns.
 """
 
 from typing import Any
@@ -45,7 +46,7 @@ class WorldState:
         self.state_cache = {}
         self._setup_indexes()
     
-    def _setup_indexes(self):
+    def _setup_indexes(self) -> None:
         """Set up indexes for frequent queries"""
         self.storage.create_index("entity_id")
         self.storage.create_index("timestamp")
@@ -61,7 +62,7 @@ class WorldState:
         current_state["last_updated"] = event["timestamp"]
         return current_state
     
-    def update_from_block(self, block):
+    def update_from_block(self, block) -> None:
         """Update world state from new block"""
         events = _extract_events(block)
         
