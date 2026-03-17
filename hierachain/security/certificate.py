@@ -216,9 +216,7 @@ class CertificateValidator:
             revocation_info = self.crl.get_revocation_info(cert.serial_number)
             if revocation_info:
                 validation_result["errors"].append(
-                    f"Revoked on: {
-                        revocation_info.get('revocation_date', 'Unknown date')
-                    }"
+                    f"Revoked on: {revocation_info.get('revocation_date', 'Unknown date')}"
                 )
                 validation_result["errors"].append(
                     f"Reason: {revocation_info.get('reason', 'Unspecified')}"
