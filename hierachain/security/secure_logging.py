@@ -94,28 +94,58 @@ class SecureLogger:
         
         return json.dumps(log_entry, ensure_ascii=True)
     
-    def info(self, message: str, **kwargs: Any):
+    def info(self, message: str, *args: Any, **kwargs: Any):
         """Log info with sanitized data."""
+        # Handle standard logging format string (e.g., "message %s", arg)
+        if args:
+            try:
+                message = message % args
+            except (TypeError, ValueError):
+                pass  # If formatting fails, use original message
         structured = self._format_structured("INFO", message, **kwargs)
         self.logger.info(structured)
     
-    def warning(self, message: str, **kwargs: Any):
+    def warning(self, message: str, *args: Any, **kwargs: Any):
         """Log warning with sanitized data."""
+        # Handle standard logging format string (e.g., "message %s", arg)
+        if args:
+            try:
+                message = message % args
+            except (TypeError, ValueError):
+                pass  # If formatting fails, use original message
         structured = self._format_structured("WARNING", message, **kwargs)
         self.logger.warning(structured)
     
-    def error(self, message: str, **kwargs: Any):
+    def error(self, message: str, *args: Any, **kwargs: Any):
         """Log error with sanitized data."""
+        # Handle standard logging format string (e.g., "message %s", arg)
+        if args:
+            try:
+                message = message % args
+            except (TypeError, ValueError):
+                pass  # If formatting fails, use original message
         structured = self._format_structured("ERROR", message, **kwargs)
         self.logger.error(structured)
     
-    def debug(self, message: str, **kwargs: Any):
+    def debug(self, message: str, *args: Any, **kwargs: Any):
         """Log debug with sanitized data."""
+        # Handle standard logging format string (e.g., "message %s", arg)
+        if args:
+            try:
+                message = message % args
+            except (TypeError, ValueError):
+                pass  # If formatting fails, use original message
         structured = self._format_structured("DEBUG", message, **kwargs)
         self.logger.debug(structured)
     
-    def critical(self, message: str, **kwargs: Any):
+    def critical(self, message: str, *args: Any, **kwargs: Any):
         """Log critical with sanitized data."""
+        # Handle standard logging format string (e.g., "message %s", arg)
+        if args:
+            try:
+                message = message % args
+            except (TypeError, ValueError):
+                pass  # If formatting fails, use original message
         structured = self._format_structured("CRITICAL", message, **kwargs)
         self.logger.critical(structured)
     
