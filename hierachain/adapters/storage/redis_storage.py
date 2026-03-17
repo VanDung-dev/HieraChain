@@ -15,7 +15,8 @@ import redis
 
 logger = logging.getLogger(__name__)
 
-def _parse_single_json_field(data: dict[str, Any], key: str):
+
+def _parse_single_json_field(data: dict[str, Any], key: str) -> None:
     """Parse a single JSON field in data dictionary"""
     if key not in data:
         return
@@ -217,9 +218,9 @@ class RedisStorageAdapter:
             self.redis_client = redis.Redis(**connection_params)
             # Test connection
             self.redis_client.ping()
-            logger.info(f"Connected to Redis at {host}:{port}")
+            logger.info("Connected to Redis at %s:%s", host, port)
         except Exception as e:
-            logger.error(f"Failed to connect to Redis: {e}")
+            logger.error("Failed to connect to Redis: %s", e)
             raise
 
         # Key prefixes for different data types
@@ -338,7 +339,7 @@ class RedisStorageAdapter:
             )
 
         except Exception as e:
-            logger.error(f"Failed to get chain metadata {chain_name}: {e}")
+            logger.error("Failed to get chain metadata %s: %s", chain_name, e)
             return None
 
     def get_block(self, chain_name: str, block_index: int) -> dict | None:
@@ -364,7 +365,10 @@ class RedisStorageAdapter:
             return block_data
 
         except Exception as e:
-            logger.error("Failed to get block %s for chain %s: %s", block_index, chain_name, e)
+            logger.error(
+                "Failed to get block %s for chain %s: %s",
+                block_index, chain_name, e
+            )
             return None
 
     def get_chain_blocks(
@@ -384,7 +388,9 @@ class RedisStorageAdapter:
             logger.error("Failed to get blocks for chain %s: %s", chain_name, e)
             return []
 
-    def _process_event_ref(self, event_ref_json: str, entity_id: str, chain_name: str = None) -> dict | None:
+    def _process_event_ref(
+        self, event_ref_json: str, entity_id: str, chain_name: str = None
+    ) -> dict | None:
         """Process a single event reference JSON"""
         try:
             event_ref = json.loads(event_ref_json)
@@ -394,7 +400,9 @@ class RedisStorageAdapter:
                 return None
 
             # Get full event data from block
-            block_data = self.get_block(event_ref["chain_name"], event_ref["block_index"])
+            block_data = self.get_block(
+                event_ref["chain_name"], event_ref["block_index"]
+            )
             return _extract_event_from_block(block_data, entity_id, event_ref)
 
         except (json.JSONDecodeError, KeyError):

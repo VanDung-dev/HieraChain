@@ -21,6 +21,7 @@ from hierachain.core.block import Block, table_to_list_of_dicts
 
 logger = logging.getLogger(__name__)
 
+
 def _validate_filename(name: str) -> None:
     """
     Validate filename against strict security rules (CWE-22).
@@ -50,7 +51,7 @@ def _parse_block_file(block_file: Path) -> dict | None:
         # Extract metadata
         meta = table.schema.metadata
         if not meta:
-            logger.warning(f"Block file {block_file} missing metadata")
+            logger.warning("Block file %s missing metadata", block_file)
             return None
 
         # Decode metadata
@@ -63,7 +64,7 @@ def _parse_block_file(block_file: Path) -> dict | None:
             "hash": meta.get(b"hash", b"").decode("utf-8")
         }
     except Exception as e:
-        logger.warning(f"Failed to parse block file {block_file}: {e}")
+        logger.warning("Failed to parse block file %s: %s", block_file, e)
         return None
 
 
@@ -181,7 +182,10 @@ def _filter_block_events(
     record_timestamp: float
 ) -> list[dict]:
     """Filter Arrow table for specific entity and timestamp."""
-    expr = (pc.field("entity_id") == entity_id) & (pc.field("timestamp") == record_timestamp)
+    expr = (
+        (pc.field("entity_id") == entity_id) &
+        (pc.field("timestamp") == record_timestamp)
+    )
     subset = events_table.filter(expr)
     return table_to_list_of_dicts(subset)
 
@@ -383,7 +387,10 @@ class FileStorageAdapter:
         """
         try:
             # Convert to Block object if it's a dict
-            block = Block.from_dict(block_data) if isinstance(block_data, dict) else block_data
+            block = (
+                Block.from_dict(block_data)
+                if isinstance(block_data, dict) else block_data
+            )
 
             # Prepare data and write
             table_with_meta = _prepare_block_write_data(block)
@@ -413,7 +420,7 @@ class FileStorageAdapter:
             _write_parquet_optimized(table, file_path)
 
         except Exception as e:
-            logger.error(f"Failed to update events index: {e}")
+            logger.error("Failed to update events index: %s", e)
 
     def get_chain_metadata(self, chain_name: str) -> dict | None:
         """Get chain metadata"""
@@ -445,9 +452,7 @@ class FileStorageAdapter:
         except Exception as e:
             logger.error(
                 "Failed to get block %s for chain %s: %s",
-                block_index,
-                chain_name,
-                e
+                block_index, chain_name, e
             )
             return None
 
@@ -483,7 +488,9 @@ class FileStorageAdapter:
         events_dir = self._get_events_dir(search_chain)
         return _fetch_events_from_chain(events_dir, self, search_chain, entity_id)
 
-    def get_entity_events(self, entity_id: str, chain_name: str | None = None) -> list[dict]:
+    def get_entity_events(
+        self, entity_id: str, chain_name: str | None = None
+    ) -> list[dict]:
         """Get all events for a specific entity using Arrow Dataset."""
         try:
             chains = self._get_search_chains(chain_name)
@@ -664,7 +671,7 @@ class BatchBlockWriter:
         Get write statistics.
 
         Returns:
-            Dictionary with blocks_written, events_written, 
+            Dictionary with blocks_written, events_written,
             flush_count, total_time_ms, avg_time_per_block_ms
         """
         stats = self._stats.copy()
