@@ -134,7 +134,11 @@ def _filter_event(event, entity_id, event_type, from_timestamp, to_timestamp):
     
     return all([
         not entity_id or getattr(event, 'entity_id', None) == entity_id,
-        not event_type or (getattr(event, 'event_type', None) or getattr(event, 'event', None)) == event_type,
+        (
+            not event_type or (
+                getattr(event, 'event_type', None) or getattr(event, 'event', None)
+            ) == event_type
+        ),
         not from_timestamp or event_time >= from_timestamp,
         not to_timestamp or event_time <= to_timestamp,
     ])
@@ -170,7 +174,9 @@ def resolve_events(
     for block in chain.chain:
         if hasattr(block, 'events') and block.events:
             for event in block.events:
-                if _filter_event(event, entity_id, event_type, from_timestamp, to_timestamp):
+                if _filter_event(
+                    event, entity_id, event_type, from_timestamp, to_timestamp
+                ):
                     events.append(_to_event_type(event))
                     if len(events) >= limit:
                         break
@@ -355,7 +361,9 @@ def _build_block_metadata(block, chain_name, events_count):
         metadata = BlockMetadataType()
         metadata.chain_name = chain_name
         metadata.events_count = events_count
-        metadata.validator_signatures = getattr(block.metadata, 'validator_signatures', []) or []
+        metadata.validator_signatures = (
+            getattr(block.metadata, 'validator_signatures', []) or []
+        )
         return metadata
     return None
 

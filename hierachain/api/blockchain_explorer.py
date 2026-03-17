@@ -92,28 +92,39 @@ class BlockchainExplorer:
         title = kwargs.get('title', 'HieraChain Explorer')
 
         # Use kwargs to filter elements if specified
-        included_components = kwargs.get('components', ['chain_overview', 'entity_tracer', 'event_analytics'])
+        included_components = kwargs.get(
+            'components', ['chain_overview', 'entity_tracer', 'event_analytics']
+        )
 
         dashboard = {
             "title": title,
             "components": []
         }
 
-        if 'chain_overview' in included_components and 'chain_overview' in self.ui_components:
+        if (
+            'chain_overview' in included_components and
+            'chain_overview' in self.ui_components
+        ):
             dashboard["components"].append({
                 "id": "chain_overview",
                 "title": "Chain Overview",
                 "content": self.ui_components["chain_overview"].render_summary()
             })
 
-        if 'entity_tracer' in included_components and 'entity_tracer' in self.ui_components:
+        if (
+            'entity_tracer' in included_components and
+            'entity_tracer' in self.ui_components
+        ):
             dashboard["components"].append({
                 "id": "entity_tracer",
                 "title": "Entity Tracer",
                 "content": self.ui_components["entity_tracer"].render_input_form()
             })
 
-        if 'event_analytics' in included_components and 'event_analytics' in self.ui_components:
+        if (
+            'event_analytics' in included_components and
+            'event_analytics' in self.ui_components
+        ):
             dashboard["components"].append({
                 "id": "event_analytics",
                 "title": "Event Analytics",
@@ -148,7 +159,9 @@ class ChainOverviewComponent:
         if hasattr(self.chain, 'main_chain'):
             chain = self.chain.main_chain
             # Use pre-calculated total_events for O(1) performance
-            total_events = getattr(chain, 'total_events', sum(len(block.events) for block in chain.chain))
+            total_events = getattr(
+                chain, 'total_events', sum(len(block.events) for block in chain.chain)
+            )
             return {
                 "block_count": len(chain.chain),
                 "latest_block": chain.chain[-1].index if chain.chain else 0,
@@ -162,7 +175,10 @@ class ChainOverviewComponent:
             stats = []
             for name, sub_chain in self.chain.sub_chains.items():
                 # Use pre-calculated total_events for O(1) performance
-                total_events = getattr(sub_chain, 'total_events', sum(len(block.events) for block in sub_chain.chain))
+                total_events = getattr(
+                    sub_chain, 'total_events',
+                    sum(len(block.events) for block in sub_chain.chain)
+                )
                 stats.append({
                     "name": name,
                     "block_count": len(sub_chain.chain),
@@ -283,14 +299,14 @@ class EntityTracerComponent:
     @staticmethod
     def _event_contains_entity(event: dict[str, Any], entity_id: str) -> bool:
         """Check if event contains entity"""
-        return (event.get("entity_id") == entity_id or 
+        return (event.get("entity_id") == entity_id or
                 entity_id in str(event.get("details", {})))
 
 
 class EventAnalyticsComponent:
     """Component for event analytics"""
     
-    def __init__(self, chain: Any):
+    def __init__(self, chain: Any) -> None:
         self.chain = chain
         self.logger = logging.getLogger(__name__)
     
@@ -420,7 +436,10 @@ class ProofVisualizerComponent:
         hierarchy = {
             "main_chain": {
                 "type": "main",
-                "blocks": len(self.chain.main_chain.chain) if hasattr(self.chain, 'main_chain') else 0,
+                "blocks": (
+                    len(self.chain.main_chain.chain)
+                    if hasattr(self.chain, 'main_chain') else 0
+                ),
                 "sub_chains": []
             }
         }

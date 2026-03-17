@@ -14,7 +14,6 @@ from hierachain.api.v1.endpoints import get_hierarchy_manager
 from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.config.settings import get_settings
 from hierachain.security.key_provider import LocalKeyProvider, CryptoError
-from hierachain.security.sanitization import sanitize_error_message
 from hierachain.security.secure_logging import SecureLogger
 
 logger = SecureLogger("hierachain.api.v3")
@@ -33,7 +32,9 @@ def get_current_key_provider() -> LocalKeyProvider:
             logger.info("Loading node identity", path=identity_path)
             return LocalKeyProvider.from_file(identity_path)
         else:
-            logger.warning("Identity file not found, using ephemeral key", path=identity_path)
+            logger.warning(
+                "Identity file not found, using ephemeral key", path=identity_path
+            )
             return LocalKeyProvider.generate()
     except CryptoError as e:
         logger.error("Failed to load node identity", error=str(e))
@@ -41,7 +42,9 @@ def get_current_key_provider() -> LocalKeyProvider:
 
 
 @router.post(
-    "/verify-identity", response_model=VerifyIdentityResponse, dependencies=[Depends(require_chain_access)]
+    "/verify-identity",
+    response_model=VerifyIdentityResponse,
+    dependencies=[Depends(require_chain_access)]
 )
 async def verify_identity(
     request: VerifyIdentityRequest,
@@ -55,7 +58,7 @@ async def verify_identity(
         signature = key_provider.sign(request.challenge.encode())
         return VerifyIdentityResponse(
             status="success",
-            node_id="node_1",  # In a multi-node setup, this would be the actual node name
+            node_id="node_1",
             signature=signature,
             challenge=request.challenge
         )
@@ -68,13 +71,14 @@ async def verify_identity(
 
 
 @router.get(
-    "/status", response_model=NodeStatusResponse, dependencies=[Depends(require_chain_access)]
+    "/status",
+    response_model=NodeStatusResponse,
+    dependencies=[Depends(require_chain_access)]
 )
 async def get_status(manager: HierarchyManager = Depends(get_hierarchy_manager)):
     """
     Get detailed node status report.
     """
-    settings = get_settings()
 
     # Get active chains count from hierarchy manager
     chains_active = len(manager.get_all_sub_chains())

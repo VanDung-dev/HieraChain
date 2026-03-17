@@ -118,7 +118,9 @@ def add_security_headers(fast_app: FastAPI, is_dev: bool):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+        response.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, private"
+        )
         response.headers["Pragma"] = "no-cache"
         
         # Hide Server Information
@@ -211,12 +213,15 @@ def add_rate_limit(fast_app: FastAPI, settings):
         return await call_next(request)
 
 
-def register_exception_handlers(fast_app: FastAPI, settings):
+def register_exception_handlers(fast_app: FastAPI, settings) -> None:
     """Register global exception handlers"""
     @fast_app.exception_handler(Exception)
     async def global_exception_handler(_request, exc):
         logger.error(f"Unhandled exception: {str(exc)}")
-        is_debug = settings.LOG_LEVEL == "DEBUG" and getattr(settings, "ENV", "dev") != "product"
+        is_debug = (
+            settings.LOG_LEVEL == "DEBUG" and
+            getattr(settings, "ENV", "dev") != "product"
+        )
         return JSONResponse(
             status_code=500,
             content={
@@ -418,8 +423,8 @@ def run_server():
         log_level="info" if not is_debug else "debug",
         log_config=LOGGING_CONFIG,
         server_header=False,
-        timeout_keep_alive=5,  # Mitigate Slowloris: low keep-alive timeout
-        limit_concurrency=100, # Limit concurrent connections
+        timeout_keep_alive=5,   # Mitigate Slowloris: low keep-alive timeout
+        limit_concurrency=100,  # Limit concurrent connections
         headers=[("Server", "HieraChain")]  # Custom server header
     )
 

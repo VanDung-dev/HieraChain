@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, ConfigDict
 class ChannelCreateRequest(BaseModel):
     """Request schema for creating a new channel"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "channel_id": "manufacturing_channel",
                 "organizations": ["org1", "org2", "org3"],
@@ -27,14 +27,18 @@ class ChannelCreateRequest(BaseModel):
     )
     
     channel_id: str = Field(..., description="Unique identifier for the channel")
-    organizations: list[str] = Field(..., description="List of organization IDs participating in the channel")
-    policy: dict[str, Any] = Field(..., description="Channel access and endorsement policies")
+    organizations: list[str] = Field(
+        ..., description="List of organization IDs participating in the channel"
+    )
+    policy: dict[str, Any] = Field(
+        ..., description="Channel access and endorsement policies"
+    )
 
 
 class ChannelResponse(BaseModel):
     """Response schema for channel operations"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "success": True,
                 "message": "Channel 'manufacturing_channel' created successfully",
@@ -51,7 +55,7 @@ class ChannelResponse(BaseModel):
 class PrivateCollectionCreateRequest(BaseModel):
     """Request schema for creating a private data collection"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "name": "sensitive_data_collection",
                 "members": ["org1", "org2"],
@@ -64,14 +68,18 @@ class PrivateCollectionCreateRequest(BaseModel):
     )
     
     name: str = Field(..., description="Name of the private collection")
-    members: list[str] = Field(..., description="List of organization IDs that are members of this collection")
-    config: dict[str, Any] = Field(..., description="Collection configuration parameters")
+    members: list[str] = Field(
+        ..., description="List of organization IDs that are members of this collection"
+    )
+    config: dict[str, Any] = Field(
+        ..., description="Collection configuration parameters"
+    )
 
 
 class PrivateDataRequest(BaseModel):
     """Request schema for adding private data"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "collection": "sensitive_data_collection",
                 "key": "contract_terms_001",
@@ -92,16 +100,20 @@ class PrivateDataRequest(BaseModel):
     collection: str = Field(..., description="Name of the private collection")
     key: str = Field(..., description="Key for the private data")
     value: dict[str, Any] = Field(..., description="Private data value")
-    event_metadata: dict[str, Any] = Field(..., description="Event metadata for endorsement verification")
+    event_metadata: dict[str, Any] = Field(
+        ..., description="Event metadata for endorsement verification"
+    )
 
 
 class PrivateDataResponse(BaseModel):
     """Response schema for private data operations"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "success": True,
-                "message": "Private data added to collection 'sensitive_data_collection'",
+                "message": (
+                    "Private data added to collection 'sensitive_data_collection'"
+                ),
                 "key": "contract_terms_001"
             }
         }
@@ -115,11 +127,13 @@ class PrivateDataResponse(BaseModel):
 class ContractCreateRequest(BaseModel):
     """Request schema for creating a domain contract"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "contract_id": "quality_control_contract",
                 "version": "1.0.0",
-                "implementation": "def quality_control_logic(event, state, context): ...",
+                "implementation": (
+                    "def quality_control_logic(event, state, context): ..."
+                ),
                 "metadata": {
                     "domain": "manufacturing",
                     "owner": "org1",
@@ -131,14 +145,18 @@ class ContractCreateRequest(BaseModel):
     
     contract_id: str = Field(..., description="Unique identifier for the contract")
     version: str = Field(..., description="Semantic version of the contract")
-    implementation: str = Field(..., description="Contract implementation code or reference")
-    metadata: dict[str, Any] = Field(..., description="Contract governance and configuration metadata")
+    implementation: str = Field(
+        ..., description="Contract implementation code or reference"
+    )
+    metadata: dict[str, Any] = Field(
+        ..., description="Contract governance and configuration metadata"
+    )
 
 
 class ContractExecuteRequest(BaseModel):
     """Request schema for executing a domain contract"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "contract_id": "quality_control_contract",
                 "event": {
@@ -158,14 +176,16 @@ class ContractExecuteRequest(BaseModel):
     )
     
     contract_id: str = Field(..., description="Identifier of the contract to execute")
-    event: dict[str, Any] = Field(..., description="Event to trigger contract execution")
+    event: dict[str, Any] = Field(
+        ..., description="Event to trigger contract execution"
+    )
     context: dict[str, Any] = Field(..., description="Execution context")
 
 
 class ContractResponse(BaseModel):
     """Response schema for contract operations"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "success": True,
                 "message": "Contract 'quality_control_contract' executed successfully",
@@ -181,13 +201,15 @@ class ContractResponse(BaseModel):
     success: bool = Field(..., description="Whether the operation was successful")
     message: str = Field(..., description="Response message")
     contract_id: str | None = Field(None, description="Contract identifier")
-    result: dict[str, Any] | None = Field(None, description="Result of contract execution")
+    result: dict[str, Any] | None = Field(
+        None, description="Result of contract execution"
+    )
 
 
 class OrganizationRequest(BaseModel):
     """Request schema for organization operations"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "org_id": "manufacturer_org",
                 "ca_config": {
@@ -206,13 +228,15 @@ class OrganizationRequest(BaseModel):
     )
     
     org_id: str = Field(..., description="Unique organization identifier")
-    ca_config: dict[str, Any] = Field(..., description="Certificate authority configuration")
+    ca_config: dict[str, Any] = Field(
+        ..., description="Certificate authority configuration"
+    )
 
 
 class OrganizationResponse(BaseModel):
     """Response schema for organization operations"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "success": True,
                 "message": "Organization 'manufacturer_org' registered successfully",

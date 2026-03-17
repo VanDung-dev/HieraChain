@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field, ConfigDict
 class EventRequest(BaseModel):
     """Request schema for adding events"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "entity_id": "PRODUCT-2024-001",
                 "event_type": "production_start",
@@ -27,14 +27,16 @@ class EventRequest(BaseModel):
     )
     
     entity_id: str = Field(..., description="Unique identifier for the entity")
-    event_type: str = Field(..., description="Type of event (e.g., 'operation_start', 'status_change')")
+    event_type: str = Field(
+        ..., description="Type of event (e.g., 'operation_start', 'status_change')"
+    )
     details: dict[str, Any] | None = Field(None, description="Additional event details")
 
 
 class EventResponse(BaseModel):
     """Response schema for event operations"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "success": True,
                 "message": "Event added to chain 'production_chain'",
@@ -51,7 +53,7 @@ class EventResponse(BaseModel):
 class ChainInfoResponse(BaseModel):
     """Response schema for chain information"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "name": "ProductionChain",
                 "type": "sub",
@@ -70,10 +72,12 @@ class ChainInfoResponse(BaseModel):
 class ProofSubmissionRequest(BaseModel):
     """Request schema for submitting proofs to Main Chain"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "sub_chain_name": "ProductionChain",
-                "proof_hash": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+                "proof_hash": (
+                    "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+                ),
                 "metadata": {
                     "domain_type": "manufacturing",
                     "operations_count": 10
@@ -82,15 +86,21 @@ class ProofSubmissionRequest(BaseModel):
         }
     )
     
-    sub_chain_name: str | None = Field(None, description="Name of the Sub-Chain submitting the proof")
-    proof_hash: str | None = Field(None, description="Cryptographic hash of the Sub-Chain's latest block")
-    metadata: dict[str, Any] | None = Field(None, description="Summary metadata about the Sub-Chain's operations")
+    sub_chain_name: str | None = Field(
+        None, description="Name of the Sub-Chain submitting the proof"
+    )
+    proof_hash: str | None = Field(
+        None, description="Cryptographic hash of the Sub-Chain's latest block"
+    )
+    metadata: dict[str, Any] | None = Field(
+        None, description="Summary metadata about the Sub-Chain's operations"
+    )
 
 
 class ProofSubmissionResponse(BaseModel):
     """Response schema for proof submission operations"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "success": True,
                 "message": "Proof from 'ProductionChain' added to Main Chain",
@@ -107,7 +117,7 @@ class ProofSubmissionResponse(BaseModel):
 class EntityTraceResponse(BaseModel):
     """Response schema for entity tracing operations"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "entity_id": "PRODUCT-2024-001",
                 "chains": ["ProductionChain", "QualityChain", "ShippingChain"],
@@ -118,7 +128,7 @@ class EntityTraceResponse(BaseModel):
                         "timestamp": 1717987200.0
                     },
                     {
-                        "chain": "QualityChain", 
+                        "chain": "QualityChain",
                         "event_type": "quality_check",
                         "timestamp": 1717987500.0
                     }
@@ -128,14 +138,18 @@ class EntityTraceResponse(BaseModel):
     )
     
     entity_id: str = Field(..., description="Entity identifier being traced")
-    chains: list[str] = Field(..., description="List of chains where the entity has events")
-    events: list[dict[str, Any]] = Field(..., description="List of events for the entity across chains")
+    chains: list[str] = Field(
+        ..., description="List of chains where the entity has events"
+    )
+    events: list[dict[str, Any]] = Field(
+        ..., description="List of events for the entity across chains"
+    )
 
 
 class ChainStatsResponse(BaseModel):
     """Response schema for chain statistics"""
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "chain_name": "MainChain",
                 "total_blocks": 100,
@@ -149,8 +163,12 @@ class ChainStatsResponse(BaseModel):
     chain_name: str = Field(..., description="Name of the chain")
     total_blocks: int = Field(..., description="Total number of blocks in the chain")
     total_events: int = Field(..., description="Total number of events in the chain")
-    proof_count: int | None = Field(None, description="Number of proofs (for Main Chain)")
-    registered_sub_chains: int | None = Field(None, description="Number of registered Sub-Chains (for Main Chain)")
+    proof_count: int | None = Field(
+        None, description="Number of proofs (for Main Chain)"
+    )
+    registered_sub_chains: int | None = Field(
+        None, description="Number of registered Sub-Chains (for Main Chain)"
+    )
 
 
 class CreateChainRequest(BaseModel):
@@ -159,7 +177,7 @@ class CreateChainRequest(BaseModel):
     participants: list[str] | None = Field(None, description="list of participants")
     
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "chain_type": "supply_chain",
                 "participants": ["manufacturer", "supplier", "distributor"]
@@ -176,7 +194,7 @@ class CreateChainResponse(BaseModel):
     chain_type: str = Field(..., description="Type of the created chain")
     
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "success": True,
                 "message": "Sub-chain 'production_chain' created successfully",
