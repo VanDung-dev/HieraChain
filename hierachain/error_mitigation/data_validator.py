@@ -59,11 +59,11 @@ class DataValidator:
     Validates event data and Arrow tables.
     
     Features:
-    - Schema compliance checking
-    - Required field validation
-    - Type checking
-    - Custom validators
-    - Auto-fix capabilities
+        - Schema compliance checking
+        - Required field validation
+        - Type checking
+        - Custom validators
+        - Auto-fix capabilities
     """
     
     # Required fields for events
@@ -96,9 +96,7 @@ class DataValidator:
         self.custom_validators = custom_validators or {}
     
     def validate_event(
-        self,
-        event: dict[str, Any],
-        index: int = 0
+        self, event: dict[str, Any], index: int = 0
     ) -> Tuple[ValidationResult, dict[str, Any]]:
         """
         Validate a single event dict.
@@ -122,10 +120,7 @@ class DataValidator:
         return result, fixed_event
 
     def _validate_required_fields(
-        self,
-        event: dict[str, Any],
-        index: int,
-        result: ValidationResult
+        self, event: dict[str, Any], index: int, result: ValidationResult
     ) -> None:
         """Check for mandatory fields and perform auto-fixes if possible."""
         for fld in self.REQUIRED_FIELDS:
@@ -149,10 +144,7 @@ class DataValidator:
             result.add_error(f"Event[{index}]: Missing required field '{fld}'")
 
     def _validate_field_types(
-        self,
-        event: dict[str, Any],
-        index: int,
-        result: ValidationResult
+        self, event: dict[str, Any], index: int, result: ValidationResult
     ) -> None:
         """Validate all field types based on FIELD_TYPES mapping."""
         if self.level not in (ValidationLevel.STRICT, ValidationLevel.RELAXED):
@@ -203,10 +195,7 @@ class DataValidator:
             result.add_error(msg)
 
     def _validate_strict_constraints(
-        self,
-        event: dict[str, Any],
-        index: int,
-        result: ValidationResult
+        self, event: dict[str, Any], index: int, result: ValidationResult
     ) -> None:
         """Additional integrity checks for STRICT validation level."""
         if self.level != ValidationLevel.STRICT:
@@ -217,10 +206,7 @@ class DataValidator:
         _check_strict_details(event, index, result)
 
     def _run_custom_validators(
-        self,
-        event: dict[str, Any],
-        index: int,
-        result: ValidationResult
+        self, event: dict[str, Any], index: int, result: ValidationResult
     ) -> None:
         """Run any externally provided custom validation functions."""
         for fld, validator in self.custom_validators.items():
@@ -269,10 +255,7 @@ class DataValidator:
         return result
 
     def _validate_table_content(
-        self,
-        table: pa.Table,
-        required_columns: list[str],
-        result: ValidationResult
+        self, table: pa.Table, required_columns: list[str], result: ValidationResult
     ) -> None:
         """Check for data integrity within the table columns."""
         if self.level != ValidationLevel.STRICT:
@@ -286,9 +269,7 @@ class DataValidator:
 
 
 def _check_strict_id_and_type(
-    event: dict[str, Any],
-    index: int,
-    result: ValidationResult
+    event: dict[str, Any], index: int, result: ValidationResult
 ) -> None:
     """Verify entity_id and event type are not empty."""
     if event.get('entity_id') == '':
@@ -299,9 +280,7 @@ def _check_strict_id_and_type(
 
 
 def _check_strict_timestamp(
-    event: dict[str, Any],
-    index: int,
-    result: ValidationResult
+    event: dict[str, Any], index: int, result: ValidationResult
 ) -> None:
     """Verify timestamp is non-negative."""
     ts = event.get('timestamp')
@@ -310,9 +289,7 @@ def _check_strict_timestamp(
 
 
 def _check_strict_details(
-    event: dict[str, Any],
-    index: int,
-    result: ValidationResult
+    event: dict[str, Any], index: int, result: ValidationResult
 ) -> None:
     """Verify details field is JSON serializable."""
     details = event.get('details')
@@ -345,9 +322,7 @@ def _run_single_custom_validator(
 
 
 def _validate_table_structure(
-    table: pa.Table,
-    required_columns: list[str],
-    result: ValidationResult
+    table: pa.Table, required_columns: list[str], result: ValidationResult
 ) -> None:
     """Check for column existence and basic table metadata."""
     for col in required_columns:
@@ -359,8 +334,7 @@ def _validate_table_structure(
 
 
 def validate_consistency(
-    events_list: list[dict[str, Any]],
-    table: pa.Table
+    events_list: list[dict[str, Any]], table: pa.Table
 ) -> ValidationResult:
     """
     Check consistency between events list and Arrow table.
@@ -406,4 +380,3 @@ def validate_and_fix_events(
     validator = DataValidator(level=ValidationLevel.RELAXED, auto_fix=True)
     result, fixed = validator.validate_events_batch(events)
     return fixed, result
-

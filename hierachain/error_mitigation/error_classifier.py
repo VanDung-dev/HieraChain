@@ -177,8 +177,7 @@ class ErrorClassifier:
 
         # Categories that trigger immediate lockdown when CRITICAL
         self.lockdown_trigger_categories = {
-            ErrorCategory.SECURITY,
-            ErrorCategory.PERFORMANCE
+            ErrorCategory.SECURITY, ErrorCategory.PERFORMANCE
         }
 
         logger.info("Initialized ErrorClassifier")
@@ -240,8 +239,7 @@ class ErrorClassifier:
         ):
             logger.warning(
                 "CRITICAL %s error detected. Triggering lockdown: %s",
-                category.value,
-                error_id,
+                category.value, error_id,
             )
             try:
                 self.lockdown_callback(error_info)
@@ -263,7 +261,9 @@ class ErrorClassifier:
         Returns:
             List[ErrorInfo]: List of errors with specified priority
         """
-        return [error for error in self.classification_history if error.priority == priority]
+        return [
+            error for error in self.classification_history if error.priority == priority
+        ]
 
     def get_category_errors(self, category: ErrorCategory) -> list[ErrorInfo]:
         """
@@ -275,7 +275,9 @@ class ErrorClassifier:
         Returns:
             List[ErrorInfo]: List of errors in specified category
         """
-        return [error for error in self.classification_history if error.category == category]
+        return [
+            error for error in self.classification_history if error.category == category
+        ]
 
     def get_classification_summary(self) -> dict[str, Any]:
         """
@@ -341,7 +343,6 @@ class ErrorClassifier:
                 return cat_enum
 
         return ErrorCategory.OPERATIONAL
-
 
     def _determine_mitigation_strategy(
         self, category: ErrorCategory, priority: PriorityLevel
@@ -510,7 +511,8 @@ def _log_classification(error_info: ErrorInfo) -> None:
         error_info: Classified error information
     """
     logger.info(
-        "CLASSIFIED: ID=%s, Type=%s, Category=%s, Priority=%s, Impact=%s, Likelihood=%s",
+        "CLASSIFIED: "
+        "ID=%s, Type=%s, Category=%s, Priority=%s, Impact=%s, Likelihood=%s",
         error_info.error_id,
         error_info.error_type,
         error_info.category.value,

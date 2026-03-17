@@ -71,7 +71,10 @@ def _build_absolute_storage_path(data_root: Path, abs_path_str: str) -> Path:
     """Build a safe path from an absolute string within data_root."""
     # Must be within data_root
     if os.path.commonpath([str(data_root), abs_path_str]) != str(data_root):
-        raise ValueError(f"Security: Storage path {abs_path_str} must be within {data_root}")
+        raise ValueError(
+            "Security: Storage path %s must be within %s",
+            abs_path_str, data_root
+        )
     # Compute relative path string safely
     try:
         rel_str = os.path.relpath(abs_path_str, start=str(data_root))
@@ -153,7 +156,7 @@ def _serialize_data_field(ev: dict[str, Any]) -> None:
             else:
                 ev["data"] = json.dumps(data).encode("utf-8")
         except (TypeError, ValueError) as e:
-            logger.warning(f"Could not JSON serialize 'data' field: {e}. Using str().")
+            logger.warning("Could not JSON serialize 'data' field: %s. Using str().", e)
             ev["data"] = str(data).encode("utf-8")
 
 
@@ -208,7 +211,9 @@ def _unpack_row_data(row: dict[str, Any]) -> dict[str, Any]:
     return row
 
 
-def _iterate_journal_batches(f: BinaryIO, schema: pa.Schema) -> Generator[dict[str, Any], None, None]:
+def _iterate_journal_batches(
+    f: BinaryIO, schema: pa.Schema
+) -> Generator[dict[str, Any], None, None]:
     """Helper generator to iterate over batches in a journal file."""
     while True:
         batch_data = _read_next_batch(f)
@@ -220,7 +225,7 @@ def _iterate_journal_batches(f: BinaryIO, schema: pa.Schema) -> Generator[dict[s
             row = batch.to_pylist()[0]
             yield _unpack_row_data(row)
         except (pa.ArrowException, ValueError) as arrow_err:
-            logger.error(f"Corrupted Arrow batch in journal: {arrow_err}")
+            logger.error("Corrupted Arrow batch in journal: %s", arrow_err)
             continue
 
 
@@ -248,7 +253,9 @@ class TransactionJournal:
                 "Allowed: [a-zA-Z0-9_-] and single optional extension."
             )
 
-    def __init__(self, storage_dir: str = "data/journal", active_log_name: str = "current.log"):
+    def __init__(
+        self, storage_dir: str = "data/journal", active_log_name: str = "current.log"
+    ) -> None:
         """
         Initialize the Transaction Journal.
 
@@ -265,11 +272,15 @@ class TransactionJournal:
         self.storage_path = _build_storage_path(data_root, storage_dir)
 
         # Enforce storage_path stays within data_root as an additional guard
-        in_root = os.path.commonpath([str(data_root), str(self.storage_path)]) == str(data_root)
+        in_root = (
+            os.path.commonpath(
+                [str(data_root), str(self.storage_path)]
+            ) == str(data_root)
+        )
         if not in_root:
             raise ValueError(
-                f"Security: Storage path {self.storage_path} "
-                f"must be within {data_root}"
+                "Security: Storage path %s must be within %s",
+                self.storage_path, data_root
             )
 
         safe_log_name = os.path.basename(active_log_name)
@@ -293,7 +304,7 @@ class TransactionJournal:
             if self.active_log_file.exists() and self.active_log_file.is_symlink():
                 raise ValueError("Security: active log file cannot be a symlink")
         except (OSError, RuntimeError) as e:
-            logger.warning(f"Filesystem check failed, attempting creation anyway: {e}")
+            logger.warning("Filesystem check failed, attempting creation anyway: %s", e)
 
         self._file_handle: BinaryIO | None = None
         self._schema = schemas.get_event_schema()
@@ -310,7 +321,7 @@ class TransactionJournal:
             # 'ab' mode for append binary
             self._file_handle = open(self.active_log_file, "ab")
         except (OSError, IOError) as e:
-            logger.critical(f"Failed to open transaction journal: {e}")
+            logger.critical("Failed to open transaction journal: %s", e)
             raise
 
     def _dict_to_arrow_batch(self, event_data: dict[str, Any]) -> pa.RecordBatch:
@@ -330,7 +341,7 @@ class TransactionJournal:
             return batch
         except (pa.ArrowInvalid, pa.ArrowTypeError) as e:
             event_id = ev.get("event_id", "unknown")
-            logger.error(f"Schema conversion error for event {event_id}: {e}")
+            logger.error("Schema conversion error for event %s: %s", event_id, e)
             raise
 
     def log_event(self, event_data: dict[str, Any]) -> bool:
@@ -372,7 +383,7 @@ class TransactionJournal:
             return True
 
         except (OSError, IOError, pa.ArrowException) as e:
-            logger.critical(f"CRITICAL: Failed to write to transaction journal: {e}")
+            logger.critical("CRITICAL: Failed to write to transaction journal: %s", e)
             return False
 
     def replay(self) -> Generator[dict[str, Any], None, None]:
@@ -387,7 +398,7 @@ class TransactionJournal:
             with open(self.active_log_file, "rb") as f:
                 yield from _iterate_journal_batches(f, self._schema)
         except (OSError, IOError) as e:
-            logger.error(f"Error replaying journal: {e}")
+            logger.error("Error replaying journal: %s", e)
 
     def close(self):
         """Close the journal file handle."""
@@ -396,7 +407,7 @@ class TransactionJournal:
                 self._file_handle.flush()
                 self._file_handle.close()
             except (OSError, IOError) as e:
-                logger.error(f"Error closing journal: {e}")
+                logger.error("Error closing journal: %s", e)
             finally:
                 self._file_handle = None
 
@@ -411,4 +422,4 @@ class TransactionJournal:
             self._open_journal()
             logger.info("Transaction journal cleared (Arrow format).")
         except (OSError, IOError) as e:
-            logger.error(f"Failed to clear journal: {e}")
+            logger.error("Failed to clear journal: %s", e)

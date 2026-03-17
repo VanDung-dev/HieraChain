@@ -122,7 +122,10 @@ class RollbackManager:
         if self.auto_snapshot:
             self._start_auto_snapshot()
 
-        logger.info(f"Initialized RollbackManager with {len(self.snapshots)} snapshots")
+        logger.info(
+            "Initialized RollbackManager with %d snapshots",
+            len(self.snapshots)
+        )
 
     def create_snapshot(
         self,
@@ -144,7 +147,10 @@ class RollbackManager:
         snapshot_id = _generate_snapshot_id()
         timestamp = time.time()
 
-        logger.info(f"Creating snapshot: {snapshot_id} ({snapshot_type.value})")
+        logger.info(
+            "Creating snapshot: %s (%s)",
+            snapshot_id, snapshot_type.value
+        )
 
         try:
             data = _capture_state(snapshot_type, components)
@@ -160,14 +166,19 @@ class RollbackManager:
                 self._cleanup_old_snapshots()
                 self._save_snapshots_index()
 
-            logger.info(f"Snapshot created successfully: {snapshot_id} ({new_snapshot.size_bytes} bytes)")
+            logger.info(
+                "Snapshot created successfully: %s (%d bytes)",
+                snapshot_id, new_snapshot.size_bytes
+            )
             return new_snapshot
 
         except Exception as e:
-            logger.error(f"Failed to create snapshot {snapshot_id}: {e}")
+            logger.error("Failed to create snapshot %s: %s", snapshot_id, e)
             raise
 
-    def rollback_to_snapshot(self, snapshot_id: str, force: bool = False) -> RollbackOperation:
+    def rollback_to_snapshot(
+        self, snapshot_id: str, force: bool = False
+    ) -> RollbackOperation:
         """
         Perform rollback to a specific snapshot
 
@@ -183,7 +194,10 @@ class RollbackManager:
             raise ValueError(f"Snapshot not found: {snapshot_id}")
 
         rollback_op = _init_rollback_operation(target_snapshot)
-        logger.info(f"Starting rollback: {rollback_op.operation_id} -> {snapshot_id}")
+        logger.info(
+            "Starting rollback: %s -> %s",
+            rollback_op.operation_id, snapshot_id
+        )
 
         with self.rollback_lock:
             self.active_operations[rollback_op.operation_id] = rollback_op
@@ -222,18 +236,26 @@ class RollbackManager:
             target_snapshot.snapshot_type,
             f"Pre-rollback snapshot for {rollback_op.operation_id}"
         )
-        rollback_op.rollback_steps.append(f"pre_rollback_snapshot_created:{pre_snap.snapshot_id}")
+        rollback_op.rollback_steps.append(
+            f"pre_rollback_snapshot_created:{pre_snap.snapshot_id}"
+        )
 
         success = _execute_rollback(rollback_op, target_snapshot)
-        rollback_op.status = (RollbackStatus.COMPLETED if success else RollbackStatus.FAILED)
+        rollback_op.status = (
+            RollbackStatus.COMPLETED if success else RollbackStatus.FAILED
+        )
         rollback_op.end_time = time.time()
 
         status_msg = "completed successfully" if success else "failed"
-        logger.info(f"Rollback {rollback_op.operation_id} {status_msg}")
+        logger.info(
+            "Rollback %s %s", rollback_op.operation_id, status_msg
+        )
 
         return rollback_op
 
-    def get_snapshots(self, snapshot_type: RollbackType | None = None) -> list[StateSnapshot]:
+    def get_snapshots(
+        self, snapshot_type: RollbackType | None = None
+    ) -> list[StateSnapshot]:
         """
         Get list of available snapshots
 
@@ -262,7 +284,7 @@ class RollbackManager:
                 if snap.snapshot_id == snapshot_id:
                     return self._perform_snapshot_deletion(i, snap)
 
-        logger.warning(f"Snapshot not found for deletion: {snapshot_id}")
+        logger.warning("Snapshot not found for deletion: %s", snapshot_id)
         return False
 
     def _perform_snapshot_deletion(self, index: int, snapshot: StateSnapshot) -> bool:
@@ -274,13 +296,15 @@ class RollbackManager:
             self.snapshots.pop(index)
             self._save_snapshots_index()
 
-            logger.info(f"Snapshot deleted: {snapshot.snapshot_id}")
+            logger.info("Snapshot deleted: %s", snapshot.snapshot_id)
             return True
         except Exception as e:
-            logger.error(f"Failed to delete snapshot {snapshot.snapshot_id}: {e}")
+            logger.error("Failed to delete snapshot %s: %s", snapshot.snapshot_id, e)
             return False
 
-    def get_rollback_operations(self, status: RollbackStatus | None = None) -> list[RollbackOperation]:
+    def get_rollback_operations(
+        self, status: RollbackStatus | None = None
+    ) -> list[RollbackOperation]:
         """
         Get rollback operations
 
@@ -308,7 +332,7 @@ class RollbackManager:
             self._process_snapshots_index(snapshots_data)
             logger.info(f"Loaded {len(self.snapshots)} snapshots")
         except Exception as e:
-            logger.error(f"Failed to load snapshots index: {e}")
+            logger.error("Failed to load snapshots index: %s", e)
 
     def _process_snapshots_index(self, snapshots_data: list[dict[str, Any]]) -> None:
         """Process loaded snapshots index data"""
@@ -317,7 +341,7 @@ class RollbackManager:
             if os.path.exists(snap.data_path):
                 self.snapshots.append(snap)
             else:
-                logger.warning(f"Snapshot file missing: {snap.data_path}")
+                logger.warning("Snapshot file missing: %s", snap.data_path)
 
     def _save_snapshots_index(self) -> None:
         """Save snapshots index to disk"""
@@ -327,7 +351,7 @@ class RollbackManager:
             with open(index_path, 'w', encoding='utf-8') as f_out:
                 json.dump(snapshots_data, f_out, indent=2)
         except Exception as e:
-            logger.error(f"Failed to save snapshots index: {e}")
+            logger.error("Failed to save snapshots index: %s", e)
 
     def _cleanup_old_snapshots(self) -> None:
         """Remove old snapshots if limit exceeded"""
@@ -356,7 +380,7 @@ class RollbackManager:
                     )
                     logger.info("Automatic snapshot created")
                 except Exception as e:
-                    logger.error(f"Auto snapshot failed: {e}")
+                    logger.error("Auto snapshot failed: %s", e)
 
         thread = threading.Thread(target=auto_snapshot_worker, daemon=True)
         thread.start()
@@ -368,9 +392,9 @@ def _delete_snapshot_files(snapshot: StateSnapshot) -> None:
     try:
         if os.path.exists(snapshot.data_path):
             os.remove(snapshot.data_path)
-        logger.info(f"Removed old snapshot: {snapshot.snapshot_id}")
+        logger.info("Removed old snapshot: %s", snapshot.snapshot_id)
     except Exception as e:
-        logger.error(f"Failed to remove old snapshot {snapshot.snapshot_id}: {e}")
+        logger.error("Failed to remove old snapshot %s: %s", snapshot.snapshot_id, e)
 
 
 def _persist_snapshot_data(
@@ -401,7 +425,9 @@ def _persist_snapshot_data(
     )
 
 
-def _execute_rollback(rollback_op: RollbackOperation, target_snapshot: StateSnapshot) -> bool:
+def _execute_rollback(
+    rollback_op: RollbackOperation, target_snapshot: StateSnapshot
+) -> bool:
     """
     Execute the actual rollback operation
 
@@ -419,7 +445,9 @@ def _execute_rollback(rollback_op: RollbackOperation, target_snapshot: StateSnap
         rollback_op.rollback_steps.append("snapshot_data_loaded")
 
         # Dispatch to appropriate handler
-        success = _dispatch_rollback(target_snapshot.snapshot_type, snapshot_data, rollback_op)
+        success = _dispatch_rollback(
+            target_snapshot.snapshot_type, snapshot_data, rollback_op
+        )
 
         if success:
             rollback_op.rollback_steps.append("rollback_executed_successfully")
@@ -447,7 +475,7 @@ def _dispatch_rollback(r_type: RollbackType, data: dict, op: RollbackOperation) 
 
     handler = handlers.get(r_type)
     if not handler:
-        logger.error(f"Unknown rollback type: {r_type}")
+        logger.error("Unknown rollback type: %s", r_type)
         return False
 
     return handler(data, op)
@@ -481,29 +509,39 @@ def _capture_full_system_state(components: list[Any] | None = None) -> dict[str,
     return full_state
 
 
-def _rollback_full_system(snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
+def _rollback_full_system(
+    snapshot_data: dict[str, Any], rollback_op: RollbackOperation
+) -> bool:
     """Rollback complete system state"""
     try:
         # Rollback each component
         success = True
 
         if "configuration" in snapshot_data:
-            success &= _rollback_configuration(snapshot_data["configuration"], rollback_op)
+            success &= _rollback_configuration(
+                snapshot_data["configuration"], rollback_op
+            )
 
         if "chain_state" in snapshot_data:
-            success &= _rollback_chain_state(snapshot_data["chain_state"], rollback_op)
+            success &= _rollback_chain_state(
+                snapshot_data["chain_state"], rollback_op
+            )
 
         if "consensus_state" in snapshot_data:
-            success &= _rollback_consensus_state(snapshot_data["consensus_state"], rollback_op)
+            success &= _rollback_consensus_state(
+                snapshot_data["consensus_state"], rollback_op
+            )
 
         if "storage_state" in snapshot_data:
-            success &= _rollback_storage_state(snapshot_data["storage_state"], rollback_op)
+            success &= _rollback_storage_state(
+                snapshot_data["storage_state"], rollback_op
+            )
 
-        logger.info(f"Full system rollback completed: success={success}")
+        logger.info("Full system rollback completed: success=%s", success)
         return success
 
     except Exception as e:
-        logger.error(f"Full system rollback failed: {e}")
+        logger.error("Full system rollback failed: %s", e)
         return False
 
 
@@ -518,7 +556,7 @@ def _validate_rollback_safety(target_snapshot: StateSnapshot) -> bool:
 
         # Verify snapshot integrity
         if not os.path.exists(target_snapshot.data_path):
-            logger.error(f"Snapshot file missing: {target_snapshot.data_path}")
+            logger.error("Snapshot file missing: %s", target_snapshot.data_path)
             return False
 
         current_hash = _calculate_file_hash(target_snapshot.data_path)
@@ -529,11 +567,13 @@ def _validate_rollback_safety(target_snapshot: StateSnapshot) -> bool:
         return True
 
     except Exception as e:
-        logger.error(f"Rollback safety validation failed: {e}")
+        logger.error("Rollback safety validation failed: %s", e)
         return False
 
 
-def _verify_and_finalize_rollback(target_snapshot: StateSnapshot, rollback_op: RollbackOperation) -> bool:
+def _verify_and_finalize_rollback(
+    target_snapshot: StateSnapshot, rollback_op: RollbackOperation
+) -> bool:
     """Verify integrity and record final steps"""
     if _verify_rollback_integrity(target_snapshot, rollback_op):
         rollback_op.rollback_steps.append("integrity_verified")
@@ -543,12 +583,16 @@ def _verify_and_finalize_rollback(target_snapshot: StateSnapshot, rollback_op: R
     return False
 
 
-def _handle_rollback_exception(rollback_op: RollbackOperation, e: Exception) -> RollbackOperation:
+def _handle_rollback_exception(
+    rollback_op: RollbackOperation, e: Exception
+) -> RollbackOperation:
     """Handle exceptions during rollback"""
     rollback_op.status = RollbackStatus.FAILED
     rollback_op.error_message = str(e)
     rollback_op.end_time = time.time()
-    logger.error(f"Rollback {rollback_op.operation_id} failed with exception: {e}")
+    logger.error(
+        "Rollback %s failed with exception: %s", rollback_op.operation_id, e
+    )
     return rollback_op
 
 
@@ -587,7 +631,7 @@ def _read_config_file(file_path: str, state: dict[str, Any]) -> None:
         with open(file_path, 'r', encoding='utf-8') as f:
             state["config_files"][file_path] = f.read()
     except Exception as e:
-        logger.warning(f"Failed to read config file {file_path}: {e}")
+        logger.warning("Failed to read config file %s: %s", file_path, e)
 
 
 def _capture_chain_state(components: list[Any] | None = None) -> dict[str, Any]:
@@ -605,7 +649,9 @@ def _capture_chain_state(components: list[Any] | None = None) -> dict[str, Any]:
             if hasattr(component, 'chain'):
                 chain_id = getattr(component, 'name', 'unknown')
                 chain_state["sub_chains"][chain_id] = {
-                    "block_count": len(component.chain) if hasattr(component, 'chain') else 0,
+                    "block_count": (
+                        len(component.chain) if hasattr(component, 'chain') else 0
+                    ),
                     "latest_hash": (
                         getattr(component.get_latest_block(), 'hash', None)
                         if hasattr(component, 'get_latest_block') else None
@@ -675,7 +721,9 @@ def _capture_state(
     return handler(components)
 
 
-def _rollback_configuration(snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
+def _rollback_configuration(
+    snapshot_data: dict[str, Any], rollback_op: RollbackOperation
+) -> bool:
     """Rollback configuration state"""
     try:
         config_files = snapshot_data.get("config_files", {})
@@ -693,15 +741,20 @@ def _rollback_configuration(snapshot_data: dict[str, Any], rollback_op: Rollback
 
             rollback_op.affected_components.append(file_path)
 
-        logger.info(f"Configuration rollback completed: {len(config_files)} files restored")
+        logger.info(
+            "Configuration rollback completed: %d files restored",
+            len(config_files)
+        )
         return True
 
     except Exception as e:
-        logger.error(f"Configuration rollback failed: {e}")
+        logger.error("Configuration rollback failed: %s", e)
         return False
 
 
-def _rollback_chain_state(snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
+def _rollback_chain_state(
+    snapshot_data: dict[str, Any], rollback_op: RollbackOperation
+) -> bool:
     """Rollback blockchain state"""
     try:
         sub_chains = snapshot_data.get("sub_chains", {})
@@ -709,15 +762,20 @@ def _rollback_chain_state(snapshot_data: dict[str, Any], rollback_op: RollbackOp
         for chain_id, _ in sub_chains.items():
             rollback_op.affected_components.append(f"chain:{chain_id}")
 
-        logger.info(f"Chain state rollback completed: {len(sub_chains)} chains")
+        logger.info(
+            "Chain state rollback completed: %d chains",
+            len(sub_chains)
+        )
         return True
 
     except Exception as e:
-        logger.error(f"Chain state rollback failed: {e}")
+        logger.error("Chain state rollback failed: %s", e)
         return False
 
 
-def _rollback_consensus_state(snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
+def _rollback_consensus_state(
+    snapshot_data: dict[str, Any], rollback_op: RollbackOperation
+) -> bool:
     """Rollback consensus state"""
     try:
         view_number = snapshot_data.get("view_number", 0)
@@ -725,26 +783,33 @@ def _rollback_consensus_state(snapshot_data: dict[str, Any], rollback_op: Rollba
         rollback_op.affected_components.append("consensus_view")
         rollback_op.affected_components.append("consensus_leader")
 
-        logger.info(f"Consensus state rollback completed: view {view_number}")
+        logger.info(
+            "Consensus state rollback completed: view %d",
+            view_number
+        )
         return True
 
     except Exception as e:
-        logger.error(f"Consensus state rollback failed: {e}")
+        logger.error("Consensus state rollback failed: %s", e)
         return False
 
 
-def _rollback_storage_state(_snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
+def _rollback_storage_state(
+    _snapshot_data: dict[str, Any], rollback_op: RollbackOperation
+) -> bool:
     """Rollback storage state"""
     try:
         rollback_op.affected_components.append("storage_state")
         logger.info("Storage state rollback completed")
         return True
     except Exception as e:
-        logger.error(f"Storage state rollback failed: {e}")
+        logger.error("Storage state rollback failed: %s", e)
         return False
 
 
-def _verify_rollback_integrity(_target_snapshot: StateSnapshot, rollback_op: RollbackOperation) -> bool:
+def _verify_rollback_integrity(
+    _target_snapshot: StateSnapshot, rollback_op: RollbackOperation
+) -> bool:
     """Verify rollback integrity"""
     try:
         rollback_op.rollback_steps.append("integrity_check_started")
@@ -757,7 +822,7 @@ def _verify_rollback_integrity(_target_snapshot: StateSnapshot, rollback_op: Rol
         return True
 
     except Exception as e:
-        logger.error(f"Rollback integrity verification failed: {e}")
+        logger.error("Rollback integrity verification failed: %s", e)
         return False
 
 
@@ -768,7 +833,7 @@ def _verify_component_integrity(component: str) -> bool:
 
     if component.endswith(('.yaml', '.py')):
         if not os.path.exists(component):
-            logger.error(f"Rollback integrity failed: missing file {component}")
+            logger.error("Rollback integrity failed: missing file %s", component)
             return False
 
     return True
@@ -807,7 +872,9 @@ def _log_rollback_operation(rollback_op: RollbackOperation) -> None:
         }
 
         os.makedirs("log/error_mitigation", exist_ok=True)
-        with open("log/error_mitigation/rollback_operations.log", "a", encoding="utf-8") as f:
+        with open(
+            "log/error_mitigation/rollback_operations.log", "a", encoding="utf-8"
+        ) as f:
             f.write(f"{datetime.now().isoformat()}: {json.dumps(log_entry)}\n")
     except Exception as e:
-        logger.error(f"Failed to log rollback operation: {e}")
+        logger.error("Failed to log rollback operation: %s", e)

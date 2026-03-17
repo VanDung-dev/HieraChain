@@ -48,7 +48,10 @@ class NetworkRecoveryEngine:
         self.network_health = {}
         self.partition_detected = False
 
-        logger.info(f"Initialized NetworkRecoveryEngine with redundancy_factor={self.redundancy_factor}")
+        logger.info(
+            "Initialized NetworkRecoveryEngine with redundancy_factor=%d",
+            self.redundancy_factor
+        )
 
     def adjust_timeout(self, latency_history_input: list[float]) -> float:
         """
@@ -71,16 +74,26 @@ class NetworkRecoveryEngine:
         network_factor = 1 + (avg_latency / 1000)  # Convert ms to s
         volatility_factor = 1 + (max_latency - avg_latency) / 1000
 
-        calculated_timeout = self.timeout_base * network_factor * volatility_factor * self.timeout_multiplier
+        calculated_timeout = (
+            self.timeout_base *
+            network_factor *
+            volatility_factor *
+            self.timeout_multiplier
+        )
 
         # Ensure timeout doesn't exceed maximum
         max_timeout = self.config.get("max_timeout", 30.0)
         calculated_timeout = min(calculated_timeout, max_timeout)
 
-        logger.info(f"Timeout adjusted to {calculated_timeout:.2f}s based on avg latency {avg_latency:.1f}ms")
+        logger.info(
+            "Timeout adjusted to %.2f s based on avg latency %.1f ms",
+            calculated_timeout, avg_latency
+        )
         return calculated_timeout
 
-    async def send_with_redundancy(self, message: dict[str, Any], target_nodes: list[str]) -> dict[str, Any]:
+    async def send_with_redundancy(
+        self, message: dict[str, Any], target_nodes: list[str]
+    ) -> dict[str, Any]:
         """
         Send message via multiple redundant paths
 
@@ -102,12 +115,16 @@ class NetworkRecoveryEngine:
         # Create multiple sending tasks
         for path_id in range(min(self.redundancy_factor, len(target_nodes))):
             target_node = target_nodes[path_id % len(target_nodes)]
-            future = asyncio.create_task(self._send_via_path(message, target_node, path_id))
+            future = asyncio.create_task(
+                self._send_via_path(message, target_node, path_id)
+            )
             futures.append(future)
 
         try:
             # Wait for first successful response
-            done, pending = await asyncio.wait(futures, return_when=asyncio.FIRST_COMPLETED)
+            done, pending = await asyncio.wait(
+                futures, return_when=asyncio.FIRST_COMPLETED
+            )
 
             # Cancel pending tasks
             for task in pending:
@@ -117,17 +134,21 @@ class NetworkRecoveryEngine:
             for task in done:
                 if not task.exception():
                     result = await task
-                    logger.info(f"Message sent successfully via redundant path")
+                    logger.info(
+                        "Message sent successfully via redundant path %d to %s",
+                        path_id, target_node
+                    )
                     return result
 
             # If all tasks failed
             raise RecoveryError("All redundant paths failed")
 
         except asyncio.TimeoutError:
-            logger.error("Redundant sending timed out")
             raise RecoveryError("Network timeout on all paths")
 
-    async def _send_via_path(self, message: dict[str, Any], target_node: str, path_id: int) -> dict[str, Any]:
+    async def _send_via_path(
+        self, message: dict[str, Any], target_node: str, path_id: int
+    ) -> dict[str, Any]:
         """
         Send message via specific path
 
@@ -145,7 +166,6 @@ class NetworkRecoveryEngine:
         start_time = time.time()
 
         try:
-            # Simulate network communication (in real implementation, this would be actual network code)
             await asyncio.sleep(0.1)  # Simulate network delay
 
             # Record latency
@@ -165,11 +185,17 @@ class NetworkRecoveryEngine:
                 "message_content": str(message)  # Actually use the message parameter
             }
 
-            logger.debug(f"Message sent via path {path_id} to {target_node} (latency: {latency:.1f}ms)")
+            logger.debug(
+                "Message sent via path %d to %s (latency: %.1f ms)",
+                path_id, target_node, latency
+            )
             return response
 
         except Exception as e:
-            logger.error(f"Path {path_id} to {target_node} failed: {e}")
+            logger.error(
+                "Path %d to %s failed: %s",
+                path_id, target_node, str(e)
+            )
             raise RecoveryError(f"Path {path_id} failed: {str(e)}")
 
     def monitor_network_health(self) -> dict[str, Any]:
@@ -189,7 +215,9 @@ class NetworkRecoveryEngine:
         }
 
         if self.latency_history:
-            health_status["avg_latency_ms"] = sum(self.latency_history) / len(self.latency_history)
+            health_status["avg_latency_ms"] = (
+                sum(self.latency_history) / len(self.latency_history)
+            )
             health_status["max_latency_ms"] = max(self.latency_history)
 
         # Detect network partition (simplified logic)
@@ -212,7 +240,10 @@ class NetworkRecoveryEngine:
             "network_health": self.monitor_network_health()
         }
 
-        logger.info(f"View change initiated: {json.dumps(view_change_event)}")
+        logger.info(
+            "View change initiated: %s",
+            json.dumps(view_change_event)
+        )
 
         # Send alert
         self._send_alert("Network partition detected, view change initiated")
@@ -232,7 +263,7 @@ class NetworkRecoveryEngine:
             "severity": "high"
         }
 
-        logger.warning(f"Network alert: {message}")
+        logger.warning("Network alert: %s", message)
 
         # Write to alert log
         try:
@@ -240,7 +271,7 @@ class NetworkRecoveryEngine:
             with open("log/error_mitigation/network_alerts.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {json.dumps(alert)}\n")
         except Exception as e:
-            logger.error(f"Failed to write network alert: {e}")
+            logger.error("Failed to write network alert: %s", str(e))
 
 
 class AutoScaler:
@@ -267,7 +298,10 @@ class AutoScaler:
         self.cooldown_period = config.get("cooldown_period", 300)  # 5 minutes
         self.last_scaling_action = 0
 
-        logger.info(f"Initialized AutoScaler (enabled={self.enabled})")
+        logger.info(
+            "Initialized AutoScaler (enabled=%s)",
+            self.enabled
+        )
 
     def scale_up(self, resource_type: str, current_load: float) -> bool:
         """
@@ -289,7 +323,10 @@ class AutoScaler:
             return False
 
         if current_load < self.scale_up_threshold:
-            logger.debug(f"Load {current_load:.2f} below scale up threshold {self.scale_up_threshold}")
+            logger.debug(
+                "Load %.2f below scale up threshold %.2f",
+                current_load, self.scale_up_threshold
+            )
             return False
 
         scaling_event = {
@@ -300,7 +337,9 @@ class AutoScaler:
             "timestamp": time.time()
         }
 
-        logger.info(f"Scaling up {resource_type}: {json.dumps(scaling_event)}")
+        logger.info(
+            "Scaling up %s: %s", resource_type, json.dumps(scaling_event)
+        )
 
         # Execute scaling
         success = self._execute_scaling("up", resource_type)
@@ -331,8 +370,11 @@ class AutoScaler:
             return False
 
         # Special check for nodes - don't scale below minimum for BFT
-        if resource_type == "nodes" and self._get_current_node_count() <= self.min_nodes:
-            logger.info(f"Cannot scale down nodes below minimum {self.min_nodes}")
+        if (
+            resource_type == "nodes" and
+            self._get_current_node_count() <= self.min_nodes
+        ):
+            logger.info("Cannot scale down nodes below minimum %d", self.min_nodes)
             return False
 
         scaling_event = {
@@ -343,7 +385,9 @@ class AutoScaler:
             "timestamp": time.time()
         }
 
-        logger.info(f"Scaling down {resource_type}: {json.dumps(scaling_event)}")
+        logger.info(
+            "Scaling down %s: %s", resource_type, json.dumps(scaling_event)
+        )
 
         success = self._execute_scaling("down", resource_type)
         if success:
@@ -378,10 +422,12 @@ class AutoScaler:
             elif resource_type in ["cpu", "memory"]:
                 return self._scale_resources(direction, resource_type)
             else:
-                logger.error(f"Unknown resource type for scaling: {resource_type}")
+                logger.error(
+                    "Unknown resource type for scaling: %s", resource_type
+                )
                 return False
         except Exception as e:
-            logger.error(f"Scaling execution failed: {e}")
+            logger.error("Scaling execution failed: %s", e)
             return False
 
     def _scale_nodes(self, direction: str) -> bool:
@@ -398,10 +444,14 @@ class AutoScaler:
 
         if direction == "up" and current_nodes < self.max_nodes:
             # In real implementation, call orchestrator API
-            logger.info(f"Adding consensus node (current: {current_nodes})")
+            logger.info(
+                "Adding consensus node (current: %d)", current_nodes
+            )
             return True
         elif direction == "down" and current_nodes > self.min_nodes:
-            logger.info(f"Removing consensus node (current: {current_nodes})")
+            logger.info(
+                "Removing consensus node (current: %d)", current_nodes
+            )
             return True
 
         return False
@@ -419,7 +469,9 @@ class AutoScaler:
             bool: True if successful
         """
         # In real implementation, this would adjust container/VM resources
-        logger.info(f"Scaling {resource_type} {direction}")
+        logger.info(
+            "Scaling %s %s", resource_type, direction
+        )
         return True
 
     @staticmethod
@@ -446,7 +498,7 @@ class AutoScaler:
             with open("log/error_mitigation/scaling_events.log", "a") as f:
                 f.write(f"{datetime.now().isoformat()}: {json.dumps(event)}\n")
         except Exception as e:
-            logger.error(f"Failed to log scaling event: {e}")
+            logger.error("Failed to log scaling event: %s", e)
 
 
 class ConsensusRecoveryEngine:
@@ -472,8 +524,8 @@ class ConsensusRecoveryEngine:
 
         # Node behavior tracking
         self.node_performance = {}  # Track node response times and failures
-        self.slow_node_threshold = config.get("slow_node_threshold", 5.0)  # seconds
-        self.silent_node_threshold = config.get("silent_node_threshold", 30.0)  # seconds
+        self.slow_node_threshold = config.get("slow_node_threshold", 5.0)  # sec
+        self.silent_node_threshold = config.get("silent_node_threshold", 30.0)  # sec
 
         logger.info("Initialized ConsensusRecoveryEngine")
 
@@ -488,13 +540,19 @@ class ConsensusRecoveryEngine:
         Returns:
             bool: True if recovery was successful
         """
-        logger.warning(f"Leader failure detected: {failed_leader_id} in view {current_view}")
+        logger.warning(
+            "Leader failure detected: %s in view %d",
+            failed_leader_id, current_view
+        )
 
         recovery_key = f"leader_failure_{current_view}"
         attempts = self.recovery_attempts.get(recovery_key, 0)
 
         if attempts >= self.max_recovery_attempts:
-            logger.error(f"Max recovery attempts reached for leader failure in view {current_view}")
+            logger.error(
+                "Max recovery attempts reached for leader failure in view %d",
+                current_view
+            )
             return False
 
         # Initiate view change
@@ -505,14 +563,18 @@ class ConsensusRecoveryEngine:
         self.recovery_attempts[recovery_key] = attempts + 1
 
         if recovery_success:
-            logger.info(f"Leader failure recovery successful, new view: {new_view}")
+            logger.info(
+                "Leader failure recovery successful, new view: %d", new_view
+            )
             # Clear recovery attempts on success
             if recovery_key in self.recovery_attempts:
                 del self.recovery_attempts[recovery_key]
 
         return recovery_success
 
-    def handle_message_ordering_failure(self, failed_messages: list[dict[str, Any]]) -> bool:
+    def handle_message_ordering_failure(
+        self, failed_messages: list[dict[str, Any]]
+    ) -> bool:
         """
         Handle message ordering failures
 
@@ -531,17 +593,22 @@ class ConsensusRecoveryEngine:
             # Attempt to process reordered messages
             for message in ordered_messages:
                 if not self._process_message(message):
-                    logger.error(f"Failed to process reordered message: {message.get('message_id')}")
+                    logger.error(
+                        "Failed to process reordered message: %s",
+                        message.get("message_id")
+                    )
                     return False
 
             logger.info("Message ordering recovery successful")
             return True
 
         except Exception as e:
-            logger.error(f"Message ordering recovery failed: {e}")
+            logger.error("Message ordering recovery failed: %s", e)
             return False
 
-    def handle_node_performance_issues(self, node_metrics: dict[str, Any]) -> dict[str, Any]:
+    def handle_node_performance_issues(
+        self, node_metrics: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Handle node performance issues based on metrics
 
@@ -566,26 +633,34 @@ class ConsensusRecoveryEngine:
 
             # Check for silent nodes
             if (current_time - last_response) > self.silent_node_threshold:
-                logger.warning(f"Silent node detected: {node_id}")
+                logger.warning("Silent node detected: %s", node_id)
                 actions["isolated_nodes"].append(node_id)
                 actions["view_change"] = True
 
             # Check for slow nodes
             elif response_time > self.slow_node_threshold:
-                logger.warning(f"Slow node detected: {node_id} (response time: {response_time}s)")
-                # Track slow nodes but don't necessarily trigger view change unless multiple
+                logger.warning(
+                    "Slow node detected: %s (response time: %.2fs)",
+                    node_id, response_time
+                )
+
                 self.node_performance.setdefault(node_id, []).append(response_time)
 
             # Check for high failure count
             if failure_count > 3:
-                logger.warning(f"High failure count for node: {node_id} ({failure_count} failures)")
+                logger.warning(
+                    "High failure count for node: %s (%d failures)",
+                    node_id, failure_count
+                )
                 actions["isolated_nodes"].append(node_id)
                 actions["view_change"] = True
 
         return actions
 
     @staticmethod
-    def adapt_consensus_parameters(network_conditions: dict[str, Any]) -> dict[str, Any]:
+    def adapt_consensus_parameters(
+        network_conditions: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Adapt consensus parameters based on network conditions
 
@@ -619,7 +694,7 @@ class ConsensusRecoveryEngine:
         else:
             adapted_params["redundancy_factor"] = 1
 
-        logger.info(f"Adapted consensus parameters: {adapted_params}")
+        logger.info("Adapted consensus parameters: %s", adapted_params)
         return adapted_params
 
     def recover_consensus_state(self, last_known_state: dict[str, Any]) -> bool:
@@ -652,11 +727,11 @@ class ConsensusRecoveryEngine:
                 "timestamp": time.time()
             }
 
-            logger.info(f"Consensus state recovered: {json.dumps(recovery_event)}")
+            logger.info("Consensus state recovered: %s", json.dumps(recovery_event))
             return True
 
         except Exception as e:
-            logger.error(f"Consensus state recovery failed: {e}")
+            logger.error("Consensus state recovery failed: %s", e)
             return False
 
     def _initiate_view_change(self, failed_leader_id: str, new_view: int) -> bool:
@@ -678,7 +753,7 @@ class ConsensusRecoveryEngine:
             "timestamp": time.time()
         }
 
-        logger.info(f"Initiating view change: {json.dumps(view_change_event)}")
+        logger.info("Initiating view change: %s", json.dumps(view_change_event))
 
         # Simulate view change process
         time.sleep(1)  # Simulate view change time
@@ -689,9 +764,11 @@ class ConsensusRecoveryEngine:
         try:
             os.makedirs("log/error_mitigation", exist_ok=True)
             with open("log/error_mitigation/view_changes.log", "a") as f:
-                f.write(f"{datetime.now().isoformat()}: {json.dumps(view_change_event)}\n")
+                f.write(
+                    f"{datetime.now().isoformat()}: {json.dumps(view_change_event)}\n"
+                )
         except Exception as e:
-            logger.error(f"Failed to log view change: {e}")
+            logger.error("Failed to log view change: %s", e)
 
         return True
 
@@ -724,7 +801,7 @@ class ConsensusRecoveryEngine:
             bool: True if processing succeeded
         """
         # Simulate message processing
-        logger.debug(f"Processing message: {message.get('message_id', 'unknown')}")
+        logger.debug("Processing message: %s", message.get("message_id", "unknown"))
         return True
 
     @staticmethod
@@ -783,7 +860,10 @@ class BackupRecoveryEngine:
         self.integrity_check = config.get("integrity_check", "sha256")
         self.max_recovery_attempts = config.get("max_recovery_attempts", 3)
 
-        logger.info(f"Initialized BackupRecoveryEngine with {len(self.backup_locations)} locations")
+        logger.info(
+            "Initialized BackupRecoveryEngine with %d locations",
+            len(self.backup_locations)
+        )
 
     # -- public API ------------------------------------------------
 
@@ -797,7 +877,7 @@ class BackupRecoveryEngine:
         Returns:
             bool: True if recovery succeeded
         """
-        logger.info(f"Attempting recovery from backup: {backup_path}")
+        logger.info("Attempting recovery from backup: %s", backup_path)
 
         for attempt in range(self.max_recovery_attempts):
             if self._attempt_single_recovery(backup_path, attempt):
@@ -821,18 +901,18 @@ class BackupRecoveryEngine:
         """
         try:
             if not self._verify_backup_integrity(backup_path):
-                logger.error(f"Backup integrity check failed: {backup_path}")
+                logger.error("Backup integrity check failed: %s", backup_path)
                 return False
 
             if self._restore_data(backup_path):
-                logger.info(f"Recovery successful from {backup_path}")
+                logger.info("Recovery successful from %s", backup_path)
                 return True
 
             return False
 
         except (OSError, json.JSONDecodeError,
                 ValueError) as exc:
-            logger.error(f"Recovery attempt {attempt + 1} failed: {exc}")
+            logger.error("Recovery attempt %d failed: %s", attempt + 1, exc)
             is_last = (attempt >= self.max_recovery_attempts - 1)
             if not is_last:
                 time.sleep(2 ** attempt)
@@ -851,18 +931,18 @@ class BackupRecoveryEngine:
             bool: True if integrity check passes
         """
         if not os.path.exists(backup_path):
-            logger.error(f"Backup file does not exist: {backup_path}")
+            logger.error("Backup file does not exist: %s", backup_path)
             return False
 
         try:
             calculated_hash = _compute_file_hash(backup_path)
             return self._compare_with_stored_hash(backup_path, calculated_hash)
         except (OSError, json.JSONDecodeError) as exc:
-            logger.error(f"Integrity verification failed: {exc}")
+            logger.error("Integrity verification failed: %s", exc)
             return False
 
     @staticmethod
-    def _compare_with_stored_hash(backup_path: str,calculated_hash: str) -> bool:
+    def _compare_with_stored_hash(backup_path: str, calculated_hash: str) -> bool:
         """
         Compare a calculated hash with a stored one.
 
@@ -909,7 +989,7 @@ class BackupRecoveryEngine:
             bool: True if restoration succeeded
         """
         try:
-            logger.info(f"Restoring data from {backup_path}")
+            logger.info("Restoring data from %s", backup_path)
 
             # In real implementation, this would
             # extract and restore actual data
@@ -921,7 +1001,7 @@ class BackupRecoveryEngine:
                 "timestamp": time.time(),
             }
 
-            logger.info(f"Data restoration completed: {json.dumps(restoration_event)}")
+            logger.info("Data restoration completed: %s", json.dumps(restoration_event))
 
             # Log restoration event
             os.makedirs("log/error_mitigation", exist_ok=True)
@@ -929,12 +1009,14 @@ class BackupRecoveryEngine:
                 "log/error_mitigation/"
                 "restoration_events.log", "a"
             ) as fh:
-                fh.write(f"{datetime.now().isoformat()}: {json.dumps(restoration_event)}\n")
+                fh.write(
+                    f"{datetime.now().isoformat()}: {json.dumps(restoration_event)}\n"
+                )
 
             return True
 
         except Exception as exc:
-            logger.error(f"Data restoration failed: {exc}")
+            logger.error("Data restoration failed: %s", exc)
             return False
 
 

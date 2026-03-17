@@ -56,14 +56,14 @@ def _log_scaling_event(event: dict[str, Any]) -> None:
     """
     try:
         log_entry = json.dumps(event, indent=2)
-        logger.info(f"Scaling event logged: {log_entry}")
+        logger.info("Scaling event logged: %s", log_entry)
 
         # Write to audit log file
         os.makedirs("log/error_mitigation", exist_ok=True)
         with open("log/error_mitigation/consensus_scaling.log", "a") as f:
             f.write(f"{datetime.now().isoformat()}: {log_entry}\n")
     except (IOError, OSError, ValueError) as ex:
-        logger.error(f"Failed to log scaling event: {ex}")
+        logger.error("Failed to log scaling event: %s", ex)
 
 
 def _is_string_type(type_: pa.DataType) -> bool:
@@ -96,7 +96,7 @@ class ConsensusValidator:
         self.auto_scale_threshold = self.config.get("auto_scale_threshold", 0.8)
         self.health_check_interval = self.config.get("health_check_interval", 30)
 
-        logger.info(f"Initialized ConsensusValidator with f={self.f}")
+        logger.info("Initialized ConsensusValidator with f=%d", self.f)
 
     def validate_node_count(self, current_nodes: list[Any]) -> bool:
         """
@@ -123,7 +123,10 @@ class ConsensusValidator:
             logger.error(error_msg)
             raise ValidationError("insufficient_nodes")
 
-        logger.info(f"Node count validation passed: {actual_nodes} >= {required_nodes}")
+        logger.info(
+            "Node count validation passed: %d >= %d",
+            actual_nodes, required_nodes
+        )
         return True
 
     def monitor_and_scale(self, current_nodes: list[Any]) -> list[Any]:
@@ -139,11 +142,15 @@ class ConsensusValidator:
         healthy_nodes = [node for node in current_nodes if self._is_healthy(node)]
         health_ratio = len(healthy_nodes) / len(current_nodes) if current_nodes else 0
 
-        logger.info(f"Node health check: {len(healthy_nodes)}/{len(current_nodes)} healthy")
+        logger.info(
+            "Node health check: %d/%d healthy",
+            len(healthy_nodes), len(current_nodes)
+        )
 
         if health_ratio < self.auto_scale_threshold:
             logger.warning(
-                f"Health ratio {health_ratio:.2f} below threshold {self.auto_scale_threshold}"
+                "Health ratio %.2f below threshold %.2f",
+                health_ratio, self.auto_scale_threshold
             )
             self._trigger_scaling(healthy_nodes)
 
@@ -161,9 +168,14 @@ class ConsensusValidator:
         """
         try:
             # Check if node has required attributes
-            if not hasattr(node, 'health_status') or not hasattr(node, 'last_heartbeat'):
+            if (
+                not hasattr(node, 'health_status') or
+                not hasattr(node, 'last_heartbeat')
+            ):
                 node_id = getattr(node, "node_id", "unknown")
-                logger.warning(f"Node {node_id} missing health attributes")
+                logger.warning(
+                    "Node %s missing health attributes", node_id
+                )
                 return False
 
             # Check status and heartbeat timing
@@ -173,7 +185,7 @@ class ConsensusValidator:
 
             return is_active and heartbeat_fresh
         except (AttributeError, TypeError, ValueError) as ex:
-            logger.error(f"Error checking node health: {ex}")
+            logger.error("Error checking node health: %s", ex)
             return False
 
     def _trigger_scaling(self, healthy_nodes: list[Any]) -> None:
@@ -183,7 +195,10 @@ class ConsensusValidator:
         Args:
             healthy_nodes: List of currently healthy nodes
         """
-        logger.info(f"Triggering auto-scaling with {len(healthy_nodes)} healthy nodes")
+        logger.info(
+            "Triggering auto-scaling with %d healthy nodes",
+            len(healthy_nodes)
+        )
 
         # In a real implementation, this would call an orchestrator like Kubernetes
         # For now, we log the scaling event
@@ -244,7 +259,8 @@ class EncryptionValidator:
         key_rotation_interval = self.config.get("key_rotation_interval", 0)
         if key_rotation_interval < self.min_key_rotation_interval:
             logger.warning(
-                f"Key rotation interval {key_rotation_interval}s below recommended {self.min_key_rotation_interval}s"
+                "Key rotation interval %d below recommended %d",
+                key_rotation_interval, self.min_key_rotation_interval
             )
             self._schedule_key_rotation()
 
@@ -307,7 +323,10 @@ class EncryptionValidator:
             "next_rotation": time.time() + self.min_key_rotation_interval
         }
 
-        logger.info(f"Key rotation scheduled: {json.dumps(rotation_event)}")
+        logger.info(
+            "Key rotation scheduled: %s",
+            json.dumps(rotation_event)
+        )
 
         # In real implementation, this would integrate with a job scheduler
 
@@ -319,8 +338,8 @@ class ResourceValidator:
     Monitors CPU, memory, disk usage and triggers alerts or
     scaling when thresholds are exceeded.
     """
-    
-    def __init__(self, config: dict[str, Any]):
+
+    def __init__(self, config: dict[str, Any]) -> None:
         """
         Initialize resource validator
 
@@ -372,7 +391,7 @@ class ResourceValidator:
             logger.error("psutil not available for resource monitoring")
             return {"error": "Resource monitoring unavailable", "violations": []}
         except Exception as ex:
-            logger.error(f"Resource validation failed: {ex}")
+            logger.error("Resource validation failed: %s", ex)
             return {"error": str(ex), "violations": []}
 
     def _check_cpu_usage(self, cpu_percent: float, status: dict[str, Any]) -> None:
@@ -385,7 +404,9 @@ class ResourceValidator:
             if self.auto_scale:
                 self._trigger_scaling("cpu")
 
-    def _check_memory_usage(self, memory_percent: float, status: dict[str, Any]) -> None:
+    def _check_memory_usage(
+        self, memory_percent: float, status: dict[str, Any]
+    ) -> None:
         """Check Memory usage against threshold"""
         if memory_percent > self.memory_threshold:
             violation = f"Memory usage {memory_percent:.1f}% > {self.memory_threshold}%"
@@ -416,7 +437,10 @@ class ResourceValidator:
             "auto_scale_enabled": self.auto_scale
         }
 
-        logger.info(f"Resource scaling triggered: {json.dumps(scaling_event)}")
+        logger.info(
+            "Resource scaling triggered: %s",
+            json.dumps(scaling_event)
+        )
 
         # Log scaling event
         os.makedirs("log/error_mitigation", exist_ok=True)
@@ -431,7 +455,10 @@ def _validate_arrow_structure(data: pa.Table | pa.RecordBatch) -> None:
     required_fields = ["entity_id", "event", "timestamp"]
     missing = [f for f in required_fields if f not in data.schema.names]
     if missing:
-        logger.error(f"Missing required fields {missing} in Arrow event data")
+        logger.error(
+            "Missing required fields %s in Arrow event data",
+            missing
+        )
 
 
 def _check_legacy_structure(data: Any) -> None:
@@ -441,7 +468,10 @@ def _check_legacy_structure(data: Any) -> None:
     required_fields = ["entity_id", "event", "timestamp"]
     for field in required_fields:
         if field not in data:
-            logger.error(f"Missing required field '{field}' in event data")
+            logger.error(
+                "Missing required field '%s' in event data",
+                field
+            )
 
 
 def _serialize_data_content(data: Any) -> str:
@@ -457,9 +487,7 @@ def _serialize_data_content(data: Any) -> str:
 
 
 def _check_forbidden_terms_in_array(
-    array: pa.Array,
-    field_name: str,
-    forbidden_terms: list[str],
+    array: pa.Array, field_name: str, forbidden_terms: list[str],
 ) -> None:
     """Scan an Arrow string array for forbidden terms."""
     utf8_lower = getattr(pc, "utf8_lower")
@@ -471,8 +499,7 @@ def _check_forbidden_terms_in_array(
         matches = match_substring(lower_data, term)
         if any_op(matches).as_py():
             error_msg = (
-                f"Forbidden crypto term '{term}' "
-                f"found in column '{field_name}'"
+                f"Forbidden crypto term '{term}' found in column '{field_name}'"
             )
             logger.error(error_msg)
             raise ValidationError(error_msg)
@@ -491,7 +518,7 @@ def _write_audit_log(audit_entry: dict[str, Any]) -> None:
                 f"{json.dumps(audit_entry)}\n"
             )
     except (IOError, OSError) as ex:
-        logger.error(f"Failed to write audit log: {ex}")
+        logger.error("Failed to write audit log: %s", ex)
 
 
 class APIValidator:
@@ -521,7 +548,9 @@ class APIValidator:
 
         logger.info("Initialized APIValidator")
 
-    def _validate_arrow_recursive(self, data: pa.Array | pa.ChunkedArray, field_name: str) -> None:
+    def _validate_arrow_recursive(
+        self, data: pa.Array | pa.ChunkedArray, field_name: str
+    ) -> None:
         """
         Recursively validate Arrow arrays for forbidden terms.
         Handles nested types: Map, List, Struct.
@@ -534,9 +563,14 @@ class APIValidator:
         except ValidationError:
             raise
         except (AttributeError, TypeError, pa.ArrowInvalid) as e:
-            logger.warning(f"Recursive validation error on {field_name}: {e}")
+            logger.warning(
+                "Recursive validation error on %s: %s",
+                field_name, e
+            )
 
-    def _dispatch_type_validation(self, data: Any, field_name: str, type_: pa.DataType) -> None:
+    def _dispatch_type_validation(
+        self, data: Any, field_name: str, type_: pa.DataType
+    ) -> None:
         """Dispatch validation based on Arrow DataType."""
         handlers = [
             (_is_string_type, lambda d, f, _t: self._check_string_array(d, f)),
@@ -554,7 +588,9 @@ class APIValidator:
         for chunk in data.chunks:
             self._validate_arrow_recursive(chunk, field_name)
 
-    def _handle_arrow_map(self, data: pa.Array, field_name: str, type_: pa.DataType) -> None:
+    def _handle_arrow_map(
+        self, data: pa.Array, field_name: str, type_: pa.DataType
+    ) -> None:
         """Handle Arrow Map validation"""
         if hasattr(data, "keys") and hasattr(data, "items"):
             self._validate_map_keys_values(data, field_name)
@@ -568,7 +604,9 @@ class APIValidator:
         self._validate_arrow_recursive(keys, f"{field_name}.keys")
         self._validate_arrow_recursive(items, f"{field_name}.values")
 
-    def _fallback_map_validation(self, data: pa.Array, field_name: str, type_: pa.DataType) -> None:
+    def _fallback_map_validation(
+        self, data: pa.Array, field_name: str, type_: pa.DataType
+    ) -> None:
         """Fallback validation for map types without keys/values attributes."""
         if not isinstance(type_, pa.MapType):
             return
@@ -592,7 +630,9 @@ class APIValidator:
             flattened = getattr(data, "flatten")()
             self._validate_arrow_recursive(flattened, f"{field_name}.nested")
 
-    def _handle_arrow_struct(self, data: pa.StructArray, field_name: str, type_: pa.DataType) -> None:
+    def _handle_arrow_struct(
+        self, data: pa.StructArray, field_name: str, type_: pa.DataType
+    ) -> None:
         """Handle Arrow Struct validation"""
         for i in range(type_.num_fields):
             field = type_.field(i)
@@ -621,7 +661,7 @@ class APIValidator:
         except ValidationError:
             raise
         except (AttributeError, TypeError, pa.ArrowInvalid) as e:
-            logger.warning(f"Validation complexity check failed: {e}")
+            logger.warning("Validation complexity check failed: %s", e)
 
         logger.info("API endpoint data validation passed")
         return True
@@ -646,7 +686,9 @@ class APIValidator:
         """Check Arrow schema names for forbidden terms."""
         for name in data.schema.names:
             if any(term in name.lower() for term in self.forbidden_terms):
-                error_msg = f"Forbidden cryptocurrency term '{name}' found in Arrow schema"
+                error_msg = (
+                    f"Forbidden cryptocurrency term '{name}' found in Arrow schema"
+                )
                 logger.error(error_msg)
                 raise ValidationError(error_msg)
 
@@ -661,7 +703,9 @@ class APIValidator:
 
         _check_legacy_structure(data)
 
-    def audit_api_call(self, endpoint: str, data: Any, user_id: str | None = None) -> None:
+    def audit_api_call(
+        self, endpoint: str, data: Any, user_id: str | None = None
+    ) -> None:
         """
         Audit API call for compliance and logging
 
@@ -681,7 +725,7 @@ class APIValidator:
             "timestamp": time.time(),
             "data_hash": hashlib.sha256(data_content.encode()).hexdigest()
         }
-        logger.info(f"API call audited: {endpoint}")
+        logger.info("API call audited: %s", endpoint)
         _write_audit_log(audit_entry)
 
 
@@ -696,7 +740,7 @@ def validate_certificate(certificate):
         SecurityError: If certificate is expired
     """
     if certificate.is_expired():
-        raise SecurityError('Certificate validation failed: Certificate has expired')
+        raise SecurityError("Certificate validation failed: Certificate has expired")
 
 
 # Factory function for creating validators
