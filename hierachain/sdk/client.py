@@ -13,6 +13,7 @@ import time
 import logging
 import asyncio
 import aiohttp
+import requests
 from dataclasses import dataclass, field
 from typing import Any
 from enum import Enum
@@ -79,7 +80,8 @@ class CircuitBreaker:
         if self._failure_count >= self.failure_threshold:
             self._state = CircuitState.OPEN
             logger.warning(
-                f"Circuit breaker opened after {self._failure_count} failures"
+                "Circuit breaker opened after %d failures",
+                self._failure_count
             )
 
     def allow_request(self) -> bool:
@@ -167,7 +169,6 @@ class HieraChainClient:
         """Get or create HTTP session."""
         if self._session is None:
             try:
-                import requests
                 self._session = requests.Session()
                 self._session.headers.update(self.config.headers)
                 if self.config.api_key:
@@ -232,8 +233,10 @@ class HieraChainClient:
 
         delay = self._calculate_delay(attempt)
         logger.warning(
-            f"Request failed ({type(e).__name__}: {e}), "
-            f"retry {attempt + 1}/{self.config.max_retries} in {delay:.1f}s"
+            "Request failed (%s: %s), "
+            "retry %d/%d in %.1fs",
+            type(e).__name__, e,
+            attempt + 1, self.config.max_retries, delay
         )
         time.sleep(delay)
 
@@ -256,7 +259,9 @@ class HieraChainClient:
             except Exception as e:
                 self._handle_request_error(e, attempt)
 
-        raise HieraChainAPIError(f"Request failed after {self.config.max_retries} retries")
+        raise HieraChainAPIError(
+            f"Request failed after {self.config.max_retries} retries"
+        )
 
     def submit_event(self, event_data: dict[str, Any]) -> EventResult:
         """
@@ -405,18 +410,24 @@ class HieraChainAsyncClient:
             return await self._handle_response(response)
 
     async def _handle_request_error(self, e: Exception, attempt: int) -> None:
-        """Handle async request failure, record to circuit breaker and sleep if needed."""
+        """
+        Handle async request failure, record to circuit breaker and sleep if needed.
+        """
         self._circuit.record_failure()
 
         if attempt >= self.config.max_retries:
-            if isinstance(e, (ServiceUnavailableError, LockdownError, HieraChainAPIError)):
+            if isinstance(
+                e, (ServiceUnavailableError, LockdownError, HieraChainAPIError)
+            ):
                 raise e
             raise HieraChainAPIError(str(e)) from e
 
         delay = self._calculate_delay(attempt)
         logger.warning(
-            f"Request failed ({type(e).__name__}: {e}), "
-            f"retry {attempt + 1}/{self.config.max_retries} in {delay:.1f}s"
+            "Request failed (%s: %s), "
+            "retry %d/%d in %.1fs",
+            type(e).__name__, e,
+            attempt + 1, self.config.max_retries, delay
         )
         await asyncio.sleep(delay)
 
@@ -437,7 +448,9 @@ class HieraChainAsyncClient:
             except Exception as e:
                 await self._handle_request_error(e, attempt)
 
-        raise HieraChainAPIError(f"Request failed after {self.config.max_retries} retries")
+        raise HieraChainAPIError(
+            f"Request failed after {self.config.max_retries} retries"
+        )
 
     async def submit_event(self, event_data: dict[str, Any]) -> EventResult:
         """Submit an event to the blockchain."""
