@@ -9,8 +9,14 @@ import re
 
 VERSION: Tuple[int, int, int, str, int] = (0, 0, 1, "dev", 8)
 
-_VERSION_PATTERN = r"(?P<major>\d+)\.(?P<minor>\d+)(?:\.(?P<micro>\d+))?(?:\.(?P<releaselevel>[a-z]+)(?P<serial>\d+)?)?"
-_RELEASE_LEVEL_ORDER: dict[str, int] = {"dev": 0, "alpha": 1, "beta": 2, "rc": 3, "final": 4}
+_VERSION_PATTERN = (
+    r"""
+    (?P<major>\d+)\.(?P<minor>\d+)(?:\.(?P<micro>\d+))?(?:\.(?P<releaselevel>[a-z]+)(?P<serial>\d+)?)?
+    """
+)
+_RELEASE_LEVEL_ORDER: dict[str, int] = {
+    "dev": 0, "alpha": 1, "beta": 2, "rc": 3, "final": 4
+}
 
 
 def _format_base_version(major: int, minor: int, micro: int | None) -> str:
@@ -53,7 +59,9 @@ def get_version(version: Tuple[int, int, int, str, int] | None = None) -> str:
     return base + suffix
 
 
-def get_complete_version(version: Tuple[int, int, int, str, int] | None = None) -> Tuple[int, int, int, str, int]:
+def get_complete_version(
+    version: Tuple[int, int, int, str, int] | None = None
+) -> Tuple[int, int, int, str, int]:
     """
     Return a tuple of the version.
     
@@ -113,7 +121,9 @@ def get_documentation_status(version: Tuple[int, int, int, str, int] | None) -> 
         return "development"
 
 
-def _apply_dev_overrides(v: str, base: Tuple[int, int, int, str, int]) -> Tuple[int, int, int, str, int]:
+def _apply_dev_overrides(
+    v: str, base: Tuple[int, int, int, str, int]
+) -> Tuple[int, int, int, str, int]:
     """
     Apply overrides for development versions, handling serial numbers and dev suffixes.
     """
@@ -150,7 +160,8 @@ def _parse_with_pattern(v: str) -> Tuple[int, int, int, str, int] | None:
 
 def _fallback_version_parse(v: str) -> Tuple[int, int, int, str, int]:
     """
-    Fallback version parsing for strings that do not match the regular expression pattern.
+    Fallback version parsing for strings that do not match the regular
+    expression pattern.
     Handles simple version formats without release level or serial numbers.
     """
     parts = v.split(".")
@@ -158,7 +169,9 @@ def _fallback_version_parse(v: str) -> Tuple[int, int, int, str, int]:
     minor = int(parts[1]) if len(parts) > 1 else 0
     micro = int(parts[2]) if len(parts) > 2 else 0
 
-    for key, level in (("dev", "dev"), ("alpha", "alpha"), ("beta", "beta"), ("rc", "rc")):
+    for key, level in (
+        ("dev", "dev"), ("alpha", "alpha"), ("beta", "beta"), ("rc", "rc")
+    ):
         if key in v:
             return major, minor, micro, level, 0
     return major, minor, micro, "final", 0
@@ -167,7 +180,8 @@ def _fallback_version_parse(v: str) -> Tuple[int, int, int, str, int]:
 def _parse_version_string(v: str) -> Tuple[int, int, int, str, int]:
     """
     Parses a version string into a tuple of (major, minor, micro, releaselevel, serial).
-    Uses a regular expression pattern for parsing, falling back to a simple format if necessary.
+    Uses a regular expression pattern for parsing, falling back to a simple format if
+    necessary.
     """
     parsed = _parse_with_pattern(v)
     if parsed is not None:
@@ -175,7 +189,9 @@ def _parse_version_string(v: str) -> Tuple[int, int, int, str, int]:
     return _fallback_version_parse(v)
 
 
-def _version_tuple(v: str | Tuple[int, int, int, str, int]) -> Tuple[int, int, int, str, int]:
+def _version_tuple(
+    v: str | Tuple[int, int, int, str, int]
+) -> Tuple[int, int, int, str, int]:
     """
     Converts a version string or tuple to a version tuple.
     If the input is already a tuple, it is returned as is.
@@ -185,7 +201,9 @@ def _version_tuple(v: str | Tuple[int, int, int, str, int]) -> Tuple[int, int, i
     return v
 
 
-def _normalize_version_tuple(v: Tuple[int, int, int, str, int]) -> Tuple[int, int, int, int, int]:
+def _normalize_version_tuple(
+    v: Tuple[int, int, int, str, int]
+) -> Tuple[int, int, int, int, int]:
     """
     Normalize a version tuple by converting release level to an integer for comparison.
     """
@@ -193,7 +211,9 @@ def _normalize_version_tuple(v: Tuple[int, int, int, str, int]) -> Tuple[int, in
     return major, minor, micro, _RELEASE_LEVEL_ORDER[level], serial
 
 
-def _compare_version_tuples(v1: Tuple[int, int, int, str, int], v2: Tuple[int, int, int, str, int]) -> int:
+def _compare_version_tuples(
+    v1: Tuple[int, int, int, str, int], v2: Tuple[int, int, int, str, int]
+) -> int:
     """
     Compares two version tuples and returns -1, 0, or 1 based on their order.
     """
