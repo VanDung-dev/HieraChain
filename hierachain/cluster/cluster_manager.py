@@ -12,6 +12,7 @@ Features:
 """
 
 import time
+import re
 import logging
 import threading
 from dataclasses import dataclass
@@ -92,7 +93,10 @@ class ClusterManager:
     def __init__(
         self,
         node_id: str,
-        quorum_threshold: float = 0.66,  # 2/3 majority - use 0.66 for proper 3-node quorum
+
+        # 2/3 majority - use 0.66 for proper 3-node quorum
+        quorum_threshold: float = 0.66,
+
         heartbeat_timeout: float = 30.0,
         on_lockdown_quorum: Callable[[], None] | None = None,
         on_recovery_quorum: Callable[[], None] | None = None,
@@ -124,7 +128,9 @@ class ClusterManager:
         self.register_node(node_id, "localhost")
         self.update_heartbeat(node_id)
 
-    def register_node(self, node_id: str, address: str, auth_token: str | None = None) -> None:
+    def register_node(
+        self, node_id: str, address: str, auth_token: str | None = None
+    ) -> None:
         """
         Register a node in the cluster.
 
@@ -133,10 +139,13 @@ class ClusterManager:
             address: Network address of the node.
             auth_token: Optional authentication token for the node.
         """
-        import re
-
+        
         # Basic address validation
-        if not re.match(r"^([a-zA-Z0-9.-]+)(:\d+)?$", address) and node_id != self.node_id and address != "localhost":
+        if (
+            not re.match(r"^([a-zA-Z0-9.-]+)(:\d+)?$", address) and
+            node_id != self.node_id and
+            address != "localhost"
+        ):
             logger.warning(f"Invalid address format for node {node_id}")
             return
 
@@ -209,7 +218,10 @@ class ClusterManager:
 
             # Calculate counts using generator expressions to reduce complexity
             healthy = sum(1 for n in nodes if n.is_healthy(timeout))
-            unhealthy = sum(1 for n in nodes if not n.is_healthy(timeout) and n.status == NodeStatus.UNHEALTHY)
+            unhealthy = sum(
+                1 for n in nodes
+                if not n.is_healthy(timeout) and n.status == NodeStatus.UNHEALTHY
+            )
             unknown = len(nodes) - healthy - unhealthy
 
             return ClusterHealthMetrics(
@@ -242,7 +254,7 @@ class ClusterManager:
             self._nodes[node_id].lockdown_vote = True
             self._nodes[node_id].lockdown_reason = reason
             self._nodes[node_id].recovery_vote = False  # Clear recovery vote
-            logger.info(f"Node {node_id} voted for lockdown: {reason}")
+            logger.info("Node %s voted for lockdown: %s", node_id, reason)
 
             return self._check_lockdown_quorum()
 
@@ -258,12 +270,12 @@ class ClusterManager:
         """
         with self._lock:
             if node_id not in self._nodes:
-                logger.warning(f"Unknown node {node_id} tried to vote for recovery")
+                logger.warning("Unknown node %s tried to vote for recovery", node_id)
                 return False
 
             self._nodes[node_id].recovery_vote = True
             self._nodes[node_id].lockdown_vote = False  # Clear lockdown vote
-            logger.info(f"Node {node_id} voted for recovery")
+            logger.info("Node %s voted for recovery", node_id)
 
             return self._check_recovery_quorum()
 
@@ -290,18 +302,24 @@ class ClusterManager:
         vote_ratio = lockdown_votes / total_nodes
 
         if vote_ratio < self.quorum_threshold:
-            logger.debug(f"Lockdown votes: {lockdown_votes}/{total_nodes} ({vote_ratio:.1%} < {self.quorum_threshold:.1%})")
+            logger.debug(
+                "Lockdown votes: %d/%d (%.1f%% < %.1f%%)",
+                lockdown_votes, total_nodes, vote_ratio*100, self.quorum_threshold*100
+            )
             return False
 
         self._is_locked_down = True
-        logger.warning(f"Lockdown quorum reached: {lockdown_votes}/{total_nodes} ({vote_ratio:.1%} >= {self.quorum_threshold:.1%})")
+        logger.warning(
+            "Lockdown quorum reached: %d/%d (%.1f%% >= %.1f%%)",
+            lockdown_votes, total_nodes, vote_ratio*100, self.quorum_threshold*100
+        )
         
         self._clear_lockdown_votes()
         if self._on_lockdown_quorum:
             try:
                 self._on_lockdown_quorum()
             except Exception as e:
-                logger.error(f"Error in lockdown callback: {e}")
+                logger.error("Error in lockdown callback: %s", e)
         return True
 
     def _check_recovery_quorum(self) -> bool:
@@ -319,18 +337,24 @@ class ClusterManager:
         vote_ratio = recovery_votes / total_nodes
 
         if vote_ratio < self.quorum_threshold:
-            logger.debug(f"Recovery votes: {recovery_votes}/{total_nodes} ({vote_ratio:.1%} < {self.quorum_threshold:.1%})")
+            logger.debug(
+                "Recovery votes: %d/%d (%.1f%% < %.1f%%)",
+                recovery_votes, total_nodes, vote_ratio*100, self.quorum_threshold*100
+            )
             return False
 
         self._is_locked_down = False
-        logger.info(f"Recovery quorum reached: {recovery_votes}/{total_nodes} ({vote_ratio:.1%} >= {self.quorum_threshold:.1%})")
+        logger.info(
+            "Recovery quorum reached: %d/%d (%.1f%% >= %.1f%%)",
+            recovery_votes, total_nodes, vote_ratio*100, self.quorum_threshold*100
+        )
         
         self._clear_recovery_votes()
         if self._on_recovery_quorum:
             try:
                 self._on_recovery_quorum()
             except Exception as e:
-                logger.error(f"Error in recovery callback: {e}")
+                logger.error("Error in recovery callback: %s", e)
         return True
 
     def _clear_lockdown_votes(self) -> None:

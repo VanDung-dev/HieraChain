@@ -225,7 +225,7 @@ class StateSyncManager:
             self._pending_requests[request.node_id] = request
             return True
         except Exception as e:
-            logger.error(f"Failed to broadcast sync request: {e}")
+            logger.error("Failed to broadcast sync request: %s", e)
             self._status = SyncStatus.FAILED
             return False
 
@@ -245,7 +245,7 @@ class StateSyncManager:
             Number of blocks accepted.
         """
         if self._status not in (SyncStatus.REQUESTING, SyncStatus.RECEIVING):
-            logger.warning(f"Not expecting blocks, status: {self._status}")
+            logger.warning("Not expecting blocks, status: %s", self._status)
             return 0
 
         self._status = SyncStatus.RECEIVING
@@ -256,10 +256,13 @@ class StateSyncManager:
             self._stats["blocks_received"] += 1
             accepted += 1
 
-        logger.info(f"Received {accepted} blocks from {peer_id}")
+        logger.info("Received %s blocks from %s", accepted, peer_id)
 
         # Check if we have all blocks
-        if len(self._received_blocks) >= (self._target_to_index - self._target_from_index):
+        if (
+            len(self._received_blocks) >=
+            (self._target_to_index - self._target_from_index)
+        ):
             self._verify_and_merge()
 
         return accepted
@@ -303,10 +306,10 @@ class StateSyncManager:
                 self._stats["blocks_verified"] += 1
                 return True
             
-            logger.warning(f"Block verification failed: {result.message}")
+            logger.warning("Block verification failed: %s", result.message)
             self._stats["blocks_rejected"] += 1
         except Exception as e:
-            logger.error(f"Block verification error: {e}")
+            logger.error("Block verification error: %s", e)
             self._stats["blocks_rejected"] += 1
             
         return False
@@ -319,7 +322,7 @@ class StateSyncManager:
             try:
                 self._on_sync_complete(self._verified_blocks)
             except Exception as e:
-                logger.error(f"Sync complete callback failed: {e}")
+                logger.error("Sync complete callback failed: %s", e)
                 self._status = SyncStatus.FAILED
                 self._stats["sync_failed"] += 1
                 return False
@@ -327,7 +330,10 @@ class StateSyncManager:
         self._status = SyncStatus.COMPLETE
         self._stats["sync_completed"] += 1
 
-        logger.info(f"Sync completed: {len(self._verified_blocks)} blocks merged")
+        logger.info(
+            "Sync completed: %s blocks merged",
+            len(self._verified_blocks),
+        )
         return True
 
     def handle_sync_request(
@@ -357,13 +363,14 @@ class StateSyncManager:
             )
 
             logger.info(
-                f"Responding to sync request from {request.node_id}: "
-                f"{len(blocks)} blocks"
+                "Responding to sync request from %s: %s blocks",
+                request.node_id,
+                len(blocks),
             )
             return response
 
         except Exception as e:
-            logger.error(f"Error handling sync request: {e}")
+            logger.error("Error handling sync request: %s", e)
             return None
 
     def reset(self) -> None:

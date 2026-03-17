@@ -126,6 +126,7 @@ class SyncResult:
             "state_root_after": self.state_root_after,
         }
 
+
 def _get_state_root(chain: Any) -> str:
     """Get state root from chain."""
     if hasattr(chain, "get_state_root"):
@@ -440,11 +441,14 @@ class CrossLevelSyncManager:
             if self._on_sync_complete:
                 self._on_sync_complete(result)
 
-            logger.info(f"Sync from MainChain complete: {blocks_synced} blocks to {sub_chain_id}")
+            logger.info(
+                "Sync from MainChain complete: %d blocks to %s",
+                blocks_synced, sub_chain_id
+            )
             return result
 
         except Exception as e:
-            logger.error(f"Sync from MainChain failed: {e}")
+            logger.error("Sync from MainChain failed: %s", e)
             self._stats["syncs_failed"] += 1
             self._status = CrossLevelSyncStatus.FAILED
             return SyncResult(
@@ -453,7 +457,9 @@ class CrossLevelSyncManager:
                 duration_seconds=time.time() - start_time,
             )
 
-    def sync_to_mainchain(self, sub_chain_id: str, proof: bytes | None = None) -> SyncResult:
+    def sync_to_mainchain(
+        self, sub_chain_id: str, proof: bytes | None = None
+    ) -> SyncResult:
         """
         Sync state from Sub-chain to MainChain (proof submission up).
 
@@ -485,7 +491,9 @@ class CrossLevelSyncManager:
 
             self._status = CrossLevelSyncStatus.VERIFYING
             if not _verify_proof_with(self._proof_verifier, proof, state_root):
-                return self._handle_sync_failure("Proof verification failed", start_time)
+                return self._handle_sync_failure(
+                    "Proof verification failed", start_time
+                )
 
             self._stats["proofs_verified"] += 1
 
@@ -499,13 +507,15 @@ class CrossLevelSyncManager:
             }
 
             if not _submit_anchor(self._mainchain_ref, anchor_data):
-                return self._handle_sync_failure("Failed to submit anchor to MainChain", start_time)
+                return self._handle_sync_failure(
+                    "Failed to submit anchor to MainChain", start_time
+                )
 
             # 3. Handle success
             return self._handle_sync_success(sub_chain_id, state_root, start_time)
 
         except Exception as e:
-            logger.error(f"Sync to MainChain failed: {e}")
+            logger.error("Sync to MainChain failed: %s", e)
             return self._handle_sync_failure(str(e), start_time)
 
     def _handle_sync_failure(self, error_message: str, start_time: float) -> SyncResult:
@@ -539,10 +549,12 @@ class CrossLevelSyncManager:
         if self._on_sync_complete:
             self._on_sync_complete(result)
 
-        logger.info(f"Sync to MainChain complete: anchor from {sub_chain_id}")
+        logger.info("Sync to MainChain complete: anchor from %s", sub_chain_id)
         return result
 
-    def verify_cross_level_state(self, source_chain_id: str, target_chain_id: str) -> bool:
+    def verify_cross_level_state(
+        self, source_chain_id: str, target_chain_id: str
+    ) -> bool:
         """
         Verify state consistency between two hierarchy levels.
 
@@ -601,8 +613,9 @@ class CrossLevelSyncManager:
         if resolved:
             self._stats["conflicts_resolved"] += 1
             logger.info(
-                f"Resolved conflict {conflict.conflict_id}: "
-                f"{conflict.resolution}"
+                "Resolved conflict %s: %s",
+                conflict.conflict_id,
+                conflict.resolution,
             )
 
         return resolved

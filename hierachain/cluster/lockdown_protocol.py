@@ -75,7 +75,9 @@ class LockdownMessage:
 
     def compute_signature(self, secret_key: str) -> str:
         """Compute HMAC signature for message."""
-        message_data = f"{self.node_id}:{self.timestamp}:{self.reason}:{self.message_type.value}"
+        message_data = (
+            f"{self.node_id}:{self.timestamp}:{self.reason}:{self.message_type.value}"
+        )
         return hashlib.sha256(f"{message_data}:{secret_key}".encode()).hexdigest()[:32]
 
     def verify_signature(self, secret_key: str) -> bool:
@@ -312,8 +314,10 @@ class ClusterLockdownManager:
         local_lockdown_callback: Callable[[], None] | None = None,
         local_recovery_callback: Callable[[], None] | None = None,
         secret_key: str | None = None,
-        quorum_threshold: float = 0.66,  # 2/3 majority - use 0.66 for proper 3-node quorum
-    ):
+
+        # 2/3 majority - use 0.66 for proper 3-node quorum
+        quorum_threshold: float = 0.66,
+    ) -> None:
         """
         Initialize cluster lockdown manager.
 
@@ -329,7 +333,10 @@ class ClusterLockdownManager:
             import os
             secret_key = os.environ.get("HRC_CLUSTER_SECRET", "")
             if not secret_key:
-                logger.warning("No secure secret_key provided for lockdown protocol. Authentication may be compromised.")
+                logger.warning(
+                    "No secure secret_key provided for lockdown protocol. "
+                    "Authentication may be compromised."
+                )
 
         self.node_id = node_id
         self._zmq_node = zmq_node
@@ -402,7 +409,10 @@ class ClusterLockdownManager:
             return False
 
         if self._state.locked_by != self.node_id:
-            logger.warning(f"Cannot broadcast recovery: lockdown initiated by {self._state.locked_by}")
+            logger.warning(
+                "Cannot broadcast recovery: lockdown initiated by %s",
+                self._state.locked_by,
+            )
             return False
 
         message = _create_signed_message(
@@ -426,10 +436,10 @@ class ClusterLockdownManager:
         try:
             _async_broadcast(self._zmq_node, message.to_dict())
             self._add_to_history(message)
-            logger.info(f"Broadcast {message.message_type.value}: {message.reason}")
+            logger.info("Broadcast %s: %s", message.message_type.value, message.reason)
             return True
         except Exception as e:
-            logger.error(f"Failed to broadcast message: {e}")
+            logger.error("Failed to broadcast message: %s", e)
             return False
 
     def _on_message_received(self, data: dict, sender_id: str,) -> None:
@@ -439,7 +449,7 @@ class ClusterLockdownManager:
             if message:
                 self._handle_lockdown_message(message)
         except Exception as e:
-            logger.error(f"Error processing lockdown message: {e}")
+            logger.error("Error processing lockdown message: %s", e)
 
     def _handle_lockdown_message(self, message: LockdownMessage) -> None:
         """Process a validated lockdown message."""
@@ -465,7 +475,10 @@ class ClusterLockdownManager:
                 message.reason,
                 message.timestamp,
             )
-            logger.warning(f"Cluster lockdown received from {message.node_id}: {message.reason}")
+            logger.warning(
+                "Cluster lockdown received from %s: %s",
+                message.node_id, message.reason
+            )
             _invoke_callback(self._local_lockdown)
 
         self._state.locked_nodes.add(message.node_id)
@@ -486,7 +499,10 @@ class ClusterLockdownManager:
             message.node_id,
             message.reason,
         )
-        logger.info(f"Lockdown vote received from {message.node_id}: {message.reason}")
+        logger.info(
+            "Lockdown vote received from %s: %s",
+            message.node_id, message.reason
+        )
         if self._check_lockdown_quorum():
             logger.warning("Lockdown quorum reached - triggering cluster lockdown")
             self._trigger_quorum_lockdown()
@@ -499,7 +515,7 @@ class ClusterLockdownManager:
             self._registered_nodes,
             message.node_id,
         )
-        logger.info(f"Recovery vote received from {message.node_id}")
+        logger.info("Recovery vote received from %s", message.node_id)
         if self._check_recovery_quorum():
             logger.info("Recovery quorum reached - lifting cluster lockdown")
             self._trigger_quorum_recovery()
@@ -680,7 +696,10 @@ class ClusterLockdownManager:
         # Store locally for reference
         self._quarantine_reports[self.node_id] = report
 
-        logger.info(f"Broadcasting quarantine report: {len(pending_event_ids)} events, block {last_block_index}")
+        logger.info(
+            "Broadcasting quarantine report: %s events, block %s",
+            len(pending_event_ids), last_block_index
+        )
 
         return self._broadcast_report(report)
 
@@ -720,7 +739,10 @@ class ClusterLockdownManager:
             )
             return report
         except Exception as e:
-            logger.error(f"Error processing quarantine report: {e}")
+            logger.error(
+                "Error processing quarantine report from %s: %s",
+                report.node_id, e
+            )
             return None
 
     def get_quarantine_reports(self) -> dict[str, QuarantineReport]:
