@@ -109,7 +109,9 @@ class ResourceAllocationEvent(DomainEvent):
             "allocation_type": allocation_type
         })
         
-        super().__init__(entity_id, event_type, domain_type, resource_details, timestamp)
+        super().__init__(
+            entity_id, event_type, domain_type, resource_details, timestamp
+        )
     
     def validate_domain_specific(self) -> bool:
         """
@@ -181,7 +183,9 @@ class QualityCheckEvent(DomainEvent):
             "inspector_id": inspector_id
         })
         
-        super().__init__(entity_id, event_type, domain_type, quality_details, timestamp)
+        super().__init__(
+            entity_id, event_type, domain_type, quality_details, timestamp
+        )
     
     def validate_domain_specific(self) -> bool:
         """
@@ -324,7 +328,9 @@ class ApprovalEvent(DomainEvent):
             "approval_processed_at": timestamp or time.time()
         })
         
-        super().__init__(entity_id, event_type, domain_type, approval_details, timestamp)
+        super().__init__(
+            entity_id, event_type, domain_type, approval_details, timestamp
+        )
     
     def validate_domain_specific(self) -> bool:
         """
@@ -376,7 +382,8 @@ class ComplianceEvent(DomainEvent):
         Args:
             entity_id: Entity identifier (used as metadata field)
             compliance_type: Type of compliance being tracked
-            compliance_status: Status of compliance (compliant, non_compliant, under_review)
+            compliance_status: Status of compliance
+                               (compliant, non_compliant, under_review)
             regulation_reference: Reference to specific regulation or standard
             domain_type: Domain this event belongs to
             details: Additional event details
@@ -398,7 +405,9 @@ class ComplianceEvent(DomainEvent):
             "compliance_checked_at": timestamp or time.time()
         })
         
-        super().__init__(entity_id, event_type, domain_type, compliance_details, timestamp)
+        super().__init__(
+            entity_id, event_type, domain_type, compliance_details, timestamp
+        )
     
     def validate_domain_specific(self) -> bool:
         """
@@ -441,6 +450,7 @@ def create_resource_allocation(
         **kwargs
     )
 
+
 def create_quality_check(
     entity_id: str,
     check_type: str,
@@ -457,6 +467,7 @@ def create_quality_check(
         **kwargs
     )
 
+
 def create_status_update(
     entity_id: str,
     old_status: str,
@@ -472,6 +483,7 @@ def create_status_update(
         domain_type=domain_type,
         **kwargs
     )
+
 
 def create_approval(
     entity_id: str,
@@ -490,6 +502,7 @@ def create_approval(
         domain_type=domain_type,
         **kwargs
     )
+
 
 def create_compliance_check(
     entity_id: str,

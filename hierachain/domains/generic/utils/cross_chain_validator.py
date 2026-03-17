@@ -70,7 +70,11 @@ def _check_status_consistency(
     old_status = details.get("old_status")
     new_status = details.get("new_status")
 
-    if old_status is not None and entity_status is not None and entity_status != old_status:
+    if (
+        old_status is not None and
+        entity_status is not None and
+        entity_status != old_status
+    ):
         inconsistencies.append({
             "type": "status_inconsistency",
             "chain_name": chain_name,
@@ -81,7 +85,9 @@ def _check_status_consistency(
     return new_status
 
 
-def _check_logical_consistency(entity_trace: dict[str, list[dict[str, Any]]]) -> list[dict[str, Any]]:
+def _check_logical_consistency(
+    entity_trace: dict[str, list[dict[str, Any]]]
+) -> list[dict[str, Any]]:
     """Check for logical inconsistencies across chains."""
     inconsistencies: list[dict[str, Any]] = []
 
@@ -128,7 +134,9 @@ def _add_chain_integrity_recommendations(
 ) -> None:
     """Add recommendations related to chain integrity."""
     if not validation_results["main_chain_valid"]:
-        recommendations.append("Main Chain integrity is compromised - immediate investigation required")
+        recommendations.append(
+            "Main Chain integrity is compromised - immediate investigation required"
+        )
 
     invalid_sub_chains = [
         name for name,
@@ -148,9 +156,13 @@ def _add_proof_consistency_recommendations(
     proof = validation_results["proof_consistency"]
     if not proof["overall_consistent"]:
         if proof["missing_blocks"] > 0:
-            recommendations.append("Missing blocks detected - check Sub-Chain synchronization")
+            recommendations.append(
+                "Missing blocks detected - check Sub-Chain synchronization"
+            )
         if proof["inconsistent_proofs"] > 0:
-            recommendations.append("Proof inconsistencies detected - verify proof submission process")
+            recommendations.append(
+                "Proof inconsistencies detected - verify proof submission process"
+            )
 
 
 def _add_ledger_compliance_recommendations(
@@ -162,11 +174,17 @@ def _add_ledger_compliance_recommendations(
     if not ledger_compliance["overall_compliant"]:
         violation_types = set(v["type"] for v in ledger_compliance["violations"])
         if "cryptocurrency_terms" in violation_types:
-            recommendations.append("Remove cryptocurrency terminology from events and data")
+            recommendations.append(
+                "Remove cryptocurrency terminology from events and data"
+            )
         if "entity_id_misuse" in violation_types:
-            recommendations.append("Ensure entity_id is used as metadata field, not as identifier")
+            recommendations.append(
+                "Ensure entity_id is used as metadata field, not as identifier"
+            )
         if "invalid_block_structure" in violation_types:
-            recommendations.append("Fix block structures to contain multiple events, not single events")
+            recommendations.append(
+                "Fix block structures to contain multiple events, not single events"
+            )
 
 
 def _generate_system_recommendations(validation_results: dict[str, Any]) -> list[str]:
@@ -221,7 +239,9 @@ def _get_block_events(block: Any) -> list[dict[str, Any]]:
 
 
 def _get_simple_value(v: Any) -> str | None:
-    """Extract simple string value from a data value, skipping long strings like hashes."""
+    """
+    Extract simple string value from a data value, skipping long strings like hashes.
+    """
     if v is None:
         return None
     if isinstance(v, bool):
@@ -254,13 +274,17 @@ def _get_forbidden_terms() -> frozenset[str]:
 def _build_default_validation_rules() -> dict[str, Callable]:
     """Return the set of default validation rules."""
 
-    def proof_hash_consistency(main_chain_event: dict[str, Any], sub_chain_block: dict[str, Any]) -> bool:
+    def proof_hash_consistency(
+        main_chain_event: dict[str, Any], sub_chain_block: dict[str, Any]
+    ) -> bool:
         """Proof hash must match Sub-Chain block hash."""
         proof_hash = main_chain_event.get("details", {}).get("proof_hash")
         block_hash = sub_chain_block.get("hash")
         return proof_hash == block_hash
 
-    def proof_timestamp_consistency(main_chain_event: dict[str, Any], sub_chain_block: dict[str, Any]) -> bool:
+    def proof_timestamp_consistency(
+        main_chain_event: dict[str, Any], sub_chain_block: dict[str, Any]
+    ) -> bool:
         """Proof timestamp must be >= block timestamp."""
         proof_ts = main_chain_event.get("timestamp", 0)
         block_ts = sub_chain_block.get("timestamp", 0)
@@ -272,8 +296,6 @@ def _build_default_validation_rules() -> dict[str, Callable]:
 
     def no_cryptocurrency_terms(data: dict[str, Any],) -> bool:
         """Data must not contain crypto terminology in values."""
-        # Only check simple string values that are likely to contain meaningful text
-        # Skip long strings like hashes/signatures that may contain forbidden substrings by chance
         forbidden = _get_forbidden_terms()
         simple_values = [
             value for v in data.values()
@@ -339,15 +361,15 @@ class ProofValidator:
         for proof_event in proof_events:
             self._validate_single_proof(proof_event, results)
 
-        results["overall_consistent"] = (results["inconsistent_proofs"] == 0 and results["missing_blocks"] == 0)
+        results["overall_consistent"] = (
+            results["inconsistent_proofs"] == 0 and results["missing_blocks"] == 0
+        )
         return results
 
     # -- internals -------------------------------------------------
 
     def _validate_single_proof(
-        self,
-        proof_event: dict[str, Any],
-        results: dict[str, Any],
+        self, proof_event: dict[str, Any], results: dict[str, Any],
     ) -> None:
         """Validate one proof event."""
         details = proof_event.get("details", {})
@@ -481,7 +503,10 @@ class ComplianceChecker:
         """Collect Ledger compliance violations."""
         violations: list[dict[str, Any]] = []
         for block in chain.chain:
-            if not isinstance(block.events, list)and not hasattr(block.events, "to_pylist"):
+            if (
+                not isinstance(block.events, list) and
+                not hasattr(block.events, "to_pylist")
+            ):
                 violations.append({
                     "type": "invalid_block_structure",
                     "chain_name": chain_name,
@@ -552,7 +577,9 @@ class CrossChainValidator:
 
         # Delegates
         self._proof_validator = ProofValidator(hierarchy_manager, self.validation_rules)
-        self._compliance_checker = ComplianceChecker(hierarchy_manager, self.validation_rules)
+        self._compliance_checker = ComplianceChecker(
+            hierarchy_manager, self.validation_rules
+        )
 
     # -- proof validation (delegated) ------------------------------
 
@@ -685,14 +712,16 @@ class CrossChainValidator:
             recommendations=[],
         )
 
-        results["main_chain_valid"] = (self.hierarchy_manager.main_chain.is_chain_valid())
+        results["main_chain_valid"] = (
+            self.hierarchy_manager.main_chain.is_chain_valid()
+            )
 
         for name, sub in (self.hierarchy_manager.sub_chains.items()):
             results["sub_chains_valid"][name] = (sub.is_chain_valid())
 
         results["proof_consistency"] = (self.validate_proof_consistency())
         results["Ledger_compliance"] = (self._compliance_checker.validate())
-        results["recommendations"] = (_generate_system_recommendations(results) )
+        results["recommendations"] = (_generate_system_recommendations(results))
 
         results["overall_integrity"] = (
             results["main_chain_valid"]

@@ -18,7 +18,9 @@ from hierachain.domains.generic.events.domain_event import (
 )
 
 
-def _analyze_compliance_status(events: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+def _analyze_compliance_status(
+    events: list[dict[str, Any]]
+) -> dict[str, dict[str, Any]]:
     """Process compliance events into a summary dictionary."""
     compliance_types: dict[str, dict[str, Any]] = {}
     for event in events:
@@ -139,7 +141,10 @@ class OperationMetricsTracker:
 
     @property
     def quality_pass_rate(self) -> float:
-        total = self._metrics["quality_checks_passed"] + self._metrics["quality_checks_failed"]
+        total = (
+            self._metrics["quality_checks_passed"] +
+            self._metrics["quality_checks_failed"]
+        )
         return _safe_ratio(self._metrics["quality_checks_passed"], total)
 
     @property
@@ -157,7 +162,9 @@ _OPERATION_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
 }
 
 
-def validate_operation_data(operation_type: str, operation_data: dict[str, Any]) -> bool:
+def validate_operation_data(
+    operation_type: str, operation_data: dict[str, Any]
+) -> bool:
     """
     Validate that *operation_data* contains the fields required by
     *operation_type*.  Returns ``True`` for unknown operation types
@@ -217,12 +224,12 @@ class DomainChain(BaseChain):
     used directly or extended for specific domain requirements.
 
     Responsibilities are delegated to helpers:
-      - OperationMetricsTracker  - recording & querying metrics
-      - TransactionManager       - 2PC transaction lifecycle
-      - validate_operation_data  - operation-type validation
+        - OperationMetricsTracker  - recording & querying metrics
+        - TransactionManager       - 2PC transaction lifecycle
+        - validate_operation_data  - operation-type validation
     """
 
-    def __init__(self, name: str, domain_type: str = "generic"):
+    def __init__(self, name: str, domain_type: str = "generic") -> None:
         """
         Initialize a domain chain.
     
@@ -263,15 +270,21 @@ class DomainChain(BaseChain):
     def _setup_default_business_rules(self) -> None:
         """Setup default business rules for the domain chain."""
     
-        def entity_must_be_registered(entity_info: dict[str, Any], _operation: str) -> bool:
+        def entity_must_be_registered(
+            entity_info: dict[str, Any], _operation: str
+        ) -> bool:
             """Rule: Entity must be registered before operations."""
             return entity_info.get("status") != "unregistered"
     
-        def no_concurrent_operations(entity_info: dict[str, Any], _operation: str) -> bool:
+        def no_concurrent_operations(
+            entity_info: dict[str, Any], _operation: str
+        ) -> bool:
             """Rule: No concurrent operations on same entity."""
             return entity_info.get("current_operation") is None
     
-        def quality_check_before_approval(entity_info: dict[str, Any], operation: str) -> bool:
+        def quality_check_before_approval(
+            entity_info: dict[str, Any], operation: str
+        ) -> bool:
             """Rule: Quality check must pass before approval."""
             if operation.startswith("approval"):
                 last_qc = entity_info.get("last_quality_check", {})
@@ -304,7 +317,9 @@ class DomainChain(BaseChain):
             return False
 
         operation_data = details or {}
-        if not self.validate_domain_operation(entity_id, operation_type, operation_data):
+        if not self.validate_domain_operation(
+            entity_id, operation_type, operation_data
+        ):
             return False
 
         success = self.start_operation(entity_id, operation_type, details)
@@ -565,10 +580,12 @@ class DomainChain(BaseChain):
                 else block.events
             )
             for event in events:
-                if event.get("entity_id") == entity_id and event.get("event") == "compliance_check":
+                if (
+                    event.get("entity_id") == entity_id and
+                    event.get("event") == "compliance_check"
+                ):
                     compliance_events.append(event)
         return compliance_events
-
 
     def get_entity_compliance_report(self, entity_id: str) -> dict[str, Any]:
         """
@@ -602,7 +619,6 @@ class DomainChain(BaseChain):
             ),
         }
 
-
     def get_entity_performance_metrics(self, entity_id: str) -> dict[str, Any]:
         """
         Get performance metrics for a specific entity.
@@ -623,9 +639,13 @@ class DomainChain(BaseChain):
             "operations_completed": stats["completed"],
             "completion_rate": _safe_ratio(stats["completed"], stats["started"]),
             "quality_checks": stats["quality_total"],
-            "quality_pass_rate": _safe_ratio(stats["quality_passed"],stats["quality_total"]),
+            "quality_pass_rate": (
+                _safe_ratio(stats["quality_passed"], stats["quality_total"])
+            ),
             "approvals_requested": stats["approvals_total"],
-            "approval_rate": _safe_ratio(stats["approvals_granted"],stats["approvals_total"]),
+            "approval_rate": (
+                _safe_ratio(stats["approvals_granted"], stats["approvals_total"])
+            ),
             "total_events": len(entity_events),
         }
 
@@ -692,7 +712,9 @@ class DomainChain(BaseChain):
 
         return self._execute_commit(transaction_id, pending_data)
 
-    def _execute_commit(self, transaction_id: str, pending_data: dict[str, Any]) -> bool:
+    def _execute_commit(
+        self, transaction_id: str, pending_data: dict[str, Any]
+    ) -> bool:
         """Execute the on-chain operations for a 2PC commit."""
         payload = pending_data["payload"]
         entity_id = payload.get("entity_id")

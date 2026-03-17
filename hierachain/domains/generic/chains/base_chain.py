@@ -35,7 +35,7 @@ class BaseChain(SubChain, ABC):
     - Supports domain-specific business rules
     """
     
-    def __init__(self, name: str, domain_type: str):
+    def __init__(self, name: str, domain_type: str) -> None:
         """
         Initialize a base domain chain.
         
@@ -147,7 +147,6 @@ class BaseChain(SubChain, ABC):
         self.add_event(update_event)
         return True
     
-
     def get_entity_history(self, entity_id: str) -> list[dict[str, Any]]:
         """
         Get complete history of events for a specific entity.
@@ -167,7 +166,9 @@ class BaseChain(SubChain, ABC):
             
         return history
 
-    def create_domain_event(self, event_class: type, entity_id: str, **kwargs) -> BaseEvent:
+    def create_domain_event(
+        self, event_class: type, entity_id: str, **kwargs
+    ) -> BaseEvent:
         """
         Create a domain-specific event using the provided event class.
         
@@ -216,7 +217,7 @@ class BaseChain(SubChain, ABC):
                 self.event_handlers[event_type](event)
             except Exception as e:
                 # Log error but don't fail the event addition
-                logger.error(f"Error processing event {event_type}: {e}")
+                logger.error("Error processing event %s: %s", event_type, e)
         
         return True
     
@@ -237,7 +238,9 @@ class BaseChain(SubChain, ABC):
         # Update entity status if registered
         if entity_id in self.entity_registry:
             self.entity_registry[entity_id].pop("current_operation", None)
-            self.entity_registry[entity_id]["last_operation_completed"] = event.timestamp
+            self.entity_registry[entity_id]["last_operation_completed"] = (
+                event.timestamp
+            )
     
     def _handle_status_update(self, event: BaseEvent) -> None:
         """Handle status update events."""
@@ -374,7 +377,9 @@ class BaseChain(SubChain, ABC):
             "current_status": entity_info.get("status"),
             "total_events": len(entity_events),
             "event_types": list(set(event.get("event") for event in entity_events)),
-            "last_activity": max((event.get("timestamp", 0) for event in entity_events), default=0),
+            "last_activity": max(
+                (event.get("timestamp", 0) for event in entity_events), default=0
+            ),
             "allocated_resources": entity_info.get("allocated_resources", []),
             "current_operation": entity_info.get("current_operation"),
             "approvals": entity_info.get("approvals", {}),
@@ -404,7 +409,9 @@ class BaseChain(SubChain, ABC):
         Returns:
             True if operation is valid for this domain, False otherwise
         """
-        raise NotImplementedError("Subclasses must implement validate_domain_operation()")
+        raise NotImplementedError(
+            "Subclasses must implement validate_domain_operation()"
+        )
     
     @abstractmethod
     def get_domain_statistics(self) -> dict[str, Any]:
@@ -445,10 +452,17 @@ class BaseChain(SubChain, ABC):
     
     def __str__(self) -> str:
         """String representation of the base chain."""
-        return f"{self.__class__.__name__}(name={self.name}, domain={self.domain_type}, entities={len(self.entity_registry)})"
+        return (
+            f"{self.__class__.__name__}(name={self.name}, "
+            f"domain={self.domain_type}, entities={len(self.entity_registry)})"
+        )
     
     def __repr__(self) -> str:
         """Detailed string representation of the base chain."""
-        return (f"{self.__class__.__name__}(name={self.name}, domain_type={self.domain_type}, "
-                f"entities={len(self.entity_registry)}, blocks={len(self.chain)}, "
-                f"operations={self.completed_operations})")
+        return (
+            f"{self.__class__.__name__}(name={self.name}, "
+            f"domain_type={self.domain_type}, "
+            f"entities={len(self.entity_registry)}, "
+            f"blocks={len(self.chain)}, "
+            f"operations={self.completed_operations})"
+        )

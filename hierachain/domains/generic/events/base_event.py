@@ -10,7 +10,9 @@ import time
 from typing import Any
 from abc import ABC, abstractmethod
 
-from hierachain.core.utils import validate_event_structure, validate_no_cryptocurrency_terms
+from hierachain.core.utils import (
+    validate_event_structure, validate_no_cryptocurrency_terms
+)
 
 
 class BaseEvent(ABC):
@@ -83,7 +85,9 @@ class BaseEvent(ABC):
         Returns:
             True if domain-specific validation passes, False otherwise
         """
-        raise NotImplementedError("Subclasses must implement validate_domain_specific()")
+        raise NotImplementedError(
+            "Subclasses must implement validate_domain_specific()"
+        )
     
     def to_dict(self) -> dict[str, Any]:
         """
@@ -178,7 +182,10 @@ class BaseEvent(ABC):
     
     def __str__(self) -> str:
         """String representation of the event."""
-        return f"{self.__class__.__name__}(entity_id={self.entity_id}, type={self.event_type})"
+        return (
+            f"{self.__class__.__name__}(entity_id={self.entity_id}, "
+            f"type={self.event_type})"
+        )
     
     def __repr__(self) -> str:
         """Detailed string representation of the event."""
@@ -215,7 +222,7 @@ class GenericEvent(BaseEvent):
         entity_id: str, event_type: str,
         details: dict[str, Any] | None = None,
         timestamp: float | None = None
-    ):
+    ) -> None:
         """
         Initialize a generic event.
         
@@ -294,7 +301,9 @@ class OperationEvent(BaseEvent):
         
         return True
     
-    def complete_operation(self, result: dict[str, Any] | None = None) -> 'OperationEvent':
+    def complete_operation(
+        self, result: dict[str, Any] | None = None
+    ) -> 'OperationEvent':
         """
         Create a completion event for this operation.
         
