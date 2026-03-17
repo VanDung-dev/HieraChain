@@ -231,7 +231,7 @@ class EmailNotifier:
                     <h2 style="margin: 0;">{alert.title}</h2>
                     <p style="margin: 5px 0 0 0;">Severity: {
                         alert.severity.value.upper()
-                    }</p>
+                        }</p>
                 </div>
                 
                 <div style="padding: 20px; border: 1px solid #ddd; border-top: none;">
@@ -242,7 +242,7 @@ class EmailNotifier:
                         datetime.fromtimestamp(alert.timestamp).strftime(
                             '%Y-%m-%d %H:%M:%S'
                         )
-                    }</p>
+                        }</p>
         """
         
         if alert.metric_name:
