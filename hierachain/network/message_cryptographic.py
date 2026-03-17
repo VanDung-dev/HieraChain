@@ -57,7 +57,9 @@ def create_signable_payload(
     return json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
-def sign_message(payload: dict[str, Any], keypair: KeyPair, sender_id: str) -> dict[str, Any]:
+def sign_message(
+    payload: dict[str, Any], keypair: KeyPair, sender_id: str
+) -> dict[str, Any]:
     """
     Create a signed P2P message.
 
@@ -111,7 +113,7 @@ def verify_message(message: dict[str, Any], public_key_hex: str) -> bool:
         return verify_signature(public_key_hex, signable, signature)
 
     except Exception as e:
-        logger.error(f"Message verification failed: {e}")
+        logger.error("Message verification failed: %s", e)
         return False
 
 
@@ -126,7 +128,9 @@ def sign_handshake_payload(handshake_data: dict[str, Any], keypair: KeyPair) -> 
     Returns:
         Hex-encoded signature string.
     """
-    canonical = json.dumps(handshake_data, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    canonical = json.dumps(
+        handshake_data, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
     return keypair.sign(canonical)
 
 
@@ -147,8 +151,10 @@ def verify_handshake_signature(
         True if the signature is valid, False otherwise.
     """
     try:
-        canonical = json.dumps(handshake_data, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        canonical = json.dumps(
+            handshake_data, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
         return verify_signature(public_key_hex, canonical, signature)
     except Exception as e:
-        logger.error(f"Handshake signature verification failed: {e}")
+        logger.error("Handshake signature verification failed: %s", e)
         return False

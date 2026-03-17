@@ -102,13 +102,13 @@ class NetworkClient:
 
             self._is_running = True
             logger.info(
-                f"NetworkClient started: {self.config.node_id} "
-                f"at {self.config.host}:{self.config.port}"
+                "NetworkClient started: %s at %s:%s",
+                self.config.node_id, self.config.host, self.config.port
             )
             return True
 
         except Exception as e:
-            logger.error(f"Failed to start NetworkClient: {e}")
+            logger.error("Failed to start NetworkClient: %s", e)
             self._is_running = False
             return False
 
@@ -126,7 +126,7 @@ class NetworkClient:
             logger.info("NetworkClient stopped")
 
         except Exception as e:
-            logger.error(f"Error stopping NetworkClient: {e}")
+            logger.error("Error stopping NetworkClient: %s", e)
 
     def get_network_status(self) -> NetworkStatus:
         """
@@ -183,7 +183,7 @@ class NetworkClient:
         if self._zmq_node and self._is_running:
             self._zmq_node.register_peer(peer_id, address)
 
-        logger.debug(f"Registered peer: {peer_id} at {address}")
+        logger.debug("Registered peer: %s at %s", peer_id, address)
 
     def unregister_peer(self, peer_id: str) -> None:
         """
@@ -194,7 +194,7 @@ class NetworkClient:
         """
         if peer_id in self._peers:
             del self._peers[peer_id]
-            logger.debug(f"Unregistered peer: {peer_id}")
+            logger.debug("Unregistered peer: %s", peer_id)
 
     @property
     def is_running(self) -> bool:

@@ -18,9 +18,11 @@ from typing import Any, Callable
 
 logger = logging.getLogger(__name__)
 
+
 class NetworkError(Exception):
     """Base exception for network errors."""
     pass
+
 
 class ZmqNode:
     """
@@ -29,7 +31,8 @@ class ZmqNode:
     Attributes:
         node_id (str): Unique identifier for this node.
         port (int): The port to bind for listening (ROUTER).
-        peers (Dict[str, str]): Mapping of peer_id -> address (e.g., "tcp://127.0.0.1:5001").
+        peers (Dict[str, str]): Mapping of peer_id -> address
+                                (e.g., "tcp://127.0.0.1:5001").
     """
 
     def __init__(
@@ -76,7 +79,7 @@ class ZmqNode:
         """Validate message replay protection."""
         return _is_valid_replay(self, message_data)
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the node: bind listener and start receiver loop."""
         try:
             self.router = self.ctx.socket(zmq.ROUTER)
@@ -86,17 +89,17 @@ class ZmqNode:
             if self.server_secret:
                 self.router.setsockopt(zmq.CURVE_SERVER, 1)
                 self.router.setsockopt(zmq.CURVE_SECRETKEY, self.server_secret)
-                logger.info(f"Node {self.node_id}: Security Enabled (CurveZMQ Server)")
+                logger.info("Node %s: Security Enabled (CurveZMQ Server)", self.node_id)
             
             self.router.bind(self.address)
-            logger.info(f"Node {self.node_id} listening on {self.address}")
+            logger.info("Node %s listening on %s", self.node_id, self.address)
             
             # Start receiver loop in background
             asyncio.create_task(_receiver_loop(self))
         except Exception as e:
             raise NetworkError(f"Failed to start node {self.node_id}: {e}")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the node and close sockets."""
         self._stop_event.set()
         
@@ -107,16 +110,18 @@ class ZmqNode:
             socket.close()
             
         self.ctx.term()
-        logger.info(f"Node {self.node_id} stopped")
+        logger.info("Node %s stopped", self.node_id)
 
-    def register_peer(self, peer_id: str, address: str, public_key: bytes | None = None):
+    def register_peer(
+        self, peer_id: str, address: str, public_key: bytes | None = None
+    ) -> None:
         """Register a known peer with optional public key."""
         self.peers[peer_id] = {
             "address": address,
             "public_key": public_key
         }
 
-    def set_handler(self, handler: Callable[[dict[str, Any], str], Any]):
+    def set_handler(self, handler: Callable[[dict[str, Any], str], Any]) -> None:
         """Set the callback function for processing received messages."""
         self._message_handler = handler
 
@@ -129,7 +134,7 @@ class ZmqNode:
             message: Dictionary message content.
         """
         if target_peer_id not in self.peers:
-            logger.error(f"Unknown peer: {target_peer_id}")
+            logger.error("Unknown peer: %s", target_peer_id)
             return False
 
         try:
@@ -138,10 +143,12 @@ class ZmqNode:
             await socket.send(encoded_msg)
             return True
         except Exception as e:
-            logger.error(f"Failed to send to {target_peer_id}: {e}")
+            logger.error("Failed to send to %s: %s", target_peer_id, e)
             return False
 
-    async def broadcast(self, message: dict[str, Any], exclude: list[str] | None = None):
+    async def broadcast(
+        self, message: dict[str, Any], exclude: list[str] | None = None
+    ) -> None:
         """Broadcast message to all registered peers."""
         exclude = exclude or []
         for peer_id in self.peers:
@@ -170,12 +177,14 @@ def _is_valid_replay(node: ZmqNode, message_data: dict[str, Any]) -> bool:
     now = time.time()
 
     if abs(now - timestamp) > node.replay_tolerance:
-        logger.warning(f"Message timestamp out of tolerance: {timestamp} (now={now})")
+        logger.warning(
+            "Message timestamp out of tolerance: %s (now=%s)", timestamp, now
+        )
         return False
 
     entry = (timestamp, nonce)
     if entry in node.replay_buffer:
-        logger.warning(f"Replay detected: {nonce}")
+        logger.warning("Replay detected: %s", nonce)
         return False
 
     node.replay_buffer.add(entry)
@@ -236,10 +245,10 @@ async def _handle_receiver_error(node: ZmqNode, e: Exception) -> bool:
     """Handle errors in the receiver loop."""
     if isinstance(e, zmq.ZMQError):
         if not node.stop_event.is_set():
-            logger.error(f"ZMQ Receive error: {e}")
+            logger.error("ZMQ Receive error: %s", e)
         return False
 
-    logger.error(f"Unexpected error in receiver loop: {e}")
+    logger.error("Unexpected error in receiver loop: %s", e)
     await asyncio.sleep(1)
     return True
 
@@ -258,13 +267,11 @@ async def _handle_received_message(node: ZmqNode, msg_parts: list[bytes]) -> Non
     except (UnicodeDecodeError, json.JSONDecodeError):
         logger.warning("Received invalid message format or encoding")
     except Exception as e:
-        logger.error(f"Error processing message parts: {e}")
+        logger.error("Error processing message parts: %s", e)
 
 
 async def _process_message_data(
-    node: ZmqNode,
-    message_data: dict[str, Any],
-    sender_id: str,
+    node: ZmqNode, message_data: dict[str, Any], sender_id: str,
 ) -> None:
     """Process received message data."""
     if not _is_valid_replay(node, message_data):
@@ -280,4 +287,4 @@ async def _process_message_data(
         else:
             handler(message_data, sender_id)
     except Exception as e:
-        logger.error(f"Error in message handler: {e}")
+        logger.error("Error in message handler: %s", e)

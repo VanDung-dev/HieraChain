@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def _evaluate_strict_policy(peer_id: str) -> bool:
     """Evaluate strict policy for a peer."""
-    logger.debug(f"Peer {peer_id} rejected (strict mode - not in allowlist)")
+    logger.debug("Peer %s rejected (strict mode - not in allowlist)", peer_id)
     return False
 
 
@@ -38,9 +38,12 @@ class PeerTrustManager:
         identity_manager: IdentityManager | None = None,
         trust_policy: str = "open",
         initial_allowlist: set[str] | None = None,
-    ):
+    ) -> None:
         if trust_policy not in self.VALID_POLICIES:
-            raise ValueError(f"Invalid trust_policy '{trust_policy}'. Use one of: {self.VALID_POLICIES}")
+            raise ValueError(
+                f"Invalid trust_policy '{trust_policy}'. "
+                f"Use one of: {self.VALID_POLICIES}"
+            )
 
         self.identity_manager = identity_manager
         self.allowlist: set[str] = set(initial_allowlist or set())
@@ -58,14 +61,14 @@ class PeerTrustManager:
         self.allowlist.add(peer_id)
         if peer_id in self.blocklist:
             self.blocklist.remove(peer_id)
-        logger.info(f"Peer {peer_id} added to allowlist")
+        logger.info("Peer %s added to allowlist", peer_id)
 
     def block_peer(self, peer_id: str, reason: str = "administrative"):
         """Block a peer."""
         self.blocklist.add(peer_id)
         if peer_id in self.allowlist:
             self.allowlist.remove(peer_id)
-        logger.warning(f"Peer {peer_id} blocked: {reason}")
+        logger.warning("Peer %s blocked: %s", peer_id, reason)
 
     def is_trusted(self, peer_id: str) -> bool:
         """
@@ -84,7 +87,7 @@ class PeerTrustManager:
     def _is_blocked(self, peer_id: str) -> bool:
         """Check if a peer is in the blocklist."""
         if peer_id in self.blocklist:
-            logger.debug(f"Peer {peer_id} rejected (blocklisted)")
+            logger.debug("Peer %s rejected (blocklisted)", peer_id)
             return True
         return False
 
@@ -103,9 +106,11 @@ class PeerTrustManager:
     def set_policy(self, policy: str):
         """Set trust policy mode ('open' or 'strict')."""
         if policy not in self.VALID_POLICIES:
-            raise ValueError(f"Invalid policy '{policy}'. Use one of: {self.VALID_POLICIES}")
+            raise ValueError(
+                f"Invalid policy '{policy}'. Use one of: {self.VALID_POLICIES}"
+            )
         self.trust_policy = policy
-        logger.info(f"Trust policy changed to '{policy}'")
+        logger.info("Trust policy changed to '%s'", policy)
 
     def load_allowlist(self, peer_ids: list[str]):
         """Load a list of peer IDs into the allowlist."""
@@ -113,4 +118,7 @@ class PeerTrustManager:
             pid = pid.strip()
             if pid:
                 self.allowlist.add(pid)
-        logger.info(f"Loaded {len(peer_ids)} peers into allowlist. Total: {len(self.allowlist)}")
+        logger.info(
+            "Loaded %s peers into allowlist. Total: %s",
+            len(peer_ids), len(self.allowlist)
+        )

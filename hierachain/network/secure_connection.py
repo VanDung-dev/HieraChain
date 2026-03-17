@@ -38,7 +38,7 @@ def handle_data_message(
     sender_id: str,
 ) -> bool:
     if not authenticated_peers.get(sender_id):
-        logger.warning(f"Dropped Unauthenticated Message from {sender_id}")
+        logger.warning("Dropped Unauthenticated Message from %s", sender_id)
         return False
 
     if not require_signatures:
@@ -46,11 +46,14 @@ def handle_data_message(
 
     peer_key = peer_public_keys.get(sender_id)
     if not peer_key:
-        logger.warning(f"No public key for peer {sender_id}, dropping message")
+        logger.warning("No public key for peer %s, dropping message", sender_id)
         return False
 
     if not verify_message(message, peer_key):
-        logger.warning(f"Invalid signature on message from {sender_id}, dropping message")
+        logger.warning(
+            "Invalid signature on message from %s, dropping message",
+            sender_id,
+        )
         return False
 
     return True
@@ -60,7 +63,10 @@ def check_trust_policy(trust_manager: PeerTrustManager, sender_id: str) -> bool:
     if trust_manager.is_trusted(sender_id):
         return True
 
-    logger.warning(f"Handshake rejected: Peer {sender_id} is not trusted by policy.")
+    logger.warning(
+        "Handshake rejected: Peer %s is not trusted by policy.",
+        sender_id,
+    )
     return False
 
 
@@ -68,7 +74,7 @@ def is_certificate_valid_in_ca(msp: HierarchicalMSP, cert_id: str) -> bool:
     if hasattr(msp, "ca") and msp.ca:
         is_valid = msp.ca.verify_certificate(cert_id)
         if not is_valid:
-            logger.debug(f"Certificate {cert_id} failed CA verification")
+            logger.debug("Certificate %s failed CA verification", cert_id)
             return False
 
     return True
@@ -122,11 +128,20 @@ def validate_msp_from_message(
     sender_msp_id = message.get("sender_msp_id")
 
     if not cert_id or not sender_msp_id:
-        logger.warning(f"Handshake rejected from {sender_id}: Missing certificate_id or sender_msp_id.")
+        logger.warning(
+            "Handshake rejected from %s: "
+            "Missing certificate_id or sender_msp_id.",
+            sender_id,
+        )
         return False
 
     if not verify_msp_certificate(msp, identity_mgr, cert_id, sender_msp_id):
-        logger.warning(f"Handshake rejected from {sender_id}: Invalid MSP certificate '{cert_id}'.")
+        logger.warning(
+            "Handshake rejected from %s: "
+            "Invalid MSP certificate '%s'.",
+            sender_id,
+            cert_id,
+        )
         return False
 
     return True
@@ -144,7 +159,10 @@ def validate_handshake_signature_from_message(
     if sender_public_key and signature:
         handshake_data = {k: v for k, v in message.items() if k != "signature"}
         if not verify_handshake_signature(handshake_data, signature, sender_public_key):
-            logger.warning(f"Handshake rejected from {sender_id}: Invalid cryptographic signature.")
+            logger.warning(
+                "Handshake rejected from %s: Invalid cryptographic signature.",
+                sender_id,
+            )
             return False
 
         peer_public_keys[sender_id] = sender_public_key
@@ -152,7 +170,7 @@ def validate_handshake_signature_from_message(
 
     if require_signatures:
         logger.warning(
-            f"Handshake rejected from {sender_id}: "
+            "Handshake rejected from %s: "
             "Missing public key or signature "
             "(signatures required in this environment)."
         )
@@ -175,7 +193,10 @@ def register_dynamic_peer(
     if not return_addr or not transport_key:
         return
 
-    logger.info(f"Dynamically registering peer {sender_id} from Handshake")
+    logger.info(
+        "Dynamically registering peer %s from Handshake",
+        sender_id,
+    )
     transport.register_peer(
         sender_id,
         return_addr,
@@ -198,7 +219,7 @@ class SecureConnectionManager:
         msp: HierarchicalMSP,
         identity_mgr: IdentityManager,
         signing_keypair: KeyPair | None = None,
-    ):
+    ) -> None:
         self.node_id = node_id
         self.msp = msp
         self.identity_mgr = identity_mgr
@@ -229,9 +250,10 @@ class SecureConnectionManager:
         if settings.ENV == "product" and trust_policy != "strict":
             logger.warning(
                 "SECURITY WARNING: Production environment running with "
-                f"P2P trust_policy='{trust_policy}' instead of 'strict'. "
+                "P2P trust_policy='%s' instead of 'strict'. "
                 "This allows any peer to connect without allowlist. "
-                "Set HRC_P2P_TRUST_POLICY=strict for production."
+                "Set HRC_P2P_TRUST_POLICY=strict for production.",
+                trust_policy,
             )
 
         if settings.ENV == "product" and not self.require_signatures:
@@ -257,22 +279,21 @@ class SecureConnectionManager:
         # Store verified peer public keys for message verification
         self.peer_public_keys: dict[str, str] = {}
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the secure transport."""
         # Set handler to intercept messages for handshake
         self.transport.set_handler(self._handle_message)
         await self.transport.start()
         logger.info(
-            f"Secure Node {self.node_id} started. "
-            f"Transport Key: {self.transport_public.decode('utf-8')[:8]}..."
+            "Secure Node %s started. "
+            "Transport Key: %s...",
+            self.node_id,
+            self.transport_public.decode("utf-8")[:8],
         )
 
     async def connect_to_peer(
-        self,
-        peer_id: str,
-        address: str,
-        peer_transport_key: str,
-    ):
+        self, peer_id: str, address: str, peer_transport_key: str,
+    ) -> None:
         """
         Connect to a peer securely.
 
@@ -288,8 +309,7 @@ class SecureConnectionManager:
             address,
             public_key=(
                 peer_transport_key.encode("utf-8")
-                if peer_transport_key
-                else None
+                if peer_transport_key else None
             ),
         )
 
@@ -308,7 +328,9 @@ class SecureConnectionManager:
             True if message was sent successfully.
         """
         if not self.authenticated_peers.get(peer_id):
-            logger.warning(f"Cannot send to unauthenticated peer {peer_id}")
+            logger.warning(
+                "Cannot send to unauthenticated peer %s", peer_id,
+            )
             return False
 
         if self.require_signatures:
@@ -318,9 +340,12 @@ class SecureConnectionManager:
 
         return await self.transport.send_direct(peer_id, message)
 
-    async def _initiate_handshake(self, peer_id: str):
+    async def _initiate_handshake(self, peer_id: str) -> None:
         """Send a handshake request to prove Identity (MSP)."""
-        logger.info(f"Initiating Handshake with {peer_id}...")
+        logger.info(
+            "Initiating Handshake with %s...",
+            peer_id,
+        )
 
         # Create handshake payload (without signature)
         handshake_data = {
@@ -338,9 +363,14 @@ class SecureConnectionManager:
 
         success = await self.transport.send_direct(peer_id, handshake_data)
         if not success:
-            logger.error(f"Failed to send handshake to {peer_id}")
+            logger.error(
+                "Failed to send handshake to %s",
+                peer_id,
+            )
 
-    async def _handle_message(self, message: dict[str, Any],sender_id: str):
+    async def _handle_message(
+        self, message: dict[str, Any], sender_id: str
+    ) -> None:
         """Intercept messages to handle Handshake vs Data."""
         msg_type = message.get("type")
 
@@ -353,7 +383,10 @@ class SecureConnectionManager:
             return
 
         if self._handle_data_message(message, sender_id):
-            logger.info(f"Received Authenticated Message from {sender_id}")
+            logger.info(
+                "Received Authenticated Message from %s",
+                sender_id,
+            )
 
     def _handle_data_message(self, message: dict[str, Any], sender_id: str) -> bool:
         return handle_data_message(
@@ -364,13 +397,19 @@ class SecureConnectionManager:
             sender_id,
         )
 
-    async def handle_handshake_request(self, message: dict[str, Any], sender_id: str):
+    async def handle_handshake_request(
+        self, message: dict[str, Any], sender_id: str
+    ) -> None:
         await self._handle_handshake_request(message, sender_id)
 
-    async def handle_handshake_ack(self, message: dict[str, Any], sender_id: str):
+    async def handle_handshake_ack(
+        self, message: dict[str, Any], sender_id: str
+    ) -> None:
         await self._handle_handshake_ack(message, sender_id)
 
-    async def _handle_handshake_request(self, message: dict[str, Any], sender_id: str):
+    async def _handle_handshake_request(
+        self, message: dict[str, Any], sender_id: str
+    ) -> None:
         """
         Process incoming handshake with full identity verification.
 
@@ -391,7 +430,11 @@ class SecureConnectionManager:
 
         self._register_dynamic_peer(message, sender_id)
 
-        logger.info(f"Handshake Validated for {sender_id}. Trust + MSP + Signature verified. Sending ACK.")
+        logger.info(
+            "Handshake Validated for %s. "
+            "Trust + MSP + Signature verified. Sending ACK.",
+            sender_id,
+        )
         self.authenticated_peers[sender_id] = True
 
         # Create signed ACK
@@ -405,10 +448,14 @@ class SecureConnectionManager:
 
         await self.transport.send_direct(sender_id, ack_data)
 
-    async def _handle_handshake_ack(self, message: dict[str, Any], sender_id: str):
+    async def _handle_handshake_ack(
+        self, message: dict[str, Any], sender_id: str
+    ) -> None:
         """Handle Handshake Acknowledgement with signature verification."""
         if message.get("status") != "OK":
-            logger.error(f"Handshake Refused by {sender_id} ❌")
+            logger.error(
+                "Handshake Refused by %s ❌", sender_id,
+            )
             return
 
         # Verify ACK signature if present
@@ -418,26 +465,33 @@ class SecureConnectionManager:
         if sender_public_key and signature:
             ack_data = {k: v for k, v in message.items() if k != "signature"}
             if not verify_handshake_signature(ack_data, signature, sender_public_key):
-                logger.warning(f"Handshake ACK from {sender_id} has invalid signature, rejecting.")
+                logger.warning(
+                    "Handshake ACK from %s has invalid signature, rejecting.",
+                    sender_id,
+                )
                 return
 
             # Store verified public key
             self.peer_public_keys[sender_id] = sender_public_key
         elif self.require_signatures:
             logger.warning(
-                f"Handshake ACK from {sender_id} missing "
+                "Handshake ACK from %s missing "
                 "public key or signature "
                 "(signatures required in this environment)."
             )
             return
 
-        logger.info(f"Secure Connection Established with {sender_id} ✅")
+        logger.info(
+            "Secure Connection Established with %s ✅", sender_id,
+        )
         self.authenticated_peers[sender_id] = True
 
     def _check_trust_policy(self, sender_id: str) -> bool:
         return check_trust_policy(self.trust_manager, sender_id)
 
-    def _validate_msp_from_message(self, message: dict[str, Any], sender_id: str) -> bool:
+    def _validate_msp_from_message(
+        self, message: dict[str, Any], sender_id: str
+    ) -> bool:
         return validate_msp_from_message(
             self.msp,
             self.identity_mgr,
@@ -445,7 +499,9 @@ class SecureConnectionManager:
             sender_id,
         )
 
-    def _validate_handshake_signature_from_message(self, message: dict[str, Any], sender_id: str) -> bool:
+    def _validate_handshake_signature_from_message(
+        self, message: dict[str, Any], sender_id: str
+    ) -> bool:
         return validate_handshake_signature_from_message(
             self.require_signatures,
             self.peer_public_keys,
@@ -480,7 +536,7 @@ class SecureConnectionManager:
                 sender_msp_id,
             )
         except Exception as e:
-            logger.error(f"MSP certificate verification error: {e}")
+            logger.error("MSP certificate verification error: %s", e,)
             return False
 
     def _is_certificate_valid_in_ca(self, cert_id: str) -> bool:
