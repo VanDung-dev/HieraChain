@@ -93,6 +93,7 @@ hrc = "hierachain.cli.__init__:hrc"
 
 [tool.setuptools]
 packages = { find = { include = ["hierachain*"] } }
+package-data = {"hierachain" = ["config/.env.HRC.example"]}
 
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"
