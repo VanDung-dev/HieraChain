@@ -48,6 +48,28 @@ class ConnectionHealthHandler:
             logger.warning(f"Ping failed for connection {connection_id}")
             return False
     
+    async def _check_single_connection(
+        self, connection_id: str, conn
+    ) -> bool:
+        """Check if a single connection is dead."""
+        if conn.is_closed:
+            return True
+        
+        is_alive = await self.ping_connection(conn.websocket, connection_id)
+        return not is_alive
+
+    @staticmethod
+    async def _disconnect_dead_connections(
+        dead_connections: list,
+        disconnect_callback: Callable[[str], Awaitable[None]]
+    ):
+        """Disconnect all dead connections."""
+        for connection_id in dead_connections:
+            try:
+                await disconnect_callback(connection_id)
+            except Exception as e:
+                logger.error(f"Error disconnecting {connection_id}: {e}")
+
     async def check_dead_connections(
         self,
         active_connections: dict,
@@ -66,20 +88,12 @@ class ConnectionHealthHandler:
         dead_connections = []
         
         for connection_id, conn in active_connections.items():
-            if conn.is_closed:
-                dead_connections.append(connection_id)
-                continue
-            
-            is_alive = await self.ping_connection(conn.websocket, connection_id)
-            if not is_alive:
+            is_dead = await self._check_single_connection(connection_id, conn)
+            if is_dead:
                 dead_connections.append(connection_id)
         
         # Remove dead connections
-        for connection_id in dead_connections:
-            try:
-                await disconnect_callback(connection_id)
-            except Exception as e:
-                logger.error(f"Error disconnecting {connection_id}: {e}")
+        await self._disconnect_dead_connections(dead_connections, disconnect_callback)
         
         return dead_connections
 

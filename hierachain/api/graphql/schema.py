@@ -119,7 +119,9 @@ def _get_blocks_from_chain(chain, from_index, to_index, limit, chain_name):
     return blocks
 
 
-def resolve_blocks(_root, _info, chain_name, from_index=None, to_index=None, limit=100):
+def resolve_blocks(
+    _root, _info, chain_name, from_index=None, to_index=None, limit=100
+):
     """Resolve multiple blocks"""
     chain = _get_chain_for_name(chain_name)
     if not chain:
@@ -127,21 +129,41 @@ def resolve_blocks(_root, _info, chain_name, from_index=None, to_index=None, lim
     return _get_blocks_from_chain(chain, from_index, to_index, limit, chain_name)
 
 
+def _filter_event_by_entity_id(event, entity_id):
+    """Filter event by entity_id"""
+    if not entity_id:
+        return True
+    return getattr(event, 'entity_id', None) == entity_id
+
+
+def _filter_event_by_type(event, event_type):
+    """Filter event by event_type"""
+    if not event_type:
+        return True
+    event_type_value = getattr(event, 'event_type', None) or getattr(event, 'event', None)
+    return event_type_value == event_type
+
+
+def _filter_event_by_time(event_time, from_timestamp, to_timestamp):
+    """Filter event by timestamp range"""
+    if not from_timestamp and not to_timestamp:
+        return True
+    if from_timestamp and event_time < from_timestamp:
+        return False
+    if to_timestamp and event_time > to_timestamp:
+        return False
+    return True
+
+
 def _filter_event(event, entity_id, event_type, from_timestamp, to_timestamp):
     """Helper to check if event matches filter criteria"""
-    # Use all() with generator to reduce cyclomatic complexity
     event_time = getattr(event, 'timestamp', 0)
     
-    return all([
-        not entity_id or getattr(event, 'entity_id', None) == entity_id,
-        (
-            not event_type or (
-                getattr(event, 'event_type', None) or getattr(event, 'event', None)
-            ) == event_type
-        ),
-        not from_timestamp or event_time >= from_timestamp,
-        not to_timestamp or event_time <= to_timestamp,
-    ])
+    return (
+        _filter_event_by_entity_id(event, entity_id) and
+        _filter_event_by_type(event, event_type) and
+        _filter_event_by_time(event_time, from_timestamp, to_timestamp)
+    )
 
 
 def _get_chain_for_name(chain_name):
@@ -152,6 +174,34 @@ def _get_chain_for_name(chain_name):
         return sub_chains[chain_name]
     main_chain = manager.get_main_chain()
     return main_chain
+
+
+def _get_filtered_events_from_block(
+    block, entity_id, event_type, from_timestamp, to_timestamp
+):
+    """Get filtered events from a single block"""
+    if not hasattr(block, 'events') or not block.events:
+        return []
+    
+    filtered = []
+    for event in block.events:
+        if _filter_event(
+            event, entity_id, event_type, from_timestamp, to_timestamp
+        ):
+            filtered.append(_to_event_type(event))
+    return filtered
+
+
+def _get_events_from_chain(
+    chain, entity_id, event_type, from_timestamp, to_timestamp
+):
+    """Generator to get filtered events from chain blocks"""
+    for block in chain.chain:
+        block_events = _get_filtered_events_from_block(
+            block, entity_id, event_type, from_timestamp, to_timestamp
+        )
+        for event in block_events:
+            yield event
 
 
 def resolve_events(
@@ -169,17 +219,12 @@ def resolve_events(
     if not chain:
         return []
 
-    # Get events from chain - iterate through blocks
+    # Use generator to collect events up to limit
     events = []
-    for block in chain.chain:
-        if hasattr(block, 'events') and block.events:
-            for event in block.events:
-                if _filter_event(
-                    event, entity_id, event_type, from_timestamp, to_timestamp
-                ):
-                    events.append(_to_event_type(event))
-                    if len(events) >= limit:
-                        break
+    for event in _get_events_from_chain(chain, entity_id, event_type, from_timestamp, to_timestamp):
+        events.append(event)
+        if len(events) >= limit:
+            break
 
     return events
 
