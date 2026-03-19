@@ -10,6 +10,8 @@ from hierachain.api.websocket.manager import (
     WebSocketSubscription,
     WebSocketMessageType
 )
+from hierachain.api.blockchain_explorer import BlockchainExplorer
+
 
 __all__ = [
     'v1',
@@ -20,5 +22,6 @@ __all__ = [
     'WebSocketManager',
     'WebSocketConnection',
     'WebSocketSubscription',
-    'WebSocketMessageType'
+    'WebSocketMessageType',
+    'BlockchainExplorer'
 ]
