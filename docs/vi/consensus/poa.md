@@ -1,5 +1,5 @@
 ---
-title: Proof of Authority (PoA)
+title: Proof of Authority - PoA
 description: Đồng thuận hiệu năng cao dành cho các tổ chức được nhận dạng (Authorized Entities).
 icon: material/account-check-outline
 ---

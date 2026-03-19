@@ -1,5 +1,5 @@
 ---
-title: "Độ tin cậy"
+title: "Hướng dẫn độ tin cậy"
 description: "Mẫu hình tăng độ tin cậy: journal, rollback, recovery, retry/idempotency, đồng bộ liên tầng."
 icon: material/check-decagram
 ---

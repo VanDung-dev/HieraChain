@@ -1,12 +1,12 @@
 ---
-title: "How-to: Triển khai an toàn"
+title: "Triển khai an toàn"
 description: "Bật xác thực, CORS/HSTS, Rate Limit, API Key và Resource Guard; hướng dẫn cấu hình môi trường sản xuất cho HieraChain."
 icon: material/shield-check
 ---
 
 # Triển khai an toàn
 
-Mục tiêu: cấu hình HieraChain ở môi trường production với các biện pháp bảo vệ cơ bản (AUTH, CORS/HSTS, Rate Limit, API key) và bảo vệ tài nguyên (Resource Guard).
+Cấu hình HieraChain ở môi trường production với các biện pháp bảo vệ cơ bản (AUTH, CORS/HSTS, Rate Limit, API key) và bảo vệ tài nguyên (Resource Guard).
 
 ## Chuẩn bị môi trường
 

@@ -1,5 +1,5 @@
 ---
-title: "Đóng góp"
+title: "Hướng dẫn đóng góp"
 description: "Hướng dẫn đóng góp cho HieraChain: quy trình Fork & Pull, chuẩn mã nguồn, kiểm thử và quy tắc ứng xử."
 icon: material/account-group
 ---

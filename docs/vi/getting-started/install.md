@@ -4,7 +4,7 @@ description: Hướng dẫn cài đặt HieraChain từ mã nguồn cho môi tr�
 icon: material/download
 ---
 
-# Cài đặt
+# Cài đặt HieraChain
 
 Tài liệu này hướng dẫn cài đặt HieraChain từ mã nguồn phục vụ phát triển và thử nghiệm.
 

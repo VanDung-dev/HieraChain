@@ -1,5 +1,5 @@
 ---
-title: "How-to: Thêm/Tùy biến Consensus"
+title: "Thêm/Tùy biến Consensus"
 description: "Hướng dẫn cấu hình PoA/PoF hoặc bổ sung cơ chế đồng thuận mới; tham chiếu core/consensus/* và hierarchical/consensus/bft_consensus.py."
 icon: material/cog-sync
 ---

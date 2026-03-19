@@ -1,10 +1,10 @@
 ---
-title: "How-to: Thêm endpoint API v1"
+title: "Thêm endpoint API v1"
 description: "Các bước thêm một endpoint mới vào API v1, wiring schema/handler và kiểm thử nhanh bằng curl."
 icon: material/plus-network
 ---
 
-# Thêm endpoint mới vào API v1
+# Thêm endpoint API v1
 
 ## Mục tiêu
 

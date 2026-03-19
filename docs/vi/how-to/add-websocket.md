@@ -4,7 +4,7 @@ description: "Hướng dẫn kết nối real-time với HieraChain qua WebSocke
 icon: material/connection
 ---
 
-# How-to: Sử dụng WebSocket
+# Sử dụng WebSocket
 
 ## Mục đích
 

@@ -1,5 +1,5 @@
 ---
-title: Proof of Federation (PoF)
+title: Proof of Federation - PoF
 description: Giao thức xoay vòng lãnh đạo dành riêng cho mạng liên minh (Consortium).
 icon: material/account-group-outline
 ---

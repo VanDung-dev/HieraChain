@@ -1,5 +1,5 @@
 ---
-title: "Tích hợp Web2"
+title: "Tích hợp Web2 & Hệ thống có sẵn"
 description: "Hướng dẫn tích hợp ứng dụng Web2, Legacy system và ERP với HieraChain thông qua REST API và SDK."
 icon: material/web
 ---

@@ -4,7 +4,7 @@ description: Byzantine Fault Tolerance — Cơ chế đồng thuận chịu lỗ
 icon: material/shield-key
 ---
 
-# BFT Consensus (`hierachain/consensus/bft/*`)
+# BFT Consensus module (`hierachain/consensus/bft/*`)
 
 ## Mục đích
 

@@ -1,5 +1,5 @@
 ---
-title: "Hiệu năng"
+title: "Hướng dẫn hiệu năng"
 description: "Hướng dẫn tối ưu hiệu năng: cache L1/L2, Apache Arrow, batch size, song song hoá, mẹo benchmark."
 icon: material/speedometer
 ---

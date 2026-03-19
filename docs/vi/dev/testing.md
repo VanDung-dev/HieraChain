@@ -1,5 +1,5 @@
 ---
-title: "Kiểm thử"
+title: "Hướng dẫn kiểm thử"
 description: "Hướng dẫn chạy test, markers/paths theo pyproject, ví dụ, và nguyên tắc viết test."
 icon: material/test-tube
 ---

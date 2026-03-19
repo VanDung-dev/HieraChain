@@ -1,10 +1,10 @@
 ---
-title: "Consensus & Ordering"
+title: "Đồng thuận & Sắp xếp (Consensus & Ordering)"
 description: "Tổng quan PoA/PoF/BFT và Ordering Service trong HieraChain; cấu hình, luồng và bất biến."
 icon: material/sync
 ---
 
-# Consensus & Ordering (Đồng thuận & Sắp xếp)
+# Đồng thuận & Sắp xếp (Consensus & Ordering)
 
 ## Mục đích
 

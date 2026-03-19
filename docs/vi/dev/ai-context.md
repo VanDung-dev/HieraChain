@@ -1,5 +1,5 @@
 ---
-title: "AI Context Definition"
+title: "AI Context Definition - HieraChain"
 description: "Chỉ dẫn cốt lõi (System Instructions) cho AI để ngăn chặn ảo giác và định hướng tư duy trong dự án HieraChain."
 icon: material/robot
 ---

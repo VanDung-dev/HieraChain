@@ -4,7 +4,7 @@ description: Ordering Service — đảm bảo thứ tự event và xử lý CFT
 icon: material/order-bool-ascending
 ---
 
-# Ordering (`hierachain/consensus/ordering/*`)
+# Ordering module (`hierachain/consensus/ordering/*`)
 
 ## Mục đích
 
