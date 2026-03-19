@@ -78,6 +78,8 @@ nav:
       - Consensus & Ordering: architecture/consensus.md
       - Phân cấp (chi tiết): architecture/hierarchy.md
       - Bảo mật (chuyên sâu): architecture/security.md
+      - Triển khai: architecture/deployment.md
+      - ZK Proofs: architecture/zk-proofs.md
   - Modules:
       - Core: modules/core.md
       - Hierarchical: modules/hierarchical.md
@@ -105,6 +107,8 @@ nav:
   - Tham chiếu:
       - Codebase map: reference/code-map.md
       - Config: reference/config.md
+      - Python SDK: reference/sdk-reference.md
+      - GraphQL API: reference/graphql-api.md
       - API v1: reference/api-v1.md
       - API v2: reference/api-v2.md
       - API v3: reference/api-v3.md
@@ -117,8 +121,12 @@ nav:
       - Thêm Endpoint: how-to/add-endpoint.md
       - Sử dụng WebSocket: how-to/add-websocket.md
       - Thêm/Tùy biến Consensus: how-to/add-consensus.md
+      - Viết Domain Contracts: how-to/write-domain-contracts.md
+      - Sử dụng Explorer: how-to/use-explorer.md
       - Triển khai an toàn: how-to/secure-deployment.md
       - Khắc phục sự cố: how-to/troubleshooting.md
+      - Khôi phục sau thảm họa: how-to/disaster-recovery.md
+      - Giao dịch Liên chuỗi: how-to/cross-chain-transactions.md
   - Hướng dẫn chung:
       - Hiệu năng: guides/performance.md
       - Độ tin cậy: guides/reliability.md
