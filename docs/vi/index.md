@@ -5,6 +5,8 @@ description: Bộ tài liệu kỹ thuật bám sát mã nguồn trong thư mụ
 
 # HieraChain — Tài liệu kỹ thuật
 
+## Tổng quan
+
 Chào mừng bạn đến với tài liệu kỹ thuật của HieraChain. Bộ tài liệu này bám sát mã nguồn trong thư mục `hierachain/` và phục vụ Developer/QA/DevOps tích hợp, vận hành và test hệ thống.
 
 Lưu ý quan trọng về phạm vi:
@@ -33,6 +35,8 @@ Lưu ý quan trọng về phạm vi:
     * [Consensus & Ordering](architecture/consensus.md)
     * [Phân cấp (chi tiết)](architecture/hierarchy.md)
     * [Bảo mật (chuyên sâu)](architecture/security.md)
+    * [Triển khai (Deployment)](architecture/deployment.md)
+    * [ZK Proofs](architecture/zk-proofs.md)
 
 * :material-cube-outline:{ .lg .middle } __Modules__
 
@@ -51,6 +55,7 @@ Lưu ý quan trọng về phạm vi:
     ---
 
     * [Config](reference/config.md)
+    * [Python SDK](reference/sdk-reference.md) · [GraphQL API](reference/graphql-api.md)
     * [API v1](reference/api-v1.md) · [API v2](reference/api-v2.md) · [API v3](reference/api-v3.md)
     * [Data Models](reference/data-models.md) · [Data Schema](reference/data-schema.md)
     * [Code Map](reference/code-map.md)
@@ -79,8 +84,12 @@ Lưu ý quan trọng về phạm vi:
     * [Tạo Sub-Chain](how-to/add-domain-chain.md)
     * [Thêm Endpoint](how-to/add-endpoint.md)
     * [Thêm/Tùy biến Consensus](how-to/add-consensus.md)
+    * [Giao dịch Liên chuỗi (2PC)](how-to/cross-chain-transactions.md)
+    * [Viết Hợp đồng Miền (Domain Contracts)](how-to/write-domain-contracts.md)
+    * [Sử dụng Blockchain Explorer](how-to/use-explorer.md)
     * [Sử dụng WebSocket](how-to/add-websocket.md) · [Tích hợp Web2](how-to/integrate-web2.md)
     * [Triển khai an toàn](how-to/secure-deployment.md) · [Xử lý sự cố](how-to/troubleshooting.md)
+    * [Khôi phục sau thảm họa (Disaster Recovery)](how-to/disaster-recovery.md)
 
 * :material-code-braces:{ .lg .middle } __Phát triển__
 
