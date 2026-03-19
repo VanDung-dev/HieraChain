@@ -1,0 +1,200 @@
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>HieraChain Supply Chain Dashboard</title>
+        <style>
+            body { font-family: monospace; margin: 0; padding: 16px; font-size: 14px; }
+            h1 { font-size: 18px; margin: 0 0 16px 0; }
+            h2 { font-size: 14px; margin: 0 0 10px 0; padding-bottom: 4px; border-bottom: 1px solid #ccc; }
+            h3 { font-size: 13px; margin: 0 0 8px 0; }
+
+            .stats-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+            .stat-box { border: 1px solid #999; padding: 12px 20px; min-width: 140px; }
+            .stat-box .label { font-size: 11px; color: #555; margin-bottom: 4px; text-transform: uppercase; }
+            .stat-box .value { font-size: 28px; font-weight: bold; }
+
+            .section { border: 1px solid #ccc; padding: 14px; margin-bottom: 16px; }
+
+            .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+            .tracer-card { border: 1px solid #bbb; padding: 10px; }
+            .tracer-card .header { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; font-size: 12px; }
+            .tracer-card .badge { font-size: 11px; border: 1px solid #888; padding: 1px 6px; font-weight: normal; }
+
+            .event-list { list-style: none; padding: 0; margin: 0; font-size: 12px; max-height: 120px; overflow-y: auto; }
+            .event-list li { padding: 4px 0; border-bottom: 1px dotted #ccc; display: flex; justify-content: space-between; }
+            .event-list li:last-child { border-bottom: none; }
+            .chain-tag { font-size: 11px; color: #666; }
+
+            .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+            table { width: 100%; border-collapse: collapse; font-size: 13px; }
+            th { text-align: left; padding: 6px 8px; background: #f0f0f0; border-bottom: 1px solid #ccc; font-weight: normal; }
+            td { padding: 6px 8px; border-bottom: 1px solid #eee; }
+            .tag { font-size: 11px; border: 1px solid #aaa; padding: 1px 5px; }
+
+            .bar-row { margin-bottom: 10px; font-size: 12px; }
+            .bar-label { display: flex; justify-content: space-between; margin-bottom: 3px; }
+            .bar-track { height: 6px; background: #ddd; }
+            .bar-fill { height: 100%; background: #333; }
+
+            @media (max-width: 900px) { .grid-3 { grid-template-columns: 1fr 1fr; } .two-col { grid-template-columns: 1fr; } }
+        </style>
+    </head>
+    <body>
+        <h1>HieraChain Supply Chain Dashboard</h1>
+
+        <!-- STATS ROW -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="label">Manufacturing Events</div>
+                <div class="value" id="m-events">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Quality Events</div>
+                <div class="value" id="q-events">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Logistics Events</div>
+                <div class="value" id="l-events">-</div>
+            </div>
+        </div>
+
+        <!-- PRODUCT TRACER -->
+        <div class="section">
+            <h2>Product Tracer</h2>
+            <div class="grid-3" id="user-tracer-container">
+                <div style="color:#999;font-size:12px;">Loading...</div>
+            </div>
+        </div>
+
+        <!-- ANALYTICS -->
+        <div class="section">
+            <h2>Network Activity</h2>
+            <div class="two-col">
+                <div>
+                    <h3>Recent Activity</h3>
+                    <table id="recent-activity-table">
+                        <thead><tr><th>Type</th><th>Chain</th><th>Block</th><th>Time</th></tr></thead>
+                        <tbody><!-- Rendered by JS --></tbody>
+                    </table>
+                </div>
+                <div>
+                    <h3>Events per Chain</h3>
+                    <div id="chain-dist-bars" style="margin-top:8px;"><!-- Rendered by JS --></div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function formatTime(ts) {
+                return new Date(ts * 1000).toLocaleTimeString('vi-VN');
+            }
+
+            async function fetchDashboard() {
+                try {
+                    const res = await fetch('http://127.0.0.1:8000/api/explorer');
+                    const data = await res.json();
+                    if (data.error) return;
+
+                    const overview = data.components.find(c => c.id === 'chain_overview').content;
+                    const analytics = data.components.find(c => c.id === 'event_analytics').content;
+
+                    const mChain = overview.sub_chains.find(c => c.name === 'ManufacturingChain');
+                    const qChain = overview.sub_chains.find(c => c.name === 'QualityChain');
+                    const lChain = overview.sub_chains.find(c => c.name === 'LogisticsChain');
+
+                    if (mChain) document.getElementById('m-events').innerText = mChain.events;
+                    if (qChain) document.getElementById('q-events').innerText = qChain.events;
+                    if (lChain) document.getElementById('l-events').innerText = lChain.events;
+
+                    // Recent activity table
+                    const tbody = document.querySelector('#recent-activity-table tbody');
+                    tbody.innerHTML = '';
+                    (overview.recent_activity || []).slice(0, 6).forEach(act => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${act.type}</td>
+                            <td><span class="tag">${act.chain.replace('Chain','')}</span></td>
+                            <td>#${act.block_index !== undefined ? act.block_index : '-'}</td>
+                            <td>${formatTime(act.timestamp)}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    // Chain distribution bars
+                    const barsEl = document.getElementById('chain-dist-bars');
+                    barsEl.innerHTML = '';
+                    if (analytics.chain_distribution) {
+                        const dist = analytics.chain_distribution;
+                        const total = Object.values(dist).reduce((a,b)=>a+b, 0);
+                        Object.keys(dist).forEach(chain => {
+                            if (chain === 'main_chain') return;
+                            const count = dist[chain];
+                            const pct = total > 0 ? Math.round((count/total)*100) : 0;
+                            barsEl.innerHTML += `
+                                <div class="bar-row">
+                                    <div class="bar-label">
+                                        <span>${chain.replace('Chain','')}</span>
+                                        <span>${count} events (${pct}%)</span>
+                                    </div>
+                                    <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+                                </div>
+                            `;
+                        });
+                    }
+                } catch (err) {
+                    console.error('Dashboard fetch error:', err);
+                }
+            }
+
+
+
+            async function fetchTracers() {
+                const container = document.getElementById('user-tracer-container');
+                const entities = ["PRODUCT-2024-001", "PRODUCT-2024-002", "PRODUCT-2024-003"];
+                const parts = [];
+
+                for (const entityId of entities) {
+                    try {
+                        const res = await fetch(`http://127.0.0.1:8000/api/trace?entity_id=${entityId}`);
+                        const d = await res.json();
+
+                        let eventsHtml = '';
+                        if (d.events && d.events.length > 0) {
+                            [...d.events].reverse().slice(0, 5).forEach(ev => {
+                                const name = ev.event && typeof ev.event === 'object' ? ev.event.event : ev.event;
+                                const chain = (ev.chain || '').replace('Chain', '');
+                                eventsHtml += `<li>
+                                    <span>${name}</span>
+                                    <span class="chain-tag">[${chain}] ${formatTime(ev.timestamp)}</span>
+                                </li>`;
+                            });
+                        } else {
+                            eventsHtml = '<li style="color:#999">No events found.</li>';
+                        }
+
+                        parts.push(`<div class="tracer-card">
+                            <div class="header">
+                                <span>${entityId}</span>
+                                <span class="badge">${d.total_events || 0} events</span>
+                            </div>
+                            <ul class="event-list">${eventsHtml}</ul>
+                        </div>`);
+                    } catch (e) {
+                        parts.push(`<div class="tracer-card" style="color:red">Error: ${entityId}</div>`);
+                    }
+                }
+                container.innerHTML = parts.join('');
+            }
+
+            async function loop() {
+                await fetchDashboard();
+                await fetchTracers();
+            }
+
+            setInterval(loop, 3000);
+            loop();
+        </script>
+    </body>
+    </html>

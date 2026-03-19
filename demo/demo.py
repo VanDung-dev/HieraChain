@@ -871,7 +871,44 @@ def demonstrate_hierachain():
     demonstrate_configuration_checking_tools(hierarchy_manager)
     demonstrate_performance_monitoring()
 
-    print("18. Ledger Demonstration Summary...")
+    print("\n18. Exporting Explorer Data to JSON...")
+    try:
+        from hierachain.api.blockchain_explorer import BlockchainExplorer
+        import json
+        
+        # Create an explorer and collect all the structural data into 1 file
+        explorer = BlockchainExplorer(chain=hierarchy_manager)
+        explorer_data = explorer.render()
+        
+        # Collect entity trace data of products
+        trace_data = {}
+        for entity in entities:
+            try:
+                t_data = explorer.ui_components["entity_tracer"].trace_entity(entity)
+                trace_data[entity] = t_data
+            except Exception as e:
+                print(f"   [!] {entity} trace error: {e}")
+                
+        # Write to file – dùng đường dẫn tuyệt đối để không bị lệch thư mục khi chạy
+        _demo_dir = os.path.dirname(os.path.abspath(__file__))
+        _data_dir = os.path.join(_demo_dir, "data")
+        os.makedirs(_data_dir, exist_ok=True)
+        
+        _explorer_file = os.path.join(_data_dir, "explorer_data.json")
+        _trace_file = os.path.join(_data_dir, "trace_data.json")
+        
+        with open(_explorer_file, "w", encoding="utf-8") as f:
+            json.dump(explorer_data, f, ensure_ascii=False, indent=2)
+            
+        with open(_trace_file, "w", encoding="utf-8") as f:
+            json.dump(trace_data, f, ensure_ascii=False, indent=2)
+            
+        print(f" ✓ Exported network structure to {_explorer_file}")
+        print(f" ✓ Exported tracer logs to {_trace_file}")
+    except Exception as e:
+        print(f" [!] Error exporting Explorer JSON: {e}")
+
+    print("\n19. Ledger Demonstration Summary...")
     print("   ✓ Hierarchical structure (Main Chain + Sub-Chains)")
     print("   ✓ Event-based model (no cryptocurrency terminology)")
     print("   ✓ Entity lifecycle management across multiple chains")
