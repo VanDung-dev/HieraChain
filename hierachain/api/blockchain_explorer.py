@@ -268,15 +268,17 @@ class EntityTracerComponent:
             
         # Use indexed search for O(1) performance
         indexed_events = self.chain.main_chain.get_indexed_entity_events(entity_id)
-        return [
-            {
+        result = []
+        for e in indexed_events:
+            ev = e.get("event", {})
+            ts = ev.get("timestamp") if isinstance(ev, dict) else 0
+            result.append({
                 "chain": "main_chain",
-                "block_index": e["block_index"],
-                "event": e["event"],
-                "timestamp": e["timestamp"]
-            }
-            for e in indexed_events
-        ]
+                "block_index": e.get("block_index", 0),
+                "event": ev,
+                "timestamp": ts or 0
+            })
+        return result
     
     def _search_sub_chains(self, entity_id: str) -> list[dict[str, Any]]:
         """Search sub-chains for entity"""
@@ -285,14 +287,15 @@ class EntityTracerComponent:
             return []
             
         for chain_name, sub_chain in self.chain.sub_chains.items():
-            # Use indexed search for O(1) performance
             indexed_events = sub_chain.get_indexed_entity_events(entity_id)
             for e in indexed_events:
+                ev = e.get("event", {})
+                ts = ev.get("timestamp") if isinstance(ev, dict) else 0
                 events.append({
                     "chain": chain_name,
-                    "block_index": e["block_index"],
-                    "event": e["event"],
-                    "timestamp": e["timestamp"]
+                    "block_index": e.get("block_index", 0),
+                    "event": ev,
+                    "timestamp": ts or 0
                 })
         return events
     
