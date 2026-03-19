@@ -37,11 +37,11 @@ HieraChain is part of a larger ecosystem of blockchain tools:
 
 Comprehensive documentation is available at our official website **[docs.hierachain.org](https://docs.hierachain.org/)**:
 
-- [Getting Started](https://docs.hierachain.org/getting-started/) - Installation and basic setup
-- [Architecture](https://docs.hierachain.org/architecture/) - System design and hierarchical model
-- [Core Modules](https://docs.hierachain.org/modules/) - Detailed breakdown of system components
-- [Guides & How-To](https://docs.hierachain.org/how-to/) - Step-by-step implementation guides
-- [API Reference](https://docs.hierachain.org/reference/) - REST API and configuration details
+- [Getting Started](https://docs.hierachain.org/getting-started/install/) - Installation and basic setup
+- [Architecture](https://docs.hierachain.org/architecture/overview/) - System design and hierarchical model
+- [Core Modules](https://docs.hierachain.org/modules/core/) - Detailed breakdown of system components
+- [Guides & How-To](https://docs.hierachain.org/how-to/integrate-web2/) - Step-by-step implementation guides
+- [API Reference](https://docs.hierachain.org/reference/code-map/) - REST API and configuration details
 
 ## Quick Start
 

@@ -35,13 +35,13 @@ HieraChain là một phần của hệ sinh thái các công cụ blockchain l�
 
 ## Tài Liệu (Documentation)
 
-Kho tài liệu chi tiết có sẵn tại trang web chính thức **[docs.hierachain.org](https://docs.hierachain.org/vi/)**:
+Kho tài liệu chi tiết có sẵn tại trang web chính thức **[docs.hierachain.org](https://docs.hierachain.org/)**:
 
-- [Bắt đầu nhanh (Getting Started)](https://docs.hierachain.org/getting-started/) - Cài đặt và thiết lập cơ bản
-- [Kiến trúc (Architecture)](https://docs.hierachain.org/architecture/) - Thiết kế hệ thống và mô hình phân cấp
-- [Thành phần hệ thống (Modules)](https://docs.hierachain.org/modules/) - Chi tiết về các module của hệ thống
-- [Hướng dẫn (How-to Guides)](https://docs.hierachain.org/how-to/) - Các bước hướng dẫn triển khai
-- [Tài liệu tham khảo (Reference)](https://docs.hierachain.org/reference/) - API REST và cấu hình chi tiết
+- [Bắt đầu nhanh (Getting Started)](https://docs.hierachain.org/getting-started/install/) - Cài đặt và thiết lập cơ bản
+- [Kiến trúc (Architecture)](https://docs.hierachain.org/architecture/overview/) - Thiết kế hệ thống và mô hình phân cấp
+- [Thành phần hệ thống (Modules)](https://docs.hierachain.org/modules/core/) - Chi tiết về các module của hệ thống
+- [Hướng dẫn (How-to Guides)](https://docs.hierachain.org/how-to/integrate-web2/) - Các bước hướng dẫn triển khai
+- [Tài liệu tham khảo (Reference)](https://docs.hierachain.org/reference/code-map/) - API REST và cấu hình chi tiết
 
 ## Bắt Đầu Nhanh
 
