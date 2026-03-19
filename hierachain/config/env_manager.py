@@ -24,85 +24,38 @@ from dotenv import load_dotenv
 ENV_FILE = Path(".env")
 ENV_EXAMPLE_FILE = Path(".env.HRC.example")
 HRC_PREFIX = "HRC_"
-AUTO_CONFIG_MARKER = "# === HieraChain Product Auto-Configuration ==="
 
 # Environment variable to track if warning has been shown
 _WARNING_ENV_VAR = "HRC_WARNING_SHOWN"
 
-# Default Product configuration template
+# Default Product configuration - loaded from .env.HRC.example file
 # NOTE: SQLite is used as default for development ease.
 # For production, consider using PostgreSQL, MySQL, or other supported databases.
 # See hierachain/adapters/database/ for available adapters.
-PRODUCT_CONFIG_TEMPLATE = f"""{AUTO_CONFIG_MARKER}
-# Auto-generated for production environment
-# Copy this content to .env and customize as needed
 
-# Environment
-HRC_ENV=product
 
-# API Settings
-HRC_API_HOST=0.0.0.0
-HRC_API_PORT=2661
-
-# ==================== DATABASE CONFIGURATION ====================
-# Supported backends: sqlite, postgres, mysql, memory
-# Default: sqlite (for development ease)
-# For production, recommended: postgres or mysql
-
-# Database Backend (uncomment and modify as needed)
-# HRC_STORAGE_BACKEND=sqlite
-# HRC_DATABASE_URL=sqlite:///hierachain.db
-
-# Example: PostgreSQL (uncomment and modify)
-# HRC_STORAGE_BACKEND=postgres
-# HRC_DATABASE_URL=postgresql://user:password@localhost:5432/hierachain
-
-# Example: MySQL (uncomment and modify)
-# HRC_STORAGE_BACKEND=mysql
-# HRC_DATABASE_URL=mysql://user:password@localhost:3306/hierachain
-
-# Example: Redis (uncomment and modify)
-# HRC_STORAGE_BACKEND=redis
-# REDIS_HOST=localhost
-# REDIS_PORT=6379
-# REDIS_DB=0
-
-# ==================== END DATABASE CONFIGURATION ====================
-
-# Security - Authentication (MANDATORY in production)
-HRC_AUTH_ENABLED=true
-
-# Security - CORS (Restricted in production)
-HRC_CORS_ALLOW_ALL=false
-HRC_CORS_ORIGINS=
-
-# Security - P2P Network
-HRC_P2P_TRUST_POLICY=strict
-HRC_P2P_REQUIRE_SIGNATURES=true
-
-# Security - HTTPS/HSTS
-HRC_HSTS_ENABLED=true
-
-# Security - Rate Limiting
-HRC_RATE_LIMIT=true
-HRC_RATE_LIMIT_RPM=100
-
-# Storage Backend (Optional - uncomment and configure for production)
-# HRC_STORAGE_BACKEND=redis
-# REDIS_HOST=localhost
-# REDIS_PORT=6379
-# REDIS_DB=0
-
-# Default: SQLite (for development)
-HRC_DATABASE_URL=sqlite:///hierachain.db
-
-# Master Key Management (Env-based in production)
-HRC_MASTER_KEY_SOURCE=env
-
-# Logging - Less verbose in production
-LOG_LEVEL=WARNING
-HRC_LOG_SQL_DETAIL=false
-"""
+def get_product_config_template() -> str:
+    """
+    Get the Product configuration template from .env.HRC.example file.
+    
+    The file is located in the same directory as this module (hierachain/config/).
+    This ensures it works both in development and when installed as a pip package.
+    
+    Returns:
+        The content of .env.HRC.example file
+    """
+    # Get the directory where this module is located
+    config_dir = Path(__file__).parent
+    env_example_file = config_dir / ".env.HRC.example"
+    
+    if env_example_file.exists():
+        with open(env_example_file, 'r') as f:
+            return f.read()
+    
+    # Fallback: raise error if file not found
+    raise FileNotFoundError(
+        f"Could not find {env_example_file}"
+    )
 
 
 def has_hierachain_config(env_file: Path = ENV_FILE) -> bool:
@@ -145,12 +98,9 @@ def get_current_env(env_file: Path = ENV_FILE) -> Optional[str]:
         return None
     
     with open(env_file, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith('#'):
-                if line.startswith('HRC_ENV='):
-                    return line.split('=', 1)[1].strip()
-    return None
+        lines = (line.strip() for line in f if line.strip() and not line.startswith('#'))
+        match = next((line for line in lines if line.startswith('HRC_ENV=')), None)
+        return match.split('=', 1)[1].strip() if match else None
 
 
 def get_current_env_from_os() -> Optional[str]:
@@ -205,8 +155,9 @@ def ensure_product_example(env_example_file: Path = ENV_EXAMPLE_FILE) -> bool:
                 return False  # Already has config
     
     # Create/update .env.HRC.example with Product config
+    template_content = get_product_config_template()
     with open(env_example_file, 'w') as f:
-        f.write(PRODUCT_CONFIG_TEMPLATE)
+        f.write(template_content)
     
     return True
 
