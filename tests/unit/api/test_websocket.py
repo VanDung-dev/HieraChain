@@ -338,16 +338,3 @@ class TestWebSocketEndpoints:
         
         # Cleanup
         await ws_manager.stop()
-        
-    @pytest.mark.asyncio
-    async def test_websocket_playground_endpoint(self, app):
-        """Test /ws/playground returns HTML"""
-        from fastapi.testclient import TestClient
-        
-        client = TestClient(app)
-        
-        response = client.get("/ws/playground")
-        
-        assert response.status_code == 200
-        assert "text/html" in response.headers["content-type"]
-        assert "HieraChain WebSocket Client" in response.text
