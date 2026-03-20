@@ -167,6 +167,13 @@ class Settings:
     # Should be False in production to avoid leaking DB schema details
     LOG_SQL_DETAIL = os.getenv("HRC_LOG_SQL_DETAIL", "true").lower() == "true"
     
+    # IPFS Storage settings (for off-chain data storage)
+    IPFS_ENABLED = os.getenv("HRC_IPFS_ENABLED", "false").lower() == "true"
+    IPFS_HOST = os.getenv("HRC_IPFS_HOST", "/ip4/127.0.0.1/tcp/5001")
+    IPFS_AUTO_PIN = os.getenv("HRC_IPFS_AUTO_PIN", "true").lower() == "true"
+    IPFS_TIMEOUT = int(os.getenv("HRC_IPFS_TIMEOUT", "120"))
+    IPFS_ENCRYPTION_KEY = os.getenv("HRC_IPFS_ENCRYPTION_KEY", "")  # Hex-encoded 32-byte key
+
     # Zero Knowledge Proof settings
     # Enable trustless verification of state transitions
     ENABLE_ZK_PROOFS = os.getenv("HRC_ENABLE_ZK_PROOFS", "false").lower() == "true"
@@ -308,6 +315,17 @@ class Settings:
             "allow_credentials": True,
             "allow_methods": cls.CORS_ALLOW_METHODS,
             "allow_headers": cls.CORS_ALLOW_HEADERS,
+        }
+
+    @classmethod
+    def get_ipfs_config(cls) -> dict[str, Any]:
+        """Get IPFS storage configuration"""
+        return {
+            "enabled": cls.IPFS_ENABLED,
+            "host": cls.IPFS_HOST,
+            "auto_pin": cls.IPFS_AUTO_PIN,
+            "timeout": cls.IPFS_TIMEOUT,
+            "encryption_key": cls.IPFS_ENCRYPTION_KEY,
         }
 
     @classmethod
