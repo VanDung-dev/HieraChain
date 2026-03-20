@@ -25,6 +25,12 @@
         <loc>https://docs.hierachain.org/architecture/security/</loc>
       </url>
       <url>
+        <loc>https://docs.hierachain.org/architecture/deployment/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/architecture/zk-proofs/</loc>
+      </url>
+      <url>
         <loc>https://docs.hierachain.org/modules/core/</loc>
       </url>
       <url>
@@ -97,6 +103,12 @@
         <loc>https://docs.hierachain.org/reference/config/</loc>
       </url>
       <url>
+        <loc>https://docs.hierachain.org/reference/sdk-reference/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/reference/graphql-api/</loc>
+      </url>
+      <url>
         <loc>https://docs.hierachain.org/reference/api-v1/</loc>
       </url>
       <url>
@@ -130,10 +142,22 @@
         <loc>https://docs.hierachain.org/how-to/add-consensus/</loc>
       </url>
       <url>
+        <loc>https://docs.hierachain.org/how-to/write-domain-contracts/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/how-to/use-explorer/</loc>
+      </url>
+      <url>
         <loc>https://docs.hierachain.org/how-to/secure-deployment/</loc>
       </url>
       <url>
         <loc>https://docs.hierachain.org/how-to/troubleshooting/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/how-to/disaster-recovery/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/how-to/cross-chain-transactions/</loc>
       </url>
       <url>
         <loc>https://docs.hierachain.org/guides/performance/</loc>
