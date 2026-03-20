@@ -6,14 +6,20 @@ including channels, private data collections, and enhanced domain contracts.
 """
 
 import time
-import logging
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import (
+    APIRouter, HTTPException, status, Depends, BackgroundTasks
+)
 from hierachain.security.verify.api_key_verifier import require_chain_access
 
 from hierachain.security.sanitization import (
     sanitize_string, sanitize_dict, sanitize_for_output,
 )
 from hierachain.security.secure_logging import SecureLogger
+from hierachain.api.storage.endpoint_helpers import (
+    process_private_data_value,
+    process_contract_implementation
+)
+from hierachain.api.storage import IPFSError
 
 from hierachain.api.v2.schemas import (
     ChannelCreateRequest, ChannelResponse,
@@ -179,18 +185,64 @@ async def create_private_collection(
     response_model=PrivateDataResponse,
     dependencies=[Depends(require_chain_access)]
 )
-async def add_private_data(data_request: PrivateDataRequest):
-    """Add private data to a collection"""
+async def add_private_data(
+    data_request: PrivateDataRequest,
+    background_tasks: BackgroundTasks
+):
+    """
+    Add private data to a collection.
+
+    Supports both on-chain and off-chain (IPFS) storage:
+    - On-chain: Provide 'value' dict in request
+    - Off-chain: Provide 'value_cid' and 'value_nonce' in request (recommended for sensitive data)
+
+    Off-chain storage provides additional security layer as data is encrypted
+    and stored in private IPFS swarm.
+    """
     collection_name = data_request.collection
     if collection_name not in _private_collections:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Private collection '{collection_name}' not found"
         )
-    
+
     try:
         # Sanitize key before using
         key = sanitize_string(data_request.key)
+
+        # Process private data value - handle both on-chain and off-chain
+        inline_value, cid_info = process_private_data_value(
+            data_request,
+            background_tasks=background_tasks
+        )
+
+        # Store private data with appropriate storage type
+        private_data_entry = {
+            "key": key,
+            "collection": collection_name,
+            "event_metadata": data_request.event_metadata,
+            "created_at": time.time()
+        }
+
+        if cid_info:
+            # Off-chain storage (IPFS) - recommended for sensitive data
+            private_data_entry["value_cid"] = cid_info["cid"]
+            private_data_entry["value_nonce"] = cid_info["nonce"]
+            if cid_info.get("metadata"):
+                private_data_entry["value_metadata"] = cid_info["metadata"]
+
+            api_logger.info(
+                "Private data using off-chain storage",
+                collection=collection_name,
+                key=key,
+                cid=cid_info["cid"]
+            )
+        else:
+            # On-chain storage (traditional)
+            private_data_entry["value"] = inline_value
+
+        # Store in collection (in real implementation, this would go to private state DB)
+        # For now, just log the operation
 
         api_logger.audit(
             action="add",
@@ -198,13 +250,26 @@ async def add_private_data(data_request: PrivateDataRequest):
             success=True,
             collection=collection_name,
             key=key,
+            storage_type="offchain" if cid_info else "onchain"
         )
-        
+
         return PrivateDataResponse(
             success=True,
-            message=f"Private data added to collection '{collection_name}'",
+            message=f"Private data added to collection '{collection_name}'" + (
+                " (off-chain storage)" if cid_info else ""
+            ),
             key=key
         )
+    except IPFSError as e:
+        api_logger.error(
+            "IPFS error while adding private data",
+            error=str(e),
+            collection=collection_name
+        )
+        raise HTTPException(
+            status_code=503,
+            detail=f"IPFS storage error: {str(e)}"
+        ) from e
     except Exception as e:
         api_logger.error(
             "Failed to add private data",
@@ -214,7 +279,7 @@ async def add_private_data(data_request: PrivateDataRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to add private data. An internal error has occurred."
-        )
+        ) from e
 
 
 @router.post(
@@ -222,35 +287,98 @@ async def add_private_data(data_request: PrivateDataRequest):
     response_model=ContractResponse,
     dependencies=[Depends(require_chain_access)]
 )
-async def create_contract(contract_request: ContractCreateRequest):
-    """Create a new domain contract"""
+async def create_contract(
+    contract_request: ContractCreateRequest,
+    background_tasks: BackgroundTasks
+):
+    """
+    Create a new domain contract.
+
+    Supports both on-chain and off-chain (IPFS) contract code storage:
+    - On-chain: Provide 'implementation' string in request (for small contracts)
+    - Off-chain: Provide 'implementation_cid' and 'implementation_nonce' in request (for large contracts)
+
+    Off-chain storage is recommended for:
+    - Large contract implementations
+    - Contracts with extensive logic
+    - Contracts that may be updated frequently
+    """
     try:
         # In a real implementation, this would create an actual DomainContract object
         contract_id = contract_request.contract_id
-        
-        # Sanitize user input before storing to prevent stored injection
-        safe_implementation = sanitize_string(
-            contract_request.implementation, context="general"
+
+        # Process contract implementation - handle both on-chain and off-chain
+        inline_implementation, cid_info = process_contract_implementation(
+            contract_request,
+            background_tasks=background_tasks
         )
+
+        # Sanitize metadata
         safe_metadata = sanitize_for_output(
             contract_request.metadata, context="general"
         ) if contract_request.metadata else {}
-        
-        _contracts[contract_id] = {
+
+        # Build contract entry
+        contract_entry = {
             "id": contract_id,
             "version": sanitize_string(contract_request.version),
-            "implementation": safe_implementation,
             "metadata": safe_metadata,
             "created_at": time.time()
         }
-        
+
+        if cid_info:
+            # Off-chain storage (IPFS) - recommended for large contracts
+            contract_entry["implementation_cid"] = cid_info["cid"]
+            contract_entry["implementation_nonce"] = cid_info["nonce"]
+            if cid_info.get("metadata"):
+                contract_entry["implementation_metadata"] = cid_info["metadata"]
+
+            api_logger.info(
+                "Contract using off-chain storage",
+                contract_id=contract_id,
+                cid=cid_info["cid"]
+            )
+        else:
+            # On-chain storage (traditional)
+            safe_implementation = sanitize_string(
+                inline_implementation, context="general"
+            )
+            contract_entry["implementation"] = safe_implementation
+
+        _contracts[contract_id] = contract_entry
+
+        api_logger.audit(
+            action="create",
+            resource="contract",
+            success=True,
+            contract_id=contract_id,
+            storage_type="offchain" if cid_info else "onchain"
+        )
+
         return ContractResponse(
             success=True,
-            message=f"Contract '{contract_id}' created successfully",
+            message=f"Contract '{contract_id}' created successfully" + (
+                " (off-chain storage)" if cid_info else ""
+            ),
             contract_id=contract_id,
             result=None
         )
-    except Exception:
+    except IPFSError as e:
+        api_logger.error(
+            "IPFS error while creating contract",
+            error=str(e),
+            contract_id=contract_request.contract_id
+        )
+        raise HTTPException(
+            status_code=503,
+            detail=f"IPFS storage error: {str(e)}"
+        ) from e
+    except Exception as e:
+        api_logger.error(
+            "Failed to create contract",
+            error=str(e),
+            contract_id=contract_request.contract_id
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create contract. An internal error has occurred."
