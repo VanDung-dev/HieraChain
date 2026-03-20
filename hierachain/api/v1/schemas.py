@@ -5,32 +5,109 @@ This module defines the data models used for validating and serializing
 API v1 requests and responses in the HieraChain system.
 Each schema corresponds to specific API endpoints and ensures data integrity
 and proper documentation.
+
+IPFS Integration:
+- Supports both on-chain data (dict) and off-chain data (IPFS CID)
+- CID fields enable large payloads to be stored off-chain
+- Backward compatible with existing on-chain data
 """
 
 from typing import Any
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import (
+    BaseModel, Field, ConfigDict, field_validator
+)
 
 
 class EventRequest(BaseModel):
-    """Request schema for adding events"""
+    """
+    Request schema for adding events.
+
+    Supports both on-chain and off-chain data storage:
+    - On-chain: Provide 'details' as a dict (traditional approach)
+    - Off-chain: Provide 'details_cid' as IPFS CID and 'details_nonce' for decryption
+
+    Note: If both 'details' and 'details_cid' are provided, 'details_cid' takes precedence.
+    """
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
-                "entity_id": "PRODUCT-2024-001",
-                "event_type": "production_start",
-                "details": {
-                    "material_batch": "BATCH-001",
-                    "machine_id": "MACHINE-07"
+            "examples": [
+                {
+                    "entity_id": "PRODUCT-2024-001",
+                    "event_type": "production_start",
+                    "details": {
+                        "material_batch": "BATCH-001",
+                        "machine_id": "MACHINE-07"
+                    }
+                },
+                {
+                    "entity_id": "PRODUCT-2024-002",
+                    "event_type": "production_start",
+                    "details_cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+                    "details_nonce": "a1b2c3d4e5f6789012345678",
+                    "details_metadata": {
+                        "channel": "manufacturing",
+                        "org": "acme_corp"
+                    }
                 }
-            }
+            ]
         }
     )
-    
+
     entity_id: str = Field(..., description="Unique identifier for the entity")
     event_type: str = Field(
         ..., description="Type of event (e.g., 'operation_start', 'status_change')"
     )
-    details: dict[str, Any] | None = Field(None, description="Additional event details")
+
+    # On-chain data (traditional)
+    details: dict[str, Any] | None = Field(
+        None,
+        description="Event details stored on-chain (use for small payloads)"
+    )
+
+    # Off-chain data (IPFS)
+    details_cid: str | None = Field(
+        None,
+        description="IPFS CID for off-chain event details (use for large payloads)"
+    )
+    details_nonce: str | None = Field(
+        None,
+        description="Encryption nonce (hex string) for decrypting IPFS data"
+    )
+    details_metadata: dict[str, Any] | None = Field(
+        None,
+        description="Metadata used as AAD during encryption (must match for decryption)"
+    )
+
+    @field_validator('details_cid')
+    @classmethod
+    def validate_cid(cls, v: str | None) -> str | None:
+        """Validate IPFS CID format."""
+        if v is not None:
+            # Basic CID validation (starts with Qm for CIDv0 or b for CIDv1)
+            if not (v.startswith('Qm') or v.startswith('b')):
+                raise ValueError(
+                    'Invalid IPFS CID format. CID should start with "Qm" (v0) or "b" (v1)'
+                )
+            if len(v) < 46:  # Minimum CID length
+                raise ValueError('Invalid IPFS CID: too short')
+        return v
+
+    @field_validator('details_nonce')
+    @classmethod
+    def validate_nonce_with_cid(cls, v: str | None, info) -> str | None:
+        """Validate that nonce is provided when CID is present."""
+        if info.data.get('details_cid') and not v:
+            raise ValueError('details_nonce is required when details_cid is provided')
+        if v is not None:
+            # Validate hex format
+            try:
+                bytes.fromhex(v)
+            except ValueError:
+                raise ValueError('details_nonce must be a valid hex string')
+            # Nonce should be 12 bytes = 24 hex chars for AES-GCM
+            if len(v) != 24:
+                raise ValueError('details_nonce must be 24 hex characters (12 bytes)')
+        return v
 
 
 class EventResponse(BaseModel):

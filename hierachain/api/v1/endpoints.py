@@ -10,13 +10,21 @@ import time
 import re
 import os
 from typing import Any
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import (
+    APIRouter, HTTPException, status, Depends, BackgroundTasks
+)
 from fastapi.responses import JSONResponse
 
 from hierachain.security.sanitization import (
     sanitize_string, sanitize_dict
 )
 from hierachain.security.secure_logging import SecureLogger
+from hierachain.api.storage.endpoint_helpers import (
+    is_ipfs_enabled,
+    process_event_details,
+    resolve_multiple_events
+)
+from hierachain.api.storage import IPFSError
 
 from hierachain.api.v1.schemas import (
     EventRequest,
@@ -130,31 +138,67 @@ async def list_chains(manager: HierarchyManager = Depends(get_hierarchy_manager)
 async def add_event(
     chain_name: str,
     event_request: EventRequest,
+    background_tasks: BackgroundTasks,
     manager: HierarchyManager = Depends(get_hierarchy_manager)
 ):
-    """Add an event to a specific sub-chain"""
+    """
+    Add an event to a specific sub-chain.
+
+    Supports both on-chain and off-chain (IPFS) data storage:
+    - On-chain: Provide 'details' dict in request
+    - Off-chain: Provide 'details_cid' and 'details_nonce' in request
+
+    If IPFS is enabled and large details are provided, they can be stored off-chain
+    to reduce block size and improve performance.
+    """
     try:
         sub_chain = manager.get_sub_chain(chain_name)
         if not sub_chain:
             raise HTTPException(
                 status_code=404, detail=f"Sub-chain '{chain_name}' not found"
             )
-        
+
         # Sanitize user input before storing
         safe_entity_id = sanitize_string(event_request.entity_id)
         safe_event_type = sanitize_string(event_request.event_type)
-        safe_details = (
-            sanitize_dict(event_request.details) if event_request.details else {}
+
+        # Process event details - handle both on-chain and off-chain data
+        inline_details, cid_info = process_event_details(
+            event_request,
+            background_tasks=background_tasks
         )
+
+        # Sanitize inline details if provided
+        if inline_details:
+            safe_details = sanitize_dict(inline_details)
+        else:
+            safe_details = None
 
         # Create event from request
         event = {
             "entity_id": safe_entity_id,
             "event": safe_event_type,
             "timestamp": time.time(),
-            "details": safe_details
         }
-        
+
+        # Add details based on storage type
+        if cid_info:
+            # Off-chain storage (IPFS)
+            event["details_cid"] = cid_info["cid"]
+            event["details_nonce"] = cid_info["nonce"]
+            if cid_info.get("metadata"):
+                event["details_metadata"] = cid_info["metadata"]
+
+            api_logger.info(
+                "Event using off-chain storage",
+                chain_name=chain_name,
+                cid=cid_info["cid"],
+                entity_id=safe_entity_id
+            )
+        else:
+            # On-chain storage (traditional)
+            event["details"] = safe_details or {}
+
         # Add event to sub-chain
         sub_chain.add_event(event)
 
@@ -164,15 +208,28 @@ async def add_event(
             success=True,
             chain_name=chain_name,
             entity_id=safe_entity_id,
+            storage_type="offchain" if cid_info else "onchain"
         )
-        
+
         return EventResponse(
             success=True,
-            message=f"Event added to chain '{chain_name}'",
+            message=f"Event added to chain '{chain_name}'" + (
+                " (off-chain storage)" if cid_info else ""
+            ),
             event_id=(
                 f"{chain_name}_{len(sub_chain.chain)}_{len(sub_chain.pending_events)}"
             )
         )
+    except IPFSError as e:
+        api_logger.error(
+            "IPFS error while adding event",
+            error=str(e),
+            chain_name=chain_name
+        )
+        raise HTTPException(
+            status_code=503,
+            detail=f"IPFS storage error: {str(e)}"
+        ) from e
     except Exception as e:
         api_logger.error("Failed to add event", error=str(e), chain_name=chain_name)
         raise HTTPException(
@@ -246,10 +303,26 @@ async def submit_proof(
 async def trace_entity(
     entity_id: str,
     chain_name: str | None = None,
+    resolve_cid: bool = False,
     manager: HierarchyManager = Depends(get_hierarchy_manager),
     tracer: EntityTracer = Depends(get_entity_tracer)
 ):
-    """Trace an entity across chains"""
+    """
+    Trace an entity across chains.
+
+    Args:
+        entity_id: Unique identifier of the entity to trace
+        chain_name: Optional chain name to limit trace to specific chain
+        resolve_cid: If True, resolve IPFS CIDs to actual event details (default: False)
+
+    Returns:
+        Entity trace with events across chains
+
+    Note:
+        When resolve_cid=True, event details stored in IPFS will be downloaded
+        and decrypted automatically. This is useful for complete entity history
+        but may increase response time.
+    """
     # Sanitize path parameter
     safe_entity_id = sanitize_string(entity_id)
 
@@ -261,7 +334,7 @@ async def trace_entity(
                 raise HTTPException(
                     status_code=404, detail=f"Sub-chain '{chain_name}' not found"
                 )
-            
+
             trace_result = tracer.trace_entity_in_chain(safe_entity_id, chain_name)
             events = trace_result.get("events", [])
         else:
@@ -271,10 +344,14 @@ async def trace_entity(
             events = []
             for chain_events in trace_result.values():
                 events.extend(chain_events)
-        
+
+        # Resolve CIDs if requested and IPFS is enabled
+        if resolve_cid and is_ipfs_enabled():
+            events = await resolve_multiple_events(events, resolve=True)
+
         # Extract chain names from the events
         chain_names = list(set(event.get('chain', 'unknown') for event in events))
-        
+
         return EntityTraceResponse(
             entity_id=safe_entity_id,
             chains=chain_names,
@@ -459,29 +536,57 @@ async def get_chain_blocks(
     chain_name: str,
     limit: int = 10,
     offset: int = 0,
+    resolve_cid: bool = False,
     manager: HierarchyManager = Depends(get_hierarchy_manager)
 ):
-    """Get blocks from a specific chain"""
+    """
+    Get blocks from a specific chain.
+
+    Args:
+        chain_name: Name of the chain
+        limit: Maximum number of blocks to return (default: 10)
+        offset: Offset for pagination (default: 0)
+        resolve_cid: If True, resolve IPFS CIDs to actual data (default: False)
+
+    Returns:
+        Block data with optional CID resolution
+
+    Note:
+        When resolve_cid=True, event details stored in IPFS will be downloaded
+        and decrypted automatically. This may increase response time for blocks
+        with many off-chain events.
+    """
     try:
         chain = _get_chain_by_name(manager, chain_name)
         if not chain:
             raise HTTPException(
                 status_code=404, detail=f"Chain '{chain_name}' not found"
             )
-        
+
         # Get blocks with pagination
         chain_blocks = getattr(chain, 'chain', [])
         blocks = chain_blocks[offset:offset + limit]
-        
+
         # Serialize each block using helper
         block_data = [_serialize_block(block) for block in blocks]
-        
+
+        # Resolve CIDs if requested and IPFS is enabled
+        if resolve_cid and is_ipfs_enabled():
+            for block in block_data:
+                if 'events' in block:
+                    # Resolve CIDs for all events in the block
+                    block['events'] = await resolve_multiple_events(
+                        block['events'],
+                        resolve=True
+                    )
+
         return {
             "chain_name": chain_name,
             "blocks": block_data,
             "total_blocks": len(chain_blocks),
             "offset": offset,
-            "limit": limit
+            "limit": limit,
+            "resolved": resolve_cid and is_ipfs_enabled()
         }
     except HTTPException:
         raise
