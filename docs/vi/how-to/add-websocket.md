@@ -183,20 +183,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## Playground
-
-HieraChain cung cấp giao diện test WebSocket tại:
-
-```
-http://localhost:2661/ws/playground
-```
-
-Sử dụng playground để:
-
-* Gửi subscribe/unsubscribe messages
-* Xem real-time events
-* Test connection health
-
 ## Connection Health
 
 Kiểm tra số lượng kết nối:

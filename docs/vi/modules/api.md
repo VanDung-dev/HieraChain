@@ -151,10 +151,6 @@ setInterval(() => {
 }, 30000);
 ```
 
-### Playground
-
-Giao diện test WebSocket có sẵn tại: `http://localhost:2661/ws/playground`
-
 ### Kiến trúc
 
 * `websocket_manager.py`: Quản lý connection lifecycle, subscriptions, broadcasting
@@ -164,7 +160,6 @@ Giao diện test WebSocket có sẵn tại: `http://localhost:2661/ws/playground
   * `broadcast_to_chain()`: Gửi message tới subscribers của một chain
 * `websocket_endpoints.py`: FastAPI WebSocket endpoints
   * `/ws`: Main WebSocket endpoint
-  * `/ws/playground`: HTML playground
   * `/ws/status`: Connection stats
 
 ### Cấu hình
