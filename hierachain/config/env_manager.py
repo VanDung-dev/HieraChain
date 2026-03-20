@@ -53,9 +53,7 @@ def get_product_config_template() -> str:
             return f.read()
     
     # Fallback: raise error if file not found
-    raise FileNotFoundError(
-        f"Could not find {env_example_file}"
-    )
+    raise FileNotFoundError(f"Could not find {env_example_file}")
 
 
 def has_hierachain_config(env_file: Path = ENV_FILE) -> bool:
@@ -143,16 +141,9 @@ def ensure_product_example(env_example_file: Path = ENV_EXAMPLE_FILE) -> bool:
     Returns:
         True if example file was created/updated, False if already exists
     """
-    # Check if .env.HRC.example already has HRC_ config
-    if env_example_file.exists():
-        with open(env_example_file, 'r') as f:
-            content = f.read()
-        
-        # Check if it already has HRC_ config
-        for line in content.splitlines():
-            line = line.strip()
-            if line and not line.startswith('#') and line.startswith(HRC_PREFIX):
-                return False  # Already has config
+    # Reuse has_hierachain_config to check existing HRC_ config
+    if has_hierachain_config(env_example_file):
+        return False
     
     # Create/update .env.HRC.example with Product config
     template_content = get_product_config_template()
