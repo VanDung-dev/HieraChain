@@ -1986,6 +1986,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#ipfs-luu-tru-off-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IPFS (Lưu trữ Off-chain)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#xu-ly-song-song-tai-nguyen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3458,6 +3469,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#ipfs-luu-tru-off-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IPFS (Lưu trữ Off-chain)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#xu-ly-song-song-tai-nguyen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3727,6 +3749,14 @@
 <li>DB: <code>DATABASE_URL</code> (mặc định: <code>sqlite:///hierachain.db</code>)</li>
 <li>Redis: <code>REDIS_HOST</code> (<code>localhost</code>), <code>REDIS_PORT</code> (<code>6379</code>), <code>REDIS_DB</code> (<code>0</code>)</li>
 </ul>
+<h3 id="ipfs-luu-tru-off-chain">IPFS (Lưu trữ Off-chain)</h3>
+<ul>
+<li><code>HRC_IPFS_ENABLED</code> (mặc định: <code>false</code>): Bật/tắt tích hợp IPFS cho dữ liệu lớn.</li>
+<li><code>HRC_IPFS_HOST</code> (mặc định: <code>/ip4/127.0.0.1/tcp/5001</code>): Địa chỉ API của IPFS daemon.</li>
+<li><code>HRC_IPFS_AUTO_PIN</code> (mặc định: <code>true</code>): Tự động pin dữ liệu sau khi upload để tránh bị dọn rác.</li>
+<li><code>HRC_IPFS_TIMEOUT</code> (mặc định: <code>120</code> giây): Thời gian chờ tối đa cho các thao tác IPFS.</li>
+<li><code>HRC_IPFS_ENCRYPTION_KEY</code>: Khóa mã hóa AES-256 (32-byte hex). <strong>Bắt buộc</strong> phải giống nhau giữa các Node trong cùng Channel/Organization.</li>
+</ul>
 <h3 id="xu-ly-song-song-tai-nguyen">Xử lý song song &amp; tài nguyên</h3>
 <ul>
 <li><code>PARALLEL_PROCESSING_ENABLED</code> (<code>True</code>), <code>MAX_WORKERS</code> (<code>None</code> → tự động 50% CPU cores), <code>PROCESSING_CHUNK_SIZE</code> (<code>100</code>)</li>
@@ -3853,6 +3883,9 @@
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>DEFAULT_STORAGE_BACKEND=redis
 <a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>REDIS_HOST=redis
 <a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>REDIS_PORT=6379
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>HRC_IPFS_ENABLED=true
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>HRC_IPFS_HOST=/ip4/ipfs/tcp/5001
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>HRC_IPFS_ENCRYPTION_KEY=your_32_byte_hex_key_here
 </code></pre></div>
 <hr />
 <details class="info">

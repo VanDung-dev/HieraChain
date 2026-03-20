@@ -2451,6 +2451,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#tinh-nang-ipfs-trong-explorer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tính năng IPFS trong Explorer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#2-cach-trieu-hoi-dashboard-qua-api" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3150,6 +3161,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#tinh-nang-ipfs-trong-explorer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tính năng IPFS trong Explorer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#2-cach-trieu-hoi-dashboard-qua-api" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3206,6 +3228,17 @@
 <li><strong>Entity Tracer Component (<code>entity_tracer</code>)</strong>: Thanh công cụ dò vết. Nhập thông tin ID hoặc bất kì đặc tả nào của Entity để tìm toàn cục xem Block và Event nào đang giao quyền kiểm soát cho đối tượng đó, hỗ trợ tracing mọi mắt xích tài sản.</li>
 <li><strong>Event Analytics Component (<code>event_analytics</code>)</strong>: Đổ ra Timeline lịch sử hoạt động lượng event rải trên Block (ví dụ tính mốc bucket 24 tiếng gần nhất) hoặc vẽ biểu đồ sự kiện (Chart Distribution). Đóng vai trò giám sát hoạt động tải cao (High-load monitoring).</li>
 <li><strong>Proof Visualizer Component (<code>proof_visualizer</code>)</strong>: Bản vẽ cây sơ đồ đệ quy (Hierarchy view). Thể hiện tỷ lệ thành công của Proof ZK, chỉ ra những chuỗi đang vướng mắc cơ chế Mock hay Production Mode xác minh.</li>
+</ul>
+<h3 id="tinh-nang-ipfs-trong-explorer">Tính năng IPFS trong Explorer</h3>
+<p>Explorer hỗ trợ trực quan hóa dữ liệu được lưu trữ ngoài chuỗi (Off-chain):</p>
+<ul>
+<li><strong>Nhận diện dữ liệu</strong>: Tự động hiển thị Huy hiệu (Badge) cho các sự kiện lưu trên IPFS.<ul>
+<li>📦 <strong>Màu vàng</strong>: Dữ liệu CID chưa tải (Unresolved).</li>
+<li>✓ <strong>Màu xanh</strong>: Dữ liệu đã được tải và giải mã (Resolved).</li>
+</ul>
+</li>
+<li><strong>Tải dữ liệu tức thời</strong>: Cung cấp nút <strong>"Load Details"</strong> để fetch dữ liệu từ IPFS qua API Server mà không cần load lại trang.</li>
+<li><strong>Bảo mật</strong>: Dữ liệu được giải mã an toàn tại Server trước khi hiển thị trên giao diện người dùng.</li>
 </ul>
 <h3 id="2-cach-trieu-hoi-dashboard-qua-api">2. Cách triệu hồi Dashboard qua API</h3>
 <p>Lập trình viên tích hợp Dashboard ngay trên Server-side Rendering của họ:</p>

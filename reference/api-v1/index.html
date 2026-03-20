@@ -3469,8 +3469,8 @@
 <li>POST <code>/api/v1/chains/{chain_name}/events</code> — Thêm sự kiện vào Sub-Chain.</li>
 <li>POST <code>/api/v1/chains/{chain_name}/submit-proof</code> — Gửi proof từ Sub-Chain lên Main Chain.</li>
 <li>GET <code>/api/v1/chains/{chain_name}/stats</code> — Lấy thống kê chuỗi.</li>
-<li>GET <code>/api/v1/chains/{chain_name}/blocks?limit=10&amp;offset=0</code> — Lấy danh sách block (có phân trang) của một chuỗi.</li>
-<li>GET <code>/api/v1/entities/{entity_id}/trace[?chain_name=...]</code> — Truy vết sự kiện của một entity trong một chuỗi cụ thể hoặc trên tất cả chuỗi.</li>
+<li>GET <code>/api/v1/chains/{chain_name}/blocks?limit=10&amp;offset=0&amp;resolve_cid=false</code> — Lấy danh sách block (có phân trang). Nếu <code>resolve_cid=true</code>, tự động tải dữ liệu chi tiết từ IPFS.</li>
+<li>GET <code>/api/v1/entities/{entity_id}/trace[?chain_name=...&amp;resolve_cid=false]</code> — Truy vết sự kiện. Nếu <code>resolve_cid=true</code>, giải mã chi tiết sự kiện từ IPFS.</li>
 </ul>
 <h2 id="schema-chinh-trich-tu-hierachainapiv1schemaspy">Schema chính (trích từ <code>hierachain/api/v1/schemas.py</code>)</h2>
 <ul>
@@ -3479,7 +3479,10 @@
 <ul>
 <li><code>entity_id: str</code></li>
 <li><code>event_type: str</code></li>
-<li><code>details: dict[str, Any] | None</code></li>
+<li><code>details: dict[str, Any] | None</code> (On-chain data)</li>
+<li><code>details_cid: str | None</code> (Off-chain CID reference)</li>
+<li><code>details_nonce: str | None</code> (Encryption nonce)</li>
+<li><code>details_metadata: dict[str, Any] | None</code></li>
 </ul>
 </li>
 <li>

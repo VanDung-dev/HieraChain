@@ -2039,6 +2039,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#schema-v2-trich-tu-hierachainapiv2schemaspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema v2 (trích từ hierachain/api/v2/schemas.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#vi-du-curl" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3165,6 +3176,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#schema-v2-trich-tu-hierachainapiv2schemaspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema v2 (trích từ hierachain/api/v2/schemas.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#vi-du-curl" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3263,8 +3285,31 @@
 <li><code>POST /api/v2/channels</code> — tạo kênh.</li>
 <li><code>GET  /api/v2/channels/{channel_id}</code> — lấy thông tin kênh.</li>
 <li><code>POST /api/v2/channels/{channel_id}/private-collections</code> — tạo bộ sưu tập dữ liệu riêng tư.</li>
-<li><code>POST /api/v2/private-data</code> — ghi dữ liệu riêng tư.</li>
-<li><code>POST /api/v2/contracts</code> — đăng ký hợp đồng domain.</li>
+<li><code>POST /api/v2/private-data</code> — Ghi dữ liệu riêng tư (Hỗ trợ <code>value</code> thô hoặc <code>value_cid</code> tham chiếu IPFS).</li>
+<li><code>POST /api/v2/contracts</code> — Đăng ký hợp đồng (Hỗ trợ <code>implementation</code> thô hoặc <code>implementation_cid</code> tham chiếu IPFS).</li>
+</ul>
+<h2 id="schema-v2-trich-tu-hierachainapiv2schemaspy">Schema v2 (trích từ <code>hierachain/api/v2/schemas.py</code>)</h2>
+<ul>
+<li>
+<p><code>PrivateDataRequest</code></p>
+<ul>
+<li><code>channel: str</code></li>
+<li><code>collection: str</code></li>
+<li><code>key: str</code></li>
+<li><code>value: Any | None</code></li>
+<li><code>value_cid: str | None</code> (IPFS reference)</li>
+<li><code>value_nonce: str | None</code></li>
+</ul>
+</li>
+<li>
+<p><code>ContractCreateRequest</code></p>
+<ul>
+<li><code>name: str</code></li>
+<li><code>implementation: str | None</code></li>
+<li><code>implementation_cid: str | None</code> (IPFS reference)</li>
+<li><code>implementation_nonce: str | None</code></li>
+</ul>
+</li>
 <li><code>POST /api/v2/contracts/execute</code> — thực thi hợp đồng.</li>
 <li><code>POST /api/v2/organizations</code> — đăng ký tổ chức.</li>
 </ul>

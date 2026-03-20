@@ -1201,6 +1201,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#luu-tru-ipfs-off-chain-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lưu trữ IPFS (Off-chain Storage)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lưu trữ IPFS (Off-chain Storage)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ac-iem-chinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Đặc điểm chính
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#module-tham-chieu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Module tham chiếu
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#api-cong-khai-mo-ta-khai-quat" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3265,6 +3304,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#luu-tru-ipfs-off-chain-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lưu trữ IPFS (Off-chain Storage)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lưu trữ IPFS (Off-chain Storage)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ac-iem-chinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Đặc điểm chính
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#module-tham-chieu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Module tham chiếu
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#api-cong-khai-mo-ta-khai-quat" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3441,12 +3519,28 @@
 <p>In-memory: <code>hierachain/storage/memory_storage.py</code> — tốc độ cao, không bền.</p>
 </li>
 <li>SQL: <code>hierachain/storage/sql_backend.py</code> — bền vững, hỗ trợ SQLite/PostgreSQL.</li>
+<li>IPFS (Off-chain): <code>hierachain/api/storage/ipfs_client.py</code> — Lưu trữ dữ liệu lớn ngoài chuỗi (Event details, Contract code).</li>
 <li>
 <p>(Tùy chọn) Mô hình dữ liệu ORM: <code>hierachain/storage/models.py</code>.</p>
 </li>
 <li>
-<p>Cấu hình qua <code>hierachain/config/settings.py</code> (DEFAULT_STORAGE_BACKEND, DATABASE_URL, REDIS_* nếu có).</p>
+<p>Cấu hình qua <code>hierachain/config/settings.py</code> (DEFAULT_STORAGE_BACKEND, DATABASE_URL, REDIS_<em> nếu có, HRC_IPFS_</em>).</p>
 </li>
+</ul>
+<h2 id="luu-tru-ipfs-off-chain-storage">Lưu trữ IPFS (Off-chain Storage)</h2>
+<p>HieraChain tích hợp IPFS để xử lý các payload lớn mà không làm ảnh hưởng đến hiệu năng của Blockchain.</p>
+<h3 id="ac-iem-chinh">Đặc điểm chính</h3>
+<ul>
+<li><strong>Mã hóa AES-256-GCM</strong>: Dữ liệu được mã hóa cục bộ trước khi tải lên IPFS.</li>
+<li><strong>Content Addressing (CID)</strong>: Blockchain chỉ lưu mã hash CID trỏ đến dữ liệu trên IPFS.</li>
+<li><strong>Private Swarm</strong>: Hỗ trợ mạng IPFS doanh nghiệp riêng tư để đảm bảo an toàn dữ liệu.</li>
+<li><strong>Auto-Pinning</strong>: Tự động ghim dữ liệu để tránh bị xóa bởi cơ chế Garbage Collection của IPFS.</li>
+</ul>
+<h3 id="module-tham-chieu">Module tham chiếu</h3>
+<ul>
+<li><code>hierachain/api/storage/ipfs_client.py</code>: Client giao tiếp với IPFS daemon.</li>
+<li><code>hierachain/api/storage/encryption.py</code>: Xử lý mã hóa/giải mã dữ liệu.</li>
+<li><code>hierachain/api/storage/utils.py</code>: Các hàm tiện ích kiểm tra CID và chuẩn hóa dữ liệu.</li>
 </ul>
 <h2 id="api-cong-khai-mo-ta-khai-quat">API công khai (mô tả khái quát)</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">WorldState</span><span class="p">:</span>
