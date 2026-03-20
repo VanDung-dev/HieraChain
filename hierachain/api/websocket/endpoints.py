@@ -10,11 +10,9 @@ import logging
 import uuid
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from fastapi.responses import HTMLResponse
 
 from hierachain.api.websocket.manager import (
-    ws_manager, 
-    WebSocketMessageType
+    ws_manager, WebSocketMessageType
 )
 
 logger = logging.getLogger(__name__)
@@ -22,177 +20,9 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter()
 
-# HTML for WebSocket playground (for development)
-WS_PLAYGROUND_HTML = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>HieraChain WebSocket Client</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        #messages { 
-            border: 1px solid #ccc; 
-            height: 400px; 
-            overflow-y: scroll; 
-            padding: 10px; 
-            margin-bottom: 10px;
-            background: #f9f9f9;
-        }
-        .message { margin: 5px 0; padding: 5px; }
-        .sent { background: #e3f2fd; }
-        .received { background: #fff3e0; }
-        .error { background: #ffebee; }
-        .system { background: #e8f5e9; font-style: italic; }
-        #status { 
-            padding: 5px 10px; 
-            margin-bottom: 10px;
-            border-radius: 3px;
-        }
-        .connected { background: #c8e6c9; }
-        .disconnected { background: #ffcdd2; }
-        input, select, button { padding: 8px; margin: 5px 0; }
-        #messageInput { width: 300px; }
-    </style>
-</head>
-<body>
-    <h1>HieraChain WebSocket Client</h1>
-    
-    <div id="status" class="disconnected">Disconnected</div>
-    
-    <div>
-        <input type="text" id="chainName" placeholder="Chain name (e.g., MainChain)" value="MainChain">
-        <button onclick="connect()">Connect</button>
-        <button onclick="disconnect()">Disconnect</button>
-    </div>
-    
-    <hr>
-    
-    <div>
-        <h3>Subscribe to Chain</h3>
-        <input type="text" id="subscribeChain" placeholder="Chain name">
-        <input type="text" id="eventTypes" placeholder="Event types (comma separated)">
-        <button onclick="subscribe()">Subscribe</button>
-    </div>
-    
-    <hr>
-    
-    <div>
-        <h3>Send Message</h3>
-        <input type="text" id="messageInput" placeholder="Custom JSON message">
-        <button onclick="sendMessage()">Send</button>
-    </div>
-    
-    <hr>
-    
-    <h3>Messages</h3>
-    <div id="messages"></div>
-    
-    <script>
-        let ws = null;
-        let reconnectAttempts = 0;
-        const maxReconnectAttempts = 5;
-        
-        function connect() {
-            const chainName = document.getElementById('chainName').value || 'all';
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/api/ws?chain_name=${encodeURIComponent(chainName)}`;
-            
-            ws = new WebSocket(wsUrl);
-            
-            ws.onopen = function() {
-                document.getElementById('status').textContent = 'Connected';
-                document.getElementById('status').className = 'connected';
-                addMessage('System', 'Connected to ' + wsUrl, 'system');
-                reconnectAttempts = 0;
-            };
-            
-            ws.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    addMessage('Received', JSON.stringify(data, null, 2), 'received');
-                } catch (e) {
-                    addMessage('Received', event.data, 'received');
-                }
-            };
-            
-            ws.onclose = function() {
-                document.getElementById('status').textContent = 'Disconnected';
-                document.getElementById('status').className = 'disconnected';
-                addMessage('System', 'Disconnected', 'system');
-                
-                // Auto reconnect
-                if (reconnectAttempts < maxReconnectAttempts) {
-                    reconnectAttempts++;
-                    addMessage('System', `Reconnecting in 3 seconds... (${reconnectAttempts}/${maxReconnectAttempts})`, 'system');
-                    setTimeout(connect, 3000);
-                }
-            };
-            
-            ws.onerror = function(error) {
-                addMessage('Error', 'WebSocket error', 'error');
-            };
-        }
-        
-        function disconnect() {
-            if (ws) {
-                ws.close();
-                ws = null;
-            }
-        }
-        
-        function subscribe() {
-            const chain = document.getElementById('subscribeChain').value;
-            const eventTypes = document.getElementById('eventTypes').value
-                .split(',')
-                .map(s => s.trim())
-                .filter(s => s);
-            
-            const message = {
-                type: 'subscribe',
-                chain_name: chain,
-                event_types: eventTypes
-            };
-            
-            sendJson(message);
-        }
-        
-        function sendMessage() {
-            const input = document.getElementById('messageInput').value;
-            try {
-                const data = JSON.parse(input);
-                sendJson(data);
-            } catch (e) {
-                addMessage('Error', 'Invalid JSON', 'error');
-            }
-        }
-        
-        function sendJson(data) {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify(data));
-                addMessage('Sent', JSON.stringify(data, null, 2), 'sent');
-            } else {
-                addMessage('Error', 'Not connected', 'error');
-            }
-        }
-        
-        function addMessage(prefix, text, type) {
-            const messages = document.getElementById('messages');
-            const div = document.createElement('div');
-            div.className = 'message ' + type;
-            div.textContent = prefix + ': ' + text;
-            messages.appendChild(div);
-            messages.scrollTop = messages.scrollHeight;
-        }
-    </script>
-</body>
-</html>
-"""
-
-
 @router.websocket("/ws")
 async def websocket_endpoint(
-    websocket: WebSocket,
-    chain_name: str | None = Query("all")
+    websocket: WebSocket, chain_name: str | None = Query("all")
 ):
     """
     Main WebSocket endpoint for real-time communication.
@@ -232,7 +62,7 @@ async def websocket_endpoint(
         await _message_loop(websocket, connection_id)
         
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.error("WebSocket error: %s", e)
         
     finally:
         # Cleanup
@@ -257,11 +87,13 @@ async def _message_loop(websocket: WebSocket, connection_id: str):
         except WebSocketDisconnect:
             break
         except Exception as e:
-            logger.error(f"Error handling message: {e}")
-            await ws_manager.send_to_connection(connection_id, {
-                "type": WebSocketMessageType.ERROR,
-                "message": "An internal error occurred"
-            })
+            logger.error("Error handling message: %s", e)
+            await ws_manager.send_to_connection(
+                connection_id, {
+                    "type": WebSocketMessageType.ERROR,
+                    "message": "An internal error occurred"
+                }
+            )
 
 
 async def _process_single_message(websocket: WebSocket, connection_id: str):
@@ -296,9 +128,7 @@ async def _send_json_error(connection_id: str, message: str):
 
 
 async def handle_websocket_message(
-    connection_id: str, 
-    message: dict, 
-    _websocket: WebSocket
+    connection_id: str, message: dict, _websocket: WebSocket
 ):
     """
     Handle incoming WebSocket messages from clients.
@@ -384,12 +214,6 @@ async def handle_unsubscribe(connection_id: str):
             "type": WebSocketMessageType.ERROR,
             "message": "Failed to unsubscribe"
         })
-
-
-@router.get("/ws/playground")
-async def websocket_playground():
-    """WebSocket playground for testing (development only)"""
-    return HTMLResponse(WS_PLAYGROUND_HTML)
 
 
 @router.get("/ws/status")
