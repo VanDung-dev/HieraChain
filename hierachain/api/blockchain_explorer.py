@@ -3,12 +3,23 @@ Blockchain Explorer for HieraChain Ledger
 
 This module provides comprehensive blockchain exploration and visualization
 capabilities for developer experience and data analysis.
+
+IPFS Integration:
+- Detects and displays off-chain data indicators
+- Provides CID resolution UI
+- Caches resolved data for performance
 """
 
 import time
 import logging
 from typing import Any
 from dataclasses import dataclass, field
+
+from hierachain.api.storage.explorer_helpers import (
+    format_event_for_display,
+    get_explorer_css_styles,
+    get_explorer_javascript
+)
 
 
 class ExplorerError(Exception):
@@ -98,7 +109,11 @@ class BlockchainExplorer:
 
         dashboard = {
             "title": title,
-            "components": []
+            "components": [],
+            "assets": {
+                "css": get_explorer_css_styles(),
+                "js": get_explorer_javascript()
+            }
         }
 
         if (
@@ -233,19 +248,28 @@ class EntityTracerComponent:
             "submit_endpoint": "/api/v1/trace_entity"
         }
     
-    def trace_entity(self, entity_id: str, chain_type: str = "all") -> dict[str, Any]:
+    def trace_entity(
+        self,
+        entity_id: str,
+        chain_type: str = "all",
+        resolve_cid: bool = False
+    ) -> dict[str, Any]:
         """Trace entity across chains"""
         try:
             events = []
             
             # Search main chain
             if chain_type in ["all", "main"] and hasattr(self.chain, 'main_chain'):
-                main_events = self._search_main_chain(entity_id)
+                main_events = self._search_main_chain(
+                    entity_id, resolve_cid=resolve_cid
+                )
                 events.extend(main_events)
             
             # Search sub-chains
             if chain_type in ["all", "sub"] and hasattr(self.chain, 'sub_chains'):
-                sub_events = self._search_sub_chains(entity_id)
+                sub_events = self._search_sub_chains(
+                    entity_id, resolve_cid=resolve_cid
+                )
                 events.extend(sub_events)
             
             # Sort by timestamp
@@ -255,13 +279,18 @@ class EntityTracerComponent:
                 "entity_id": entity_id,
                 "total_events": len(events),
                 "events": events,
-                "chains_found": list(set(e['chain'] for e in events))
+                "chains_found": list(set(e['chain'] for e in events)),
+                "resolved": resolve_cid
             }
         except Exception as e:
             self.logger.error(f"EntityTracerComponent trace_entity error: {e}")
             return {"error": "An internal error occurred"}
     
-    def _search_main_chain(self, entity_id: str) -> list[dict[str, Any]]:
+    def _search_main_chain(
+        self,
+        entity_id: str,
+        resolve_cid: bool = False
+    ) -> list[dict[str, Any]]:
         """Search main chain for entity"""
         if not hasattr(self.chain, 'main_chain'):
             return []
@@ -271,16 +300,23 @@ class EntityTracerComponent:
         result = []
         for e in indexed_events:
             ev = e.get("event", {})
+            # Format event for display (handles IPFS indicators)
+            formatted_ev = format_event_for_display(ev, resolve_cid=resolve_cid)
+            
             ts = ev.get("timestamp") if isinstance(ev, dict) else 0
             result.append({
                 "chain": "main_chain",
                 "block_index": e.get("block_index", 0),
-                "event": ev,
+                "event": formatted_ev,
                 "timestamp": ts or 0
             })
         return result
     
-    def _search_sub_chains(self, entity_id: str) -> list[dict[str, Any]]:
+    def _search_sub_chains(
+        self,
+        entity_id: str,
+        resolve_cid: bool = False
+    ) -> list[dict[str, Any]]:
         """Search sub-chains for entity"""
         events = []
         if not hasattr(self.chain, 'sub_chains'):
@@ -290,11 +326,14 @@ class EntityTracerComponent:
             indexed_events = sub_chain.get_indexed_entity_events(entity_id)
             for e in indexed_events:
                 ev = e.get("event", {})
+                # Format event for display (handles IPFS indicators)
+                formatted_ev = format_event_for_display(ev, resolve_cid=resolve_cid)
+                
                 ts = ev.get("timestamp") if isinstance(ev, dict) else 0
                 events.append({
                     "chain": chain_name,
                     "block_index": e.get("block_index", 0),
-                    "event": ev,
+                    "event": formatted_ev,
                     "timestamp": ts or 0
                 })
         return events
