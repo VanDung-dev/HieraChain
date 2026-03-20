@@ -13,7 +13,8 @@ import time
 import json
 import graphene
 from graphene import (
-    ObjectType, String, Int, Float, List, Field, InputObjectType, Boolean
+    ObjectType, String, Int, Float, List, Field,
+    InputObjectType, Boolean
 )
 
 from hierachain.api.v1.endpoints import get_hierarchy_manager
@@ -45,59 +46,68 @@ class EventType(ObjectType):
     timestamp = Float()
     signature = String()
 
-    async def resolve_details(self, info, resolve_cid=True):
+    async def resolve_details(self, _info, resolve_cid=True):
         """
         Lazy resolver for event details with CID support.
 
         Args:
+            _info: GraphQL resolve info (unused)
             resolve_cid: If True, automatically resolve CIDs to actual data
 
         Returns:
             JSON string of event details
         """
-        # Check if data is already inline
-        if hasattr(self, 'details') and self.details and not is_cid_string(str(self.details)):
+        if self._has_inline_details():
             return self.details
-
-        # Check if we have CID info for off-chain data
-        if hasattr(self, 'details_cid') and self.details_cid and resolve_cid:
-            if not is_ipfs_enabled():
-                return json.dumps({"error": "IPFS not enabled", "cid": self.details_cid})
-
-            try:
-                # Build event dict for resolver
-                event_dict = {
-                    "entity_id": getattr(self, 'entity_id', None),
-                    "event": getattr(self, 'event_type', None),
-                    "details_cid": self.details_cid,
-                    "details_nonce": getattr(self, 'details_nonce', None),
-                    "details_metadata": getattr(self, 'details_metadata', None),
-                }
-
-                # Resolve from IPFS
-                resolved = await resolve_event_details(event_dict, resolve=True)
-
-                # Return resolved details as JSON string
-                if 'details' in resolved:
-                    return json.dumps(resolved['details'])
-
-            except Exception as e:
-                return json.dumps({
-                    "error": f"Failed to resolve CID: {str(e)}",
-                    "cid": self.details_cid
-                })
-
-        # Return CID reference if not resolving
-        if hasattr(self, 'details_cid') and self.details_cid:
-            return json.dumps({
-                "cid": self.details_cid,
-                "nonce": getattr(self, 'details_nonce', None),
-                "note": "Set resolve_cid=true to fetch actual data"
-            })
-
+        
+        if self._should_resolve_cid(resolve_cid):
+            return await self._resolve_offchain_details()
+        
+        if self._has_cid_reference():
+            return self._get_cid_reference()
+        
         return self.details if hasattr(self, 'details') else None
 
-    def resolve_is_offchain(self, info):
+    def _has_inline_details(self):
+        return hasattr(self, 'details') and self.details and not is_cid_string(str(self.details))
+
+    def _should_resolve_cid(self, resolve_cid):
+        return hasattr(self, 'details_cid') and self.details_cid and resolve_cid
+
+    def _has_cid_reference(self):
+        return hasattr(self, 'details_cid') and self.details_cid
+
+    async def _resolve_offchain_details(self):
+        if not is_ipfs_enabled():
+            return json.dumps({"error": "IPFS not enabled", "cid": self.details_cid})
+        
+        try:
+            event_dict = self._build_event_dict()
+            resolved = await resolve_event_details(event_dict, resolve=True)
+            if 'details' in resolved:
+                return json.dumps(resolved['details'])
+        except Exception as e:
+            return json.dumps({"error": f"Failed to resolve CID: {str(e)}", "cid": self.details_cid})
+        
+        return None
+
+    def _build_event_dict(self):
+        return {
+            "entity_id": getattr(self, 'entity_id', None),
+            "event": getattr(self, 'event_type', None),
+            "details_cid": self.details_cid,
+            "details_nonce": getattr(self, 'details_nonce', None),
+            "details_metadata": getattr(self, 'details_metadata', None),
+        }
+
+    def _get_cid_reference(self):
+        return json.dumps({
+            "cid": self.details_cid,
+            "nonce": getattr(self, 'details_nonce', None),
+            "note": "Set resolve_cid=true to fetch actual data"
+        })
+
+    def resolve_is_offchain(self, _info):
         """Check if event uses off-chain storage."""
         return hasattr(self, 'details_cid') and bool(self.details_cid)
 
