@@ -92,18 +92,29 @@ def detect_data_location(data: dict[str, Any], cid_field: str = "cid") -> str:
         >>> detect_data_location({"details_cid": "QmXx...", "details_nonce": "abc123"})
         'offchain'
     """
-    # Check for CID field
+    # 1. Check for CID field
     if cid_field in data and is_cid_string(data[cid_field]):
         return "offchain"
 
-    # Check for common CID field patterns
+    # 2. Check for common CID field patterns
     cid_fields = [k for k in data.keys() if k.endswith('_cid')]
     if cid_fields and any(is_cid_string(data[f]) for f in cid_fields):
         return "offchain"
 
-    # Check if data contains inline content
-    data_fields = [k for k in data.keys() if not k.endswith(('_cid', '_nonce', '_metadata'))]
-    if data_fields:
+    # Exclude CID-related fields and standard event metadata
+    standard_fields = {
+        'entity_id', 'event', 'timestamp', 'data',
+        'creator_id', 'signature', 'index', 'hash', 'merkle_root'
+    }
+    data_fields = [
+        k for k in data.keys()
+        if k != cid_field
+        and not k.endswith(('_cid', '_nonce', '_metadata'))
+        and k not in standard_fields
+    ]
+
+    # If we have fields like 'details', 'value', or 'implementation' with actual data
+    if any(data.get(f) for f in data_fields):
         return "onchain"
 
     return "unknown"

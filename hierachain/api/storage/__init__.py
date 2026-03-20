@@ -32,6 +32,16 @@ from .endpoint_helpers import (
     close_ipfs_client
 )
 
+from .explorer_helpers import (
+    format_event_for_display,
+    resolve_event_for_explorer,
+    build_cid_badge_html,
+    build_cid_resolution_button_html,
+    get_explorer_css_styles,
+    get_explorer_javascript,
+    format_event_table_row_html
+)
+
 __all__ = [
     # IPFS Client
     "IPFSClient",
@@ -62,4 +72,12 @@ __all__ = [
     "resolve_event_details",
     "resolve_multiple_events",
     "close_ipfs_client",
+    # Explorer Helpers
+    "format_event_for_display",
+    "resolve_event_for_explorer",
+    "build_cid_badge_html",
+    "build_cid_resolution_button_html",
+    "get_explorer_css_styles",
+    "get_explorer_javascript",
+    "format_event_table_row_html",
 ]
