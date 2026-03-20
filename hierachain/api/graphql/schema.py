@@ -2,25 +2,104 @@
 GraphQL Schema for HieraChain Ledger
 
 This module provides GraphQL types, queries, and mutations for the HieraChain system.
+
+IPFS Integration:
+- Event details can be stored on-chain (details field) or off-chain (details_cid)
+- GraphQL resolvers support lazy-loading of off-chain data
+- Clients control CID resolution via query arguments
 """
 
 import time
+import json
 import graphene
-from graphene import ObjectType, String, Int, Float, List, Field, InputObjectType
+from graphene import (
+    ObjectType, String, Int, Float, List, Field, InputObjectType, Boolean
+)
 
 from hierachain.api.v1.endpoints import get_hierarchy_manager
+from hierachain.api.storage.endpoint_helpers import (
+    is_ipfs_enabled, resolve_event_details
+)
+from hierachain.api.storage.utils import is_cid_string
 
 
 # ===== GraphQL Types =====
 
 
 class EventType(ObjectType):
-    """Event type for GraphQL"""
+    """
+    Event type for GraphQL with IPFS support.
+
+    Fields:
+    - details: Event details (inline or resolved from IPFS)
+    - details_cid: IPFS CID if data is stored off-chain
+    - details_nonce: Encryption nonce for IPFS data
+    - is_offchain: Indicator if event uses off-chain storage
+    """
     entity_id = String()
     event_type = String()
-    details = String()  # JSON string
+    details = String()  # JSON string (inline or resolved from CID)
+    details_cid = String()  # IPFS CID if off-chain storage
+    details_nonce = String()  # Encryption nonce
+    is_offchain = Boolean()  # Indicator for off-chain storage
     timestamp = Float()
     signature = String()
+
+    async def resolve_details(self, info, resolve_cid=True):
+        """
+        Lazy resolver for event details with CID support.
+
+        Args:
+            resolve_cid: If True, automatically resolve CIDs to actual data
+
+        Returns:
+            JSON string of event details
+        """
+        # Check if data is already inline
+        if hasattr(self, 'details') and self.details and not is_cid_string(str(self.details)):
+            return self.details
+
+        # Check if we have CID info for off-chain data
+        if hasattr(self, 'details_cid') and self.details_cid and resolve_cid:
+            if not is_ipfs_enabled():
+                return json.dumps({"error": "IPFS not enabled", "cid": self.details_cid})
+
+            try:
+                # Build event dict for resolver
+                event_dict = {
+                    "entity_id": getattr(self, 'entity_id', None),
+                    "event": getattr(self, 'event_type', None),
+                    "details_cid": self.details_cid,
+                    "details_nonce": getattr(self, 'details_nonce', None),
+                    "details_metadata": getattr(self, 'details_metadata', None),
+                }
+
+                # Resolve from IPFS
+                resolved = await resolve_event_details(event_dict, resolve=True)
+
+                # Return resolved details as JSON string
+                if 'details' in resolved:
+                    return json.dumps(resolved['details'])
+
+            except Exception as e:
+                return json.dumps({
+                    "error": f"Failed to resolve CID: {str(e)}",
+                    "cid": self.details_cid
+                })
+
+        # Return CID reference if not resolving
+        if hasattr(self, 'details_cid') and self.details_cid:
+            return json.dumps({
+                "cid": self.details_cid,
+                "nonce": getattr(self, 'details_nonce', None),
+                "note": "Set resolve_cid=true to fetch actual data"
+            })
+
+        return self.details if hasattr(self, 'details') else None
+
+    def resolve_is_offchain(self, info):
+        """Check if event uses off-chain storage."""
+        return hasattr(self, 'details_cid') and bool(self.details_cid)
 
 
 class BlockMetadataType(ObjectType):
