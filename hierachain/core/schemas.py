@@ -10,12 +10,15 @@ This module defines the Apache Arrow schemas used for:
 import pyarrow as pa
 
 # Event Schema - Simple structure for events
+# Updated to include IPFS CID and encryption fields
 EVENT_SCHEMA = pa.schema([
     ('entity_id', pa.string()),
     ('event', pa.string()),
     ('timestamp', pa.float64()),
     ('details', pa.map_(pa.string(), pa.string())),
-    ('data', pa.binary()),
+    ('details_cid', pa.string()),    # IPFS CID reference
+    ('details_nonce', pa.string()),  # Encryption nonce
+    ('data', pa.binary()),           # Full payload blob
 ])
 
 
