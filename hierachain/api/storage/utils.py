@@ -218,7 +218,7 @@ def build_cid_reference(
         >>> build_cid_reference("QmXx...", "abc123")
         {'cid': 'QmXx...', 'nonce': 'abc123', 'encrypted': True}
     """
-    ref = {
+    ref: dict[str, Any] = {
         "cid": cid,
         "nonce": nonce,
         "encrypted": True

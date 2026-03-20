@@ -67,6 +67,7 @@ async def upload_to_ipfs_background(
     Raises:
         IPFSError: If upload fails
     """
+    _ = background_tasks  # reserved for future background task support
     if not is_ipfs_enabled():
         raise IPFSError("IPFS is not enabled")
 
@@ -92,7 +93,7 @@ async def upload_to_ipfs_background(
 
 async def download_from_ipfs(
     cid: str,
-    nonce: str,
+    nonce: str | None,
     metadata: dict[str, Any] | None = None
 ) -> dict[str, Any]:
     """
@@ -142,14 +143,16 @@ def process_event_details(
         - If on-chain: (details_dict, None)
         - If off-chain: (None, {cid, nonce, metadata})
 
-    Example:
-        >>> details, cid_info = process_event_details(event_request)
-        >>> if cid_info:
-        ...     event["details_cid"] = cid_info["cid"]
-        ...     event["details_nonce"] = cid_info["nonce"]
-        >>> else:
-        ...     event["details"] = details
+    Example::
+
+        details, cid_info = process_event_details(event_request)
+        if cid_info:
+            event["details_cid"] = cid_info["cid"]
+            event["details_nonce"] = cid_info["nonce"]
+        else:
+            event["details"] = details
     """
+    _ = background_tasks  # reserved for future background task support
     # Check if CID is already provided (data already in IPFS)
     if hasattr(event_request, 'details_cid') and event_request.details_cid:
         return None, {
@@ -180,6 +183,7 @@ def process_private_data_value(
     Returns:
         Tuple of (inline_value, cid_info)
     """
+    _ = background_tasks  # reserved for future background task support
     # Check if CID is already provided
     if hasattr(private_data_request, 'value_cid') and private_data_request.value_cid:
         return None, {
@@ -210,6 +214,7 @@ def process_contract_implementation(
     Returns:
         Tuple of (inline_implementation, cid_info)
     """
+    _ = background_tasks  # reserved for future background task support
     # Check if CID is already provided
     if hasattr(contract_request, 'implementation_cid') and contract_request.implementation_cid:
         return None, {
@@ -241,12 +246,8 @@ async def resolve_cid_field(
         Data dict with resolved field (CID replaced with actual data)
 
     Example:
-        >>> data = {
-        ...     "details_cid": "QmXx...",
-        ...     "details_nonce": "abc123"
-        ... }
-        >>> resolved = await resolve_cid_field(data, "details")
-        >>> # resolved now has "details" key with actual data
+        resolved = await resolve_cid_field(data, "details")
+        # resolved now has "details" key with actual data
     """
     cid_field = f"{field_prefix}_cid"
     nonce_field = f"{field_prefix}_nonce"

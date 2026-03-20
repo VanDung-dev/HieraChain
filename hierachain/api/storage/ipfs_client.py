@@ -11,7 +11,6 @@ ensuring that all data stored remains within the enterprise boundary.
 import json
 import os
 from typing import Any
-from contextlib import contextmanager
 import ipfshttpclient
 
 from hierachain.security.secure_logging import SecureLogger
@@ -23,6 +22,21 @@ logger = SecureLogger("hierachain.storage.ipfs_client")
 class IPFSError(Exception):
     """Base exception for IPFS-related errors."""
     pass
+
+
+class _IPFSClientContext:
+    """Context manager wrapper for IPFS client."""
+
+    def __init__(self, client: Any):
+        self._client = client
+
+    def __enter__(self) -> Any:
+        return self._client
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        if exc_type is not None:
+            logger.error("IPFS operation failed", error=str(exc_val))
+            raise IPFSError(f"IPFS operation failed: {str(exc_val)}")
 
 
 class IPFSClient:
@@ -104,15 +118,10 @@ class IPFSClient:
                 logger.error("Failed to connect to IPFS daemon", error=str(e))
                 raise IPFSError(f"Failed to connect to IPFS daemon: {str(e)}")
 
-    @contextmanager
-    def _get_client(self):
+    def _get_client(self) -> Any:
         """Context manager for getting IPFS client."""
         self._ensure_connected()
-        try:
-            yield self._client
-        except Exception as e:
-            logger.error("IPFS operation failed", error=str(e))
-            raise IPFSError(f"IPFS operation failed: {str(e)}")
+        return _IPFSClientContext(self._client)
 
     def upload_bytes(
         self,
@@ -414,10 +423,9 @@ class IPFSClient:
         """
         try:
             with self._get_client() as client:
-                # Try to get object stats
                 client.object.stat(cid)
             return True
-        except Exception:
+        except IPFSError:
             return False
 
     def get_daemon_version(self) -> dict[str, Any]:

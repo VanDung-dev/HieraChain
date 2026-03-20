@@ -5,6 +5,7 @@ This module provides utilities for displaying and resolving CIDs
 in the Blockchain Explorer UI.
 """
 
+import json
 from typing import Any
 from functools import lru_cache
 
@@ -345,26 +346,20 @@ def format_event_table_row_html(event: dict[str, Any], index: int, resolve_cid: 
         </div>
         '''
 
-    details_display = ""
     if resolve_cid and "details" in event:
-        import json
-        details_display = f"<pre>{json.dumps(event['details'], indent=2)}</pre>"
+        details_html = f"<pre>{json.dumps(event['details'], indent=2)}</pre>"
     elif not resolve_cid and storage_info.get("ipfs"):
-        details_display = f"<em>Click 'Load Details' to view</em>"
+        details_html = "<em>Click 'Load Details' to view</em>"
     else:
-        import json
-        details_display = f"<pre>{json.dumps(event.get('details', {}), indent=2)}</pre>"
+        details_html = f"<pre>{json.dumps(event.get('details', {}), indent=2)}</pre>"
 
-    return f'''
-    <tr class="event-row" data-index="{index}">
-        <td>{index}</td>
-        <td>{event.get('entity_id', 'N/A')}</td>
-        <td>{event.get('event', event.get('event_type', 'N/A'))}</td>
-        <td>{storage_badge}</td>
-        <td class="event-details">
-            {cid_display}
-            {details_display}
-        </td>
-        <td>{event.get('timestamp', 'N/A')}</td>
-    </tr>
-    '''
+    return (
+        f'<tr class="event-row" data-index="{index}">'
+        f'<td>{index}</td>'
+        f'<td>{event.get("entity_id", "N/A")}</td>'
+        f'<td>{event.get("event", event.get("event_type", "N/A"))}</td>'
+        f'<td>{storage_badge}</td>'
+        f'<td class="event-details">{cid_display}{details_html}</td>'
+        f'<td>{event.get("timestamp", "N/A")}</td>'
+        f'</tr>'
+    )
