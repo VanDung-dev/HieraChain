@@ -44,8 +44,24 @@ sequenceDiagram
 * `POST /api/v2/channels` — tạo kênh.
 * `GET  /api/v2/channels/{channel_id}` — lấy thông tin kênh.
 * `POST /api/v2/channels/{channel_id}/private-collections` — tạo bộ sưu tập dữ liệu riêng tư.
-* `POST /api/v2/private-data` — ghi dữ liệu riêng tư.
-* `POST /api/v2/contracts` — đăng ký hợp đồng domain.
+* `POST /api/v2/private-data` — Ghi dữ liệu riêng tư (Hỗ trợ `value` thô hoặc `value_cid` tham chiếu IPFS).
+* `POST /api/v2/contracts` — Đăng ký hợp đồng (Hỗ trợ `implementation` thô hoặc `implementation_cid` tham chiếu IPFS).
+
+## Schema v2 (trích từ `hierachain/api/v2/schemas.py`)
+
+* `PrivateDataRequest`
+    * `channel: str`
+    * `collection: str`
+    * `key: str`
+    * `value: Any | None`
+    * `value_cid: str | None` (IPFS reference)
+    * `value_nonce: str | None`
+
+* `ContractCreateRequest`
+    * `name: str`
+    * `implementation: str | None`
+    * `implementation_cid: str | None` (IPFS reference)
+    * `implementation_nonce: str | None`
 * `POST /api/v2/contracts/execute` — thực thi hợp đồng.
 * `POST /api/v2/organizations` — đăng ký tổ chức.
 

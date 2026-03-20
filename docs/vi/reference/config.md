@@ -58,6 +58,14 @@ print(settings.AUTH_ENABLED)
 * DB: `DATABASE_URL` (mặc định: `sqlite:///hierachain.db`)
 * Redis: `REDIS_HOST` (`localhost`), `REDIS_PORT` (`6379`), `REDIS_DB` (`0`)
 
+### IPFS (Lưu trữ Off-chain)
+
+* `HRC_IPFS_ENABLED` (mặc định: `false`): Bật/tắt tích hợp IPFS cho dữ liệu lớn.
+* `HRC_IPFS_HOST` (mặc định: `/ip4/127.0.0.1/tcp/5001`): Địa chỉ API của IPFS daemon.
+* `HRC_IPFS_AUTO_PIN` (mặc định: `true`): Tự động pin dữ liệu sau khi upload để tránh bị dọn rác.
+* `HRC_IPFS_TIMEOUT` (mặc định: `120` giây): Thời gian chờ tối đa cho các thao tác IPFS.
+* `HRC_IPFS_ENCRYPTION_KEY`: Khóa mã hóa AES-256 (32-byte hex). **Bắt buộc** phải giống nhau giữa các Node trong cùng Channel/Organization.
+
 ### Xử lý song song & tài nguyên
 
 * `PARALLEL_PROCESSING_ENABLED` (`True`), `MAX_WORKERS` (`None` → tự động 50% CPU cores), `PROCESSING_CHUNK_SIZE` (`100`)
@@ -185,6 +193,9 @@ DATABASE_URL=postgresql+psycopg://user:pass@db:5432/hierachain
 DEFAULT_STORAGE_BACKEND=redis
 REDIS_HOST=redis
 REDIS_PORT=6379
+HRC_IPFS_ENABLED=true
+HRC_IPFS_HOST=/ip4/ipfs/tcp/5001
+HRC_IPFS_ENCRYPTION_KEY=your_32_byte_hex_key_here
 ```
 
 ---

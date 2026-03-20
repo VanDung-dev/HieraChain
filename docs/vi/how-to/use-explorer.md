@@ -19,6 +19,16 @@ Giao diện (hoặc Render format từ API) sẽ bao gồm 4 khối chủ lực 
 - **Event Analytics Component (`event_analytics`)**: Đổ ra Timeline lịch sử hoạt động lượng event rải trên Block (ví dụ tính mốc bucket 24 tiếng gần nhất) hoặc vẽ biểu đồ sự kiện (Chart Distribution). Đóng vai trò giám sát hoạt động tải cao (High-load monitoring).
 - **Proof Visualizer Component (`proof_visualizer`)**: Bản vẽ cây sơ đồ đệ quy (Hierarchy view). Thể hiện tỷ lệ thành công của Proof ZK, chỉ ra những chuỗi đang vướng mắc cơ chế Mock hay Production Mode xác minh.
 
+### Tính năng IPFS trong Explorer
+
+Explorer hỗ trợ trực quan hóa dữ liệu được lưu trữ ngoài chuỗi (Off-chain):
+
+- **Nhận diện dữ liệu**: Tự động hiển thị Huy hiệu (Badge) cho các sự kiện lưu trên IPFS.
+    - 📦 **Màu vàng**: Dữ liệu CID chưa tải (Unresolved).
+    - ✓ **Màu xanh**: Dữ liệu đã được tải và giải mã (Resolved).
+- **Tải dữ liệu tức thời**: Cung cấp nút **"Load Details"** để fetch dữ liệu từ IPFS qua API Server mà không cần load lại trang.
+- **Bảo mật**: Dữ liệu được giải mã an toàn tại Server trước khi hiển thị trên giao diện người dùng.
+
 ### 2. Cách triệu hồi Dashboard qua API
 
 Lập trình viên tích hợp Dashboard ngay trên Server-side Rendering của họ:

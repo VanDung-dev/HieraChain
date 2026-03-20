@@ -41,8 +41,8 @@ sequenceDiagram
 * POST `/api/v1/chains/{chain_name}/events` — Thêm sự kiện vào Sub-Chain.
 * POST `/api/v1/chains/{chain_name}/submit-proof` — Gửi proof từ Sub-Chain lên Main Chain.
 * GET `/api/v1/chains/{chain_name}/stats` — Lấy thống kê chuỗi.
-* GET `/api/v1/chains/{chain_name}/blocks?limit=10&offset=0` — Lấy danh sách block (có phân trang) của một chuỗi.
-* GET `/api/v1/entities/{entity_id}/trace[?chain_name=...]` — Truy vết sự kiện của một entity trong một chuỗi cụ thể hoặc trên tất cả chuỗi.
+* GET `/api/v1/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false` — Lấy danh sách block (có phân trang). Nếu `resolve_cid=true`, tự động tải dữ liệu chi tiết từ IPFS.
+* GET `/api/v1/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]` — Truy vết sự kiện. Nếu `resolve_cid=true`, giải mã chi tiết sự kiện từ IPFS.
 
 ## Schema chính (trích từ `hierachain/api/v1/schemas.py`)
 
@@ -50,7 +50,10 @@ sequenceDiagram
 
     * `entity_id: str`
     * `event_type: str`
-    * `details: dict[str, Any] | None`
+    * `details: dict[str, Any] | None` (On-chain data)
+    * `details_cid: str | None` (Off-chain CID reference)
+    * `details_nonce: str | None` (Encryption nonce)
+    * `details_metadata: dict[str, Any] | None`
 
 * `EventResponse`
 

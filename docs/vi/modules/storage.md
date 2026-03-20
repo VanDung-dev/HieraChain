@@ -17,9 +17,25 @@ Quản lý lưu trữ trạng thái (world state) và lịch sử Block/Event v�
 
   * In-memory: `hierachain/storage/memory_storage.py` — tốc độ cao, không bền.
   * SQL: `hierachain/storage/sql_backend.py` — bền vững, hỗ trợ SQLite/PostgreSQL.
+  * IPFS (Off-chain): `hierachain/api/storage/ipfs_client.py` — Lưu trữ dữ liệu lớn ngoài chuỗi (Event details, Contract code).
   * (Tùy chọn) Mô hình dữ liệu ORM: `hierachain/storage/models.py`.
 
-* Cấu hình qua `hierachain/config/settings.py` (DEFAULT_STORAGE_BACKEND, DATABASE_URL, REDIS_* nếu có).
+* Cấu hình qua `hierachain/config/settings.py` (DEFAULT_STORAGE_BACKEND, DATABASE_URL, REDIS_* nếu có, HRC_IPFS_*).
+
+## Lưu trữ IPFS (Off-chain Storage)
+
+HieraChain tích hợp IPFS để xử lý các payload lớn mà không làm ảnh hưởng đến hiệu năng của Blockchain.
+
+### Đặc điểm chính
+- **Mã hóa AES-256-GCM**: Dữ liệu được mã hóa cục bộ trước khi tải lên IPFS.
+- **Content Addressing (CID)**: Blockchain chỉ lưu mã hash CID trỏ đến dữ liệu trên IPFS.
+- **Private Swarm**: Hỗ trợ mạng IPFS doanh nghiệp riêng tư để đảm bảo an toàn dữ liệu.
+- **Auto-Pinning**: Tự động ghim dữ liệu để tránh bị xóa bởi cơ chế Garbage Collection của IPFS.
+
+### Module tham chiếu
+- `hierachain/api/storage/ipfs_client.py`: Client giao tiếp với IPFS daemon.
+- `hierachain/api/storage/encryption.py`: Xử lý mã hóa/giải mã dữ liệu.
+- `hierachain/api/storage/utils.py`: Các hàm tiện ích kiểm tra CID và chuẩn hóa dữ liệu.
 
 ## API công khai (mô tả khái quát)
 

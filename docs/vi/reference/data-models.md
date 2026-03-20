@@ -26,7 +26,9 @@ EVENT_SCHEMA = schema([
   ('entity_id', string),          # ID thực thể
   ('event', string),              # loại sự kiện
   ('timestamp', float64),         # epoch giây (float)
-  ('details', map<string,string>),# metadata key→string
+  ('details', map<string,string>),# metadata key→string (On-chain)
+  ('details_cid', string),        # IPFS CID (Off-chain reference)
+  ('details_nonce', string),      # Encryption nonce
   ('data', binary),               # payload nhị phân (tuỳ chọn)
 ])
 ```
@@ -38,8 +40,10 @@ Ví dụ JSON (khi trả về qua API):
   "entity_id": "PROD-001",
   "event": "production_complete",
   "timestamp": 1703088000.0,
-  "details": {"quantity": "100"},
-  "data": "e30="  // base64 của {} (tuỳ cách tuần tự hoá)
+  "details": null,
+  "details_cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
+  "details_nonce": "a1b2c3d4e5f6...",
+  "data": null
 }
 ```
 
