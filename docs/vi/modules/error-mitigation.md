@@ -37,6 +37,39 @@ RollbackManager:
 
 RecoveryEngine:
   recover(context)  # chọn kịch bản phù hợp
+
+#### Journaling Example
+
+**File**: `hierachain/error_mitigation/journal.py`
+
+Ghi nhật ký hoạt động để đảm bảo khả năng hoàn tác/phục hồi:
+
+```python
+from hierachain.error_mitigation.journal import Journal
+
+journal = Journal(name="ordering_journal")
+
+# Ghi nhận thao tác trước khi thực hiện
+journal.append({"op": "create_block", "index": 100})
+
+# Khi cần phục hồi (replay)
+entries = journal.read_all()
+```
+
+#### Recovery Engine
+
+**File**: `hierachain/error_mitigation/recovery_engine.py`
+
+Tự động hóa quy trình khắc phục sự cố:
+
+```python
+from hierachain.error_mitigation.recovery_engine import RecoveryEngine
+
+engine = RecoveryEngine()
+
+# Kích hoạt quy trình phục hồi dựa trên ngữ cảnh lỗi
+engine.recover(error_type="consensus_timeout", context={"node_id": "node-1"})
+```
 ```
 
 ### Luồng xử lý lỗi (Workflow)

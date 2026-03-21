@@ -63,6 +63,24 @@ class ClusterManager:
 class StateSyncManager:
   sync_from(source) -> bool
   checkpoint() -> str
+
+#### Cross-Level Sync
+
+**File**: `hierachain/cluster/cross_level_sync.py`
+
+Cơ chế đồng bộ trạng thái giữa Main Chain và Sub-Chains:
+
+```python
+from hierachain.cluster.cross_level_sync import CrossLevelSync
+
+sync = CrossLevelSync(hierarchy_manager)
+
+# Đồng bộ proof từ Sub-chain lên Main-chain
+sync.sync_subchain_to_main("supply_chain")
+
+# Kiểm tra tính nhất quán liên tầng
+is_consistent = sync.verify_cross_level_integrity("supply_chain")
+```
 ```
 
 ## Cấu hình

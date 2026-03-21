@@ -22,14 +22,18 @@ Mô tả chữ ký tiêu biểu (mang tính tài liệu):
 
 ```python
 class RiskAnalyzer:
-  analyze_event(event) -> dict  # trả về điểm rủi ro/nhãn
-  analyze_metrics(metrics) -> dict
+  analyze_consensus_risks(data) -> list[RiskAssessment]  # Kiểm tra số lượng node BFT, timeout
+  analyze_security_risks(data) -> list[RiskAssessment]   # Hết hạn certificate, brute force
+  analyze_performance_risks(data) -> list[RiskAssessment] # CPU/RAM cao, tràn event pool
+  analyze_storage_risks(data) -> list[RiskAssessment]     # Kích thước World State, sao lưu quá hạn
 
 class MitigationStrategies:
-  apply(strategy_name, context) -> bool
-
-class AuditLogger:
-  log(action, details) -> None
+  # Các chiến lược tự động
+  add_validator_nodes(params)       # Thêm node để đảm bảo n >= 3f + 1
+  renew_certificates(params)        # Gia hạn chứng chỉ sắp hết hạn
+  scale_processing_capacity(params) # Mở rộng tài nguyên khi tải cao
+  execute_backup(params)            # Sao lưu dữ liệu khẩn cấp
+  implement_rate_limiting(params)   # Chặn brute force
 ```
 
 Ví dụ sử dụng (mô tả):

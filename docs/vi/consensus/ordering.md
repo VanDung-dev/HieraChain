@@ -205,6 +205,26 @@ class OrderingMaintenance:
     def enter_lockdown()
     def exit_lockdown()
     def graceful_shutdown()
+
+#### 7. Recovery
+
+**File**: `hierachain/consensus/ordering/recovery.py`
+
+Cơ chế khôi phục trạng thái sau khi node bị dừng đột ngột:
+
+```python
+from hierachain.consensus.ordering.recovery import OrderingRecovery
+
+recovery = OrderingRecovery(service)
+
+# Kiểm tra xem có cần recovery không
+if recovery.needs_recovery():
+    # Khôi phục các event chưa được đóng block từ Journal
+    recovered_count = recovery.perform_recovery()
+    print(f"Recovered {recovered_count} events from journal")
+```
+
+Cơ chế này đảm bảo tính bền vững (durability) bằng cách đọc lại `TransactionJournal` và tái lập `pending_events` pool.
 ```
 
 ### Luồng xử lý (Flow)

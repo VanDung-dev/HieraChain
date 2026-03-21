@@ -20,6 +20,17 @@ Quản lý lưu trữ trạng thái (world state) và lịch sử Block/Event v�
   * IPFS (Off-chain): `hierachain/api/storage/ipfs_client.py` — Lưu trữ dữ liệu lớn ngoài chuỗi (Event details, Contract code).
   * (Tùy chọn) Mô hình dữ liệu ORM: `hierachain/storage/models.py`.
 
+#### SQLAlchemy Data Models
+
+**File**: `hierachain/storage/models.py`
+
+HieraChain sử dụng SQLAlchemy để quản lý schema database:
+
+- **ChainModel**: Lưu trữ thông tin về các chuỗi (Main/Sub-chain).
+- **BlockModel**: Chứa header của block (index, hash, prev_hash, timestamp).
+- **EventModel**: Lưu trữ chi tiết từng sự kiện trong block (event_id, type, data JSON).
+- **ChainStateModel**: Lưu trữ World State dưới dạng Key-Value (JSON).
+
 * Cấu hình qua `hierachain/config/settings.py` (DEFAULT_STORAGE_BACKEND, DATABASE_URL, REDIS_* nếu có, HRC_IPFS_*).
 
 ## Lưu trữ IPFS (Off-chain Storage)

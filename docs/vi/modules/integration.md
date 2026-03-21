@@ -21,13 +21,42 @@ Cung cấp lớp tích hợp với hệ thống doanh nghiệp/ERP và các clie
 ## API công khai (mang tính mô tả)
 
 ```python
-class ArrowClient:
-  write_table(table, destination) -> bool
-  read_table(source) -> Table
-
 class ERPAdapter:
   pull(domain, params) -> list[dict]
   push(domain, items) -> bool
+
+#### Arrow Client Example
+
+**File**: `hierachain/integration/arrow_client.py`
+
+Xuất dữ liệu hiệu năng cao sang định dạng Apache Arrow:
+
+```python
+import pyarrow as pa
+from hierachain.integration.arrow_client import ArrowClient
+
+client = ArrowClient()
+data = [pa.array([1, 2, 3]), pa.array(["A", "B", "C"])]
+table = pa.Table.from_arrays(data, names=["id", "code"])
+
+# Ghi dữ liệu ra file arrow
+client.write_table(table, "export_data.arrow")
+```
+
+#### ERP Adapter Implementation
+
+**File**: `hierachain/integration/erp_adapters/base.py`
+
+Dự án cung cấp sẵn các adapter như `ODataAdapter`, `RestAdapter`. Bạn có thể tùy biến:
+
+```python
+from hierachain.integration.erp_ledger import ERPAdapter
+
+class MyCustomERP(ERPAdapter):
+    def pull(self, domain, params):
+        # Logic gọi API từ SAP/Oracle...
+        return [{"id": "1", "value": "data"}]
+```
 ```
 
 ## Cấu hình

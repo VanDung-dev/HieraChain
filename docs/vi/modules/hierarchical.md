@@ -279,6 +279,55 @@ k8s_mgr = K8sNamespaceManager(prefix="hrc-", use_mock=False)
 k8s_mgr.create_namespace("supply_chain", labels={"env": "prod"})
 ```
 
+### Multi-Org Management
+
+**File**: `hierarchical/multi_org.py`
+
+Quản lý nhiều tổ chức tham gia vào các kênh (channels):
+
+```python
+from hierachain.hierarchical.multi_org import MultiOrgManager
+
+org_mgr = MultiOrgManager()
+
+# Đăng ký tổ chức mới
+org_mgr.register_organization(
+    org_id="ORG-A",
+    name="Logistics Corp",
+    msp_config={"ca_root": "..."}
+)
+
+# Thêm tổ chức vào sub-chain
+org_mgr.add_org_to_chain("supply_chain", "ORG-A", permissions=["read", "write"])
+
+# Kiểm tra quyền
+if org_mgr.can_access_chain("ORG-A", "supply_chain"):
+    print("Access granted")
+```
+
+### Private Data Collections
+
+**File**: `hierarchical/private_data.py`
+
+Xử lý dữ liệu riêng tư chỉ chia sẻ giữa một nhóm nhỏ các bên:
+
+```python
+from hierachain.hierarchical.private_data import PrivateDataManager
+
+pdm = PrivateDataManager(storage_backend="sqlite")
+
+# Lưu trữ dữ liệu riêng tư (chỉ Org-A và Org-B)
+pdm.store_private_data(
+    collection="bid_details",
+    key="bid-001",
+    data={"price": 5000, "bidder": "Org-A"},
+    authorized_orgs=["ORG-A", "ORG-B"]
+)
+
+# Chỉ băm (hash) của dữ liệu này được đưa vào block công khai
+hash_val = pdm.get_data_hash("bid-001")
+```
+
 ---
 
 ## BFT Consensus (Byzantine Fault Tolerance)

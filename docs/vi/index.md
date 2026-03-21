@@ -90,6 +90,7 @@ Lưu ý quan trọng về phạm vi:
     * [Sử dụng WebSocket](how-to/add-websocket.md) · [Tích hợp Web2](how-to/integrate-web2.md)
     * [Triển khai an toàn](how-to/secure-deployment.md) · [Xử lý sự cố](how-to/troubleshooting.md)
     * [Khôi phục sau thảm họa (Disaster Recovery)](how-to/disaster-recovery.md)
+    * [Hướng dẫn chạy Demo](how-to/use-demos.md)
 
 * :material-code-braces:{ .lg .middle } __Phát triển__
 

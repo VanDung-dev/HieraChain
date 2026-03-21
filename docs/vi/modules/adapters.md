@@ -34,12 +34,26 @@ Mức mô tả (rút gọn, tham khảo tên lớp/hàm trong mã nguồn):
 Ví dụ mô tả (giả định):
 
 ```python
-# Pseudocode
-from hierachain.adapters.storage import file_storage
-store = file_storage.FileStorage(root_dir="./data")
-store.write("blocks/0001.json", b"{...}")
 data = store.read("blocks/0001.json")
 ```
+
+### Database Adapters
+
+**File**: `adapters/database/sqlite_adapter.py`
+
+Adapter cho cơ sở dữ liệu quan hệ (RDBMS), mặc định là SQLite:
+
+```python
+from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
+
+db_adapter = SQLiteAdapter(db_url="sqlite:///hierachain.db")
+
+# Thao tác dữ liệu
+db_adapter.execute("INSERT INTO events ...")
+rows = db_adapter.query("SELECT * FROM blocks WHERE index = ?", (10,))
+```
+
+**Lưu ý**: SqliteAdapter hỗ trợ tự động khởi tạo schema và quản lý migration cơ bản cho môi trường phát triển.
 
 ## Cấu hình
 

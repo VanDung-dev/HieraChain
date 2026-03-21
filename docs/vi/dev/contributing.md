@@ -52,6 +52,16 @@ Chúng tôi sử dụng quy trình **Fork & Pull** tiêu chuẩn:
 * Đảm bảo mã vượt qua các kiểm tra phân tích tĩnh (static analysis) trong thư mục `scripts/`.
 * Mã mới phải có **Type Hints** đầy đủ (Python >= 3.10).
 
+## Quy tắc cấm (Forbidden Patterns)
+
+Để đảm bảo tính nhất quán và triết lý của HieraChain, các nhà phát triển **TUYỆT ĐỐI KHÔNG**:
+
+* ❌ **Sử dụng thuật ngữ tiền điện tử**: Không dùng các từ như `transaction`, `mining`, `coin`, `token`, `wallet`, `address`, `amount`, `fee`. Thay vào đó, hãy dùng `event`, `entity_id`, `details`.
+* ❌ **Sử dụng `print()`**: Luôn sử dụng `logging.getLogger(__name__)`.
+* ❌ **Truy cập DB trực tiếp**: Không gọi trực tiếp `sqlite3` hay `redis` bên ngoài thư mục `adapters/storage/`.
+* ❌ **Bỏ qua Journal**: Không bỏ qua bước ghi `TransactionJournal` khi thiết lập luồng ordering mới.
+* ❌ **Lưu secret trong code**: Luôn sử dụng biến môi trường hoặc Secret Manager.
+
 ## Kiểm thử (Testing)
 
 HieraChain duy trì tiêu chuẩn cao về chất lượng mã. Mọi đóng góp đều phải vượt qua các bài kiểm tra tự động.

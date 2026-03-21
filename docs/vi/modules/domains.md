@@ -122,6 +122,36 @@ class CrossChainValidator:
     def __init__(self, hierarchy_manager: HierarchyManager, entity_tracer: EntityTracer)
     def validate_chain_consistency(self, chain_name: str) -> dict
     def validate_cross_chain_operations(self, entity_id: str) -> list[dict]
+
+#### Entity Tracer Example
+
+Truy vết một lô hàng (Shipment) qua nhiều phòng ban (Sub-chains):
+
+```python
+from hierachain.domains.generic.utils.entity_tracer import EntityTracer
+
+tracer = EntityTracer(hierarchy_manager)
+
+# Truy vết thực thể "SHIPMENT-123" trên toàn mạng lưới
+history = tracer.trace_entity_across_chains("SHIPMENT-123")
+
+for chain, events in history.items():
+    print(f"Chain: {chain}, Events count: {len(events)}")
+```
+
+#### Cross-Chain Validation
+
+Kiểm tra xem dữ liệu ở Sub-chain có khớp với Proof ở Main chain không:
+
+```python
+from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
+
+validator = CrossChainValidator(hierarchy_manager, tracer)
+report = validator.validate_chain_consistency("logistics_chain")
+
+if report["is_consistent"]:
+    print("Dữ liệu chuỗi logistics hoàn toàn nhất quán.")
+```
 ```
 
 ## Event Types được hỗ trợ

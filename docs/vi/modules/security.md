@@ -219,6 +219,96 @@ print(f"Current failures: {count}/5")
 
 **[EDGE CASE]** Distributed deployment: Mỗi node có tracking riêng → attacker có thể bypass bằng cách rotate IPs across nodes. Giải pháp: dùng shared Redis store.
 
+#### Certificate Manager
+
+**File**: `security/certificate.py`
+
+Quản lý chứng chỉ doanh nghiệp và danh sách thu hồi (CRL):
+
+```python
+from hierachain.security.certificate import CertificateManager
+
+cert_mgr = CertificateManager(storage_dir="./certs", ca_path="ca.pem")
+
+# Lưu trữ chứng chỉ mới
+storage_id = cert_mgr.store_certificate(
+    cert_data="---BEGIN CERTIFICATE---...",
+    metadata={"entity": "node-1", "org": "org-A"}
+)
+
+# Xác thực
+result = cert_mgr.validate_certificate_by_id(storage_id)
+if result["valid"]:
+    print("Certificate is valid and trusted")
+
+# Thu hồi
+cert_mgr.revoke_certificate(storage_id, reason="key_compromise")
+```
+
+#### Key Backup Manager
+
+**File**: `security/key_backup_manager.py`
+
+Sao lưu và khôi phục khóa an toàn (mã hóa bằng Master Key):
+
+```python
+from hierachain.security.key_backup_manager import KeyBackupManager
+
+backup_mgr = KeyBackupManager(storage_dir="./backups", master_key=master_key)
+
+# Sao lưu
+backup_id = backup_mgr.backup_keys(
+    public_key="0xabc...", 
+    private_key="0x123...",
+    key_type="identity"
+)
+
+# Khôi phục
+pub, priv = backup_mgr.restore_keys(backup_id)
+
+# Kiểm tra toàn vẹn
+is_intact = backup_mgr.verify_backup_integrity(backup_id)
+```
+
+#### Resource Guard
+
+**File**: `security/resource_guard.py`
+
+Middleware bảo vệ hệ thống trước tình trạng quá tải (DoS protection):
+
+```python
+from hierachain.security.resource_guard import ResourceGuardMiddleware
+
+# Tích hợp vào FastAPI
+app.add_middleware(
+    ResourceGuardMiddleware,
+    cpu_threshold=85.0,    # Chặn yêu cầu nếu CPU > 85%
+    memory_threshold=90.0, # Chặn yêu cầu nếu RAM > 90%
+    whitelist_ips=["127.0.0.1"]
+)
+```
+
+#### Secure Logger & Sanitization
+
+**File**: `security/secure_logging.py`, `security/sanitization.py`
+
+Ghi log an toàn và làm sạch dữ liệu:
+
+```python
+from hierachain.security.secure_logging import SecureLogger
+from hierachain.security.sanitization import sanitize_for_output
+
+logger = SecureLogger("API")
+
+# Dữ liệu nhạy cảm sẽ tự động bị ẩn hoặc băm
+user_data = {"user_id": "U123", "api_key": "secret-key", "email": "test@example.com"}
+logger.info("User request processed", extra={"payload": user_data})
+# Output: {... "api_key": "[SENSITIVE]", "email": "t***@example.com" ...}
+
+# Sanitization trước khi trả về client
+clean_data = sanitize_for_output(user_data, context="public_api")
+```
+
 #### Master Key Provider
 
 **File**: `security/master_key_provider.py`

@@ -20,14 +20,48 @@ Theo dõi tình trạng hệ thống (CPU, RAM, thông lượng sự kiện/kh�
 ## API công khai (mô tả khái quát)
 
 ```yaml
-PerformanceMonitor:
-  start_monitoring()
-  stop_monitoring()
-  get_current_metrics() -> {cpu_usage, memory_usage, ...}
-
 AlertSystem:
   add_rule(name, predicate, action)
   evaluate(metrics)
+
+#### Performance Metrics & Monitor
+
+**File**: `hierachain/monitoring/performance_monitor.py`, `performance_metrics.py`
+
+Thu thập và tổng hợp chỉ số hệ thống:
+
+```python
+from hierachain.monitoring.performance_monitor import PerformanceMonitor
+
+monitor = PerformanceMonitor(interval=5.0)
+monitor.start_monitoring()
+
+# Lấy metrics hiện tại
+stats = monitor.get_current_metrics()
+print(f"CPU: {stats.cpu_usage}%, RAM: {stats.memory_usage}%")
+```
+
+#### Alert System
+
+**File**: `hierachain/monitoring/alert_system.py`
+
+Hệ thống cảnh báo dựa trên ngưỡng chỉ số:
+
+```python
+from hierachain.monitoring.alert_system import AlertSystem
+
+alerts = AlertSystem()
+
+# Thêm quy tắc cảnh báo
+alerts.add_rule(
+    name="High CPU",
+    predicate=lambda m: m["cpu_usage"] > 90.0,
+    action=lambda m: print(f"ALERT: CPU is too high! {m['cpu_usage']}%")
+)
+
+# Đánh giá metrics
+alerts.evaluate(stats)
+```
 ```
 
 Ví dụ (mô tả):
