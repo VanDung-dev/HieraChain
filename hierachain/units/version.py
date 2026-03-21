@@ -232,3 +232,6 @@ def compare_versions(
     v1 = _version_tuple(version1)
     v2 = _version_tuple(version2)
     return _compare_version_tuples(v1, v2)
+
+
+__version__: str = get_version(VERSION)
