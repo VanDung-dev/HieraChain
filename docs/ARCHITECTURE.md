@@ -1,5 +1,7 @@
 # HieraChain Architecture
 
+*Last updated: 2026-01-12*
+
 ## 📋 Overview
 
 HieraChain is a **multi-language blockchain infrastructure** designed for high-performance enterprise applications. The architecture follows a **layered approach** combining the strengths of Python and Rust:
@@ -521,5 +523,3 @@ flowchart TB
 Dual licensed under [Apache-2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT).
 
 ---
-
-*Last updated: 2026-01-12*
