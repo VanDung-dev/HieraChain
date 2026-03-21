@@ -11,16 +11,18 @@ ensuring that all data stored remains within the enterprise boundary.
 import json
 import os
 from typing import Any
+
 import ipfshttpclient
 
-from hierachain.security.secure_logging import SecureLogger
 from hierachain.api.storage.encryption import AESEncryption, EncryptionError
+from hierachain.security.secure_logging import SecureLogger
 
 logger = SecureLogger("hierachain.storage.ipfs_client")
 
 
 class IPFSError(Exception):
     """Base exception for IPFS-related errors."""
+
     pass
 
 
@@ -33,10 +35,11 @@ class _IPFSClientContext:
     def __enter__(self) -> Any:
         return self._client
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb) -> None:
         if exc_type is not None:
             logger.error("IPFS operation failed", error=str(exc_val))
-            raise IPFSError(f"IPFS operation failed: {str(exc_val)}")
+            # Don't re-raise - let the original exception propagate naturally
+            return None  # or True to suppress if needed
 
 
 class IPFSClient:
@@ -62,7 +65,7 @@ class IPFSClient:
         ipfs_host: str = "/ip4/127.0.0.1/tcp/5001",
         encryption_key: bytes | None = None,
         auto_pin: bool = True,
-        timeout: int = 120
+        timeout: int = 120,
     ):
         """
         Initialize IPFS client.
@@ -90,7 +93,7 @@ class IPFSClient:
             "IPFS client initialized",
             host=ipfs_host,
             auto_pin=auto_pin,
-            encryption_enabled=True
+            encryption_enabled=True,
         )
 
     @property
@@ -100,17 +103,14 @@ class IPFSClient:
 
     @property
     def encryption_key(self) -> bytes:
-        """Get the encryption key (handle with care)."""
-        return self._encryption.key
+        """Get the encryption key (return a copy to prevent modification)."""
+        return self._encryption.key.copy()  # Return copy for safety
 
     def _ensure_connected(self):
         """Ensure IPFS client is connected, connect if needed."""
         if self._client is None:
             try:
-                self._client = ipfshttpclient.connect(
-                    self._host,
-                    timeout=self._timeout
-                )
+                self._client = ipfshttpclient.connect(self._host, timeout=self._timeout)
                 # Test connection
                 self._client.version()
                 logger.info("Connected to IPFS daemon", host=self._host)
@@ -124,10 +124,7 @@ class IPFSClient:
         return _IPFSClientContext(self._client)
 
     def upload_bytes(
-        self,
-        data: bytes,
-        encrypt: bool = True,
-        metadata: dict[str, Any] | None = None
+        self, data: bytes, encrypt: bool = True, metadata: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """
         Upload raw bytes to IPFS with optional encryption.
@@ -153,7 +150,11 @@ class IPFSClient:
             # Prepare data for upload
             if encrypt:
                 # Serialize metadata for AAD
-                aad = json.dumps(metadata, sort_keys=True).encode('utf-8') if metadata else None
+                aad = (
+                    json.dumps(metadata, sort_keys=True).encode("utf-8")
+                    if metadata
+                    else None
+                )
 
                 # Encrypt data
                 ciphertext, nonce = self._encryption.encrypt(data, aad)
@@ -163,7 +164,7 @@ class IPFSClient:
                 logger.debug(
                     "Data encrypted for IPFS upload",
                     original_size=len(data),
-                    encrypted_size=len(ciphertext)
+                    encrypted_size=len(ciphertext),
                 )
             else:
                 upload_data = data
@@ -195,7 +196,7 @@ class IPFSClient:
                 "Data uploaded to IPFS successfully",
                 cid=cid,
                 size=len(upload_data),
-                encrypted=encrypt
+                encrypted=encrypt,
             )
 
             return response
@@ -211,7 +212,7 @@ class IPFSClient:
         cid: str,
         encrypted: bool = True,
         nonce: str | None = None,
-        metadata: dict[str, Any] | None = None
+        metadata: dict[str, Any] | None = None,
     ) -> bytes:
         """
         Download and optionally decrypt data from IPFS.
@@ -234,11 +235,7 @@ class IPFSClient:
             with self._get_client() as client:
                 download_data = client.cat(cid)
 
-            logger.debug(
-                "Data downloaded from IPFS",
-                cid=cid,
-                size=len(download_data)
-            )
+            logger.debug("Data downloaded from IPFS", cid=cid, size=len(download_data))
 
             # Decrypt if needed
             if encrypted:
@@ -246,15 +243,18 @@ class IPFSClient:
                     raise IPFSError("Nonce is required for decrypting data")
 
                 # Deserialize metadata for AAD
-                aad = json.dumps(metadata, sort_keys=True).encode('utf-8') if metadata else None
+                aad = (
+                    json.dumps(metadata, sort_keys=True).encode("utf-8")
+                    if metadata
+                    else None
+                )
 
                 # Decrypt
                 nonce_bytes = bytes.fromhex(nonce)
                 plaintext = self._encryption.decrypt(download_data, nonce_bytes, aad)
 
                 logger.debug(
-                    "Data decrypted successfully",
-                    decrypted_size=len(plaintext)
+                    "Data decrypted successfully", decrypted_size=len(plaintext)
                 )
 
                 return plaintext
@@ -268,10 +268,7 @@ class IPFSClient:
             raise IPFSError(f"Failed to download data from CID {cid}: {str(e)}")
 
     def upload_json(
-        self,
-        data: dict,
-        encrypt: bool = True,
-        metadata: dict[str, Any] | None = None
+        self, data: dict, encrypt: bool = True, metadata: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """
         Upload JSON data to IPFS with optional encryption.
@@ -285,7 +282,7 @@ class IPFSClient:
             Upload result dict with CID, nonce, etc.
         """
         try:
-            json_bytes = json.dumps(data, sort_keys=True).encode('utf-8')
+            json_bytes = json.dumps(data, sort_keys=True).encode("utf-8")
             return self.upload_bytes(json_bytes, encrypt=encrypt, metadata=metadata)
         except (TypeError, ValueError) as e:
             raise IPFSError(f"JSON serialization failed: {str(e)}")
@@ -295,7 +292,7 @@ class IPFSClient:
         cid: str,
         encrypted: bool = True,
         nonce: str | None = None,
-        metadata: dict[str, Any] | None = None
+        metadata: dict[str, Any] | None = None,
     ) -> dict:
         """
         Download and optionally decrypt JSON data from IPFS.
@@ -309,9 +306,11 @@ class IPFSClient:
         Returns:
             Decrypted dictionary
         """
-        json_bytes = self.download_bytes(cid, encrypted=encrypted, nonce=nonce, metadata=metadata)
+        json_bytes = self.download_bytes(
+            cid, encrypted=encrypted, nonce=nonce, metadata=metadata
+        )
         try:
-            return json.loads(json_bytes.decode('utf-8'))
+            return json.loads(json_bytes.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
             raise IPFSError(f"JSON deserialization failed: {str(e)}")
 
@@ -378,7 +377,7 @@ class IPFSClient:
                 pins = client.pin.ls()
 
             # Extract CIDs from pins dict
-            cids = list(pins['Keys'].keys()) if 'Keys' in pins else []
+            cids = list(pins["Keys"].keys()) if "Keys" in pins else []
 
             logger.debug("Listed pinned content", count=len(cids))
             return cids
@@ -425,7 +424,7 @@ class IPFSClient:
             with self._get_client() as client:
                 client.object.stat(cid)
             return True
-        except IPFSError:
+        except Exception:  # Catch all exceptions, not just IPFSError
             return False
 
     def get_daemon_version(self) -> dict[str, Any]:
@@ -442,8 +441,12 @@ class IPFSClient:
             with self._get_client() as client:
                 version = client.version()
 
-            logger.debug("Retrieved IPFS daemon version", version=version['Version'])
-            return version
+            # Safe access to Version key with default value
+            logger.debug(
+                "Retrieved IPFS daemon version",
+                version=version.get("Version", "unknown"),
+            )
+            return {"version": version.get("Version", "unknown")}
 
         except Exception as e:
             logger.error("Failed to get daemon version", error=str(e))
@@ -510,5 +513,5 @@ def create_ipfs_client_from_env() -> IPFSClient:
         ipfs_host=ipfs_host,
         encryption_key=encryption_key,
         auto_pin=auto_pin,
-        timeout=timeout
+        timeout=timeout,
     )
