@@ -74,7 +74,7 @@ async def get_trace_data(entity_id: str):
 # --- ENDPOINT SERVING INTERFACE (READ FROM demo/index.html) ---
 _FRONTEND_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/explorer", response_class=HTMLResponse)
 async def serve_frontend():
     """Serve index.html from the demo folder/"""
     try:
@@ -89,8 +89,8 @@ if __name__ == "__main__":
     print("🚀 HieraChain API Server is running...")
     print("   Please run: python demo/demo.py first!")
     print("")
-    print("   Dashboard: http://127.0.0.1:8000")
-    print("   API docs:  http://127.0.0.1:8000/docs")
+    print("   Dashboard: http://127.0.0.1:2661/explorer")
+    print("   API docs:  http://127.0.0.1:2661/docs")
     print("   Or straight open: demo/index.html")
     print("=========================================================")
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
+    uvicorn.run(app, host="127.0.0.1", port=2661, log_level="warning")
