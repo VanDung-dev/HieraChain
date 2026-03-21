@@ -1886,17 +1886,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#luong-xu-ly-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Luồng xử lý (Flow)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#metrics-va-monitoring" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3404,17 +3393,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#luong-xu-ly-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Luồng xử lý (Flow)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#metrics-va-monitoring" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3659,19 +3637,40 @@
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">enter_lockdown</span><span class="p">()</span>
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exit_lockdown</span><span class="p">()</span>
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">graceful_shutdown</span><span class="p">()</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="c1">#### 7. Recovery</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="o">**</span><span class="n">File</span><span class="o">**</span><span class="p">:</span> <span class="err">`</span><span class="n">hierachain</span><span class="o">/</span><span class="n">consensus</span><span class="o">/</span><span class="n">ordering</span><span class="o">/</span><span class="n">recovery</span><span class="o">.</span><span class="n">py</span><span class="err">`</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="n">Cơ</span> <span class="n">chế</span> <span class="n">khôi</span> <span class="n">phục</span> <span class="n">trạng</span> <span class="n">thái</span> <span class="n">sau</span> <span class="n">khi</span> <span class="n">node</span> <span class="n">bị</span> <span class="n">dừng</span> <span class="n">đột</span> <span class="n">ngột</span><span class="p">:</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="err">```</span><span class="n">python</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.ordering.recovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderingRecovery</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="n">recovery</span> <span class="o">=</span> <span class="n">OrderingRecovery</span><span class="p">(</span><span class="n">service</span><span class="p">)</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="c1"># Kiểm tra xem có cần recovery không</span>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="k">if</span> <span class="n">recovery</span><span class="o">.</span><span class="n">needs_recovery</span><span class="p">():</span>
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>    <span class="c1"># Khôi phục các event chưa được đóng block từ Journal</span>
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>    <span class="n">recovered_count</span> <span class="o">=</span> <span class="n">recovery</span><span class="o">.</span><span class="n">perform_recovery</span><span class="p">()</span>
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recovered </span><span class="si">{</span><span class="n">recovered_count</span><span class="si">}</span><span class="s2"> events from journal&quot;</span><span class="p">)</span>
 </code></pre></div>
-<h3 id="luong-xu-ly-flow">Luồng xử lý (Flow)</h3>
-<pre class="mermaid"><code>flowchart TB
-    Client[Client] --&gt;|1. Submit Event| OS[OrderingService]
-    OS --&gt;|2. Queue| Pool[Event Pool]
-    Pool --&gt;|3. Dequeue| Proc[OrderingProcessor]
-    Proc --&gt;|4. Certify| Cert[EventCertifier]
-    Cert --&gt;|5. Valid Event| BB[BlockBuilder]
-    BB --&gt;|6. Batch Full/Timeout| Build[Build Block]
-    Build --&gt;|7. Commit| CQ[Commit Queue]
-    CQ --&gt;|8. Persist| Storage[(Storage)]
-    Storage --&gt;|9. Return Block| OS
-    OS --&gt;|10. Block Ready| Client</code></pre>
+<p>Cơ chế này đảm bảo tính bền vững (durability) bằng cách đọc lại <code>TransactionJournal</code> và tái lập <code>pending_events</code> pool.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>### Luồng xử lý (Flow)
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>```mermaid
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>flowchart TB
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    Client[Client] --&gt;|1. Submit Event| OS[OrderingService]
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    OS --&gt;|2. Queue| Pool[Event Pool]
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    Pool --&gt;|3. Dequeue| Proc[OrderingProcessor]
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    Proc --&gt;|4. Certify| Cert[EventCertifier]
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    Cert --&gt;|5. Valid Event| BB[BlockBuilder]
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>    BB --&gt;|6. Batch Full/Timeout| Build[Build Block]
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>    Build --&gt;|7. Commit| CQ[Commit Queue]
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    CQ --&gt;|8. Persist| Storage[(Storage)]
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>    Storage --&gt;|9. Return Block| OS
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>    OS --&gt;|10. Block Ready| Client
+</code></pre></div></p>
 <p>Normal Operation:</p>
 <ol>
 <li>Client submit Event → <code>receive_event()</code></li>
@@ -3686,42 +3685,42 @@
 </ol>
 <h3 id="metrics-va-monitoring">Metrics và Monitoring</h3>
 <p><strong>File</strong>: <code>hierachain/consensus/ordering/metrics.py</code></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.ordering.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderingMetrics</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">metrics</span> <span class="o">=</span> <span class="n">OrderingMetrics</span><span class="p">()</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1"># Record operations</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">metrics</span><span class="o">.</span><span class="n">record_received</span><span class="p">()</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">metrics</span><span class="o">.</span><span class="n">record_certified</span><span class="p">()</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">metrics</span><span class="o">.</span><span class="n">record_block_created</span><span class="p">()</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="n">metrics</span><span class="o">.</span><span class="n">record_committed</span><span class="p">()</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="c1"># Get metrics</span>
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="n">stats</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">get_stats</span><span class="p">()</span>
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="c1"># {</span>
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="c1">#   &quot;received&quot;: 1000,</span>
-<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="c1">#   &quot;certified&quot;: 995,</span>
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="c1">#   &quot;blocks_created&quot;: 10,</span>
-<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="c1">#   &quot;committed&quot;: 10,</span>
-<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="c1">#   &quot;throughput&quot;: 500.0  # events/sec</span>
-<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="c1"># }</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.ordering.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderingMetrics</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">metrics</span> <span class="o">=</span> <span class="n">OrderingMetrics</span><span class="p">()</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1"># Record operations</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">metrics</span><span class="o">.</span><span class="n">record_received</span><span class="p">()</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">metrics</span><span class="o">.</span><span class="n">record_certified</span><span class="p">()</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="n">metrics</span><span class="o">.</span><span class="n">record_block_created</span><span class="p">()</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="n">metrics</span><span class="o">.</span><span class="n">record_committed</span><span class="p">()</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="c1"># Get metrics</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="n">stats</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">get_stats</span><span class="p">()</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="c1"># {</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="c1">#   &quot;received&quot;: 1000,</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="c1">#   &quot;certified&quot;: 995,</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="c1">#   &quot;blocks_created&quot;: 10,</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="c1">#   &quot;committed&quot;: 10,</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="c1">#   &quot;throughput&quot;: 500.0  # events/sec</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="c1"># }</span>
 </code></pre></div>
 <h3 id="cau-hinh">Cấu hình</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">ORDERING_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="s2">&quot;batch_size&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>              <span class="c1"># Max events per block</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="s2">&quot;batch_timeout&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>            <span class="c1"># Max wait time (seconds)</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="s2">&quot;storage_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;./ordering_data&quot;</span><span class="p">,</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="s2">&quot;enable_persistence&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="s2">&quot;certifier&quot;</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>        <span class="s2">&quot;require_signature&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>        <span class="s2">&quot;validate_schema&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>        <span class="s2">&quot;check_policy&quot;</span><span class="p">:</span> <span class="kc">True</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>    <span class="p">},</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>    <span class="s2">&quot;processor&quot;</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>        <span class="s2">&quot;poll_interval&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>        <span class="c1"># Event polling interval</span>
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>        <span class="s2">&quot;max_concurrent&quot;</span><span class="p">:</span> <span class="mi">10</span>          <span class="c1"># Max concurrent processing</span>
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>    <span class="p">}</span>
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">ORDERING_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="s2">&quot;batch_size&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>              <span class="c1"># Max events per block</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="s2">&quot;batch_timeout&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>            <span class="c1"># Max wait time (seconds)</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    <span class="s2">&quot;storage_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;./ordering_data&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    <span class="s2">&quot;enable_persistence&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="s2">&quot;certifier&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>        <span class="s2">&quot;require_signature&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>        <span class="s2">&quot;validate_schema&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>        <span class="s2">&quot;check_policy&quot;</span><span class="p">:</span> <span class="kc">True</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    <span class="p">},</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>    <span class="s2">&quot;processor&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>        <span class="s2">&quot;poll_interval&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>        <span class="c1"># Event polling interval</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>        <span class="s2">&quot;max_concurrent&quot;</span><span class="p">:</span> <span class="mi">10</span>          <span class="c1"># Max concurrent processing</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>    <span class="p">}</span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="p">}</span>
 </code></pre></div>
 <h2 id="faq">FAQ</h2>
 <div class="admonition question">

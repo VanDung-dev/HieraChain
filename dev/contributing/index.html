@@ -2833,6 +2833,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#quy-tac-cam-forbidden-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quy tắc cấm (Forbidden Patterns)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#kiem-thu-testing" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3276,6 +3287,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#quy-tac-cam-forbidden-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quy tắc cấm (Forbidden Patterns)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#kiem-thu-testing" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3473,6 +3495,15 @@
 <li>Tuân thủ tiêu chuẩn <strong>PEP 8</strong>.</li>
 <li>Đảm bảo mã vượt qua các kiểm tra phân tích tĩnh (static analysis) trong thư mục <code>scripts/</code>.</li>
 <li>Mã mới phải có <strong>Type Hints</strong> đầy đủ (Python &gt;= 3.10).</li>
+</ul>
+<h2 id="quy-tac-cam-forbidden-patterns">Quy tắc cấm (Forbidden Patterns)</h2>
+<p>Để đảm bảo tính nhất quán và triết lý của HieraChain, các nhà phát triển <strong>TUYỆT ĐỐI KHÔNG</strong>:</p>
+<ul>
+<li>❌ <strong>Sử dụng thuật ngữ tiền điện tử</strong>: Không dùng các từ như <code>transaction</code>, <code>mining</code>, <code>coin</code>, <code>token</code>, <code>wallet</code>, <code>address</code>, <code>amount</code>, <code>fee</code>. Thay vào đó, hãy dùng <code>event</code>, <code>entity_id</code>, <code>details</code>.</li>
+<li>❌ <strong>Sử dụng <code>print()</code></strong>: Luôn sử dụng <code>logging.getLogger(__name__)</code>.</li>
+<li>❌ <strong>Truy cập DB trực tiếp</strong>: Không gọi trực tiếp <code>sqlite3</code> hay <code>redis</code> bên ngoài thư mục <code>adapters/storage/</code>.</li>
+<li>❌ <strong>Bỏ qua Journal</strong>: Không bỏ qua bước ghi <code>TransactionJournal</code> khi thiết lập luồng ordering mới.</li>
+<li>❌ <strong>Lưu secret trong code</strong>: Luôn sử dụng biến môi trường hoặc Secret Manager.</li>
 </ul>
 <h2 id="kiem-thu-testing">Kiểm thử (Testing)</h2>
 <p>HieraChain duy trì tiêu chuẩn cao về chất lượng mã. Mọi đóng góp đều phải vượt qua các bài kiểm tra tự động.</p>

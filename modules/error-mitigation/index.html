@@ -1243,10 +1243,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#luong-xu-ly-loi-workflow" class="md-nav__link">
+  <a href="#recovery-engine" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Luồng xử lý lỗi (Workflow)
+        Recovery Engine
       
     </span>
   </a>
@@ -3227,10 +3227,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#luong-xu-ly-loi-workflow" class="md-nav__link">
+  <a href="#recovery-engine" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Luồng xử lý lỗi (Workflow)
+        Recovery Engine
       
     </span>
   </a>
@@ -3356,60 +3356,90 @@
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="nt">RecoveryEngine</span><span class="p">:</span>
 <a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">recover(context)</span><span class="w">  </span><span class="c1"># chọn kịch bản phù hợp</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="c1">#### Journaling Example</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="nt">**File**</span><span class="p">:</span><span class="w"> </span><span class="err">`</span><span class="l l-Scalar l-Scalar-Plain">hierachain/error_mitigation/journal.py`</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="nt">Ghi nhật ký hoạt động để đảm bảo khả năng hoàn tác/phục hồi</span><span class="p">:</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="err">```</span><span class="l l-Scalar l-Scalar-Plain">python</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="l l-Scalar l-Scalar-Plain">from hierachain.error_mitigation.journal import Journal</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="l l-Scalar l-Scalar-Plain">journal = Journal(name=&quot;ordering_journal&quot;)</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="c1"># Ghi nhận thao tác trước khi thực hiện</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="l l-Scalar l-Scalar-Plain">journal.append({&quot;op&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;create_block&quot;</span><span class="err">,</span><span class="w"> </span><span class="s">&quot;index&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100})</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="c1"># Khi cần phục hồi (replay)</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="l l-Scalar l-Scalar-Plain">entries = journal.read_all()</span>
 </code></pre></div>
-<h3 id="luong-xu-ly-loi-workflow">Luồng xử lý lỗi (Workflow)</h3>
-<pre class="mermaid"><code>sequenceDiagram
-    participant App as Application
-    participant Val as Validator
-    participant Class as ErrorClassifier
-    participant Jrnl as Journal
-    participant Rec as Recovery/Rollback
-
-    App-&gt;&gt;Val: validate(event)
-    alt Dữ liệu không hợp lệ
-        Val--&gt;&gt;App: ValidationError
-        App-&gt;&gt;Class: classify(error)
-        Class--&gt;&gt;App: ErrorStrategy (Level, Action)
-    end
-
-    App-&gt;&gt;Jrnl: append(operation_log)
-
-    alt Lỗi nghiêm trọng (Critical)
-        App-&gt;&gt;Rec: recover(context) / rollback(snapshot)
-        Rec--&gt;&gt;App: Recovery Status
-    end</code></pre>
+<h4 id="recovery-engine">Recovery Engine</h4>
+<p><strong>File</strong>: <code>hierachain/error_mitigation/recovery_engine.py</code></p>
+<p>Tự động hóa quy trình khắc phục sự cố:</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.recovery_engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecoveryEngine</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">RecoveryEngine</span><span class="p">()</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># Kích hoạt quy trình phục hồi dựa trên ngữ cảnh lỗi</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">engine</span><span class="o">.</span><span class="n">recover</span><span class="p">(</span><span class="n">error_type</span><span class="o">=</span><span class="s2">&quot;consensus_timeout&quot;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;node_id&quot;</span><span class="p">:</span> <span class="s2">&quot;node-1&quot;</span><span class="p">})</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>### Luồng xử lý lỗi (Workflow)
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>```mermaid
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>sequenceDiagram
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    participant App as Application
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    participant Val as Validator
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    participant Class as ErrorClassifier
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    participant Jrnl as Journal
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    participant Rec as Recovery/Rollback
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    App-&gt;&gt;Val: validate(event)
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    alt Dữ liệu không hợp lệ
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>        Val--&gt;&gt;App: ValidationError
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>        App-&gt;&gt;Class: classify(error)
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>        Class--&gt;&gt;App: ErrorStrategy (Level, Action)
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    end
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    App-&gt;&gt;Jrnl: append(operation_log)
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>    alt Lỗi nghiêm trọng (Critical)
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>        App-&gt;&gt;Rec: recover(context) / rollback(snapshot)
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>        Rec--&gt;&gt;App: Recovery Status
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>    end
+</code></pre></div></p>
 <h3 id="vi-du-trien-khai">Ví dụ triển khai</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.validator</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataValidator</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.error_classifier</span><span class="w"> </span><span class="kn">import</span> <span class="n">ErrorClassifier</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.rollback_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">RollbackManager</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">handle_transaction</span><span class="p">(</span><span class="n">tx_data</span><span class="p">):</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="c1"># 1. Validate Input</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">validator</span> <span class="o">=</span> <span class="n">DataValidator</span><span class="p">()</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">validation_result</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">tx_data</span><span class="p">)</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">validation_result</span><span class="o">.</span><span class="n">is_valid</span><span class="p">:</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>        <span class="c1"># 2. Classify Error nếu có vấn đề</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>        <span class="n">classifier</span> <span class="o">=</span> <span class="n">ErrorClassifier</span><span class="p">()</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        <span class="n">strategy</span> <span class="o">=</span> <span class="n">classifier</span><span class="o">.</span><span class="n">classify</span><span class="p">(</span><span class="n">validation_result</span><span class="o">.</span><span class="n">error</span><span class="p">)</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>        <span class="c1"># 3. Xử lý theo chiến lược (ví dụ: Rollback)</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>        <span class="k">if</span> <span class="n">strategy</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;ROLLBACK&quot;</span><span class="p">:</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>            <span class="c1"># Ghi nhận sự kiện vào Journal trước khi tác động</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>            <span class="n">journal</span> <span class="o">=</span> <span class="n">Journal</span><span class="p">()</span>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>            <span class="n">journal</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>                <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;rollback_triggered&quot;</span><span class="p">,</span> 
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>                <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">validation_result</span><span class="o">.</span><span class="n">error</span><span class="p">),</span>
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>                <span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="n">strategy</span><span class="o">.</span><span class="n">level</span>
-<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>            <span class="p">})</span>
-<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>
-<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>            <span class="c1"># Thực hiện Rollback về điểm an toàn</span>
-<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>            <span class="n">rollback_mgr</span> <span class="o">=</span> <span class="n">RollbackManager</span><span class="p">()</span>
-<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>            <span class="n">success</span> <span class="o">=</span> <span class="n">rollback_mgr</span><span class="o">.</span><span class="n">rollback</span><span class="p">(</span><span class="n">to_snapshot</span><span class="o">=</span><span class="s2">&quot;last_safe_checkpoint&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Rolled back: </span><span class="si">{</span><span class="n">success</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>
-<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>    <span class="k">return</span> <span class="s2">&quot;Transaction processed&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.validator</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataValidator</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.error_classifier</span><span class="w"> </span><span class="kn">import</span> <span class="n">ErrorClassifier</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.rollback_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">RollbackManager</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">handle_transaction</span><span class="p">(</span><span class="n">tx_data</span><span class="p">):</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="c1"># 1. Validate Input</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">validator</span> <span class="o">=</span> <span class="n">DataValidator</span><span class="p">()</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">validation_result</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">tx_data</span><span class="p">)</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">validation_result</span><span class="o">.</span><span class="n">is_valid</span><span class="p">:</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>        <span class="c1"># 2. Classify Error nếu có vấn đề</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>        <span class="n">classifier</span> <span class="o">=</span> <span class="n">ErrorClassifier</span><span class="p">()</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>        <span class="n">strategy</span> <span class="o">=</span> <span class="n">classifier</span><span class="o">.</span><span class="n">classify</span><span class="p">(</span><span class="n">validation_result</span><span class="o">.</span><span class="n">error</span><span class="p">)</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>        <span class="c1"># 3. Xử lý theo chiến lược (ví dụ: Rollback)</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>        <span class="k">if</span> <span class="n">strategy</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;ROLLBACK&quot;</span><span class="p">:</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>            <span class="c1"># Ghi nhận sự kiện vào Journal trước khi tác động</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>            <span class="n">journal</span> <span class="o">=</span> <span class="n">Journal</span><span class="p">()</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>            <span class="n">journal</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>                <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;rollback_triggered&quot;</span><span class="p">,</span> 
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>                <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">validation_result</span><span class="o">.</span><span class="n">error</span><span class="p">),</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>                <span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="n">strategy</span><span class="o">.</span><span class="n">level</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>            <span class="p">})</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>            <span class="c1"># Thực hiện Rollback về điểm an toàn</span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>            <span class="n">rollback_mgr</span> <span class="o">=</span> <span class="n">RollbackManager</span><span class="p">()</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>            <span class="n">success</span> <span class="o">=</span> <span class="n">rollback_mgr</span><span class="o">.</span><span class="n">rollback</span><span class="p">(</span><span class="n">to_snapshot</span><span class="o">=</span><span class="s2">&quot;last_safe_checkpoint&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Rolled back: </span><span class="si">{</span><span class="n">success</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>    <span class="k">return</span> <span class="s2">&quot;Transaction processed&quot;</span>
 </code></pre></div>
 <h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
 <ul>

@@ -1231,6 +1231,50 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#certificate-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Certificate Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-backup-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Backup Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resource-guard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resource Guard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secure-logger-sanitization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secure Logger &amp; Sanitization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#master-key-provider" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3410,6 +3454,50 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#certificate-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Certificate Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-backup-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Backup Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resource-guard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resource Guard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secure-logger-sanitization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secure Logger &amp; Sanitization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#master-key-provider" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3746,36 +3834,106 @@
 <li>Có thể extend sang Redis cho distributed systems</li>
 </ul>
 <p><strong>[EDGE CASE]</strong> Distributed deployment: Mỗi node có tracking riêng → attacker có thể bypass bằng cách rotate IPs across nodes. Giải pháp: dùng shared Redis store.</p>
+<h4 id="certificate-manager">Certificate Manager</h4>
+<p><strong>File</strong>: <code>security/certificate.py</code></p>
+<p>Quản lý chứng chỉ doanh nghiệp và danh sách thu hồi (CRL):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.certificate</span><span class="w"> </span><span class="kn">import</span> <span class="n">CertificateManager</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">cert_mgr</span> <span class="o">=</span> <span class="n">CertificateManager</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">&quot;./certs&quot;</span><span class="p">,</span> <span class="n">ca_path</span><span class="o">=</span><span class="s2">&quot;ca.pem&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># Lưu trữ chứng chỉ mới</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">storage_id</span> <span class="o">=</span> <span class="n">cert_mgr</span><span class="o">.</span><span class="n">store_certificate</span><span class="p">(</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">cert_data</span><span class="o">=</span><span class="s2">&quot;---BEGIN CERTIFICATE---...&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="s2">&quot;node-1&quot;</span><span class="p">,</span> <span class="s2">&quot;org&quot;</span><span class="p">:</span> <span class="s2">&quot;org-A&quot;</span><span class="p">}</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="p">)</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="c1"># Xác thực</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="n">result</span> <span class="o">=</span> <span class="n">cert_mgr</span><span class="o">.</span><span class="n">validate_certificate_by_id</span><span class="p">(</span><span class="n">storage_id</span><span class="p">)</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;valid&quot;</span><span class="p">]:</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Certificate is valid and trusted&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="c1"># Thu hồi</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="n">cert_mgr</span><span class="o">.</span><span class="n">revoke_certificate</span><span class="p">(</span><span class="n">storage_id</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;key_compromise&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h4 id="key-backup-manager">Key Backup Manager</h4>
+<p><strong>File</strong>: <code>security/key_backup_manager.py</code></p>
+<p>Sao lưu và khôi phục khóa an toàn (mã hóa bằng Master Key):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.key_backup_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyBackupManager</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">backup_mgr</span> <span class="o">=</span> <span class="n">KeyBackupManager</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">&quot;./backups&quot;</span><span class="p">,</span> <span class="n">master_key</span><span class="o">=</span><span class="n">master_key</span><span class="p">)</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1"># Sao lưu</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">backup_id</span> <span class="o">=</span> <span class="n">backup_mgr</span><span class="o">.</span><span class="n">backup_keys</span><span class="p">(</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="n">public_key</span><span class="o">=</span><span class="s2">&quot;0xabc...&quot;</span><span class="p">,</span> 
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="n">private_key</span><span class="o">=</span><span class="s2">&quot;0x123...&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    <span class="n">key_type</span><span class="o">=</span><span class="s2">&quot;identity&quot;</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="p">)</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="c1"># Khôi phục</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="n">pub</span><span class="p">,</span> <span class="n">priv</span> <span class="o">=</span> <span class="n">backup_mgr</span><span class="o">.</span><span class="n">restore_keys</span><span class="p">(</span><span class="n">backup_id</span><span class="p">)</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="c1"># Kiểm tra toàn vẹn</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="n">is_intact</span> <span class="o">=</span> <span class="n">backup_mgr</span><span class="o">.</span><span class="n">verify_backup_integrity</span><span class="p">(</span><span class="n">backup_id</span><span class="p">)</span>
+</code></pre></div>
+<h4 id="resource-guard">Resource Guard</h4>
+<p><strong>File</strong>: <code>security/resource_guard.py</code></p>
+<p>Middleware bảo vệ hệ thống trước tình trạng quá tải (DoS protection):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.resource_guard</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResourceGuardMiddleware</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Tích hợp vào FastAPI</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">app</span><span class="o">.</span><span class="n">add_middleware</span><span class="p">(</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="n">ResourceGuardMiddleware</span><span class="p">,</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="n">cpu_threshold</span><span class="o">=</span><span class="mf">85.0</span><span class="p">,</span>    <span class="c1"># Chặn yêu cầu nếu CPU &gt; 85%</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="n">memory_threshold</span><span class="o">=</span><span class="mf">90.0</span><span class="p">,</span> <span class="c1"># Chặn yêu cầu nếu RAM &gt; 90%</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>    <span class="n">whitelist_ips</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">]</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="p">)</span>
+</code></pre></div>
+<h4 id="secure-logger-sanitization">Secure Logger &amp; Sanitization</h4>
+<p><strong>File</strong>: <code>security/secure_logging.py</code>, <code>security/sanitization.py</code></p>
+<p>Ghi log an toàn và làm sạch dữ liệu:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.secure_logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">SecureLogger</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.sanitization</span><span class="w"> </span><span class="kn">import</span> <span class="n">sanitize_for_output</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">SecureLogger</span><span class="p">(</span><span class="s2">&quot;API&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="c1"># Dữ liệu nhạy cảm sẽ tự động bị ẩn hoặc băm</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">user_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;user_id&quot;</span><span class="p">:</span> <span class="s2">&quot;U123&quot;</span><span class="p">,</span> <span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="s2">&quot;secret-key&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="s2">&quot;test@example.com&quot;</span><span class="p">}</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;User request processed&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;payload&quot;</span><span class="p">:</span> <span class="n">user_data</span><span class="p">})</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="c1"># Output: {... &quot;api_key&quot;: &quot;[SENSITIVE]&quot;, &quot;email&quot;: &quot;t***@example.com&quot; ...}</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="c1"># Sanitization trước khi trả về client</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="n">clean_data</span> <span class="o">=</span> <span class="n">sanitize_for_output</span><span class="p">(</span><span class="n">user_data</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="s2">&quot;public_api&quot;</span><span class="p">)</span>
+</code></pre></div>
 <h4 id="master-key-provider">Master Key Provider</h4>
 <p><strong>File</strong>: <code>security/master_key_provider.py</code></p>
 <p>Module quản lý master encryption key cho backup system:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.master_key_provider</span><span class="w"> </span><span class="kn">import</span> <span class="n">MasterKeyProvider</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># Khởi tạo với auto mode (default)</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>  <span class="c1"># &quot;env&quot; | &quot;file&quot; | &quot;auto&quot;</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="s2">&quot;key_file&quot;</span><span class="p">:</span> <span class="s2">&quot;config/master_backup_key.key&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="s2">&quot;env_var&quot;</span><span class="p">:</span> <span class="s2">&quot;HRC_MASTER_BACKUP_KEY&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="s2">&quot;environment&quot;</span><span class="p">:</span> <span class="s2">&quot;product&quot;</span>  <span class="c1"># &quot;dev&quot; | &quot;product&quot; | &quot;test&quot;</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="p">})</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="c1"># Load master key</span>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="n">master_key</span> <span class="o">=</span> <span class="n">provider</span><span class="o">.</span><span class="n">get_master_key</span><span class="p">()</span>  <span class="c1"># 32-byte AES-256 key</span>
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="c1"># Sử dụng với KeyBackupManager</span>
-<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.key_backup_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyBackupManager</span>
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>
-<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="n">backup_manager</span> <span class="o">=</span> <span class="n">KeyBackupManager</span><span class="p">(</span>
-<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>    <span class="n">storage_dir</span><span class="o">=</span><span class="s2">&quot;./backups&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>    <span class="n">master_key</span><span class="o">=</span><span class="n">master_key</span>  <span class="c1"># From MasterKeyProvider</span>
-<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="p">)</span>
-<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>
-<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="c1"># Security checks</span>
-<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="n">warnings</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="o">.</span><span class="n">check_key_file_security</span><span class="p">(</span>
-<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>    <span class="n">key_file</span><span class="o">=</span><span class="s2">&quot;config/master_backup_key.key&quot;</span>
-<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="p">)</span>
-<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a><span class="k">for</span> <span class="n">warning</span> <span class="ow">in</span> <span class="n">warnings</span><span class="p">:</span>
-<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warning</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.master_key_provider</span><span class="w"> </span><span class="kn">import</span> <span class="n">MasterKeyProvider</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># Khởi tạo với auto mode (default)</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>  <span class="c1"># &quot;env&quot; | &quot;file&quot; | &quot;auto&quot;</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="s2">&quot;key_file&quot;</span><span class="p">:</span> <span class="s2">&quot;config/master_backup_key.key&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    <span class="s2">&quot;env_var&quot;</span><span class="p">:</span> <span class="s2">&quot;HRC_MASTER_BACKUP_KEY&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    <span class="s2">&quot;environment&quot;</span><span class="p">:</span> <span class="s2">&quot;product&quot;</span>  <span class="c1"># &quot;dev&quot; | &quot;product&quot; | &quot;test&quot;</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="p">})</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="c1"># Load master key</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="n">master_key</span> <span class="o">=</span> <span class="n">provider</span><span class="o">.</span><span class="n">get_master_key</span><span class="p">()</span>  <span class="c1"># 32-byte AES-256 key</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="c1"># Sử dụng với KeyBackupManager</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.key_backup_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyBackupManager</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="n">backup_manager</span> <span class="o">=</span> <span class="n">KeyBackupManager</span><span class="p">(</span>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>    <span class="n">storage_dir</span><span class="o">=</span><span class="s2">&quot;./backups&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>    <span class="n">master_key</span><span class="o">=</span><span class="n">master_key</span>  <span class="c1"># From MasterKeyProvider</span>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="p">)</span>
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="c1"># Security checks</span>
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="n">warnings</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="o">.</span><span class="n">check_key_file_security</span><span class="p">(</span>
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>    <span class="n">key_file</span><span class="o">=</span><span class="s2">&quot;config/master_backup_key.key&quot;</span>
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="p">)</span>
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="k">for</span> <span class="n">warning</span> <span class="ow">in</span> <span class="n">warnings</span><span class="p">:</span>
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warning</span><span class="p">)</span>
 </code></pre></div>
 <p><strong>Source Resolution Order</strong> (<code>source="auto"</code>):</p>
 <ol>
@@ -3784,26 +3942,26 @@
 <li><strong>Auto-generate</strong>: Generate new key và save to file</li>
 </ol>
 <p><strong>Best Practices</strong>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Production: Dùng environment variable</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># Set in shell:</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># export HRC_MASTER_BACKUP_KEY=$(openssl rand -base64 32)</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;env&quot;</span><span class="p">,</span>  <span class="c1"># Force env var only</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="s2">&quot;environment&quot;</span><span class="p">:</span> <span class="s2">&quot;product&quot;</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="p">})</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="c1"># Development: Dùng file</span>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>    <span class="s2">&quot;key_file&quot;</span><span class="p">:</span> <span class="s2">&quot;config/dev_master_key.key&quot;</span>
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="p">})</span>
-<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="c1"># Testing: Auto-generate</span>
-<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>    <span class="s2">&quot;environment&quot;</span><span class="p">:</span> <span class="s2">&quot;test&quot;</span>
-<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="p">})</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Production: Dùng environment variable</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="c1"># Set in shell:</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="c1"># export HRC_MASTER_BACKUP_KEY=$(openssl rand -base64 32)</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;env&quot;</span><span class="p">,</span>  <span class="c1"># Force env var only</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="s2">&quot;environment&quot;</span><span class="p">:</span> <span class="s2">&quot;product&quot;</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="p">})</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="c1"># Development: Dùng file</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>    <span class="s2">&quot;key_file&quot;</span><span class="p">:</span> <span class="s2">&quot;config/dev_master_key.key&quot;</span>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="p">})</span>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="c1"># Testing: Auto-generate</span>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>    <span class="s2">&quot;environment&quot;</span><span class="p">:</span> <span class="s2">&quot;test&quot;</span>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="p">})</span>
 </code></pre></div>
 <p><strong>[FACT]</strong> Security checks performed:</p>
 <ul>

@@ -1221,6 +1221,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#multi-org-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Org Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#private-data-collections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Private Data Collections
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3430,6 +3452,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#multi-org-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Org Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#private-data-collections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Private Data Collections
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3774,60 +3818,99 @@
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">k8s_mgr</span> <span class="o">=</span> <span class="n">K8sNamespaceManager</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;hrc-&quot;</span><span class="p">,</span> <span class="n">use_mock</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">k8s_mgr</span><span class="o">.</span><span class="n">create_namespace</span><span class="p">(</span><span class="s2">&quot;supply_chain&quot;</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;env&quot;</span><span class="p">:</span> <span class="s2">&quot;prod&quot;</span><span class="p">})</span>
 </code></pre></div>
+<h3 id="multi-org-management">Multi-Org Management</h3>
+<p><strong>File</strong>: <code>hierarchical/multi_org.py</code></p>
+<p>Quản lý nhiều tổ chức tham gia vào các kênh (channels):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.multi_org</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiOrgManager</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">org_mgr</span> <span class="o">=</span> <span class="n">MultiOrgManager</span><span class="p">()</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="c1"># Đăng ký tổ chức mới</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="n">org_mgr</span><span class="o">.</span><span class="n">register_organization</span><span class="p">(</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    <span class="n">org_id</span><span class="o">=</span><span class="s2">&quot;ORG-A&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Logistics Corp&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    <span class="n">msp_config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;ca_root&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span><span class="p">}</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="p">)</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="c1"># Thêm tổ chức vào sub-chain</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="n">org_mgr</span><span class="o">.</span><span class="n">add_org_to_chain</span><span class="p">(</span><span class="s2">&quot;supply_chain&quot;</span><span class="p">,</span> <span class="s2">&quot;ORG-A&quot;</span><span class="p">,</span> <span class="n">permissions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;read&quot;</span><span class="p">,</span> <span class="s2">&quot;write&quot;</span><span class="p">])</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="c1"># Kiểm tra quyền</span>
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="k">if</span> <span class="n">org_mgr</span><span class="o">.</span><span class="n">can_access_chain</span><span class="p">(</span><span class="s2">&quot;ORG-A&quot;</span><span class="p">,</span> <span class="s2">&quot;supply_chain&quot;</span><span class="p">):</span>
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Access granted&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="private-data-collections">Private Data Collections</h3>
+<p><strong>File</strong>: <code>hierarchical/private_data.py</code></p>
+<p>Xử lý dữ liệu riêng tư chỉ chia sẻ giữa một nhóm nhỏ các bên:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.private_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrivateDataManager</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">pdm</span> <span class="o">=</span> <span class="n">PrivateDataManager</span><span class="p">(</span><span class="n">storage_backend</span><span class="o">=</span><span class="s2">&quot;sqlite&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="c1"># Lưu trữ dữ liệu riêng tư (chỉ Org-A và Org-B)</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">pdm</span><span class="o">.</span><span class="n">store_private_data</span><span class="p">(</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    <span class="n">collection</span><span class="o">=</span><span class="s2">&quot;bid_details&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    <span class="n">key</span><span class="o">=</span><span class="s2">&quot;bid-001&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span> <span class="s2">&quot;bidder&quot;</span><span class="p">:</span> <span class="s2">&quot;Org-A&quot;</span><span class="p">},</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>    <span class="n">authorized_orgs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ORG-A&quot;</span><span class="p">,</span> <span class="s2">&quot;ORG-B&quot;</span><span class="p">]</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="p">)</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="c1"># Chỉ băm (hash) của dữ liệu này được đưa vào block công khai</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="n">hash_val</span> <span class="o">=</span> <span class="n">pdm</span><span class="o">.</span><span class="n">get_data_hash</span><span class="p">(</span><span class="s2">&quot;bid-001&quot;</span><span class="p">)</span>
+</code></pre></div>
 <hr />
 <h2 id="bft-consensus-byzantine-fault-tolerance">BFT Consensus (Byzantine Fault Tolerance)</h2>
 <p>Cơ chế đồng thuận chịu lỗi Byzantine (BFT) bảo đảm tính nhất quán cho mô-đun Phân cấp và xử lý chống lỗi độc hại. Nội dung chi tiết của thuật toán này đã được tách ra thành một module chuyên biệt để dễ dàng tra cứu riêng.</p>
 <p>→ <strong>Xem toàn bộ chi tiết tài liệu tại</strong>: <a href="../../consensus/bft_consensus/">BFT Consensus</a></p>
 <h2 id="tich-hop-ordering-bft">Tích hợp Ordering &amp; BFT</h2>
 <h3 id="sub-chain-voi-ordering-service">Sub-Chain với Ordering Service</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.sub_chain</span><span class="w"> </span><span class="kn">import</span> <span class="n">SubChain</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.ordering.service</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderingService</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Khởi tạo Ordering Service</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">ordering_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;batch_size&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;batch_timeout&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">}</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="n">ordering_service</span> <span class="o">=</span> <span class="n">OrderingService</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">ordering_config</span><span class="p">)</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="c1"># Khởi tạo Sub-Chain với Ordering</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="n">sub_chain</span> <span class="o">=</span> <span class="n">SubChain</span><span class="p">(</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    <span class="n">sub_chain_id</span><span class="o">=</span><span class="s2">&quot;supply_chain&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>    <span class="n">domain_type</span><span class="o">=</span><span class="s2">&quot;generic&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>    <span class="n">ordering_service</span><span class="o">=</span><span class="n">ordering_service</span>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="p">)</span>
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>
-<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="c1"># Submit event → Ordering → Block</span>
-<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="n">event_id</span> <span class="o">=</span> <span class="n">sub_chain</span><span class="o">.</span><span class="n">add_event</span><span class="p">({</span>
-<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>    <span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PROD-001&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>    <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;production_complete&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>    <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
-<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="p">})</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.sub_chain</span><span class="w"> </span><span class="kn">import</span> <span class="n">SubChain</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus.ordering.service</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderingService</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Khởi tạo Ordering Service</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">ordering_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;batch_size&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;batch_timeout&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">}</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="n">ordering_service</span> <span class="o">=</span> <span class="n">OrderingService</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">ordering_config</span><span class="p">)</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="c1"># Khởi tạo Sub-Chain với Ordering</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="n">sub_chain</span> <span class="o">=</span> <span class="n">SubChain</span><span class="p">(</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>    <span class="n">sub_chain_id</span><span class="o">=</span><span class="s2">&quot;supply_chain&quot;</span><span class="p">,</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>    <span class="n">domain_type</span><span class="o">=</span><span class="s2">&quot;generic&quot;</span><span class="p">,</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>    <span class="n">ordering_service</span><span class="o">=</span><span class="n">ordering_service</span>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="p">)</span>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="c1"># Submit event → Ordering → Block</span>
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="n">event_id</span> <span class="o">=</span> <span class="n">sub_chain</span><span class="o">.</span><span class="n">add_event</span><span class="p">({</span>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>    <span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PROD-001&quot;</span><span class="p">,</span>
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>    <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;production_complete&quot;</span><span class="p">,</span>
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>    <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="p">})</span>
 </code></pre></div>
 <h3 id="sub-chain-voi-bft-consensus">Sub-Chain với BFT Consensus</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.sub_chain</span><span class="w"> </span><span class="kn">import</span> <span class="n">SubChain</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus</span><span class="w"> </span><span class="kn">import</span> <span class="n">BFTConsensus</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Khởi tạo BFT</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">bft</span> <span class="o">=</span> <span class="n">BFTConsensus</span><span class="p">(</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="n">node_id</span><span class="o">=</span><span class="s2">&quot;node_1&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    <span class="n">all_nodes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;node_1&quot;</span><span class="p">,</span> <span class="s2">&quot;node_2&quot;</span><span class="p">,</span> <span class="s2">&quot;node_3&quot;</span><span class="p">,</span> <span class="s2">&quot;node_4&quot;</span><span class="p">],</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    <span class="n">key_pair</span><span class="o">=</span><span class="n">key_pair</span><span class="p">,</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    <span class="n">chain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># Will be set later</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>    <span class="n">f</span><span class="o">=</span><span class="mi">1</span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="p">)</span>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="c1"># Khởi tạo Sub-Chain với BFT</span>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="n">sub_chain</span> <span class="o">=</span> <span class="n">SubChain</span><span class="p">(</span>
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>    <span class="n">sub_chain_id</span><span class="o">=</span><span class="s2">&quot;supply_chain&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>    <span class="n">domain_type</span><span class="o">=</span><span class="s2">&quot;generic&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>    <span class="n">consensus</span><span class="o">=</span><span class="n">bft</span>
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="p">)</span>
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="n">bft</span><span class="o">.</span><span class="n">chain</span> <span class="o">=</span> <span class="n">sub_chain</span>
-<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>
-<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="c1"># Submit event → BFT consensus → Block</span>
-<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="n">event_id</span> <span class="o">=</span> <span class="n">sub_chain</span><span class="o">.</span><span class="n">add_event</span><span class="p">({</span>
-<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>    <span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PROD-001&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>    <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;production_complete&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>    <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
-<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="p">})</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical.sub_chain</span><span class="w"> </span><span class="kn">import</span> <span class="n">SubChain</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus</span><span class="w"> </span><span class="kn">import</span> <span class="n">BFTConsensus</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># Khởi tạo BFT</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">bft</span> <span class="o">=</span> <span class="n">BFTConsensus</span><span class="p">(</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>    <span class="n">node_id</span><span class="o">=</span><span class="s2">&quot;node_1&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    <span class="n">all_nodes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;node_1&quot;</span><span class="p">,</span> <span class="s2">&quot;node_2&quot;</span><span class="p">,</span> <span class="s2">&quot;node_3&quot;</span><span class="p">,</span> <span class="s2">&quot;node_4&quot;</span><span class="p">],</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    <span class="n">key_pair</span><span class="o">=</span><span class="n">key_pair</span><span class="p">,</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>    <span class="n">chain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># Will be set later</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>    <span class="n">f</span><span class="o">=</span><span class="mi">1</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="p">)</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="c1"># Khởi tạo Sub-Chain với BFT</span>
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="n">sub_chain</span> <span class="o">=</span> <span class="n">SubChain</span><span class="p">(</span>
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>    <span class="n">sub_chain_id</span><span class="o">=</span><span class="s2">&quot;supply_chain&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>    <span class="n">domain_type</span><span class="o">=</span><span class="s2">&quot;generic&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>    <span class="n">consensus</span><span class="o">=</span><span class="n">bft</span>
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="p">)</span>
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="n">bft</span><span class="o">.</span><span class="n">chain</span> <span class="o">=</span> <span class="n">sub_chain</span>
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>
+<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a><span class="c1"># Submit event → BFT consensus → Block</span>
+<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a><span class="n">event_id</span> <span class="o">=</span> <span class="n">sub_chain</span><span class="o">.</span><span class="n">add_event</span><span class="p">({</span>
+<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a>    <span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PROD-001&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a>    <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;production_complete&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a>    <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
+<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a><span class="p">})</span>
 </code></pre></div>
 <h2 id="faq">FAQ</h2>
 <div class="admonition question">

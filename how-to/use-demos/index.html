@@ -6,17 +6,15 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bộ tài liệu kỹ thuật bám sát mã nguồn trong thư mục hierachain.">
+        <meta name="description" content="Cách chạy các kịch bản demo để kiểm tra tính năng cốt lõi của HieraChain.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
       
       
-        <link rel="canonical" href="https://docs.hierachain.org/">
+        <link rel="canonical" href="https://docs.hierachain.org/how-to/use-demos/">
       
       
-      
-        <link rel="next" href="./getting-started/install/">
       
       
         
@@ -24,24 +22,24 @@
         
       
       
-      <link rel="icon" href="./assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="zensical-0.0.28">
     
     
       
-        <title>Tài liệu HieraChain - HieraChain Docs</title>
+        <title>Hướng dẫn chạy Demo - HieraChain Docs</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="./assets/stylesheets/modern/main.6f2fbb28.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.6f2fbb28.min.css">
       
         
           
         
-        <link rel="stylesheet" href="./assets/stylesheets/modern/palette.dfe2e883.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.dfe2e883.min.css">
       
       
 
@@ -60,7 +58,7 @@
       
     
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,a=__md_scope)=>JSON.parse(t.getItem(a.pathname+"."+e)),__md_set=(e,t,a=localStorage,_=__md_scope)=>{try{a.setItem(_.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,a=__md_scope)=>JSON.parse(t.getItem(a.pathname+"."+e)),__md_set=(e,t,a=localStorage,_=__md_scope)=>{try{a.setItem(_.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
     
       
 
@@ -85,7 +83,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#hierachain-tai-lieu-ky-thuat" class="md-skip">
+        <a href="#huong-dan-chay-demo-demo" class="md-skip">
           Bỏ qua
         </a>
       
@@ -99,7 +97,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Đầu trang">
-    <a href="" title="HieraChain Docs" class="md-header__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
+    <a href="../.." title="HieraChain Docs" class="md-header__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
@@ -119,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tài liệu HieraChain
+              Hướng dẫn chạy Demo
             
           </span>
         </div>
@@ -231,11 +229,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
         
   
   Trang chủ
@@ -253,7 +249,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="./getting-started/install/" class="md-tabs__link">
+        <a href="../../getting-started/install/" class="md-tabs__link">
           
   
   Bắt đầu
@@ -272,7 +268,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="./architecture/overview/" class="md-tabs__link">
+        <a href="../../architecture/overview/" class="md-tabs__link">
           
   
   Kiến trúc
@@ -291,7 +287,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="./modules/core/" class="md-tabs__link">
+        <a href="../../modules/core/" class="md-tabs__link">
           
   
   Modules
@@ -310,7 +306,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="./consensus/base_consensus/" class="md-tabs__link">
+        <a href="../../consensus/base_consensus/" class="md-tabs__link">
           
   
   Cơ chế đồng thuận
@@ -329,7 +325,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="./reference/code-map/" class="md-tabs__link">
+        <a href="../../reference/code-map/" class="md-tabs__link">
           
   
   Tham chiếu
@@ -348,7 +344,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="./how-to/integrate-web2/" class="md-tabs__link">
+        <a href="../integrate-web2/" class="md-tabs__link">
           
   
   Sử dụng
@@ -367,7 +363,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="./guides/performance/" class="md-tabs__link">
+        <a href="../../guides/performance/" class="md-tabs__link">
           
   
   Hướng dẫn chung
@@ -386,7 +382,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="./dev/contributing/" class="md-tabs__link">
+        <a href="../../dev/contributing/" class="md-tabs__link">
           
   
   Phát triển
@@ -405,7 +401,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="./faq/" class="md-tabs__link">
+        <a href="../../faq/" class="md-tabs__link">
           
   
   Khác
@@ -438,7 +434,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Thanh điều hướng" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="" title="HieraChain Docs" class="md-nav__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
+    <a href="../.." title="HieraChain Docs" class="md-nav__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
@@ -465,37 +461,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Trang chủ
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -511,60 +480,6 @@
   
 
       </a>
-      
-        
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Mục lục
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tổng quan
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bat-au" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bắt đầu
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ieu-huong-theo-chu-e" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Điều hướng theo chủ đề
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -634,7 +549,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./getting-started/install/" class="md-nav__link">
+      <a href="../../getting-started/install/" class="md-nav__link">
         
   
   
@@ -664,7 +579,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./getting-started/quickstart/" class="md-nav__link">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
         
   
   
@@ -694,7 +609,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./getting-started/concepts/" class="md-nav__link">
+      <a href="../../getting-started/concepts/" class="md-nav__link">
         
   
   
@@ -795,7 +710,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./architecture/overview/" class="md-nav__link">
+      <a href="../../architecture/overview/" class="md-nav__link">
         
   
   
@@ -825,7 +740,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./architecture/consensus/" class="md-nav__link">
+      <a href="../../architecture/consensus/" class="md-nav__link">
         
   
   
@@ -855,7 +770,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./architecture/hierarchy/" class="md-nav__link">
+      <a href="../../architecture/hierarchy/" class="md-nav__link">
         
   
   
@@ -885,7 +800,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./architecture/security/" class="md-nav__link">
+      <a href="../../architecture/security/" class="md-nav__link">
         
   
   
@@ -915,7 +830,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./architecture/deployment/" class="md-nav__link">
+      <a href="../../architecture/deployment/" class="md-nav__link">
         
   
   
@@ -945,7 +860,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./architecture/zk-proofs/" class="md-nav__link">
+      <a href="../../architecture/zk-proofs/" class="md-nav__link">
         
   
   
@@ -1068,7 +983,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/core/" class="md-nav__link">
+      <a href="../../modules/core/" class="md-nav__link">
         
   
   
@@ -1098,7 +1013,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/hierarchical/" class="md-nav__link">
+      <a href="../../modules/hierarchical/" class="md-nav__link">
         
   
   
@@ -1128,7 +1043,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/security/" class="md-nav__link">
+      <a href="../../modules/security/" class="md-nav__link">
         
   
   
@@ -1158,7 +1073,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/api/" class="md-nav__link">
+      <a href="../../modules/api/" class="md-nav__link">
         
   
   
@@ -1188,7 +1103,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/storage/" class="md-nav__link">
+      <a href="../../modules/storage/" class="md-nav__link">
         
   
   
@@ -1218,7 +1133,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/error-mitigation/" class="md-nav__link">
+      <a href="../../modules/error-mitigation/" class="md-nav__link">
         
   
   
@@ -1248,7 +1163,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/monitoring/" class="md-nav__link">
+      <a href="../../modules/monitoring/" class="md-nav__link">
         
   
   
@@ -1278,7 +1193,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/adapters/" class="md-nav__link">
+      <a href="../../modules/adapters/" class="md-nav__link">
         
   
   
@@ -1308,7 +1223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/network/" class="md-nav__link">
+      <a href="../../modules/network/" class="md-nav__link">
         
   
   
@@ -1338,7 +1253,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/integration/" class="md-nav__link">
+      <a href="../../modules/integration/" class="md-nav__link">
         
   
   
@@ -1368,7 +1283,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/cluster/" class="md-nav__link">
+      <a href="../../modules/cluster/" class="md-nav__link">
         
   
   
@@ -1398,7 +1313,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/domains/" class="md-nav__link">
+      <a href="../../modules/domains/" class="md-nav__link">
         
   
   
@@ -1428,7 +1343,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/risk-management/" class="md-nav__link">
+      <a href="../../modules/risk-management/" class="md-nav__link">
         
   
   
@@ -1458,7 +1373,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/config/" class="md-nav__link">
+      <a href="../../modules/config/" class="md-nav__link">
         
   
   
@@ -1488,7 +1403,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/cli/" class="md-nav__link">
+      <a href="../../modules/cli/" class="md-nav__link">
         
   
   
@@ -1518,7 +1433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/sdk/" class="md-nav__link">
+      <a href="../../modules/sdk/" class="md-nav__link">
         
   
   
@@ -1548,7 +1463,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./modules/units/" class="md-nav__link">
+      <a href="../../modules/units/" class="md-nav__link">
         
   
   
@@ -1647,7 +1562,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./consensus/base_consensus/" class="md-nav__link">
+      <a href="../../consensus/base_consensus/" class="md-nav__link">
         
   
   
@@ -1677,7 +1592,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./consensus/poa/" class="md-nav__link">
+      <a href="../../consensus/poa/" class="md-nav__link">
         
   
   
@@ -1707,7 +1622,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./consensus/pof/" class="md-nav__link">
+      <a href="../../consensus/pof/" class="md-nav__link">
         
   
   
@@ -1737,7 +1652,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./consensus/bft_consensus/" class="md-nav__link">
+      <a href="../../consensus/bft_consensus/" class="md-nav__link">
         
   
   
@@ -1767,7 +1682,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./consensus/ordering/" class="md-nav__link">
+      <a href="../../consensus/ordering/" class="md-nav__link">
         
   
   
@@ -1876,7 +1791,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./reference/code-map/" class="md-nav__link">
+      <a href="../../reference/code-map/" class="md-nav__link">
         
   
   
@@ -1906,7 +1821,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./reference/config/" class="md-nav__link">
+      <a href="../../reference/config/" class="md-nav__link">
         
   
   
@@ -1936,7 +1851,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./reference/sdk-reference/" class="md-nav__link">
+      <a href="../../reference/sdk-reference/" class="md-nav__link">
         
   
   
@@ -1966,7 +1881,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./reference/graphql-api/" class="md-nav__link">
+      <a href="../../reference/graphql-api/" class="md-nav__link">
         
   
   
@@ -1996,7 +1911,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-v1/" class="md-nav__link">
         
   
   
@@ -2026,7 +1941,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-v2/" class="md-nav__link">
         
   
   
@@ -2056,7 +1971,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-v3/" class="md-nav__link">
         
   
   
@@ -2086,7 +2001,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./reference/data-models/" class="md-nav__link">
+      <a href="../../reference/data-models/" class="md-nav__link">
         
   
   
@@ -2116,7 +2031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./reference/data-schema/" class="md-nav__link">
+      <a href="../../reference/data-schema/" class="md-nav__link">
         
   
   
@@ -2146,7 +2061,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./glossary/" class="md-nav__link">
+      <a href="../../glossary/" class="md-nav__link">
         
   
   
@@ -2257,7 +2172,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./how-to/integrate-web2/" class="md-nav__link">
+      <a href="../integrate-web2/" class="md-nav__link">
         
   
   
@@ -2287,7 +2202,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./how-to/add-domain-chain/" class="md-nav__link">
+      <a href="../add-domain-chain/" class="md-nav__link">
         
   
   
@@ -2317,7 +2232,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./how-to/add-endpoint/" class="md-nav__link">
+      <a href="../add-endpoint/" class="md-nav__link">
         
   
   
@@ -2347,7 +2262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./how-to/add-websocket/" class="md-nav__link">
+      <a href="../add-websocket/" class="md-nav__link">
         
   
   
@@ -2377,7 +2292,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./how-to/add-consensus/" class="md-nav__link">
+      <a href="../add-consensus/" class="md-nav__link">
         
   
   
@@ -2407,7 +2322,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./how-to/write-domain-contracts/" class="md-nav__link">
+      <a href="../write-domain-contracts/" class="md-nav__link">
         
   
   
@@ -2437,7 +2352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./how-to/use-explorer/" class="md-nav__link">
+      <a href="../use-explorer/" class="md-nav__link">
         
   
   
@@ -2467,7 +2382,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./how-to/secure-deployment/" class="md-nav__link">
+      <a href="../secure-deployment/" class="md-nav__link">
         
   
   
@@ -2497,7 +2412,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./how-to/troubleshooting/" class="md-nav__link">
+      <a href="../troubleshooting/" class="md-nav__link">
         
   
   
@@ -2527,7 +2442,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./how-to/disaster-recovery/" class="md-nav__link">
+      <a href="../disaster-recovery/" class="md-nav__link">
         
   
   
@@ -2557,7 +2472,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./how-to/cross-chain-transactions/" class="md-nav__link">
+      <a href="../cross-chain-transactions/" class="md-nav__link">
         
   
   
@@ -2652,7 +2567,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./guides/performance/" class="md-nav__link">
+      <a href="../../guides/performance/" class="md-nav__link">
         
   
   
@@ -2682,7 +2597,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./guides/reliability/" class="md-nav__link">
+      <a href="../../guides/reliability/" class="md-nav__link">
         
   
   
@@ -2712,7 +2627,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./guides/security-best-practices/" class="md-nav__link">
+      <a href="../../guides/security-best-practices/" class="md-nav__link">
         
   
   
@@ -2809,7 +2724,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./dev/contributing/" class="md-nav__link">
+      <a href="../../dev/contributing/" class="md-nav__link">
         
   
   
@@ -2839,7 +2754,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./dev/testing/" class="md-nav__link">
+      <a href="../../dev/testing/" class="md-nav__link">
         
   
   
@@ -2869,7 +2784,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./dev/release-process/" class="md-nav__link">
+      <a href="../../dev/release-process/" class="md-nav__link">
         
   
   
@@ -2899,7 +2814,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./dev/ai-context/" class="md-nav__link">
+      <a href="../../dev/ai-context/" class="md-nav__link">
         
   
   
@@ -2994,7 +2909,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./faq/" class="md-nav__link">
+      <a href="../../faq/" class="md-nav__link">
         
   
   
@@ -3024,7 +2939,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./future-roadmap/" class="md-nav__link">
+      <a href="../../future-roadmap/" class="md-nav__link">
         
   
   
@@ -3054,7 +2969,7 @@
   
   
     <li class="md-nav__item">
-      <a href="./changelog/" class="md-nav__link">
+      <a href="../../changelog/" class="md-nav__link">
         
   
   
@@ -3112,10 +3027,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#1-demo-tinh-nang-cot-loi-core-features" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tổng quan
+        1. Demo tính năng cốt lõi (Core Features)
       
     </span>
   </a>
@@ -3123,10 +3038,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bat-au" class="md-nav__link">
+  <a href="#2-demo-ong-thuan-bft-qua-zeromq" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bắt đầu
+        2. Demo Đồng thuận BFT qua ZeroMQ
       
     </span>
   </a>
@@ -3134,10 +3049,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ieu-huong-theo-chu-e" class="md-nav__link">
+  <a href="#3-demo-sao-luu-va-khoi-phuc-khoa" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Điều hướng theo chủ đề
+        3. Demo Sao lưu và Khôi phục Khóa
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-demo-tich-hop-ipfs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Demo Tích hợp IPFS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-trinh-kham-pha-blockchain-explorer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Trình khám phá Blockchain (Explorer)
       
     </span>
   </a>
@@ -3159,7 +3096,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/index.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/use-demos.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -3168,153 +3105,81 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/index.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/use-demos.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
   
 
 
-<h1 id="hierachain-tai-lieu-ky-thuat">HieraChain — Tài liệu kỹ thuật</h1>
-<h2 id="tong-quan">Tổng quan</h2>
-<p>Chào mừng bạn đến với tài liệu kỹ thuật của HieraChain. Bộ tài liệu này bám sát mã nguồn trong thư mục <code>hierachain/</code> và phục vụ Developer/QA/DevOps tích hợp, vận hành và test hệ thống.</p>
-<p>Lưu ý quan trọng về phạm vi:</p>
-<ul>
-<li>Tài liệu CHỈ mô tả hiện trạng và quyết định kỹ thuật dựa trên mã trong <code>hierachain/*</code>.</li>
-<li>Mọi ví dụ, hình ảnh hay mô tả đều gắn với thành phần cụ thể trong mã nguồn.</li>
-<li>Ngôn ngữ ưu tiên: Tiếng Việt (thư mục <code>docs/vi</code>).</li>
-</ul>
-<div class="admonition warning">
-<p class="admonition-title"><strong>CẢNH BÁO DEVELOPER &amp; AI</strong>: HieraChain là Blockchain Doanh nghiệp tập trung vào <strong>Dữ liệu (Data)</strong>, KHÔNG PHẢI <strong>Tiền mã hóa (Cryptocurrency)</strong>. Mọi khái niệm về Token, Coin, Gas Fee, Mining đều bị CẤM và chặn bởi bộ lọc trong core system. Xem chi tiết tại <a href="dev/ai-context/">AI Context</a>.</p>
-</div>
-<h2 id="bat-au">Bắt đầu</h2>
-<ul>
-<li>Cài đặt: xem Getting Started → <a href="getting-started/install/">Cài đặt</a></li>
-<li>Bắt đầu nhanh: xem <a href="getting-started/quickstart/">Bắt đầu nhanh</a></li>
-<li>Thuật ngữ: xem <a href="glossary/">Thuật ngữ</a></li>
-</ul>
-<h2 id="ieu-huong-theo-chu-e">Điều hướng theo chủ đề</h2>
-<div class="grid cards">
-<ul>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 2v6h2v3H5c-1.11 0-2 .89-2 2v3H1v6h6v-6H5v-3h6v3H9v6h6v-6h-2v-3h6v3h-2v6h6v-6h-2v-3c0-1.11-.89-2-2-2h-6V8h2V2z"/></svg></span> <strong>Kiến trúc</strong></p>
+<h1 id="huong-dan-chay-demo-demo">Hướng dẫn chạy Demo (<code>demo/*</code>)</h1>
+<p>Thư mục <code>demo/</code> chứa các script mẫu giúp bạn nhanh chóng làm quen với các tính năng quan trọng của hệ thống.</p>
+<h2 id="1-demo-tinh-nang-cot-loi-core-features">1. Demo tính năng cốt lõi (Core Features)</h2>
+<p>Script này trình diễn luồng tạo Sub-chain, gửi Event, và cơ chế Channel/Private Data.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Chạy demo cơ bản</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>demo/demo.py
+</code></pre></div>
+<p><strong>Các bước diễn ra trong demo:</strong>
+- Khởi tạo Main Chain và Sub-Chain (<code>supply_chain</code>).
+- Đăng ký tổ chức (Organization) và người dùng (User).
+- Gửi các sự kiện (Events) nghiệp vụ.
+- Tạo Private Data Collection chỉ chia sẻ giữa hai bên.</p>
 <hr />
-<ul>
-<li><a href="architecture/overview/">Tổng quan</a></li>
-<li><a href="architecture/consensus/">Consensus &amp; Ordering</a></li>
-<li><a href="architecture/hierarchy/">Phân cấp (chi tiết)</a></li>
-<li><a href="architecture/security/">Bảo mật (chuyên sâu)</a></li>
-<li><a href="architecture/deployment/">Triển khai (Deployment)</a></li>
-<li><a href="architecture/zk-proofs/">ZK Proofs</a></li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18s-.41-.06-.57-.18l-7.9-4.44A.99.99 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18s.41.06.57.18l7.9 4.44c.32.17.53.5.53.88zM12 4.15 6.04 7.5 12 10.85l5.96-3.35zM5 15.91l6 3.38v-6.71L5 9.21zm14 0v-6.7l-6 3.37v6.71z"/></svg></span> <strong>Modules</strong></p>
+<h2 id="2-demo-ong-thuan-bft-qua-zeromq">2. Demo Đồng thuận BFT qua ZeroMQ</h2>
+<p>Trình diễn khả năng đồng thuận của 4 node sử dụng giao thức BFT qua mạng ZeroMQ.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Chạy demo BFT</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python<span class="w"> </span>demo/demo_zmq_consensus.py
+</code></pre></div>
 <hr />
-<ul>
-<li><a href="modules/core/">Core</a> · <a href="modules/hierarchical/">Hierarchical</a> · <a href="modules/security/">Security</a></li>
-<li><a href="modules/storage/">Storage</a> · <a href="modules/error-mitigation/">Error Mitigation</a></li>
-<li><a href="modules/adapters/">Adapters</a> · <a href="modules/network/">Network</a> · <a href="modules/api/">API</a></li>
-<li><a href="modules/config/">Config</a> · <a href="modules/cli/">CLI</a> · <a href="modules/sdk/">SDK</a></li>
-<li><a href="modules/cluster/">Cluster</a> · <a href="modules/domains/">Domains</a></li>
-<li><a href="modules/monitoring/">Monitoring</a> · <a href="modules/risk-management/">Risk Management</a></li>
-<li><a href="modules/integration/">Integration</a> · <a href="modules/units/">Units</a></li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21.5c-1.35-.85-3.8-1.5-5.5-1.5-1.65 0-3.35.3-4.75 1.05-.1.05-.15.05-.25.05-.25 0-.5-.25-.5-.5V6c.6-.45 1.25-.75 2-1 1.11-.35 2.33-.5 3.5-.5 1.95 0 4.05.4 5.5 1.5 1.45-1.1 3.55-1.5 5.5-1.5 1.17 0 2.39.15 3.5.5.75.25 1.4.55 2 1v14.6c0 .25-.25.5-.5.5-.1 0-.15 0-.25-.05-1.4-.75-3.1-1.05-4.75-1.05-1.7 0-4.15.65-5.5 1.5M12 8v11.5c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5V7c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5m1 3.5c1.11-.68 2.6-1 4.5-1 .91 0 1.76.09 2.5.28V9.23c-.87-.15-1.71-.23-2.5-.23q-2.655 0-4.5.84zm4.5.17c-1.71 0-3.21.26-4.5.79v1.69c1.11-.65 2.6-.99 4.5-.99 1.04 0 1.88.08 2.5.24v-1.5c-.87-.16-1.71-.23-2.5-.23m2.5 2.9c-.87-.16-1.71-.24-2.5-.24-1.83 0-3.33.27-4.5.8v1.69c1.11-.66 2.6-.99 4.5-.99 1.04 0 1.88.08 2.5.24z"/></svg></span> <strong>Tham chiếu</strong></p>
+<h2 id="3-demo-sao-luu-va-khoi-phuc-khoa">3. Demo Sao lưu và Khôi phục Khóa</h2>
+<p>Hướng dẫn cách sử dụng <code>KeyBackupManager</code> để bảo vệ khóa cá nhân của người dùng.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Chạy demo backup</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>python<span class="w"> </span>demo/demo_key_backup.py
+</code></pre></div>
 <hr />
-<ul>
-<li><a href="reference/config/">Config</a></li>
-<li><a href="reference/sdk-reference/">Python SDK</a> · <a href="reference/graphql-api/">GraphQL API</a></li>
-<li><a href="reference/api-v1/">API v1</a> · <a href="reference/api-v2/">API v2</a> · <a href="reference/api-v3/">API v3</a></li>
-<li><a href="reference/data-models/">Data Models</a> · <a href="reference/data-schema/">Data Schema</a></li>
-<li><a href="reference/code-map/">Code Map</a></li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg></span> <strong>Consensus</strong></p>
+<h2 id="4-demo-tich-hop-ipfs">4. Demo Tích hợp IPFS</h2>
+<p>Minh họa cách lưu trữ dữ liệu lớn/tài liệu lên IPFS với mã hóa AES-256.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Chạy demo IPFS</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>python<span class="w"> </span>demo/demo_ipfs.py
+</code></pre></div>
+<blockquote>
+<p><strong>Lưu ý</strong>: Yêu cầu daemon IPFS phải đang chạy (mặc định tại port 5001).</p>
+</blockquote>
 <hr />
-<ul>
-<li><a href="consensus/base_consensus/">Base Consensus</a></li>
-<li><a href="consensus/bft_consensus/">BFT Consensus</a></li>
-<li><a href="consensus/ordering/">Ordering</a></li>
-<li><a href="consensus/poa/">PoA</a> · <a href="consensus/pof/">PoF</a></li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m13.13 22.19-1.63-3.83c1.57-.58 3.04-1.36 4.4-2.27zM5.64 12.5l-3.83-1.63 6.1-2.77C7 9.46 6.22 10.93 5.64 12.5M21.61 2.39S16.66.269 11 5.93c-2.19 2.19-3.5 4.6-4.35 6.71-.28.75-.09 1.57.46 2.13l2.13 2.12c.55.56 1.37.74 2.12.46A19.1 19.1 0 0 0 18.07 13c5.66-5.66 3.54-10.61 3.54-10.61m-7.07 7.07c-.78-.78-.78-2.05 0-2.83s2.05-.78 2.83 0c.77.78.78 2.05 0 2.83s-2.05.78-2.83 0m-5.66 7.07-1.41-1.41zM6.24 22l3.64-3.64c-.34-.09-.67-.24-.97-.45L4.83 22zM2 22h1.41l4.77-4.76-1.42-1.41L2 20.59zm0-2.83 4.09-4.08c-.21-.3-.36-.62-.45-.97L2 17.76z"/></svg></span> <strong>Hướng dẫn chung</strong></p>
-<hr />
-<ul>
-<li><a href="guides/performance/">Hiệu năng</a></li>
-<li><a href="guides/reliability/">Độ tin cậy</a></li>
-<li><a href="guides/security-best-practices/">Thực hành bảo mật</a></li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.71 20.29-1.42 1.42a1 1 0 0 1-1.41 0L7 9.85A3.8 3.8 0 0 1 6 10a4 4 0 0 1-3.78-5.3l2.54 2.54.53-.53 1.42-1.42.53-.53L4.7 2.22A4 4 0 0 1 10 6a3.8 3.8 0 0 1-.15 1l11.86 11.88a1 1 0 0 1 0 1.41M2.29 18.88a1 1 0 0 0 0 1.41l1.42 1.42a1 1 0 0 0 1.41 0l5.47-5.46-2.83-2.83M20 2l-4 2v2l-2.17 2.17 2 2L18 8h2l2-4Z"/></svg></span> <strong>Sử dụng</strong></p>
-<hr />
-<ul>
-<li><a href="how-to/add-domain-chain/">Tạo Sub-Chain</a></li>
-<li><a href="how-to/add-endpoint/">Thêm Endpoint</a></li>
-<li><a href="how-to/add-consensus/">Thêm/Tùy biến Consensus</a></li>
-<li><a href="how-to/cross-chain-transactions/">Giao dịch Liên chuỗi (2PC)</a></li>
-<li><a href="how-to/write-domain-contracts/">Viết Hợp đồng Miền (Domain Contracts)</a></li>
-<li><a href="how-to/use-explorer/">Sử dụng Blockchain Explorer</a></li>
-<li><a href="how-to/add-websocket/">Sử dụng WebSocket</a> · <a href="how-to/integrate-web2/">Tích hợp Web2</a></li>
-<li><a href="how-to/secure-deployment/">Triển khai an toàn</a> · <a href="how-to/troubleshooting/">Xử lý sự cố</a></li>
-<li><a href="how-to/disaster-recovery/">Khôi phục sau thảm họa (Disaster Recovery)</a></li>
-<li><a href="how-to/use-demos/">Hướng dẫn chạy Demo</a></li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 3a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2H3v2h1a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h2v-2H8v-5a2 2 0 0 0-2-2 2 2 0 0 0 2-2V5h2V3m6 0a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1v2h-1a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-2v-2h2v-5a2 2 0 0 1 2-2 2 2 0 0 1-2-2V5h-2V3z"/></svg></span> <strong>Phát triển</strong></p>
-<hr />
-<ul>
-<li><a href="dev/contributing/">Đóng góp</a></li>
-<li><a href="dev/testing/">Kiểm thử</a></li>
-<li><a href="dev/release-process/">Quy trình phát hành</a></li>
-<li><a href="dev/ai-context/">AI Context</a></li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 15H6l-4 4V3a1 1 0 0 1 1-1h15a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1m5-6v14l-4-4H8a1 1 0 0 1-1-1v-1h14V8h1a1 1 0 0 1 1 1M8.19 4c-.87 0-1.57.2-2.11.59-.52.41-.78.98-.77 1.77l.01.03h1.93c.01-.3.1-.53.28-.69a1 1 0 0 1 .66-.23c.31 0 .57.1.75.28.18.19.26.45.26.75 0 .32-.07.59-.23.82-.14.23-.35.43-.61.59-.51.34-.86.64-1.05.91C7.11 9.08 7 9.5 7 10h2c0-.31.04-.56.13-.74s.26-.36.51-.52c.45-.24.82-.53 1.11-.93s.44-.81.44-1.31c0-.76-.27-1.37-.81-1.82C9.85 4.23 9.12 4 8.19 4M7 11v2h2v-2zm6 2h2v-2h-2zm0-9v6h2V4z"/></svg></span> <strong>Khác</strong></p>
-<hr />
-<ul>
-<li><a href="faq/">FAQ</a> · <a href="glossary/">Glossary</a></li>
-<li><a href="changelog/">Changelog</a> · <a href="future-roadmap/">Future Roadmap</a></li>
-</ul>
-</li>
-</ul>
-</div>
+<h2 id="5-trinh-kham-pha-blockchain-explorer">5. Trình khám phá Blockchain (Explorer)</h2>
+<p>Giao diện web đơn giản để xem danh sách block và sự kiện.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Chạy explorer demo</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>python<span class="w"> </span>demo/demo_explorer.py
+</code></pre></div>
+<p>Sau đó truy cập <a href="http://localhost:2661/explorer">http://localhost:2661/explorer</a> (yêu cầu server API đang chạy).</p>
 <hr />
 <details class="info">
 <summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
 <p><strong>FACT</strong></p>
 <ul>
-<li>Mã nguồn tài liệu tham chiếu: <code>hierachain/*</code> (Python &gt;= 3.10 theo <code>pyproject.toml</code>).</li>
-<li>Script CLI: <code>hrc</code> (định nghĩa tại <code>[project.scripts]</code> trong <code>pyproject.toml</code>).</li>
-<li>API server: <code>hierachain/api/server.py</code> (có thể chạy bằng <code>python -m hierachain.api.server</code>).</li>
+<li>Các script demo nằm trong thư mục gốc <code>demo/</code>.</li>
+<li>Yêu cầu môi trường Python &gt;= 3.10.</li>
+<li>Hầu hết demo cần khởi tạo <code>HierarchyManager</code> (Main Chain) trước.</li>
 </ul>
 <p><strong>DECISION</strong></p>
 <ul>
-<li>Dùng Markdown, tách rõ các khối FACT / DECISION / ASSUMPTION / INVARIANT / EDGE CASES.</li>
-<li>Tổ chức nội dung theo khung chuẩn thống nhất.</li>
+<li>Chạy script trực tiếp từ thư mục gốc để đảm bảo các import nội bộ từ <code>hierachain</code> hoạt động đúng.</li>
+<li>Tách riêng các demo theo tính năng (Consensus, Security, IPFS) để dễ kiểm tra độc lập.</li>
 </ul>
 <p><strong>ASSUMPTION</strong></p>
 <ul>
-<li>Người đọc đã cài Python 3.10+ và có quyền truy cập internet để cài dependencies.</li>
-<li>Môi trường phát triển sử dụng <code>venv</code> hoặc công cụ tương đương.</li>
+<li>Người chạy demo đã cài đặt đầy đủ dependencies qua <code>pip install -e .</code>.</li>
+<li>Biến môi trường <code>.env</code> đã được cấu hình nếu demo yêu cầu database hoặc IPFS thật.</li>
 </ul>
 <p><strong>INVARIANT</strong></p>
 <ul>
-<li>FACT phải bám sát mã nguồn hiện tại (tên file, chữ ký API, đường dẫn).</li>
-<li>Không pha trộn nội dung tiếp thị trong tài liệu kỹ thuật.</li>
+<li>Demo không làm thay đổi dữ liệu thật nếu đang chạy ở mode <code>MemoryStorage</code>.</li>
+<li>Mọi demo đều phải dọn dẹp (cleanup) tài nguyên hoặc log sau khi kết thúc nếu chạy thành công.</li>
 </ul>
 <p><strong>EDGE CASES</strong></p>
 <ul>
-<li>Khác biệt shell giữa Windows (PowerShell) và Linux/macOS (bash) khi kích hoạt venv.</li>
-<li>Mạng nội bộ hạn chế có thể ảnh hưởng quá trình cài gói.</li>
+<li>Chạy demo IPFS khi server IPFS local chưa bật → script sẽ tự động chuyển sang mock mode hoặc báo lỗi kết nối.</li>
+<li>Chạy nhiều demo cùng lúc trên cùng một database file → có thể gây lock database (nếu dùng SQLite).</li>
 </ul>
 </details>
 
@@ -3352,28 +3217,6 @@
       
         <footer class="md-footer">
   
-    
-      
-      <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
-        
-        
-          
-          <a href="./getting-started/install/" class="md-footer__link md-footer__link--next" aria-label="Sau: Cài đặt">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Sau
-              </span>
-              <div class="md-ellipsis">
-                Cài đặt
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </div>
-          </a>
-        
-      </nav>
     
   
   <div class="md-footer-meta md-typeset">
@@ -3413,10 +3256,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":".","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"./assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Đã sao chép","clipboard.copy":"Sao chép vào bộ nhớ tạm","search.result.more.one":"1 từ khác trong trang","search.result.more.other":"# từ khác trong trang","search.result.none":"Không tìm thấy tài liệu liên quan","search.result.one":"1 tài liệu liên quan","search.result.other":"# tài liệu liên quan","search.result.placeholder":"Nhập để bắt đầu tìm kiếm","search.result.term.missing":"Không","select.version":"Chọn phiên bản"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Đã sao chép","clipboard.copy":"Sao chép vào bộ nhớ tạm","search.result.more.one":"1 từ khác trong trang","search.result.more.other":"# từ khác trong trang","search.result.none":"Không tìm thấy tài liệu liên quan","search.result.one":"1 tài liệu liên quan","search.result.other":"# tài liệu liên quan","search.result.placeholder":"Nhập để bắt đầu tìm kiếm","search.result.term.missing":"Không","select.version":"Chọn phiên bản"},"version":null}</script>
     
     
-      <script src="./assets/javascripts/bundle.c2b142ea.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c2b142ea.min.js"></script>
       
     
   </body>

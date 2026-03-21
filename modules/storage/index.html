@@ -1198,6 +1198,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Kiến trúc &amp; khái niệm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqlalchemy-data-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLAlchemy Data Models
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3301,6 +3318,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Kiến trúc &amp; khái niệm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqlalchemy-data-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLAlchemy Data Models
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3520,8 +3554,17 @@
 </li>
 <li>SQL: <code>hierachain/storage/sql_backend.py</code> — bền vững, hỗ trợ SQLite/PostgreSQL.</li>
 <li>IPFS (Off-chain): <code>hierachain/api/storage/ipfs_client.py</code> — Lưu trữ dữ liệu lớn ngoài chuỗi (Event details, Contract code).</li>
+<li>(Tùy chọn) Mô hình dữ liệu ORM: <code>hierachain/storage/models.py</code>.</li>
+</ul>
+<h4 id="sqlalchemy-data-models">SQLAlchemy Data Models</h4>
+<p><strong>File</strong>: <code>hierachain/storage/models.py</code></p>
+<p>HieraChain sử dụng SQLAlchemy để quản lý schema database:</p>
+<ul>
+<li><strong>ChainModel</strong>: Lưu trữ thông tin về các chuỗi (Main/Sub-chain).</li>
+<li><strong>BlockModel</strong>: Chứa header của block (index, hash, prev_hash, timestamp).</li>
+<li><strong>EventModel</strong>: Lưu trữ chi tiết từng sự kiện trong block (event_id, type, data JSON).</li>
 <li>
-<p>(Tùy chọn) Mô hình dữ liệu ORM: <code>hierachain/storage/models.py</code>.</p>
+<p><strong>ChainStateModel</strong>: Lưu trữ World State dưới dạng Key-Value (JSON).</p>
 </li>
 <li>
 <p>Cấu hình qua <code>hierachain/config/settings.py</code> (DEFAULT_STORAGE_BACKEND, DATABASE_URL, REDIS_<em> nếu có, HRC_IPFS_</em>).</p>

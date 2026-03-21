@@ -1299,6 +1299,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="API công khai (Public API)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#database-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Database Adapters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3217,6 +3234,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="API công khai (Public API)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#database-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Database Adapters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3347,12 +3381,20 @@
 <li>Quản lý vòng đời tài nguyên: mở/kết nối → dùng → đóng/flush.</li>
 </ul>
 <p>Ví dụ mô tả (giả định):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Pseudocode</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.storage</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_storage</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">store</span> <span class="o">=</span> <span class="n">file_storage</span><span class="o">.</span><span class="n">FileStorage</span><span class="p">(</span><span class="n">root_dir</span><span class="o">=</span><span class="s2">&quot;./data&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">store</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;blocks/0001.json&quot;</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;{...}&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">data</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;blocks/0001.json&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">data</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;blocks/0001.json&quot;</span><span class="p">)</span>
 </code></pre></div>
+<h3 id="database-adapters">Database Adapters</h3>
+<p><strong>File</strong>: <code>adapters/database/sqlite_adapter.py</code></p>
+<p>Adapter cho cơ sở dữ liệu quan hệ (RDBMS), mặc định là SQLite:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.database.sqlite_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQLiteAdapter</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">db_adapter</span> <span class="o">=</span> <span class="n">SQLiteAdapter</span><span class="p">(</span><span class="n">db_url</span><span class="o">=</span><span class="s2">&quot;sqlite:///hierachain.db&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># Thao tác dữ liệu</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">db_adapter</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO events ...&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">rows</span> <span class="o">=</span> <span class="n">db_adapter</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM blocks WHERE index = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">10</span><span class="p">,))</span>
+</code></pre></div>
+<p><strong>Lưu ý</strong>: SqliteAdapter hỗ trợ tự động khởi tạo schema và quản lý migration cơ bản cho môi trường phát triển.</p>
 <h2 id="cau-hinh">Cấu hình</h2>
 <ul>
 <li>Tham khảo <code>hierachain/config/settings.py</code>:</li>
