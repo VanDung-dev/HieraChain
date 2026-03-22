@@ -1,0 +1,2 @@
+# PEP 561 marker — signals that this package provides inline type hints.
+# Type checkers (mypy, pyright, pylance) use this to discover annotations.
