@@ -12,8 +12,6 @@ import json
 import os
 from typing import Any
 
-import ipfshttpclient
-
 from hierachain.api.storage.encryption import AESEncryption, EncryptionError
 from hierachain.security.secure_logging import SecureLogger
 
@@ -109,6 +107,13 @@ class IPFSClient:
     def _ensure_connected(self):
         """Ensure IPFS client is connected, connect if needed."""
         if self._client is None:
+            try:
+                import ipfshttpclient
+            except ImportError:
+                raise IPFSError(
+                    "ipfshttpclient is not installed. "
+                    "Install it with: pip install HieraChain[ipfs]"
+                )
             try:
                 self._client = ipfshttpclient.connect(self._host, timeout=self._timeout)
                 # Test connection
