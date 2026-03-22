@@ -8,32 +8,28 @@ icon: material/lightning-bolt
 
 Tài liệu này tóm tắt các bước tối thiểu để bạn chạy thử HieraChain.
 
-> Nếu bạn chưa cài đặt, vui lòng xem trước trang [Cài đặt](install.md).
+## Cài đặt nhanh
 
-## Kích hoạt môi trường và cài gói
+Để bắt đầu nhanh nhất, bạn chỉ cần cài đặt gói qua PIP:
 
-=== "Linux/macOS"
+```bash
+pip install HieraChain
+```
 
-    ```bash
-    # giả định đang ở thư mục HieraChain và đã tạo venv
-    source .venv/bin/activate
-    
-    pip install -e . -r requirements.txt
-    ```
-
-=== "Windows"
-
-    ```powershell
-    # giả định đang ở thư mục HieraChain và đã tạo venv
-    .venv\Scripts\Activate.ps1
-    
-    pip install -e . -r requirements.txt
-    ```
+Nếu bạn muốn phát triển mã nguồn, vui lòng xem hướng dẫn [Cài đặt chi tiết](install.md).
 
 ## Khởi động API server
 
+Sau khi cài đặt, bạn có thể khởi chạy server bằng lệnh:
+
 ```bash
 python -m hierachain.api.server
+```
+
+Hoặc sử dụng CLI (nếu đã cài đặt qua pip):
+
+```bash
+hrc server start
 ```
 
 Mặc định server phục vụ tại `http://localhost:2661`. Mở `http://localhost:2661/docs` để xem tài liệu OpenAPI và thử endpoint.

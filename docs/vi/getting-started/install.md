@@ -6,20 +6,25 @@ icon: material/download
 
 # Cài đặt HieraChain
 
-Tài liệu này hướng dẫn cài đặt HieraChain từ mã nguồn phục vụ phát triển và thử nghiệm.
+Tài liệu này hướng dẫn các cách để cài đặt và thiết lập HieraChain.
 
-## Yêu cầu hệ thống
+## Cài đặt qua PIP (Khuyên dùng)
 
-* Python >= 3.10 (được khai báo trong `pyproject.toml`)
-* pip, venv (hoặc công cụ quản lý môi trường ảo tương đương)
-* Quyền truy cập Internet để cài dependencies từ PyPI
+Đây là cách nhanh nhất và đơn giản nhất để bắt đầu sử dụng HieraChain như một thư viện hoặc chạy server.
 
-Tùy chọn (không bắt buộc để bắt đầu):
+```bash
+pip install HieraChain
+```
 
-* Redis (nếu muốn dùng adapter Redis)
-* SQLite/PostgreSQL (mặc định dự án có SQLite qua `sqlalchemy`)
+Sau khi cài đặt, bạn có thể kiểm tra bằng lệnh:
 
-## Cài đặt từ mã nguồn (khuyến nghị cho dev)
+```bash
+hrc --help
+```
+
+## Cài đặt từ mã nguồn (Dành cho nhà phát triển)
+
+Nếu bạn muốn đóng góp cho dự án hoặc tùy chỉnh mã nguồn, hãy làm theo các bước sau:
 
 1. Clone repository và tạo môi trường ảo
 
