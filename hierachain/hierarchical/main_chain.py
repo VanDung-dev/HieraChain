@@ -88,6 +88,11 @@ def _record_proof_on_main_chain(
         "block_index": chain.get_latest_block().index + 1,
     }
 
+    # Update proof index for O(1) lookup
+    if sub_chain_name not in chain.proof_index:
+        chain.proof_index[sub_chain_name] = []
+    chain.proof_index[sub_chain_name].append(chain.get_latest_block().index + 1)
+
     _update_recent_proofs_on_main_chain(
         chain, sub_chain_name, proof_hash,
         sanitized_metadata, current_time,
@@ -118,15 +123,19 @@ def _update_recent_proofs_on_main_chain(
 def _verify_proof_in_main_chain(
     chain: "MainChain", proof_hash: str, sub_chain_name: str
 ) -> bool:
-    """Verify a proof exists in the Main Chain."""
-    for block in chain.chain:
-        events = (
-            block.to_event_list()
-            if hasattr(block, "to_event_list")
-            else block.events
-        )
-        if _find_proof_in_events(events, proof_hash, sub_chain_name):
-            return True
+    """Verify a proof exists in the Main Chain using the proof index."""
+    # Use index to avoid full chain scan
+    block_indices = chain.proof_index.get(sub_chain_name, [])
+    for idx in block_indices:
+        if idx < len(chain.chain):
+            block = chain.chain[idx]
+            events = (
+                block.to_event_list()
+                if hasattr(block, "to_event_list")
+                else block.events
+            )
+            if _find_proof_in_events(events, proof_hash, sub_chain_name):
+                return True
 
     return _find_proof_in_events(chain.pending_events, proof_hash, sub_chain_name)
 
@@ -134,15 +143,20 @@ def _verify_proof_in_main_chain(
 def _get_proofs_by_sub_chain_from_main_chain(
     chain: "MainChain", sub_chain_name: str
 ) -> list[dict[str, Any]]:
-    """Get all proofs submitted by a specific Sub-Chain from the Main Chain."""
+    """Get all proofs submitted by a specific Sub-Chain using the proof index."""
     proofs: list[dict[str, Any]] = []
-    for block in chain.chain:
-        events = (
-            block.to_event_list()
-            if hasattr(block, "to_event_list")
-            else block.events
-        )
-        proofs.extend(_filter_proofs_by_sub_chain(events, sub_chain_name))
+    
+    # Use index to avoid full chain scan
+    block_indices = chain.proof_index.get(sub_chain_name, [])
+    for idx in block_indices:
+        if idx < len(chain.chain):
+            block = chain.chain[idx]
+            events = (
+                block.to_event_list()
+                if hasattr(block, "to_event_list")
+                else block.events
+            )
+            proofs.extend(_filter_proofs_by_sub_chain(events, sub_chain_name))
 
     proofs.extend(_filter_proofs_by_sub_chain(chain.pending_events, sub_chain_name))
     return proofs
@@ -241,6 +255,7 @@ class MainChain(Blockchain):
         self.proof_count: int = 0
         self.latest_proofs: dict[str, dict[str, Any]] = {}
         self.recent_proofs: list[dict[str, Any]] = []
+        self.proof_index: dict[str, list[int]] = {}  # sub_chain_name -> block_indices
 
         # ZK Proof Verifier (initialized if ZK proofs are enabled)
         self.zk_verifier: ZKVerifier | None = None
