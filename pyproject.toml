@@ -10,7 +10,7 @@ name = "HieraChain"
 description = "HieraChain - The Hierarchical Blockchain Enterprise Ledger"
 readme = "README.md"
 authors = [{ name = "Nguyễn Lê Văn Dũng", email = "dungnguyen2661@gmail.com" }]
-license = "Apache-2.0 OR MIT"
+license = { text = "Apache-2.0 OR MIT" }
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
