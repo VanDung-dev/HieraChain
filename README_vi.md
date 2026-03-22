@@ -4,7 +4,6 @@
 [![Giấy phép](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
 [![Giấy phép](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
 ![Phiên bản](https://img.shields.io/badge/version-0.0.1-green)
-![Tests](https://img.shields.io/badge/tests-371%20passed-green)
 
 [English](README.md) | **Tiếng Việt**
 
