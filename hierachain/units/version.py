@@ -7,7 +7,7 @@ This module provides functions for managing and retrieving version information.
 from typing import Tuple
 import re
 
-VERSION: Tuple[int, int, int, str, int] = (0, 0, 1, "dev", 8)
+VERSION: Tuple[int, int, int, str, int] = (0, 0, 1, "final", 0)
 
 _VERSION_PATTERN = (
     r"""
