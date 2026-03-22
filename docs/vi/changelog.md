@@ -6,6 +6,24 @@ icon: material/history
 
 # Changelog
 
+## v0.0.1 (2026-03-22)
+
+Phiên bản này đánh dấu việc hoàn thiện định hướng kiến trúc ban đầu của HieraChain, tập trung vào việc hợp nhất các thành phần cốt lõi thành một khung nguyên mẫu thống nhất.
+
+- **Tích hợp Lưu trữ IPFS**: Hỗ trợ lưu trữ dữ liệu off-chain với mã hóa AES-256-GCM và định danh CID trên toàn bộ các giao diện API (REST, GraphQL, WebSocket).
+- **Tối ưu Hiệu suất & Khả năng mở rộng**: 
+    - Xử lý khối song song trong `OrderingService`.
+    - Caching cho xác thực chứng chỉ và quyền hạn.
+    - Tối ưu hóa worker pool (75% CPU) và hỗ trợ đa luồng cho SQLite.
+- **Công cụ cho Nhà phát triển**: Ra mắt `BlockchainExplorer` dashboard và hệ thống tài liệu kỹ thuật chi tiết.
+- **Bảo mật & Toàn vẹn**: 
+    - Hỗ trợ Merkle Root trong block header và lưu trữ.
+    - Đảm bảo tính nhất quán của hash và thread-safe cho các thành phần core.
+    - Chuẩn hóa logging bảo mật với `SecureLogger`.
+- **Ổn định & QA**: 
+    - Sửa lỗi Chain Rehydration giúp khôi phục trạng thái chính xác sau khi restart.
+    - Cải thiện độ tin cậy của CI/CD với matrix testing và xử lý flaky tests.
+
 ---
 
 ??? info "Thông tin kỹ thuật bổ sung (Metadata)"
