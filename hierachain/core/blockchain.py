@@ -10,6 +10,7 @@ for both Main Chain and Sub-Chain implementations, following Ledger guidelines:
 
 import time
 import logging
+import threading
 from typing import Any, Callable
 
 from hierachain.core.block import Block
@@ -49,12 +50,14 @@ class Blockchain:
             name: Name identifier for this blockchain
         """
         self.name = name
+        self.lock = threading.RLock()
         self.chain: list[Block] = []
         self.pending_events: list[dict[str, Any]] = []
         self.total_events: int = 0
         self.event_type_counts: dict[str, int] = {}
         self.entity_event_index: dict[str, list[dict[str, Any]]] = {}
-        self.create_genesis_block()
+        with self.lock:
+            self.create_genesis_block()
     
     def create_genesis_block(self) -> None:
         """Create the genesis (first) block of the blockchain."""
@@ -80,26 +83,27 @@ class Blockchain:
 
     def _index_block_events(self, block: Block) -> None:
         """Update counters and indexing for all events in the given block."""
-        events = (
-            block.to_event_list()
-            if hasattr(block, "to_event_list")
-            else block.events
-        )
-        self.total_events += len(events)
-        for event in events:
-            etype = event.get("event", "unknown")
-            self.event_type_counts[etype] = self.event_type_counts.get(etype, 0) + 1
+        with self.lock:
+            events = (
+                block.to_event_list()
+                if hasattr(block, "to_event_list")
+                else block.events
+            )
+            self.total_events += len(events)
+            for event in events:
+                etype = event.get("event", "unknown")
+                self.event_type_counts[etype] = self.event_type_counts.get(etype, 0) + 1
 
-            # Update entity index
-            entity_id = event.get("entity_id")
-            if entity_id:
-                if entity_id not in self.entity_event_index:
-                    self.entity_event_index[entity_id] = []
-                self.entity_event_index[entity_id].append({
-                    "block_index": block.index,
-                    "event": event,
-                    "timestamp": event.get("timestamp", time.time())
-                })
+                # Update entity index
+                entity_id = event.get("entity_id")
+                if entity_id:
+                    if entity_id not in self.entity_event_index:
+                        self.entity_event_index[entity_id] = []
+                    self.entity_event_index[entity_id].append({
+                        "block_index": block.index,
+                        "event": event,
+                        "timestamp": event.get("timestamp", time.time())
+                    })
     
     def get_latest_block(self) -> Block:
         """
@@ -108,7 +112,8 @@ class Blockchain:
         Returns:
             The most recent block in the blockchain
         """
-        return self.chain[-1]
+        with self.lock:
+            return self.chain[-1]
     
     def add_event(self, event: dict[str, Any]) -> None:
         """
@@ -117,15 +122,16 @@ class Blockchain:
         Args:
             event: Event dictionary with required metadata
         """
-        # Validate event structure
-        if not isinstance(event, dict):
-            raise ValueError("Event must be a dictionary")
-        
-        # Add timestamp if not present
-        if "timestamp" not in event:
-            event["timestamp"] = time.time()
-        
-        self.pending_events.append(event)
+        with self.lock:
+            # Validate event structure
+            if not isinstance(event, dict):
+                raise ValueError("Event must be a dictionary")
+            
+            # Add timestamp if not present
+            if "timestamp" not in event:
+                event["timestamp"] = time.time()
+            
+            self.pending_events.append(event)
     
     def create_block(self, events: list[dict[str, Any]] | None = None) -> Block:
         """
@@ -137,22 +143,23 @@ class Blockchain:
         Returns:
             The newly created block
         """
-        if events is None:
-            events = self.pending_events.copy()
-            self.pending_events.clear()
-        
-        if not events:
-            raise ValueError("Cannot create block without events")
-        
-        latest_block = self.get_latest_block()
-        new_block = Block(
-            index=latest_block.index + 1,
-            events=events,
-            timestamp=time.time(),
-            previous_hash=latest_block.hash
-        )
-        
-        return new_block
+        with self.lock:
+            if events is None:
+                events = self.pending_events.copy()
+                self.pending_events.clear()
+            
+            if not events:
+                raise ValueError("Cannot create block without events")
+            
+            latest_block = self.get_latest_block()
+            new_block = Block(
+                index=latest_block.index + 1,
+                events=events,
+                timestamp=time.time(),
+                previous_hash=latest_block.hash
+            )
+            
+            return new_block
     
     def add_block(self, block: Block) -> bool:
         """
@@ -164,11 +171,12 @@ class Blockchain:
         Returns:
             True if block was added successfully, False otherwise
         """
-        if self.is_valid_new_block(block):
-            self._index_block_events(block)
-            self.chain.append(block)
-            return True
-        return False
+        with self.lock:
+            if self.is_valid_new_block(block):
+                self._index_block_events(block)
+                self.chain.append(block)
+                return True
+            return False
     
     def finalize_block(self) -> Block | None:
         """
@@ -177,13 +185,14 @@ class Blockchain:
         Returns:
             The newly created and added block, or None if no pending events
         """
-        if not self.pending_events:
+        with self.lock:
+            if not self.pending_events:
+                return None
+            
+            new_block = self.create_block()
+            if self.add_block(new_block):
+                return new_block
             return None
-        
-        new_block = self.create_block()
-        if self.add_block(new_block):
-            return new_block
-        return None
     
     def is_valid_new_block(self, block: Block) -> bool:
         """
@@ -230,10 +239,11 @@ class Blockchain:
         Returns:
             True if the entire chain is valid, False otherwise
         """
-        return all(
-            _is_block_linked_correctly(self.chain[i], self.chain[i - 1])
-            for i in range(1, len(self.chain))
-        )
+        with self.lock:
+            return all(
+                _is_block_linked_correctly(self.chain[i], self.chain[i - 1])
+                for i in range(1, len(self.chain))
+            )
     
     def get_events_by_entity(self, entity_id: str) -> list[dict[str, Any]]:
         """
@@ -246,15 +256,19 @@ class Blockchain:
             List of events for the specified entity
         """
         # Use pre-calculated entity index for O(1) access
-        if hasattr(self, 'entity_event_index') and entity_id in self.entity_event_index:
-            indexed_events = self.entity_event_index[entity_id]
-            # Format to match original output (list of events only)
-            return [e['event'] for e in indexed_events]
-            
-        events = []
-        for block in self.chain:
-            events.extend(block.get_events_by_entity(entity_id))
-        return events
+        with self.lock:
+            if (
+                hasattr(self, 'entity_event_index')
+                and entity_id in self.entity_event_index
+            ):
+                indexed_events = self.entity_event_index[entity_id]
+                # Format to match original output (list of events only)
+                return [e['event'] for e in indexed_events]
+                
+            events = []
+            for block in self.chain:
+                events.extend(block.get_events_by_entity(entity_id))
+            return events
 
     def get_indexed_entity_events(self, entity_id: str) -> list[dict[str, Any]]:
         """
@@ -266,9 +280,10 @@ class Blockchain:
         Returns:
             List of dictionaries containing block_index, event, and timestamp
         """
-        if hasattr(self, 'entity_event_index'):
-            return self.entity_event_index.get(entity_id, [])
-        return []
+        with self.lock:
+            if hasattr(self, 'entity_event_index'):
+                return self.entity_event_index.get(entity_id, [])
+            return []
     
     def get_events_by_type(self, event_type: str) -> list[dict[str, Any]]:
         """
@@ -280,10 +295,11 @@ class Blockchain:
         Returns:
             List of events of the specified type
         """
-        events = []
-        for block in self.chain:
-            events.extend(block.get_events_by_type(event_type))
-        return events
+        with self.lock:
+            events = []
+            for block in self.chain:
+                events.extend(block.get_events_by_type(event_type))
+            return events
 
     def get_events_by_filter(
         self, filter_func: Callable[[dict[str, Any]], bool]

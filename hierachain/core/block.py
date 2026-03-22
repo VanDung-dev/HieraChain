@@ -228,7 +228,10 @@ def _serialize_event_payload(event: dict[str, Any]) -> bytes:
         for k, v in event.items()
         if not _should_exclude_from_payload(k, v)
     }
-    return json.dumps(payload).encode('utf-8')
+    # Use sort_keys and strict separators for deterministic hashing
+    return json.dumps(
+        payload, sort_keys=True, separators=(',', ':')
+    ).encode('utf-8')
 
 
 def _convert_events_to_arrow(events_list: list[dict[str, Any]]) -> pa.Table:
