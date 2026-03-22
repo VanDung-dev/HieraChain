@@ -1,0 +1,52 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for HieraChain
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please describe your idea clearly so the community can discuss and evaluate it.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? Is this related to a frustration?
+      placeholder: I'm always frustrated when...
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Affected Module
+      description: Which part of HieraChain is this related to?
+      options:
+        - Core (Block, Blockchain)
+        - Hierarchical (MainChain, SubChain, HierarchyManager)
+        - Consensus (Ordering, BFT)
+        - Security (Verification, MSP, Policy)
+        - API (REST, GraphQL, WebSocket)
+        - Storage (SQL, Redis, IPFS)
+        - CLI
+        - SDK
+        - Integration (ERP, Arrow)
+        - Other
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, mockups, or screenshots.

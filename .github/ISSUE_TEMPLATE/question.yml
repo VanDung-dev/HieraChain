@@ -1,0 +1,40 @@
+name: Question
+description: Ask a question about HieraChain usage or architecture
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question? Please check the [documentation](https://docs.hierachain.org/) first. If you still need help, describe your question below.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: Describe what you'd like to know.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Any relevant context (what you've tried, code snippets, config).
+      render: python
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Related Module
+      options:
+        - Installation / Setup
+        - Core (Block, Blockchain)
+        - Hierarchical (MainChain, SubChain, HierarchyManager)
+        - Consensus (Ordering, BFT)
+        - Security (Verification, MSP, Policy)
+        - API (REST, GraphQL, WebSocket)
+        - Storage (SQL, Redis, IPFS)
+        - CLI
+        - SDK
+        - Integration (ERP, Arrow)
+        - Other
