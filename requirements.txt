@@ -24,4 +24,4 @@ aiohttp==3.13.3
 graphene==3.4.3
 
 # IPFS integration for off-chain storage
-ipfshttpclient==0.8.0a2
+ipfshttpclient==0.7.0

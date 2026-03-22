@@ -53,6 +53,9 @@ dynamic = ["version"]
 version = {attr = "hierachain.units.version.__version__"}
 
 [project.optional-dependencies]
+ipfs = [
+    "ipfshttpclient>=0.7.0",
+]
 dev = [
     "tox>=4.34.1",
     "virtualenv-pyenv>=0.6.0",
