@@ -3,7 +3,7 @@
 ![Phiên bản Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)
 [![Giấy phép](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE-APACHE)
 [![Giấy phép](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
-![Phiên bản](https://img.shields.io/badge/version-0.0.1.dev8-orange)
+![Phiên bản](https://img.shields.io/badge/version-0.0.1-green)
 ![Tests](https://img.shields.io/badge/tests-371%20passed-green)
 
 [English](README.md) | **Tiếng Việt**
@@ -46,6 +46,14 @@ Kho tài liệu chi tiết có sẵn tại trang web chính thức **[docs.hiera
 ## Bắt Đầu Nhanh
 
 ### Cài Đặt
+
+**Qua PIP (khuyên dùng)**
+
+```bash
+pip install HieraChain
+```
+
+**Từ mã nguồn (dành cho phát triển)**
 
 ```bash
 git clone https://github.com/VanDung-dev/HieraChain.git
