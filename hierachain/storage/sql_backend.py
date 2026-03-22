@@ -87,10 +87,27 @@ class SqlStorageBackend:
         self.db_url = connection_string or settings.DATABASE_URL
         # Control SQL echo via settings to prevent schema leaks in production
         sql_echo = getattr(settings, 'LOG_SQL_DETAIL', False)
-        self.engine = create_engine(self.db_url, echo=sql_echo)
+        
+        # Handle SQLite specifically to allow multiple threads
+        if self.db_url.startswith("sqlite"):
+            self.engine = create_engine(
+                self.db_url, 
+                echo=sql_echo, 
+                connect_args={"check_same_thread": False}
+            )
+        else:
+            self.engine = create_engine(self.db_url, echo=sql_echo)
 
         # Create all tables (if they don't exist)
-        Base.metadata.create_all(self.engine)
+        try:
+            Base.metadata.create_all(self.engine)
+        except Exception as e:
+            if "readonly database" in str(e).lower():
+                logger.error(
+                    "Database is readonly. Ensure the storage directory is writable.",
+                    db_url=self.db_url
+                )
+            raise
 
         # Create thread-safe session factory
         self.Session = scoped_session(sessionmaker(bind=self.engine))
