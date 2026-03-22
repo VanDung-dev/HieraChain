@@ -123,6 +123,7 @@ nav:
       - Thêm/Tùy biến Consensus: how-to/add-consensus.md
       - Viết Domain Contracts: how-to/write-domain-contracts.md
       - Sử dụng Explorer: how-to/use-explorer.md
+      - Hướng dẫn chạy Demo: how-to/use-demos.md
       - Triển khai an toàn: how-to/secure-deployment.md
       - Khắc phục sự cố: how-to/troubleshooting.md
       - Khôi phục sau thảm họa: how-to/disaster-recovery.md
