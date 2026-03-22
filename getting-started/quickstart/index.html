@@ -655,10 +655,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#kich-hoat-moi-truong-va-cai-goi" class="md-nav__link">
+  <a href="#cai-at-nhanh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kích hoạt môi trường và cài gói
+        Cài đặt nhanh
       
     </span>
   </a>
@@ -3175,10 +3175,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#kich-hoat-moi-truong-va-cai-goi" class="md-nav__link">
+  <a href="#cai-at-nhanh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kích hoạt môi trường và cài gói
+        Cài đặt nhanh
       
     </span>
   </a>
@@ -3262,30 +3262,17 @@
 
 <h1 id="bat-au-nhanh">Bắt đầu nhanh</h1>
 <p>Tài liệu này tóm tắt các bước tối thiểu để bạn chạy thử HieraChain.</p>
-<blockquote>
-<p>Nếu bạn chưa cài đặt, vui lòng xem trước trang <a href="../install/">Cài đặt</a>.</p>
-</blockquote>
-<h2 id="kich-hoat-moi-truong-va-cai-goi">Kích hoạt môi trường và cài gói</h2>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="linuxmacos" name="__tabbed_1" type="radio" /><input id="windows" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="linuxmacos">Linux/macOS</label><label for="windows">Windows</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># giả định đang ở thư mục HieraChain và đã tạo venv</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+<h2 id="cai-at-nhanh">Cài đặt nhanh</h2>
+<p>Để bắt đầu nhanh nhất, bạn chỉ cần cài đặt gói qua PIP:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>HieraChain
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c"># giả định đang ở thư mục HieraChain và đã tạo venv</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="p">.</span><span class="n">venv</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">Activate</span><span class="p">.</span><span class="n">ps1</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">pip</span> <span class="n">install</span> <span class="n">-e</span> <span class="p">.</span> <span class="n">-r</span> <span class="n">requirements</span><span class="p">.</span><span class="n">txt</span>
-</code></pre></div>
-</div>
-</div>
-</div>
+<p>Nếu bạn muốn phát triển mã nguồn, vui lòng xem hướng dẫn <a href="../install/">Cài đặt chi tiết</a>.</p>
 <h2 id="khoi-ong-api-server">Khởi động API server</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
+<p>Sau khi cài đặt, bạn có thể khởi chạy server bằng lệnh:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
+</code></pre></div>
+<p>Hoặc sử dụng CLI (nếu đã cài đặt qua pip):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>hrc<span class="w"> </span>server<span class="w"> </span>start
 </code></pre></div>
 <p>Mặc định server phục vụ tại <code>http://localhost:2661</code>. Mở <code>http://localhost:2661/docs</code> để xem tài liệu OpenAPI và thử endpoint.</p>
 <h2 id="su-dung-nhanh-trong-python">Sử dụng nhanh trong Python</h2>

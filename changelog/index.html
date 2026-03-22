@@ -3019,6 +3019,26 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.5 8H12v5l4.28 2.54.72-1.21-3.5-2.08zM13 3a9 9 0 0 0-9 9H1l3.96 4.03L9 12H6a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.9 8.9 0 0 0 13 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="././" class="md-nav__link md-nav__link--active">
         
   
@@ -3037,6 +3057,37 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Mục lục
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v001-2026-03-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.0.1 (2026-03-22)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -3071,6 +3122,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Mục lục
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v001-2026-03-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.0.1 (2026-03-22)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -3101,6 +3171,29 @@
 
 
 <h1 id="changelog">Changelog</h1>
+<h2 id="v001-2026-03-22">v0.0.1 (2026-03-22)</h2>
+<p>Phiên bản này đánh dấu việc hoàn thiện định hướng kiến trúc ban đầu của HieraChain, tập trung vào việc hợp nhất các thành phần cốt lõi thành một khung nguyên mẫu thống nhất.</p>
+<ul>
+<li><strong>Tích hợp Lưu trữ IPFS</strong>: Hỗ trợ lưu trữ dữ liệu off-chain với mã hóa AES-256-GCM và định danh CID trên toàn bộ các giao diện API (REST, GraphQL, WebSocket).</li>
+<li><strong>Tối ưu Hiệu suất &amp; Khả năng mở rộng</strong>: <ul>
+<li>Xử lý khối song song trong <code>OrderingService</code>.</li>
+<li>Caching cho xác thực chứng chỉ và quyền hạn.</li>
+<li>Tối ưu hóa worker pool (75% CPU) và hỗ trợ đa luồng cho SQLite.</li>
+</ul>
+</li>
+<li><strong>Công cụ cho Nhà phát triển</strong>: Ra mắt <code>BlockchainExplorer</code> dashboard và hệ thống tài liệu kỹ thuật chi tiết.</li>
+<li><strong>Bảo mật &amp; Toàn vẹn</strong>: <ul>
+<li>Hỗ trợ Merkle Root trong block header và lưu trữ.</li>
+<li>Đảm bảo tính nhất quán của hash và thread-safe cho các thành phần core.</li>
+<li>Chuẩn hóa logging bảo mật với <code>SecureLogger</code>.</li>
+</ul>
+</li>
+<li><strong>Ổn định &amp; QA</strong>: <ul>
+<li>Sửa lỗi Chain Rehydration giúp khôi phục trạng thái chính xác sau khi restart.</li>
+<li>Cải thiện độ tin cậy của CI/CD với matrix testing và xử lý flaky tests.</li>
+</ul>
+</li>
+</ul>
 <hr />
 <details class="info">
 <summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
