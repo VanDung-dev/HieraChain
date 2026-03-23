@@ -37,7 +37,7 @@ class _IPFSClientContext:
         if exc_type is not None:
             logger.error("IPFS operation failed", error=str(exc_val))
             # Don't re-raise - let the original exception propagate naturally
-            return None  # or True to suppress if needed
+        return None
 
 
 class IPFSClient:
@@ -102,7 +102,7 @@ class IPFSClient:
     @property
     def encryption_key(self) -> bytes:
         """Get the encryption key (return a copy to prevent modification)."""
-        return self._encryption.key.copy()  # Return copy for safety
+        return bytes(self._encryption.key)  # Return copy for safety
 
     def _ensure_connected(self):
         """Ensure IPFS client is connected, connect if needed."""
@@ -429,7 +429,9 @@ class IPFSClient:
             with self._get_client() as client:
                 client.object.stat(cid)
             return True
-        except Exception:  # Catch all exceptions, not just IPFSError
+        except (IPFSError, Exception) as e:
+            # Catch specific IPFS errors and connection errors
+            logger.debug("Content not available", cid=cid, error=str(e))
             return False
 
     def get_daemon_version(self) -> dict[str, Any]:
