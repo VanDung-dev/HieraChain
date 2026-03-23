@@ -193,7 +193,7 @@ def _verify_integrity(file_path: str, expected_hash: str, integrity_check: str) 
 
 
 def _distribute_to_locations(
-    file_path: str, backup_id: str, locations: list[str]
+    file_path: str, backup_id: str, locations: list[str], base_dir: str = "backups/keys"
 ) -> list[str]:
     """Distribute encrypted backup to secure locations."""
     distributed_locations: list[str] = []
@@ -201,7 +201,7 @@ def _distribute_to_locations(
 
     for location in locations:
         try:
-            location_path = os.path.join("backups", location)
+            location_path = os.path.join(base_dir, location)
             os.makedirs(location_path, exist_ok=True)
             dest_path = os.path.join(location_path, filename)
             shutil.copy2(file_path, dest_path)
@@ -230,7 +230,7 @@ def _cleanup_old_backups(metadata: dict, retention_period: int, remove_backup):
             logger.error("Failed to remove expired backup %s: %s", backup_id, str(e))
 
 
-def _find_backup_file(backup_id: str, metadata: dict) -> str | None:
+def _find_backup_file(backup_id: str, metadata: dict, base_dir: str = "backups/keys") -> str | None:
     """Find the backup file for given backup ID."""
     entry = metadata.get(backup_id)
     if not entry:
@@ -241,7 +241,7 @@ def _find_backup_file(backup_id: str, metadata: dict) -> str | None:
         return primary_path
 
     for location in entry.get("locations", []):
-        file_path = os.path.join("backups", location, f"{backup_id}.enc")
+        file_path = os.path.join(base_dir, location, f"{backup_id}.enc")
         if os.path.exists(file_path):
             return file_path
 
@@ -337,7 +337,7 @@ class KeyBackupManager:
 
     def _distribute_to_locations(self, file_path: str, backup_id: str) -> list[str]:
         """Distribute encrypted backup to secure locations."""
-        return _distribute_to_locations(file_path, backup_id, self.locations)
+        return _distribute_to_locations(file_path, backup_id, self.locations, self.backup_dir)
 
     @staticmethod
     def _log_backup_success(backup_id: str, hash_value: str, locations: list[str]):
@@ -545,7 +545,7 @@ class KeyBackupManager:
         # Remove from all locations
         for location in metadata.get("locations", []):
             try:
-                file_path = os.path.join("backups", location, f"{backup_id}.enc")
+                file_path = os.path.join(self.backup_dir, location, f"{backup_id}.enc")
                 if os.path.exists(file_path):
                     os.remove(file_path)
             except Exception as e:
@@ -564,7 +564,7 @@ class KeyBackupManager:
 
     def _find_backup_file(self, backup_id: str) -> str | None:
         """Find the backup file for given backup ID."""
-        return _find_backup_file(backup_id, self.metadata)
+        return _find_backup_file(backup_id, self.metadata, self.backup_dir)
     
     def _get_backup_hash(self, backup_id: str) -> str:
         """Retrieve stored hash for backup."""
