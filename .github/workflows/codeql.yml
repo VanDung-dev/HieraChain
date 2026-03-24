@@ -3,8 +3,12 @@ name: "CodeQL"
 on:
   push:
     branches: ["main"]
+    paths:
+      - 'hierachain/**'
   pull_request:
     branches: ["main"]
+    paths:
+      - 'hierachain/**'
   schedule:
     - cron: "0 0 * * 0"
 
