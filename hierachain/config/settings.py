@@ -85,6 +85,8 @@ class Settings:
     AUTH_ENABLED = os.getenv("HRC_AUTH_ENABLED", "false").lower() == "true"
     API_KEY_LOCATION = os.getenv("HRC_API_KEY_LOCATION", "header")
     API_KEY_NAME = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
+    # Secret backend: "env" (default), "vault" (HashiCorp), "aws" (AWS Secrets Manager)
+    SECRET_BACKEND = os.getenv("HRC_SECRET_BACKEND", "env")
     
     # Master key management
     # Source: "auto" (env → file → generate), "env" (env var only), "file" (file only)
@@ -131,6 +133,8 @@ class Settings:
     # Rate Limiting (disabled by default)
     RATE_LIMIT_ENABLED = os.getenv("HRC_RATE_LIMIT", "false").lower() == "true"
     RATE_LIMIT_REQUESTS_PER_MINUTE = int(os.getenv("HRC_RATE_LIMIT_RPM", "100"))
+    # Rate limit backend: "memory" (default, single-node) or "redis" (cluster-wide)
+    RATE_LIMIT_BACKEND = os.getenv("HRC_RATE_LIMIT_BACKEND", "memory")
     
     # Multi-Organization settings
     MULTI_ORG_ENABLED = True
@@ -163,6 +167,8 @@ class Settings:
     # Logging settings
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    # Log output format: "text" (default) or "json" (structured, production-ready)
+    LOG_OUTPUT_FORMAT = os.getenv("HRC_LOG_FORMAT", "text")
     # Enable detailed SQL logging (query echo, verbose DB errors)
     # Should be False in production to avoid leaking DB schema details
     LOG_SQL_DETAIL = os.getenv("HRC_LOG_SQL_DETAIL", "true").lower() == "true"
@@ -173,6 +179,9 @@ class Settings:
     IPFS_AUTO_PIN = os.getenv("HRC_IPFS_AUTO_PIN", "true").lower() == "true"
     IPFS_TIMEOUT = int(os.getenv("HRC_IPFS_TIMEOUT", "120"))
     IPFS_ENCRYPTION_KEY = os.getenv("HRC_IPFS_ENCRYPTION_KEY", "")  # Hex-encoded 32-byte key
+
+    # Prometheus metrics (disabled by default, enable in production for observability)
+    METRICS_ENABLED = os.getenv("HRC_METRICS_ENABLED", "false").lower() == "true"
 
     # Zero Knowledge Proof settings
     # Enable trustless verification of state transitions
