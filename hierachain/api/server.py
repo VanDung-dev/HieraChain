@@ -9,10 +9,13 @@ The server uses FastAPI for high performance and includes proper
 error handling, CORS support, and comprehensive logging.
 """
 
+import uuid
 import uvicorn
 import logging
 import time
-from fastapi import FastAPI, HTTPException, Depends, Request, APIRouter
+from fastapi import (
+    FastAPI, HTTPException, Depends, Request, APIRouter, Response
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import warnings
@@ -164,9 +167,9 @@ def add_payload_limit(fast_app: FastAPI):
 
 
 class RateLimiter:
-    """Simple in-memory rate limiter"""
+    """Simple in-memory rate limiter (single-node only)"""
     def __init__(self, requests_per_minute: int):
-        self.store = {}
+        self.store: dict = {}
         self.limit = requests_per_minute
 
     def is_allowed(self, ip: str) -> bool:
@@ -188,29 +191,101 @@ class RateLimiter:
         self.store[ip] = (start, count + 1)
         return True
 
+    def remaining(self, ip: str) -> int:
+        """Return remaining requests in the current window."""
+        now = int(time.time())
+        start, count = self.store.get(ip, (now, 0))
+        if now - start > 60:
+            return self.limit
+        return max(0, self.limit - count)
 
-def add_rate_limit(fast_app: FastAPI, settings):
-    """Add rate limit middleware to the application"""
+
+class RedisRateLimiter:
+    """
+    Sliding-window rate limiter backed by Redis.
+
+    Uses INCR + EXPIRE for atomicity. Works across multiple server processes
+    and nodes sharing the same Redis instance.
+    """
+    def __init__(self, requests_per_minute: int, host: str, port: int, db: int):
+        import redis as redis_lib
+        self._redis = redis_lib.Redis(
+            host=host, port=port, db=db,
+            socket_connect_timeout=2, socket_timeout=2, decode_responses=True
+        )
+        self.limit = requests_per_minute
+
+    def _key(self, ip: str) -> str:
+        window = int(time.time()) // 60
+        return f"hrc:rl:{ip}:{window}"
+
+    def is_allowed(self, ip: str) -> bool:
+        key = self._key(ip)
+        try:
+            pipe = self._redis.pipeline()
+            pipe.incr(key)
+            pipe.expire(key, 60)
+            count, _ = pipe.execute()
+            return int(count) <= self.limit
+        except Exception as exc:
+            logger.warning("Redis rate-limiter error, allowing request: %s", exc)
+            return True  # fail-open: don't block traffic if Redis is unavailable
+
+    def remaining(self, ip: str) -> int:
+        key = self._key(ip)
+        try:
+            count = int(self._redis.get(key) or 0)
+            return max(0, self.limit - count)
+        except Exception:
+            return self.limit
+
+
+
+def add_rate_limit(fast_app: FastAPI, settings) -> None:
+    """Add rate limit middleware — memory or Redis backend."""
     if not settings.RATE_LIMIT_ENABLED:
         return
-        
-    limiter = RateLimiter(settings.RATE_LIMIT_REQUESTS_PER_MINUTE)
-    
+
+    rpm = settings.RATE_LIMIT_REQUESTS_PER_MINUTE
+    backend = getattr(settings, "RATE_LIMIT_BACKEND", "memory")
+
+    if backend == "redis":
+        limiter: RateLimiter | RedisRateLimiter = RedisRateLimiter(
+            rpm,
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            db=settings.REDIS_DB,
+        )
+        logger.info("Rate limiter: Redis backend (%d rpm)", rpm)
+    else:
+        limiter = RateLimiter(rpm)
+        logger.info("Rate limiter: in-memory backend (%d rpm)", rpm)
+
     @fast_app.middleware("http")
     async def rate_limit_middleware(request: Request, call_next):
         client_ip = request.client.host if request.client else "unknown"
         
         if not limiter.is_allowed(client_ip):
+            remaining = limiter.remaining(client_ip)
             return JSONResponse(
                 status_code=429,
+                headers={
+                    "Retry-After": "60",
+                    "X-RateLimit-Limit": str(rpm),
+                    "X-RateLimit-Remaining": str(remaining),
+                },
                 content={
                     "error": "Too Many Requests",
                     "message": "Rate limit exceeded. Please try again later.",
-                    "status_code": 429
-                }
+                    "status_code": 429,
+                },
             )
-            
-        return await call_next(request)
+
+        response = await call_next(request)
+        response.headers["X-RateLimit-Limit"] = str(rpm)
+        response.headers["X-RateLimit-Remaining"] = str(limiter.remaining(client_ip))
+        return response
+
 
 
 def register_exception_handlers(fast_app: FastAPI, settings) -> None:
@@ -340,6 +415,56 @@ def _register_root_endpoint(fast_app: FastAPI):
         }
 
 
+def add_request_logging(fast_app: FastAPI) -> None:
+    """
+    Middleware that:
+    - Generates a unique X-Request-ID for every request.
+    - Logs method, path, status code, and latency in milliseconds.
+    """
+    @fast_app.middleware("http")
+    async def request_logging_middleware(request: Request, call_next):
+        request_id = str(uuid.uuid4())
+        start = time.perf_counter()
+
+        response = await call_next(request)
+
+        latency_ms = round((time.perf_counter() - start) * 1000, 2)
+        response.headers["X-Request-ID"] = request_id
+
+        logger.info(
+            "%s %s -> %s (%.2f ms) [%s]",
+            request.method,
+            request.url.path,
+            response.status_code,
+            latency_ms,
+            request_id,
+            extra={"request_id": request_id},
+        )
+        return response
+
+
+def _register_metrics_endpoint(fast_app: FastAPI) -> None:
+    """Register Prometheus /metrics endpoint (requires prometheus-client)."""
+    try:
+        import prometheus_client  # type: ignore[import]
+        from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
+        @fast_app.get("/metrics", include_in_schema=False)
+        async def metrics_endpoint() -> Response:
+            """Prometheus metrics scrape endpoint."""
+            return Response(
+                content=generate_latest(),
+                media_type=CONTENT_TYPE_LATEST,
+            )
+
+        logger.info("Prometheus /metrics endpoint registered")
+    except ImportError:
+        logger.warning(
+            "prometheus-client not installed. "
+            "Install it with: pip install prometheus-client==0.21.1"
+        )
+
+
 def register_routers(fast_app: FastAPI):
     """Register API routers and root endpoint"""
     _register_api_router(fast_app, v1_router, "v1")
@@ -392,9 +517,14 @@ def create_app() -> FastAPI:
     add_security_headers(fast_app, settings.ENV in ("dev", "development"))
     add_payload_limit(fast_app)
     add_rate_limit(fast_app, settings)
+    add_request_logging(fast_app)
 
     # Register Routers and Root Endpoint
     register_routers(fast_app)
+
+    # Register optional Prometheus /metrics endpoint
+    if getattr(settings, "METRICS_ENABLED", False):
+        _register_metrics_endpoint(fast_app)
 
     # Register Exception Handlers
     register_exception_handlers(fast_app, settings)
