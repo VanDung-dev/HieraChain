@@ -695,3 +695,4 @@ cython_debug/
 *.key
 backups/
 .benchmarks/
+demo/data/
