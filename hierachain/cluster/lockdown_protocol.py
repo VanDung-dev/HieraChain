@@ -330,11 +330,12 @@ class ClusterLockdownManager:
             quorum_threshold: Fraction of nodes needed for quorum (default 2/3).
         """
         if not secret_key or secret_key == "default_secret_key":
-            import os
-            secret_key = os.environ.get("HRC_CLUSTER_SECRET", "")
+            from hierachain.config.secret_manager import SecretManager
+            secret_key = SecretManager().get_secret("HRC_CLUSTER_SECRET", default="")
             if not secret_key:
                 logger.warning(
                     "No secure secret_key provided for lockdown protocol. "
+                    "Set HRC_CLUSTER_SECRET (or configure HRC_SECRET_BACKEND). "
                     "Authentication may be compromised."
                 )
 
