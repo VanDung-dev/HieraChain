@@ -418,7 +418,21 @@ class MainChain(Blockchain):
 
         # Check if ZK proof is required
         if settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN and zk_proof is None:
-            logger.warning("Rejected proof: ZK proof required but missing")
+            logger.critical("CRITICAL: Rejected proof from '%s'. ZK proof is REQUIRED but missing.", sub_chain_name)
+            
+            # Send alert about the missing proof to AlertManager
+            try:
+                from hierachain.monitoring.alert_manager import alert_manager
+                alert_manager.send_alert(
+                    level="CRITICAL",
+                    title="Missing ZK Proof",
+                    message=f"SubChain '{sub_chain_name}' attempted to submit a proof without a required ZK proof.",
+                    source="MainChain._verify_zk_proof",
+                    details={"proof_hash": proof_hash, "metadata": metadata}
+                )
+            except Exception as e:
+                logger.error("Failed to send alert for missing ZK proof from '%s': %s", sub_chain_name, e)
+                
             return False
 
         if zk_proof is None:
