@@ -59,10 +59,11 @@ def _get_from_vault(key: str, vault_url: str, vault_token: str, vault_path: str)
         data: dict[str, Any] = response["data"]["data"]
         value = data.get(key)
         if value is None:
-            logger.warning("Secret '%s' not found at Vault path '%s'", key, vault_path)
+            masked_key = key[:4] + "****" if len(key) > 4 else "****"
+            logger.warning("Secret '%s' not found at Vault path", masked_key)
         return str(value) if value is not None else None
     except Exception as exc:  # noqa: BLE001
-        logger.error("Error reading from Vault: %s", exc)
+        logger.error("Error reading from Vault: %s", type(exc).__name__)
         return None
 
 
@@ -91,10 +92,10 @@ def _get_from_aws(secret_name: str, region: str) -> str | None:
         response = client.get_secret_value(SecretId=secret_name)
         return response.get("SecretString")
     except ClientError as exc:  # noqa: BLE001
-        logger.error("AWS Secrets Manager error for '%s': %s", secret_name, exc)
+        logger.error("AWS Secrets Manager error for '%s': %s", secret_name, type(exc).__name__)
         return None
     except Exception as exc:  # noqa: BLE001
-        logger.error("Unexpected error fetching AWS secret '%s': %s", secret_name, exc)
+        logger.error("Unexpected error fetching AWS secret '%s': %s", secret_name, type(exc).__name__)
         return None
 
 
@@ -129,7 +130,7 @@ class SecretManager:
         self._aws_region: str = os.environ.get("HRC_AWS_REGION", "us-east-1")
         self._aws_secret_name: str = os.environ.get("HRC_AWS_SECRET_NAME", "")
 
-        logger.debug("SecretManager initialised with backend='%s'", self._backend)
+        logger.debug("SecretManager initialised")
 
     def get_secret(self, key: str, default: str | None = None) -> str | None:
         """
@@ -152,15 +153,15 @@ class SecretManager:
         else:
             if self._backend != "env":
                 logger.warning(
-                    "Unknown HRC_SECRET_BACKEND='%s', falling back to 'env'",
-                    self._backend,
+                    "Unknown HRC_SECRET_BACKEND, falling back to 'env'"
                 )
             value = _get_from_env(key)
 
         if value is None:
             if default is None:
+                masked_key = key[:4] + "****" if len(key) > 4 else "****"
                 logger.warning(
-                    "Secret '%s' not found in backend '%s'", key, self._backend
+                    "Secret '%s' not found in backend '%s'", masked_key, self._backend
                 )
             return default
 
