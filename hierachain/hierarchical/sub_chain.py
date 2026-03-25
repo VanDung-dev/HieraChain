@@ -600,10 +600,10 @@ class SubChain(Blockchain):
         if db_url.startswith("sqlite:///"):
             base_data_dir = os.path.realpath("data")
             safe_name = re.sub(r"[^a-zA-Z0-9_\-]", "", self.name)
-            db_dir = os.path.join(base_data_dir, safe_name)
+            db_dir = os.path.normpath(os.path.join(base_data_dir, safe_name))
 
-            if not os.path.realpath(db_dir).startswith(base_data_dir + os.sep):
-                raise ValueError(f"Invalid SubChain name: path traversal detected")
+            if not db_dir.startswith(base_data_dir):
+                raise ValueError("Invalid SubChain name: path traversal detected")
             os.makedirs(db_dir, exist_ok=True)
             db_url = f"sqlite:///{db_dir}/hierachain.db"
 
