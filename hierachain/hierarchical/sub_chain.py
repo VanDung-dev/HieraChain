@@ -10,6 +10,7 @@ import time
 import threading
 import logging
 import re
+import os
 from typing import Any, Callable
 
 from hierachain.core.blockchain import Blockchain
@@ -595,15 +596,20 @@ class SubChain(Blockchain):
 
         # Configure unique database URL if using default SQLite
         db_url = settings.DATABASE_URL
+        db_dir = "data"
         if db_url.startswith("sqlite:///"):
-            import os
-            db_dir = f"data/{self.name}"
+            base_data_dir = os.path.realpath("data")
+            safe_name = re.sub(r"[^a-zA-Z0-9_\-]", "", self.name)
+            db_dir = os.path.join(base_data_dir, safe_name)
+
+            if not os.path.realpath(db_dir).startswith(base_data_dir + os.sep):
+                raise ValueError(f"Invalid SubChain name: path traversal detected")
             os.makedirs(db_dir, exist_ok=True)
             db_url = f"sqlite:///{db_dir}/hierachain.db"
 
         # Service configuration
         default_config = {
-            "storage_dir": f"data/{self.name}/journal",
+            "storage_dir": os.path.join(db_dir, "journal"),
             "block_size": 50,  # Smaller batches for lower latency in demo
             "batch_timeout": 1.0,
             "worker_threads": 2,
