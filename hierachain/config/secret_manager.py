@@ -152,8 +152,10 @@ class SecretManager:
             value = self._get_aws(key)
         else:
             if self._backend != "env":
+                masked_backend = self._backend[:3] + "****" if len(self._backend) > 3 else self._backend
                 logger.warning(
-                    "Unknown HRC_SECRET_BACKEND, falling back to 'env'"
+                    "Unknown HRC_SECRET_BACKEND='%s', falling back to 'env'",
+                    masked_backend,
                 )
             value = _get_from_env(key)
 
