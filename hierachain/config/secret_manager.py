@@ -59,8 +59,7 @@ def _get_from_vault(key: str, vault_url: str, vault_token: str, vault_path: str)
         data: dict[str, Any] = response["data"]["data"]
         value = data.get(key)
         if value is None:
-            masked_key = key[:4] + "****" if len(key) > 4 else "****"
-            logger.warning("Secret '%s' not found at Vault path", masked_key)
+            logger.warning("Secret not found at Vault path")
         return str(value) if value is not None else None
     except Exception as exc:  # noqa: BLE001
         logger.error("Error reading from Vault: %s", type(exc).__name__)
@@ -92,12 +91,10 @@ def _get_from_aws(secret_name: str, region: str) -> str | None:
         response = client.get_secret_value(SecretId=secret_name)
         return response.get("SecretString")
     except ClientError as exc:  # noqa: BLE001
-        masked_secret = secret_name[:8] + "****" if len(secret_name) > 8 else "********"
-        logger.error("AWS Secrets Manager error for '%s': %s", masked_secret, type(exc).__name__)
+        logger.error("AWS Secrets Manager error: %s", type(exc).__name__)
         return None
     except Exception as exc:  # noqa: BLE001
-        masked_secret = secret_name[:8] + "****" if len(secret_name) > 8 else "********"
-        logger.error("Unexpected error fetching AWS secret '%s': %s", masked_secret, type(exc).__name__)
+        logger.error("Unexpected error fetching AWS secret: %s", type(exc).__name__)
         return None
 
 
@@ -154,23 +151,12 @@ class SecretManager:
             value = self._get_aws(key)
         else:
             if self._backend != "env":
-                masked_backend = self._backend[:3] + "****" if len(self._backend) > 3 else self._backend
-                logger.warning(
-                    "Unknown HRC_SECRET_BACKEND='%s', falling back to 'env'",
-                    masked_backend,
-                )
+                logger.warning("Unknown HRC_SECRET_BACKEND, falling back to 'env'")
             value = _get_from_env(key)
 
         if value is None:
             if default is None:
-                masked_key = key[:4] + "****" if len(key) > 4 else "****"
-                masked_backend = (
-                    self._backend[:3] + "****" if len(self._backend) > 3 else self._backend
-                )
-                logger.warning(
-                    "Secret '%s' not found in backend '%s'",
-                    masked_key, masked_backend
-                )
+                logger.warning("Secret not found in backend")
             return default
 
         return value
