@@ -24,47 +24,55 @@ logger = logging.getLogger(__name__)
 
 
 def _generate_zk_proof(name: str, chain: list[Any], latest_block: Any) -> bytes | None:
-    """Generate ZK proof for the latest block transition."""
+    """Generate ZK proof for the latest block transition with retries."""
     if not settings.ENABLE_ZK_PROOFS:
         return None
 
-    try:
-        # Get state roots for ZK proof
-        previous_block = chain[-2] if len(chain) > 1 else None
-        old_state_root = previous_block.merkle_root if previous_block else "genesis"
-        new_state_root = latest_block.merkle_root or latest_block.hash
+    # Get state roots for ZK proof
+    previous_block = chain[-2] if len(chain) > 1 else None
+    old_state_root = previous_block.merkle_root if previous_block else "genesis"
+    new_state_root = latest_block.merkle_root or latest_block.hash
 
-        # Generate ZK proof
-        prover = ZKProver(mode=settings.ZK_MODE)
-        result = prover.generate_proof(
-            old_state_root=old_state_root,
-            new_state_root=new_state_root,
-            block_index=latest_block.index,
-            events=latest_block.to_event_list()
-            if hasattr(latest_block, "to_event_list")
-            else [],
-            sub_chain_name=name,
-        )
-
-        if result.success:
-            logger.info(
-                "Generated ZK proof for block %d in %.2fms",
-                latest_block.index, result.generation_time_ms,
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        try:
+            # Generate ZK proof
+            prover = ZKProver(mode=settings.ZK_MODE)
+            result = prover.generate_proof(
+                old_state_root=old_state_root,
+                new_state_root=new_state_root,
+                block_index=latest_block.index,
+                events=latest_block.to_event_list()
+                if hasattr(latest_block, "to_event_list")
+                else [],
+                sub_chain_name=name,
             )
-            return result.proof
 
-        logger.warning(
-            "ZK proof generation failed for block %d: %s",
-            latest_block.index, result.error,
-        )
-        return None
+            if result.success:
+                logger.info(
+                    "Generated ZK proof for block %d in %.2fms (Attempt %d/%d)",
+                    latest_block.index, result.generation_time_ms, attempt + 1, max_attempts
+                )
+                return result.proof
 
-    except Exception as e:
-        logger.error(
-            "ZK proof generation error for block %d: %s",
-            latest_block.index, e,
-        )
-        return None
+            logger.warning(
+                "ZK proof generation failed for block %d on attempt %d/%d: %s",
+                latest_block.index, attempt + 1, max_attempts, result.error,
+            )
+            
+            if attempt < max_attempts - 1:
+                time.sleep(1.0 * (attempt + 1))  # Exponential-ish backoff
+
+        except Exception as e:
+            logger.error(
+                "ZK proof generation error for block %d on attempt %d/%d: %s",
+                latest_block.index, attempt + 1, max_attempts, e,
+            )
+            if attempt < max_attempts - 1:
+                time.sleep(1.0 * (attempt + 1))
+            
+    logger.error("Failed to generate ZK proof for block %d after %d attempts", latest_block.index, max_attempts)
+    return None
 
 
 def _generate_default_proof_metadata(
@@ -391,20 +399,29 @@ def _rehydrate_chain_from_ordering_service(
         sub_chain.name, latest_local.index, all_blocks[-1].index,
     )
 
-    # Clear the locally created chain (including the newly created genesis block)
-    sub_chain.chain.clear()
-    sub_chain.total_events = 0
-    sub_chain.event_type_counts.clear()
-    sub_chain.entity_event_index.clear()
+    # Map out the temporary index to save events occurring during rehydration
+    with sub_chain.lock:
+        temp_entity_index = dict(sub_chain.entity_event_index)
 
-    # Add all blocks from DB to the chain with proper indexing
-    for block in all_blocks:
-        sub_chain.chain.append(block)
-        _update_event_statistics(sub_chain, block)
+        # Clear the locally created chain (including the newly created genesis block)
+        sub_chain.chain.clear()
+        sub_chain.total_events = 0
+        sub_chain.event_type_counts.clear()
+        sub_chain.entity_event_index.clear()
 
-    # Also update the ordering service's block_history and blocks_created to match
-    sub_chain.ordering_service.block_history = list(sub_chain.chain)
-    sub_chain.ordering_service.blocks_created = all_blocks[-1].index + 1
+        # Add all blocks from DB to the chain with proper indexing
+        for block in all_blocks:
+            sub_chain.chain.append(block)
+            _update_event_statistics(sub_chain, block)
+            
+        # Restore events added during rehydration
+        for entity_id, events in temp_entity_index.items():
+            if entity_id not in sub_chain.entity_event_index:
+                sub_chain.entity_event_index[entity_id] = events
+
+        # Also update the ordering service's block_history and blocks_created to match
+        sub_chain.ordering_service.block_history = list(sub_chain.chain)
+        sub_chain.ordering_service.blocks_created = all_blocks[-1].index + 1
 
     logger.info(
         "Rehydrated %d blocks from Ordering Service. Latest index: %d",
@@ -576,13 +593,21 @@ class SubChain(Blockchain):
             last_heartbeat=time.time()
         )
 
+        # Configure unique database URL if using default SQLite
+        db_url = settings.DATABASE_URL
+        if db_url.startswith("sqlite:///"):
+            import os
+            db_dir = f"data/{self.name}"
+            os.makedirs(db_dir, exist_ok=True)
+            db_url = f"sqlite:///{db_dir}/hierachain.db"
+
         # Service configuration
         default_config = {
             "storage_dir": f"data/{self.name}/journal",
             "block_size": 50,  # Smaller batches for lower latency in demo
             "batch_timeout": 1.0,
             "worker_threads": 2,
-            "db_url": settings.DATABASE_URL,
+            "db_url": db_url,
             "chain_name": self.name,
         }
 
@@ -606,9 +631,16 @@ class SubChain(Blockchain):
             event["event"] = event.get("type", "generic_event")
 
         logger.debug("SubChain %s adding event: %s", self.name, event.get("event"))
+        
+        # Send to OrderingService first
         self.ordering_service.receive_event(
             event_data=event, channel_id=self.name, submitter_org=self.name
         )
+        
+        # Also add to Blockchain.pending_events for compatibility
+        with self.lock:
+            if event not in self.pending_events:
+                self.pending_events.append(event)
 
         return f"tx-{hash(str(event))}"
 
