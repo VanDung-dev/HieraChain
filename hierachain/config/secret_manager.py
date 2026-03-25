@@ -92,10 +92,12 @@ def _get_from_aws(secret_name: str, region: str) -> str | None:
         response = client.get_secret_value(SecretId=secret_name)
         return response.get("SecretString")
     except ClientError as exc:  # noqa: BLE001
-        logger.error("AWS Secrets Manager error for '%s': %s", secret_name, type(exc).__name__)
+        masked_secret = secret_name[:8] + "****" if len(secret_name) > 8 else "********"
+        logger.error("AWS Secrets Manager error for '%s': %s", masked_secret, type(exc).__name__)
         return None
     except Exception as exc:  # noqa: BLE001
-        logger.error("Unexpected error fetching AWS secret '%s': %s", secret_name, type(exc).__name__)
+        masked_secret = secret_name[:8] + "****" if len(secret_name) > 8 else "********"
+        logger.error("Unexpected error fetching AWS secret '%s': %s", masked_secret, type(exc).__name__)
         return None
 
 
@@ -162,8 +164,12 @@ class SecretManager:
         if value is None:
             if default is None:
                 masked_key = key[:4] + "****" if len(key) > 4 else "****"
+                masked_backend = (
+                    self._backend[:3] + "****" if len(self._backend) > 3 else self._backend
+                )
                 logger.warning(
-                    "Secret '%s' not found in backend '%s'", masked_key, self._backend
+                    "Secret '%s' not found in backend '%s'",
+                    masked_key, masked_backend
                 )
             return default
 
