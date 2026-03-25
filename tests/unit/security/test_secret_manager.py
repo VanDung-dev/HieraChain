@@ -144,7 +144,7 @@ class TestUnknownBackend:
                 result = mgr.get_secret("MY_KEY")
 
         assert result == "my_value"
-        assert any("gcp" in m for m in caplog.messages)
+        assert any("Unknown HRC_SECRET_BACKEND" in m for m in caplog.messages)
 
 
 class TestLockdownProtocolIntegration:
