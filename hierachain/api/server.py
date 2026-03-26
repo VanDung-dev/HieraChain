@@ -555,7 +555,9 @@ def run_server():
         server_header=False,
         timeout_keep_alive=5,   # Mitigate Slowloris: low keep-alive timeout
         limit_concurrency=100,  # Limit concurrent connections
-        headers=[("Server", "HieraChain")]  # Custom server header
+        headers=[("Server", "HieraChain")],  # Custom server header
+        proxy_headers=True,     # Read X-Forwarded-* headers for Rate Limiters
+        forwarded_allow_ips=api_config.get("trusted_proxies", "127.0.0.1")
     )
 
 
