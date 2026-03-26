@@ -132,6 +132,7 @@ nav:
       - Hiệu năng: guides/performance.md
       - Độ tin cậy: guides/reliability.md
       - Thực hành bảo mật: guides/security-best-practices.md
+      - Triển khai HTTP/2 & HTTP/3: guides/http-proxy.md
   - Phát triển:
       - Đóng góp: dev/contributing.md
       - Kiểm thử: dev/testing.md

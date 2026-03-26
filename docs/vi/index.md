@@ -76,6 +76,7 @@ Lưu ý quan trọng về phạm vi:
     * [Hiệu năng](guides/performance.md)
     * [Độ tin cậy](guides/reliability.md)
     * [Thực hành bảo mật](guides/security-best-practices.md)
+    * [Triển khai HTTP/2 & HTTP/3](guides/http-proxy.md)
 
 * :material-tools:{ .lg .middle } __Sử dụng__
 
