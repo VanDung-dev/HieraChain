@@ -6,19 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Tổng quan PoA/PoF/BFT và Ordering Service trong HieraChain; cấu hình, luồng và bất biến.">
+        <meta name="description" content="Hướng dẫn cấu hình Reverse Proxy (NGINX/Edge Gateway) để hỗ trợ HTTP/2 và HTTP/3 cho HieraChain.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
       
       
-        <link rel="canonical" href="https://docs.hierachain.org/architecture/consensus/">
+        <link rel="canonical" href="https://docs.hierachain.org/guides/http-proxy/">
       
       
-        <link rel="prev" href="../overview/">
+        <link rel="prev" href="../security-best-practices/">
       
       
-        <link rel="next" href="../hierarchy/">
+        <link rel="next" href="../../dev/contributing/">
       
       
         
@@ -31,7 +31,7 @@
     
     
       
-        <title>Đồng thuận & Sắp xếp (Consensus & Ordering) - HieraChain Docs</title>
+        <title>Triển khai HTTP/2 & HTTP/3 - HieraChain Docs</title>
       
     
     
@@ -87,7 +87,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ong-thuan-sap-xep-consensus-ordering" class="md-skip">
+        <a href="#kien-truc-mang-e-xuat" class="md-skip">
           Bỏ qua
         </a>
       
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Đồng thuận & Sắp xếp (Consensus & Ordering)
+              Triển khai HTTP/2 & HTTP/3
             
           </span>
         </div>
@@ -268,13 +268,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../overview/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../architecture/overview/" class="md-tabs__link">
           
   
   Kiến trúc
@@ -365,11 +363,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../guides/performance/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../performance/" class="md-tabs__link">
           
   
   Hướng dẫn chung
@@ -649,10 +649,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -672,20 +670,17 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -703,7 +698,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -721,7 +716,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../overview/" class="md-nav__link">
+      <a href="../../architecture/overview/" class="md-nav__link">
         
   
   
@@ -748,39 +743,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18a6 6 0 0 1-6-6c0-1 .25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12a8 8 0 0 0 8 8v3l4-4-4-4m0-11V1L8 5l4 4V6a6 6 0 0 1 6 6c0 1-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12a8 8 0 0 0-8-8"/></svg>
-  
-  <span class="md-ellipsis">
-    
-  
-    Consensus & Ordering
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="././" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../architecture/consensus/" class="md-nav__link">
         
   
   
@@ -798,99 +764,6 @@
   
 
       </a>
-      
-        
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Mục lục
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mục đích
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Kiến trúc &amp; khái niệm
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Kiến trúc &amp; khái niệm">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#luong-ien-hinh" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Luồng điển hình
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Cấu hình
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tính năng &amp; hạn chế
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Liên quan
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -903,7 +776,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../hierarchy/" class="md-nav__link">
+      <a href="../../architecture/hierarchy/" class="md-nav__link">
         
   
   
@@ -933,7 +806,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../security/" class="md-nav__link">
+      <a href="../../architecture/security/" class="md-nav__link">
         
   
   
@@ -963,7 +836,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../deployment/" class="md-nav__link">
+      <a href="../../architecture/deployment/" class="md-nav__link">
         
   
   
@@ -993,7 +866,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../zk-proofs/" class="md-nav__link">
+      <a href="../../architecture/zk-proofs/" class="md-nav__link">
         
   
   
@@ -2671,8 +2544,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -2688,17 +2563,20 @@
     
     
       
+        
+        
+      
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
             
   
   
@@ -2716,7 +2594,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2734,7 +2612,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/performance/" class="md-nav__link">
+      <a href="../performance/" class="md-nav__link">
         
   
   
@@ -2764,7 +2642,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/reliability/" class="md-nav__link">
+      <a href="../reliability/" class="md-nav__link">
         
   
   
@@ -2794,7 +2672,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/security-best-practices/" class="md-nav__link">
+      <a href="../security-best-practices/" class="md-nav__link">
         
   
   
@@ -2821,10 +2699,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../guides/http-proxy/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2m-5.15 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56M14.34 14H9.66c-.1-.66-.16-1.32-.16-2s.06-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2M12 19.96c-.83-1.2-1.5-2.53-1.91-3.96h3.82c-.41 1.43-1.08 2.76-1.91 3.96M8 8H5.08A7.92 7.92 0 0 1 9.4 4.44C8.8 5.55 8.35 6.75 8 8m-2.92 8H8c.35 1.25.8 2.45 1.4 3.56A8 8 0 0 1 5.08 16m-.82-2C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2M12 4.03c.83 1.2 1.5 2.54 1.91 3.97h-3.82c.41-1.43 1.08-2.77 1.91-3.97M18.92 8h-2.95a15.7 15.7 0 0 0-1.38-3.56c1.84.63 3.37 1.9 4.33 3.56M12 2C6.47 2 2 6.5 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Triển khai HTTP/2 & HTTP/3
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2842,6 +2747,86 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Mục lục
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#kien-truc-mang-e-xuat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kiến trúc Mạng Đề Xuất
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loi-ich-cua-kien-truc-nay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lợi ích của Kiến Trúc này
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cau-hinh-tham-khao-nginx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cấu Hình Tham Khảo (NGINX)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cấu Hình Tham Khảo (NGINX)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-chuan-bi-file-nginxconf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Chuẩn bị file nginx.conf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-cau-hinh-hierachain-tin-tuong-proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Cấu hình HieraChain Tin Tưởng Proxy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -3214,8 +3199,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -3224,10 +3207,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#kien-truc-mang-e-xuat" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Kiến trúc Mạng Đề Xuất
       
     </span>
   </a>
@@ -3235,22 +3218,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#loi-ich-cua-kien-truc-nay" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Lợi ích của Kiến Trúc này
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Kiến trúc &amp; khái niệm">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cau-hinh-tham-khao-nginx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cấu Hình Tham Khảo (NGINX)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cấu Hình Tham Khảo (NGINX)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#luong-ien-hinh" class="md-nav__link">
+  <a href="#1-chuan-bi-file-nginxconf" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Luồng điển hình
+        1. Chuẩn bị file nginx.conf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-cau-hinh-hierachain-tin-tuong-proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Cấu hình HieraChain Tin Tưởng Proxy
       
     </span>
   </a>
@@ -3259,39 +3264,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Cấu hình
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tính năng &amp; hạn chế
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Liên quan
-      
-    </span>
-  </a>
   
 </li>
       
@@ -3310,7 +3282,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/architecture/consensus.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/guides/http-proxy.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -3319,101 +3291,95 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/architecture/consensus.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/guides/http-proxy.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
   
 
 
-<h1 id="ong-thuan-sap-xep-consensus-ordering">Đồng thuận &amp; Sắp xếp (Consensus &amp; Ordering)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>Mô tả các cơ chế Consensus và Ordering Service được HieraChain sử dụng để đảm bảo tính toàn vẹn, thứ tự và khả năng xác minh của Block/Event.</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
-<ul>
-<li>Base Consensus: <code>hierachain/consensus/base_consensus.py</code> — Giao diện/khung cơ bản cho các thuật toán đồng thuận.</li>
-<li>Proof of Authority (PoA): <code>hierachain/consensus/proof_of_authority.py</code> — Môi trường tập trung/validator tĩnh; tốc độ cao, cấu hình đơn giản.</li>
-<li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code> — Liên minh tổ chức động; phù hợp consortium.</li>
-<li>BFT Consensus: <code>hierachain/consensus/bft/</code> — Chống lỗi Byzantine ở lớp phân cấp.</li>
-<li>Ordering Service: <code>hierachain/consensus/ordering/</code> — Sắp xếp Event trước khi đóng Block; kiến trúc đa thành phần (Processor, Certifier, BlockBuilder).</li>
-</ul>
-<h3 id="luong-ien-hinh">Luồng điển hình</h3>
-<pre class="mermaid"><code>sequenceDiagram
-    participant SC as Sub-Chain
-    participant OS as Ordering Service
-    participant C as Consensus (PoA/PoF)
-    participant MC as Main Chain
+  <h1 id="__skip">Triển khai HTTP/2 & HTTP/3</h1>
 
-    SC-&gt;&gt;OS: 1. Submit Event
-    OS-&gt;&gt;OS: Queue &amp; Batch
-    OS-&gt;&gt;C: 2. Propose Batch
-    C-&gt;&gt;C: Validate &amp; Sign
-    C--&gt;&gt;SC: 3. Approved Block
-    SC-&gt;&gt;SC: Finalize &amp; Store
-    SC-&gt;&gt;MC: 4. Submit Proof (Root Hash)
-    MC--&gt;&gt;SC: Acknowledge</code></pre>
+<p>HieraChain được thiết kế để xử lý giao dịch nội bộ hiệu quả nhất bằng giao thức HTTP/1.1 thông qua <code>Uvicorn</code> (FastAPI). Để cung cấp tốc độ mạng tối đa cho người dùng cuối qua HTTP/2 và HTTP/3 (QUIC), HieraChain áp dụng mô hình <strong>Reverse Proxy Offloading</strong>.</p>
+<h2 id="kien-truc-mang-e-xuat">Kiến trúc Mạng Đề Xuất</h2>
+<p>Thực tiễn (Best Practice) trong các hệ thống Enterprise là <strong>không</strong> để server Python trực tiếp mở kết nối HTTP/2 và HTTP/3, vốn đi kèm nhiều phức tạp về mã hóa, quản lý chứng chỉ SSL, và xử lý gói tin UDP ở tầng User-space.</p>
+<p>Thay vào đó, bạn nên đặt một <strong>Reverse Proxy</strong> mạnh mẽ như NGINX, Traefik, hoặc AWS ALB ở phía trước (Edge Gateway).</p>
+<pre class="mermaid"><code>graph TD
+    Client[Client Browser / Mobile] -- HTTP/3 QUIC (UDP 443) --&gt; Gateway[NGINX Gateway]
+    Client -- HTTP/2 (TCP 443) --&gt; Gateway
+    Gateway -- HTTP/1.1 (TCP 2661) --&gt; HieraChain[HieraChain API Node]</code></pre>
+<h2 id="loi-ich-cua-kien-truc-nay">Lợi ích của Kiến Trúc này</h2>
 <ol>
-<li>Sub‑Chain nhận Event → đẩy vào hàng đợi của Ordering Service.</li>
-<li>Ordering Service tạo batch theo chính sách (kích thước/ngưỡng thời gian) → gửi cho cơ chế Consensus đã chọn.</li>
-<li>Cơ chế Consensus (PoA/PoF hoặc BFT) xác nhận batch/Block → Sub‑Chain đóng Block.</li>
-<li>Nếu bật neo lên Main Chain: Sub‑Chain gửi Proof (Merkle root/hash) để Main Chain ghi nhận.</li>
+<li><strong>Hiệu suất mã hóa</strong>: NGINX (viết bằng C) giải mã TLS và đàm phán HTTP/3 cực kỳ nhanh mà không chiếm dụng CPU của Python.</li>
+<li><strong>Quản lý SSL tập trung</strong>: Dễ dàng tích hợp certbot/Let's Encrypt tại một điểm duy nhất.</li>
+<li><strong>Tính ổn định của Blockchain</strong>: HieraChain API Server cực kỳ tinh gọn và chỉ tập trung xử lý Transaction / Block, ngăn chặn các nguy cơ tấn công từ chối dịch vụ (DDoS) thông qua đường hầm QUIC.</li>
 </ol>
-<h2 id="cau-hinh">Cấu hình</h2>
-<p>Các biến trong <code>hierachain/config/settings.py</code>:</p>
-<ul>
-<li><code>CONSENSUS_TYPE</code>: <code>proof_of_authority</code> (mặc định) hoặc <code>proof_of_federation</code>.</li>
-<li><code>BFT_ENABLED</code>: Bật/tắt lớp BFT cho kịch bản cần chống Byzantine.</li>
-<li><code>VALIDATOR_TIMEOUT</code>: Thời gian timeout giữa các validator.</li>
-<li><code>CONSENSUS_FEDERATION_CONFIG</code>: tham số liên minh (ví dụ <code>min_validators</code>, <code>block_interval</code>).</li>
-</ul>
-<p>Ví dụ môi trường:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>HRC_CONSENSUS_TYPE=proof_of_authority
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>HRC_ZK_REQUIRED_MAINCHAIN=false
+<h2 id="cau-hinh-tham-khao-nginx">Cấu Hình Tham Khảo (NGINX)</h2>
+<p>Dưới đây là cấu hình máy chủ NGINX mẫu để phục vụ HTTP/2 và HTTP/3, đồng thời proxy ngược về HieraChain đang chạy ở cổng <code>2661</code>.</p>
+<h3 id="1-chuan-bi-file-nginxconf">1. Chuẩn bị file <code>nginx.conf</code></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="c1"># Hỗ trợ HTTP/2 trên TLS</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">443</span><span class="w"> </span><span class="s">ssl</span><span class="w"> </span><span class="s">http2</span><span class="p">;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="s">[::]:443</span><span class="w"> </span><span class="s">ssl</span><span class="w"> </span><span class="s">http2</span><span class="p">;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="c1"># Hỗ trợ HTTP/3 (QUIC) trên UDP</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">443</span><span class="w"> </span><span class="s">quic</span><span class="w"> </span><span class="s">reuseport</span><span class="p">;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="s">[::]:443</span><span class="w"> </span><span class="s">quic</span><span class="w"> </span><span class="s">reuseport</span><span class="p">;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">api.hierachain.io</span><span class="p">;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="c1"># Chứng chỉ SSL hợp lệ (Bắt buộc cho HTTP/2 và 3)</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="kn">ssl_certificate</span><span class="w"> </span><span class="s">/etc/nginx/ssl/cert.pem</span><span class="p">;</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="kn">ssl_certificate_key</span><span class="w"> </span><span class="s">/etc/nginx/ssl/key.pem</span><span class="p">;</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="c1"># Thông báo cho trình duyệt Client nâng cấp lên HTTP/3</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Alt-Svc</span><span class="w"> </span><span class="s">&#39;h3=&quot;:443&quot;</span><span class="p">;</span><span class="w"> </span><span class="kn">ma=86400&#39;</span><span class="p">;</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">        </span><span class="c1"># Địa chỉ IP của Container/Máy chủ HieraChain</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://hierachain_api:2661</span><span class="p">;</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">        </span><span class="kn">proxy_http_version</span><span class="w"> </span><span class="mi">1</span><span class="s">.1</span><span class="p">;</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">        </span><span class="c1"># Truyền chính xác IP thực của Client xuống cho HieraChain</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="p">}</span>
 </code></pre></div>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
-<ul>
-<li>PoA: triển khai đơn giản, độ trễ thấp; phụ thuộc niềm tin vào validator tập trung.</li>
-<li>PoF: cân bằng giữa tin cậy và phân tán; cần quản trị thành viên liên minh.</li>
-<li>BFT: chịu lỗi Byzantine tốt; đổi lại phức tạp/chi phí thông điệp cao hơn.</li>
-<li>Ordering: đảm bảo thứ tự/nhóm sự kiện ổn định trước khi đóng block.</li>
-</ul>
-<h2 id="lien-quan">Liên quan</h2>
-<ul>
-<li>Kiến trúc tổng quan: <a href="../overview/">Tổng quan</a></li>
-<li>Hierarchical module: <a href="../../modules/hierarchical/">Hierarchical</a></li>
-<li>Data Models: <a href="../../reference/data-models/">Data Models</a></li>
-<li>Config: <a href="../../reference/config/">Config</a></li>
-</ul>
+<h3 id="2-cau-hinh-hierachain-tin-tuong-proxy">2. Cấu hình HieraChain Tin Tưởng Proxy</h3>
+<p>Khi đứng sau NGINX, HieraChain sẽ thấy mọi Request đều có IP xuất phát từ NGINX (ví dụ <code>127.0.0.1</code> hoặc IP của Docker Gateway). Để các tính năng như <strong>Rate Limiting</strong> (Giới hạn truy cập) và <strong>Audit Logging</strong> (Ghi dấu vết kiểm toán) hoạt động chuẩn xác với IP người dùng thật, bạn phải định nghĩa các Proxy được tin tưởng.</p>
+<p>Thêm biến môi trường sau vào HieraChain (ví dụ trong file <code>.env</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># Mặc định là 127.0.0.1
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>HRC_TRUSTED_PROXIES=127.0.0.1,192.168.1.100
+</code></pre></div>
+<p><em>(Nếu hệ thống NGINX chạy khác máy chủ, hãy điền IP của máy NGINX vào đây hoặc dùng <code>*</code> nếu mạng nội bộ hoàn toàn khép kín).</em></p>
+<p>Lớp bảo mật này tự động sử dụng tùy chọn <code>forwarded_allow_ips</code> của Uvicorn để chấp nhận Header <code>X-Forwarded-For</code>. All done! Hệ thống của bạn đã đạt chuẩn doanh nghiệp.</p>
 <hr />
 <details class="info">
 <summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
 <p><strong>FACT</strong></p>
 <ul>
-<li>Tệp PoA: <code>hierachain/consensus/proof_of_authority.py</code>; PoF: <code>hierachain/consensus/proof_of_federation.py</code>; Base: <code>hierachain/consensus/base_consensus.py</code>.</li>
-<li>BFT: <code>hierachain/hierarchical/consensus/bft_consensus.py</code>.</li>
-<li>Ordering Service: <code>hierachain/consensus/ordering_service.py</code>.</li>
-<li>Cấu hình đồng thuận đọc từ <code>hierachain/config/settings.py</code> (ví dụ <code>CONSENSUS_TYPE</code>, <code>VALIDATOR_TIMEOUT</code>, <code>BFT_ENABLED</code>).</li>
+<li>Uvicorn chỉ hỗ trợ HTTP/1.1 và WebSockets, không hỗ trợ native HTTP/2 &amp; HTTP/3.</li>
+<li>Khai báo Proxy Headers đi qua cấu hình môi trường <code>HRC_TRUSTED_PROXIES</code> trong <code>hierachain/config/settings.py</code>.</li>
 </ul>
 <p><strong>DECISION</strong></p>
 <ul>
-<li>Ưu tiên dùng PoA cho môi trường dev và PoF/BFT cho môi trường consortium/production.</li>
-<li>Mọi Sub‑Chain phải qua Ordering trước khi đóng block để đảm bảo tính xác định thứ tự.</li>
+<li>KHÔNG nhúng Hypercorn/aioquic trực tiếp vào API nhằm giữ code base ổn định, thay vào đó áp dụng mô hình Reverse Proxy Offloading.</li>
 </ul>
 <p><strong>ASSUMPTION</strong></p>
 <ul>
-<li>Đồng hồ hệ thống các node đủ đồng bộ để timestamp không gây sai lệch kiểm toán.</li>
-<li>Mạng ổn định hoặc có cơ chế retry/idempotency ở tầng giao tiếp.</li>
+<li>Cơ sở hạ tầng cloud / firewall của doanh nghiệp có cho phép lưu lượng UDP Port 443 khi muốn bật HTTP/3 QUIC.</li>
+<li>Proxy (ví dụ NGINX) luôn được cấp tải chứng chỉ TLS (SSL Certificate) hợp lệ cho tên miền dịch vụ.</li>
 </ul>
 <p><strong>INVARIANT</strong></p>
 <ul>
-<li>Block hợp lệ phải có thứ tự sự kiện xác định và hash/Merkle nhất quán.</li>
-<li>Khi <code>BFT_ENABLED=true</code>, commit phải tuân thủ điều kiện an toàn của thuật toán BFT tương ứng.</li>
+<li>Các headers proxy như <code>X-Forwarded-For</code> luôn phải bị từ chối nếu bị spoofed từ mạng Internet bên ngoài. API Server chỉ phân giải proxy origin (Client IP) từ các node được khai báo tường minh trong <code>HRC_TRUSTED_PROXIES</code>.</li>
 </ul>
 <p><strong>EDGE CASES</strong></p>
 <ul>
-<li>Mất đồng thuận/timeout kéo dài → cần cơ chế view‑change/leader‑election (nếu có) hoặc chuyển chế độ an toàn.</li>
-<li>Sự kiện đến trễ/out‑of‑order → Ordering phải xếp đúng thứ tự trước khi đóng Block.</li>
-<li>Thay đổi cấu hình <code>CONSENSUS_TYPE</code> khi hệ thống đang chạy → cần quy trình nâng cấp/di trú an toàn.</li>
+<li>Cổng UDP 443 bị block bới IPS/IDS: Client sẽ liên tục timeout. Phương thức chống chịu là browser sẽ tự động fallback về HTTP/2 hoặc HTTP/1.1 thông qua TCP. Lỗi hạ tầng ko ảnh hưởng đến Blockchain ledger.</li>
 </ul>
 </details>
 
@@ -3456,7 +3422,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
         
           
-          <a href="../overview/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Tổng quan">
+          <a href="../security-best-practices/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Thực hành bảo mật">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -3466,20 +3432,20 @@
                 Trước
               </span>
               <div class="md-ellipsis">
-                Tổng quan
+                Thực hành bảo mật
               </div>
             </div>
           </a>
         
         
           
-          <a href="../hierarchy/" class="md-footer__link md-footer__link--next" aria-label="Sau: Phân cấp (chi tiết)">
+          <a href="../../dev/contributing/" class="md-footer__link md-footer__link--next" aria-label="Sau: Đóng góp">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Sau
               </span>
               <div class="md-ellipsis">
-                Phân cấp (chi tiết)
+                Đóng góp
               </div>
             </div>
             <div class="md-footer__button md-icon">
