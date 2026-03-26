@@ -152,6 +152,9 @@ class Settings:
     API_HOST = os.getenv("HRC_API_HOST", "localhost")
     API_PORT = int(os.getenv("HRC_API_PORT", "2661"))
     
+    # Proxy Trust settings (for HTTP/2, HTTP/3 Gateway compatibility)
+    TRUSTED_PROXIES = os.getenv("HRC_TRUSTED_PROXIES", "127.0.0.1")
+    
     # CLI settings
     CLI_CONFIG_FILE = "chains.json"
     CLI_LOG_LEVEL = "INFO"
@@ -264,7 +267,8 @@ class Settings:
         return {
             "version": cls.API_VERSION,
             "host": cls.API_HOST,
-            "port": cls.API_PORT
+            "port": cls.API_PORT,
+            "trusted_proxies": cls.TRUSTED_PROXIES
         }
 
     @classmethod
