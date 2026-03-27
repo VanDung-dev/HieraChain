@@ -305,7 +305,11 @@ def test_custom_validation_rule():
     service = None
     try:
         config = get_test_config(temp_dir)
+        config.update({"block_size": 1, "batch_timeout": 0.1})
         service = OrderingService(nodes=[node], config=config)
+
+        # Wait for service to become active before submitting events
+        service.wait_for_active(timeout=5.0)
 
         # Add custom rules
         def custom_rule(event_data: dict[str, Any]) -> bool:
@@ -322,7 +326,7 @@ def test_custom_validation_rule():
         event_id = service.receive_event(event, "test-channel", "test-org")
 
         # Wait for processing
-        time.sleep(1.0)
+        time.sleep(2.0)
         status = service.get_event_status(event_id)
         assert status is not None
         assert status["status"] == "rejected"
@@ -471,6 +475,9 @@ def test_system_error_handling():
         config = get_test_config(temp_dir)
         service = OrderingService(nodes=[node], config=config)
 
+        # Wait for service to become active before submitting events
+        service.wait_for_active(timeout=5.0)
+
         # Add a validation rule that raises an exception
         def faulty_rule(event_data):
             if event_data.get("event") == "faulty_event":
@@ -500,7 +507,7 @@ def test_system_error_handling():
         )
 
         # Wait for processing
-        time.sleep(1.0)
+        time.sleep(2.0)
 
         # Check that normal event was processed
         normal_status = service.get_event_status(normal_event_id)
@@ -588,6 +595,9 @@ def test_malformed_event_data():
         config = get_test_config(temp_dir)
         service = OrderingService(nodes=[node], config=config)
 
+        # Wait for service to become active before submitting events
+        service.wait_for_active(timeout=5.0)
+
         # Test with non-dictionary event data
         try:
             bad_event: Any = "not a dict!!!"
@@ -615,7 +625,7 @@ def test_malformed_event_data():
             "timestamp": time.time() + 7200  # 2 hours in the future
         }
         event_id = service.receive_event(future_event, "test-channel", "test-org")
-        time.sleep(1.5)
+        time.sleep(2.5)
         status = service.get_event_status(event_id)
         assert status is not None
         assert status["status"] == "rejected"
@@ -951,7 +961,12 @@ def test_complex_event_data():
     temp_dir = create_test_temp_dir()
     service = None
     try:
-        service = OrderingService(nodes=[node], config=get_test_config(temp_dir))
+        config = get_test_config(temp_dir)
+        config.update({"block_size": 1, "batch_timeout": 0.1})
+        service = OrderingService(nodes=[node], config=config)
+
+        # Wait for service to become active before submitting events
+        service.wait_for_active(timeout=5.0)
 
         # Complex nested event data
         complex_event = {
@@ -984,7 +999,7 @@ def test_complex_event_data():
         }
 
         event_id = service.receive_event(complex_event, "test-channel", "test-org")
-        time.sleep(0.5)  # Give more time for complex event processing
+        time.sleep(1.5)  # Give more time for complex event processing
 
         # Check that complex event was processed correctly
         status = service.get_event_status(event_id)
@@ -1161,7 +1176,12 @@ def test_binary_data_handling():
         # Create binary data
         binary_data = bytes([i % 256 for i in range(1000)])  # 1000 bytes of binary data
 
-        service = OrderingService(nodes=[node], config=get_test_config(temp_dir))
+        config = get_test_config(temp_dir)
+        config.update({"block_size": 1, "batch_timeout": 0.1})
+        service = OrderingService(nodes=[node], config=config)
+
+        # Wait for service to become active before submitting events
+        service.wait_for_active(timeout=5.0)
 
         event = {
             "entity_id": "BINARY-001",
@@ -1172,7 +1192,7 @@ def test_binary_data_handling():
         }
 
         event_id = service.receive_event(event, "test-channel", "test-org")
-        time.sleep(0.5)
+        time.sleep(1.5)
 
         status = service.get_event_status(event_id)
         assert status is not None
