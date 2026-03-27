@@ -507,7 +507,13 @@ def test_system_error_handling():
         )
 
         # Wait for processing
-        time.sleep(2.0)
+        timeout = 10.0
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            status = service.get_event_status(normal_event_id)
+            if status and status.get("status") == "certified":
+                break
+            time.sleep(0.2)
 
         # Check that normal event was processed
         normal_status = service.get_event_status(normal_event_id)
