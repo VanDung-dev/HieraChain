@@ -367,6 +367,77 @@ class AlertManager:
         """Create new alert"""
         _create_alert(self, rule, current_value, source_component, custom_description)
 
+    def send_alert(
+        self,
+        level: str,
+        title: str,
+        message: str,
+        source: str,
+        details: dict[str, Any] | None = None
+    ) -> None:
+        """
+        Send a simple alert with string parameters.
+        
+        This is a convenience method for sending alerts without needing
+        to create AlertRule or Alert objects manually.
+        
+        Args:
+            level: Alert severity level ("info", "warning", "critical", "emergency")
+            title: Alert title
+            message: Alert message/description
+            source: Source component that generated the alert
+            details: Additional details to include in the alert
+        """
+        # Map string level to AlertSeverity
+        severity_map = {
+            "info": AlertSeverity.INFO,
+            "warning": AlertSeverity.WARNING,
+            "critical": AlertSeverity.CRITICAL,
+            "emergency": AlertSeverity.EMERGENCY,
+        }
+        severity = severity_map.get(level.lower(), AlertSeverity.INFO)
+        
+        # Determine category based on source
+        category = AlertCategory.SYSTEM
+        if "zk" in source.lower() or "proof" in source.lower():
+            category = AlertCategory.SECURITY
+        elif "consensus" in source.lower():
+            category = AlertCategory.CONSENSUS
+        elif "performance" in source.lower():
+            category = AlertCategory.PERFORMANCE
+        
+        # Create alert object
+        alert = Alert(
+            alert_id=f"ALERT-{int(time.time() * 1000)}",
+            timestamp=time.time(),
+            severity=severity,
+            category=category,
+            title=title,
+            description=message,
+            source_component=source,
+            metadata=details,
+        )
+        
+        # Add to active alerts and history
+        self.active_alerts[alert.alert_id] = alert
+        self.alert_history.append(alert)
+        self.stats['total_alerts'] += 1
+        
+        # Log the alert
+        log_level_map = {
+            AlertSeverity.INFO: logging.INFO,
+            AlertSeverity.WARNING: logging.WARNING,
+            AlertSeverity.CRITICAL: logging.CRITICAL,
+            AlertSeverity.EMERGENCY: logging.CRITICAL,
+        }
+        self.logger.log(
+            log_level_map.get(severity, logging.INFO),
+            f"[{severity.value.upper()}] {title}: {message}"
+        )
+        
+        # Send notifications
+        _send_notifications(self, alert)
+
     def acknowledge_alert(self, alert_id: str, user: str | None = None) -> bool:
         """Acknowledge alert"""
         return _acknowledge_alert(self, alert_id, user)
