@@ -164,7 +164,7 @@ def _force_block_creation(ordering_service: Any, timeout: float) -> None:
 
 def _consumer_loop(sub_chain: Any) -> None:
     """Background loop to continuously pull and finalize blocks."""
-    while sub_chain.running:
+    while sub_chain.running and not (hasattr(sub_chain, '_shutdown_event') and sub_chain._shutdown_event.is_set()):
         try:
             # Attempt to finalize blocks
             sub_chain.finalize_sub_chain_block()
@@ -307,18 +307,19 @@ def _submit_proof_for_sub_chain(
 
 def _process_and_finalize_single_block(sub_chain: "SubChain", block: Any) -> bool:
     """Process and finalize a single block."""
-    latest_block = sub_chain.get_latest_block()
+    with sub_chain._block_processing_lock:
+        latest_block = sub_chain.get_latest_block()
 
-    block.index = latest_block.index + 1
-    block.previous_hash = latest_block.hash
+        block.index = latest_block.index + 1
+        block.previous_hash = latest_block.hash
 
-    block.hash = block.calculate_hash()
+        block.hash = block.calculate_hash()
 
-    finalized_block = sub_chain.consensus.finalize_block(block, sub_chain.name)
+        finalized_block = sub_chain.consensus.finalize_block(block, sub_chain.name)
 
-    if sub_chain.add_block(finalized_block):
-        sub_chain.auto_submit_proof_if_needed()
-        return True
+        if sub_chain.add_block(finalized_block):
+            sub_chain.auto_submit_proof_if_needed()
+            return True
 
     logger.error("Failed to add ordered block %d", block.index)
     return False
@@ -556,8 +557,12 @@ class SubChain(Blockchain):
 
         self.sync_chain()
 
+        self._block_processing_lock = threading.Lock()
+        self._async_sync_lock = threading.Lock()
+
         # Start Block Consumer Thread
         self.running = True
+        self._shutdown_event = threading.Event()
         self.consumer_thread = threading.Thread(
             target=_consumer_loop, args=(self,), daemon=True
         )
@@ -589,6 +594,10 @@ class SubChain(Blockchain):
                 _process_and_finalize_single_block(self, block)
         except Exception as e:
             logger.warning("Error draining commit_queue during stop: %s", e)
+
+        # Signal shutdown event for graceful thread exit
+        if hasattr(self, '_shutdown_event'):
+            self._shutdown_event.set()
 
         self.running = False
         if self.consumer_thread:
@@ -845,7 +854,8 @@ class SubChain(Blockchain):
 
     def finalize_sub_chain_block(self) -> dict[str, Any] | None:
         """Pull ordered blocks from Ordering Service and finalize them."""
-        return _finalize_sub_chain_block_for_chain(self)
+        with self._async_sync_lock:
+            return _finalize_sub_chain_block_for_chain(self)
 
     def _process_and_finalize_block(self, block: Any) -> bool:
         """Process, finalize and add a single block to the local chain."""
