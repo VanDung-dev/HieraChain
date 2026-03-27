@@ -19,6 +19,104 @@ from hierachain.security.verify.block_verifier import get_block_verifier
 logger = logging.getLogger(__name__)
 
 
+class DeadlockDetector:
+    """
+    Background monitor that detects potential deadlocks by tracking lock wait times.
+    """
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+    
+    def __init__(self):
+        if self._initialized:
+            return
+        self._initialized = True
+        self._lock_wait_times: dict[int, list[float]] = {}
+        self._monitor_thread: threading.Thread | None = None
+        self._should_stop = threading.Event()
+        self._threshold = 3.0  # seconds
+        
+    def record_wait_start(self, lock_id: int) -> float:
+        """Record when a thread starts waiting for a lock."""
+        self._lock_wait_times[lock_id] = self._lock_wait_times.get(lock_id, [])
+        self._lock_wait_times[lock_id].append(time.time())
+        return self._lock_wait_times[lock_id][-1]
+    
+    def record_wait_end(self, lock_id: int, wait_time: float) -> None:
+        """Record when a thread acquires a lock."""
+        if lock_id in self._lock_wait_times and self._lock_wait_times[lock_id]:
+            self._lock_wait_times[lock_id].pop(0)
+            if wait_time > self._threshold:
+                logger.warning(
+                    "DEADLOCK RISK: Lock %d waited %.2fs (threshold=%.2fs)",
+                    lock_id, wait_time, self._threshold
+                )
+    
+    def get_lock_stats(self) -> dict[int, dict[str, Any]]:
+        """Get statistics about lock wait times."""
+        stats = {}
+        for lock_id, wait_times in self._lock_wait_times.items():
+            if wait_times:
+                current_wait = time.time() - wait_times[0]
+                stats[lock_id] = {
+                    "waiting": len(wait_times),
+                    "current_wait": current_wait,
+                    "at_risk": current_wait > self._threshold
+                }
+        return stats
+    
+    def start_monitoring(self, interval: float = 1.0):
+        """Start background monitoring thread."""
+        if self._monitor_thread and self._monitor_thread.is_alive():
+            return
+        self._should_stop.clear()
+        self._monitor_thread = threading.Thread(
+            target=self._monitor_loop,
+            args=(interval,),
+            daemon=True
+        )
+        self._monitor_thread.start()
+        logger.info("DeadlockDetector started monitoring")
+    
+    def stop_monitoring(self):
+        """Stop background monitoring."""
+        self._should_stop.set()
+        if self._monitor_thread:
+            self._monitor_thread.join(timeout=5.0)
+        logger.info("DeadlockDetector stopped")
+    
+    def _monitor_loop(self, interval: float):
+        """Background loop to check for potential deadlocks."""
+        while not self._should_stop.is_set():
+            stats = self.get_lock_stats()
+            at_risk = [lid for lid, s in stats.items() if s.get("at_risk")]
+            if at_risk:
+                logger.error(
+                    "DEADLOCK DETECTED: Locks %s have been waiting > %.2fs",
+                    at_risk, self._threshold
+                )
+            time.sleep(interval)
+
+
+# Global deadlock detector instance
+_deadlock_detector: DeadlockDetector | None = None
+
+
+def get_deadlock_detector() -> DeadlockDetector:
+    """Get the global deadlock detector instance."""
+    global _deadlock_detector
+    if _deadlock_detector is None:
+        _deadlock_detector = DeadlockDetector()
+    return _deadlock_detector
+
+
 def _is_block_linked_correctly(current: Block, previous: Block) -> bool:
     """Check if current block is correctly linked to the previous block."""
     if not current.validate_structure():
@@ -51,6 +149,8 @@ class Blockchain:
         """
         self.name = name
         self.lock = threading.RLock()
+        self._lock_id = id(self.lock)
+        self._deadlock_detector = get_deadlock_detector()
         self.chain: list[Block] = []
         self.pending_events: list[dict[str, Any]] = []
         self.total_events: int = 0
@@ -58,6 +158,32 @@ class Blockchain:
         self.entity_event_index: dict[str, list[dict[str, Any]]] = {}
         with self.lock:
             self.create_genesis_block()
+    
+    def safe_lock(self, timeout: float = 5.0) -> bool:
+        """
+        Acquire lock with deadlock detection (Issue 14).
+        
+        Args:
+            timeout: Maximum time to wait for lock
+            
+        Returns:
+            True if lock acquired, False if timeout
+        """
+        wait_start = self._deadlock_detector.record_wait_start(self._lock_id)
+        try:
+            result = self.lock.acquire(blocking=True, timeout=timeout)
+            wait_time = time.time() - wait_start
+            self._deadlock_detector.record_wait_end(self._lock_id, wait_time)
+            return result
+        except Exception:
+            return False
+    
+    def safe_unlock(self):
+        """Release lock safely."""
+        try:
+            self.lock.release()
+        except RuntimeError:
+            pass  # Lock not held
     
     def create_genesis_block(self) -> None:
         """Create the genesis (first) block of the blockchain."""
