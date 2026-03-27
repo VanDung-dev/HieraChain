@@ -402,7 +402,7 @@ class EntityTracer:
         self.entity_cache: dict[str, dict[str, Any]] = {}
         self.relationship_cache: dict[str, set[str]] = defaultdict(set)
         self.last_cache_update = 0.0
-        self.cache_ttl = 300.0  # 5 minutes cache TTL
+        self.cache_ttl = 60.0
 
     def trace_entity(
         self,
