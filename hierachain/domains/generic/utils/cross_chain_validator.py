@@ -11,6 +11,9 @@ from typing import Any, Callable
 
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.generic.utils.entity_tracer import EntityTracer
+from hierachain.security.secure_logging import get_security_logger
+
+logger = get_security_logger()
 
 
 def _validate_event_structure(event: dict[str, Any]) -> bool:
@@ -580,6 +583,12 @@ class CrossChainValidator:
         self._compliance_checker = ComplianceChecker(
             hierarchy_manager, self.validation_rules
         )
+
+    def invalidate_cache(self) -> None:
+        """Invalidate the validation cache. Call this on proof submission or block finalization."""
+        self.validation_cache.clear()
+        self.last_validation = 0.0
+        logger.debug("CrossChainValidator cache invalidated")
 
     # -- proof validation (delegated) ------------------------------
 
