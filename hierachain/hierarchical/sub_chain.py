@@ -559,7 +559,7 @@ class SubChain(Blockchain):
         # Start Block Consumer Thread
         self.running = True
         self.consumer_thread = threading.Thread(
-            target=_consumer_loop, args=(self,), daemon=False
+            target=_consumer_loop, args=(self,), daemon=True
         )
         self.consumer_thread.start()
 
