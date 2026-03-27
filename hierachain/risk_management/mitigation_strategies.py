@@ -658,7 +658,8 @@ def _execute_mitigation_plan(
         if async_execution and not action.requires_downtime:
             thread = threading.Thread(
                 target=_execute_action_async,
-                args=(manager, action, params, results)
+                args=(manager, action, params, results),
+                daemon=True
             )
             thread.start()
             manager.active_mitigations[action.action_id] = thread
