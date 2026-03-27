@@ -260,6 +260,22 @@ def _submit_proof_for_sub_chain(
         logger.debug("SubChain has only genesis block. Aborting proof.")
         return False
 
+    # Check if the latest block has been properly finalized (has valid hash and index)
+    if not latest_block.hash or latest_block.hash == "0" * 64:
+        logger.warning(
+            "SubChain %s: Cannot submit proof - latest block %d not finalized (hash=%s)",
+            sub_chain.name, latest_block.index, latest_block.hash
+        )
+        return False
+
+    # Additional check: ensure block index is properly assigned
+    if latest_block.index < 0:
+        logger.warning(
+            "SubChain %s: Cannot submit proof - latest block has invalid index %d",
+            sub_chain.name, latest_block.index
+        )
+        return False
+
     metadata = (
         metadata_filter(sub_chain)
         if metadata_filter
@@ -513,7 +529,7 @@ class SubChain(Blockchain):
 
         self.main_chain_connection: Any | None = None
         self.proof_submission_interval: float = 60.0  # Submit proofs every 60 seconds
-        self.last_proof_submission: float = 0.0
+        self.last_proof_submission: float = time.time()
         self.completed_operations: int = 0
 
         # Register Sub-Chain as authority for its own operations
@@ -543,7 +559,7 @@ class SubChain(Blockchain):
         # Start Block Consumer Thread
         self.running = True
         self.consumer_thread = threading.Thread(
-            target=_consumer_loop, args=(self,), daemon=True
+            target=_consumer_loop, args=(self,), daemon=False
         )
         self.consumer_thread.start()
 
