@@ -59,45 +59,46 @@ def _record_proof_on_main_chain(
     zk_verified: bool,
 ) -> bool:
     """Record a proof on the Main Chain."""
-    proof_id = f"PROOF-{chain.proof_count + 1}"
-    current_time = time.time()
-    event: dict[str, Any] = {
-        "entity_id": sub_chain_name,
-        "event": "proof_submission",
-        "timestamp": current_time,
-        "type": "sub_chain_proof",
-        "sub_chain": sub_chain_name,
-        "proof_hash": proof_hash,
-        "metadata": sanitized_metadata,
-        "zk_verified": zk_verified,
-        "details": {
-            "sub_chain_name": sub_chain_name,
+    with chain.lock:
+        proof_id = f"PROOF-{chain.proof_count + 1}"
+        current_time = time.time()
+        event: dict[str, Any] = {
+            "entity_id": sub_chain_name,
+            "event": "proof_submission",
+            "timestamp": current_time,
+            "type": "sub_chain_proof",
+            "sub_chain": sub_chain_name,
             "proof_hash": proof_hash,
-            "proof_id": proof_id,
-            "submitted_at": current_time,
+            "metadata": sanitized_metadata,
             "zk_verified": zk_verified,
-        },
-    }
+            "details": {
+                "sub_chain_name": sub_chain_name,
+                "proof_hash": proof_hash,
+                "proof_id": proof_id,
+                "submitted_at": current_time,
+                "zk_verified": zk_verified,
+            },
+        }
 
-    chain.add_event(event)
-    chain.proof_count += 1
+        chain.add_event(event)
+        chain.proof_count += 1
 
-    chain.latest_proofs[sub_chain_name] = {
-        "proof_hash": proof_hash,
-        "timestamp": current_time,
-        "block_index": chain.get_latest_block().index + 1,
-    }
+        chain.latest_proofs[sub_chain_name] = {
+            "proof_hash": proof_hash,
+            "timestamp": current_time,
+            "block_index": chain.get_latest_block().index + 1,
+        }
 
-    # Update proof index for O(1) lookup
-    if sub_chain_name not in chain.proof_index:
-        chain.proof_index[sub_chain_name] = []
-    chain.proof_index[sub_chain_name].append(chain.get_latest_block().index + 1)
+        # Update proof index for O(1) lookup
+        if sub_chain_name not in chain.proof_index:
+            chain.proof_index[sub_chain_name] = []
+        chain.proof_index[sub_chain_name].append(chain.get_latest_block().index + 1)
 
-    _update_recent_proofs_on_main_chain(
-        chain, sub_chain_name, proof_hash,
-        sanitized_metadata, current_time,
-    )
-    return True
+        _update_recent_proofs_on_main_chain(
+            chain, sub_chain_name, proof_hash,
+            sanitized_metadata, current_time,
+        )
+        return True
 
 
 def _update_recent_proofs_on_main_chain(
@@ -412,6 +413,14 @@ class MainChain(Blockchain):
         if not settings.ENABLE_ZK_PROOFS:
             return False
 
+        if not settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN:
+            logger.warning(
+                "ZK Proofs are ENABLED but NOT REQUIRED for MainChain. "
+                "SubChain '%s' proof will be accepted without ZK verification. "
+                "This may pose a security risk if misconfigured.",
+                sub_chain_name
+            )
+
         if self.zk_verifier is None:
             logger.error("ZK Proofs enabled but ZKVerifier not initialized")
             return False
@@ -419,20 +428,6 @@ class MainChain(Blockchain):
         # Check if ZK proof is required
         if settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN and zk_proof is None:
             logger.critical("CRITICAL: Rejected proof from '%s'. ZK proof is REQUIRED but missing.", sub_chain_name)
-            
-            # Send alert about the missing proof to AlertManager
-            try:
-                from hierachain.monitoring.alert_manager import alert_manager
-                alert_manager.send_alert(
-                    level="CRITICAL",
-                    title="Missing ZK Proof",
-                    message=f"SubChain '{sub_chain_name}' attempted to submit a proof without a required ZK proof.",
-                    source="MainChain._verify_zk_proof",
-                    details={"proof_hash": proof_hash, "metadata": metadata}
-                )
-            except Exception as e:
-                logger.error("Failed to send alert for missing ZK proof from '%s': %s", sub_chain_name, e)
-                
             return False
 
         if zk_proof is None:
