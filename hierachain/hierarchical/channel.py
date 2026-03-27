@@ -244,6 +244,18 @@ class ChannelLedger:
 
     def add_event(self, event: dict[str, Any]) -> None:
         """Add event to current block"""
+        if not isinstance(event, dict):
+            logger.warning("Channel %s: Rejected event - not a dict", self.name)
+            return
+
+        if "entity_id" not in event or not event.get("entity_id"):
+            logger.warning("Channel %s: Rejected event - missing entity_id", self.name)
+            return
+
+        if "event" not in event or not event.get("event"):
+            logger.warning("Channel %s: Rejected event - missing event type", self.name)
+            return
+
         event["timestamp"] = event.get("timestamp", time.time())
         event["channel_event"] = True
         self.current_block_events.append(event)
