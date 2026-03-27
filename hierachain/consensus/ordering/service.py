@@ -61,10 +61,47 @@ class OrderingService:
         self.journal = TransactionJournal(
             storage_dir=storage_dir, active_log_name=active_log_name
         )
-        
+
+        batch_timeout = config.get("batch_timeout", 2.0)
+        if not isinstance(batch_timeout, (int, float)) or not (0.1 <= batch_timeout <= 60.0):
+            logger.warning(
+                "Invalid batch_timeout %s, using default 2.0. Must be between 0.1 and 60.0",
+                batch_timeout
+            )
+            batch_timeout = 2.0
+        self.config["batch_timeout"] = batch_timeout
+
         self.certifier = EventCertifier()
-        self.block_builder = BlockBuilder(config)
-        
+
+        self._recover_pending_events_from_journal()
+
+    def _recover_pending_events_from_journal(self) -> None:
+        """Recover pending events from the journal on startup to prevent data loss."""
+        try:
+            for event_data in self.journal.replay():
+                event_id = event_data.get("event_id")
+                if event_id and event_id not in self.pending_events:
+                    # Reconstruct PendingEvent from journal data
+                    from hierachain.consensus.ordering.types import PendingEvent, EventStatus
+                    pending = PendingEvent(
+                        event_id=event_id,
+                        event_data=event_data,
+                        channel_id=event_data.get("channel_id", "default"),
+                        submitter_org=event_data.get("submitter_org", "unknown"),
+                        received_at=event_data.get("timestamp", time.time()),
+                    )
+                    self.pending_events[event_id] = pending
+                    logger.debug("Recovered pending event %s from journal", event_id)
+            if self.pending_events:
+                logger.info(
+                    "Recovered %d pending events from journal on startup",
+                    len(self.pending_events)
+                )
+        except Exception as e:
+            logger.warning("Failed to recover pending events from journal: %s", e)
+
+        self.block_builder = BlockBuilder(self.config)
+
         # Complex Logic Handlers
         self.processor = OrderingProcessor(self)
         self.maintenance = OrderingMaintenance(self)
