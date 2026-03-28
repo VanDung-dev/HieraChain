@@ -228,11 +228,12 @@ class ERPIntegrationLedger:
     ) -> str:
         """Create mapping profile for ERP integration"""
         try:
-            return self.mapping_engine.create_profile(
-                profile_name, 
-                erp_system,
-                mapping_rules
-            )
+            with self.lock:
+                return self.mapping_engine.create_profile(
+                    profile_name, 
+                    erp_system,
+                    mapping_rules
+                )
         except Exception as e:
             self.logger.error(
                 "Failed to create mapping profile %s: %s", profile_name, e
@@ -246,22 +247,23 @@ class ERPIntegrationLedger:
     ) -> dict[str, Any]:
         """Translate ERP event to blockchain event"""
         try:
-            # Get mapping profile
-            profile = self.mapping_engine.get_profile(profile_name)
-            if not profile:
-                raise IntegrationError(f"Mapping profile {profile_name} not found")
-            
-            # Detect changes if needed
-            if profile.get("detect_changes", False):
-                erp_event = self.change_detector.detect_changes(erp_event, profile)
-            
-            # Translate using mapping rules
-            blockchain_event = self.event_translator.translate(
-                erp_event, 
-                profile["mapping_rules"]
-            )
-            
-            return blockchain_event
+            with self.lock:
+                # Get mapping profile
+                profile = self.mapping_engine.get_profile(profile_name)
+                if not profile:
+                    raise IntegrationError(f"Mapping profile {profile_name} not found")
+                
+                # Detect changes if needed
+                if profile.get("detect_changes", False):
+                    erp_event = self.change_detector.detect_changes(erp_event, profile)
+                
+                # Translate using mapping rules
+                blockchain_event = self.event_translator.translate(
+                    erp_event, 
+                    profile["mapping_rules"]
+                )
+                
+                return blockchain_event
             
         except Exception as e:
             self.logger.error(
