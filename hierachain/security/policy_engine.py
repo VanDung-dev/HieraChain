@@ -155,9 +155,22 @@ class PolicyCondition:
                 case ComparisonOperator.NOT_IN:
                     return attribute_value not in self.value
                 case ComparisonOperator.MATCHES:
-                    return bool(re.match(str(self.value), str(attribute_value)))
+                    # Use anchors for full match to prevent bypass
+                    pattern = str(self.value)
+                    # If pattern doesn't already have anchors, add them
+                    if not pattern.startswith('^'):
+                        pattern = '^' + pattern
+                    if not pattern.endswith('$'):
+                        pattern = pattern + '$'
+                    return bool(re.match(pattern, str(attribute_value)))
                 case ComparisonOperator.NOT_MATCHES:
-                    return not bool(re.match(str(self.value), str(attribute_value)))
+                    # Use anchors for full match to prevent bypass
+                    pattern = str(self.value)
+                    if not pattern.startswith('^'):
+                        pattern = '^' + pattern
+                    if not pattern.endswith('$'):
+                        pattern = pattern + '$'
+                    return not bool(re.match(pattern, str(attribute_value)))
         except (TypeError, ValueError, AttributeError):
             return False
 
