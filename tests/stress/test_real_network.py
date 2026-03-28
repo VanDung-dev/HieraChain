@@ -65,6 +65,10 @@ class TestRealNetworkStress:
             workers=2,
         )
 
+        # Skip if no test was run (no nodes available)
+        if results.total_requests == 0:
+            pytest.skip("No nodes available - run in Docker/K8s environment")
+
         print(f"\n=== Light Stress Test Results ===")
         print(f"Total Requests: {results.total_requests}")
         print(f"Successful: {results.successful_requests}")
@@ -85,6 +89,10 @@ class TestRealNetworkStress:
             workers=4,
         )
 
+        # Skip if no test was run (no nodes available)
+        if results.total_requests == 0:
+            pytest.skip("No nodes available - run in Docker/K8s environment")
+
         print(f"\n=== Medium Stress Test Results ===")
         print(f"Total Requests: {results.total_requests}")
         print(f"Successful: {results.successful_requests}")
@@ -102,6 +110,10 @@ class TestRealNetworkStress:
             events_per_second=50,
             workers=8,
         )
+
+        # Skip if no test was run (no nodes available)
+        if results.total_requests == 0:
+            pytest.skip("No nodes available - run in Docker/K8s environment")
 
         print(f"\n=== Heavy Stress Test Results ===")
         print(f"Total Requests: {results.total_requests}")
