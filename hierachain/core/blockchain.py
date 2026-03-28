@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 class DeadlockDetector:
     """
     Background monitor that detects potential deadlocks by tracking lock wait times.
+    Provides deadlock prevention via timeout-based lock acquisition.
     """
     _instance = None
     _lock = threading.Lock()
@@ -42,7 +43,13 @@ class DeadlockDetector:
         self._monitor_thread: threading.Thread | None = None
         self._should_stop = threading.Event()
         self._threshold = 3.0  # seconds
+        self._lock_timeout = 10.0  # Maximum time to wait for a lock
+        self._deadlock_callbacks: list[Callable] = []
         
+    def register_deadlock_callback(self, callback: Callable) -> None:
+        """Register a callback to be invoked when deadlock is detected."""
+        self._deadlock_callbacks.append(callback)
+    
     def record_wait_start(self, lock_id: int) -> float:
         """Record when a thread starts waiting for a lock."""
         self._lock_wait_times[lock_id] = self._lock_wait_times.get(lock_id, [])
@@ -58,6 +65,28 @@ class DeadlockDetector:
                     "DEADLOCK RISK: Lock %d waited %.2fs (threshold=%.2fs)",
                     lock_id, wait_time, self._threshold
                 )
+                # Trigger deadlock recovery
+                self._trigger_deadlock_recovery(lock_id, wait_time)
+    
+    def _trigger_deadlock_recovery(self, lock_id: int, wait_time: float) -> None:
+        """Trigger deadlock recovery callbacks."""
+        for callback in self._deadlock_callbacks:
+            try:
+                callback(lock_id, wait_time)
+            except Exception as e:
+                logger.error("Deadlock recovery callback failed: %s", e)
+    
+    def check_lock_timeout(self, lock_id: int) -> bool:
+        """
+        Check if a lock has been waiting too long.
+        
+        Returns:
+            True if lock is in deadlock state (exceeded timeout)
+        """
+        if lock_id not in self._lock_wait_times or not self._lock_wait_times[lock_id]:
+            return False
+        wait_time = time.time() - self._lock_wait_times[lock_id][0]
+        return wait_time > self._lock_timeout
     
     def get_lock_stats(self) -> dict[int, dict[str, Any]]:
         """Get statistics about lock wait times."""
