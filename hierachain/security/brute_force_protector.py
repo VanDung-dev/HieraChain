@@ -1,13 +1,19 @@
 """
 Brute Force Protection for API key verification.
 
-This module provides in-memory tracking of failed authentication attempts
+This module provides tracking of failed authentication attempts
 by IP address and API key prefix, with automatic lockout when thresholds
 are exceeded. Designed to integrate with APIKeyVerifier.
+
+Supports both in-memory and persistent storage (Redis or file-based).
 """
 
 import time
 import threading
+import json
+import os
+from pathlib import Path
+from typing import Any
 
 from hierachain.security.secure_logging import get_security_logger
 
@@ -24,6 +30,7 @@ class BruteForceProtector:
     - Security event logging when brute-force pattern detected
     - Thread-safe operations
     - Auto-cleanup of expired tracking entries to prevent memory growth
+    - Persistent storage (survives service restarts)
     """
 
     def __init__(self, config: dict | None = None):
@@ -36,11 +43,23 @@ class BruteForceProtector:
                 - lockout_duration: Seconds to lock out (default: 900 = 15 min)
                 - tracking_window: Seconds window for counting failures
                                    (default: 300 = 5 min)
+                - storage_backend: Storage type - "memory", "redis", or "file" (default: "file")
+                - storage_path: Path for file-based storage (default: "data/brute_force")
+                - redis_url: Redis connection URL (if using redis)
         """
         config = config or {}
         self.max_failures = config.get("max_failures", 5)
         self.lockout_duration = config.get("lockout_duration", 900)
         self.tracking_window = config.get("tracking_window", 300)
+        
+        # Storage configuration
+        self._storage_backend = config.get("storage_backend", "file")
+        self._storage_path = config.get("storage_path", "data/brute_force")
+        self._redis_url = config.get("redis_url", None)
+        
+        # Initialize storage backend
+        self._storage: dict[str, Any] = {}
+        self._init_storage()
 
         # Thread-safe storage for failure tracking
         self._lock = threading.Lock()
@@ -54,6 +73,95 @@ class BruteForceProtector:
         # Track last cleanup time to avoid frequent cleanup runs
         self._last_cleanup = time.time()
         self._cleanup_interval = 60  # Run cleanup at most every 60 seconds
+        
+        # Load persisted data
+        self._load_persisted_data()
+    
+    def _init_storage(self) -> None:
+        """Initialize storage backend."""
+        if self._storage_backend == "file":
+            # Ensure directory exists
+            Path(self._storage_path).parent.mkdir(parents=True, exist_ok=True)
+        elif self._storage_backend == "redis":
+            try:
+                import redis
+                self._redis_client = redis.from_url(
+                    self._redis_url or "redis://localhost:6379/0",
+                    decode_responses=True
+                )
+            except ImportError:
+                logger.warning("Redis not available, falling back to file storage")
+                self._storage_backend = "file"
+                Path(self._storage_path).parent.mkdir(parents=True, exist_ok=True)
+    
+    def _load_persisted_data(self) -> None:
+        """Load persisted lockout data from storage."""
+        if self._storage_backend == "file":
+            self._load_from_file()
+        elif self._storage_backend == "redis":
+            self._load_from_redis()
+    
+    def _load_from_file(self) -> None:
+        """Load data from file storage."""
+        lockout_file = f"{self._storage_path}_lockouts.json"
+        if os.path.exists(lockout_file):
+            try:
+                with open(lockout_file, 'r') as f:
+                    data = json.load(f)
+                    now = time.time()
+                    # Only load non-expired lockouts
+                    self._lockouts = {
+                        ip: expiry for ip, expiry in data.items()
+                        if expiry > now
+                    }
+                logger.info("Loaded %d persisted lockouts", len(self._lockouts))
+            except Exception as e:
+                logger.error("Failed to load persisted lockouts: %s", e)
+    
+    def _load_from_redis(self) -> None:
+        """Load data from Redis storage."""
+        try:
+            now = time.time()
+            keys = self._redis_client.keys("brute_force:lockout:*")
+            for key in keys:
+                ip = key.split(":")[-1]
+                expiry = self._redis_client.get(key)
+                if expiry and float(expiry) > now:
+                    self._lockouts[ip] = float(expiry)
+            logger.info("Loaded %d persisted lockouts from Redis", len(self._lockouts))
+        except Exception as e:
+            logger.error("Failed to load persisted lockouts from Redis: %s", e)
+    
+    def _persist_lockouts(self) -> None:
+        """Persist current lockouts to storage."""
+        if self._storage_backend == "file":
+            self._save_to_file()
+        elif self._storage_backend == "redis":
+            self._save_to_redis()
+    
+    def _save_to_file(self) -> None:
+        """Save lockouts to file storage."""
+        lockout_file = f"{self._storage_path}_lockouts.json"
+        try:
+            with open(lockout_file, 'w') as f:
+                json.dump(self._lockouts, f)
+        except Exception as e:
+            logger.error("Failed to persist lockouts: %s", e)
+    
+    def _save_to_redis(self) -> None:
+        """Save lockouts to Redis storage."""
+        try:
+            pipe = self._redis_client.pipeline()
+            # Clear existing
+            keys = self._redis_client.keys("brute_force:lockout:*")
+            if keys:
+                pipe.delete(*keys)
+            # Set new lockouts
+            for ip, expiry in self._lockouts.items():
+                pipe.setex(f"brute_force:lockout:{ip}", int(self.lockout_duration), str(expiry))
+            pipe.execute()
+        except Exception as e:
+            logger.error("Failed to persist lockouts to Redis: %s", e)
 
     def record_failure(self, ip: str, key_prefix: str = "unknown") -> bool:
         """
@@ -90,6 +198,9 @@ class BruteForceProtector:
             if failure_count >= self.max_failures:
                 self._lockouts[ip] = now + self.lockout_duration
                 self._failures[ip] = []  # Reset failures after lockout
+                
+                # Persist lockout to survive service restart
+                self._persist_lockouts()
 
                 # Log security event
                 self._log_brute_force_detected(ip, key_prefix, failure_count)
@@ -135,6 +246,8 @@ class BruteForceProtector:
 
             # Lockout has expired, clean up
             del self._lockouts[ip]
+            # Persist the cleanup
+            self._persist_lockouts()
             return False
 
     def get_remaining_lockout(self, ip: str) -> float:
