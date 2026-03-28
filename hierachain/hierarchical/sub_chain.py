@@ -403,43 +403,68 @@ def _rehydrate_chain_from_ordering_service(
 
     # Check if local chain needs rehydration
     latest_local = sub_chain.get_latest_block()
+    latest_db = all_blocks[-1]
 
-    # If local chain already has more or equal blocks, skip rehydration
-    if latest_local.index >= all_blocks[-1].index:
-        logger.info(
-            "Chain %s already up to date. Local index: %d, DB index: %d",
-            sub_chain.name, latest_local.index, all_blocks[-1].index,
-        )
-        return
+    # If local chain already has more blocks, verify content matches
+    if latest_local.index > latest_db.index:
+        # More blocks locally - verify hashes match for common range
+        local_hash = latest_local.hash
+        db_hash = latest_db.hash
+        if local_hash != db_hash:
+            logger.warning(
+                "Chain %s has divergent state! Local hash: %s, DB hash: %s. Will rehydrate.",
+                sub_chain.name, local_hash[:16] if local_hash else "None", db_hash[:16] if db_hash else "None"
+            )
+        else:
+            logger.info(
+                "Chain %s already up to date with more blocks. Local index: %d, DB index: %d",
+                sub_chain.name, latest_local.index, latest_db.index,
+            )
+            return
+    
+    # If local chain has equal blocks, verify hashes match
+    if latest_local.index == latest_db.index:
+        local_hash = latest_local.hash
+        db_hash = latest_db.hash
+        if local_hash == db_hash:
+            logger.info(
+                "Chain %s already up to date. Local index: %d, hash: %s",
+                sub_chain.name, latest_local.index, local_hash[:16] if local_hash else "None",
+            )
+            return
+        else:
+            logger.warning(
+                "Chain %s has divergent block at index %d! Local hash: %s, DB hash: %s. Rehydrating.",
+                sub_chain.name, latest_local.index, 
+                local_hash[:16] if local_hash else "None",
+                db_hash[:16] if db_hash else "None"
+            )
+    
+    # If local chain has fewer blocks, proceed with rehydration
+    if latest_local.index < latest_db.index:
+        # Map out the temporary index to save events occurring during rehydration
+        with sub_chain.lock:
+            temp_entity_index = dict(sub_chain.entity_event_index)
 
-    logger.info(
-        "Rehydrating chain %s from index %d to %d",
-        sub_chain.name, latest_local.index, all_blocks[-1].index,
-    )
+            # Clear the locally created chain (including the newly created genesis block)
+            sub_chain.chain.clear()
+            sub_chain.total_events = 0
+            sub_chain.event_type_counts.clear()
+            sub_chain.entity_event_index.clear()
 
-    # Map out the temporary index to save events occurring during rehydration
-    with sub_chain.lock:
-        temp_entity_index = dict(sub_chain.entity_event_index)
+            # Add all blocks from DB to the chain with proper indexing
+            for block in all_blocks:
+                sub_chain.chain.append(block)
+                _update_event_statistics(sub_chain, block)
+                
+            # Restore events added during rehydration
+            for entity_id, events in temp_entity_index.items():
+                if entity_id not in sub_chain.entity_event_index:
+                    sub_chain.entity_event_index[entity_id] = events
 
-        # Clear the locally created chain (including the newly created genesis block)
-        sub_chain.chain.clear()
-        sub_chain.total_events = 0
-        sub_chain.event_type_counts.clear()
-        sub_chain.entity_event_index.clear()
-
-        # Add all blocks from DB to the chain with proper indexing
-        for block in all_blocks:
-            sub_chain.chain.append(block)
-            _update_event_statistics(sub_chain, block)
-            
-        # Restore events added during rehydration
-        for entity_id, events in temp_entity_index.items():
-            if entity_id not in sub_chain.entity_event_index:
-                sub_chain.entity_event_index[entity_id] = events
-
-        # Also update the ordering service's block_history and blocks_created to match
-        sub_chain.ordering_service.block_history = list(sub_chain.chain)
-        sub_chain.ordering_service.blocks_created = all_blocks[-1].index + 1
+            # Also update the ordering service's block_history and blocks_created to match
+            sub_chain.ordering_service.block_history = list(sub_chain.chain)
+            sub_chain.ordering_service.blocks_created = all_blocks[-1].index + 1
 
     logger.info(
         "Rehydrated %d blocks from Ordering Service. Latest index: %d",
