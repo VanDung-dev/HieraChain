@@ -133,12 +133,18 @@ class TestIsSafeInput:
         is_safe, reason = is_safe_input("Hello, world!")
         assert is_safe
 
-    def test_xss_payload_accepted_with_warning(self):
-        """is_safe_input logs a warning but still accepts
-        dangerous input (sanitization handles it)."""
+    def test_xss_payload_rejected(self):
+        """is_safe_input rejects dangerous input instead of just logging."""
         is_safe, reason = is_safe_input("<script>alert('xss')</script>")
-        # Current implementation logs but doesn't reject
-        assert is_safe
+        # Now rejects dangerous input
+        assert not is_safe
+        assert "Script tag detected" in reason
+    
+    def test_xss_payload_accepted_with_warning(self):
+        """Legacy test - dangerous input is now rejected."""
+        is_safe, reason = is_safe_input("<script>alert('xss')</script>")
+        # New implementation rejects instead of accepting
+        assert not is_safe
 
 
 # ------------------------------------------------------------------ #
