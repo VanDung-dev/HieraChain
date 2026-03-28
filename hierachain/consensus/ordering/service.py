@@ -98,7 +98,8 @@ class OrderingService:
                     len(self.pending_events)
                 )
         except Exception as e:
-            logger.warning("Failed to recover pending events from journal: %s", e)
+            logger.error("Failed to recover pending events from journal: %s", e)
+            raise
 
         self.block_builder = BlockBuilder(self.config)
 
