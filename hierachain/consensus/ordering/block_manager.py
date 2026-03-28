@@ -4,6 +4,7 @@ Block builder for the HieraChain ordering service.
 
 import time
 import logging
+import threading
 from typing import Any
 from hierachain.core.block import Block
 from hierachain.core.performance import process_pool
@@ -23,6 +24,9 @@ class OrderingBlockManager:
         self.journal = service.journal
         self.commit_queue = service.commit_queue
         self.config = service.config
+        
+        # Lock for thread-safe block index assignment
+        self._block_index_lock = threading.Lock()
 
     async def create_block_async(self, events: list[dict[str, Any]]) -> None:
         """Create a block asynchronously by offloading Merkle tree calculation."""
@@ -51,31 +55,34 @@ class OrderingBlockManager:
 
     def commit_block(self, block: Block) -> None:
         """Commit a completed block to the commit queue and persistent storage"""
-        block.index = self.service.blocks_created
-        block.calculate_hash()
+        
+        # Use lock to ensure thread-safe block index assignment
+        with self._block_index_lock:
+            block.index = self.service.blocks_created
+            block.calculate_hash()
 
-        try:
-            chain_name = self.config.get("chain_name")
-            event_count, block_latency = self.storage_handler.save_block(
-                block, chain_name
-            )
-            self.metrics.record_block_created(event_count, block_latency)
-            
-            if self.service.status == OrderingStatus.ACTIVE:
-                system_event = {
-                    "event": "$SYSTEM_BLOCK_CUT",
-                    "entity_id": "SYSTEM",
-                    "timestamp": time.time(),
-                    "details": {"block_index": block.index, "block_hash": block.hash}
-                }
-                self.journal.log_event(system_event)
+            try:
+                chain_name = self.config.get("chain_name")
+                event_count, block_latency = self.storage_handler.save_block(
+                    block, chain_name
+                )
+                self.metrics.record_block_created(event_count, block_latency)
+                
+                if self.service.status == OrderingStatus.ACTIVE:
+                    system_event = {
+                        "event": "$SYSTEM_BLOCK_CUT",
+                        "entity_id": "SYSTEM",
+                        "timestamp": time.time(),
+                        "details": {"block_index": block.index, "block_hash": block.hash}
+                    }
+                    self.journal.log_event(system_event)
 
-            self.service.blocks_created += 1
-            self.commit_queue.put(block)
-            logger.info("Block #%d committed with %d events", block.index, event_count)
-        except Exception as e:
-            logger.error("Failed to commit block #%d: %s", block.index, e)
-            self.service.status = OrderingStatus.MAINTENANCE
+                self.service.blocks_created += 1
+                self.commit_queue.put(block)
+                logger.info("Block #%d committed with %d events", block.index, event_count)
+            except Exception as e:
+                logger.error("Failed to commit block #%d: %s", block.index, e)
+                self.service.status = OrderingStatus.MAINTENANCE
 
     async def check_timeout_block_creation(self, force: bool = False) -> None:
         """Check if block needs to be created due to timeout or forced"""
