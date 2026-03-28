@@ -148,7 +148,7 @@ class MasterKeyProvider:
         return self._master_key
 
     def _load_auto(self) -> bytes:
-        """Auto-resolve key: env var → file → generate."""
+        """Auto-resolve key: env var → file → fail (no auto-generate in production)."""
         # Try environment variable first
         key = self._try_load_from_env()
         if key is not None:
@@ -168,9 +168,21 @@ class MasterKeyProvider:
             )
             return key
 
-        # Auto-generate as last resort
+        # In production, fail instead of auto-generating
+        if self.environment == "product":
+            raise MasterKeyError(
+                "Master key not configured in production. "
+                "Please set environment variable or provide key file. "
+                f"Expected env var: {self.env_var}"
+            )
+        
+        # Auto-generate as last resort (only for non-production)
         key = self._generate_new_key()
-        logger.info("Generated new master backup encryption key")
+        logger.warning(
+            "Generated new master key - THIS IS NOT RECOMMENDED FOR PRODUCTION. "
+            "Data encrypted with this key cannot be decrypted after node restart "
+            "unless the key is properly configured."
+        )
         return key
 
     def _load_from_env(self) -> bytes:
