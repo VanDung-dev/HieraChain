@@ -245,16 +245,32 @@ def _get_simple_value(v: Any) -> str | None:
     """
     Extract simple string value from a data value, skipping long strings like hashes.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     if v is None:
         return None
     if isinstance(v, bool):
         return str(v).lower()
     if isinstance(v, (int, float)):
         return str(v).lower()
-    if isinstance(v, str) and len(v) < 100:
-        return v.lower()
-    if isinstance(v, bytes) and len(v) < 100:
-        return v.decode('utf-8', errors='ignore').lower()
+    if isinstance(v, str):
+        if len(v) >= 100:
+            # Log when validation is skipped for long strings (likely hashes)
+            logger.debug(
+                "Skipping validation for long string (length=%d). "
+                "Consider validating with pattern matching for hashes.",
+                len(v)
+            )
+        return v.lower() if len(v) < 100 else None
+    if isinstance(v, bytes):
+        if len(v) >= 100:
+            logger.debug(
+                "Skipping validation for long bytes (length=%d). "
+                "Consider validating with pattern matching for hashes.",
+                len(v)
+            )
+        return v.decode('utf-8', errors='ignore').lower() if len(v) < 100 else None
     return None
 
 
