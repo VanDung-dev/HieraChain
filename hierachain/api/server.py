@@ -349,18 +349,57 @@ def _register_websocket_router(fast_app: FastAPI):
 
 
 def _register_graphql_router(fast_app: FastAPI):
-    """Helper to register GraphQL router with error handling."""
+    """Helper to register GraphQL router with error handling and security measures."""
     try:
         graphql_router = APIRouter()
         
+        # Import GraphQL security utilities
+        from hierachain.api.graphql import security as graphql_security
+        
         @graphql_router.post("/graphql")
         async def graphql_endpoint(request: Request):
-            """GraphQL endpoint handler"""
+            """GraphQL endpoint handler with security measures"""
             try:
+                # Get client IP for rate limiting
+                client_ip = request.client.host if request.client else "unknown"
+                
+                # Check rate limit
+                if not graphql_security.check_rate_limit(client_ip):
+                    return JSONResponse(
+                        status_code=429,
+                        content={"errors": [{"message": "Rate limit exceeded. Please try again later."}]}
+                    )
+                
                 body = await request.json()
                 query = body.get("query", "")
                 variables = body.get("variables", {})
                 operation_name = body.get("operationName")
+                
+                # Check for introspection query in production
+                settings = get_settings()
+                is_production = getattr(settings, "ENV", "dev") == "product"
+                
+                if is_production and graphql_security.is_introspection_query(query):
+                    return JSONResponse(
+                        status_code=400,
+                        content={"errors": [{"message": "Introspection queries disabled in production"}]}
+                    )
+                
+                # Check query depth
+                depth = graphql_security.get_query_depth(query)
+                if depth > graphql_security.MAX_QUERY_DEPTH:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"errors": [{"message": f"Query depth exceeds maximum of {graphql_security.MAX_QUERY_DEPTH} levels"}]}
+                    )
+                
+                # Check query complexity
+                complexity = graphql_security.estimate_complexity(query)
+                if complexity > graphql_security.MAX_COMPLEXITY:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"errors": [{"message": "Query complexity exceeds maximum allowed"}]}
+                    )
                 
                 result = graphql_schema.execute(
                     query,
