@@ -208,8 +208,9 @@ def is_safe_input(value: str, max_length: int = 10000) -> tuple[bool, str]:
     
     for pattern, reason in dangerous_patterns:
         if re.search(pattern, value, re.IGNORECASE):
-            logger.warning("Potentially dangerous input detected: %s", reason)
-            # Don't reject, just log - sanitization will handle it
+            logger.warning("Potentially dangerous input rejected: %s", reason)
+            # Reject dangerous input instead of just logging
+            return False, f"Input rejected: {reason}"
     
     return True, "Input accepted"
 
