@@ -23,22 +23,34 @@ router = APIRouter(prefix="/api/v3", tags=["HieraChain-v3 (System & Admin)"])
 
 
 def get_current_key_provider() -> LocalKeyProvider:
-    """Dependency to get the active key provider with loaded identity."""
+    """
+    Dependency to get the active key provider with loaded identity.
+    
+    Raises:
+        HTTPException(401): If identity file is missing or fails to load
+    """
     settings = get_settings()
     identity_path = settings.VALIDATOR_IDENTITY_PATH
     
+    if not os.path.exists(identity_path):
+        logger.error(
+            "Identity file not found, access denied",
+            path=identity_path
+        )
+        raise HTTPException(
+            status_code=401,
+            detail="Node identity not configured. Please provide valid identity file."
+        )
+    
     try:
-        if os.path.exists(identity_path):
-            logger.info("Loading node identity", path=identity_path)
-            return LocalKeyProvider.from_file(identity_path)
-        else:
-            logger.warning(
-                "Identity file not found, using ephemeral key", path=identity_path
-            )
-            return LocalKeyProvider.generate()
+        logger.info("Loading node identity", path=identity_path)
+        return LocalKeyProvider.from_file(identity_path)
     except CryptoError as e:
         logger.error("Failed to load node identity", error=str(e))
-        return LocalKeyProvider.generate()
+        raise HTTPException(
+            status_code=401,
+            detail=f"Failed to load node identity: {str(e)}"
+        )
 
 
 @router.post(
