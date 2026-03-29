@@ -34,6 +34,19 @@ from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
 logger = logging.getLogger(__name__)
 
+# Endpoints that should bypass authentication and rate limiting
+# These are the system endpoints used for health monitoring and documentation
+EXEMPT_PATHS = {
+    "/",
+    "/api/v1/health",
+    "/api/v2/health",
+    "/api/v3/status",
+    "/metrics",
+    "/docs",
+    "/redoc",
+    "/openapi.json"
+}
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -263,6 +276,10 @@ def add_rate_limit(fast_app: FastAPI, settings) -> None:
 
     @fast_app.middleware("http")
     async def rate_limit_middleware(request: Request, call_next):
+        # Bypass rate limiting for exempt system paths (health checks, metrics, etc.)
+        if request.url.path in EXEMPT_PATHS:
+            return await call_next(request)
+
         client_ip = request.client.host if request.client else "unknown"
         
         if not limiter.is_allowed(client_ip):
@@ -523,7 +540,13 @@ def create_app() -> FastAPI:
 
     # Initialize implementation with settings
     if settings.AUTH_ENABLED:
-        auth_dependency = APIKeyVerifier(settings.get_auth_config())
+        verifier = APIKeyVerifier(settings.get_auth_config())
+
+        async def auth_dependency(request: Request):
+            # Bypass authentication for exempt system paths (health checks, etc.)
+            if request.url.path in EXEMPT_PATHS:
+                return {"user_id": "system", "app_details": {"name": "Exempt"}}
+            return await verifier(request)
     else:
         # No-op dependency
         auth_dependency = lambda: None  # noqa: E731
