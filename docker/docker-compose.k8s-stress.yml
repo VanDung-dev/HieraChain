@@ -6,7 +6,7 @@
 #
 # Prerequisites:
 #   - K8s cluster running with HieraChain nodes deployed
-#   - NodePort service exposed (default: localhost:32661)
+#   - NodePort service exposed (default: localhost:2661)
 
 # version: "3.8"
 
@@ -19,7 +19,7 @@ services:
     environment:
       # Target K8s nodes via NodePort (accessible from host)
       # Docker Desktop: host.docker.internal resolves to host machine
-      - TARGET_NODES=host.docker.internal:32661
+      - TARGET_NODES=host.docker.internal:2661
       - TEST_DURATION=60
       - REAL_REQUESTS=true
     volumes:
