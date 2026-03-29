@@ -18,6 +18,8 @@ data:
   DATABASE_PATH: "/app/data/hierachain.db"
 
   # Stress test configuration
+  HRC_RATE_LIMIT: "false"
+  HRC_AUTH_ENABLED: "false"
   TEST_DURATION: "60"
   REAL_REQUESTS: "true"
   STRESS_CHAIN_NAME: "stress_test"
