@@ -387,7 +387,7 @@ class ProductionSettings(Settings):
     
     # === SECURITY: Auto-enabled in production ===
     # Authentication is MANDATORY in production
-    AUTH_ENABLED = True
+    AUTH_ENABLED = os.getenv("HRC_AUTH_ENABLED", "true").lower() == "true"
     
     # Organization validation is required
     REQUIRE_ORGANIZATION_VALIDATION = True
@@ -415,8 +415,8 @@ class ProductionSettings(Settings):
     HSTS_MAX_AGE = 31536000  # 1 year
     
     # === Rate Limiting: Recommended ===
-    RATE_LIMIT_ENABLED = True
-    RATE_LIMIT_REQUESTS_PER_MINUTE = 100
+    RATE_LIMIT_ENABLED = os.getenv("HRC_RATE_LIMIT", "true").lower() == "true"
+    RATE_LIMIT_REQUESTS_PER_MINUTE = int(os.getenv("HRC_RATE_LIMIT_RPM", "100"))
 
     # === P2P: Strict trust by default in production ===
     P2P_TRUST_POLICY = "strict"
