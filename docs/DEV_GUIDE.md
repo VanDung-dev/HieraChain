@@ -191,10 +191,10 @@ kubectl apply -k docker/k8s/
 kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout=120s
 
 # Expose the API to local host
-kubectl port-forward service/hierachain-api 32661:2661 -n hierachain --address 0.0.0.0
+kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
 
 # Test API  
-curl http://localhost:32661/api/v1/health
+curl http://localhost:2661/api/v1/health
 
 # Run stress test
 docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
