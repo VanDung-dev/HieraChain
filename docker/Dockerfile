@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt -r requirements_dev.txt
 
 # Copy source code and project files
 COPY hierachain/ ./hierachain/
+COPY hierachain/config/.env.HRC.example ./.env
 COPY tests/ ./tests/
 COPY scripts/ ./scripts/
 COPY config/ ./config/
