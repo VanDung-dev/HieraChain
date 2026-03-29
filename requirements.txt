@@ -1,5 +1,5 @@
 # Core system libraries
-cryptography==46.0.5
+cryptography==46.0.6
 pydantic==2.12.5
 python-dotenv==1.2.2
 fastapi==0.128.8
