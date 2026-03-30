@@ -537,7 +537,7 @@ def _handle_complex_rule(erp_event: dict[str, Any], rule: dict[str, Any]) -> Any
     transformer_name = rule.get("transformer")
     if transformer_name:
         # Identity transformer (no transformation)
-        def identity_transform(v, p):
+        def identity_transform(v, _p):
             return v
         return identity_transform(value, rule.get("params"))
     return value
