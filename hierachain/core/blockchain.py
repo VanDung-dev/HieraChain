@@ -204,7 +204,9 @@ class Blockchain:
             wait_time = time.time() - wait_start
             self._deadlock_detector.record_wait_end(self._lock_id, wait_time)
             return result
-        except Exception:
+        except RuntimeError:
+            # Lock acquire failed due to runtime error
+            logger.error("Lock acquisition failed with RuntimeError for %s", self.name)
             return False
     
     def safe_unlock(self):

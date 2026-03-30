@@ -345,8 +345,8 @@ class ParallelProcessingEngine:
                     
             except Exception as e:
                 self.logger.error(
-                    "Failed to get task result %s: %s",
-                    task.task_id, e
+                    "Failed to get task result: %s",
+                    e
                 )
                 results.append(ProcessingResult(
                     task_id="unknown",
