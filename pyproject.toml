@@ -25,64 +25,94 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "cryptography>=46.0.5",
-    "pydantic>=2.12.5",
-    "python-dotenv>=1.2.2",
+    # Web Framework & API
     "fastapi>=0.128.8",
     "uvicorn>=0.38.0",
-    "pyyaml>=6.0.3",
-    "redis>=7.1.1",
+    "starlette>=0.50.0",
+
+    # Data Validation & Modeling
+    "pydantic>=2.12.5",
+
+    # Cryptography & Security
+    "cryptography>=46.0.5",
+    "pynacl>=1.6.2",
+    "passlib>=1.7.4",
+    "python-multipart>=0.0.22",
+
+    # Database & Storage
     "sqlalchemy>=2.0.46",
     "alembic>=1.17.2",
-    "python-multipart>=0.0.22",
-    "passlib>=1.7.4",
-    "python-dateutil>=2.9.0.post0",
-    "httpx>=0.28.1",
-    "click>=8.3.1",
-    "psutil>=7.1.3",
-    "requests>=2.32.5",
-    "pyarrow>=23.0.1",
-    "pyzmq>=27.1.0",
-    "pynacl>=1.6.2",
-    "starlette>=0.50.0",
-    "kubernetes>=35.0.0",
-    "aiohttp==3.13.3",
-    "graphene>=3.4.3",
-    "prometheus-client>=0.21.1",
-]
-dynamic = ["version"]
+    "redis>=7.1.1",
 
-[tool.setuptools.dynamic]
-version = {attr = "hierachain.units.version.__version__"}
+    # Configuration & Environment
+    "python-dotenv>=1.2.2",
+    "pyyaml>=6.0.3",
+
+    # Networking & Communication
+    "httpx>=0.28.1",
+    "requests>=2.32.5",
+    "aiohttp==3.13.3",
+    "pyzmq>=27.1.0",
+
+    # Cloud & Infrastructure
+    "kubernetes>=35.0.0",
+
+    # Distributed Systems & IPC
+    "pyarrow>=23.0.1",
+
+    # Monitoring & Metrics
+    "prometheus-client>=0.21.1",
+
+    # GraphQL API
+    "graphene>=3.4.3",
+
+    # CLI & Utilities
+    "click>=8.3.1",
+    "python-dateutil>=2.9.0.post0",
+    "psutil>=7.1.3",
+]
 
 [project.optional-dependencies]
 ipfs = [
     "ipfshttpclient>=0.7.0",
 ]
 dev = [
-    "tox>=4.34.1",
-    "virtualenv-pyenv>=0.6.0",
-    "black>=26.3.1",
-    "flake8>=7.3.0",
-    "mypy>=1.19.1",
-    "setuptools>=82.0.0",
-    "wheel>=0.46.3",
-    "coverage>=7.13.4",
-    "build>=1.3.0",
-    "twine>=6.2.0",
-    "bandit>=1.9.2",
-    "hypothesis>=6.151.6",
+    # Testing
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
     "pytest-benchmark>=5.2.3",
     "pytest-html>=4.2.0",
     "pytest-rerunfailures>=16.1",
+    "hypothesis>=6.151.6",
+
+    # Linting & Code Quality
+    "black>=26.3.1",
+    "flake8>=7.3.0",
+    "mypy>=1.19.1",
+    "bandit>=1.9.2",
+
+    # Build & Packaging
+    "setuptools>=82.0.0",
+    "wheel>=0.46.3",
+    "build>=1.3.0",
+    "twine>=6.2.0",
+
+    # CI/CD & DevOps
+    "tox>=4.34.1",
+    "virtualenv-pyenv>=0.6.0",
+    "coverage>=7.13.4",
+
+    # Security Auditing
     "pip-audit>=2.10.0",
-    "pygal>=3.1.0",
+
+    # Documentation
     "mkdocs>=1.6.1",
-    "zensical==0.0.23",
+    "zensical==0.0.30",
     "mkdocs-git-revision-date-localized-plugin>=1.5.1",
     "polib>=1.2.0",
+
+    # Visualization
+    "pygal>=3.1.0",
 ]
 
 [project.scripts]
@@ -98,7 +128,10 @@ hrc = "hierachain.cli.__init__:hrc"
 
 [tool.setuptools]
 packages = { find = { include = ["hierachain*"] } }
-package-data = {"hierachain" = ["*.env.HRC.example", "config/*.env.HRC.example"]}
+package-data = {"hierachain" = ["*.env.HRC.example", "config/*.env.HRC.example"] }
+
+[tool.setuptools.dynamic]
+version = {attr = "hierachain.units.version.__version__"}
 
 [tool.pytest.ini_options]
 minversion = "6.0"
