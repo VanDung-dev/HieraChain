@@ -18,6 +18,9 @@ Usage::
 
 import logging
 import os
+import hvac
+import boto3
+from botocore.exceptions import ClientError
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -41,13 +44,6 @@ def _get_from_vault(key: str, vault_url: str, vault_token: str, vault_path: str)
     Returns:
         Secret string value, or None if not found / on error.
     """
-    try:
-        import hvac  # type: ignore[import]
-    except ImportError:
-        logger.error(
-            "hvac is not installed. Install it with: pip install hvac"
-        )
-        return None
 
     try:
         client = hvac.Client(url=vault_url, token=vault_token)
@@ -77,14 +73,6 @@ def _get_from_aws(secret_name: str, region: str) -> str | None:
     Returns:
         The ``SecretString`` value, or None on error.
     """
-    try:
-        import boto3  # type: ignore[import]
-        from botocore.exceptions import ClientError  # type: ignore[import]
-    except ImportError:
-        logger.error(
-            "boto3 is not installed. Install it with: pip install boto3"
-        )
-        return None
 
     try:
         client = boto3.client("secretsmanager", region_name=region)
@@ -136,14 +124,14 @@ class SecretManager:
         Retrieve a secret by key.
 
         Args:
-            key:     The environment variable name (used as-is for ``env`` backend,
-                     and as the data field name for Vault/AWS backends).
+            key: The environment variable name (used as-is for ``env`` backend,
+                 and as the data field name for Vault/AWS backends).
             default: Value to return if the secret is not found.
 
         Returns:
             Secret string value, or *default* if not found.
         """
-        value: str | None = None
+        value: str | None
 
         if self._backend == "vault":
             value = self._get_vault(key)

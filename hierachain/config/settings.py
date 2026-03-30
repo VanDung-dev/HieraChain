@@ -21,7 +21,7 @@ class Settings:
     # Environment - use property ENV below
     
     @property
-    def ENV(self) -> str:
+    def env(self) -> str:
         """Auto-detect environment from environment variable."""
         env = os.getenv("HRC_ENV") or os.getenv("ENV")
         if env in ("production", "prod"):
@@ -294,7 +294,7 @@ class Settings:
             "master_key": {
                 "source": cls.MASTER_KEY_SOURCE,
                 "key_file": cls.MASTER_KEY_FILE,
-                "environment": cls.ENV,
+                "environment": cls.env,
             }
         }
 
@@ -495,7 +495,7 @@ def check_security_config() -> list[str]:
     s = settings
     warnings = []
     
-    env = s.ENV
+    env = s.env
     
     if env == "production":
         checks = [

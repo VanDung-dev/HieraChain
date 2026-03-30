@@ -22,34 +22,44 @@ class _JsonFormatter(logging.Formatter):
     merged into the top-level JSON object.
     """
 
+    # Class-level constant to avoid recomputing on every format() call
+    _SKIP_FIELDS: frozenset = frozenset(logging.LogRecord.__dict__) | {
+        "message", "asctime", "request_id"
+    }
+
     def format(self, record: logging.LogRecord) -> str:
+        payload = self._build_base_payload(record)
+        self._add_extra_fields(record, payload)
+        self._add_exception_info(record, payload)
+        return json.dumps(payload, ensure_ascii=False)
+
+    def _build_base_payload(self, record: logging.LogRecord) -> dict:
+        """Build the base payload with standard fields."""
         payload: dict = {
             "timestamp": self.formatTime(record, "%Y-%m-%dT%H:%M:%S"),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
         }
-
-        # Include request_id injected by server middleware when present
         if hasattr(record, "request_id"):
             payload["request_id"] = getattr(record, "request_id")
+        return payload
 
-        # Merge any user-supplied extra fields (excluding internal logging attrs)
-        _SKIP = frozenset(logging.LogRecord.__dict__) | {
-            "message", "asctime", "request_id"
-        }
+    def _add_extra_fields(self, record: logging.LogRecord, payload: dict) -> None:
+        """Merge user-supplied extra fields into payload."""
         for key, value in record.__dict__.items():
-            if key not in _SKIP and not key.startswith("_"):
-                try:
-                    json.dumps(value)  # guard: only include JSON-serialisable values
-                    payload[key] = value
-                except (TypeError, ValueError):
-                    payload[key] = str(value)
+            if key in self._SKIP_FIELDS or key.startswith("_"):
+                continue
+            try:
+                json.dumps(value)
+                payload[key] = value
+            except (TypeError, ValueError):
+                payload[key] = str(value)
 
+    def _add_exception_info(self, record: logging.LogRecord, payload: dict) -> None:
+        """Add exception information if present."""
         if record.exc_info:
             payload["exception"] = self.formatException(record.exc_info)
-
-        return json.dumps(payload, ensure_ascii=False)
 
 
 _TEXT_LOGGING_CONFIG: dict = {
