@@ -742,7 +742,7 @@ class ClusterLockdownManager:
         except Exception as e:
             logger.error(
                 "Error processing quarantine report from %s: %s",
-                report.node_id, e
+                data.get("node_id", "unknown"), e
             )
             return None
 
