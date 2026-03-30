@@ -30,50 +30,82 @@ def _generate_zk_proof(name: str, chain: list[Any], latest_block: Any) -> bytes 
         return None
 
     # Get state roots for ZK proof
-    previous_block = chain[-2] if len(chain) > 1 else None
-    old_state_root = previous_block.merkle_root if previous_block else "genesis"
+    old_state_root = _get_old_state_root(chain)
     new_state_root = latest_block.merkle_root or latest_block.hash
 
     max_attempts = 3
     for attempt in range(max_attempts):
-        try:
-            # Generate ZK proof
-            prover = ZKProver(mode=settings.ZK_MODE)
-            result = prover.generate_proof(
-                old_state_root=old_state_root,
-                new_state_root=new_state_root,
-                block_index=latest_block.index,
-                events=latest_block.to_event_list()
-                if hasattr(latest_block, "to_event_list")
-                else [],
-                sub_chain_name=name,
-            )
+        result = _try_generate_proof(
+            name, old_state_root, new_state_root, latest_block, attempt, max_attempts
+        )
+        
+        if result is not None:
+            return result
+        
+        _sleep_with_backoff(attempt, max_attempts)
 
-            if result.success:
-                logger.info(
-                    "Generated ZK proof for block %d in %.2fms (Attempt %d/%d)",
-                    latest_block.index, result.generation_time_ms, attempt + 1, max_attempts
-                )
-                return result.proof
-
-            logger.warning(
-                "ZK proof generation failed for block %d on attempt %d/%d: %s",
-                latest_block.index, attempt + 1, max_attempts, result.error,
-            )
-            
-            if attempt < max_attempts - 1:
-                time.sleep(1.0 * (attempt + 1))  # Exponential-ish backoff
-
-        except Exception as e:
-            logger.error(
-                "ZK proof generation error for block %d on attempt %d/%d: %s",
-                latest_block.index, attempt + 1, max_attempts, e,
-            )
-            if attempt < max_attempts - 1:
-                time.sleep(1.0 * (attempt + 1))
-            
-    logger.error("Failed to generate ZK proof for block %d after %d attempts", latest_block.index, max_attempts)
+    logger.error(
+        "Failed to generate ZK proof for block %d after %d attempts",
+        latest_block.index, max_attempts
+    )
     return None
+
+
+def _get_old_state_root(chain: list[Any]) -> str:
+    """Get the state root from the previous block."""
+    previous_block = chain[-2] if len(chain) > 1 else None
+    return previous_block.merkle_root if previous_block else "genesis"
+
+
+def _try_generate_proof(
+    name: str,
+    old_state_root: str,
+    new_state_root: str,
+    latest_block: Any,
+    attempt: int,
+    max_attempts: int
+) -> bytes | None:
+    """Attempt to generate a ZK proof once."""
+    try:
+        prover = ZKProver(mode=settings.ZK_MODE)
+        events = (
+            latest_block.to_event_list()
+            if hasattr(latest_block, "to_event_list")
+            else []
+        )
+        result = prover.generate_proof(
+            old_state_root=old_state_root,
+            new_state_root=new_state_root,
+            block_index=latest_block.index,
+            events=events,
+            sub_chain_name=name,
+        )
+
+        if result.success:
+            logger.info(
+                "Generated ZK proof for block %d in %.2fms (Attempt %d/%d)",
+                latest_block.index, result.generation_time_ms, attempt + 1, max_attempts
+            )
+            return result.proof
+
+        logger.warning(
+            "ZK proof generation failed for block %d on attempt %d/%d: %s",
+            latest_block.index, attempt + 1, max_attempts, result.error,
+        )
+        return None
+
+    except Exception as e:
+        logger.error(
+            "ZK proof generation error for block %d on attempt %d/%d: %s",
+            latest_block.index, attempt + 1, max_attempts, e,
+        )
+        return None
+
+
+def _sleep_with_backoff(attempt: int, max_attempts: int) -> None:
+    """Sleep with exponential backoff between retry attempts."""
+    if attempt < max_attempts - 1:
+        time.sleep(1.0 * (attempt + 1))
 
 
 def _generate_default_proof_metadata(
@@ -164,7 +196,7 @@ def _force_block_creation(ordering_service: Any, timeout: float) -> None:
 
 def _consumer_loop(sub_chain: Any) -> None:
     """Background loop to continuously pull and finalize blocks."""
-    while sub_chain.running and not (hasattr(sub_chain, '_shutdown_event') and sub_chain._shutdown_event.is_set()):
+    while sub_chain.running and not sub_chain.is_shutting_down:
         try:
             # Attempt to finalize blocks
             sub_chain.finalize_sub_chain_block()
@@ -307,7 +339,7 @@ def _submit_proof_for_sub_chain(
 
 def _process_and_finalize_single_block(sub_chain: "SubChain", block: Any) -> bool:
     """Process and finalize a single block."""
-    with sub_chain._block_processing_lock:
+    with sub_chain.block_processing_lock:
         latest_block = sub_chain.get_latest_block()
 
         block.index = latest_block.index + 1
@@ -620,10 +652,23 @@ class SubChain(Blockchain):
         except Exception as e:
             logger.warning("Error draining commit_queue during stop: %s", e)
 
-        # Signal shutdown event for graceful thread exit
         if hasattr(self, '_shutdown_event'):
             self._shutdown_event.set()
-
+    
+    # -- Public Property Accessors for Protected Members ---
+    
+    @property
+    def is_shutting_down(self) -> bool:
+        """Check if the sub-chain is shutting down."""
+        return hasattr(self, '_shutdown_event') and self._shutdown_event.is_set()
+    
+    @property
+    def block_processing_lock(self):
+        """Get the block processing lock."""
+        return self._block_processing_lock
+    
+    def shutdown(self) -> None:
+        """Shutdown the sub-chain and cleanup resources."""
         self.running = False
         if self.consumer_thread:
             self.consumer_thread.join(timeout=2.0)

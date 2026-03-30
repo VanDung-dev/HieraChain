@@ -316,7 +316,7 @@ class HierarchyManager:
         if name in self.sub_chains:
             return False
 
-        sub_chain = DomainChain(name, domain_type)
+        sub_chain = DomainChain(name, domain_type, metadata=metadata)
 
         # Connect to main chain (simulated logical connection)
         if sub_chain.connect_to_main_chain(self.main_chain):
