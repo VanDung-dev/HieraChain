@@ -229,16 +229,22 @@ class DomainChain(BaseChain):
         - validate_operation_data  - operation-type validation
     """
 
-    def __init__(self, name: str, domain_type: str = "generic") -> None:
+    def __init__(
+        self, name: str, domain_type: str = "generic", metadata: dict[str, Any] | None = None
+    ) -> None:
         """
         Initialize a domain chain.
     
         Args:
             name: Name identifier for the chain
             domain_type: Type of domain this chain handles
+            metadata: Additional metadata for the chain
         """
         super().__init__(name, domain_type)
-    
+        
+        # Store metadata if provided
+        self.metadata = metadata or {}
+        
         # Add domain-specific business rules
         self._setup_default_business_rules()
     
