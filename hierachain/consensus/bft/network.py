@@ -110,4 +110,4 @@ def forward_to_primary(
                 "operation": operation
             })
         except Exception as e:
-            logger.error(f"Error forwarding to primary {primary_id}: {e}")
+            logger.error("Error forwarding to primary %s: %s", primary_id, e)

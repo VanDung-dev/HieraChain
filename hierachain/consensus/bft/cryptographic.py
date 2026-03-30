@@ -76,5 +76,5 @@ def verify_operation_zk_proof(data: dict[str, Any]) -> bool:
         return verifier.verify(zk_proof, public_inputs)
 
     except Exception as e:
-        logger.error(f"ZK verification error in BFT: {e}")
+        logger.error("ZK verification error in BFT: %s", e)
         return False
