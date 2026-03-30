@@ -11,6 +11,7 @@ error handling, CORS support, and comprehensive logging.
 
 import uuid
 import uvicorn
+import redis
 import logging
 import time
 from fastapi import (
@@ -29,6 +30,7 @@ from hierachain.api.v3.endpoints import router as v3_router
 from hierachain.api.websocket.endpoints import router as ws_router
 from hierachain.api.websocket.manager import ws_manager
 from hierachain.api.graphql.schema import schema as graphql_schema
+from hierachain.api.graphql import security as graphql_security
 from hierachain.config.settings import get_settings
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
@@ -221,14 +223,14 @@ class RedisRateLimiter:
     and nodes sharing the same Redis instance.
     """
     def __init__(self, requests_per_minute: int, host: str, port: int, db: int):
-        import redis as redis_lib
-        self._redis = redis_lib.Redis(
+        self._redis = redis.Redis(
             host=host, port=port, db=db,
             socket_connect_timeout=2, socket_timeout=2, decode_responses=True
         )
         self.limit = requests_per_minute
 
-    def _key(self, ip: str) -> str:
+    @staticmethod
+    def _key(ip: str) -> str:
         window = int(time.time()) // 60
         return f"hrc:rl:{ip}:{window}"
 
@@ -249,7 +251,7 @@ class RedisRateLimiter:
         try:
             count = int(self._redis.get(key) or 0)
             return max(0, self.limit - count)
-        except Exception:
+        except (TypeError, AttributeError):  # Fail-open on Redis client errors
             return self.limit
 
 
@@ -365,94 +367,123 @@ def _register_websocket_router(fast_app: FastAPI):
         logger.warning("WebSocket router not available")
 
 
+async def _validate_graphql_request(
+    request: Request,
+) -> tuple[bool, JSONResponse | None, dict | None]:
+    """Validate GraphQL request. Returns (valid, error_response, parsed_body)."""
+    import json
+    client_ip = request.client.host if request.client else "unknown"
+
+    # Check rate limit
+    if not graphql_security.check_rate_limit(client_ip):
+        return False, JSONResponse(
+            status_code=429,
+            content={"errors": [{"message": "Rate limit exceeded. Please try again later."}]}
+        ), None
+
+    # Parse request body
+    try:
+        body = json.loads(await request.body())
+    except json.JSONDecodeError:
+        return False, JSONResponse(
+            status_code=400,
+            content={"errors": [{"message": "Invalid JSON body"}]}
+        ), None
+
+    query = body.get("query", "")
+    variables = body.get("variables", {})
+    operation_name = body.get("operationName")
+
+    # Check for introspection query in production
+    settings = get_settings()
+    is_production = getattr(settings, "ENV", "dev") == "product"
+
+    if is_production and graphql_security.is_introspection_query(query):
+        return False, JSONResponse(
+            status_code=400,
+            content={"errors": [{"message": "Introspection queries disabled in production"}]}
+        ), None
+
+    # Check query depth
+    depth = graphql_security.get_query_depth(query)
+    if depth > graphql_security.MAX_QUERY_DEPTH:
+        return False, JSONResponse(
+            status_code=400,
+            content={"errors": [{"message": f"Query depth exceeds maximum of {graphql_security.MAX_QUERY_DEPTH} levels"}]}
+        ), None
+
+    # Check query complexity
+    complexity = graphql_security.estimate_complexity(query)
+    if complexity > graphql_security.MAX_COMPLEXITY:
+        return False, JSONResponse(
+            status_code=400,
+            content={"errors": [{"message": "Query complexity exceeds maximum allowed"}]}
+        ), None
+
+    return True, None, {"query": query, "variables": variables, "operation_name": operation_name}
+
+
+def _execute_graphql_query(
+    query: str,
+    variables: dict,
+    operation_name: str | None,
+) -> tuple[dict, bool]:
+    """Execute GraphQL query. Returns (response_dict, is_error)."""
+    result = graphql_schema.execute(
+        query,
+        variable_values=variables,
+        operation_name=operation_name
+    )
+
+    if result.errors:
+        _settings = get_settings()
+        is_debug = (
+            _settings.LOG_LEVEL == "DEBUG"
+            and getattr(_settings, "ENV", "dev") != "product"
+        )
+        for err in result.errors:
+            logger.error(f"GraphQL schema error: {err.message}")
+        error_messages = (
+            [{"message": str(err.message)} for err in result.errors]
+            if is_debug
+            else [{"message": "An internal error occurred"}]
+        )
+        return {
+            "data": result.data,
+            "errors": error_messages
+        }, True
+
+    return {"data": result.data}, False
+
+
 def _register_graphql_router(fast_app: FastAPI):
     """Helper to register GraphQL router with error handling and security measures."""
     try:
         graphql_router = APIRouter()
-        
-        # Import GraphQL security utilities
-        from hierachain.api.graphql import security as graphql_security
-        
+
         @graphql_router.post("/graphql")
         async def graphql_endpoint(request: Request):
             """GraphQL endpoint handler with security measures"""
             try:
-                # Get client IP for rate limiting
-                client_ip = request.client.host if request.client else "unknown"
-                
-                # Check rate limit
-                if not graphql_security.check_rate_limit(client_ip):
-                    return JSONResponse(
-                        status_code=429,
-                        content={"errors": [{"message": "Rate limit exceeded. Please try again later."}]}
-                    )
-                
-                body = await request.json()
-                query = body.get("query", "")
-                variables = body.get("variables", {})
-                operation_name = body.get("operationName")
-                
-                # Check for introspection query in production
-                settings = get_settings()
-                is_production = getattr(settings, "ENV", "dev") == "product"
-                
-                if is_production and graphql_security.is_introspection_query(query):
-                    return JSONResponse(
-                        status_code=400,
-                        content={"errors": [{"message": "Introspection queries disabled in production"}]}
-                    )
-                
-                # Check query depth
-                depth = graphql_security.get_query_depth(query)
-                if depth > graphql_security.MAX_QUERY_DEPTH:
-                    return JSONResponse(
-                        status_code=400,
-                        content={"errors": [{"message": f"Query depth exceeds maximum of {graphql_security.MAX_QUERY_DEPTH} levels"}]}
-                    )
-                
-                # Check query complexity
-                complexity = graphql_security.estimate_complexity(query)
-                if complexity > graphql_security.MAX_COMPLEXITY:
-                    return JSONResponse(
-                        status_code=400,
-                        content={"errors": [{"message": "Query complexity exceeds maximum allowed"}]}
-                    )
-                
-                result = graphql_schema.execute(
-                    query,
-                    variable_values=variables,
-                    operation_name=operation_name
+                # Validate request
+                is_valid, error_response, parsed = _validate_graphql_request(request)
+                if not is_valid:
+                    return error_response
+
+                # Execute query
+                response, is_error = _execute_graphql_query(
+                    parsed["query"], parsed["variables"], parsed["operation_name"]
                 )
-                
-                if result.errors:
-                    _settings = get_settings()
-                    is_debug = (
-                        _settings.LOG_LEVEL == "DEBUG"
-                        and getattr(_settings, "ENV", "dev") != "product"
-                    )
-                    for err in result.errors:
-                        logger.error(f"GraphQL schema error: {err.message}")
-                    error_messages = (
-                        [{"message": str(err.message)} for err in result.errors]
-                        if is_debug
-                        else [{"message": "An internal error occurred"}]
-                    )
-                    return JSONResponse(
-                        status_code=400,
-                        content={
-                            "data": result.data,
-                            "errors": error_messages
-                        }
-                    )
-                
-                return {"data": result.data}
+                status_code = 400 if is_error else 200
+
+                return JSONResponse(status_code=status_code, content=response)
             except Exception as exc:
                 logger.error(f"GraphQL error: {exc}")
                 return JSONResponse(
                     status_code=400,
                     content={"errors": [{"message": "An internal error occurred"}]}
                 )
-        
+
         fast_app.include_router(graphql_router)
         logger.debug("GraphQL endpoint included successfully")
     except Exception as e:
@@ -576,7 +607,7 @@ def create_app() -> FastAPI:
     )
 
     # Add Middlewares
-    add_security_headers(fast_app, settings.ENV in ("dev", "development"))
+    add_security_headers(fast_app, settings.env in ("dev", "development"))
     add_payload_limit(fast_app)
     add_rate_limit(fast_app, settings)
     add_request_logging(fast_app)

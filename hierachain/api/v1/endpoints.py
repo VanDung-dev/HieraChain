@@ -24,7 +24,6 @@ from hierachain.api.storage.endpoint_helpers import (
     process_event_details,
     resolve_multiple_events
 )
-from hierachain.api.storage import IPFSError
 
 from hierachain.api.v1.schemas import (
     EventRequest,
@@ -130,6 +129,60 @@ async def list_chains(manager: HierarchyManager = Depends(get_hierarchy_manager)
         ) from e
 
 
+def _build_event_data(
+    event_request: EventRequest,
+    inline_details: dict | None,
+    cid_info: dict | None
+) -> dict:
+    """Build event dict from request with sanitization and storage handling"""
+    safe_entity_id = sanitize_string(event_request.entity_id)
+    safe_event_type = sanitize_string(event_request.event_type)
+    safe_details = sanitize_dict(inline_details) if inline_details else None
+    
+    event: dict = {
+        "entity_id": safe_entity_id,
+        "event": safe_event_type,
+        "timestamp": time.time(),
+    }
+    
+    # Add details based on storage type
+    if cid_info:
+        # Off-chain storage (IPFS)
+        event["details_cid"] = cid_info["cid"]  # type: ignore[index]
+        event["details_nonce"] = cid_info["nonce"]  # type: ignore[index]
+        if cid_info.get("metadata"):
+            event["details_metadata"] = cid_info["metadata"]  # type: ignore[index]
+    else:
+        # On-chain storage (traditional)
+        event["details"] = safe_details or {}
+    
+    return event
+
+
+def _log_event_success(
+    chain_name: str,
+    safe_entity_id: str,
+    cid_info: dict | None
+) -> None:
+    """Log successful event addition for audit trail"""
+    if cid_info:
+        api_logger.info(
+            "Event using off-chain storage",
+            chain_name=chain_name,
+            cid=cid_info["cid"],
+            entity_id=safe_entity_id
+        )
+    
+    api_logger.audit(
+        action="add_event",
+        resource="sub_chain",
+        success=True,
+        chain_name=chain_name,
+        entity_id=safe_entity_id,
+        storage_type="offchain" if cid_info else "onchain"
+    )
+
+
 @router.post(
     "/chains/{chain_name}/events",
     response_model=EventResponse,
@@ -151,91 +204,36 @@ async def add_event(
     If IPFS is enabled and large details are provided, they can be stored off-chain
     to reduce block size and improve performance.
     """
-    try:
-        sub_chain = manager.get_sub_chain(chain_name)
-        if not sub_chain:
-            raise HTTPException(
-                status_code=404, detail=f"Sub-chain '{chain_name}' not found"
-            )
-
-        # Sanitize user input before storing
-        safe_entity_id = sanitize_string(event_request.entity_id)
-        safe_event_type = sanitize_string(event_request.event_type)
-
-        # Process event details - handle both on-chain and off-chain data
-        inline_details, cid_info = process_event_details(
-            event_request,
-            background_tasks=background_tasks
-        )
-
-        # Sanitize inline details if provided
-        if inline_details:
-            safe_details = sanitize_dict(inline_details)
-        else:
-            safe_details = None
-
-        # Create event from request
-        event = {
-            "entity_id": safe_entity_id,
-            "event": safe_event_type,
-            "timestamp": time.time(),
-        }
-
-        # Add details based on storage type
-        if cid_info:
-            # Off-chain storage (IPFS)
-            event["details_cid"] = cid_info["cid"]
-            event["details_nonce"] = cid_info["nonce"]
-            if cid_info.get("metadata"):
-                event["details_metadata"] = cid_info["metadata"]
-
-            api_logger.info(
-                "Event using off-chain storage",
-                chain_name=chain_name,
-                cid=cid_info["cid"],
-                entity_id=safe_entity_id
-            )
-        else:
-            # On-chain storage (traditional)
-            event["details"] = safe_details or {}
-
-        # Add event to sub-chain
-        sub_chain.add_event(event)
-
-        api_logger.audit(
-            action="add_event",
-            resource="sub_chain",
-            success=True,
-            chain_name=chain_name,
-            entity_id=safe_entity_id,
-            storage_type="offchain" if cid_info else "onchain"
-        )
-
-        return EventResponse(
-            success=True,
-            message=f"Event added to chain '{chain_name}'" + (
-                " (off-chain storage)" if cid_info else ""
-            ),
-            event_id=(
-                f"{chain_name}_{len(sub_chain.chain)}_{len(sub_chain.pending_events)}"
-            )
-        )
-    except IPFSError as e:
-        api_logger.error(
-            "IPFS error while adding event",
-            error=str(e),
-            chain_name=chain_name
-        )
+    sub_chain = manager.get_sub_chain(chain_name)
+    if not sub_chain:
         raise HTTPException(
-            status_code=503,
-            detail=f"IPFS storage error: {str(e)}"
-        ) from e
-    except Exception as e:
-        api_logger.error("Failed to add event", error=str(e), chain_name=chain_name)
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to add event. An internal error has occurred."
-        ) from e
+            status_code=404, detail=f"Sub-chain '{chain_name}' not found"
+        )
+
+    # Process event details - handle both on-chain and off-chain data
+    inline_details, cid_info = process_event_details(
+        event_request,
+        background_tasks=background_tasks
+    )
+
+    # Build event data with sanitization
+    event = _build_event_data(event_request, inline_details, cid_info)
+    
+    # Add event to sub-chain
+    sub_chain.add_event(event)
+
+    # Log success
+    _log_event_success(chain_name, event["entity_id"], cid_info)
+
+    return EventResponse(
+        success=True,
+        message=f"Event added to chain '{chain_name}'" + (
+            " (off-chain storage)" if cid_info else ""
+        ),
+        event_id=(
+            f"{chain_name}_{len(sub_chain.chain)}_{len(sub_chain.pending_events)}"
+        )
+    )
 
 
 @router.post(
@@ -295,6 +293,41 @@ async def submit_proof(
         ) from e
 
 
+def _validate_chain_exists(
+    manager: HierarchyManager,
+    chain_name: str
+) -> SubChain:
+    """Validate that a chain exists and return it"""
+    sub_chain = manager.get_sub_chain(chain_name)
+    if not sub_chain:
+        raise HTTPException(
+            status_code=404, detail=f"Sub-chain '{chain_name}' not found"
+        )
+    return sub_chain
+
+
+def _extract_events_for_specific_chain(
+    tracer: EntityTracer,
+    safe_entity_id: str,
+    chain_name: str
+) -> list:
+    """Extract events for a specific chain"""
+    trace_result = tracer.trace_entity_in_chain(safe_entity_id, chain_name)
+    return trace_result.get("events", [])
+
+
+def _extract_events_across_all_chains(
+    tracer: EntityTracer,
+    safe_entity_id: str
+) -> list:
+    """Extract events across all chains"""
+    trace_result = tracer.trace_entity_across_chains(safe_entity_id)
+    events = []
+    for chain_events in trace_result.values():
+        events.extend(chain_events)
+    return events
+
+
 @router.get(
     "/entities/{entity_id}/trace",
     response_model=EntityTraceResponse,
@@ -314,6 +347,8 @@ async def trace_entity(
         entity_id: Unique identifier of the entity to trace
         chain_name: Optional chain name to limit trace to specific chain
         resolve_cid: If True, resolve IPFS CIDs to actual event details (default: False)
+        manager: HierarchyManager instance (injected via Depends)
+        tracer: EntityTracer instance (injected via Depends)
 
     Returns:
         Entity trace with events across chains
@@ -326,47 +361,25 @@ async def trace_entity(
     # Sanitize path parameter
     safe_entity_id = sanitize_string(entity_id)
 
-    try:
-        if chain_name:
-            # Trace in specific chain
-            sub_chain = manager.get_sub_chain(chain_name)
-            if not sub_chain:
-                raise HTTPException(
-                    status_code=404, detail=f"Sub-chain '{chain_name}' not found"
-                )
+    # Get events based on chain filter
+    if chain_name:
+        _validate_chain_exists(manager, chain_name)
+        events = _extract_events_for_specific_chain(tracer, safe_entity_id, chain_name)
+    else:
+        events = _extract_events_across_all_chains(tracer, safe_entity_id)
 
-            trace_result = tracer.trace_entity_in_chain(safe_entity_id, chain_name)
-            events = trace_result.get("events", [])
-        else:
-            # Trace across all chains
-            trace_result = tracer.trace_entity_across_chains(safe_entity_id)
-            # Flatten events from all chains
-            events = []
-            for chain_events in trace_result.values():
-                events.extend(chain_events)
+    # Resolve CIDs if requested and IPFS is enabled
+    if resolve_cid and is_ipfs_enabled():
+        events = await resolve_multiple_events(events, resolve=True)
 
-        # Resolve CIDs if requested and IPFS is enabled
-        if resolve_cid and is_ipfs_enabled():
-            events = await resolve_multiple_events(events, resolve=True)
+    # Extract chain names from the events
+    chain_names = list(set(event.get('chain', 'unknown') for event in events))
 
-        # Extract chain names from the events
-        chain_names = list(set(event.get('chain', 'unknown') for event in events))
-
-        return EntityTraceResponse(
-            entity_id=safe_entity_id,
-            chains=chain_names,
-            events=events
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        api_logger.error(
-            "Failed to trace entity", error=str(e), entity_id=safe_entity_id
-        )
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to trace entity. An internal error has occurred."
-        ) from e
+    return EntityTraceResponse(
+        entity_id=safe_entity_id,
+        chains=chain_names,
+        events=events
+    )
 
 
 def _get_chain_by_name(manager: HierarchyManager, chain_name: str) -> Blockchain | None:
@@ -529,6 +542,45 @@ async def create_sub_chain(
         ) from e
 
 
+def _validate_chain_exists_for_blocks(
+    manager: HierarchyManager,
+    chain_name: str
+) -> Blockchain:
+    """Validate chain exists and return it for get_chain_blocks"""
+    chain = _get_chain_by_name(manager, chain_name)
+    if not chain:
+        raise HTTPException(
+            status_code=404, detail=f"Chain '{chain_name}' not found"
+        )
+    return chain
+
+
+def _extract_paginated_blocks(
+    chain: Any,
+    offset: int,
+    limit: int
+) -> list:
+    """Extract paginated blocks from chain"""
+    chain_blocks = getattr(chain, 'chain', [])
+    return chain_blocks[offset:offset + limit]
+
+
+async def _resolve_blocks_cids(
+    block_data: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Resolve CIDs for all events in blocks if IPFS enabled"""
+    if not is_ipfs_enabled():
+        return block_data
+    
+    for block in block_data:
+        if 'events' in block:
+            block['events'] = await resolve_multiple_events(
+                block['events'],
+                resolve=True
+            )
+    return block_data
+
+
 @router.get(
     "/chains/{chain_name}/blocks", dependencies=[Depends(require_chain_access)]
 )
@@ -547,6 +599,7 @@ async def get_chain_blocks(
         limit: Maximum number of blocks to return (default: 10)
         offset: Offset for pagination (default: 0)
         resolve_cid: If True, resolve IPFS CIDs to actual data (default: False)
+        manager: HierarchyManager instance (injected via Depends)
 
     Returns:
         Block data with optional CID resolution
@@ -556,43 +609,25 @@ async def get_chain_blocks(
         and decrypted automatically. This may increase response time for blocks
         with many off-chain events.
     """
-    try:
-        chain = _get_chain_by_name(manager, chain_name)
-        if not chain:
-            raise HTTPException(
-                status_code=404, detail=f"Chain '{chain_name}' not found"
-            )
+    # Validate chain exists
+    chain = _validate_chain_exists_for_blocks(manager, chain_name)
 
-        # Get blocks with pagination
-        chain_blocks = getattr(chain, 'chain', [])
-        blocks = chain_blocks[offset:offset + limit]
+    # Get paginated blocks
+    chain_blocks = getattr(chain, 'chain', [])
+    blocks = _extract_paginated_blocks(chain, offset, limit)
 
-        # Serialize each block using helper
-        block_data = [_serialize_block(block) for block in blocks]
+    # Serialize blocks
+    block_data = [_serialize_block(block) for block in blocks]
 
-        # Resolve CIDs if requested and IPFS is enabled
-        if resolve_cid and is_ipfs_enabled():
-            for block in block_data:
-                if 'events' in block:
-                    # Resolve CIDs for all events in the block
-                    block['events'] = await resolve_multiple_events(
-                        block['events'],
-                        resolve=True
-                    )
+    # Resolve CIDs if requested
+    if resolve_cid:
+        block_data = await _resolve_blocks_cids(block_data)
 
-        return {
-            "chain_name": chain_name,
-            "blocks": block_data,
-            "total_blocks": len(chain_blocks),
-            "offset": offset,
-            "limit": limit,
-            "resolved": resolve_cid and is_ipfs_enabled()
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        api_logger.error("Failed to get blocks", error=str(e), chain_name=chain_name)
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to get blocks. An internal error has occurred."
-        ) from e
+    return {
+        "chain_name": chain_name,
+        "blocks": block_data,
+        "total_blocks": len(chain_blocks),
+        "offset": offset,
+        "limit": limit,
+        "resolved": resolve_cid and is_ipfs_enabled()
+    }
