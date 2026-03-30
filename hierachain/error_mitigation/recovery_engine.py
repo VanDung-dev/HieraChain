@@ -135,8 +135,7 @@ class NetworkRecoveryEngine:
                 if not task.exception():
                     result = await task
                     logger.info(
-                        "Message sent successfully via redundant path %d to %s",
-                        path_id, target_node
+                        "Message sent successfully via redundant path"
                     )
                     return result
 
