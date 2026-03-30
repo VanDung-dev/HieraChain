@@ -245,33 +245,48 @@ def _get_simple_value(v: Any) -> str | None:
     """
     Extract simple string value from a data value, skipping long strings like hashes.
     """
-    import logging
-    logger = logging.getLogger(__name__)
-    
     if v is None:
         return None
+
+    # Handle primitive types directly
     if isinstance(v, bool):
         return str(v).lower()
     if isinstance(v, (int, float)):
         return str(v).lower()
+
+    # Handle string with length check
     if isinstance(v, str):
-        if len(v) >= 100:
-            # Log when validation is skipped for long strings (likely hashes)
-            logger.debug(
-                "Skipping validation for long string (length=%d). "
-                "Consider validating with pattern matching for hashes.",
-                len(v)
-            )
-        return v.lower() if len(v) < 100 else None
+        return _process_string_value(v)
+
+    # Handle bytes with length check
     if isinstance(v, bytes):
-        if len(v) >= 100:
-            logger.debug(
-                "Skipping validation for long bytes (length=%d). "
-                "Consider validating with pattern matching for hashes.",
-                len(v)
-            )
-        return v.decode('utf-8', errors='ignore').lower() if len(v) < 100 else None
+        return _process_bytes_value(v)
+
     return None
+
+
+def _process_string_value(v: str) -> str | None:
+    """Process string value with length check."""
+    if len(v) >= 100:
+        logger.debug(
+            "Skipping validation for long string (length=%d). "
+            "Consider validating with pattern matching for hashes.",
+            len(v)
+        )
+        return None
+    return v.lower()
+
+
+def _process_bytes_value(v: bytes) -> str | None:
+    """Process bytes value with length check."""
+    if len(v) >= 100:
+        logger.debug(
+            "Skipping validation for long bytes (length=%d). "
+            "Consider validating with pattern matching for hashes.",
+            len(v)
+        )
+        return None
+    return v.decode('utf-8', errors='ignore').lower()
 
 
 def _get_forbidden_terms() -> frozenset[str]:
