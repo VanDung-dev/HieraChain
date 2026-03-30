@@ -139,7 +139,7 @@ def _run_audit_loop(backend, start, tip):
 def _get_audit_range(tip, limit):
     """Helper to determine the range of blocks to audit."""
     start = 0
-    if limit > 0 and tip > limit:
+    if tip > limit > 0:
         start = tip - limit + 1
         click.echo(f"Verifying last {limit} blocks (Index {start}-{tip})")
     else:
