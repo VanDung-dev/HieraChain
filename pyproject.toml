@@ -71,6 +71,10 @@ dependencies = [
     "python-dateutil>=2.9.0.post0",
     "psutil>=7.1.3",
 ]
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "hierachain.units.version.__version__"}
 
 [project.optional-dependencies]
 ipfs = [
@@ -129,9 +133,6 @@ hrc = "hierachain.cli.__init__:hrc"
 [tool.setuptools]
 packages = { find = { include = ["hierachain*"] } }
 package-data = {"hierachain" = ["*.env.HRC.example", "config/*.env.HRC.example"] }
-
-[tool.setuptools.dynamic]
-version = {attr = "hierachain.units.version.__version__"}
 
 [tool.pytest.ini_options]
 minversion = "6.0"
