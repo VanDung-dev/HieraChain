@@ -46,7 +46,7 @@ class KeyManager:
         self.storage = storage_backend or {}  # In-memory fallback
         self.revoked_keys: set[str] = set()
         self.key_cache: dict[str, dict] = {}
-        self.permission_cache: dict[str, dict] = {}  # Cache cho permissions
+        self.permission_cache: dict[str, tuple[float, bool]] = {}  # Cache cho permissions
         self.cache_ttl = 300  # 5 minutes default TTL
         
     def is_valid(self, api_key: str | None) -> bool:
