@@ -41,11 +41,12 @@ class OrderingService:
         self.event_pool: Queue[PendingEvent] = Queue()
         self.pending_events: dict[str, PendingEvent] = {}
         self.commit_queue: Queue[Block] = Queue()
-        
+        self.processing_thread: threading.Thread | None = None
+
         # Component Initialization
         self.metrics = OrderingMetrics()
         self.storage_handler = OrderingStorageHandler(config)
-        
+
         # Initialize blocks_created from DB to ensure continuity after restart
         latest_block = self.storage_handler.get_latest_block_from_db()
         self.blocks_created = (latest_block.index + 1) if latest_block else 0
@@ -53,7 +54,7 @@ class OrderingService:
             "Initialized ordering service state: blocks_created=%s",
             self.blocks_created
         )
-        
+
         # Configure journal based on storage_dir and node_id for persistence
         storage_dir = config.get("storage_dir", "journal")
         node_id = nodes[0].node_id if nodes else "unknown"
@@ -89,6 +90,7 @@ class OrderingService:
                         channel_id=event_data.get("channel_id", "default"),
                         submitter_org=event_data.get("submitter_org", "unknown"),
                         received_at=event_data.get("timestamp", time.time()),
+                        status=EventStatus.PENDING,
                     )
                     self.pending_events[event_id] = pending
                     logger.debug("Recovered pending event %s from journal", event_id)
@@ -106,7 +108,7 @@ class OrderingService:
         # Complex Logic Handlers
         self.processor = OrderingProcessor(self)
         self.maintenance = OrderingMaintenance(self)
-        
+
         # Thread Management
         self.processing_thread = threading.Thread(
             target=self._init_processing_thread,
@@ -140,7 +142,7 @@ class OrderingService:
 
         self.metrics.record_received()
         event_id = generate_event_id(event_data, channel_id)
-        
+
         if event_id in self.pending_events:
             return event_id
 
@@ -152,13 +154,13 @@ class OrderingService:
             received_at=time.time(),
             status=EventStatus.PENDING
         )
-        
+
         logged_data = event_data.copy()
         logged_data["channel_id"] = channel_id
         self.journal.log_event(logged_data)
         self.pending_events[event_id] = pending_event
         self.event_pool.put(pending_event)
-        
+
         return event_id
 
     def get_latest_block(self) -> Block | None:
@@ -194,7 +196,7 @@ class OrderingService:
     def force_block_creation(self, timeout: float = 3.0) -> None:
         """
         Force the creation of a block from pending events.
-        
+
         Args:
             timeout: Maximum time to wait for completion.
         """
@@ -234,7 +236,7 @@ class OrderingService:
         """Get comprehensive service status information"""
         healthy_nodes = sum(1 for n in self.nodes if n.is_healthy())
         leader_node = next((n.node_id for n in self.nodes if n.is_leader), None)
-        
+
         return {
             "status": self.status.value,
             "nodes": {
@@ -269,7 +271,7 @@ class OrderingService:
                 "submitter_org": pending.submitter_org,
                 "certification_result": pending.certification_result
             }
-        
+
         # Check processed events in storage handler
         if event_id in self.storage_handler.processed_events:
             processed = self.storage_handler.processed_events[event_id]
@@ -281,7 +283,7 @@ class OrderingService:
                 "submitter_org": processed.submitter_org,
                 "certification_result": processed.certification_result
             }
-        
+
         # Check certified events in certifier
         certification = self.certifier.get_certification(event_id)
         if certification:
@@ -290,7 +292,7 @@ class OrderingService:
                 "status": "certified" if certification.get("valid") else "rejected",
                 "certification_result": certification
             }
-        
+
         return None
 
     def add_validation_rule(self, rule: Callable) -> None:
@@ -300,10 +302,10 @@ class OrderingService:
     def wait_for_active(self, timeout: float = 5.0) -> bool:
         """
         Wait for the service to become active.
-        
+
         Args:
             timeout: Maximum time to wait in seconds.
-            
+
         Returns:
             True if service is active, False if timeout reached.
         """
@@ -319,18 +321,19 @@ class OrderingService:
         if self.status == OrderingStatus.ACTIVE:
             logger.warning("Ordering service is already active")
             return
-        
+
         logger.info("Starting ordering service...")
         self.should_stop.clear()
         self.status = OrderingStatus.MAINTENANCE
-        
+
         # Start a new processing thread
-        self.processing_thread = threading.Thread(
-            target=self._init_processing_thread,
-            daemon=True,
-            name="OrderingProcessor"
-        )
-        self.processing_thread.start()
+        if self.processing_thread is None or not self.processing_thread.is_alive():
+            self.processing_thread = threading.Thread(
+                target=self._init_processing_thread,
+                daemon=True,
+                name="OrderingProcessor"
+            )
+            self.processing_thread.start()
         logger.info("Ordering service started")
 
     def shutdown(self):
