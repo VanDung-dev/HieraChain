@@ -119,7 +119,7 @@ def get_query_depth(query: str) -> int:
         Maximum depth of the query
     """
     # Remove comments
-    query = re.sub(r'#.*$', '', query, flags=re.MULTILINE)
+    query = re.sub(r'#[^\n]*', '', query)
     
     # Simple depth calculation based on indentation and braces
     max_depth = 0
@@ -152,7 +152,7 @@ def estimate_complexity(query: str) -> int:
         Estimated complexity score
     """
     # Remove comments and strings
-    query = re.sub(r'#.*$', '', query, flags=re.MULTILINE)
+    query = re.sub(r'#[^\n]*', '', query)
     query = re.sub(r'"[^"]*"', '""', query)
     
     complexity = 0
