@@ -26,7 +26,7 @@ class VerifyIdentityResponse(BaseModel):
                 "status": "success",
                 "node_id": "node_1",
                 "signature": "abcd1234_signed_by_node",
-                "challenge_received": "abcd1234"
+                "challenge": "abcd1234"
             }
         }
     )
