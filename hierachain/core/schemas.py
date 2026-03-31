@@ -79,6 +79,8 @@ def get_block_schema() -> pa.Schema:
             ('event', pa.string()),
             ('timestamp', pa.float64()),
             ('details', pa.map_(pa.string(), pa.string())),
+            ('details_cid', pa.string()),
+            ('details_nonce', pa.string()),
             ('data', pa.binary()),
         ]))),
         # Block-level ZK Proof (for SubChain -> MainChain submission)
