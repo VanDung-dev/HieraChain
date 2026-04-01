@@ -35,6 +35,12 @@ Tài liệu này ánh xạ các khái niệm (Concepts) trong tài liệu kỹ t
 |---------|-----------|---------------|
 | **API Server** | `hierachain/api/server.py` | Điểm khởi chạy FastAPI server. |
 | **Endpoints V1** | `hierachain/api/v1/endpoints.py` | Các API cơ bản (Blocks, Chain info). |
+| **Endpoints V2** | `hierachain/api/v2/endpoints.py` | API nâng cao (Events, Domain). |
+| **Endpoints V3** | `hierachain/api/v3/endpoints.py` | API hệ thống (Admin, Health). |
+| **WebSocket Manager** | `hierachain/api/websocket/manager.py` | Quản lý kết nối WebSocket thời gian thực. |
+| **GraphQL Schema** | `hierachain/api/graphql/schema.py` | Schema GraphQL cho truy vấn linh hoạt. |
+| **IPFS Client** | `hierachain/api/storage/ipfs_client.py` | Tích hợp lưu trữ Off-chain (AES-256-GCM). |
+| **Blockchain Explorer** | `hierachain/api/blockchain_explorer.py` | Giao diện phân tích và hiển thị chuỗi. |
 | **CLI Entry** | `hierachain/__main__.py` | Điểm vào của dòng lệnh `python -m hierachain`. |
 | **SDK Client** | `hierachain/sdk/client.py` | Thư viện Python để ứng dụng bên ngoài tương tác với Chain. |
 
@@ -46,37 +52,33 @@ Tài liệu này ánh xạ các khái niệm (Concepts) trong tài liệu kỹ t
 | **ZK Prover** | `hierachain/security/zk_prover.py` | Tạo bằng chứng Zero-Knowledge (bảo mật dữ liệu). |
 | **Policy Engine** | `hierachain/security/policy_engine.py` | Thực thi các quy tắc truy cập (Access Control). |
 | **Key Manager** | `hierachain/security/key_manager.py` | Quản lý khóa Cryptographic. |
+| **Key Provider** | `hierachain/security/key_provider.py` | Cung cấp khóa cho Node. |
+| **Block Verifier** | `hierachain/security/verify/block_verifier.py` | Xác thực tính toàn vẹn Block. |
+| **Signature Verifier** | `hierachain/security/verify/signature_verifier.py` | Xác thực chữ ký số. |
 
 ## Storage & Persistence
 
 | Concept | File Path | Vai trò chính |
 |---------|-----------|---------------|
 | **SQLite Adapter** | `hierachain/adapters/database/sqlite_adapter.py` | Lưu trữ dữ liệu vào SQLite (SQLAlchemy). |
+| **File Storage** | `hierachain/adapters/storage/file_storage.py` | Lưu trữ file (Parquet) cho dữ liệu lớn. |
 | **Redis Storage** | `hierachain/adapters/storage/redis_storage.py` | Lưu trữ tạm thời/Cache hiệu năng cao. |
 | **SQL Backend** | `hierachain/storage/sql_backend.py` | Lớp trừu tượng hóa tương tác SQL. |
+| **Memory Storage** | `hierachain/storage/memory_storage.py` | Lưu trữ In-Memory (cho testing/dev). |
 
 ## Network & Cluster
 
 | Concept | File Path | Vai trò chính |
 |---------|-----------|---------------|
-| **Network Client** | `hierachain/network/network_client.py` | `api/` | **Giao tiếp & Cung cấp dữ liệu** |
-| ├── `v1/, v2/, v3/` | Các phiên bản REST API (Nghiệp vụ, Hợp đồng, Hệ thống). |
-| ├── `graphql/` | Truy vấn dữ liệu linh hoạt (Kèm `security.py` cho Rate Limit & Depth check). |
-| ├── `websocket/` | Truyền dữ liệu thời gian thực (Events, Blocks). |
-| ├── `storage/` | **IPFS Client** - Tích hợp lưu trữ Off-chain (AES-256-GCM). |
-| └── `blockchain_explorer.py` | UI Component cho việc phân tích và hiển thị chuỗi. |
-
-| `adapters/` | **Lớp tương tác dữ liệu (Persistence)** |
-| ├── `database/` | `SQLiteAdapter` - Lưu trữ World State & Metadata. |
-| └── `storage/` | `FileStorageAdapter` (Parquet) & `RedisStorageAdapter`. |
-
-| `security/` | **An ninh & Định danh** |
-| ├── `verify/` | Các bộ xác thực: Block, Signature, API Key, ZK. |
-| └── `key_provider.py` | Quản lý khóa và định danh Node. |
+| **Network Client** | `hierachain/network/network_client.py` | Giao tiếp & Cung cấp dữ liệu giữa các Node. |
+| **ZMQ Transport** | `hierachain/network/zmq_transport.py` | Giao thức truyền tin qua ZeroMQ. |
+| **Message Crypto** | `hierachain/network/message_cryptographic.py` | Mã hóa tin nhắn giữa các Node. |
+| **Peer Trust Manager** | `hierachain/network/peer_trust_manager.py` | Quản lý tin cậy Peer-to-Peer. |
 | **Secure Connection** | `hierachain/network/secure_connection.py` | Thiết lập kết nối bảo mật giữa các node. |
 | **Cluster Manager** | `hierachain/cluster/cluster_manager.py` | Quản lý trạng thái và thành viên trong cụm. |
 | **State Sync** | `hierachain/cluster/state_sync_manager.py` | Đồng bộ trạng thái giữa các node trong cụm. |
 | **Lockdown Protocol** | `hierachain/cluster/lockdown_protocol.py` | Giao thức khóa cụm khi phát hiện sự cố nghiêm trọng. |
+| **Cross-Chain Sync** | `hierachain/cluster/cross_level_sync.py` | Đồng bộ dữ liệu giữa các cấp (Main <-> Sub). |
 
 ## Giám sát & Quản lý rủi ro
 
@@ -99,9 +101,10 @@ Tài liệu này ánh xạ các khái niệm (Concepts) trong tài liệu kỹ t
 
 | Concept | File Path | Vai trò chính |
 |---------|-----------|---------------|
-| **Cross-Chain** | `hierachain/cluster/cross_level_sync.py` | Đồng bộ dữ liệu giữa các cấp (Main <-> Sub). |
 | **Error Mitigation** | `hierachain/error_mitigation/` | Cơ chế tự phục hồi (Rollback, Journal). |
 | **Integration (ERP)** | `hierachain/integration/enterprise.py` | Kết nối với hệ thống doanh nghiệp bên ngoài. |
+| **Domains** | `hierachain/domains/` | Logic nghiệp vụ Domain-specific (chains, events, utils). |
+| **Units** | `hierachain/units/` | Quản lý phiên bản và semantic versioning. |
 
 ??? info "Thông tin kỹ thuật bổ sung (Metadata)"
 
