@@ -32,19 +32,20 @@ Chúng tôi sử dụng quy trình **Fork & Pull** tiêu chuẩn:
     ```
 
 4. Thay đổi code và **Commit**. Chúng tôi khuyến khích tuân thủ [Conventional Commits](https://www.conventionalcommits.org/):
+
     * `feat: ...`: Tính năng mới
     * `fix: ...`: Sửa lỗi
     * `docs: ...`: Thay đổi tài liệu
     * `style: ...`: Định dạng code (không ảnh hưởng logic)
     * `refactor: ...`: Tái cấu trúc mã
     * `test: ...`: Thêm hoặc sửa test
+
 5. **Push** branch lên fork của bạn.
 6. Tạo **Pull Request (PR)** từ branch của bạn vào branch `main` của repo gốc HieraChain.
 
 ## Môi trường phát triển
 
-Để thiết lập môi trường, cài đặt dependencies và chạy test, vui lòng xem hướng dẫn chi tiết tại:
-👉 **[Cài đặt](../getting-started/install.md)** hoặc **[Kiểm thử](testing.md)**.
+Để thiết lập môi trường, cài đặt dependencies và chạy test, vui lòng xem hướng dẫn chi tiết tại: **[Cài đặt](../getting-started/install.md)** hoặc **[Kiểm thử](testing.md)**.
 
 ## Tiêu chuẩn mã nguồn (Coding Standards)
 
@@ -90,11 +91,13 @@ python -m pytest tests -v
 
 ## Báo lỗi và Đề xuất
 
-* Sử dụng tab **Issues** trên GitHub để báo lỗi hoặc yêu cầu tính năng.
-* Khi báo lỗi, vui lòng cung cấp:
-    1. Mô tả chi tiết lỗi.
-    2. Các bước tái hiện.
-    3. Môi trường (Hệ điều hành, phiên bản Python, logs lỗi...).
+Sử dụng tab **Issues** trên GitHub để báo lỗi hoặc yêu cầu tính năng.
+
+Khi báo lỗi, vui lòng cung cấp:
+
+1. Mô tả chi tiết lỗi.
+2. Các bước tái hiện.
+3. Môi trường (Hệ điều hành, phiên bản Python, logs lỗi...).
 
 ## Chính sách bảo mật (Security Policy)
 
