@@ -205,6 +205,7 @@ class OrderingMaintenance:
     def enter_lockdown()
     def exit_lockdown()
     def graceful_shutdown()
+```
 
 #### 7. Recovery
 
