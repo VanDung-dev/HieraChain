@@ -29,12 +29,12 @@ contract = DomainContract(
 
 Các hợp đồng trên HieraChain không bao giờ khởi chạy trực tiếp ra ngay production mà đi qua một chu trình kiểm soát chất lượng (ContractStatus):
 
-- `DEVELOPMENT`: Mặc định khi vừa khởi tạo. Dành cho dev/gỡ lỗi.
-- `TESTING`: Giai đoạn QA, thử nghiệm với test data.
-- `ACTIVE`: Hợp đồng chính thức live trên mạng, được phép kích hoạt xử lý giao dịch qua `activate()`.
-- `DEPRECATED`: Đánh dấu là lỗi thời nhưng vẫn giữ để hỗ trợ khối block cũ thông qua `deprecate()`.
-- `DISABLED`: Vô hiệu hóa khẩn cấp bằng `disable()`.
-- `ARCHIVED`: Đã cất gọn hoàn toàn, không thể kích hoạt lại.
+* `DEVELOPMENT`: Mặc định khi vừa khởi tạo. Dành cho dev/gỡ lỗi.
+* `TESTING`: Giai đoạn QA, thử nghiệm với test data.
+* `ACTIVE`: Hợp đồng chính thức live trên mạng, được phép kích hoạt xử lý giao dịch qua `activate()`.
+* `DEPRECATED`: Đánh dấu là lỗi thời nhưng vẫn giữ để hỗ trợ khối block cũ thông qua `deprecate()`.
+* `DISABLED`: Vô hiệu hóa khẩn cấp bằng `disable()`.
+* `ARCHIVED`: Đã cất gọn hoàn toàn, không thể kích hoạt lại.
 
 ### 3. Nâng cấp Phiên bản (Versioning)
 

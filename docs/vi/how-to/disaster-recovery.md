@@ -16,9 +16,9 @@ Nhằm chống lại việc mất dữ liệu do crash ứng dụng, mất đi�
 
 ### Cách thức hoạt động
 
-- **Storage Format:** Các log journal được tuần tự hóa theo định dạng **Apache Arrow RecordBatch**, cho phép tốc độ đọc/ghi cực nhanh và bảo toàn cấu trúc schema.
-- **Length-Prefixed Framing:** Tập tin append-only ghi theo cấu trúc `[Độ dài 4 Bytes][Dữ liệu Batch]`.
-- **Sync & Fsync:** Mọi thao tác log sự kiện đều được gọi `os.fsync()` đảm bảo disk I/O thực sự ghi xuống phần cứng trước khi phản hồi thành công.
+* **Storage Format:** Các log journal được tuần tự hóa theo định dạng **Apache Arrow RecordBatch**, cho phép tốc độ đọc/ghi cực nhanh và bảo toàn cấu trúc schema.
+* **Length-Prefixed Framing:** Tập tin append-only ghi theo cấu trúc `[Độ dài 4 Bytes][Dữ liệu Batch]`.
+* **Sync & Fsync:** Mọi thao tác log sự kiện đều được gọi `os.fsync()` đảm bảo disk I/O thực sự ghi xuống phần cứng trước khi phản hồi thành công.
 
 ### Hướng dẫn Khôi phục (Replay)
 
@@ -32,10 +32,10 @@ Trong trường hợp rủi cấu ro lớn hơn — như dữ liệu phân vùng
 
 `RollbackManager` sẽ lưu lại các điểm trạng thái hệ thống:
 
-- **Configuration State**: Cấu hình file YAML, JSON, PY.
-- **Chain State**: Khối lượng block và Hash gần nhất.
-- **Consensus State**: View Number, Node ID của Leader hiện tại.
-- **Storage State**: Snapshot của World State.
+* **Configuration State**: Cấu hình file YAML, JSON, PY.
+* **Chain State**: Khối lượng block và Hash gần nhất.
+* **Consensus State**: View Number, Node ID của Leader hiện tại.
+* **Storage State**: Snapshot của World State.
 
 ### Quy trình Rollback
 
@@ -49,9 +49,9 @@ Trong trường hợp rủi cấu ro lớn hơn — như dữ liệu phân vùng
 
 Bảo vệ cặp quá ký ECDSA/Ed25519 là nhiệm vụ quan trọng. `KeyBackupManager` tự động sao lưu an toàn khi hệ thống tạo Key mới:
 
-- **Bảo mật AES-256-GCM**: Key Public / Private của Node được thu thập, mã hóa GCM (Authenticate Encryption) với Key Master được cấp bởi Admin.
-- **Xác minh toàn vẹn (Integrity)**: Sử dụng cấu hình băm `SHA-512` kết hợp `HMAC` để đối chiếu mỗi khi khôi phục.
-- **Phân phối đa vị trí (Multi-location)**: Mã băm và file `.enc` được hệ thống "copy" phân tán ra nhiều đường dẫn `locations` nhằm chống Single Point of Failure (SPOF).
+* **Bảo mật AES-256-GCM**: Key Public / Private của Node được thu thập, mã hóa GCM (Authenticate Encryption) với Key Master được cấp bởi Admin.
+* **Xác minh toàn vẹn (Integrity)**: Sử dụng cấu hình băm `SHA-512` kết hợp `HMAC` để đối chiếu mỗi khi khôi phục.
+* **Phân phối đa vị trí (Multi-location)**: Mã băm và file `.enc` được hệ thống "copy" phân tán ra nhiều đường dẫn `locations` nhằm chống Single Point of Failure (SPOF).
 
 ### Khôi phục khi cần thiết
 
@@ -63,8 +63,8 @@ Sử dụng `restore_keys(backup_id)`. Manger sẽ đọc luồng IO, xác minh 
 
 Cụm BFT của HieraChain (với thuật toán dựa trên View Change) tự chứa các đặc tính "Tự phục hồi" (Self-recovery) đối với các sự cố liên lạc:
 
-- **Sự cố Leader bị Node-down**: Nếu Leader gặp crash, timeout (không broadcast block mới đúng hạn), các Validators sẽ gửi tin nhắn kháng nghị. Khi đạt trên `2f + 1` tin nhắn kháng nghị, hệ thống khởi tạo **View Change**, chuyển qua Leader tiếp theo (ví dụ: `Leader_ID = View_Number % Total_Nodes`).
-- **Sự cố Network Partition (Chia cắt mạng)**: Nếu mạng bị chia làm 2 mảnh, mảnh không chiếm đa số (***< 2f + 1***) sẽ tự động ngừng (Halt). Mảng lớn hơn (trên 66% số node) tiếp tục giao dịch. Khi kết nối khôi phục, mảnh nhỏ hơn tự động gọi API P2P để đồng bộ (Sync Blocks) với nhánh dài nhất.
+* **Sự cố Leader bị Node-down**: Nếu Leader gặp crash, timeout (không broadcast block mới đúng hạn), các Validators sẽ gửi tin nhắn kháng nghị. Khi đạt trên `2f + 1` tin nhắn kháng nghị, hệ thống khởi tạo **View Change**, chuyển qua Leader tiếp theo (ví dụ: `Leader_ID = View_Number % Total_Nodes`).
+* **Sự cố Network Partition (Chia cắt mạng)**: Nếu mạng bị chia làm 2 mảnh, mảnh không chiếm đa số (***< 2f + 1***) sẽ tự động ngừng (Halt). Mảng lớn hơn (trên 66% số node) tiếp tục giao dịch. Khi kết nối khôi phục, mảnh nhỏ hơn tự động gọi API P2P để đồng bộ (Sync Blocks) với nhánh dài nhất.
 
 ---
 

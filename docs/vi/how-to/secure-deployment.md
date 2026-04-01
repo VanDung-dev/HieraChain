@@ -167,8 +167,8 @@ for w in warnings:
 ```
 
 !!! tip "Mẹo"
-    - Chỉ WARN, không ngăn chặn dev dùng insecure mode (giữ flexibility)
-    - Dev tự handle enterprise integrations (LDAP, HSM, SIEM) bên ngoài
+    * Chỉ WARN, không ngăn chặn dev dùng insecure mode (giữ flexibility)
+    * Dev tự handle enterprise integrations (LDAP, HSM, SIEM) bên ngoài
 
 ## Liên quan
 

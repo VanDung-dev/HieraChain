@@ -18,10 +18,11 @@ python demo/demo.py
 ```
 
 **Các bước diễn ra trong demo:**
-- Khởi tạo Main Chain và Sub-Chain (`supply_chain`).
-- Đăng ký tổ chức (Organization) và người dùng (User).
-- Gửi các sự kiện (Events) nghiệp vụ.
-- Tạo Private Data Collection chỉ chia sẻ giữa hai bên.
+
+* Khởi tạo Main Chain và Sub-Chain (`supply_chain`).
+* Đăng ký tổ chức (Organization) và người dùng (User).
+* Gửi các sự kiện (Events) nghiệp vụ.
+* Tạo Private Data Collection chỉ chia sẻ giữa hai bên.
 
 ---
 

@@ -16,11 +16,11 @@ Cơ chế này được quản lý chủ đạo bởi module `CrossChainTransact
 
 Mỗi giao dịch liên chuỗi sẽ di chuyển tuần tự qua các biểu đồ trạng thái sau nhằm tránh thất thoát:
 
-- **`PENDING`**: Giao dịch đã được khởi tạo, mạng lưới đang chờ chạy lệnh hoạt động chính.
-- **`PREPARED`**: Cả chuỗi nguồn (Source chain) và chuỗi đích (Destination chain) đều đã cam kết có đủ điều kiện thực hiện giao dịch, thực tế đã khóa (lock) trước tài nguyên thành công.
-- **`COMMITTED`**: Giao dịch hoàn tất trên tất cả các chuỗi mạng lưới một cách đồng thuận.
-- **`ROLLED_BACK`**: Giao dịch bị hủy do một trong hai chốt thất bại. Tài nguyên đã "đặt trước" (locked) trên các chi nhánh sẽ được rollback về phiên bản cũ.
-- **`FAILED`**: Giao dịch thất bại hoàn toàn (nhiều khả năng do không kết nối được TCP nội bộ hoặc lỗi logic nghiêm trọng).
+* **`PENDING`**: Giao dịch đã được khởi tạo, mạng lưới đang chờ chạy lệnh hoạt động chính.
+* **`PREPARED`**: Cả chuỗi nguồn (Source chain) và chuỗi đích (Destination chain) đều đã cam kết có đủ điều kiện thực hiện giao dịch, thực tế đã khóa (lock) trước tài nguyên thành công.
+* **`COMMITTED`**: Giao dịch hoàn tất trên tất cả các chuỗi mạng lưới một cách đồng thuận.
+* **`ROLLED_BACK`**: Giao dịch bị hủy do một trong hai chốt thất bại. Tài nguyên đã "đặt trước" (locked) trên các chi nhánh sẽ được rollback về phiên bản cũ.
+* **`FAILED`**: Giao dịch thất bại hoàn toàn (nhiều khả năng do không kết nối được TCP nội bộ hoặc lỗi logic nghiêm trọng).
 
 ### 2. Mô hình Two-Phase Commit (2PC)
 
@@ -28,19 +28,19 @@ Trong `CrossChainTransactionManager`, chức năng `_execute_2pc(transaction)` p
 
 #### Pha 1: Chuẩn bị (Prepare Phase)
 
-- Người quản lý lấy ra đối tượng từ hàm cấp `get_sub_chain()` của HierarchyManager.
-- Lần lượt gọi phương thức `prepare_transaction(tx_id, payload, is_source=True)` của chuỗi **Nguồn** để khóa các tài khoản nguồn lại.
-- Tiếp tục gọi `prepare_transaction` lên chuỗi **Đích** để yêu cầu đánh dấu nhận giao dịch.
-- Mục tiêu của Phase 1: Buộc mọi chuỗi tham gia giao dịch đưa ra lời cam kết có khả năng thực hiện thay đổi.
-- Nếu chuỗi Nguồn hoặc Đích không thể Prepare thành công (ví dụ do lỗi số dư khóa), hệ thống đi ngay vào khâu `_rollback()`.
+* Người quản lý lấy ra đối tượng từ hàm cấp `get_sub_chain()` của HierarchyManager.
+* Lần lượt gọi phương thức `prepare_transaction(tx_id, payload, is_source=True)` của chuỗi **Nguồn** để khóa các tài khoản nguồn lại.
+* Tiếp tục gọi `prepare_transaction` lên chuỗi **Đích** để yêu cầu đánh dấu nhận giao dịch.
+* Mục tiêu của Phase 1: Buộc mọi chuỗi tham gia giao dịch đưa ra lời cam kết có khả năng thực hiện thay đổi.
+* Nếu chuỗi Nguồn hoặc Đích không thể Prepare thành công (ví dụ do lỗi số dư khóa), hệ thống đi ngay vào khâu `_rollback()`.
 
 #### Pha 2: Chốt xác nhận (Commit Phase)
 
-- Được thực hiện nếu và chỉ nếu Phase 1 trả về thành công ở tất cả các bên tham gia giao dịch.
-- Module gọi tới API `commit_transaction(tx_id)` của chuỗi Nguồn.
-- Đồng thời chạy tương tự tới cấu trúc của chuỗi Đích định danh là Commit hoàn tất.
-- Ở bước này, block thực thụ sẽ được tạo trên hai Sub-chain để dứt điểm quá trình hoán đổi dữ liệu.
-- Nếu lỗi trong quy trình Commit (mặc dù hãn hữu), trạng thái giao dịch sẽ bị gắn cờ `FAILED` để đợi công cụ sửa chữa thủ công (Recovery) kiểm tra qua ID đó.
+* Được thực hiện nếu và chỉ nếu Phase 1 trả về thành công ở tất cả các bên tham gia giao dịch.
+* Module gọi tới API `commit_transaction(tx_id)` của chuỗi Nguồn.
+* Đồng thời chạy tương tự tới cấu trúc của chuỗi Đích định danh là Commit hoàn tất.
+* Ở bước này, block thực thụ sẽ được tạo trên hai Sub-chain để dứt điểm quá trình hoán đổi dữ liệu.
+* Nếu lỗi trong quy trình Commit (mặc dù hãn hữu), trạng thái giao dịch sẽ bị gắn cờ `FAILED` để đợi công cụ sửa chữa thủ công (Recovery) kiểm tra qua ID đó.
 
 ### 3. Hướng dẫn Khởi tạo Lệnh
 
