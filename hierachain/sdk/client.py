@@ -132,13 +132,32 @@ class EventResult:
 
 
 @dataclass
-class ChainStatus:
-    """Status of the blockchain."""
-    node_id: str
-    is_healthy: bool
-    block_height: int
-    pending_events: int
-    is_lockdown: bool = False
+class NodeStatus:
+    """Status of the HieraChain node (API v3)."""
+    status: str
+    version: str
+    chains_active: int
+    license_active: bool
+    uptime: str
+
+
+@dataclass
+class ChainStats:
+    """Statistics for a specific chain."""
+    chain_name: str
+    total_blocks: int
+    total_events: int
+    unique_entities: int = 0
+    proof_count: int | None = None
+    registered_sub_chains: int | None = None
+
+
+@dataclass
+class EntityTrace:
+    """Trace result for an entity."""
+    entity_id: str
+    chains: list[str]
+    events: list[dict[str, Any]]
 
 
 class HieraChainClient:
@@ -152,8 +171,8 @@ class HieraChainClient:
 
     Example:
         client = HieraChainClient(config)
-        result = client.submit_event({"type": "transfer", "amount": 100})
-        status = client.get_chain_status()
+        result = client.submit_event("supply_chain", {"type": "quality_check", "entity_id": "P-1"})
+        status = client.get_node_status()
     """
 
     def __init__(self, config: HieraChainClientConfig | None = None):
@@ -263,49 +282,121 @@ class HieraChainClient:
             f"Request failed after {self.config.max_retries} retries"
         )
 
-    def submit_event(self, event_data: dict[str, Any]) -> EventResult:
+    def submit_event(self, chain_name: str, event_data: dict[str, Any]) -> EventResult:
         """
-        Submit an event to the blockchain.
+        Submit an event to a specific sub-chain.
 
         Args:
+            chain_name: Name of the chain
             event_data: Event data dictionary
 
         Returns:
             EventResult with event_id and status
         """
-        response = self._request("POST", "/api/v1/events", data=event_data)
+        url = f"/api/v1/chains/{chain_name}/events"
+        response = self._request("POST", url, data=event_data)
         return EventResult(
             event_id=response.get("event_id", ""),
             status=response.get("status", "unknown"),
             message=response.get("message", ""),
         )
 
-    def get_block(self, block_id: str) -> dict[str, Any]:
+    def get_block(
+        self,
+        chain_name: str,
+        index_or_hash: str | int,
+        resolve_cid: bool = False
+    ) -> dict[str, Any]:
         """
-        Get a block by ID or index.
+        Get a specific block by index or hash.
 
         Args:
-            block_id: Block ID or index
+            chain_name: Name of the chain
+            index_or_hash: Block index or hash
+            resolve_cid: Whether to resolve IPFS CIDs
 
         Returns:
             Block data dictionary
         """
-        return self._request("GET", f"/api/v1/blocks/{block_id}")
+        params = {"resolve_cid": str(resolve_cid).lower()}
+        url = f"/api/v1/chains/{chain_name}/blocks/{index_or_hash}"
+        return self._request("GET", url, params=params)
 
-    def get_chain_status(self) -> ChainStatus:
+    def get_node_status(self) -> NodeStatus:
         """
-        Get current blockchain status.
+        Get current node status (API v3).
 
         Returns:
-            ChainStatus object
+            NodeStatus object
         """
-        response = self._request("GET", "/api/v1/status")
-        return ChainStatus(
-            node_id=response.get("node_id", "unknown"),
-            is_healthy=response.get("is_healthy", False),
-            block_height=response.get("block_height", 0),
-            pending_events=response.get("pending_events", 0),
-            is_lockdown=response.get("is_lockdown", False),
+        response = self._request("GET", "/api/v3/status")
+        return NodeStatus(
+            status=response.get("status", "unknown"),
+            version=response.get("version", "unknown"),
+            chains_active=response.get("chains_active", 0),
+            license_active=response.get("license_active", False),
+            uptime=response.get("uptime", "unknown"),
+        )
+
+    def get_chain_stats(self, chain_name: str) -> ChainStats:
+        """
+        Get statistics for a specific chain.
+
+        Args:
+            chain_name: Name of the chain
+
+        Returns:
+            ChainStats object
+        """
+        response = self._request("GET", f"/api/v1/chains/{chain_name}/stats")
+        return ChainStats(
+            chain_name=response.get("chain_name", chain_name),
+            total_blocks=response.get("total_blocks", 0),
+            total_events=response.get("total_events", 0),
+            unique_entities=response.get("unique_entities", 0),
+            proof_count=response.get("proof_count"),
+            registered_sub_chains=response.get("registered_sub_chains")
+        )
+
+    def submit_proof(self, chain_name: str) -> dict[str, Any]:
+        """
+        Submit proof from sub-chain to main chain.
+
+        Args:
+            chain_name: Name of the sub-chain
+
+        Returns:
+            API response dictionary
+        """
+        return self._request("POST", f"/api/v1/chains/{chain_name}/submit-proof")
+
+    def trace_entity(
+        self,
+        entity_id: str,
+        chain_name: str | None = None,
+        resolve_cid: bool = False
+    ) -> EntityTrace:
+        """
+        Trace an entity across chains.
+
+        Args:
+            entity_id: ID of the entity to trace
+            chain_name: Optional chain name filter
+            resolve_cid: Whether to resolve IPFS CIDs
+
+        Returns:
+            EntityTrace object
+        """
+        params = {"resolve_cid": str(resolve_cid).lower()}
+        if chain_name:
+            params["chain_name"] = chain_name
+
+        url = f"/api/v1/entities/{entity_id}/trace"
+        response = self._request("GET", url, params=params)
+        return EntityTrace(
+            entity_id=response.get("entity_id", entity_id),
+            chains=response.get("chains", []),
+            events=response.get("events", [])
         )
 
     def health_check(self) -> bool:
@@ -342,8 +433,8 @@ class HieraChainAsyncClient:
 
     Example:
         async with HieraChainAsyncClient(config) as client:
-            result = await client.submit_event({"type": "transfer"})
-            status = await client.get_chain_status()
+            result = await client.submit_event("supply_chain", {"type": "quality_check"})
+            status = await client.get_node_status()
     """
 
     def __init__(self, config: HieraChainClientConfig | None = None):
@@ -452,28 +543,71 @@ class HieraChainAsyncClient:
             f"Request failed after {self.config.max_retries} retries"
         )
 
-    async def submit_event(self, event_data: dict[str, Any]) -> EventResult:
+    async def submit_event(self, chain_name: str, event_data: dict[str, Any]) -> EventResult:
         """Submit an event to the blockchain."""
-        response = await self._request("POST", "/api/v1/events", data=event_data)
+        url = f"/api/v1/chains/{chain_name}/events"
+        response = await self._request("POST", url, data=event_data)
         return EventResult(
             event_id=response.get("event_id", ""),
             status=response.get("status", "unknown"),
             message=response.get("message", ""),
         )
 
-    async def get_block(self, block_id: str) -> dict[str, Any]:
-        """Get a block by ID or index."""
-        return await self._request("GET", f"/api/v1/blocks/{block_id}")
+    async def get_block(
+        self,
+        chain_name: str,
+        index_or_hash: str | int,
+        resolve_cid: bool = False
+    ) -> dict[str, Any]:
+        """Get a specific block by index or hash."""
+        params = {"resolve_cid": str(resolve_cid).lower()}
+        url = f"/api/v1/chains/{chain_name}/blocks/{index_or_hash}"
+        return await self._request("GET", url, params=params)
 
-    async def get_chain_status(self) -> ChainStatus:
-        """Get current blockchain status."""
-        response = await self._request("GET", "/api/v1/status")
-        return ChainStatus(
-            node_id=response.get("node_id", "unknown"),
-            is_healthy=response.get("is_healthy", False),
-            block_height=response.get("block_height", 0),
-            pending_events=response.get("pending_events", 0),
-            is_lockdown=response.get("is_lockdown", False),
+    async def get_node_status(self) -> NodeStatus:
+        """Get current node status (API v3)."""
+        response = await self._request("GET", "/api/v3/status")
+        return NodeStatus(
+            status=response.get("status", "unknown"),
+            version=response.get("version", "unknown"),
+            chains_active=response.get("chains_active", 0),
+            license_active=response.get("license_active", False),
+            uptime=response.get("uptime", "unknown"),
+        )
+
+    async def get_chain_stats(self, chain_name: str) -> ChainStats:
+        """Get statistics for a specific chain."""
+        response = await self._request("GET", f"/api/v1/chains/{chain_name}/stats")
+        return ChainStats(
+            chain_name=response.get("chain_name", chain_name),
+            total_blocks=response.get("total_blocks", 0),
+            total_events=response.get("total_events", 0),
+            unique_entities=response.get("unique_entities", 0),
+            proof_count=response.get("proof_count"),
+            registered_sub_chains=response.get("registered_sub_chains")
+        )
+
+    async def submit_proof(self, chain_name: str) -> dict[str, Any]:
+        """Submit proof from sub-chain to main chain."""
+        return await self._request("POST", f"/api/v1/chains/{chain_name}/submit-proof")
+
+    async def trace_entity(
+        self,
+        entity_id: str,
+        chain_name: str | None = None,
+        resolve_cid: bool = False
+    ) -> EntityTrace:
+        """Trace an entity across chains."""
+        params = {"resolve_cid": str(resolve_cid).lower()}
+        if chain_name:
+            params["chain_name"] = chain_name
+
+        url = f"/api/v1/entities/{entity_id}/trace"
+        response = await self._request("GET", url, params=params)
+        return EntityTrace(
+            entity_id=response.get("entity_id", entity_id),
+            chains=response.get("chains", []),
+            events=response.get("events", [])
         )
 
     async def health_check(self) -> bool:
