@@ -1,6 +1,6 @@
 ---
 title: "Core module"
-description: "Core HieraChain module: Block, Blockchain, Schema, Utils, Caching, Domain Contract, Parallel Engine và Core Consensus (PoA/PoF)."
+description: "Core HieraChain module: Block, Blockchain, Schema, Utils, Caching, Domain Contract, Parallel Engine."
 icon: material/cube
 ---
 
@@ -64,7 +64,7 @@ class Block:
 Ví dụ tối thiểu:
 
 ```python
-# Ví dụ (không đầy đủ import):
+  # Ví dụ (không đầy đủ import):
   from hierachain.core.block import Block
   events = [{
       "entity_id": "PROD-001",
@@ -259,14 +259,14 @@ engine.shutdown()
 
 * Tính năng:
 
-  * Lưu trữ sự kiện bằng Apache Arrow, hiệu quả bộ nhớ.
-  * Băm và Merkle root xác định (deterministic) để phục vụ proof.
-  * Truy vấn theo entity/type/filter trên chuỗi.
+    * Lưu trữ sự kiện bằng Apache Arrow, hiệu quả bộ nhớ.
+    * Băm và Merkle root xác định (deterministic) để phục vụ proof.
+    * Truy vấn theo entity/type/filter trên chuỗi.
 
 * Hạn chế/ghi chú:
 
-  * Payload `data` dạng nhị phân; người dùng cần tự tuần tự hoá phù hợp.
-  * `details` chuẩn hoá về Map(str,str); giá trị phi chuỗi sẽ được chuyển thành chuỗi.
+    * Payload `data` dạng nhị phân; người dùng cần tự tuần tự hoá phù hợp.
+    * `details` chuẩn hoá về Map(str,str); giá trị phi chuỗi sẽ được chuyển thành chuỗi.
 
 ## Bảo mật & quyền truy cập
 
@@ -284,11 +284,9 @@ engine.shutdown()
 ## FAQ
 
 !!! question "Tại sao dùng Arrow?"
-
     Giảm chi phí chuyển đổi, tăng hiệu quả bộ nhớ và phù hợp khối lượng sự kiện lớn.
 
 !!! question "Có thể nhúng dữ liệu tuỳ ý?"
-
     Có, qua trường `data` (binary). Khuyến nghị giới hạn kích thước và tuần tự JSON/binary hợp lý.
 
 ## Liên quan

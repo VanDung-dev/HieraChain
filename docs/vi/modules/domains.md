@@ -152,7 +152,6 @@ report = validator.validate_chain_consistency("logistics_chain")
 if report["is_consistent"]:
     print("Dữ liệu chuỗi logistics hoàn toàn nhất quán.")
 ```
-```
 
 ## Event Types được hỗ trợ
 
@@ -169,14 +168,16 @@ if report["is_consistent"]:
 ## Tính năng & hạn chế
 
 * **Tính năng**: 
-  * Khung sẵn có giúp xây dựng domain nhanh
-  * Có sẵn tiện ích truy vết entity cross-chain
-  * Validation nhất quán giữa các chain
-  * Operation metrics tự động
+
+    * Khung sẵn có giúp xây dựng domain nhanh
+    * Có sẵn tiện ích truy vết entity cross-chain
+    * Validation nhất quán giữa các chain
+    * Operation metrics tự động
 
 * **Hạn chế**: 
-  * Tuỳ chỉnh sâu cho domain cụ thể cần mở rộng lớp cơ sở
-  * Domain chain phụ thuộc vào SubChain và HierarchyManager
+
+    * Tuỳ chỉnh sâu cho domain cụ thể cần mở rộng lớp cơ sở
+    * Domain chain phụ thuộc vào SubChain và HierarchyManager
 
 ## Liên quan
 

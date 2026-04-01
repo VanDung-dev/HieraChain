@@ -37,6 +37,7 @@ RollbackManager:
 
 RecoveryEngine:
   recover(context)  # chọn kịch bản phù hợp
+```
 
 #### Journaling Example
 
@@ -69,7 +70,6 @@ engine = RecoveryEngine()
 
 # Kích hoạt quy trình phục hồi dựa trên ngữ cảnh lỗi
 engine.recover(error_type="consensus_timeout", context={"node_id": "node-1"})
-```
 ```
 
 ### Luồng xử lý lỗi (Workflow)

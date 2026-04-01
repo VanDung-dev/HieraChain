@@ -24,6 +24,7 @@ Cung cấp lớp tích hợp với hệ thống doanh nghiệp/ERP và các clie
 class ERPAdapter:
   pull(domain, params) -> list[dict]
   push(domain, items) -> bool
+```
 
 #### Arrow Client Example
 
@@ -56,7 +57,6 @@ class MyCustomERP(ERPAdapter):
     def pull(self, domain, params):
         # Logic gọi API từ SAP/Oracle...
         return [{"id": "1", "value": "data"}]
-```
 ```
 
 ## Cấu hình

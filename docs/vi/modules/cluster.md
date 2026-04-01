@@ -56,9 +56,10 @@ Quản lý cụm (cluster) và cơ chế đồng bộ trạng thái giữa các 
 
 ```python
 class ClusterManager:
-  add_node(node) -> bool
-  remove_node(node) -> bool
-  elect_leader() -> str | None
+  register_node(node_id, address)
+  unregister_node(node_id)
+  vote_lockdown(node_id, reason) -> bool
+  vote_recovery(node_id) -> bool
 
 class StateSyncManager:
   sync_from(source) -> bool
@@ -80,7 +81,6 @@ sync.sync_subchain_to_main("supply_chain")
 
 # Kiểm tra tính nhất quán liên tầng
 is_consistent = sync.verify_cross_level_integrity("supply_chain")
-```
 ```
 
 ## Cấu hình

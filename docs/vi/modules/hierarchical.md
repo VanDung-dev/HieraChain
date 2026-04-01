@@ -43,7 +43,7 @@ Mô-đun Hierarchical hiện thực kiến trúc phân cấp: nhiều Sub-Chain 
 
     ---
 
-    Đồng thuận đa tầng với `hierachain/hierarchical/consensus/bft_consensus.py` (BFT) và Ordering Service.
+    Đồng thuận đa tầng với `hierachain/consensus/bft/bft_consensus.py` (BFT) và Ordering Service.
 
     → Xem chi tiết tại [Ordering](../consensus/ordering.md) và [BFT Consensus](../consensus/bft_consensus.md)
 
@@ -75,7 +75,7 @@ flowchart TD
 
 ## API công khai (Public API)
 
-Lưu ý: Tên hàm dưới đây mang tính mô tả nhóm hành vi phổ biến; xem chữ ký chính xác trong mã nguồn tương ứng.
+**Lưu ý:** Tên hàm dưới đây mang tính mô tả nhóm hành vi phổ biến; xem chữ ký chính xác trong mã nguồn tương ứng.
 
 * Main Chain (vai trò điển hình) — Đăng ký sub-chain; thêm Proof; xác minh Proof; truy vấn Proof theo sub-chain; đóng block chính khi cần.
 * Sub-Chain (vai trò điển hình) — Thêm Event; gom/đóng Block; khởi tạo Ordering; tạo & gửi Proof lên Main Chain.
@@ -116,14 +116,14 @@ print(success, proof_success)
 
 * Tính năng:
 
-  * Phân tách dữ liệu: Sub-Chain giữ dữ liệu domain; Main Chain chỉ lưu Proof.
-  * Hỗ trợ Ordering/Consensus trước khi đóng Block để đảm bảo thứ tự xác định.
-  * Khả năng mở rộng theo chiều ngang bằng cách thêm Sub-Chain theo domain.
+    * Phân tách dữ liệu: Sub-Chain giữ dữ liệu domain; Main Chain chỉ lưu Proof.
+    * Hỗ trợ Ordering/Consensus trước khi đóng Block để đảm bảo thứ tự xác định.
+    * Khả năng mở rộng theo chiều ngang bằng cách thêm Sub-Chain theo domain.
 
 * Hạn chế/ghi chú:
 
-  * Cần cơ chế đồng bộ thời gian hợp lý để phục vụ kiểm toán.
-  * Việc gửi proof phụ thuộc độ tin cậy mạng; cần retry/idempotency.
+    * Cần cơ chế đồng bộ thời gian hợp lý để phục vụ kiểm toán.
+    * Việc gửi proof phụ thuộc độ tin cậy mạng; cần retry/idempotency.
 
 ## Bảo mật & quyền truy cập
 
@@ -417,7 +417,7 @@ event_id = sub_chain.add_event({
 
     **FACT**
 
-    * Các tệp: `hierachain/hierarchical/{main_chain.py, sub_chain.py, hierarchy_manager.py, channel.py, multi_org.py, private_data.py}` và `hierachain/hierarchical/consensus/*` (vai trò BFT Consensus), `hierachain/consensus/ordering/service.py` (vai trò Ordering).
+    * Các tệp: `hierachain/hierarchical/{main_chain.py, sub_chain.py, hierarchy_manager.py, channel.py, multi_org.py, private_data.py}` và `hierachain/consensus/bft/*` (vai trò BFT Consensus), `hierachain/consensus/ordering/service.py` (vai trò Ordering).
     * Proof Aggregation: `hierarchical/proof_aggregation.py` (`ProofAggregator` gộp proof từ nhiều sub-chain).
     * Rebalancer: `hierarchical/rebalancer.py` (`SubChainRebalancer` tự động chia tách khi tải vượt ngưỡng).
     * Main Chain giữ Proof/metadata; Sub-Chain giữ dữ liệu domain và tạo Proof; Hierarchy Manager điều phối — phản ánh trực tiếp bố cục mô-đun.

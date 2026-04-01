@@ -46,7 +46,7 @@ graph LR
 
 Mức mô tả (rút gọn, tham khảo tên lớp/hàm trong mã nguồn):
 
-* ZmqTransport: khởi tạo với endpoint (bind/connect), gửi (`send`), nhận (`recv`), đóng (`close`).
+* ZmqNode: khởi tạo với `node_id`, `port`, `host`; hỗ trợ đăng ký peer (`register_peer`), gửi `send_direct`, `broadcast` qua `DEALER`, nhận dữ liệu tự động cấu hình qua hàm callback (`set_handler`). Hỗ trợ Replay Protection sẵn (qua `nonce` và `timestamp`).
 * NetworkClient: cấu hình danh sách endpoint, phương thức `publish`, `subscribe`, `request`, `respond` (tùy thực thi).
 * SecureConnection: tạo/ký/xác minh thông điệp, bọc thêm lớp mã hóa nếu thiết lập.
 * **MessageCryptographic**: ký messages (`sign_message`), verify signatures (`verify_message`), handshake signing/verification.
@@ -55,13 +55,24 @@ Mức mô tả (rút gọn, tham khảo tên lớp/hàm trong mã nguồn):
 Ví dụ mô tả (pseudocode):
 
 ```python
-from hierachain.network.zmq_transport import ZmqTransport
+import asyncio
+from hierachain.network.zmq_transport import ZmqNode
 
-tx = ZmqTransport(endpoint="tcp://127.0.0.1:5555", mode="bind")
-rx = ZmqTransport(endpoint="tcp://127.0.0.1:5555", mode="connect")
-
-tx.send({"type": "event", "payload": {"entity_id": "PROD-001"}})
-msg = rx.recv(timeout=1000)  # ms
+async def main():
+    # Khởi tạo hai Node
+    node_A = ZmqNode(node_id="node_A", port=5555)
+    node_B = ZmqNode(node_id="node_B", port=5556)
+    
+    # Cài đặt bộ xử lý thông điệp
+    node_B.set_handler(lambda msg, sender: print(f"Nhận từ {sender}: {msg}"))
+    
+    await node_A.start()
+    await node_B.start()
+    
+    # Đăng ký peer và gửi tin
+    node_A.register_peer("node_B", "tcp://127.0.0.1:5556")
+    msg = {"type": "event", "timestamp": time.time(), "nonce": "abc1234"}
+    await node_A.send_direct("node_B", msg)
 ```
 
 ### Message Cryptographic (Chi tiết)
@@ -157,24 +168,28 @@ else:
 ```
 
 **[FACT]** Message Cryptographic features:
+
 * **Ed25519 signatures**: Fast, secure digital signatures (128-bit security)
 * **Canonical serialization**: Deterministic JSON serialization (sorted keys) for consistent signing
 * **Replay protection**: Timestamp + UUID nonce prevent replay attacks
 * **Handshake support**: Separate signing for connection establishment
 
 **[INVARIANT]** Signed message structure:
+
 * Must contain: `payload`, `timestamp`, `nonce`, `sender_id`, `signature`
 * `timestamp` must be Unix timestamp (float)
 * `nonce` must be unique UUID string
 * `signature` must be hex-encoded Ed25519 signature
 
 **[DECISION]** Dùng Ed25519 thay vì RSA/ECDSA vì:
+
 * Faster signing/verification (~10x faster than RSA-2048)
 * Smaller signatures (64 bytes vs 256 bytes for RSA)
 * Better security properties (immunity to timing attacks)
 * Native support in Python via `cryptography` library
 
 **[EDGE CASE]** Clock skew: Nếu sender và receiver có clock skew lớn (>5 minutes), timestamp validation có thể fail. Giải pháp:
+
 * Sync clocks với NTP
 * Accept messages trong time window (±5 minutes)
 * Log warnings nếu detect large clock skew

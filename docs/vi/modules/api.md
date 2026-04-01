@@ -13,12 +13,12 @@ Cung cấp giao diện HTTP để tương tác với hệ thống HieraChain: qu
 ## Kiến trúc & khái niệm
 
 * Server: `hierachain/api/server.py` (khởi tạo FastAPI, wiring router, middleware).
-* Router v1: `hierachain/api/v1/endpoints.py` + schemas Pydantic `api/v1/schemas.py`.
-* Router v2 (nếu dùng): `hierachain/api/v2/*` (mở rộng nâng cao/ordering).
-* Router v3: `hierachain/api/v3/*` (System & Admin: status, identity).
-* Explorer: `hierachain/api/blockchain_explorer.py` (API khám phá chuỗi, nếu áp dụng).
-* Dependency Injection: lazy singleton `HierarchyManager` / `EntityTracer` (xem `get_hierarchy_manager`, `get_entity_tracer`).
-* Bảo vệ tài nguyên: có thể thêm `ResourceGuardMiddleware` từ `security/resource_guard.py` khi chạy server.
+* Router v1/v2/v3: Các phiên bản REST API tương ứng.
+* Explorer: `hierachain/api/blockchain_explorer.py` (Giao diện trực quan hóa và phân tích dữ liệu).
+* GraphQL: `hierachain/api/graphql/` (Truy vấn linh hoạt với cơ chế bảo mật nâng cao).
+* Storage Wrapper: `hierachain/api/storage/` (Tích hợp IPFS và mã hóa cho dữ liệu lớn off-chain).
+* Dependency Injection: lazy singleton `HierarchyManager` / `EntityTracer`.
+* Bảo vệ tài nguyên: `ResourceGuardMiddleware` và `APIKeyVerifier`.
 
 ## API công khai (v1)
 
@@ -114,17 +114,22 @@ Các schema chính nằm ở `hierachain/api/v3/schemas.py`:
 ### Subscriptions
 
 * **Per-chain**: Nhận tất cả events/blocks từ một chain cụ thể
-  ```json
-  {"action": "subscribe", "chain_name": "supply_chain"}
-  ```
+
+    ```json
+    {"action": "subscribe", "chain_name": "supply_chain"}
+    ```
+  
 * **Per-event-type**: Nhận events theo loại (ví dụ: `production_complete`)
-  ```json
-  {"action": "subscribe", "chain_name": "supply_chain", "event_type": "production_complete"}
-  ```
+
+    ```json
+    {"action": "subscribe", "chain_name": "supply_chain", "event_type": "production_complete"}
+    ```
+  
 * **Unsubscribe**: Huỷ subscription
-  ```json
-  {"action": "unsubscribe", "chain_name": "supply_chain"}
-  ```
+
+    ```json
+    {"action": "unsubscribe", "chain_name": "supply_chain"}
+    ```
 
 ### Ví dụ JavaScript
 
@@ -154,19 +159,53 @@ setInterval(() => {
 ### Kiến trúc
 
 * `websocket_manager.py`: Quản lý connection lifecycle, subscriptions, broadcasting
-  * `WebSocketManager`: Singleton quản lý tất cả connections
-  * `connect()` / `disconnect()`: Thêm/xoá connection
-  * `subscribe()` / `unsubscribe()`: Quản lý subscriptions
-  * `broadcast_to_chain()`: Gửi message tới subscribers của một chain
+
+    * `WebSocketManager`: Singleton quản lý tất cả connections
+    * `connect()` / `disconnect()`: Thêm/xoá connection
+    * `subscribe()` / `unsubscribe()`: Quản lý subscriptions
+    * `broadcast_to_chain()`: Gửi message tới subscribers của một chain
+
 * `websocket_endpoints.py`: FastAPI WebSocket endpoints
-  * `/ws`: Main WebSocket endpoint
-  * `/ws/status`: Connection stats
+
+    * `/ws`: Main WebSocket endpoint
+    * `/ws/status`: Connection stats
 
 ### Cấu hình
 
 Các biến liên quan (xem `hierachain/config/settings.py`):
 
 * Không có cấu hình riêng — WebSocket sử dụng cùng host/port với HTTP API
+
+## Blockchain Explorer (`hierachain/api/blockchain_explorer.py`)
+
+Cung cấp khả năng quan sát và phân tích dữ liệu chuỗi trực quan cho nhà phát triển.
+
+### Các thành phần chính (Components)
+
+* **`ChainOverviewComponent`**: 
+
+    *   Xem tổng quan số lượng block, sự kiện trên Main Chain và tất cả Sub-Chains.
+    *   Theo dõi hoạt động gần đây (5 blocks mới nhất).
+  
+* **`EntityTracerComponent`**:
+
+    *   Truy vết vòng đời của một thực thể (`entity_id`) xuyên suốt hệ thống phân cấp.
+    *   Hỗ trợ giải mã **CID IPFS** trực tiếp trên giao diện nếu dữ liệu được lưu off-chain.
+  
+* **`EventAnalyticsComponent`**:
+
+    *   Thống kê loại sự kiện (Event Types).
+    *   Biểu đồ dòng thời gian hoạt động (Activity Timeline) trong 24 giờ qua.
+    *   Phân bổ sự kiện giữa các chuỗi (Chain Distribution).
+  
+* **`ProofVisualizerComponent`**:
+
+    *   Trực quan hóa luồng gửi Proof từ Sub-Chain lên Main Chain.
+    *   Kiểm tra trạng thái xác thực và sơ đồ cây phân cấp hệ thống.
+
+### Tích hợp IPFS
+
+Explorer tự động phát hiện các chỉ số dữ liệu off-chain (IPFS indicators) và cung cấp nút bấm để phân giải dữ liệu từ mạng IPFS Swarm (đã được giải mã AES-256-GCM).
 
 ## GraphQL API — Query & Mutation
 
@@ -264,6 +303,30 @@ mutation {
 * `_filter_event()`: Hàm nội bộ lọc events theo các tiêu chí (entity_id, event_type, from_timestamp, to_timestamp). Sử dụng `all()` với generator expression để giảm cyclomatic complexity.
 * `_to_event_type()`, `_to_block_type()`, `_to_chain_status()`: Chuyển đổi từ objects nội bộ sang GraphQL types.
 
+### Bảo mật GraphQL (`hierachain/api/graphql/security.py`)
+
+HieraChain triển khai các lớp bảo mật nghiêm ngặt để bảo vệ endpoint GraphQL:
+
+1. **Giới hạn độ sâu (Query Depth Limit)**: 
+
+    *   Tối đa **10 cấp** lồng nhau. Ngăn chặn các truy vấn đệ quy gây cạn kiệt tài nguyên.
+   
+2. **Phân tích độ phức tạp (Complexity Analysis)**: 
+
+    *   Ngưỡng tối đa: **1000 điểm**.
+    *   Tính điểm dựa trên số lượng field, các phép toán danh sách (`limit`, `first`), và fragment.
+   
+3. **Chặn Introspection**: 
+
+    *   Tự động vô hiệu hóa các truy vấn `__schema` và `__type` trong môi trường **Production**.
+   
+4. **Rate Limiting**: 
+
+    *   Giới hạn **10 requests mỗi phút** cho mỗi IP (độc lập với giới hạn của REST API).
+
+> [!IMPORTANT]
+> Các cơ chế này giúp ngăn chặn các cuộc tấn công DoS dựa trên truy vấn phức tạp (Resource Exhaustion attacks).
+
 ### Kiến trúc
 
 * `schema.py`: Định nghĩa types, queries, mutations và schema GraphQL
@@ -317,19 +380,21 @@ Các biến cấu hình liên quan (xem `hierachain/config/settings.py`):
 
 * Tính năng:
 
-  * Các endpoint cốt lõi để thao tác chuỗi và quan sát dữ liệu.
-  * Truy vết thực thể (`EntityTracer`) trên nhiều chain.
-  * Fallback an toàn khi serialize events từ Arrow Table.
+    * Các endpoint cốt lõi để thao tác chuỗi và quan sát dữ liệu.
+    * Truy vết thực thể (`EntityTracer`) trên nhiều chain.
+    * Fallback an toàn khi serialize events từ Arrow Table.
 
 * Hạn chế:
 
-  * Một số endpoint dùng mô phỏng (ví dụ submit proof ở chế độ không có ZK thực) — cần cấu hình/triển khai bổ sung nếu bật ZK.
+    * Một số endpoint dùng mô phỏng (ví dụ submit proof ở chế độ không có ZK thực) — cần cấu hình/triển khai bổ sung nếu bật ZK.
 
 ## Bảo mật & quyền truy cập
 
 * Xác thực API key (tuỳ môi trường): `security/verify/api_key_verifier.py`.
+* Bảo mật GraphQL: Cơ chế Depth/Complexity/Introspection bảo vệ chống lại các truy vấn độc hại.
+* Lưu trữ an toàn: Dữ liệu lớn được mã hóa AES-256-GCM trước khi đẩy lên IPFS (xem [Storage](storage.md)).
 * Bảo vệ tài nguyên: `ResourceGuardMiddleware` có thể từ chối request khi CPU/RAM vượt ngưỡng.
-* Chính sách/role: tích hợp qua `security/identity.py`, `policy_engine.py` (tài liệu ở trang Security).
+* Chính sách/role: tích hợp qua `security/identity.py`, `policy_engine.py`.
 
 ## Xử lý lỗi & khắc phục
 

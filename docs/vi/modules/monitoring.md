@@ -23,8 +23,9 @@ Theo dõi tình trạng hệ thống (CPU, RAM, thông lượng sự kiện/kh�
 AlertSystem:
   add_rule(name, predicate, action)
   evaluate(metrics)
+```
 
-#### Performance Metrics & Monitor
+### Performance Metrics & Monitor
 
 **File**: `hierachain/monitoring/performance_monitor.py`, `performance_metrics.py`
 
@@ -41,7 +42,7 @@ stats = monitor.get_current_metrics()
 print(f"CPU: {stats.cpu_usage}%, RAM: {stats.memory_usage}%")
 ```
 
-#### Alert System
+### Alert System
 
 **File**: `hierachain/monitoring/alert_system.py`
 
@@ -62,9 +63,8 @@ alerts.add_rule(
 # Đánh giá metrics
 alerts.evaluate(stats)
 ```
-```
 
-Ví dụ (mô tả):
+### Ví dụ (mô tả):
 
 ```python
 from hierachain.monitoring.performance_monitor import PerformanceMonitor

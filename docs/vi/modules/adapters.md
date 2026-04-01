@@ -15,11 +15,11 @@ Chuẩn hóa điểm nối (IO boundary) giữa HieraChain và hệ thống lưu
 * Adapter Pattern: Mỗi backend hiện thực giao diện đọc/ghi thống nhất cho dữ liệu/khối/trạng thái.
 * Phân loại:
 
-  * Database: `adapters/database/sqlite_adapter.py` — truy cập kho SQLite (và có thể mở rộng RDBMS khác).
-  * Storage:
+    * Database: `adapters/database/sqlite_adapter.py` — truy cập kho SQLite (và có thể mở rộng RDBMS khác).
+    * Storage:
 
-    * `adapters/storage/file_storage.py` — lưu/đọc tệp khối, snapshot, đính kèm.
-    * `adapters/storage/redis_storage.py` — lưu đệm/tra cứu nhanh qua Redis.
+        * `adapters/storage/file_storage.py` — lưu/đọc tệp khối, snapshot, đính kèm.
+        * `adapters/storage/redis_storage.py` — lưu đệm/tra cứu nhanh qua Redis.
 
 * Ràng buộc: Các adapter không tự áp đặt logic đồng thuận hay bảo mật; chúng triển khai thao tác IO theo hợp đồng đã định.
 
@@ -27,9 +27,9 @@ Chuẩn hóa điểm nối (IO boundary) giữa HieraChain và hệ thống lưu
 
 Mức mô tả (rút gọn, tham khảo tên lớp/hàm trong mã nguồn):
 
-* Khởi tạo adapter với cấu hình (đường dẫn DB/file, host/port Redis, timeouts...).
-* Giao diện đọc/ghi bản ghi/block/snapshot theo khóa/ID.
-* Quản lý vòng đời tài nguyên: mở/kết nối → dùng → đóng/flush.
+    * Khởi tạo adapter với cấu hình (đường dẫn DB/file, host/port Redis, timeouts...).
+    * Giao diện đọc/ghi bản ghi/block/snapshot theo khóa/ID.
+    * Quản lý vòng đời tài nguyên: mở/kết nối → dùng → đóng/flush.
 
 Ví dụ mô tả (giả định):
 
@@ -46,33 +46,51 @@ Adapter cho cơ sở dữ liệu quan hệ (RDBMS), mặc định là SQLite:
 ```python
 from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 
-db_adapter = SQLiteAdapter(db_url="sqlite:///hierachain.db")
+# Khởi tạo với đường dẫn tệp DB (mặc định: hierachain.db)
+db_adapter = SQLiteAdapter(database_path="hierachain.db")
 
-# Thao tác dữ liệu
-db_adapter.execute("INSERT INTO events ...")
-rows = db_adapter.query("SELECT * FROM blocks WHERE index = ?", (10,))
+# Thao tác dữ liệu cấp cao (khớp với Ledger guidelines)
+db_adapter.store_chain(chain_instance)
+stats = db_adapter.get_chain_statistics("supply_chain")
+events = db_adapter.get_entity_events("PROD-001")
 ```
 
-**Lưu ý**: SqliteAdapter hỗ trợ tự động khởi tạo schema và quản lý migration cơ bản cho môi trường phát triển.
+**Lưu ý**: `SQLiteAdapter` hỗ trợ tự động khởi tạo schema và quản lý chỉ mục (indexes) tối ưu cho việc truy vấn theo `entity_id`.
+
+### Storage Adapters
+
+**File**: `adapters/storage/file_storage.py` và `adapters/storage/redis_storage.py`
+
+```python
+# File Storage (Lưu trữ khối Parquet)
+from hierachain.adapters.storage.file_storage import FileStorageAdapter
+file_store = FileStorageAdapter(storage_path="blockchain_data")
+file_store.store_block("main_chain", block_dict)
+
+# Redis Storage (Cache và tra cứu nóng)
+from hierachain.adapters.storage.redis_storage import RedisStorageAdapter
+redis_store = RedisStorageAdapter(host="localhost", port=6379)
+redis_store.store_block("sub_chain_1", block_data)
+```
 
 ## Cấu hình
 
 * Tham khảo `hierachain/config/settings.py`:
-  * `DEFAULT_STORAGE_BACKEND`: memory | redis | sqlite
-  * Thông số Redis: `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB`
-  * `DATABASE_URL`: ví dụ `sqlite:///hierachain.db`
+    * `DEFAULT_STORAGE_BACKEND`: memory | redis | sqlite
+    * Thông số Redis: `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB`
+    * `DATABASE_URL`: ví dụ `sqlite:///hierachain.db`
 * Biến môi trường tương ứng có thể ghi đè giá trị mặc định (xem trang Reference/Config).
 
 ## Tính năng & hạn chế
 
 * Tính năng:
 
-  * Thay thế backend nhanh chóng mà không đổi luồng nghiệp vụ.
-  * Kết hợp nhiều adapter: Redis (cache) + SQLite/File (bền vững).
+    * Thay thế backend nhanh chóng mà không đổi luồng nghiệp vụ.
+    * Kết hợp nhiều adapter: Redis (cache) + SQLite/File (bền vững).
 
 * Hạn chế:
 
-  * File/SQLite phù hợp môi trường đơn nút; môi trường phân tán cần backend đồng bộ/HA.
+    * File/SQLite phù hợp môi trường đơn nút; môi trường phân tán cần backend đồng bộ/HA.
 
 ## Bảo mật & quyền truy cập
 
