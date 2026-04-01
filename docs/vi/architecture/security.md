@@ -6,16 +6,31 @@ icon: material/shield-lock
 
 # Kiến trúc bảo mật
 
-Trang này mô tả các cơ chế bảo mật ở tầng kiến trúc và cách chúng tích hợp vào HieraChain.
+Trang này mô tả các cơ chế bảo mật ở tầng kiến trúc và cách chúng tích hợp vào HieraChain. Hệ thống tuân theo chiến lược bảo mật doanh nghiệp ngặt nghèo - một kiến trúc phòng thủ đa tầng vắt ngang qua toàn bộ vòng đời ứng dụng.
 
-## Thành phần chính
+## Thành Bảo Mật phần chính
 
-* MSP/Identity: `hierachain/security/{msp.py, identity.py}` — quản lý Organization, User, Role, và xác minh danh tính/chữ ký.
-* Key/Cert: `hierachain/security/{key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}` — quản lý vòng đời khóa và chứng chỉ.
-* Policy/Guard: `hierachain/security/{policy_engine.py, resource_guard.py}` — kiểm soát quyền và bảo vệ tài nguyên.
-* API Key: `hierachain/security/verify/api_key_verifier.py` — xác thực API key cho các endpoint quan trọng.
-* Signature/ZK: `hierachain/security/verify/{signature_verifier.py, zk_verifier.py}`, `security/zk_prover.py` — xác minh chữ ký, bằng chứng ZK (tùy chọn).
-* Cấu hình: `hierachain/config/settings.py` — bật/tắt các tính năng bảo mật (AUTH, CORS, HSTS, rate limit…).
+Kiến trúc phòng vệ được cấu thành từ 6 luồng chính phối hợp chặt chẽ:
+
+* **Authorization & Access Control**: 
+  * `hierachain/security/{msp.py, identity.py}` — quản lý Organization, User, Role, và PKI Identity.
+  * `hierachain/security/policy_engine.py` — kiểm soát quyền (ABAC).
+  * `hierachain/security/verify/api_key_verifier.py` — xác thực API key.
+* **Lockdown & Logging**: 
+  * `hierachain/security/secure_logging.py` — Tamper-evident log, che mờ dữ liệu PII.
+  * `hierachain/cluster/cluster_lockdown_manager.py` — Phong tỏa (Lockdown) khẩn cấp bằng Quorum.
+* **Fault-tolerance & Integrity**: 
+  * `hierachain/security/resource_guard.py` — Lá chắn thép chống DoS/DDoS tải cao.
+  * `hierachain/security/integrity.py` — Quét chữ ký checksum các tệp khởi động.
+* **Risk Analyzer**: 
+  * `hierachain/risk_management/risk_analyzer.py` — Theo dõi chỉ báo dị thường Z-score.
+  * `hierachain/security/sanitization.py` — Chống injection đầu vào.
+* **Encryption & Keys**: 
+  * `hierachain/security/{key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}` — AES-GCM, Ed25519 và vòng đời X.509 cho mTLS.
+* **Decentralized Zero-Knowledge Proofs**: 
+  * `hierachain/security/zk_prover.py` & `hierachain/security/verify/zk_verifier.py` — Triển khai Zero-Knowledge proofs cho Sub-Chains ẩn danh dữ liệu thật.
+
+Cấu hình bảo mật hệ thống được bật/tắt linh hoạt tại `hierachain/config/settings.py` (AUTH, CORS, HSTS, rate limit…).
 
 ## Tích hợp vào hệ thống
 
