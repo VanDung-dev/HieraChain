@@ -631,3 +631,61 @@ async def get_chain_blocks(
         "limit": limit,
         "resolved": resolve_cid and is_ipfs_enabled()
     }
+
+
+@router.get(
+    "/chains/{chain_name}/blocks/{index_or_hash}",
+    dependencies=[Depends(require_chain_access)]
+)
+async def get_block_detail(
+    chain_name: str,
+    index_or_hash: str,
+    resolve_cid: bool = False,
+    manager: HierarchyManager = Depends(get_hierarchy_manager)
+):
+    """
+    Get details of a specific block by index or hash.
+
+    Args:
+        chain_name: Name of the chain
+        index_or_hash: Block index (integer) or block hash (string)
+        resolve_cid: If True, resolve IPFS CIDs to actual data (default: False)
+        manager: HierarchyManager instance (injected via Depends)
+
+    Returns:
+        Detailed block data
+    """
+    # Validate chain exists
+    chain = _validate_chain_exists_for_blocks(manager, chain_name)
+    chain_blocks = getattr(chain, 'chain', [])
+
+    target_block = None
+
+    # Try to find by index first if it looks like an integer
+    if index_or_hash.isdigit():
+        idx = int(index_or_hash)
+        if 0 <= idx < len(chain_blocks):
+            target_block = chain_blocks[idx]
+
+    # Try to find by hash if not found by index or index_or_hash is not a digit
+    if not target_block:
+        for block in chain_blocks:
+            if getattr(block, 'hash', '') == index_or_hash:
+                target_block = block
+                break
+
+    if not target_block:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Block '{index_or_hash}' not found in chain '{chain_name}'"
+        )
+
+    # Serialize block
+    block_data = _serialize_block(target_block)
+
+    # Resolve CIDs if requested and IPFS is enabled
+    if resolve_cid and is_ipfs_enabled():
+        resolved_blocks = await _resolve_blocks_cids([block_data])
+        block_data = resolved_blocks[0]
+
+    return block_data
