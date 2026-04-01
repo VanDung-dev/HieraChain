@@ -10,6 +10,27 @@ icon: material/numeric-1-circle
 
 Mô tả các endpoint REST trong phiên bản API v1 dùng để tương tác với HieraChain: quản lý chuỗi, ghi sự kiện, gửi bằng chứng (proof), truy vết thực thể, thống kê và truy xuất block.
 
+#### Phụ lục: Ví dụ Gửi Sự kiện kèm IPFS
+
+Khi doanh nghiệp cần lưu trữ các tệp tin lớn (hợp đồng PDF, ảnh sản phẩm) mà không muốn làm phình to blockchain:
+
+1. **Bước 1**: Upload tệp lên IPFS và nhận `CID`.
+2. **Bước 2**: Gửi sự kiện vào HieraChain với `details_cid`.
+
+```bash
+curl -X POST "http://localhost:2661/api/v1/chains/supply_chain/events" \
+     -H "Content-Type: application/json" \
+     -H "X-API-Key: your_api_key" \
+     -d '{
+       "entity_id": "CONTRACT-2024-001",
+       "event": "contract_signed",
+       "details_cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
+       "details_nonce": "98765"
+     }'
+```
+
+Dữ liệu này sẽ được HieraChain bảo chứng tính toàn vẹn thông qua mã băm, trong khi nội dung thực tế được lưu trữ an toàn trên mạng lưới IPFS.
+
 ## Tổng quan endpoint
 
 ```mermaid
@@ -42,6 +63,7 @@ sequenceDiagram
 * POST `/api/v1/chains/{chain_name}/submit-proof` — Gửi proof từ Sub-Chain lên Main Chain.
 * GET `/api/v1/chains/{chain_name}/stats` — Lấy thống kê chuỗi.
 * GET `/api/v1/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false` — Lấy danh sách block (có phân trang). Nếu `resolve_cid=true`, tự động tải dữ liệu chi tiết từ IPFS.
+* GET `/api/v1/chains/{chain_name}/blocks/{index_or_hash}` — Lấy chi tiết một block cụ thể.
 * GET `/api/v1/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]` — Truy vết sự kiện. Nếu `resolve_cid=true`, giải mã chi tiết sự kiện từ IPFS.
 
 ## Schema chính (trích từ `hierachain/api/v1/schemas.py`)
@@ -152,7 +174,23 @@ Phản hồi:
 }
 ```
 
-### 5. Truy vết entity trên tất cả chuỗi
+### 5. Lấy thông tin khối (Chi tiết)
+
+**Endpoint**: `GET /api/v1/chains/{chain_name}/blocks/{index_or_hash}`
+
+Lấy dữ liệu chi tiết của một khối cụ thể bằng Index (số) hoặc Hash (chuỗi).
+
+**Tham số Query**:
+
+* `resolve_cid` (boolean): Nếu `True`, server sẽ giải mã các `details_cid` từ IPFS và trả về dữ liệu gốc trong trường `details`.
+
+**Ví dụ**:
+```bash
+curl -X GET "http://localhost:2661/api/v1/chains/supply_chain/blocks/10?resolve_cid=true" \
+     -H "X-API-Key: your_api_key"
+```
+
+### 6. Truy vết entity trên tất cả chuỗi
 
 ```bash
 curl -s "http://localhost:2661/api/v1/entities/PROD-001/trace"

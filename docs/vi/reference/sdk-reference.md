@@ -22,6 +22,67 @@ config = HieraChainClientConfig(
     timeout=10.0,
     api_key="your-api-key-here"
 )
+```
+
+### Các phương thức chính
+
+#### `submit_event(chain_name: str, event_data: dict) -> EventResult`
+
+Gửi một sự kiện mới vào một sub-chain cụ thể.
+
+*   **Ví dụ**: `client.submit_event("supply_chain", {"entity_id": "P001", "event": "check"})`
+
+#### `get_block(chain_name: str, index_or_hash: str | int, resolve_cid: bool = False) -> dict`
+
+Lấy thông tin chi tiết của một khối.
+
+*   **resolve_cid**: Nếu `True`, SDK sẽ tự động tải dữ liệu từ IPFS cho các sự kiện có `details_cid`.
+
+#### `get_node_status() -> NodeStatus`
+
+Lấy trạng thái hệ thống từ API v3. Trả về đối tượng chứa `version`, `uptime`, `chains_active`, v.v.
+
+#### `trace_entity(entity_id: str, chain_name: str = None, resolve_cid: bool = False) -> EntityTrace`
+
+Truy vết lịch sử của một thực thể qua các chuỗi.
+
+---
+
+### Ví dụ: Lưu trữ Off-chain (IPFS)
+
+Khi gửi sự kiện với dữ liệu lớn hoặc nhạy cảm, HieraChain khuyến khích sử dụng IPFS. SDK hỗ trợ truy vấn minh bạch:
+
+```python
+# 1. Gửi sự kiện với CID từ IPFS (đã upload trước đó)
+client.submit_event("supply_chain", {
+    "entity_id": "LARGE-DOC-001",
+    "event": "document_notarization",
+    "details_cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
+    "details_nonce": "12345"
+})
+
+# 2. Truy vấn và tự động giải mã dữ liệu
+block = client.get_block("supply_chain", 100, resolve_cid=True)
+# Trường 'details' trong event sẽ chứa dữ liệu đã tải từ IPFS
+```
+
+### Xử lý lỗi (Error Handling)
+
+SDK định nghĩa các ngoại lệ chuyên biệt để ứng dụng có thể xử lý logic nghiệp vụ:
+
+```python
+from hierachain.sdk.exceptions import (
+    CircuitOpenError,     # Khi Circuit Breaker được kích hoạt
+    LockdownError,        # Khi hệ thống đang trong chế độ phong tỏa bảo mật
+    ServiceUnavailableError # Khi lỗi kết nối hoặc server quá tải
+)
+
+try:
+    client.submit_event(...)
+except LockdownError:
+    # Logic xử lý khi hệ thống tạm ngừng hoạt động để bảo trì/bảo mật
+    pass
+```
 
 # Chạy dạng context manager
 with HieraChainClient(config) as client:

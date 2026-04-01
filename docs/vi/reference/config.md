@@ -73,8 +73,9 @@ print(settings.AUTH_ENABLED)
 
 ### Bảo mật & Authentication
 
-* `HRC_AUTH_ENABLED` (`false` ở dev/test; `True` cưỡng bức ở production)
+* Authentication: `HRC_AUTH_ENABLED` (`false` ở dev/test; `True` cưỡng bức ở production)
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
+* Secret Backend: `HRC_SECRET_BACKEND` (giá trị: `env` | `vault` | `aws`). Mặc định là `env`.
 * Master Key: `HRC_MASTER_KEY_SOURCE` (`auto` ở dev/test, `env` ở production), `HRC_MASTER_KEY_FILE` (mặc định: `config/master_backup_key.key`)
 * Brute-force protection:
     * `HRC_BF_MAX_FAILURES` (mặc định: `5`)
@@ -104,6 +105,12 @@ print(settings.AUTH_ENABLED)
 
 * `HRC_RATE_LIMIT` (`false` ở dev/test; `true` ở production)
 * `HRC_RATE_LIMIT_RPM` (mặc định: `100` requests/phút)
+* `HRC_RATE_LIMIT_BACKEND`: `memory` (đơn node) hoặc `redis` (đa node/cluster).
+
+### Monitoring & Metrics
+
+* `HRC_METRICS_ENABLED` (mặc định: `false`): Bật endpoint `/metrics` cho Prometheus.
+* `HRC_TRUSTED_PROXIES` (mặc định: `127.0.0.1`): Danh sách IP của Reverse Proxy tin cậy (cho HTTP/2, HTTP/3).
 
 ### Multi-Organization
 
@@ -125,6 +132,7 @@ print(settings.AUTH_ENABLED)
 * `HRC_K8S_NAMESPACE_PREFIX` (mặc định: `hrc-subchain-`)
 * `HRC_K8S_CONFIG` (đường dẫn kubeconfig, rỗng nếu in-cluster)
 * Giới hạn/tài nguyên:
+
     * `HRC_K8S_CPU_LIMIT` (mặc định: `1000m`)
     * `HRC_K8S_MEMORY_LIMIT` (mặc định: `1Gi`)
     * `HRC_K8S_CPU_REQUEST` (mặc định: `250m`)
@@ -159,7 +167,8 @@ print(settings.AUTH_ENABLED)
 ### Logging
 
 * `LOG_LEVEL` (mặc định: `INFO` ở dev, `DEBUG` ở test, `WARNING` ở production)
-* `LOG_FORMAT` (chuỗi định dạng mặc định: `%(asctime)s - %(name)s - %(levelname)s - %(message)s`)
+* `LOG_FORMAT` (chuỗi định dạng Python logging tiêu chuẩn).
+* `HRC_LOG_FORMAT`: `text` (mặc định) hoặc `json` (cho hệ thống log tập trung như ELK/Loki).
 * `HRC_LOG_SQL_DETAIL` (mặc định: `true` ở dev, `false` ở production)
 
 ### CLI

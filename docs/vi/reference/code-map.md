@@ -59,7 +59,20 @@ Tài liệu này ánh xạ các khái niệm (Concepts) trong tài liệu kỹ t
 
 | Concept | File Path | Vai trò chính |
 |---------|-----------|---------------|
-| **Network Client** | `hierachain/network/network_client.py` | Client giao tiếp mạng lưới (P2P). |
+| **Network Client** | `hierachain/network/network_client.py` | `api/` | **Giao tiếp & Cung cấp dữ liệu** |
+| ├── `v1/, v2/, v3/` | Các phiên bản REST API (Nghiệp vụ, Hợp đồng, Hệ thống). |
+| ├── `graphql/` | Truy vấn dữ liệu linh hoạt (Kèm `security.py` cho Rate Limit & Depth check). |
+| ├── `websocket/` | Truyền dữ liệu thời gian thực (Events, Blocks). |
+| ├── `storage/` | **IPFS Client** - Tích hợp lưu trữ Off-chain (AES-256-GCM). |
+| └── `blockchain_explorer.py` | UI Component cho việc phân tích và hiển thị chuỗi. |
+
+| `adapters/` | **Lớp tương tác dữ liệu (Persistence)** |
+| ├── `database/` | `SQLiteAdapter` - Lưu trữ World State & Metadata. |
+| └── `storage/` | `FileStorageAdapter` (Parquet) & `RedisStorageAdapter`. |
+
+| `security/` | **An ninh & Định danh** |
+| ├── `verify/` | Các bộ xác thực: Block, Signature, API Key, ZK. |
+| └── `key_provider.py` | Quản lý khóa và định danh Node. |
 | **Secure Connection** | `hierachain/network/secure_connection.py` | Thiết lập kết nối bảo mật giữa các node. |
 | **Cluster Manager** | `hierachain/cluster/cluster_manager.py` | Quản lý trạng thái và thành viên trong cụm. |
 | **State Sync** | `hierachain/cluster/state_sync_manager.py` | Đồng bộ trạng thái giữa các node trong cụm. |

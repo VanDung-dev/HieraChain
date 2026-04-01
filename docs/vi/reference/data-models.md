@@ -85,23 +85,23 @@ TRANSACTION_SCHEMA = schema([
 Block đầy đủ gồm header + danh sách events + (tuỳ chọn) ZK proof ở cấp block.
 
 ```python
-BLOCK_SCHEMA = schema([
-  ('index', int64),
-  ('timestamp', float64),
-  ('previous_hash', string),
-  ('nonce', int64),
-  ('merkle_root', string),
-  ('hash', string),
-  ('events', list<struct<
-      entity_id:string,
-      event:string,
-      timestamp:float64,
-      details:map<string,string>,
-      data:binary
-  >>),
-  ('zk_proof', binary),
-  ('zk_public_inputs', binary),
-])
+      previous_hash:string,
+      nonce:int64,
+      merkle_root:string,
+      hash:string,
+      events:list<struct<
+          entity_id:string,
+          event:string,
+          timestamp:float64,
+          details:map<string,string>,
+          details_cid:string,
+          details_nonce:string,
+          data:binary
+      >>),
+      zk_proof:binary,
+      zk_public_inputs:binary
+  ])
+```
 ```
 
 ## Mapping Pydantic (API v1)
@@ -113,6 +113,9 @@ class EventRequest(BaseModel):
     entity_id: str
     event_type: str
     details: dict[str, Any] | None
+    details_cid: str | None
+    details_nonce: str | None
+    details_metadata: dict[str, Any] | None
 
 class ProofSubmissionRequest(BaseModel):
     sub_chain_name: str | None

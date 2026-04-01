@@ -47,21 +47,18 @@ sequenceDiagram
 * `POST /api/v2/private-data` — Ghi dữ liệu riêng tư (Hỗ trợ `value` thô hoặc `value_cid` tham chiếu IPFS).
 * `POST /api/v2/contracts` — Đăng ký hợp đồng (Hỗ trợ `implementation` thô hoặc `implementation_cid` tham chiếu IPFS).
 
-## Schema v2 (trích từ `hierachain/api/v2/schemas.py`)
-
-* `PrivateDataRequest`
-    * `channel: str`
-    * `collection: str`
-    * `key: str`
-    * `value: Any | None`
-    * `value_cid: str | None` (IPFS reference)
     * `value_nonce: str | None`
+    * `event_metadata: dict[str, Any]` (Entity ID, Event Type, Timestamp)
 
 * `ContractCreateRequest`
-    * `name: str`
-    * `implementation: str | None`
+
+    * `contract_id: str` (Unique identifier)
+    * `version: str` (Semantic version, e.g., "1.0.0")
+    * `implementation: str | None` (Python code thô)
     * `implementation_cid: str | None` (IPFS reference)
     * `implementation_nonce: str | None`
+    * `metadata: dict[str, Any]` (Domain, Owner, Endorsement Policy)
+    
 * `POST /api/v2/contracts/execute` — thực thi hợp đồng.
 * `POST /api/v2/organizations` — đăng ký tổ chức.
 
@@ -90,8 +87,22 @@ curl -s -X POST http://localhost:2661/api/v2/private-data \
   -d '{"channel": "test_channel", "collection": "sensitive_docs", "key": "doc-001", "value": "..."}'
 
 # Đăng ký & thực thi hợp đồng domain
-curl -s -X POST http://localhost:2661/api/v2/contracts -H 'Content-Type: application/json' -d '{"name": "quality", "code": "..."}'
-curl -s -X POST http://localhost:2661/api/v2/contracts/execute -H 'Content-Type: application/json' -d '{"name": "quality", "input": {"entity": "PROD-001"}}'
+curl -s -X POST http://localhost:2661/api/v2/contracts \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "contract_id": "quality_control", 
+        "version": "1.0.0",
+        "implementation": "def logic()...",
+        "metadata": {"domain": "mfg"}
+      }'
+
+curl -s -X POST http://localhost:2661/api/v2/contracts/execute \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "contract_id": "quality_control", 
+        "event": {"entity_id": "PROD-001", "event": "check", "details": {}},
+        "context": {"chain": "sub_chain_1"}
+      }'
 
 # Tổ chức
 curl -s -X POST http://localhost:2661/api/v2/organizations -H 'Content-Type: application/json' -d '{"org_id": "orgA", "name": "Org A"}'

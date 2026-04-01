@@ -23,8 +23,10 @@ Event là đơn vị dữ liệu nhỏ nhất, đại diện cho một hành đ�
 | `entity_id` | `string` | **Metadata Field**. Định danh thực thể chịu tác động (ví dụ: ProductID, OrderID). **Lưu ý:** Không dùng làm định danh Block. |
 | `event` | `string` | Loại sự kiện (ví dụ: `CREATED`, `UPDATED`, `TRANSFERRED`). |
 | `timestamp` | `float64` | Thời điểm xảy ra sự kiện (Unix timestamp). |
-| `details` | `map<string, string>` | Các thông tin bổ sung dạng Key-Value (ít thay đổi). |
-| `data` | `binary` | Payload dữ liệu chính (thường là JSON đã serialize hoặc binary data). |
+| `details` | `map<string, string>` | Các thông tin bổ sung dạng Key-Value (On-chain data). |
+| `details_cid` | `string` | **IPFS CID**. Tham chiếu dữ liệu lớn được lưu off-chain. |
+| `details_nonce` | `string` | **Encryption Nonce**. Khóa giải mã dữ liệu off-chain (dùng cho AES-GCM). |
+| `data` | `binary` | Payload dữ liệu chính (thành phần JSON nội bộ, bao gồm cả on-chain và off-chain refs). |
 
 ### Transaction
 

@@ -15,7 +15,9 @@ Hệ thống cho phép tương tác trực tiếp qua cổng **GraphQL Endpoint*
 Giao diện GraphQL Schema hỗ trợ trích xuất mạnh mẽ theo phân cấp Main-Chain và Sub-Chains.
 
 **Lấy dữ liệu Block đơn lẻ:**
+
 Truy vấn cục bộ một hàm Block duy nhất qua tên chuỗi và số `index`.
+
 ```graphql
 query GetSingleBlock {
   block(chainName: "sub_chain_finance", blockIndex: 1) {
@@ -31,7 +33,9 @@ query GetSingleBlock {
 ```
 
 **Lọc các đối tượng Lịch sử Sự kiện (Events) bằng tham số:**
+
 Có thể filter nhanh gọn.
+
 ```graphql
 query FilterEvents {
   events(
@@ -47,7 +51,9 @@ query FilterEvents {
 ```
 
 **Trạng thái Blockchain:**
+
 Cung cấp cái nhìn toàn vẹn với `chainStatus` (kiểm tra một chain) hoặc `allChains` (phản chiếu dashboard của mạng lưới).
+
 ```graphql
 query OverallSystem {
   allChains {
@@ -70,6 +76,7 @@ Schema GraphQL hỗ trợ tính năng Mutation dùng để truyền Event trực
 - `details` (Optional String - dạng JSON string hóa)
 
 **Ví dụ:**
+
 ```graphql
 mutation CreateNewEvent {
   addEvent(event: {

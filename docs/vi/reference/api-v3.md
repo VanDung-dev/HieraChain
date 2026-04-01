@@ -12,8 +12,8 @@ Mô tả các endpoint REST trong phiên bản API v3 (System & Admin) dùng cho
 
 ## Tổng quan endpoint
 
-* POST `/api/v3/verify-identity` — Xác minh danh tính node bằng cách ký vào một chuỗi challenge.
-* GET `/api/v3/status` — Lấy báo cáo chi tiết về trạng thái node (version, uptime, số lượng chain đang hoạt động).
+* POST `/api/v3/verify-identity` — Xác minh danh tính node bằng cách ký vào một chuỗi challenge. (Yêu cầu xác thực)
+* GET `/api/v3/status` — Lấy báo cáo chi tiết về trạng thái node. (**Public Access** - Không yêu cầu API Key)
 
 ## Schema chính (trích từ `hierachain/api/v3/schemas.py`)
 
@@ -127,11 +127,11 @@ curl -s http://localhost:2661/api/v3/status
     **DECISION**
 
     * API v3 tập trung vào "System & Admin", tách biệt với các thao tác chain (v1/v2).
-    * Sử dụng chữ ký số để xác minh quyền sở hữu node (Proof of Possession).
+    * `/api/v3/status` được mở công khai để các hệ thống giám sát (Monitoring) dễ dàng lấy dữ liệu.
 
     **ASSUMPTION**
 
-    * Node đã được cấu hình identity (file key) hoặc sẽ sử dụng key tạm thời (ephemeral) nếu không tìm thấy.
+    * Node phải được cấu hình identity (file key) trước khi khởi chạy. Nếu thiếu, các endpoint yêu cầu định danh sẽ trả về 401.
 
     **INVARIANT**
 
@@ -140,5 +140,5 @@ curl -s http://localhost:2661/api/v3/status
 
     **EDGE CASES**
 
-    * Không tìm thấy file identity → Log warning và sử dụng key tạm thời (sinh mới mỗi lần khởi động), dẫn đến public key thay đổi.
+    * Không tìm thấy file identity → Trả về **401 Unauthorized**. Quản trị viên cần kiểm tra `VALIDATOR_IDENTITY_PATH`.
     * Lỗi crypto khi ký → Trả về 500.
