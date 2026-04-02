@@ -9,12 +9,80 @@
 
 HieraChain is an **enterprise-grade hierarchical blockchain ledger** built in Python. It is designed for **business process management** — NOT cryptocurrency. Key philosophy:
 
-- All operations are called **"events"** (not "transactions")
-- No cryptocurrency concepts: no mining, no tokens, no wallets, no coins
-- Hierarchical two-tier structure (Main Chain + Sub-Chains) mirrors enterprise org charts
-- Built for ERP integration (SAP, Oracle, Dynamics)
+* All operations are called **"events"** (not "transactions")
+* No cryptocurrency concepts: no mining, no tokens, no wallets, no coins
+* Hierarchical two-tier structure (Main Chain + Sub-Chains) mirrors enterprise org charts
+* Built for ERP integration (SAP, Oracle, Dynamics)
 
 > **Critical rule**: Never introduce cryptocurrency terminology into the codebase. The `CrossChainValidator` literally scans for and flags forbidden terms: `transaction`, `mining`, `coin`, `token`, `wallet`, `address`, `sender`, `receiver`, `amount`, `fee`.
+
+---
+
+## 🎯 Plugin Layer Philosophy
+
+HieraChain is designed as a **Plugin Layer** for existing Web2 enterprise systems — NOT a standalone blockchain application.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    ENTERPRISE WEB2 INFRASTRUCTURE                       │
+│   [WAF] → [Load Balancer] → [HTTPS/TLS] → [API Gateway] → ...           │
+│   ✦ All basic security layers ALREADY EXIST in enterprise               │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        HIERACHAIN PLUGIN                                │
+│   ✦ Immutability (data cannot be modified after commit)                 │
+│   ✦ Distributed verification (4+ nodes confirm)                         │
+│   ✦ Tamper detection (automatically detect changes)                     │
+│   ✦ Cross-org proof (no need to trust single entity)                    │
+│   ✦ Audit trail (complete history traceable)                            │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           DATABASE                                      │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### ⚠️ Don't Reinvent the Wheel
+
+* **DO NOT** add TLS/SSL handling — enterprise reverse proxy handles this
+* **DO NOT** add WAF, firewall, or network filtering — already exists
+* **DO NOT** add rate limiting logic beyond basic API protection — API Gateway handles it
+* **DO NOT** add certificate management for transport — enterprise PKI handles it
+
+HieraChain only adds **blockchain value** that Web2 lacks:
+
+* **Immutability** — Web2 can delete/modify logs, HieraChain cannot
+* **Distributed Trust** — Web2 needs single entity trust, HieraChain doesn't
+* **Tamper Evidence** — Web2 needs manual audit, HieraChain detects automatically
+* **Non-reppudiation** — Web2 can deny, HieraChain has cryptographic proof
+
+### 🐍 Python Performance Constraint
+
+Python is inherently slower than compiled languages. Every additional security layer adds latency:
+
+* Current design: minimal overhead, fast response (~10-20ms base)
+* Adding TLS/mTLS internally: +50-100ms latency
+* Enterprise priority: "Is data IMMUTABLE? Is it VERIFIABLE?"
+* NOT: "How does internal plugin encrypt if network is already secure"
+
+---
+
+## 🔐 Security is Distributed (Not Just in `security/`)
+
+Security in HieraChain is **distributed across multiple modules** following defense-in-depth:
+
+| Module | Security Responsibilities |
+|--------|--------------------------|
+| `hierachain/api/` | Security headers, rate limiting, payload limits, API key auth, CORS |
+| `hierachain/api/storage/` | AES-256-GCM encryption for IPFS data |
+| `hierachain/network/` | Curve25519 transport, Ed25519 message signing, MSP certificates, replay protection |
+| `hierachain/consensus/` | BFT cryptographic operations, ZK proofs, block signatures |
+| `hierachain/security/` | Identity, key management, policy engine, sanitization, brute force protection |
+| `hierachain/cluster/` | HMAC-SHA256 for cluster lockdown, encrypted rollback snapshots |
+| `hierachain/error_mitigation/` | Audit logging, integrity verification |
+
+When analyzing or implementing security features, consider ALL these modules, not just `security/`.
 
 ---
 
@@ -248,36 +316,39 @@ All configs live in `hierachain/config/settings.py` as a singleton `settings`. O
 ## Coding Conventions
 
 ### Python Style
-- **Type hints required** on all function signatures (the codebase enforces this)
-- Use `dataclasses` and `Enum` for structured data (see `consensus/bft/types.py` as reference)
-- Module-level helper functions preferred over deeply nested methods (see `bft/consensus.py`)
-- Logging via `logging.getLogger(__name__)` — never `print()` in library code
-- Use `hierachain.security.secure_logging.SecureLogger` for security-sensitive modules
+
+* **Type hints required** on all function signatures (the codebase enforces this)
+* Use `dataclasses` and `Enum` for structured data (see `consensus/bft/types.py` as reference)
+* Module-level helper functions preferred over deeply nested methods (see `bft/consensus.py`)
+* Logging via `logging.getLogger(__name__)` — never `print()` in library code
+* Use `hierachain.security.secure_logging.SecureLogger` for security-sensitive modules
 
 ### Architecture Patterns (follow existing conventions)
-- **Facade Pattern**: complex subsystems expose a single coordinator class — see `OrderingService`, `HierarchyManager`
-- **Strategy Pattern**: swappable algorithms (cache policies, consensus, split strategies)
-- **State Machine**: lifecycle transitions must follow defined allowed states — see `DomainContract` lifecycle, `ClusterLockdownManager`
-- **Repository Pattern**: never access DB directly from business logic — use storage adapters
-- **Adapter Pattern**: new storage backends go in `adapters/storage/`, new ERP integrations in `integration/erp_adapters/`
+
+* **Facade Pattern**: complex subsystems expose a single coordinator class — see `OrderingService`, `HierarchyManager`
+* **Strategy Pattern**: swappable algorithms (cache policies, consensus, split strategies)
+* **State Machine**: lifecycle transitions must follow defined allowed states — see `DomainContract` lifecycle, `ClusterLockdownManager`
+* **Repository Pattern**: never access DB directly from business logic — use storage adapters
+* **Adapter Pattern**: new storage backends go in `adapters/storage/`, new ERP integrations in `integration/erp_adapters/`
 
 ### Module Organization
-- Each sub-package exposes a clean `__init__.py` with `__all__` and categorized imports
-- See `hierachain/risk_management/__init__.py` and `hierachain/security/__init__.py` as canonical examples
-- New verifiers belong in `security/verify/`
-- New domain-agnostic utilities belong in `domains/generic/utils/`
+
+* Each sub-package exposes a clean `__init__.py` with `__all__` and categorized imports
+* See `hierachain/risk_management/__init__.py` and `hierachain/security/__init__.py` as canonical examples
+* New verifiers belong in `security/verify/`
+* New domain-agnostic utilities belong in `domains/generic/utils/`
 
 ---
 
 ## Forbidden Patterns
 
-- ❌ No cryptocurrency terminology in any event data, variable names, or comments
-- ❌ No direct `sqlite3` or `redis` calls outside `adapters/storage/`
-- ❌ No `print()` statements in library code (use logging)
-- ❌ Do NOT run all tests at once — run per-file
-- ❌ Do NOT store secrets in code — use environment variables
-- ❌ Do NOT skip the `TransactionJournal` durability step when implementing new ordering flows
-- ❌ Do NOT bypass `PolicyEngine` for access-sensitive operations
+* ❌ No cryptocurrency terminology in any event data, variable names, or comments
+* ❌ No direct `sqlite3` or `redis` calls outside `adapters/storage/`
+* ❌ No `print()` statements in library code (use logging)
+* ❌ Do NOT run all tests at once — run per-file
+* ❌ Do NOT store secrets in code — use environment variables
+* ❌ Do NOT skip the `TransactionJournal` durability step when implementing new ordering flows
+* ❌ Do NOT bypass `PolicyEngine` for access-sensitive operations
 
 ---
 
@@ -298,7 +369,7 @@ python demo/demo_zmq_consensus.py
 
 ## Related Documents
 
-- [`docs/CODEBASE_REFERENCE.md`](./docs/CODEBASE_REFERENCE.md) — Detailed architecture reference (all packages, design patterns, data flows)
-- [`docs/DEV_GUIDE.md`](./docs/DEV_GUIDE.md) — Full developer guide with environment setup and testing
-- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — Visual high-level architecture (Mermaid diagrams, Rust layer, ZKP)
-- [`docs/`](./docs/) — All developer documentation
+* [`docs/CODEBASE_REFERENCE.md`](./docs/CODEBASE_REFERENCE.md) — Detailed architecture reference (all packages, design patterns, data flows)
+* [`docs/DEV_GUIDE.md`](./docs/DEV_GUIDE.md) — Full developer guide with environment setup and testing
+* [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — Visual high-level architecture (Mermaid diagrams, Rust layer, ZKP)
+* [`docs/`](./docs/) — All developer documentation
