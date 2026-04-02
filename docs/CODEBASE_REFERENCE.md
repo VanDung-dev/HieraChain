@@ -11,11 +11,13 @@ HieraChain is a **hierarchical blockchain enterprise ledger** designed specifica
 ## Core Architectural Philosophy
 
 ### 1. Event-Centric Design (Not Transaction-Centric)
-- All operations are called **"events"**, not "transactions"
-- This emphasizes the business application focus over financial/monetary operations
-- Events contain metadata like `entity_id`, `event_type`, `timestamp`, and `details`
+
+* All operations are called **"events"**, not "transactions"
+* This emphasizes the business application focus over financial/monetary operations
+* Events contain metadata like `entity_id`, `event_type`, `timestamp`, and `details`
 
 ### 2. Hierarchical Two-Tier Architecture
+
 ```
 ┌─────────────────┐
 │   MAIN CHAIN    │  ← Root Authority / Supervisor (like CEO)
@@ -28,8 +30,9 @@ HieraChain is a **hierarchical blockchain enterprise ledger** designed specifica
 ```
 
 **Key Design Decision**: The Main Chain **only stores proofs from Sub-Chains**, NOT detailed domain data. This separation ensures:
-- Main Chain maintains system-wide integrity and coordination
-- Sub-Chains handle domain-specific business operations with detailed event data
+
+* Main Chain maintains system-wide integrity and coordination
+* Sub-Chains handle domain-specific business operations with detailed event data
 
 ---
 
@@ -69,11 +72,9 @@ HieraChain is a **hierarchical blockchain enterprise ledger** designed specifica
 
 **Key Additions**:
 
-- **`K8sNamespaceManager`**: Deploys each Sub-Chain into an isolated Kubernetes namespace—ensuring complete resource isolation, fault isolation, independent scaling, and easier monitoring. Supports both real K8s and mock mode.
-
-- **`SubChainRebalancer`**: Monitors sub-chain load in events/second (EPS). When throughput exceeds a configurable threshold, automatically splits the sub-chain into two child branches and migrates state using configurable strategies (`HASH_BASED`, `TIME_BASED`, `ROUND_ROBIN`).
-
-- **`private_data.py`**: Manages private data collections scoped per-organization within a channel, ensuring data isolation even between organizations sharing the same Sub-Chain.
+* **`K8sNamespaceManager`**: Deploys each Sub-Chain into an isolated Kubernetes namespace—ensuring complete resource isolation, fault isolation, independent scaling, and easier monitoring. Supports both real K8s and mock mode.
+* **`SubChainRebalancer`**: Monitors sub-chain load in events/second (EPS). When throughput exceeds a configurable threshold, automatically splits the sub-chain into two child branches and migrates state using configurable strategies (`HASH_BASED`, `TIME_BASED`, `ROUND_ROBIN`).
+* **`private_data.py`**: Manages private data collections scoped per-organization within a channel, ensuring data isolation even between organizations sharing the same Sub-Chain.
 
 ---
 
@@ -82,21 +83,24 @@ HieraChain is a **hierarchical blockchain enterprise ledger** designed specifica
 The system supports **three consensus mechanisms** configurable via `HRC_CONSENSUS_TYPE`:
 
 1. **Proof of Authority (PoA)** - Static/Centralized model
-   - Designated authorities create blocks
-   - No energy-intensive mining (suitable for business)
-   - Main Chain acts as root authority
+
+   * Designated authorities create blocks
+   * No energy-intensive mining (suitable for business)
+   * Main Chain acts as root authority
 
 2. **Proof of Federation (PoF)** - Dynamic/Consortium model
-   - Rotating leader schedule: `Leader = Validators[BlockHeight % ValidatorCount]`
-   - Designed for semi-trusted consortiums (Healthcare, Education)
-   - Removes single point of failure
+
+   * Rotating leader schedule: `Leader = Validators[BlockHeight % ValidatorCount]`
+   * Designed for semi-trusted consortiums (Healthcare, Education)
+   * Removes single point of failure
 
 3. **Byzantine Fault Tolerant (BFT)** - High fault tolerance
-   - Tolerates `f` faults with `3f + 1` nodes
-   - **3-phase protocol**: PRE-PREPARE → PREPARE (2f votes) → COMMIT (2f+1 votes) → Execute
-   - **View Change**: `BFTViewChangeManager` handles leader failure with rotating view and proof verification
-   - Integrates with `ErrorClassifier` for auto-recovery when failure threshold exceeded
-   - Critical for safety-critical enterprise systems
+
+   * Tolerates `f` faults with `3f + 1` nodes
+   * **3-phase protocol**: PRE-PREPARE → PREPARE (2f votes) → COMMIT (2f+1 votes) → Execute
+   * **View Change**: `BFTViewChangeManager` handles leader failure with rotating view and proof verification
+   * Integrates with `ErrorClassifier` for auto-recovery when failure threshold exceeded
+   * Critical for safety-critical enterprise systems
 
 **Architectural Note**: Both PoA and PoF support **ZK Proof verification** for trustless block validation, configurable via `HRC_ENABLE_ZK_PROOFS`.
 
@@ -117,13 +121,14 @@ The system supports **three consensus mechanisms** configurable via `HRC_CONSENS
 **Files**: `service.py` (Facade), `certifier.py`, `block_builder.py`, `processor.py`, `maintenance.py`, `storage.py`, `metrics.py`, `recovery.py`, `types.py`, `utils.py`
 
 **Patterns Used**:
-- **Facade Pattern**: `OrderingService` coordinates specialized components
-- **Pipeline Pattern**: Event → Certify → Build Block → Persist → Commit
-- `OrderingMaintenance` handles lockdown/resume within Ordering layer independently of cluster lockdown
+
+* **Facade Pattern**: `OrderingService` coordinates specialized components
+* **Pipeline Pattern**: Event → Certify → Build Block → Persist → Commit
+* `OrderingMaintenance` handles lockdown/resume within Ordering layer independently of cluster lockdown
 
 ---
 
-### Cluster Management Layer (`cluster/`) — **[MỚI HOÀN TOÀN]**
+### Cluster Management Layer (`cluster/`)
 
 | Component | Purpose | Design Pattern |
 |-----------|---------|----------------|
@@ -162,7 +167,7 @@ The `ClusterLockdownManager` uses gossip-style P2P messaging via ZeroMQ with HMA
 
 ---
 
-### Monitoring & Observability Layer (`monitoring/`) — **[MỚI HOÀN TOÀN]**
+### Monitoring & Observability Layer (`monitoring/`)
 
 | Component | Purpose | Features |
 |-----------|---------|----------|
@@ -190,7 +195,7 @@ Alert categories: `RISK_MANAGEMENT | PERFORMANCE | SECURITY | CONSENSUS | STORAG
 
 ---
 
-### Risk Management Layer (`risk_management/`) — **[MỚI HOÀN TOÀN]**
+### Risk Management Layer (`risk_management/`)
 
 | Component | Purpose | Design Pattern |
 |-----------|---------|----------------|
@@ -231,7 +236,7 @@ Each `RiskAssessment` includes: severity, likelihood (0.0–1.0), affected compo
 | `storage/memory_storage.py` | In-memory cache layer | Cache-Aside Pattern |
 | `storage/world_state.py` | Current state snapshot | Snapshot Pattern |
 | `storage/models.py` | **[MỚI]** SQLAlchemy ORM models | Active Record |
-| `adapters/storage/sqlite_adapter.py` | **[MỚI]** Dedicated SQLite adapter with connection pooling | Adapter Pattern |
+| `adapters/database/sqlite_adapter.py` | **[MỚI]** Dedicated SQLite adapter with connection pooling | Adapter Pattern |
 | `adapters/storage/redis_storage.py` | **[MỚI]** Redis adapter with entity index, chain stats, batch fetch | Redis Backend |
 | `adapters/storage/file_storage.py` | **[MỚI]** File-based storage adapter | File Backend |
 
@@ -288,23 +293,26 @@ The system converts **ERP business events** → **Blockchain events** via config
 | `cli/` | Click-based CLI (chain, event, node subcommands) | CLI Tool |
 
 **`WebSocketManager` Key Features**:
-- Max 1,000 concurrent connections (configurable)
-- Subscriptions by chain name AND by event_type within a chain
-- Async ping loop (30s interval) with disconnect on timeout
-- Thread-safe with `asyncio.Lock()`
-- Broadcast modes: `broadcast_to_chain()`, `broadcast_event_type()`, `broadcast_to_all()`, `send_to_connection()`
+
+* Max 1,000 concurrent connections (configurable)
+* Subscriptions by chain name AND by event_type within a chain
+* Async ping loop (30s interval) with disconnect on timeout
+* Thread-safe with `asyncio.Lock()`
+* Broadcast modes: `broadcast_to_chain()`, `broadcast_event_type()`, `broadcast_to_all()`, `send_to_connection()`
 
 **`IPFSClient` — Private IPFS Swarm**:
-- All data encrypted with AES-256-GCM **before upload** (IPFS stores ciphertext only)
-- Auto-pin to prevent garbage collection
-- Lazy connection (only connects when needed)
-- Environment config: `HRC_IPFS_HOST`, `HRC_IPFS_ENCRYPTION_KEY`, `HRC_IPFS_AUTO_PIN`
+
+* All data encrypted with AES-256-GCM **before upload** (IPFS stores ciphertext only)
+* Auto-pin to prevent garbage collection
+* Lazy connection (only connects when needed)
+* Environment config: `HRC_IPFS_HOST`, `HRC_IPFS_ENCRYPTION_KEY`, `HRC_IPFS_AUTO_PIN`
 
 **`BlockchainExplorer` Components**:
-- **`ChainOverviewComponent`** — Block/event counts across all chains
-- **`EntityTracerComponent`** — Trace any entity ID across Main Chain + all Sub-Chains
-- **`EventAnalyticsComponent`** — Event type statistics, activity timeline (24h), chain distribution
-- **`ProofVisualizerComponent`** — Proof submission flow, validation status, hierarchy view
+
+* **`ChainOverviewComponent`** — Block/event counts across all chains
+* **`EntityTracerComponent`** — Trace any entity ID across Main Chain + all Sub-Chains
+* **`EventAnalyticsComponent`** — Event type statistics, activity timeline (24h), chain distribution
+* **`ProofVisualizerComponent`** — Proof submission flow, validation status, hierarchy view
 
 ---
 
@@ -333,59 +341,59 @@ The system converts **ERP business events** → **Blockchain events** via config
 | `security/verify/zk_verifier.py` | **[MỚI]** ZK proof verification integration | ZK Proof Guard |
 
 **`PolicyEngine` Highlights** (ABAC model):
-- Policy types: `ACCESS_CONTROL`, `ENDORSEMENT`, `LIFECYCLE`, `DATA_ACCESS`, `CHANNEL_MANAGEMENT`, `CONTRACT_EXECUTION`
-- Condition operators: 12 types including `EQUALS`, `CONTAINS`, `IN`, `MATCHES` (regex)
-- Combination logic: `all_allow`, `any_allow`, `majority_allow`
-- Built-in LRU cache (TTL=5min) for evaluated policies
-- Full audit trail of all policy evaluations
+
+* Policy types: `ACCESS_CONTROL`, `ENDORSEMENT`, `LIFECYCLE`, `DATA_ACCESS`, `CHANNEL_MANAGEMENT`, `CONTRACT_EXECUTION`
+* Condition operators: 12 types including `EQUALS`, `CONTAINS`, `IN`, `MATCHES` (regex)
+* Combination logic: `all_allow`, `any_allow`, `majority_allow`
+* Built-in LRU cache (TTL=5min) for evaluated policies
+* Full audit trail of all policy evaluations
 
 **`BlockVerifier` Highlights**:
-- Verifies: block hash, Merkle root, chain-link (prev_hash), block creator signature
-- Strict mode / non-strict mode (missing signature treated as error vs. warning)
-- Supports ECDSA (EC secp256r1) and RSA signature schemes
-- `verify_chain(blocks)` method validates entire block sequence
-- Statistics tracking: `blocks_verified`, `valid_blocks`, `hash_failures`, `signature_failures`
+
+* Verifies: block hash, Merkle root, chain-link (prev_hash), block creator signature
+* Strict mode / non-strict mode (missing signature treated as error vs. warning)
+* Supports ECDSA (EC secp256r1) and RSA signature schemes
+* `verify_chain(blocks)` method validates entire block sequence
+* Statistics tracking: `blocks_verified`, `valid_blocks`, `hash_failures`, `signature_failures`
 
 ---
 
-### Domain Model Layer (`domains/`) — **[MỚI HOÀN TOÀN]**
+### Domain Model Layer (`domains/`)
 
-```
-domains/
-└── generic/
-    ├── chains/
-    │   ├── base_chain.py      ← Abstract BaseChain with entity registry, domain rules
-    │   └── domain_chain.py    ← Concrete DomainChain with 2PC, business rules, metrics
-    ├── events/
-    │   ├── base_event.py      ← Base event schema and validation
-    │   └── domain_event.py    ← Factory functions: create_resource_allocation, create_quality_check, etc.
-    └── utils/
-        ├── entity_tracer.py         ← EntityTracer: cross-chain entity lifecycle tracking
-        └── cross_chain_validator.py ← CrossChainValidator: proof consistency + compliance
-```
+| Component | Purpose | Algorithm/Standard |
+|-----------|---------|-------------------|
+| `chains/base_chain.py` | Abstract BaseChain with entity registry, domain rules, event handlers | Template Method Pattern - Extended by domain-specific chains |
+| `chains/domain_chain.py` | Concrete DomainChain with 2PC, business rules, operation metrics | Factory + Strategy - Business rule validation, metric tracking |
+| `events/base_event.py` | Base event schema with Ledger-compliant structure and validation | Composite Pattern - Event container with metadata |
+| `events/domain_event.py` | Domain event classes and factory functions | Factory Pattern - Domain-specific event creation |
+| `utils/entity_tracer.py` | Cross-chain entity lifecycle tracking across Main Chain + Sub-Chains | Chain Traversal - Event aggregation, lifecycle stage detection |
+| `utils/cross_chain_validator.py` | Proof consistency verification + Ledger compliance validation | Consistency Check - Hash verification, cryptocurrency term scanning |
 
 **`DomainChain` (concrete domain implementation)**:
-- Default business rules: `entity_must_be_registered`, `no_concurrent_operations`, `quality_check_before_approval`
-- Operations: `start_domain_operation()`, `complete_domain_operation()`, `allocate_resource()`, `perform_quality_check()`, `process_approval()`, `check_compliance()`
-- `OperationMetricsTracker`: tracks success_rate, quality_pass_rate, approval_rate
-- **2PC (Two-Phase Commit)** support: `prepare_transaction()` → `commit_transaction()` or `rollback_transaction()`
-- Generates compliance reports per entity and per operation
+
+* Default business rules: `entity_must_be_registered`, `no_concurrent_operations`, `quality_check_before_approval`
+* Operations: `start_domain_operation()`, `complete_domain_operation()`, `allocate_resource()`, `perform_quality_check()`, `process_approval()`, `check_compliance()`
+* `OperationMetricsTracker`: tracks success_rate, quality_pass_rate, approval_rate
+* **2PC (Two-Phase Commit)** support: `prepare_transaction()` → `commit_transaction()` or `rollback_transaction()`
+* Generates compliance reports per entity and per operation
 
 **`EntityTracer`** — Cross-chain entity tracking:
-- `trace_entity(entity_id)`: finds entity across ALL sub-chains
-- `get_entity_lifecycle()`: lifecycle stages (registered → in_progress → quality_approved → approved)
-- `find_related_entities()`: finds shared_resources, approvers, inspectors, processors
-- `get_entity_performance_summary()`: completion_rate, quality_pass_rate, compliance_rate
-- `generate_entity_report()`: comprehensive report with recommendations
-- 5-minute LRU cache to avoid repeated queries
+
+* `trace_entity(entity_id)`: finds entity across ALL sub-chains
+* `get_entity_lifecycle()`: lifecycle stages (registered → in_progress → quality_approved → approved)
+* `find_related_entities()`: finds shared_resources, approvers, inspectors, processors
+* `get_entity_performance_summary()`: completion_rate, quality_pass_rate, compliance_rate
+* `generate_entity_report()`: comprehensive report with recommendations
+* 5-minute LRU cache to avoid repeated queries
 
 **`CrossChainValidator`** — System integrity validation:
-- `validate_proof_consistency()`: verifies Main Chain proof hashes match Sub-Chain block hashes
-- `validate_entity_consistency(entity_id)`: checks entity events for logical consistency across chains
-- `validate_system_integrity()`: full system check (chain validity + proofs + Ledger compliance)
-- **Ledger Compliance check**: scans all events for forbidden cryptocurrency terminology (`transaction`, `mining`, `coin`, `wallet`, etc.)
-- `generate_validation_report()`: comprehensive report with recommendations
-- Extensible via `add_validation_rule(name, function)`
+
+* `validate_proof_consistency()`: verifies Main Chain proof hashes match Sub-Chain block hashes
+* `validate_entity_consistency(entity_id)`: checks entity events for logical consistency across chains
+* `validate_system_integrity()`: full system check (chain validity + proofs + Ledger compliance)
+* **Ledger Compliance check**: scans all events for forbidden cryptocurrency terminology (`transaction`, `mining`, `coin`, `wallet`, etc.)
+* `generate_validation_report()`: comprehensive report with recommendations
+* Extensible via `add_validation_rule(name, function)`
 
 ---
 
@@ -406,9 +414,10 @@ The configuration is highly flexible via **environment variables**:
 | `DATABASE_URL` | Database connection string | `sqlite:///hierachain.db` |
 
 Additional config components:
-- `settings.py` — Settings singleton with environment variable fallback
-- `env_manager.py` — **[MỚI]** Advanced environment variable management and validation
-- `logging.py` — **[MỚI]** Structured logging configuration
+
+* `settings.py` — Settings singleton with environment variable fallback
+* `env_manager.py` — **[MỚI]** Advanced environment variable management and validation
+* `logging.py` — **[MỚI]** Structured logging configuration
 
 ---
 
@@ -434,39 +443,45 @@ The CLI uses **Click** with context-passing (`ctx.obj`) for config sharing betwe
 ## System Design Highlights (From a System Engineer Perspective)
 
 ### 1. Separation of Concerns in Hierarchy
-- **Main Chain**: System integrity, proof storage, coordination (supervisor role)
-- **Sub-Chains**: Domain-specific operations, detailed event data (worker role)
+
+* **Main Chain**: System integrity, proof storage, coordination (supervisor role)
+* **Sub-Chains**: Domain-specific operations, detailed event data (worker role)
 
 This mirrors enterprise organizational structure: CEO coordinates at high level, department heads handle detailed work.
 
 ### 2. Performance-First Design
-- **Columnar storage** (Apache Arrow) for efficient data processing
-- **Hybrid caching** with different policies per data type
-- **Parallel processing** across CPU cores
-- **Arrow Flight** for high-speed inter-service data transfer
+
+* **Columnar storage** (Apache Arrow) for efficient data processing
+* **Hybrid caching** with different policies per data type
+* **Parallel processing** across CPU cores
+* **Arrow Flight** for high-speed inter-service data transfer
 
 ### 3. Reliability Engineering
-- **Durability layer** (Transaction Journal) before processing
-- **Circuit breaker pattern** in SDK for resilience
-- **Rollback capabilities** for recovery
-- **Quorum-based cluster lockdown** for coordinated failure response
+
+* **Durability layer** (Transaction Journal) before processing
+* **Circuit breaker pattern** in SDK for resilience
+* **Rollback capabilities** for recovery
+* **Quorum-based cluster lockdown** for coordinated failure response
 
 ### 4. Enterprise Readiness
-- **Channel-based isolation** between organizations
-- **MSP (Membership Service Provider)** for identity management
-- **ERP integration** as first-class feature
-- **ABAC PolicyEngine** for fine-grained access control
+
+* **Channel-based isolation** between organizations
+* **MSP (Membership Service Provider)** for identity management
+* **ERP integration** as first-class feature
+* **ABAC PolicyEngine** for fine-grained access control
 
 ### 5. Cloud-Native / Kubernetes-Ready
-- **K8s Namespace Manager** for sub-chain isolation in production clusters
-- **Sub-chain auto-rebalancer** for elastic horizontal scaling
-- **Cross-level state sync** for distributed consistency
+
+* **K8s Namespace Manager** for sub-chain isolation in production clusters
+* **Sub-chain auto-rebalancer** for elastic horizontal scaling
+* **Cross-level state sync** for distributed consistency
 
 ### 6. Observability & Operations
-- **Real-time alert system** with anomaly detection (Z-score)
-- **Multi-domain risk analyzer** with actionable recommendations
-- **Immutable audit logger** for compliance
-- **Blockchain Explorer** for developer inspection
+
+* **Real-time alert system** with anomaly detection (Z-score)
+* **Multi-domain risk analyzer** with actionable recommendations
+* **Immutable audit logger** for compliance
+* **Blockchain Explorer** for developer inspection
 
 ---
 

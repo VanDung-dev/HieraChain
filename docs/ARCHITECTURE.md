@@ -4,29 +4,24 @@
 
 ## 📋 Overview
 
-HieraChain is a **multi-language blockchain infrastructure** designed for high-performance enterprise applications. The architecture follows a **layered approach** combining the strengths of Python and Rust:
-
-| Component | Language | Purpose |
-|:----------|:---------|:--------|
-| **hierachain** | Python | Business logic, REST API, high-level abstractions |
-| **hierachain-consensus** | Rust | High-performance consensus, cryptography |
+HieraChain is a **pure Python, high-performance enterprise blockchain ledger**. The architecture follows a **layered approach**, heavily utilizing **Apache Arrow** for fast columnar data processings and focusing on true enterprise integration rather than cryptocurrency mining natively.
 
 ---
 
 ## 📑 Table of Contents
 
-- [🏗️ High-Level Architecture](#️-high-level-architecture)
-- [📦 Project Structure](#-project-structure)
-- [🏛️ Hierarchical Chain Architecture](#️-hierarchical-chain-architecture)
-- [🔄 Data Flow Architecture](#-data-flow-architecture)
-- [🔗 Inter-Language Communication](#-inter-language-communication)
-- [⚙️ Consensus Mechanisms](#️-consensus-mechanisms)
-- [🛡️ Zero Knowledge Proof (ZKP) Verification Layer](#️-zero-knowledge-proof-zkp-verification-layer)
-- [🔐 Security Architecture](#-security-architecture)
-- [📊 Performance Architecture](#-performance-architecture)
-- [🌐 Network Architecture](#-network-architecture)
-- [📈 Monitoring & Observability](#-monitoring--observability)
-- [📄 License](#-license)
+* [🏗️ High-Level Architecture](#️-high-level-architecture)
+* [📦 Project Structure](#-project-structure)
+* [🏛️ Hierarchical Chain Architecture](#️-hierarchical-chain-architecture)
+* [🔄 Data Flow Architecture](#-data-flow-architecture)
+* [⚙️ Consensus Mechanism & Ordering](#️-consensus-mechanism--ordering)
+* [🛡️ Zero Knowledge Proof (ZKP) Verification Layer](#️-zero-knowledge-proof-zkp-verification-layer)
+* [⚖️ Cluster & Risk Management](#-cluster--risk-management)
+* [🔐 Security Architecture](#-security-architecture)
+* [📊 Performance Architecture](#-performance-architecture)
+* [🌐 Network Architecture](#-network-architecture)
+* [📈 Monitoring & Observability](#-monitoring--observability)
+* [📄 License](#-license)
 
 ---
 
@@ -38,59 +33,50 @@ HieraChain is a **multi-language blockchain infrastructure** designed for high-p
 flowchart TB
     CLIENT["🖥️ <b>Client Applications</b><br/>Web Apps · Mobile · CLI · External Services"]
     
-    API["🌐 <b>API Gateway Layer</b><br/>Python FastAPI · Arrow IPC"]
+    API["🌐 <b>API Gateway Layer</b><br/>FastAPI · WebSocket · GraphQL"]
     
-    CORE["⚙️ <b>Core Components</b><br/>hierachain · hierachain-consensus"]
+    CORE["⚙️ <b>Core Components</b><br/>Consensus · Hierarchical Chains · Security"]
     
-    STORAGE["💾 <b>Data & Storage Layer</b><br/>SQL · In-Memory · World State · Arrow IPC"]
+    CLUSTER["⚖️ <b>Cluster & Management</b><br/>Lockdown Protocol · Risk Analyzer"]
+    
+    STORAGE["💾 <b>Data & Storage Layer</b><br/>SQLite/Redis · IPFS · World State · Arrow IPC"]
 
-    CLIENT --> API --> CORE --> STORAGE
-```
-
-### API Gateway Detail
-
-```mermaid
-flowchart LR
-    subgraph PY["🐍 Python FastAPI"]
-        P1["REST API v1/v2"]
-        P2["Blockchain Explorer"]
-    end
-
+    CLIENT --> API --> CORE
+    CORE <--> CLUSTER
+    CORE --> STORAGE
 ```
 
 ### Core Components Detail
 
 ```mermaid
 flowchart LR
-    subgraph HP["🐍 hierachain"]
+    subgraph HieraChain_Core["⚙️ HieraChain Core"]
         direction TB
-        HP1["Core blockchain logic"]
-        HP2["Domain contracts"]
-        HP3["Hierarchical chains"]
-        HP4["Security policies"]
-        HP1~~~HP2~~~HP3~~~HP4
+        subgraph Hierarchical["Hierarchical System"]
+            H1["Main Chain"]
+            H2["Sub Chains"]
+            H3["Channels"]
+        end
+        
+        subgraph Consensus["Consensus & Security"]
+            C1["Ordering Service"]
+            C2["PoA / PoF / BFT"]
+            C3["Policy Engine (ABAC)"]
+            C4["ZK Verifier"]
+        end
+        
+        Hierarchical <--> Consensus
     end
-
-    subgraph HC["🦀 hierachain-consensus"]
-        direction TB
-        HC1["Block creation"]
-        HC2["Hash & Merkle tree"]
-        HC3["Digital signatures"]
-        HC4["Consensus algorithms"]
-        HC1~~~HC2~~~HC3~~~HC4
-    end
-
-    HP <-->|"PyO3 FFI"| HC
 ```
 
 ### Storage Layer Detail
 
 ```mermaid
 flowchart LR
-    S1[("SQL<br/>Backend")]
-    S2[("In-Memory<br/>Storage")]
-    S3[("World State<br/>Cache")]
-    S4[("Arrow IPC<br/>Files")]
+    S1[("SQL / Redis Backend")]
+    S2[("In-Memory Cache")]
+    S3[("World State")]
+    S4[("Arrow IPC Files")]
 
     S1 --- S2 --- S3 --- S4
 ```
@@ -102,71 +88,28 @@ flowchart LR
 ```
 HieraChain Ecosystem/
 ├── hierachain/                    # 🐍 Python - Main Ledger
-│   ├── adapters/                  # External adapters
-│   ├── api/                       # REST API (FastAPI)
-│   │   ├── v1/                    # API version 1
-│   │   ├── v2/                    # API version 2
-│   │   ├── server.py              # FastAPI server
-│   │   └── blockchain_explorer.py # Explorer endpoints
+│   ├── adapters/                  # Storage/DB adapters (SQLite, Redis)
+│   ├── api/                       # REST, GraphQL, WebSocket, Explorer
 │   ├── cli/                       # Command-line interface
+│   ├── cluster/                   # ⚖️ Cluster Quorum & Sync
 │   ├── config/                    # Configuration management
-│   ├── consensus/                 # Python consensus wrappers
-│   │   └── ordering_service.py    # Transaction ordering
+│   ├── consensus/                 # ⚙️ Ordering Service, BFT, PoA, PoF
 │   ├── core/                      # Core blockchain components
-│   │   ├── block.py               # Block definitions
-│   │   ├── blockchain.py          # Blockchain management
-│   │   ├── caching.py             # Performance caching
-│   │   ├── domain_contract.py     # Smart contracts
-│   │   ├── parallel_engine.py     # Parallel execution
-│   │   └── consensus/             # Consensus implementations
-│   ├── domains/                   # Business domain logic
+│   ├── domains/                   # 🏢 Business domain logic & Event Types
 │   ├── error_mitigation/          # Error handling & recovery
 │   ├── hierarchical/              # Hierarchical chain system
-│   │   ├── channel.py             # Channel management
-│   │   ├── main_chain.py          # Main chain logic
-│   │   ├── sub_chain.py           # Sub-chain management
-│   │   ├── hierarchy_manager.py   # Hierarchy coordination
-│   │   └── consensus/             # BFT consensus
-│   ├── integration/               # System integrations
-│   ├── monitoring/                # Observability & metrics
-│   ├── network/                   # Network layer
-│   │   ├── zmq_transport.py       # ZeroMQ transport
-│   │   └── secure_connection.py   # TLS connections
-│   ├── risk_management/           # Risk assessment
-│   ├── security/                  # Security & cryptography
-│   ├── storage/                   # Data persistence
-│   │   ├── memory_storage.py      # In-memory backend
-│   │   ├── sql_backend.py         # SQL database
-│   │   └── world_state.py         # State management
-│   └── units/                     # Utility modules
+│   ├── integration/               # Enterprise logic (ERP connectors)
+│   ├── monitoring/                # 📈 Observability & Alerts
+│   ├── network/                   # P2P Network (ZMQ)
+│   ├── risk_management/           # 🛡️ Risk assessment & Mitigation
+│   ├── security/                  # Cryptography, PoA, ACL
+│   ├── storage/                   # Data persistence abstractions
+│   └── units/                     # Semantic versioning & Utils
 │
-├── hierachain-consensus/          # 🦀 Rust - High-Performance Core
-│   ├── lib.rs                     # Library entry point + PyO3 module
-│   ├── ffi.rs                     # Foreign Function Interface
-│   ├── core/                      # Core components
-│   │   ├── block.rs               # Block struct & operations
-│   │   ├── blockchain.rs          # Blockchain management
-│   │   ├── schemas.rs             # Data schemas
-│   │   ├── utils.rs               # Utilities (hashing, Merkle)
-│   │   ├── py_wrapper.rs          # Python bindings
-│   │   └── consensus/             # Consensus algorithms
-│   │       ├── poa.rs             # Proof of Authority
-│   │       └── pof.rs             # Proof of Federation
-│   ├── consensus/                 # Ordering services
-│   │   └── ordering_service.rs    # Transaction ordering
-│   ├── hierarchical/              # Hierarchical chains
-│   │   ├── main_chain.rs          # Main chain
-│   │   ├── sub_chain.rs           # Sub-chains
-│   │   ├── bft.rs                 # BFT consensus
-│   │   └── hierarchy_manager.rs   # Hierarchy management
-│   ├── security/                  # Cryptography
-│   │   └── signatures.rs          # Ed25519 signatures
-│   ├── error_mitigation/          # Error handling
-│   └── utils/                     # Helper functions
-│
-├── Cargo.toml                     # Rust dependencies
+├── tests/                         # Unit, Integration, Stress tests
+├── docs/                          # Developer documentation
 ├── pyproject.toml                 # Python dependencies
-└── Makefile                       # Build automation
+└── requirements.txt               # Main dependencies
 ```
 
 ---
@@ -174,7 +117,7 @@ HieraChain Ecosystem/
 ## 🏛️ Hierarchical Chain Architecture
 
 ```mermaid
-flowchart TB
+flowchart BT
     %% Main Chain
     MC["🔗 <b>MAIN CHAIN</b><br/>━━━━━━━━━━━━━━━━<br/>Global State & Anchoring<br/>• Global consensus<br/>• Cross-chain transactions<br/>• Anchor blocks from sub-chains"]
 
@@ -188,13 +131,15 @@ flowchart TB
     CHB["💬 Channel B<br/>(Private Comms)"]
     CHC["💬 Channel C<br/>(Private Comms)"]
 
-    %% Connections
-    MC --> SCA
-    MC --> SCB
-    MC --> SCC
-    SCA --> CHA
-    SCB --> CHB
-    SCC --> CHC
+    %% Data Flow / Proof Anchoring connections
+    SCA --> MC
+    SCB --> MC
+    SCC --> MC
+    
+    %% Channel Private connections
+    CHA --> SCA
+    CHB --> SCB
+    CHC --> SCC
 ```
 
 ---
@@ -224,73 +169,36 @@ flowchart TB
 
 ---
 
-## 🔗 Inter-Language Communication
+## ⚖️ Cluster & Risk Management
 
-### Unified Data Format: Apache Arrow
+### Cluster Quorum Protocol
 
-Python and Rust communicate using **Apache Arrow** as the common data format, enabling zero-copy data sharing:
+HieraChain implements a robust, Quorum-based cluster protocol (instead of single-leader election) to manage distributed states safely:
 
-```mermaid
-flowchart TB
-    subgraph ARROW["📦 Apache Arrow"]
-        direction LR
-        A1["Zero-Copy Memory"]
-        A2["Columnar Format"]
-        A3["Cross-Language"]
-        A1~~~A2~~~A3
-    end
+* **Heartbeat & Health Sync**: Continuous peer validation across the cluster.
+* **Lockdown Protocol**: If severe anomalies occur, nodes cast votes. A quorum triggers a system-wide lockdown to freeze state changes.
+* **Recovery Voting**: Upon resolution, the cluster votes to lift the lockdown.
 
-    subgraph PY["🐍 Python"]
-        PY1["PyArrow"]
-    end
+### Risk Analyzer
 
-    subgraph RS["🦀 Rust"]
-        RS1["arrow-rs"]
-    end
+Runs concurrently alongside operations to detect anomalies such as:
 
-    PY <--> ARROW
-    RS <--> ARROW
-```
-
-| Language | Arrow Library | Integration Method |
-|:---------|:--------------|:-------------------|
-| **Python** | `pyarrow` | Native Python bindings |
-| **Rust** | `arrow-rs` | PyO3 FFI + Arrow IPC |
-
-### Python ↔ Rust (PyO3 FFI + Arrow)
-
-```mermaid
-flowchart TB
-    subgraph PythonLayer["🐍 Python Layer"]
-        PY1["PyArrow RecordBatch"]
-        PY2["hierachain_consensus bindings"]
-        PY1~~~PY2
-    end
-
-    FFI["PyO3 FFI<br/>(Arrow Memory Shared)"]
-
-    subgraph RustLayer["🦀 Rust Layer"]
-        R1["#[pyclass] Block"]
-        R2["arrow-rs RecordBatch"]
-        R3["#[pymodule] hierachain_consensus"]
-        R1~~~R2~~~R3
-    end
-
-    PythonLayer --> FFI --> RustLayer
-```
+* Abnormal transaction volume (Z-score analysis).
+* Suspicious cross-chain activity.
+* Entity misbehaviors.
 
 ---
 
-## ⚙️ Consensus Mechanisms
+## ⚙️ Consensus Mechanism & Ordering
 
 ### Supported Algorithms
 
 | Algorithm | Language | Use Case |
 |:----------|:---------|:---------|
-| **Proof of Authority (PoA)** | Rust | Private networks with trusted validators |
-| **Proof of Federation (PoF)** | Rust | Multi-organization permissioned networks |
-| **BFT Consensus** | Rust/Python | Byzantine fault-tolerant ordering |
-| **Ordering Service** | Rust | Transaction ordering & batching |
+| **Proof of Authority (PoA)** | Python | Private networks with trusted validators |
+| **Proof of Federation (PoF)** | Python | Multi-organization permissioned networks |
+| **BFT Consensus** | Python | Byzantine fault-tolerant ordering |
+| **Ordering Service** | Python | Transaction ordering & batching |
 
 ### Algorithm Summary
 
@@ -376,10 +284,10 @@ flowchart LR
 
 ZK verification is integrated into all consensus mechanisms:
 
-- **ProofOfAuthority (PoA)**: Uses `_verify_block_zk_proof()` from `BaseConsensus`
-- **ProofOfFederation (PoF)**: Uses `_verify_block_zk_proof()` from `BaseConsensus`
-- **BFTConsensus**: Includes `_verify_operation_zk_proof()` in `_handle_pre_prepare`
-- **OrderingService**: `EventCertifier.validate()` includes `_verify_zk_proof()` method
+* **ProofOfAuthority (PoA)**: Uses `_verify_block_zk_proof()` from `BaseConsensus`
+* **ProofOfFederation (PoF)**: Uses `_verify_block_zk_proof()` from `BaseConsensus`
+* **BFTConsensus**: Includes `_verify_operation_zk_proof()` in `_handle_pre_prepare`
+* **OrderingService**: `EventCertifier.validate()` includes `_verify_zk_proof()` method
 
 ### Configuration
 
@@ -392,57 +300,65 @@ ZK verification is integrated into all consensus mechanisms:
 
 ### Modes
 
-- **Mock Mode**: Uses SHA-256 hashes to simulate ZK proofs (development)
-- **Production Mode**: Uses **ZoKrates** for real ZK-SNARKs circuits
+* **Mock Mode**: Uses SHA-256 hashes to simulate ZK proofs (development)
+* **Production Mode**: Uses **ZoKrates** for real ZK-SNARKs circuits
 
 ### Security Guarantees
 
-- ✅ **Soundness**: Cannot forge a valid proof for an invalid state transition
-- ✅ **Completeness**: Valid state transitions always produce valid proofs
-- ✅ **Zero-Knowledge**: Proof reveals nothing about private transaction data
-- ✅ **Non-Interactive**: No communication needed between prover and verifier
-- ✅ **Succinct**: Proof size is constant regardless of transaction count
+* ✅ **Soundness**: Cannot forge a valid proof for an invalid state transition
+* ✅ **Completeness**: Valid state transitions always produce valid proofs
+* ✅ **Zero-Knowledge**: Proof reveals nothing about private transaction data
+* ✅ **Non-Interactive**: No communication needed between prover and verifier
+* ✅ **Succinct**: Proof size is constant regardless of transaction count
 
 ---
 
-## 🔐 Security Architecture
+## 🛡️ Enterprise Security Architecture
+
+HieraChain adopts an omnipresent security philosophy relying on **6 core pillars**. Rather than being a single module, these pillars bind components across `hierachain.security`, `hierachain.cluster`, and `hierachain.risk_management` into a holistic enterprise-grade defense mechanism:
+
+* 👤 **Authorization**: `PolicyEngine` (ABAC) and MSP Identity enforcing zero-trust access control.
+* 🔒 **Lockdown & Logging**: `ClusterLockdownManager` via Quorum voting, paired with tamper-evident `SecureLogger`.
+* 🛡️ **Fault-tolerance**: BFT and PoF consortium models resisting Byzantine behaviors and network splits.
+* 📈 **Risk Analyzer**: Real-time Z-score anomaly detection to identify and flag suspicious transaction patterns.
+* 🔑 **Encryption**: AES-256-GCM for all IPFS Swarm data, Ed25519 signatures, and mTLS/ZMQ Curve for the transport layer.
+* 🔐 **Decentralized Zero-Knowledge Proofs**: ZK circuits (`ZKProver`/`ZKVerifier`) allowing systemic truth verification without revealing raw private data on the Main Chain.
 
 ```mermaid
 flowchart TB
-    subgraph Security["Security Layers"]
-        TS["🔒 <b>Transport</b><br/>───────────<br/>TLS 1.3<br/>mTLS<br/>ZMQ Curve"]
-        CR["🔑 <b>Crypto (Rust)</b><br/>───────────<br/>Ed25519<br/>SHA-256<br/>Merkle Tree"]
-        AC["👤 <b>Access Control</b><br/>───────────<br/>Role-based<br/>Organization<br/>Channel"]
-        TS ~~~ CR ~~~ AC
+    subgraph ALFRED["Comprehensive Security Framework"]
+        direction TB
+        A["👤 <b>Authorization</b><br/>PolicyEngine / MSP"]
+        L["🔒 <b>Lockdown</b><br/>Quorum / SecureLog"]
+        F["🛡️ <b>Fault-tolerance</b><br/>BFT / PoF"]
+        R["📈 <b>Risk Analyzer</b><br/>Z-score Monitor"]
+        E["🔑 <b>Encryption</b><br/>AES-256-GCM / Ed25519"]
+        D["🔐 <b>Decentralized Proofs</b><br/>ZK Verifier"]
+        
+        A ~~~ L ~~~ F
+        R ~~~ E ~~~ D
     end
-
-    subgraph DataSecurity["Data & Connection Security"]
-        PD["📁 <b>Data Collections</b><br/>───────────<br/>Encryption<br/>Hash Only<br/>Access Rules"]
-        SC["🔗 <b>Connections</b><br/>───────────<br/>Peer Auth<br/>Node Verify<br/>Key Rotation"]
-        EM["🛡️ <b>Error Mitigation</b><br/>───────────<br/>Fault Tolerance<br/>Recovery"]
-        PD ~~~ SC ~~~ EM
-    end
-
-    Security --> DataSecurity
 ```
 
 ---
 
 ## 📊 Performance Architecture
 
+Despite being written natively in Python, HieraChain achieves high throughput via advanced data processing paradigms:
+
 ```mermaid
 flowchart TB
     subgraph Performance["Performance Optimization Strategies"]
-        L1["🔄 <b>Zero-Copy Transfer</b><br/>Arrow IPC<br/>───────────<br/>Eliminates serialization<br/>overhead across layers"]
+        L1["🔄 <b>Columnar Storage</b><br/>Apache Arrow<br/>───────────<br/>High-speed bulk <br/>data processing"]
         L2["🔀 <b>Parallel Processing</b><br/>Worker Pool<br/>───────────<br/>Concurrent execution<br/>Configurable workers"]
-        L3["🔐 <b>Native Crypto</b><br/>Rust<br/>───────────<br/>Ed25519 signatures<br/>SHA-256, Merkle trees"]
+        L3["🔗 <b>High-Speed Transport</b><br/>Arrow Flight<br/>───────────<br/>Enterprise ERP <br/>data streaming"]
         L1 ~~~ L2 ~~~ L3
     end
 
     subgraph Batching["Batching & Caching"]
-        L4["📦 <b>Batch Operations</b><br/>Rust<br/>───────────<br/>batch_create_blocks<br/>batch_calculate_hashes"]
-        L5["📋 <b>TX Batching</b><br/>Mempool<br/>───────────<br/>Groups transactions<br/>Efficient processing"]
-        L6["💾 <b>Cache Layer</b><br/>Python<br/>───────────<br/>In-memory caching<br/>Frequently accessed data"]
+        L4["📦 <b>Batch Operations</b><br/>Events<br/>───────────<br/>batch_create_blocks<br/>batch_calculate_hashes"]
+        L5["📋 <b>TX Batching</b><br/>Ordering<br/>───────────<br/>Groups transactions<br/>Efficient processing"]
+        L6["💾 <b>Cache Layer</b><br/>World State<br/>───────────<br/>In-memory caching<br/>Redis indexing"]
         L4 ~~~ L5 ~~~ L6
     end
 
@@ -461,29 +377,26 @@ flowchart LR
 
     subgraph Peers["Peer Nodes"]
         subgraph Peer1["Peer Node 1"]
-            P1E["Network Engine (P2P/ZMQ)"]
-            P1A["Python API"]
-            P1R["Rust Core"]
-            P1E ~~~ P1A ~~~ P1R
+            P1E["ZmqNode Engine"]
+            P1A["Python Core"]
+            P1E ~~~ P1A
         end
         subgraph Peer2["Peer Node 2"]
-            P2E["Network Engine (P2P/ZMQ)"]
-            P2A["Python API"]
-            P2R["Rust Core"]
-            P2E ~~~ P2A ~~~ P2R
+            P2E["ZmqNode Engine"]
+            P2A["Python Core"]
+            P2E ~~~ P2A
         end
         subgraph Peer3["Peer Node 3"]
-            P3E["Network Engine (P2P/ZMQ)"]
-            P3A["Python API"]
-            P3R["Rust Core"]
-            P3E ~~~ P3A ~~~ P3R
+            P3E["ZmqNode Engine"]
+            P3A["Python Core"]
+            P3E ~~~ P3A
         end
     end
 
     subgraph Protocols["Message Protocols"]
         MP1["ZeroMQ (Fast)"]
         MP2["HTTP/REST (Structured)"]
-        MP3["Arrow IPC (Bulk)"]
+        MP3["WebSocket (Streaming)"]
         MP1 ~~~ MP2 ~~~ MP3
     end
 
@@ -513,8 +426,6 @@ flowchart TB
         ENGINE --> PROM --> GRAF
     end
 ```
-
----
 
 ---
 
