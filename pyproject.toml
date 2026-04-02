@@ -132,7 +132,6 @@ hrc = "hierachain.cli.__init__:hrc"
 
 [tool.setuptools]
 packages = { find = { include = ["hierachain*"] } }
-package-data = {"hierachain" = ["*.env.HRC.example", "config/*.env.HRC.example"] }
 
 [tool.pytest.ini_options]
 minversion = "6.0"
