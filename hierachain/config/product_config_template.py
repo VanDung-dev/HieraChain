@@ -1,4 +1,12 @@
-# === HieraChain Product Auto-Configuration ===
+"""
+Product configuration template for HieraChain.
+
+This module provides the default Product configuration template as a Python string,
+ensuring it works both in development and when installed as a pip package.
+"""
+
+# Product configuration template for .env.HRC.example
+PRODUCT_CONFIG_TEMPLATE = """# === HieraChain Product Auto-Configuration ===
 # Auto-generated for production environment
 # Copy this content to .env and customize as needed
 
@@ -85,3 +93,4 @@ HRC_IPFS_ENCRYPTION_KEY=
 # Logging - Less verbose in production
 LOG_LEVEL=WARNING
 HRC_LOG_SQL_DETAIL=false
+"""

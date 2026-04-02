@@ -36,27 +36,23 @@ _WARNING_ENV_VAR = "HRC_WARNING_SHOWN"
 
 def get_product_config_template() -> str:
     """
-    Get the Product configuration template from .env.HRC.example file.
+    Get the Product configuration template.
     
-    The file is located in the same directory as this module (hierachain/config/).
-    This ensures it works both in development and when installed as a pip package.
+    This function imports the template from the Python module to ensure
+    it works both in development and when installed as a pip package.
     
     Returns:
-        The content of .env.HRC.example file
+        The Product configuration template string
     """
-    # Get the directory where this module is located
-    config_dir = Path(__file__).parent
-    env_example_file = config_dir / ".env.HRC.example"
-    
-    if env_example_file.exists():
-        with open(env_example_file, 'r') as f:
-            return f.read()
-    
-    # Fallback: raise error if file not found
-    raise FileNotFoundError(f"Could not find {env_example_file}")
+    try:
+        from hierachain.config.product_config_template import PRODUCT_CONFIG_TEMPLATE
+        return PRODUCT_CONFIG_TEMPLATE
+    except ImportError:
+        # Fallback: raise error if module not found
+        raise FileNotFoundError("Could not find Product config template module")
 
 
-def has_hierachain_config(env_file: Path = ENV_FILE) -> bool:
+def has_hierachain_config(env_file: Optional[Path] = ENV_FILE) -> bool:
     """
     Check if .env file has any HieraChain configuration.
     
@@ -68,7 +64,7 @@ def has_hierachain_config(env_file: Path = ENV_FILE) -> bool:
     Returns:
         True if HRC_ configuration exists, False otherwise
     """
-    if not env_file.exists():
+    if env_file is None or not env_file.exists():
         return False
     
     with open(env_file, 'r') as f:
@@ -82,7 +78,7 @@ def has_hierachain_config(env_file: Path = ENV_FILE) -> bool:
     return False
 
 
-def get_current_env(env_file: Path = ENV_FILE) -> Optional[str]:
+def get_current_env(env_file: Optional[Path] = ENV_FILE) -> Optional[str]:
     """
     Get current HRC_ENV value from .env file.
     
@@ -92,7 +88,7 @@ def get_current_env(env_file: Path = ENV_FILE) -> Optional[str]:
     Returns:
         Current environment value or None if not set
     """
-    if not env_file.exists():
+    if env_file is None or not env_file.exists():
         return None
     
     with open(env_file, 'r') as f:
@@ -128,7 +124,7 @@ def validate_no_conflict(env_file: Path) -> list[str]:
     return warnings
 
 
-def ensure_product_example(env_example_file: Path = ENV_EXAMPLE_FILE) -> bool:
+def ensure_product_example(env_example_file: Optional[Path] = ENV_EXAMPLE_FILE) -> bool:
     """
     Ensure .env.HRC.example file exists with Product configuration.
     
@@ -141,6 +137,9 @@ def ensure_product_example(env_example_file: Path = ENV_EXAMPLE_FILE) -> bool:
     Returns:
         True if example file was created/updated, False if already exists
     """
+    if env_example_file is None:
+        return False
+    
     # Reuse has_hierachain_config to check existing HRC_ config
     if has_hierachain_config(env_example_file):
         return False
@@ -153,7 +152,7 @@ def ensure_product_example(env_example_file: Path = ENV_EXAMPLE_FILE) -> bool:
     return True
 
 
-def load_env(env_file: Path = ENV_FILE) -> bool:
+def load_env(env_file: Optional[Path] = ENV_FILE) -> bool:
     """
     Load .env file into os.environ.
     
@@ -163,10 +162,11 @@ def load_env(env_file: Path = ENV_FILE) -> bool:
     Returns:
         True if file was loaded, False if not found
     """
-    if env_file.exists():
-        load_dotenv(env_file)
-        return True
-    return False
+    if env_file is None or not env_file.exists():
+        return False
+    
+    load_dotenv(env_file)
+    return True
 
 
 def should_auto_config() -> bool:
