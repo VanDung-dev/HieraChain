@@ -28,6 +28,12 @@ from hierachain.cli.event import (
     add_event as add_event_cmd,
     show_events as show_events_cmd
 )
+from hierachain.cli.key import (
+    key_group,
+    generate as generate_key_cmd,
+    show as show_key_cmd,
+    verify as verify_key_cmd
+)
 
 
 @click.group()
@@ -47,6 +53,7 @@ hrc.add_command(cast(Command, verify_group))
 hrc.add_command(cast(Command, node_group))
 hrc.add_command(cast(Command, chain_group))
 hrc.add_command(cast(Command, event_group))
+hrc.add_command(cast(Command, key_group))
 
 # Node
 hrc.add_command(cast(Command, start_node))
@@ -58,6 +65,11 @@ hrc.add_command(cast(Command, list_chains_cmd), name="list_chains")
 hrc.add_command(cast(Command, submit_proof_cmd), name="submit_proof")
 hrc.add_command(cast(Command, add_event_cmd), name="add_event")
 hrc.add_command(cast(Command, show_events_cmd), name="show_events")
+
+# Key
+hrc.add_command(cast(Command, generate_key_cmd), name="generate_key")
+hrc.add_command(cast(Command, show_key_cmd), name="show_key")
+hrc.add_command(cast(Command, verify_key_cmd), name="verify_key")
 
 if __name__ == '__main__':
     hrc()
