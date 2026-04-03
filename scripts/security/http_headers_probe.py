@@ -11,7 +11,7 @@ Tests for required security headers on API responses:
 import asyncio
 import time
 import httpx
-from base_probe import BaseProbe, ProbeResult, parse_args, run_probe
+from .base_probe import BaseProbe, ProbeResult, parse_args, run_probe
 
 
 # Required security headers and their expected values

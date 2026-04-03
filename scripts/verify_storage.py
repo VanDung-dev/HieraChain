@@ -37,7 +37,7 @@ def run_verification():
             "previous_hash": f"hash_{i-1}",
             "timestamp": time.time(),
             "events": [
-                {"event": "test_event", "timestamp": time.time(), "sender": "user1", "data": f"value_{i}"}
+                {"event": "test_event", "timestamp": time.time(), "source": "user1", "data": f"value_{i}"}
             ],
             "metadata": {"consensus": "PoA"}
         }

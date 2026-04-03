@@ -13,7 +13,7 @@ Tests various methods to bypass API authentication:
 import asyncio
 import time
 import httpx
-from base_probe import BaseProbe, ProbeResult, parse_args
+from .base_probe import BaseProbe, ProbeResult, parse_args
 
 
 # Protected endpoints to test (both v1 and v2)

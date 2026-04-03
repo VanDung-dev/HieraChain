@@ -11,7 +11,7 @@ import asyncio
 import sys
 import re
 import httpx
-from base_probe import BaseProbe, parse_args, run_probe, ProbeResult
+from .base_probe import BaseProbe, parse_args, run_probe, ProbeResult
 
 
 def _check_critical_patterns(

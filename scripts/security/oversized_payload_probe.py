@@ -5,7 +5,7 @@ Probe script to test large payload handling (Oversized Body).
 import sys
 import httpx
 import asyncio
-from base_probe import BaseProbe, parse_args, run_probe, ProbeResult
+from .base_probe import BaseProbe, parse_args, run_probe, ProbeResult
 
 
 class OversizedPayloadProbe(BaseProbe):

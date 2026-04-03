@@ -9,7 +9,7 @@ import sys
 import time
 import httpx
 from collections import Counter
-from base_probe import BaseProbe, ProbeResult
+from .base_probe import BaseProbe, ProbeResult
 
 
 class RateLimitStressProbe(BaseProbe):

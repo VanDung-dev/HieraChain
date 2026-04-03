@@ -16,7 +16,7 @@ from typing import Any
 
 import httpx
 
-from base_probe import BaseProbe, ProbeResult, parse_args, run_probe
+from .base_probe import BaseProbe, ProbeResult, parse_args, run_probe
 
 
 # Payloads that should be STORED but cause harm when RETRIEVED

@@ -5,7 +5,7 @@ Probe script to test Server-Side Request Forgery (SSRF).
 import sys
 import httpx
 import asyncio
-from base_probe import BaseProbe, parse_args, run_probe, ProbeResult
+from .base_probe import BaseProbe, parse_args, run_probe, ProbeResult
 
 
 class SSRFProbe(BaseProbe):

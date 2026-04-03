@@ -7,7 +7,7 @@ import asyncio
 import re
 import sys
 import httpx
-from base_probe import BaseProbe, parse_args, run_probe, ProbeResult
+from .base_probe import BaseProbe, parse_args, run_probe, ProbeResult
 
 
 def _check_stack_trace(result: ProbeResult, body: str) -> bool:

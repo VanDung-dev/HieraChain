@@ -8,7 +8,7 @@ import ssl
 import time
 import sys
 from urllib.parse import urlparse
-from base_probe import parse_args
+from .base_probe import parse_args
 
 
 def _initialize_sockets(parsed, host, port, count):

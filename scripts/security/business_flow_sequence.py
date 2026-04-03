@@ -8,7 +8,7 @@ import sys
 import httpx
 import asyncio
 import time
-from base_probe import BaseProbe, parse_args, run_probe, ProbeResult
+from .base_probe import BaseProbe, parse_args, run_probe, ProbeResult
 
 
 class BusinessLogicProbe(BaseProbe):

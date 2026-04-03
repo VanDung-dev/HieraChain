@@ -44,12 +44,12 @@ def generate_events(count: int) -> list[dict[str, Any]]:
         
         event = {
             "entity_id": "user1",
-            "event": "transaction",
+            "event": "benchmark_event",
             "timestamp": time.time(),
             "details": {"nonce": str(i), "payload": payload},
-            "sender": public_key,
-            "receiver": "user2",
-            "amount": 10,
+            "source": public_key,
+            "target": "user2",
+            "quantity": 10,
             "signature": signature,
             "creator_id": "user1",
         }

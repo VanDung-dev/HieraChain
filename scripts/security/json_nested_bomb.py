@@ -5,7 +5,7 @@ Probe script to test JSON parsing vulnerabilities (Nested JSON / Billion Laughs)
 import sys
 import httpx
 import asyncio
-from base_probe import BaseProbe, parse_args, run_probe, ProbeResult
+from .base_probe import BaseProbe, parse_args, run_probe, ProbeResult
 
 
 class JsonBombProbe(BaseProbe):

@@ -11,7 +11,7 @@ This script verifies:
 import asyncio
 import sys
 import httpx
-from base_probe import BaseProbe, parse_args, run_probe, ProbeResult
+from .base_probe import BaseProbe, parse_args, run_probe, ProbeResult
 
 
 def _build_case_variations(api_key: str):

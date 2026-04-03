@@ -5,7 +5,7 @@ Probe script to test Path Traversal vulnerabilities.
 import sys
 import httpx
 import asyncio
-from base_probe import BaseProbe, parse_args, run_probe, ProbeResult
+from .base_probe import BaseProbe, parse_args, run_probe, ProbeResult
 
 
 def _get_traversal_payloads():

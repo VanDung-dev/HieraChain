@@ -14,7 +14,7 @@ import asyncio
 import time
 import httpx
 from typing import Any
-from base_probe import BaseProbe, ProbeResult, parse_args, run_probe
+from .base_probe import BaseProbe, ProbeResult, parse_args, run_probe
 
 
 # Fuzz payloads by category
