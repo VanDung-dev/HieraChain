@@ -3107,6 +3107,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v002-2026-04-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.0.2 (2026-04-04)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v001-2026-03-22" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3174,6 +3185,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v002-2026-04-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v0.0.2 (2026-04-04)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v001-2026-03-22" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3216,8 +3238,87 @@
 
 
 <h1 id="changelog">Changelog</h1>
+<h2 id="v002-2026-04-04">v0.0.2 (2026-04-04)</h2>
+<p>Phiên bản này tập trung vào tăng cường bảo mật, khả năng quan sát hệ thống và các cải thiện quan trọng về ổn định cho core package <code>hierachain/</code>, giải quyết các vấn đề thực tế phát hiện trong quá trình kiểm thử và đánh giá.</p>
+<details class="note">
+<summary>Improvements (5)</summary>
+<ul>
+<li>
+<p><strong>Quản lý Secret &amp; Thông tin xác thực</strong>:</p>
+<ul>
+<li>Giới thiệu <code>SecretManager</code> thống nhất trong <code>config</code> để quản lý thông tin xác thực an toàn với hỗ trợ nhiều backend.</li>
+<li>Ngăn chặn vô tình làm lộ bí mật trong logs bằng cách che tên secret và định danh backend.</li>
+<li>Ngăn chặn tự động sinh master key trong môi trường production để yêu cầu cấp phát key rõ ràng.</li>
+</ul>
+</li>
+<li>
+<p><strong>Bảo mật &amp; Chính sách</strong>:</p>
+<ul>
+<li>Thêm lưu trữ persistent cho brute force lockouts và chủ động từ chối các mẫu input nguy hiểm trong policy engine.</li>
+<li>Tăng cường kiểm tra tạo thư mục để ngăn chặn tấn công path traversal trong đường dẫn cơ sở dữ liệu SQLite của SubChain.</li>
+<li>Thêm module bảo mật chuyên dụng cho endpoint GraphQL với xác thực input và kiểm soát truy cập.</li>
+</ul>
+</li>
+<li>
+<p><strong>Khả năng Quan sát &amp; Giám sát</strong>:</p>
+<ul>
+<li>Tích hợp thu thập metrics Prometheus để giám sát thời gian thực độ trễ API, thông lượng khối và sức khỏe consensus.</li>
+<li>Thêm hỗ trợ logging JSON để tích hợp tốt hơn với các hệ thống tổng hợp logs như ELK và Loki.</li>
+<li>Thêm phương thức alert đơn giản và instance manager toàn cục để thông báo sự kiện chủ động.</li>
+<li>Tăng cường rate limiting API với backend Redis cho các deployment phân tán.</li>
+</ul>
+</li>
+<li>
+<p><strong>Cải thiện Core &amp; Hierarchical Chain</strong>:</p>
+<ul>
+<li>Triển khai phát hiện deadlock với timeout và cơ chế phục hồi trong quản lý lock.</li>
+<li>Leo thang mức độ nghiêm trọng của ZK proof bị thiếu lên mức critical và tích hợp trigger alert tự động.</li>
+<li>Cải thiện độ mạnh mẽ của việc submit proof và xử lý shutdown trong hierarchical chains.</li>
+<li>Thêm xác thực input cho <code>ChannelLedger.add_event</code> để ngăn chặn events bị malformed.</li>
+</ul>
+</li>
+<li>
+<p><strong>Công cụ Nhà phát triển &amp; CLI</strong>:</p>
+<ul>
+<li>Thêm lệnh CLI chuyên dụng cho sinh, backup và phục hồi key (<code>python -m hierachain key ...</code>).</li>
+<li>Thêm endpoint để fetch khối cụ thể theo index hoặc hash cho audit mục tiêu.</li>
+<li>Cập nhật SDK client để hỗ trợ đầy đủ multi-chain API v3.</li>
+<li>Đồng bộ block schema với event schema để có cấu trúc dữ liệu nhất quán.</li>
+</ul>
+</li>
+</ul>
+</details>
+<details class="warning">
+<summary>Fix (3)</summary>
+<ul>
+<li>
+<p><strong>Ổn định Consensus &amp; Ordering</strong>:</p>
+<ul>
+<li>Giải quyết race condition quan trọng trong commit khối và xử lý sự kiện chờ trong <code>OrderingService</code>.</li>
+<li>Đảm bảo các hoạt động lockdown và resume là atomic để ngăn chặn trạng thái không nhất quán trong quá trình bảo trì.</li>
+<li>Ngăn chặn mất dữ liệu im lặng trong quá trình phục hồi transaction journal với xác thực đúng đắn.</li>
+<li>Cải thiện logic phục hồi state với xác thực config và modularized recovery từ transaction journal.</li>
+</ul>
+</li>
+<li>
+<p><strong>Core &amp; Hierarchical Chain</strong>:</p>
+<ul>
+<li>Sửa race condition trong quản lý hierarchical chain và thêm thủ tục shutdown graceful.</li>
+</ul>
+</li>
+<li>
+<p><strong>Build &amp; Packaging</strong>:</p>
+<ul>
+<li>Nhúng template cấu hình vào module Python để sửa lỗi thiếu file <code>.env.HRC.example</code> khi cài đặt qua pip.</li>
+</ul>
+</li>
+</ul>
+</details>
+<hr />
 <h2 id="v001-2026-03-22">v0.0.1 (2026-03-22)</h2>
 <p>Phiên bản này đánh dấu việc hoàn thiện định hướng kiến trúc ban đầu của HieraChain, tập trung vào việc hợp nhất các thành phần cốt lõi thành một khung nguyên mẫu thống nhất.</p>
+<details class="note">
+<summary>Improvements (4)</summary>
 <ul>
 <li><strong>Tích hợp Lưu trữ IPFS</strong>: Hỗ trợ lưu trữ dữ liệu off-chain với mã hóa AES-256-GCM và định danh CID trên toàn bộ các giao diện API (REST, GraphQL, WebSocket).</li>
 <li>
@@ -3239,6 +3340,11 @@
 <li>Chuẩn hóa logging bảo mật với <code>SecureLogger</code>.</li>
 </ul>
 </li>
+</ul>
+</details>
+<details class="warning">
+<summary>Fix (1)</summary>
+<ul>
 <li>
 <p><strong>Ổn định &amp; QA</strong>: </p>
 <ul>
@@ -3247,16 +3353,19 @@
 </ul>
 </li>
 </ul>
+</details>
 <hr />
 <details class="info">
 <summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
 <p><strong>FACT</strong></p>
 <ul>
 <li>Ngày tháng theo UTC; ghi nhận các thay đổi quan trọng của HieraChain.</li>
+<li>Mỗi phiên bản được chia thành 2 phần: <strong>Improvements</strong> (cải tiến, tính năng mới) và <strong>Fix</strong> (sửa lỗi, khắc phục sự cố).</li>
 </ul>
 <p><strong>DECISION</strong></p>
 <ul>
-<li>Gộp thay đổi theo nhóm tính năng/module để dễ tra cứu.</li>
+<li>Phân loại thay đổi theo nhóm <strong>Improvements</strong> và <strong>Fix</strong> để dễ theo dõi.</li>
+<li>Sử dụng collapsible blocks (<code>???</code>) để ẩn/hiện nội dung, giúp tài liệu gọn gàng.</li>
 <li>Trước khi có bản release chính thức, changelog tập trung vào development milestones.</li>
 </ul>
 <p><strong>ASSUMPTION</strong></p>
