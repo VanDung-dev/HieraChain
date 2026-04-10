@@ -7,7 +7,7 @@ starlette==0.50.0
 pydantic==2.12.5
 
 # Cryptography & Security
-cryptography==46.0.6
+cryptography==46.0.7
 pynacl==1.6.2
 passlib==1.7.4
 python-multipart==0.0.22
