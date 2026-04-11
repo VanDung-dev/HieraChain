@@ -15,10 +15,9 @@ import redis
 import logging
 import time
 from fastapi import (
-    FastAPI, HTTPException, Depends, Request, APIRouter, Response
+    FastAPI, HTTPException, Depends, APIRouter, Response
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import warnings
 from contextlib import asynccontextmanager
 
@@ -48,6 +47,30 @@ EXEMPT_PATHS = {
     "/redoc",
     "/openapi.json"
 }
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
+
+class PayloadLimitMiddleware(BaseHTTPMiddleware):
+    """
+    Rejects requests larger than 1MB to prevent DoS attacks
+    """
+    MAX_PAYLOAD_SIZE = 1 * 1024 * 1024  # 1 MB
+
+    async def dispatch(self, request: Request, call_next):
+        if request.method in ("POST", "PUT", "PATCH"):
+            content_length = request.headers.get("Content-Length")
+            if content_length:
+                try:
+                    if int(content_length) > self.MAX_PAYLOAD_SIZE:
+                        return JSONResponse(
+                            status_code=413,
+                            content={"error": "Payload too large. Maximum size is 1MB."}
+                        )
+                except ValueError:
+                    pass
+        return await call_next(request)
 
 
 @asynccontextmanager
