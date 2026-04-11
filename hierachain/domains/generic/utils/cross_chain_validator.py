@@ -267,7 +267,7 @@ def _get_simple_value(v: Any) -> str | None:
 
 def _process_string_value(v: str) -> str | None:
     """Process string value with length check."""
-    if len(v) >= 100:
+    if len(v) >= 1000:
         logger.debug(
             "Skipping validation for long string (length=%d). "
             "Consider validating with pattern matching for hashes.",
@@ -279,7 +279,7 @@ def _process_string_value(v: str) -> str | None:
 
 def _process_bytes_value(v: bytes) -> str | None:
     """Process bytes value with length check."""
-    if len(v) >= 100:
+    if len(v) >= 1000:
         logger.debug(
             "Skipping validation for long bytes (length=%d). "
             "Consider validating with pattern matching for hashes.",
