@@ -14,34 +14,34 @@ Mô-đun Security cung cấp các năng lực bảo mật cấp doanh nghiệp c
 
 * MSP & Identity:
 
-  * `security/msp.py`: `HierarchicalMSP` quản trị Entity, Role, Policy và cấp phát/hủy Certificate nội bộ.
-  * `security/identity.py`: `IdentityManager` quản lý Organization, User, Role, xác thực Identity và chữ ký User.
+    * `security/msp.py`: `HierarchicalMSP` quản trị Entity, Role, Policy và cấp phát/hủy Certificate nội bộ.
+    * `security/identity.py`: `IdentityManager` quản lý Organization, User, Role, xác thực Identity và chữ ký User.
 
 * API Key & Policy:
 
-  * `security/key_manager.py`: `KeyManager` tạo, thu hồi, kiểm tra API Key và quyền truy cập theo resource.
-  * `security/policy_engine.py`: `PolicyEngine` đánh giá tập Policy (allow/deny) trên context giàu thông tin.
-  * `security/verify/api_key_verifier.py`: `APIKeyVerifier`/`ResourcePermissionChecker` tích hợp FastAPI để xác thực/ủy quyền theo API Key.
+    * `security/key_manager.py`: `KeyManager` tạo, thu hồi, kiểm tra API Key và quyền truy cập theo resource.
+    * `security/policy_engine.py`: `PolicyEngine` đánh giá tập Policy (allow/deny) trên context giàu thông tin.
+    * `security/verify/api_key_verifier.py`: `APIKeyVerifier`/`ResourcePermissionChecker` tích hợp FastAPI để xác thực/ủy quyền theo API Key.
 
 * Key Providers & Backup:
 
-  * `security/key_provider.py`: `LocalKeyProvider`, `FileVaultProvider` (AES-GCM, dẫn xuất Key) cung cấp chữ ký và Public Key ở dạng hex.
-  * `security/key_backup_manager.py`: `KeyBackupManager` sao lưu/khôi phục Key (mã hóa, hash toàn vẹn, đa vị trí, dọn dẹp vòng đời).
+    * `security/key_provider.py`: `LocalKeyProvider`, `FileVaultProvider` (AES-GCM, dẫn xuất Key) cung cấp chữ ký và Public Key ở dạng hex.
+    * `security/key_backup_manager.py`: `KeyBackupManager` sao lưu/khôi phục Key (mã hóa, hash toàn vẹn, đa vị trí, dọn dẹp vòng đời).
 
 * Logging & Guard:
 
-  * `security/secure_logging.py`: Logger an toàn, chuẩn hóa cấu trúc, tự động ẩn/sanitize dữ liệu nhạy cảm.
-  * `security/resource_guard.py`: Middleware chặn tải khi CPU/RAM vượt ngưỡng (DoS/load‑shedding), sử dụng `monitoring/PerformanceMonitor`.
+    * `security/secure_logging.py`: Logger an toàn, chuẩn hóa cấu trúc, tự động ẩn/sanitize dữ liệu nhạy cảm.
+    * `security/resource_guard.py`: Middleware chặn tải khi CPU/RAM vượt ngưỡng (DoS/load‑shedding), sử dụng `monitoring/PerformanceMonitor`.
 
 * Chứng chỉ & Toàn vẹn:
 
-  * `security/certificate.py`: `CertificateManager`, `CertificateValidator`, CRL quản trị chứng chỉ doanh nghiệp.
-  * `security/integrity.py`: `ChecksumValidator`, `verify_startup_integrity()` để xác minh toàn vẹn mã/tài sản.
+    * `security/certificate.py`: `CertificateManager`, `CertificateValidator`, CRL quản trị chứng chỉ doanh nghiệp.
+    * `security/integrity.py`: `ChecksumValidator`, `verify_startup_integrity()` để xác minh toàn vẹn mã/tài sản.
 
 * Sanitization & ZK:
 
-  * `security/sanitization.py`: Hàm sanitize/validate cho chuỗi, dict, số, timestamp…
-  * `security/zk_prover.py` và `security/verify/zk_verifier.py`: Tạo và xác minh ZK proof (mock/production mode).
+    * `security/sanitization.py`: Hàm sanitize/validate cho chuỗi, dict, số, timestamp…
+    * `security/zk_prover.py` và `security/verify/zk_verifier.py`: Tạo và xác minh ZK proof (mock/production mode).
 
 Sơ đồ khái quát:
 

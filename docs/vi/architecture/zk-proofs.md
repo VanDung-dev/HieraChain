@@ -14,15 +14,15 @@ Hệ thống cung cấp hai module cốt lõi đảm nhiệm công việc này:
 
 * **`ZKProver`** (Nằm tại Sub-chain - `hierachain/security/zk_prover.py`):
   
-  * Đóng vai trò là bên chứng minh (Prover).
-  * Khi một Sub-chain sinh ra một block mới, nó tạo ra một trạng thái mới (World State).
-  * `ZKProver` sẽ sinh ra các đoạn mã Proof để chứng minh cho logic chuyển trạng thái từ `old_state_root` sang `new_state_root` trong `block_index` tương ứng vừa được kích hoạt.
+    * Đóng vai trò là bên chứng minh (Prover).
+    * Khi một Sub-chain sinh ra một block mới, nó tạo ra một trạng thái mới (World State).
+    * `ZKProver` sẽ sinh ra các đoạn mã Proof để chứng minh cho logic chuyển trạng thái từ `old_state_root` sang `new_state_root` trong `block_index` tương ứng vừa được kích hoạt.
 
 * **`ZKVerifier`** (Nằm tại Main-chain - `hierachain/security/verify/zk_verifier.py`):
   
-  * Đóng vai trò là bên xác minh (Verifier).
-  * Khi nhận được tín hiệu Proof từ Sub-chain gửi lên Main-chain, `ZKVerifier` sẽ phân tích và xác minh tính hợp lệ của toán học cũng như tính toàn vẹn trạng thái.
-  * Giải quyết triệt để nguy cơ **Fake Proofs** (Chứng cứ giả). Nếu Proof không vượt qua xác minh, giao dịch đính kèm trên Main-chain sẽ bị từ chối thẳng thừng.
+    * Đóng vai trò là bên xác minh (Verifier).
+    * Khi nhận được tín hiệu Proof từ Sub-chain gửi lên Main-chain, `ZKVerifier` sẽ phân tích và xác minh tính hợp lệ của toán học cũng như tính toàn vẹn trạng thái.
+    * Giải quyết triệt để nguy cơ **Fake Proofs** (Chứng cứ giả). Nếu Proof không vượt qua xác minh, giao dịch đính kèm trên Main-chain sẽ bị từ chối thẳng thừng.
 
 ### 2. Các Chế độ Hoạt động (Modes)
 

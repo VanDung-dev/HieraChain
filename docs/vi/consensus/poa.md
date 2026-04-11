@@ -66,7 +66,8 @@ print(poa.is_authority("node_1"))  # True
 
 ## Liên quan
 
-* [Base Consensus](base_consensus.md)
+* Cơ chế Consensus Core: [Base Consensus](base_consensus.md)
+* Đồng thuận Proof of Federation(PoF): [PoF Consensus](pof.md)
 
 ---
 

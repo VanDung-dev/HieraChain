@@ -64,8 +64,8 @@ class MyCustomConsensus(BaseConsensus):
 
 ## Liên quan
 
-* [PoA Consensus](poa.md)
-* [PoF Consensus](pof.md)
+* Đồng thuận Proof of Authority (PoA): [PoA Consensus](poa.md)
+* Đồng thuận Proof of Federation(PoF): [PoF Consensus](pof.md)
 
 ---
 

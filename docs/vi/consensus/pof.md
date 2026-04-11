@@ -66,8 +66,8 @@ print(pof.get_current_leader(1))  # Hospital_B
 
 ## Liên quan
 
-* [PoA Consensus](poa.md)
-* [BFT Consensus](bft_consensus.md)
+* Cơ chế Consensus Core: [Base Consensus](base_consensus.md)
+* Đồng thuận Proof of Authority (PoA): [PoA Consensus](poa.md)
 
 ---
 

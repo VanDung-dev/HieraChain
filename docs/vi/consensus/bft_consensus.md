@@ -196,7 +196,6 @@ BFT_CONFIG = {
 ## Liên quan
 
 * Tổng quan kiến trúc: [Tổng quan](../architecture/overview.md)
-* Cơ chế Consensus Core: [Base Consensus](base_consensus.md)
 * Thuật ngữ: [Thuật ngữ](../glossary.md)
 
 ---

@@ -226,7 +226,6 @@ if recovery.needs_recovery():
 ```
 
 Cơ chế này đảm bảo tính bền vững (durability) bằng cách đọc lại `TransactionJournal` và tái lập `pending_events` pool.
-```
 
 ### Luồng xử lý (Flow)
 
