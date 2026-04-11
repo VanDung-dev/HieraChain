@@ -13,6 +13,7 @@ Features:
 
 import time
 import hashlib
+import hmac
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
@@ -78,7 +79,11 @@ class LockdownMessage:
         message_data = (
             f"{self.node_id}:{self.timestamp}:{self.reason}:{self.message_type.value}"
         )
-        return hashlib.sha256(f"{message_data}:{secret_key}".encode()).hexdigest()[:32]
+        return hmac.new(
+            secret_key.encode(),
+            message_data.encode(),
+            hashlib.sha256
+        ).hexdigest()[:32]
 
     def verify_signature(self, secret_key: str) -> bool:
         """Verify message signature."""
@@ -151,7 +156,11 @@ class QuarantineReport:
     def compute_signature(self, secret_key: str) -> str:
         """Compute HMAC signature for report."""
         msg = f"{self.node_id}:{self.timestamp}:{self.last_block_index}"
-        return hashlib.sha256(f"{msg}:{secret_key}".encode()).hexdigest()[:32]
+        return hmac.new(
+            secret_key.encode(),
+            msg.encode(),
+            hashlib.sha256
+        ).hexdigest()[:32]
 
     def verify_signature(self, secret_key: str) -> bool:
         """Verify report signature."""
