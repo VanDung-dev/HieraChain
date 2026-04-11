@@ -1,4 +1,7 @@
-import json
+"""
+Tests for storage logging security.
+"""
+
 import pytest
 
 from hierachain.security.verify.signature_verifier import SignatureVerifier
