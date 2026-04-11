@@ -94,6 +94,9 @@ def verify_signature_standalone(
         verify_key = VerifyKey(verify_key_bytes)
         
         signature_bytes = binascii.unhexlify(signature_hex)
+        # Reject signatures longer than 64 bytes - PyNaCl accepts concatenated signature+message
+        if len(signature_bytes) != 64:
+            return False
         
         # Verify
         verify_key.verify(message, signature_bytes)
