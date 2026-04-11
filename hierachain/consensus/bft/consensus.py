@@ -467,6 +467,9 @@ class BFTConsensus:
         self.committed_sequence = -1
         self.pending_requests: list[dict[str, Any]] = []
         self.message_log: list[BFTMessage] = []
+        self.MAX_MESSAGE_LOG = 10000
+        self.seen_nonces: set[str] = set()
+        self.MAX_SEEN_NONCES = 100000
         self.node_failure_counts: dict[str, int] = {}
         self.max_failure_count = 3
         self.view_change_timer: threading.Timer | None = None
@@ -521,6 +524,8 @@ class BFTConsensus:
             self._broadcast_msg(msg)
             self.state = ConsensusState.PRE_PREPARED
             self.message_log.append(msg)
+            if len(self.message_log) > self.MAX_MESSAGE_LOG:
+                self.message_log = self.message_log[-self.MAX_MESSAGE_LOG:]
             return True
     
     def handle_message(self, message: dict[str, Any]) -> bool:
@@ -620,6 +625,8 @@ class BFTConsensus:
             )
             self._broadcast_msg(prep_msg)
             self.message_log.append(prep_msg)
+            if len(self.message_log) > self.MAX_MESSAGE_LOG:
+                self.message_log = self.message_log[-self.MAX_MESSAGE_LOG:]
             self.view_change_manager.reset_timer()
             return True
 
@@ -659,6 +666,8 @@ class BFTConsensus:
         if commit_msg:
             self._broadcast_msg(commit_msg)
             self.message_log.append(commit_msg)
+            if len(self.message_log) > self.MAX_MESSAGE_LOG:
+                self.message_log = self.message_log[-self.MAX_MESSAGE_LOG:]
             return True
         return True
 
