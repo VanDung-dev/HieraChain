@@ -319,10 +319,11 @@ def _build_default_validation_rules() -> dict[str, Callable]:
     def proof_timestamp_consistency(
         main_chain_event: dict[str, Any], sub_chain_block: dict[str, Any]
     ) -> bool:
-        """Proof timestamp must be >= block timestamp."""
+        """Proof timestamp must be >= block timestamp AND within 24 hours of block."""
         proof_ts = main_chain_event.get("timestamp", 0)
         block_ts = sub_chain_block.get("timestamp", 0)
-        return proof_ts >= block_ts
+
+        return proof_ts >= block_ts and (proof_ts - block_ts) < 86400
 
     def entity_id_metadata_usage(event: dict[str, Any],) -> bool:
         """entity_id must be used as metadata."""
