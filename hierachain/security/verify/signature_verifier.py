@@ -6,6 +6,7 @@ supporting both Ed25519 (via PyNaCl) and ECDSA (via cryptography).
 """
 
 import json
+import unicodedata
 from typing import Any
 
 from hierachain.security.security_utils import verify_signature, verify_batch_signatures
@@ -194,6 +195,38 @@ class SignatureVerifier:
             )
             return False
 
+
+    @staticmethod
+    def _canonicalize_value(v: Any) -> Any:
+        """Recursively canonicalize values for consistent hashing."""
+        if isinstance(v, dict):
+            return {k: SignatureVerifier._canonicalize_value(v[k]) for k in sorted(v.keys())}
+        elif isinstance(v, list):
+            return [SignatureVerifier._canonicalize_value(item) for item in v]
+        elif isinstance(v, str):
+            # Normalize Unicode to NFC form
+            return unicodedata.normalize('NFC', v)
+        elif isinstance(v, float):
+            # Format floats consistently to avoid precision issues
+            return f"{v:.16f}".rstrip('0').rstrip('.') if '.' in f"{v:.16f}" else f"{v:.16f}"
+        else:
+            return v
+
+    @staticmethod
+    def get_canonical_bytes(data: dict[str, Any]) -> bytes:
+        """
+        Get cryptographically canonical bytes for signing/hashing.
+        Fixes JSON canonicalization vulnerabilities.
+        """
+        canonical = SignatureVerifier._canonicalize_value(data)
+        return json.dumps(
+            canonical,
+            sort_keys=True,
+            separators=(',', ':'),
+            ensure_ascii=False,
+            allow_nan=False
+        ).encode('utf-8')
+
     @staticmethod
     def _get_signable_event_content(event: dict[str, Any]) -> bytes:
         """
@@ -203,12 +236,8 @@ class SignatureVerifier:
         event_copy = event.copy()
         if 'signature' in event_copy:
             del event_copy['signature']
-        
-        # Use simple JSON dump with sort_keys for determinism
-        # Ensure separators are compact to match most signing implementations
-        return json.dumps(
-            event_copy, sort_keys=True, separators=(',', ':')
-        ).encode('utf-8')
+
+        return SignatureVerifier.get_canonical_bytes(event_copy)
 
     @staticmethod
     def _get_signable_transaction_content(tx: dict[str, Any]) -> bytes:
@@ -219,7 +248,5 @@ class SignatureVerifier:
         tx_copy = tx.copy()
         if 'signature' in tx_copy:
             del tx_copy['signature']
-        
-        return json.dumps(
-            tx_copy, sort_keys=True, separators=(',', ':')
-        ).encode('utf-8')
+
+        return SignatureVerifier.get_canonical_bytes(tx_copy)
