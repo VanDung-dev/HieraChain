@@ -5,7 +5,7 @@ This module handles API key management for the HieraChain Ledger,
 ensuring secure access control without cryptocurrency concepts.
 """
 
-
+import os
 import time
 import json
 import hashlib
@@ -327,21 +327,27 @@ class KeyManager:
 
 # Example usage and initialization
 def initialize_default_keys():
-    """Initialize some default API keys for testing and development."""
+    """Initialize some default API keys for testing and development only."""
+    if os.environ.get("HRC_ENV", "dev").lower() in ["production", "prod", "product"]:
+        logger.critical("Attempted to create default API keys in production environment!")
+        raise RuntimeError("Default keys cannot be created in production environment")
+        
     key_manager = KeyManager()
     
-    # Create demo keys
+    # Create demo keys for development only
     demo_key = key_manager.create_key(
         user_id="demo_user",
         permissions=["events", "chains", "proofs"],
-        app_details={"name": "Demo Application", "version": "1.0"}
+        app_details={"name": "Demo Application", "version": "1.0", "environment": "development"}
     )
     
     admin_key = key_manager.create_key(
         user_id="admin_user",
         permissions=["all"],
-        app_details={"name": "Admin Console", "version": "1.0"}
+        app_details={"name": "Admin Console", "version": "1.0", "environment": "development"}
     )
+    
+    logger.warning("Default development API keys created. This should NEVER happen in production!")
     
     return {
         "demo_key": demo_key,
