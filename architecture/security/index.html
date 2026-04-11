@@ -27,7 +27,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.31">
+      <meta name="generator" content="zensical-0.0.32">
     
     
       
@@ -3310,23 +3310,47 @@
 <h2 id="thanh-bao-mat-phan-chinh">Thành Bảo Mật phần chính</h2>
 <p>Kiến trúc phòng vệ được cấu thành từ 6 luồng chính phối hợp chặt chẽ:</p>
 <ul>
-<li><strong>Authorization &amp; Access Control</strong>: </li>
+<li>
+<p><strong>Authorization &amp; Access Control</strong>: </p>
+<ul>
 <li><code>hierachain/security/{msp.py, identity.py}</code> — quản lý Organization, User, Role, và PKI Identity.</li>
 <li><code>hierachain/security/policy_engine.py</code> — kiểm soát quyền (ABAC).</li>
 <li><code>hierachain/security/verify/api_key_verifier.py</code> — xác thực API key.</li>
-<li><strong>Lockdown &amp; Logging</strong>: </li>
+</ul>
+</li>
+<li>
+<p><strong>Lockdown &amp; Logging</strong>: </p>
+<ul>
 <li><code>hierachain/security/secure_logging.py</code> — Tamper-evident log, che mờ dữ liệu PII.</li>
 <li><code>hierachain/cluster/cluster_lockdown_manager.py</code> — Phong tỏa (Lockdown) khẩn cấp bằng Quorum.</li>
-<li><strong>Fault-tolerance &amp; Integrity</strong>: </li>
+</ul>
+</li>
+<li>
+<p><strong>Fault-tolerance &amp; Integrity</strong>: </p>
+<ul>
 <li><code>hierachain/security/resource_guard.py</code> — Lá chắn thép chống DoS/DDoS tải cao.</li>
 <li><code>hierachain/security/integrity.py</code> — Quét chữ ký checksum các tệp khởi động.</li>
-<li><strong>Risk Analyzer</strong>: </li>
+</ul>
+</li>
+<li>
+<p><strong>Risk Analyzer</strong>: </p>
+<ul>
 <li><code>hierachain/risk_management/risk_analyzer.py</code> — Theo dõi chỉ báo dị thường Z-score.</li>
 <li><code>hierachain/security/sanitization.py</code> — Chống injection đầu vào.</li>
-<li><strong>Encryption &amp; Keys</strong>: </li>
+</ul>
+</li>
+<li>
+<p><strong>Encryption &amp; Keys</strong>: </p>
+<ul>
 <li><code>hierachain/security/{key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}</code> — AES-GCM, Ed25519 và vòng đời X.509 cho mTLS.</li>
-<li><strong>Decentralized Zero-Knowledge Proofs</strong>: </li>
+</ul>
+</li>
+<li>
+<p><strong>Decentralized Zero-Knowledge Proofs</strong>:</p>
+<ul>
 <li><code>hierachain/security/zk_prover.py</code> &amp; <code>hierachain/security/verify/zk_verifier.py</code> — Triển khai Zero-Knowledge proofs cho Sub-Chains ẩn danh dữ liệu thật.</li>
+</ul>
+</li>
 </ul>
 <p>Cấu hình bảo mật hệ thống được bật/tắt linh hoạt tại <code>hierachain/config/settings.py</code> (AUTH, CORS, HSTS, rate limit…).</p>
 <h2 id="tich-hop-vao-he-thong">Tích hợp vào hệ thống</h2>
