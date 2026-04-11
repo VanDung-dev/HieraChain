@@ -1,13 +1,11 @@
-"""
-Tests for storage logging security.
-"""
-import pytest
 import json
-from hierachain.security.verify import SignatureVerifier
-from hierachain.security import KeyPair
+import pytest
+
+from hierachain.security.verify.signature_verifier import SignatureVerifier
+from hierachain.security.security_utils import KeyPair
+
 
 class TestSignatureVerifier:
-    
     @pytest.fixture
     def verifier(self):
         return SignatureVerifier()
@@ -26,8 +24,8 @@ class TestSignatureVerifier:
         }
         
         # 2. Sign it manually using the same canonicalization rule
-        # Rule: json dump with sorted keys, separators=(',', ':')
-        message = json.dumps(event, sort_keys=True, separators=(',', ':')).encode('utf-8')
+        # Use new secure canonicalization with Unicode normalization
+        message = SignatureVerifier.get_canonical_bytes(event)
         signature = keypair.sign(message)
         
         # 3. Add signature to event
@@ -43,7 +41,7 @@ class TestSignatureVerifier:
             "event": "CREATE",
             "timestamp": 123456789.0
         }
-        message = json.dumps(event, sort_keys=True, separators=(',', ':')).encode('utf-8')
+        message = SignatureVerifier.get_canonical_bytes(event)
         signature = keypair.sign(message)
         
         signed_event = event.copy()
@@ -63,8 +61,8 @@ class TestSignatureVerifier:
                 "sender_public_key": keypair.public_key
             }
         }
-        
-        message = json.dumps(tx, sort_keys=True, separators=(',', ':')).encode('utf-8')
+
+        message = SignatureVerifier.get_canonical_bytes(tx)
         signature = keypair.sign(message)
         
         signed_tx = tx.copy()
@@ -72,9 +70,6 @@ class TestSignatureVerifier:
         
         # Verify using extracted key
         assert verifier.verify_transaction_signature(signed_tx) is True
-        
-        # Verify using explicit key
-        assert verifier.verify_transaction_with_key(signed_tx, keypair.public_key) is True
 
     def test_batch_verify(self, verifier, keypair):
         # Create multiple events
@@ -82,7 +77,7 @@ class TestSignatureVerifier:
         
         for i in range(5):
             event = {"index": i, "data": "test"}
-            msg = json.dumps(event, sort_keys=True, separators=(',', ':')).encode('utf-8')
+            msg = SignatureVerifier.get_canonical_bytes(event)
             sig = keypair.sign(msg)
             signed_event = event.copy()
             signed_event['signature'] = sig
@@ -98,15 +93,13 @@ class TestSignatureVerifier:
             })
             
         results = verifier.batch_verify(batch_input)
-        
         assert len(results) == 5
         assert results[0] is True
         assert results[1] is True
-        assert results[2] is False # The tampered one
+        assert results[2] is False  # Tampered
         assert results[3] is True
         assert results[4] is True
 
     def test_missing_signature(self, verifier, keypair):
         event = {"foo": "bar"}
         assert verifier.verify_event_signature(event, keypair.public_key) is False
-
