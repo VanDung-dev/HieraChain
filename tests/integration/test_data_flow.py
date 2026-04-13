@@ -31,11 +31,25 @@ def _read_first_journal_row(journal_path, schema):
 
             length = struct.unpack("<I", len_bytes)[0]
             batch_data = f.read(length)
-            batch = pa.ipc.read_record_batch(batch_data, schema)
-            rows = batch.to_pylist()
 
-            if rows:
-                return rows[0]
+            # Detect format: JSON starts with '{'
+            if batch_data.startswith(b'{'):
+                import json
+                row = json.loads(batch_data)
+                return row
+
+            try:
+                # Fallback: standalone RecordBatch
+                batch = pa.ipc.read_record_batch(batch_data, schema)
+                return batch.to_pylist()[0]
+            except:
+                # Fallback: Arrow stream
+                try:
+                    reader = pa.ipc.open_stream(batch_data)
+                    batch = reader.read_next_batch()
+                    return batch.to_pylist()[0]
+                except:
+                    continue
 
     return None
 

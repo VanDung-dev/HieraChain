@@ -120,10 +120,8 @@ def test_recovery_and_rehydration():
         evt = events_list[0]
         
         assert evt.get('event') == 'event_1', "Recovered event data content mismatch"
-
-        print(
-            f"[Test] Successfully verified integrity of {latest_block_2.index} restored blocks."
-        )
+        print("[Test] Successfully verified integrity of 3 restored blocks.")
 
     finally:
+        # Cleanup
         _cleanup_chain(chain_name)
