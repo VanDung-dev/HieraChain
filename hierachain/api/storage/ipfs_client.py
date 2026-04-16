@@ -115,9 +115,12 @@ class IPFSClient:
                     "Install it with: pip install HieraChain[ipfs]"
                 )
             try:
-                self._client = ipfshttpclient.connect(self._host, timeout=self._timeout)
+                client = ipfshttpclient.connect(self._host, timeout=self._timeout)
+                if client is None:
+                    raise IPFSError("Failed to connect: client is None")
                 # Test connection
-                self._client.version()
+                client.version()
+                self._client = client
                 logger.info("Connected to IPFS daemon", host=self._host)
             except Exception as e:
                 logger.error("Failed to connect to IPFS daemon", error=str(e))
