@@ -10,7 +10,7 @@ pydantic==2.12.5
 cryptography==46.0.7
 pynacl==1.6.2
 passlib==1.7.4
-python-multipart==0.0.22
+python-multipart==0.0.26
 
 # Database & Storage
 sqlalchemy==2.0.46
