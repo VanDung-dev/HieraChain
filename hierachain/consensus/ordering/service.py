@@ -343,6 +343,6 @@ class OrderingService:
         self.should_stop.set()
         self.storage_handler.close()
         self.journal.close()
-        if self.processing_thread.is_alive():
+        if self.processing_thread and self.processing_thread.is_alive():
             self.processing_thread.join(timeout=5.0)
         logger.info("Ordering service shutdown complete.")
