@@ -340,6 +340,11 @@ async def create_contract(
             )
         else:
             # On-chain storage (traditional)
+            if inline_implementation is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Contract implementation is required for on-chain storage"
+                )
             safe_implementation = sanitize_string(
                 inline_implementation, context="general"
             )
