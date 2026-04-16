@@ -148,10 +148,10 @@ def _build_event_data(
     # Add details based on storage type
     if cid_info:
         # Off-chain storage (IPFS)
-        event["details_cid"] = cid_info["cid"]  # type: ignore[index]
-        event["details_nonce"] = cid_info["nonce"]  # type: ignore[index]
+        event["details_cid"] = cid_info["cid"]
+        event["details_nonce"] = cid_info["nonce"]
         if cid_info.get("metadata"):
-            event["details_metadata"] = cid_info["metadata"]  # type: ignore[index]
+            event["details_metadata"] = cid_info["metadata"]
     else:
         # On-chain storage (traditional)
         event["details"] = safe_details or {}
