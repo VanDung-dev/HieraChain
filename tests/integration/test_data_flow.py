@@ -42,13 +42,13 @@ def _read_first_journal_row(journal_path, schema):
                 # Fallback: standalone RecordBatch
                 batch = pa.ipc.read_record_batch(batch_data, schema)
                 return batch.to_pylist()[0]
-            except:
+            except Exception:
                 # Fallback: Arrow stream
                 try:
                     reader = pa.ipc.open_stream(batch_data)
                     batch = reader.read_next_batch()
                     return batch.to_pylist()[0]
-                except:
+                except Exception:
                     continue
 
     return None
