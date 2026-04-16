@@ -15,7 +15,7 @@ from hierachain.sdk.client import (
     ServiceUnavailableError,
     LockdownError,
     EventResult,
-    ChainStatus,
+    ChainStats,
 )
 
 __all__ = [
@@ -29,5 +29,5 @@ __all__ = [
     "ServiceUnavailableError",
     "LockdownError",
     "EventResult",
-    "ChainStatus",
+    "ChainStats",
 ]
