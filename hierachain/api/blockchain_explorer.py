@@ -12,7 +12,7 @@ IPFS Integration:
 
 import time
 import logging
-from typing import Any
+from typing import Any, cast
 from dataclasses import dataclass, field
 
 from hierachain.api.storage.explorer_helpers import (
@@ -90,9 +90,9 @@ class BlockchainExplorer:
         """
         if component_id:
             component = self.get_component(component_id)
-            if not component:
+            if component is None:
                 raise ExplorerError(f"Component {component_id} not found")
-            return component.render(**kwargs)
+            return cast(Any, component).render(**kwargs)
         
         # Render main dashboard
         return self._render_dashboard(**kwargs)
@@ -107,7 +107,7 @@ class BlockchainExplorer:
             'components', ['chain_overview', 'entity_tracer', 'event_analytics']
         )
 
-        dashboard = {
+        dashboard: dict[str, Any] = {
             "title": title,
             "components": [],
             "assets": {
@@ -475,7 +475,7 @@ class ProofVisualizerComponent:
     
     def _get_hierarchy_view(self) -> dict[str, Any]:
         """Get hierarchical view of chains"""
-        hierarchy = {
+        hierarchy: dict[str, Any] = {
             "main_chain": {
                 "type": "main",
                 "blocks": (

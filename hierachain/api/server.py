@@ -14,6 +14,7 @@ import uvicorn
 import redis
 import logging
 import time
+from typing import Any, cast
 from fastapi import (
     FastAPI, HTTPException, Depends, APIRouter, Response
 )
@@ -272,7 +273,7 @@ class RedisRateLimiter:
     def remaining(self, ip: str) -> int:
         key = self._key(ip)
         try:
-            count = int(self._redis.get(key) or 0)
+            count = int(cast(Any, self._redis.get(key)) or 0)
             return max(0, self.limit - count)
         except (TypeError, AttributeError):  # Fail-open on Redis client errors
             return self.limit
@@ -305,7 +306,10 @@ def add_rate_limit(fast_app: FastAPI, settings) -> None:
         if request.url.path in EXEMPT_PATHS:
             return await call_next(request)
 
-        client_ip = request.client.host if request.client else "unknown"
+        client = request.client
+        client_ip = "unknown"
+        if client is not None:
+            client_ip = client.host
         
         if not limiter.is_allowed(client_ip):
             remaining = limiter.remaining(client_ip)
@@ -395,8 +399,10 @@ async def _validate_graphql_request(
 ) -> tuple[bool, JSONResponse | None, dict | None]:
     """Validate GraphQL request. Returns (valid, error_response, parsed_body)."""
     import json
-    client_ip = request.client.host if request.client else "unknown"
-
+    client = request.client
+    client_ip = "unknown"
+    if client is not None:
+        client_ip = client.host
     # Check rate limit
     if not graphql_security.check_rate_limit(client_ip):
         return False, JSONResponse(
@@ -625,7 +631,7 @@ def create_app() -> FastAPI:
     # Add CORS middleware (driven by settings)
     cors_config = settings.get_cors_config()
     fast_app.add_middleware(
-        CORSMiddleware,
+        cast(Any, CORSMiddleware),
         **cors_config
     )
 
@@ -664,7 +670,7 @@ def run_server():
     uvicorn.run(
         "hierachain.api.server:app",
         host=api_config["host"],
-        port=api_config["port"],
+        port=cast(int, api_config["port"]),
         reload=is_debug,
         log_level="info" if not is_debug else "debug",
         log_config=LOGGING_CONFIG,
