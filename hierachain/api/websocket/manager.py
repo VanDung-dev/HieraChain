@@ -8,7 +8,7 @@ bidirectional communication with HieraChain clients.
 import asyncio
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -104,6 +104,7 @@ class WebSocketManager:
         """Start the WebSocket manager"""
         self._running = True
         self._ping_runner = PingLoopRunner(self._health_handler)
+        assert self._ping_runner is not None
         await self._ping_runner.start(
             self._registry.get_all,
             self.disconnect
@@ -186,7 +187,7 @@ class WebSocketManager:
             # Remove from old subscriptions
             self._subscriptions.unsubscribe_from_chain(connection_id, old_chain)
             self._subscriptions.unsubscribe_from_all_event_types(
-                connection_id, old_chain, conn.subscription.event_types
+                connection_id, old_chain, cast(Any, conn.subscription.event_types)
             )
             
             # Update subscription

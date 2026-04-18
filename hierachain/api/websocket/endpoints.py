@@ -69,7 +69,7 @@ async def websocket_endpoint(
         await ws_manager.disconnect(connection_id)
 
 
-async def _send_welcome_message(websocket: WebSocket, connection_id: str, chain_name: str):
+async def _send_welcome_message(websocket: WebSocket, connection_id: str, chain_name: str | None):
     """Send welcome message to new connection."""
     await websocket.send_json({
         "type": "connected",
