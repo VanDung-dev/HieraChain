@@ -26,51 +26,27 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    # Web Framework & API
-    "fastapi>=0.128.8",
-    "uvicorn>=0.38.0",
-    "starlette>=0.50.0",
-
-    # Data Validation & Modeling
-    "pydantic>=2.12.5",
-
-    # Cryptography & Security
-    "cryptography>=46.0.5",
-    "pynacl>=1.6.2",
-    "passlib>=1.7.4",
-    "python-multipart>=0.0.22",
-
-    # Database & Storage
-    "sqlalchemy>=2.0.46",
-    "alembic>=1.17.2",
-    "redis>=7.1.1",
-
-    # Configuration & Environment
-    "python-dotenv>=1.2.2",
-    "pyyaml>=6.0.3",
-
-    # Networking & Communication
-    "httpx>=0.28.1",
-    "requests>=2.32.5",
-    "aiohttp==3.13.4",
-    "pyzmq>=27.1.0",
-
-    # Cloud & Infrastructure
-    "kubernetes>=35.0.0",
-
-    # Distributed Systems & IPC
-    "pyarrow>=23.0.1",
-
-    # Monitoring & Metrics
-    "prometheus-client>=0.21.1",
-
-    # GraphQL API
-    "graphene>=3.4.3",
-
-    # CLI & Utilities
-    "click>=8.3.1",
-    "python-dateutil>=2.9.0.post0",
-    "psutil>=7.1.3",
+    "aiohttp==3.13.5",
+    "boto3==1.42.91",
+    "boto3-stubs==1.42.91",
+    "cryptography==46.0.7",
+    "fastapi==0.128.8",
+    "graphene==3.4.3",
+    "httpx==0.28.1",
+    "hvac==2.4.0",
+    "ipfshttpclient==0.7.0",
+    "kubernetes==35.0.0",
+    "prometheus-client==0.21.1",
+    "psutil==7.2.2",
+    "pyarrow==23.0.1",
+    "pydantic==2.13.2",
+    "pynacl==1.6.2",
+    "python-dotenv==1.2.2",
+    "pyzmq==27.1.0",
+    "redis==7.4.0",
+    "sqlalchemy==2.0.49",
+    "starlette==0.52.1",
+    "uvicorn==0.44.0",
 ]
 dynamic = ["version"]
 
@@ -78,46 +54,17 @@ dynamic = ["version"]
 version = {attr = "hierachain.units.version.__version__"}
 
 [project.optional-dependencies]
-ipfs = [
-    "ipfshttpclient>=0.7.0",
+doc =[
+    "zensical==0.0.33",
+    "polib==1.2.0",
 ]
 dev = [
-    # Testing
     "pytest>=9.0.2",
-    "pytest-asyncio>=1.3.0",
-    "pytest-benchmark>=5.2.3",
-    "pytest-html>=4.2.0",
-    "pytest-rerunfailures>=16.1",
-    "hypothesis>=6.151.6",
-
-    # Linting & Code Quality
-    "black>=26.3.1",
-    "flake8>=7.3.0",
-    "mypy>=1.19.1",
-    "bandit>=1.9.2",
-
-    # Build & Packaging
-    "setuptools>=82.0.0",
-    "wheel>=0.46.3",
-    "build>=1.3.0",
-    "twine>=6.2.0",
-
-    # CI/CD & DevOps
-    "tox>=4.34.1",
-    "virtualenv-pyenv>=0.6.0",
-    "coverage>=7.13.4",
-
-    # Security Auditing
-    "pip-audit>=2.10.0",
-
-    # Documentation
-    "mkdocs>=1.6.1",
-    "zensical==0.0.30",
-    "mkdocs-git-revision-date-localized-plugin>=1.5.1",
-    "polib>=1.2.0",
-
-    # Visualization
-    "pygal>=3.1.0",
+    "pytest-asyncio==1.3.0",
+    "pytest-benchmark==5.2.3",
+    "pytest-html==4.2.0",
+    "pytest-rerunfailures==16.1",
+    "hypothesis==6.151.1",
 ]
 
 [project.scripts]
