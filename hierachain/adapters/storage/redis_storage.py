@@ -9,7 +9,7 @@ and provides indexing capabilities for entities and events.
 import json
 import logging
 import time
-from typing import Any, Callable
+from typing import Any, Callable, cast, Iterable
 import redis
 
 
@@ -48,7 +48,7 @@ def _convert_fields(
 
 
 def _extract_event_from_block(
-    block_data: dict[str, Any],
+    block_data: dict[str, Any] | None,
     entity_id: str,
     event_ref: dict[str, Any]
 ) -> dict[str, Any] | None:
@@ -165,10 +165,11 @@ def _perform_redis_cleanup(
     """Perform data cleanup in Redis."""
     for chain_name in chain_names:
         blocks_key = blocks_key_fn(chain_name)
-        block_keys = redis_client.zrange(blocks_key, 0, -1)
+        # Cast to Any to avoid Awaitable union issues in static analysis
+        block_keys: Any = redis_client.zrange(blocks_key, 0, -1)
 
         for block_key in block_keys:
-            block_data = redis_client.hgetall(block_key)
+            block_data: Any = redis_client.hgetall(block_key)
             stored_at = float(block_data.get("stored_at", 0))
 
             if stored_at < cutoff_time:
@@ -327,7 +328,7 @@ class RedisStorageAdapter:
         """Get chain metadata"""
         try:
             chain_key = self._get_chain_key(chain_name)
-            chain_data = self.redis_client.hgetall(chain_key)
+            chain_data = cast(dict, self.redis_client.hgetall(chain_key))
 
             if not chain_data:
                 return None
@@ -353,14 +354,15 @@ class RedisStorageAdapter:
 
             # Process fields
             block_data = _process_redis_data(
-                block_data,
+                cast(dict, block_data),
                 json_fields=["events"],
                 int_fields=["index", "nonce"],
                 float_fields=["timestamp", "stored_at"]
             )
 
             # Remove storage metadata
-            block_data.pop("stored_at", None)
+            if block_data:
+                block_data.pop("stored_at", None)
 
             return block_data
 
@@ -381,7 +383,7 @@ class RedisStorageAdapter:
         try:
             key = self._get_chain_blocks_key(chain_name)
             end = (offset + limit - 1) if limit else -1
-            block_keys = self.redis_client.zrange(key, offset, end)
+            block_keys = cast(list, self.redis_client.zrange(key, offset, end))
             return _fetch_blocks_batch(self, chain_name, block_keys)
 
         except Exception as e:
@@ -416,7 +418,7 @@ class RedisStorageAdapter:
         """Get all events for a specific entity"""
         try:
             entity_key = self._get_entity_key(entity_id)
-            event_refs = self.redis_client.zrange(entity_key, 0, -1)
+            event_refs = cast(Iterable, self.redis_client.zrange(entity_key, 0, -1))
 
             events = []
             for ref_json in event_refs:
@@ -433,7 +435,7 @@ class RedisStorageAdapter:
         """Get statistics for a specific chain"""
         try:
             stats_key = self._get_stats_key(chain_name)
-            stats_data = self.redis_client.hgetall(stats_key)
+            stats_data = cast(dict, self.redis_client.hgetall(stats_key))
 
             if not stats_data:
                 return {
@@ -466,7 +468,7 @@ class RedisStorageAdapter:
     def list_chains(self) -> list[str]:
         """list all stored chains"""
         try:
-            return list(self.redis_client.smembers("chains"))
+            return list(cast(Iterable, self.redis_client.smembers("chains")))
         except Exception as e:
             logger.error("Failed to list chains: %s", e)
             return []
@@ -488,7 +490,7 @@ class RedisStorageAdapter:
     def get_storage_info(self) -> dict:
         """Get storage information"""
         try:
-            info = self.redis_client.info()
+            info = cast(dict, self.redis_client.info())
 
             return {
                 "redis_version": info.get("redis_version"),
