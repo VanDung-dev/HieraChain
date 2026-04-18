@@ -182,7 +182,7 @@ __all__ = [
     "KeyPair",
     "CryptoError",
     "verify_signature",
-    "generate_key_pair_hex"
+    "generate_key_pair_hex",
 
     # Zero Knowledge Proving
     "ZKProver",
