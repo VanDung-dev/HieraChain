@@ -47,6 +47,11 @@ else
   fi
 fi
 
+# Activate virtual environment
+if [ -f /app/.venv/bin/activate ]; then
+  . /app/.venv/bin/activate
+fi
+
 # Execute the original command passed by Docker
 echo "Executing: $@"
 exec "$@"
