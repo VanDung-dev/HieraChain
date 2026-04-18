@@ -488,6 +488,9 @@ class CrossLevelSyncManager:
             # 1. Prepare and verify proof
             if proof is None:
                 proof = _generate_proof(subchain, block_height)
+            
+            # Narrow proof to bytes for the type checker
+            assert proof is not None
 
             self._status = CrossLevelSyncStatus.VERIFYING
             if not _verify_proof_with(self._proof_verifier, proof, state_root):

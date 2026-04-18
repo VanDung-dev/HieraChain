@@ -352,7 +352,7 @@ class ClusterLockdownManager:
         self._zmq_node = zmq_node
         self._local_lockdown = local_lockdown_callback
         self._local_recovery = local_recovery_callback
-        self._secret_key = secret_key
+        self._secret_key: str = secret_key or ""
         self._state = ClusterState()
         self._message_history: list[LockdownMessage] = []
         self._max_history = 100

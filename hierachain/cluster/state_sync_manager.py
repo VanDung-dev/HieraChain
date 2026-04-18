@@ -14,7 +14,7 @@ import time
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 logger = logging.getLogger(__name__)
 
@@ -207,20 +207,24 @@ class StateSyncManager:
 
     def _broadcast_request(self, request: SyncRequest) -> bool:
         """Broadcast sync request to peers."""
-        if not self._zmq_node:
+        zmq_node = self._zmq_node
+        if zmq_node is None:
             logger.warning("No ZMQ node configured, cannot request sync")
             self._status = SyncStatus.FAILED
             return False
+
+        # Cast to Any to satisfy the type checker after null check
+        safe_node = cast(Any, zmq_node)
 
         try:
             import asyncio
             try:
                 asyncio.get_running_loop()
                 asyncio.create_task(
-                    self._zmq_node.broadcast(request.to_dict())
+                    safe_node.broadcast(request.to_dict())
                 )
             except RuntimeError:
-                asyncio.run(self._zmq_node.broadcast(request.to_dict()))
+                asyncio.run(safe_node.broadcast(request.to_dict()))
 
             self._pending_requests[request.node_id] = request
             return True
@@ -300,8 +304,15 @@ class StateSyncManager:
 
     def _verify_single_block(self, block: Any, previous_block: Any | None) -> bool:
         """Verify a single block and update statistics."""
+        verifier = self._block_verifier
+        if verifier is None:
+            return True
+
+        # Cast to Any to satisfy the type checker after null check
+        safe_verifier = cast(Any, verifier)
+
         try:
-            result = self._block_verifier.verify_block(block, previous_block)
+            result = safe_verifier.verify_block(block, previous_block)
             if result.is_valid():
                 self._stats["blocks_verified"] += 1
                 return True
