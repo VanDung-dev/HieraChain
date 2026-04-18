@@ -59,6 +59,7 @@ def get_hierarchy_manager() -> HierarchyManager:
     global _hierarchy_manager
     if _hierarchy_manager is None:
         _hierarchy_manager = HierarchyManager()
+    assert _hierarchy_manager is not None
     return _hierarchy_manager
 
 
@@ -69,6 +70,7 @@ def get_entity_tracer(
     global _entity_tracer
     if _entity_tracer is None:
         _entity_tracer = EntityTracer(manager)
+    assert _entity_tracer is not None
     return _entity_tracer
 
 
