@@ -46,18 +46,19 @@ class AESEncryption:
 
         Args:
             encryption_key: 32-byte encryption key. If None, generates a new key.
-                           In production, this should come from secure key management.
+                            In production, this should come from secure key management.
 
         Raises:
             EncryptionError: If key is invalid
         """
         if encryption_key is None:
-            encryption_key = AESGCM.generate_key(bit_length=256)
+            self._key = AESGCM.generate_key(bit_length=256)
+        else:
+            self._key = encryption_key
 
-        if len(encryption_key) != 32:
+        if len(self._key) != 32:
             raise EncryptionError("Encryption key must be exactly 32 bytes (256 bits)")
 
-        self._key = encryption_key
         self._aesgcm = AESGCM(self._key)
 
     @property
@@ -82,13 +83,12 @@ class AESEncryption:
             This is useful for development/testing but in production,
             use proper key management systems (HSM, KMS, etc.)
         """
-        if salt is None:
-            salt = os.urandom(16)
+        effective_salt = salt if salt is not None else os.urandom(16)
 
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
-            salt=salt,
+            salt=effective_salt,
             iterations=100000,
             backend=default_backend()
         )

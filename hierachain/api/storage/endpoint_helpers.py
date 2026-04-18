@@ -40,6 +40,7 @@ def get_ipfs_client() -> IPFSClient:
         _ipfs_client = create_ipfs_client_from_env()
         logger.info("IPFS client initialized for endpoint operations")
 
+    assert _ipfs_client is not None
     return _ipfs_client
 
 

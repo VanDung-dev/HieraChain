@@ -10,7 +10,7 @@ ensuring that all data stored remains within the enterprise boundary.
 
 import json
 import os
-from typing import Any
+from typing import Any, cast
 
 from hierachain.api.storage.encryption import AESEncryption, EncryptionError
 from hierachain.security.secure_logging import SecureLogger
@@ -412,7 +412,7 @@ class IPFSClient:
                 stats = client.files.stat(f"/ipfs/{cid}")
 
             logger.debug("Retrieved IPFS stats", cid=cid)
-            return dict(stats)
+            return cast(dict[str, Any], dict(stats))
 
         except Exception as e:
             logger.error("Failed to get stats", cid=cid, error=str(e))
