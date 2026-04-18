@@ -34,7 +34,7 @@ spec:
               name: node-port
             - containerPort: 2661
               name: api-port
-          command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
+          command: ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
           env:
             - name: NODE_ID
               value: "node1"
@@ -113,7 +113,7 @@ spec:
               name: node-port
             - containerPort: 2661
               name: api-port
-          command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
+          command: ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
           env:
             - name: NODE_ID
               value: "node2"
@@ -191,7 +191,7 @@ spec:
               name: node-port
             - containerPort: 2661
               name: api-port
-          command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
+          command: ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
           env:
             - name: NODE_ID
               value: "node3"
@@ -269,7 +269,7 @@ spec:
               name: node-port
             - containerPort: 2661
               name: api-port
-          command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
+          command: ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
           env:
             - name: NODE_ID
               value: "node4"

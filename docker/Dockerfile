@@ -13,26 +13,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt requirements_dev.txt ./
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt -r requirements_dev.txt
-
 # Copy source code and project files
 COPY hierachain/ ./hierachain/
-COPY hierachain/config/.env.HRC.example ./.env
+COPY .env.HRC.example ./.env
+COPY pyproject.toml uv.lock ./
 COPY tests/ ./tests/
 COPY scripts/ ./scripts/
 COPY config/ ./config/
-COPY pyproject.toml README.md ./
+COPY README.md ./
 
 # Provide version for setuptools-scm since .git is not copied
-ARG VERSION=0.0.1.dev
+ARG VERSION=0.0.2
 ENV SETUPTOOLS_SCM_PRETEND_VERSION=$VERSION
 
-# Install package
-RUN pip install --no-cache-dir .
+# Install ALL dependencies (production + development) in one optimized step
+RUN pip install uv
+RUN uv sync
+
+# Install the project itself (editable mode for docker)
+RUN uv pip install -e ".[dev]"
 
 # Create data directories
 RUN mkdir -p /app/data /app/log
@@ -43,8 +42,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV LOG_LEVEL=INFO
 
 # Expose ports
-EXPOSE 5000 8000
+EXPOSE 2661 5555 26657
 
-# Default command - use hrc CLI
-CMD ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
+# Install bash shell since slim image only has sh
+RUN apt-get update && apt-get install -y --no-install-recommends bash && rm -rf /var/lib/apt/lists/*
 
+# Default command - activate venv then run node service using sh (available on all images)
+CMD ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
