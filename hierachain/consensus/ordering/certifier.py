@@ -32,6 +32,9 @@ def _verify_zk_proof(event: PendingEvent) -> dict[str, Any]:
         result["verified"] = True
         result["reason"] = "ZK proof not required"
         return result
+    if not isinstance(zk_proof_hex, str):
+        result["reason"] = "Invalid ZK proof format"
+        return result
 
     try:
         verifier = ZKVerifier(mode=settings.ZK_MODE)

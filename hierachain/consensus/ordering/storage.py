@@ -12,7 +12,7 @@ from hierachain.consensus.ordering.types import PendingEvent
 
 def _block_from_dict(data: dict[str, Any]) -> Block:
     """Create a Block from dictionary data without recalculating hash."""
-    block = Block.__new__(Block)
+    block = object.__new__(Block)
     block.index = data["index"]
     block.timestamp = data["timestamp"]
     block.previous_hash = data["previous_hash"]

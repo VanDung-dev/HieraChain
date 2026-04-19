@@ -10,7 +10,7 @@ import logging
 import time
 import asyncio
 from queue import Queue, Empty
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from hierachain.core.block import Block
 from hierachain.error_mitigation.journal import TransactionJournal
@@ -84,16 +84,17 @@ class OrderingService:
                 if event_id and event_id not in self.pending_events:
                     # Reconstruct PendingEvent from journal data
                     from hierachain.consensus.ordering.types import PendingEvent, EventStatus
+                    safe_id = cast(str, event_id)
                     pending = PendingEvent(
-                        event_id=event_id,
+                        event_id=safe_id,
                         event_data=event_data,
                         channel_id=event_data.get("channel_id", "default"),
                         submitter_org=event_data.get("submitter_org", "unknown"),
                         received_at=event_data.get("timestamp", time.time()),
                         status=EventStatus.PENDING,
                     )
-                    self.pending_events[event_id] = pending
-                    logger.debug("Recovered pending event %s from journal", event_id)
+                    self.pending_events[safe_id] = pending
+                    logger.debug("Recovered pending event %s from journal", safe_id)
             if self.pending_events:
                 logger.info(
                     "Recovered %d pending events from journal on startup",
@@ -110,12 +111,13 @@ class OrderingService:
         self.maintenance = OrderingMaintenance(self)
 
         # Thread Management
-        self.processing_thread = threading.Thread(
+        thread = threading.Thread(
             target=self._init_processing_thread,
             daemon=True,
             name="OrderingProcessor"
         )
-        self.processing_thread.start()
+        self.processing_thread = thread
+        thread.start()
 
     def _init_processing_thread(self):
         """Entry point for the background processing thread"""
@@ -328,12 +330,13 @@ class OrderingService:
 
         # Start a new processing thread
         if self.processing_thread is None or not self.processing_thread.is_alive():
-            self.processing_thread = threading.Thread(
+            thread = threading.Thread(
                 target=self._init_processing_thread,
                 daemon=True,
                 name="OrderingProcessor"
             )
-            self.processing_thread.start()
+            self.processing_thread = thread
+            thread.start()
         logger.info("Ordering service started")
 
     def shutdown(self):

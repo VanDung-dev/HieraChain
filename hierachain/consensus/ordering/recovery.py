@@ -5,6 +5,7 @@ ordering service.
 
 import time
 import logging
+from typing import Any, cast
 from hierachain.consensus.ordering.types import PendingEvent, EventStatus
 from hierachain.consensus.ordering.utils import make_serializable, generate_event_id
 
@@ -31,7 +32,7 @@ def _extract_block_index(event_data: dict) -> int | None:
         return None
 
     try:
-        return int(block_index_raw)
+        return int(cast(Any, block_index_raw))
     except (ValueError, TypeError) as e:
         logger.warning("Invalid block_index in marker: %s", e)
         return None

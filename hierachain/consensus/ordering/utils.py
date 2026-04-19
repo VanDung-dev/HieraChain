@@ -42,7 +42,7 @@ def verify_event_signature(event: PendingEvent, certification: dict[str, Any]) -
     signature = event.event_data.get("signature")
     sender = event.event_data.get("sender")
 
-    if signature and sender:
+    if isinstance(signature, str) and isinstance(sender, str):
         details = event.event_data.get("details", {})
         payload = details.get("payload", "") if isinstance(details, dict) else ""
 
