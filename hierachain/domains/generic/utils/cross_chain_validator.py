@@ -7,6 +7,7 @@ and Sub-Chains while maintaining Ledger guidelines.
 """
 
 import time
+import re
 from typing import Any, Callable, cast
 
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
@@ -336,8 +337,16 @@ def _build_default_validation_rules() -> dict[str, Callable]:
             value for v in data.values()
             if (value := _get_simple_value(v)) is not None
         ]
-        data_values_str = "".join(simple_values)
-        return not any(t in data_values_str for t in forbidden)
+        
+        # Use space to separate values to maintain word boundaries
+        data_values_str = " ".join(simple_values)
+        
+        for term in forbidden:
+            # Use regex to check for whole word match only
+            pattern = rf"\b{re.escape(term)}\b"
+            if re.search(pattern, data_values_str):
+                return False
+        return True
 
     return {
         "proof_hash_consistency": proof_hash_consistency,
