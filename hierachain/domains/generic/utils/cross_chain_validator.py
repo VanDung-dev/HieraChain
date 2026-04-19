@@ -7,7 +7,7 @@ and Sub-Chains while maintaining Ledger guidelines.
 """
 
 import time
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.generic.utils.entity_tracer import EntityTracer
@@ -438,7 +438,7 @@ class ProofValidator:
 
         self._check_proof_rules(
             proof_event,
-            block.to_dict(),
+            cast(Any, block).to_dict(),
             sub_chain_name,
             proof_hash,
             results,
@@ -743,7 +743,7 @@ class CrossChainValidator:
         Returns:
             Comprehensive system integrity results
         """
-        results = dict(
+        results: dict[str, Any] = dict(
             timestamp=time.time(),
             main_chain_valid=False,
             sub_chains_valid={},

@@ -224,6 +224,8 @@ def _extract_relationships_from_event(
     """Extract entity relationships from a single event."""
     details = event.get("details", {})
     event_type = event.get("event")
+    if not isinstance(event_type, str):
+        return
 
     # Map event types to relationship categories and detail keys
     rel_map = {
@@ -434,8 +436,8 @@ class EntityTracer:
 
         # Analyze the trace
         total_events = 0
-        first_seen = float('inf')
-        last_seen = 0.0
+        first_seen: float = float('inf')
+        last_seen: float = 0.0
         chain_summaries = {}
 
         for chain_name, events in entity_trace.items():
