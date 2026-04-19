@@ -196,7 +196,7 @@ class ProofOfAuthority(BaseConsensus):
         signature = details.get("authority_signature")
         public_key = self.authority_metadata.get(authority_id, {}).get("public_key")
 
-        if not public_key or not signature:
+        if not isinstance(public_key, str) or not isinstance(signature, str):
             return True
 
         from hierachain.security.security_utils import verify_signature
