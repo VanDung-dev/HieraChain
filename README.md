@@ -50,6 +50,8 @@ pip install HieraChain
 
 **From source (for development)**
 
+*Traditional `pip` method:*
+
 ```bash
 git clone https://github.com/VanDung-dev/HieraChain.git
 cd HieraChain
@@ -59,6 +61,21 @@ source venv/bin/activate  # Linux/macOS (or venv\Scripts\activate on Windows)
 # Install dependencies and project in dev mode
 pip install -r requirements.txt
 pip install -e .
+```
+
+*Modern fast method with `uv` (recommended):*
+
+```bash
+git clone https://github.com/VanDung-dev/HieraChain.git
+cd HieraChain
+
+# Install uv if not installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Auto create venv + install ALL dependencies in one command
+uv sync
+
+source .venv/bin/activate
 ```
 
 ### Basic Usage

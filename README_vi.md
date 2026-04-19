@@ -50,6 +50,8 @@ pip install HieraChain
 
 **Từ mã nguồn (dành cho phát triển)**
 
+*Phương pháp truyền thống với `pip`:*
+
 ```bash
 git clone https://github.com/VanDung-dev/HieraChain.git
 cd HieraChain
@@ -59,6 +61,21 @@ source venv/bin/activate  # Linux/macOS (hoặc venv\Scripts\activate trên Wind
 # Cài đặt dependencies và dự án ở chế độ dev
 pip install -r requirements.txt
 pip install -e .
+```
+
+*Phương pháp hiện đại và nhanh với `uv` (khuyên dùng):*
+
+```bash
+git clone https://github.com/VanDung-dev/HieraChain.git
+cd HieraChain
+
+# Cài đặt uv nếu chưa có
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Tự động tạo môi trường ảo + cài đặt TẤT CẢ dependencies chỉ với 1 lệnh
+uv sync
+
+source .venv/bin/activate
 ```
 
 ### Sử Dụng Cơ Bản

@@ -46,6 +46,8 @@ which python
 
 ### Install Dependencies
 
+#### Using `pip` (traditional method)
+
 ```bash
 # Core dependencies
 pip install -r requirements.txt
@@ -55,6 +57,35 @@ pip install -r requirements_dev.txt
 
 # Install the package in development mode
 pip install -e .
+```
+
+#### Using `uv` (recommended, modern fast package manager)
+
+`uv` is a modern, extremely fast Python package manager written in Rust. It's **10-100x faster** than pip for dependency resolution and installation.
+
+**Install uv first (if not available):**
+```bash
+# Linux / macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**Setup project with uv:**
+```bash
+# Initialize virtual environment (auto detected)
+uv venv
+
+# Activate venv
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\Activate.ps1  # Windows
+
+# Install ALL dependencies automatically
+uv sync
+
+# ✅ This single command replaces all 3 pip commands above
+# It reads pyproject.toml, resolves dependencies, installs everything in dev mode
 ```
 
 This will set up your environment to work with the Ledger.
