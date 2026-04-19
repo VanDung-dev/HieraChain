@@ -9,6 +9,7 @@ import hashlib
 import json
 import time
 import uuid
+import re
 from typing import Any
 from datetime import datetime
 
@@ -403,12 +404,13 @@ def create_domain_event_template(domain_type: str) -> dict[str, Any]:
     }
 
 
-def validate_no_cryptocurrency_terms(data: str | dict[str, Any]) -> bool:
+def validate_no_cryptocurrency_terms(data: Any) -> bool:
     """
-    Validate that data doesn't contain cryptocurrency terminology.
+    Validate that data doesn't contain standalone cryptocurrency terminology.
+    This function recursively checks strings, dictionaries, and lists.
     
     Args:
-        data: Data to validate (string or dictionary)
+        data: Data to validate (string, dictionary, list, or other)
         
     Returns:
         True if no cryptocurrency terms found, False otherwise
@@ -419,17 +421,34 @@ def validate_no_cryptocurrency_terms(data: str | dict[str, Any]) -> bool:
         "sender", "receiver", "amount", "fee", "reward", "coinbase"
     ]
     
-    # Convert data to string for checking
+    # Process data to check for whole words
     if isinstance(data, dict):
-        data_string = json.dumps(data).lower()
-    else:
-        data_string = str(data).lower()
+        # Check both keys and values in dictionary
+        for key, value in data.items():
+            if not validate_no_cryptocurrency_terms(str(key)):
+                return False
+            if isinstance(value, (dict, list)):
+                if not validate_no_cryptocurrency_terms(value):
+                    return False
+            else:
+                if not validate_no_cryptocurrency_terms(str(value)):
+                    return False
+        return True
     
-    # Check for forbidden terms
+    if isinstance(data, list):
+        for item in data:
+            if not validate_no_cryptocurrency_terms(item):
+                return False
+        return True
+
+    # For strings, use word boundaries
+    data_string = str(data).lower()
     for term in crypto_terms:
-        if term in data_string:
+        # Use regex to check for whole word match only
+        pattern = rf"\b{re.escape(term)}\b"
+        if re.search(pattern, data_string):
             return False
-    
+            
     return True
 
 
