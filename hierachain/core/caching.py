@@ -9,7 +9,7 @@ significant performance improvements.
 import time
 import threading
 import logging
-from typing import Any
+from typing import Any, cast
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -596,9 +596,12 @@ class BlockchainCacheManager:
     def _fetch_block(self, chain_name: str, index: int, cache_key: str) -> Any | None:
         """Load a block from the chain and cache it."""
         chain = self._get_chain(chain_name)
-        if chain is None or not (0 <= index < len(chain.chain)):
+        if chain is None:
             return None
-        block = chain.chain[index]
+            
+        if not (0 <= index < len(cast(Any, chain).chain)):
+            return None
+        block = cast(Any, chain).chain[index]
         self.block_cache.set(cache_key, block)
         self.perf_tracker.record_miss()
         return block
@@ -622,7 +625,7 @@ class BlockchainCacheManager:
             if events is None:
                 block = self.get_block(chain_name, index)
                 if block:
-                    events = block.events
+                    events = cast(Any, block).events
                     # Cache with TTL
                     self.event_cache.set(
                         cache_key, events, ttl=self.config.get("event_ttl", 300)

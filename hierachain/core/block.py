@@ -277,7 +277,7 @@ def calculate_merkle_from_list(events_list: list[dict[str, Any]]) -> str:
 def _recover_from_data_column(row: dict[str, Any]) -> dict[str, Any] | None:
     """Try to recover full event object from binary data column."""
     data = row.get('data')
-    if not data:
+    if not isinstance(data, (str, bytes, bytearray)):
         return None
     try:
         return json.loads(data)

@@ -11,7 +11,7 @@ for both Main Chain and Sub-Chain implementations, following Ledger guidelines:
 import time
 import logging
 import threading
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from hierachain.core.block import Block
 from hierachain.security.verify.block_verifier import get_block_verifier
@@ -106,12 +106,13 @@ class DeadlockDetector:
         if self._monitor_thread and self._monitor_thread.is_alive():
             return
         self._should_stop.clear()
-        self._monitor_thread = threading.Thread(
+        thread = threading.Thread(
             target=self._monitor_loop,
             args=(interval,),
             daemon=True
         )
-        self._monitor_thread.start()
+        self._monitor_thread = thread
+        thread.start()
         logger.info("DeadlockDetector started monitoring")
     
     def stop_monitoring(self):
@@ -143,7 +144,7 @@ def get_deadlock_detector() -> DeadlockDetector:
     global _deadlock_detector
     if _deadlock_detector is None:
         _deadlock_detector = DeadlockDetector()
-    return _deadlock_detector
+    return cast(DeadlockDetector, _deadlock_detector)
 
 
 def _is_block_linked_correctly(current: Block, previous: Block) -> bool:
@@ -254,9 +255,10 @@ class Blockchain:
                 # Update entity index
                 entity_id = event.get("entity_id")
                 if entity_id:
-                    if entity_id not in self.entity_event_index:
-                        self.entity_event_index[entity_id] = []
-                    self.entity_event_index[entity_id].append({
+                    safe_id = cast(str, entity_id)
+                    if safe_id not in self.entity_event_index:
+                        self.entity_event_index[safe_id] = []
+                    self.entity_event_index[safe_id].append({
                         "block_index": block.index,
                         "event": event,
                         "timestamp": event.get("timestamp", time.time())

@@ -67,26 +67,15 @@ def get_transaction_schema() -> pa.Schema:
 
 def get_block_schema() -> pa.Schema:
     """Return the Arrow schema for a full Block (header + events)."""
-    return pa.schema([
-        ('index', pa.int64()),
-        ('timestamp', pa.float64()),
-        ('previous_hash', pa.string()),
-        ('nonce', pa.int64()),
-        ('merkle_root', pa.string()),
-        ('hash', pa.string()),
-        ('events', pa.list_(pa.struct([
-            ('entity_id', pa.string()),
-            ('event', pa.string()),
-            ('timestamp', pa.float64()),
-            ('details', pa.map_(pa.string(), pa.string())),
-            ('details_cid', pa.string()),
-            ('details_nonce', pa.string()),
-            ('data', pa.binary()),
-        ]))),
+    # Combine header fields with events list and ZK proof fields
+    fields = list(BLOCK_HEADER_SCHEMA)
+    fields.extend([
+        ('events', pa.list_(pa.struct(EVENT_SCHEMA))),
         # Block-level ZK Proof (for SubChain -> MainChain submission)
         ('zk_proof', pa.binary()),
         ('zk_public_inputs', pa.binary()),
     ])
+    return pa.schema(fields)
 
 
 # Constants for conversion

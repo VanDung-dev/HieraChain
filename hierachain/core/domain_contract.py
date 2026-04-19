@@ -8,7 +8,7 @@ and security controls across enterprise processes.
 """
 
 import time
-from typing import Any, Callable
+from typing import Any, Callable, cast
 from dataclasses import dataclass
 from enum import Enum
 
@@ -244,7 +244,7 @@ class DomainContract:
             else ContractVersion.from_string(version)
         )
         self.implementation = implementation
-        self.metadata = metadata or {}
+        self.metadata: dict[str, Any] = metadata or {}
         
         # Core components
         self.lifecycle = ContractLifecycle()
@@ -489,7 +489,7 @@ class DomainContract:
             contract_id=self.contract_id,
             version=self.version,
             implementation=self.implementation,
-            metadata=self.metadata.copy()
+            metadata=cast(dict[str, Any], self.metadata).copy()
         )
         current_contract.lifecycle = self.lifecycle
         current_contract.execution_history = self.execution_history.copy()
@@ -497,7 +497,7 @@ class DomainContract:
         self.previous_versions.append(current_contract)
         
         # Limit version history
-        max_versions = self.metadata.get("max_version_history", 10)
+        max_versions = cast(dict[str, Any], self.metadata).get("max_version_history", 10)
         if len(self.previous_versions) > max_versions:
             self.previous_versions = self.previous_versions[-max_versions:]
         
