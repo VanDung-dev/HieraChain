@@ -645,10 +645,9 @@ def classify_error_quick(
     Returns:
         ErrorInfo: Classified error information
     """
-    if config is None:
-        config = {}
-
-    classifier = ErrorClassifier(config)
+    # Ensure config is not None for the classifier
+    classifier_config = config or {}
+    classifier = ErrorClassifier(classifier_config)
     error_data = {
         "error_type": error_type,
         "message": message,

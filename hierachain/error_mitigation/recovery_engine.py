@@ -617,11 +617,9 @@ class ConsensusRecoveryEngine:
         Returns:
             Dict: Recovery actions to take
         """
-        actions = {
-            "view_change": False,
-            "isolated_nodes": [],
-            "scaling_actions": []
-        }
+        isolated_nodes: list[str] = []
+        scaling_actions: list[Any] = []
+        view_change = False
 
         current_time = time.time()
 
@@ -633,8 +631,8 @@ class ConsensusRecoveryEngine:
             # Check for silent nodes
             if (current_time - last_response) > self.silent_node_threshold:
                 logger.warning("Silent node detected: %s", node_id)
-                actions["isolated_nodes"].append(node_id)
-                actions["view_change"] = True
+                isolated_nodes.append(node_id)
+                view_change = True
 
             # Check for slow nodes
             elif response_time > self.slow_node_threshold:
@@ -651,10 +649,14 @@ class ConsensusRecoveryEngine:
                     "High failure count for node: %s (%d failures)",
                     node_id, failure_count
                 )
-                actions["isolated_nodes"].append(node_id)
-                actions["view_change"] = True
+                isolated_nodes.append(node_id)
+                view_change = True
 
-        return actions
+        return {
+            "view_change": view_change,
+            "isolated_nodes": isolated_nodes,
+            "scaling_actions": scaling_actions
+        }
 
     @staticmethod
     def adapt_consensus_parameters(

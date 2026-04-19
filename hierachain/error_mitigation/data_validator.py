@@ -284,7 +284,7 @@ def _check_strict_timestamp(
 ) -> None:
     """Verify timestamp is non-negative."""
     ts = event.get('timestamp')
-    if ts is not None and ts < 0:
+    if isinstance(ts, (int, float)) and ts < 0:
         result.add_error(f"Event[{index}]: timestamp cannot be negative")
 
 

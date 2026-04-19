@@ -11,7 +11,7 @@ import json
 import logging
 import hashlib
 import os
-from typing import Any
+from typing import Any, cast
 from datetime import datetime
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -299,7 +299,7 @@ class EncryptionValidator:
 
             result = {
                 "ciphertext": ciphertext,
-                "tag": encryptor.tag,
+                "tag": cast(Any, encryptor).tag,
                 "iv": iv,
                 "algorithm": "AES-256-GCM",
                 "timestamp": time.time()
@@ -380,7 +380,7 @@ class ResourceValidator:
             # Check for threshold violations
             self._check_cpu_usage(cpu_percent, resource_status)
             self._check_memory_usage(memory.percent, resource_status)
-            self._check_disk_usage(resource_status["disk_percent"], resource_status)
+            self._check_disk_usage(cast(float, resource_status["disk_percent"]), resource_status)
 
             if not resource_status["violations"]:
                 logger.info("All resource thresholds within limits")
