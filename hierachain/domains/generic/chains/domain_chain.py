@@ -678,10 +678,13 @@ class DomainChain(BaseChain):
             return True
 
         entity_id = payload.get("entity_id")
-        if not entity_id:
+        if not isinstance(entity_id, str):
             return False
         
         operation_type = payload.get("operation_type")
+        if not isinstance(operation_type, str):
+            return False
+            
         details = payload.get("details", {})
 
         if not self._validate_transaction_payload(entity_id, operation_type, details):
