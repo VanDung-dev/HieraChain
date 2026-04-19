@@ -5,7 +5,7 @@ Byzantine Fault Tolerance Consensus Implementation
 import time
 import threading
 import logging
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from hierachain.error_mitigation.validator import ConsensusValidator
 from hierachain.error_mitigation.error_classifier import ErrorClassifier
@@ -430,9 +430,34 @@ class BFTConsensus:
         self.sequence_number = 0
         self.state = ConsensusState.IDLE
         self.current_request: dict[str, Any] | None = None
+        
+        # Internal state
+        self.pre_prepare_messages: dict[int, BFTMessage] = {}
+        self.prepare_messages: dict[int, list[BFTMessage]] = {}
+        self.commit_messages: dict[int, list[BFTMessage]] = {}
+        self.view_change_votes: dict[int, list[BFTMessage]] = {}
+        self.committed_sequence = -1
+        self.pending_requests: list[dict[str, Any]] = []
+        self.message_log: list[BFTMessage] = []
+        self.MAX_MESSAGE_LOG = 10000
+        self.seen_nonces: set[str] = set()
+        self.MAX_SEEN_NONCES = 100000
+        self.node_failure_counts: dict[str, int] = {}
+        self.max_failure_count = 3
+        self.view_change_timer: threading.Timer | None = None
+        self.view_change_timeout = 30.0
+        self.lock = threading.Lock()
+        self.view_change_manager = BFTViewChangeManager(self)
+        self.message_handlers: dict[MessageType, Callable[[BFTMessage], bool]] = {
+            MessageType.PRE_PREPARE: self._handle_pre_prepare,
+            MessageType.PREPARE: self._handle_prepare,
+            MessageType.COMMIT: self._handle_commit,
+            MessageType.VIEW_CHANGE: self.view_change_manager.handle_view_change,
+            MessageType.NEW_VIEW: self.view_change_manager.handle_new_view
+        }
+
         self._configure_network()
         self._validate_initial_requirements()
-        self._initialize_internal_state()
         self._init_error_mitigation()
         self._validate_bft_requirements()
         self.view_change_manager.start_timer()
@@ -458,31 +483,6 @@ class BFTConsensus:
         if self.n < 3 * self.f + 1:
             raise ConsensusError(f"BFT requires n >= 3f+1, but n={self.n}, f={self.f}")
 
-    def _initialize_internal_state(self):
-        """Initialize internal consensus state."""
-        self.pre_prepare_messages: dict[int, BFTMessage] = {}
-        self.prepare_messages: dict[int, list[BFTMessage]] = {}
-        self.commit_messages: dict[int, list[BFTMessage]] = {}
-        self.view_change_votes: dict[int, list[BFTMessage]] = {}
-        self.committed_sequence = -1
-        self.pending_requests: list[dict[str, Any]] = []
-        self.message_log: list[BFTMessage] = []
-        self.MAX_MESSAGE_LOG = 10000
-        self.seen_nonces: set[str] = set()
-        self.MAX_SEEN_NONCES = 100000
-        self.node_failure_counts: dict[str, int] = {}
-        self.max_failure_count = 3
-        self.view_change_timer: threading.Timer | None = None
-        self.view_change_timeout = 30.0
-        self.lock = threading.Lock()
-        self.view_change_manager = BFTViewChangeManager(self)
-        self.message_handlers: dict[MessageType, Callable[[BFTMessage], bool]] = {
-            MessageType.PRE_PREPARE: self._handle_pre_prepare,
-            MessageType.PREPARE: self._handle_prepare,
-            MessageType.COMMIT: self._handle_commit,
-            MessageType.VIEW_CHANGE: self.view_change_manager.handle_view_change,
-            MessageType.NEW_VIEW: self.view_change_manager.handle_new_view
-        }
 
     def _direct_send(self, target_node: str, message: dict[str, Any]) -> None:
         """Directly send a message to a node using ZMQ."""
@@ -512,7 +512,7 @@ class BFTConsensus:
                 "client_id": operation.get("client_id", "unknown"),
                 "timestamp": time.time()
             }
-            digest = hash_request(self.current_request)
+            digest = hash_request(cast(dict[str, Any], self.current_request))
             data = {"request": self.current_request, "digest": digest}
             
             msg = _create_signed_bft_message(
