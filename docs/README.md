@@ -106,4 +106,6 @@ If you are hosting the documentation on GitHub Pages and want to use a custom do
 
 Below is an illustration of configuring the custom domain in GitHub settings:
 
-![GitHub Pages Custom Domain Configuration](./Screenshot.webp)
+<p align="center">
+  <img src="./Screenshot.webp" width="600" height="400"/>
+</p>
