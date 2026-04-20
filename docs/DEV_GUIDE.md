@@ -84,6 +84,9 @@ source .venv/bin/activate  # Linux/macOS
 # Install ALL dependencies automatically
 uv sync
 
+# Or manually install with specific extras (dev tools, documentation tools)
+# uv pip install -e ".[dev,doc]"
+
 # ✅ This single command replaces all 3 pip commands above
 # It reads pyproject.toml, resolves dependencies, installs everything in dev mode
 ```
