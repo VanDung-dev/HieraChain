@@ -1,95 +1,85 @@
 ---
-title: Proof of Federation - PoF
-description: Giao thức xoay vòng lãnh đạo dành riêng cho mạng liên minh (Consortium).
+title: "Proof of Federation (PoF)"
+description: "Giao thức đồng thuận liên minh: Bầu chọn lãnh đạo xác định, Biểu quyết Quorum và Quản trị đa tổ chức."
 icon: material/account-group-outline
 ---
 
-# Proof of Federation - PoF (`hierachain/consensus/proof_of_federation.py`)
+# Proof of Federation (`hierachain/consensus/proof_of_federation.py`)
 
-## Mục đích
+## Tổng quan
 
-PoF trong hệ thống HieraChain (nằm tại `hierachain/consensus/proof_of_federation.py`) là biến thể nâng cấp trên mô hình Authority, tập trung vào mô hình đa đối tác (Bệnh viện, Trường học, Ngân hàng) tham gia chia sẻ sổ cái mà không có tổ chức lãnh đạo đơn bộ nào (phi tập trung một phần).
-
-## Kiến trúc & khái niệm
-
-* Lớp `ProofOfFederation` chịu trách nhiệm quay vòng tính minh bạch thông qua công thức Toán Học Lịch Trình (Deterministic Schedule): `Leader = Validator[BlockIndex % ValidatorCount]`.
-* Giám sát luân phiên, thay thế liên kết tĩnh của PoA, khắc phục điểm lõi đơn lẻ `Single point of Failure`.
-
-## API công khai (Public API)
-
-* `add_validator(validator_id: str, metadata: dict[str, Any] | None = None) -> bool`: Hàm định danh và thêm node mới vào Liên Minh (giữ danh sách được Sắp Xếp / Sort).
-* `remove_validator(validator_id: str) -> bool`: Xóa Node tổ chức tham gia Liên minh.
-* `get_current_leader(block_index: int) -> str | None`: Công thức Toán chỉ định Người Lãnh Đạo tiếp theo của BlockIndex truyền vào.
-* `validate_block_proposer(block_index: int, proposer_id: str) -> bool`: Xác nhận cẩn thận Leader hiện tại (Proposer ID) có đúng với thiết kế lịch trình toán (BlockIndex) hay không.
-* `verify_quorum_signatures(message: bytes, signatures: list[dict[str, str]], required_count: int | None = None) -> bool`: Cơ chế xác nhận theo Quorum (Số lượng biểu quyết lớn hơn). Bác bỏ giả mạo.
-
-Ví dụ xác nhận Leader:
-
-```python
-from hierachain.consensus import ProofOfFederation
-
-pof = ProofOfFederation()
-pof.add_validator("Hospital_A")
-pof.add_validator("Hospital_B")
-print(pof.get_current_leader(0))  # Hospital_A
-print(pof.get_current_leader(1))  # Hospital_B
-```
-
-## Cấu hình
-
-* Vòng lặp thiết lập khối của PoF (thuộc tính nội bộ `config`) được tinh chỉnh: tạo nhanh chóng `block_interval: 5.0` (giây).
-* Điều kiện Liên minh tối thiểu (`min_validators: 3`) phải duy trì.
-* Cho phép xoay vòng `enforce_rotation: True` luôn được bật.
-
-## Tính năng & hạn chế
-
-* **Hoạt động Quorum**: Tính pháp lý được công nhận qua quy tắc xác nhận `(TotalValidators * 2) // 3 + 1` Node có chữ ký số (Mở rộng cho môi trường không tin cậy toàn bộ BFT-style).
-* **Hạn chế**: Số lượng liên minh cần giới hạn (thường < 50-100 Validator) để giữ tính phản chiếu (Sync) vì mọi biểu quyết Quorum làm chậm thời gian finality của hệ thống hơn là PoA đơn điệu.
-
-## Bảo mật & quyền truy cập (nếu áp dụng)
-
-* Mật mã chữ ký Quỹ Đạo xác nhận qua hàm xử lý băm SHA-256 đối với tham số: (Mã băm khối, Validator ID, Vị trí khối, và Thời gian thực).
-* Được kết hợp với Zero-knowledge Proof (tương đồng logic PoA) để ẩn dữ liệu Liên Minh cho các Node.
-
-## Xử lý lỗi & khắc phục
-
-* Nếu số lượng Liên minh (Validator) rớt thấp hơn ngưỡng `min_validators`, hệ thống từ chối mọi quyền sinh khối (`can_create_block = False`), dừng tạm thời chờ cấu hình từ mạng để phục hồi.
-* Nếu Block được tạo trễ/chậm nhịp (Chấp nhận trễ 80% thời gian tạo khối lý thuyết - Lỗi trễ thời gian hệ thống), hệ thống vẫn duy trì xác thực.
-
-## Hiệu năng
-
-* Với chỉ số interval = 5.0 (so với 10 của PoA), cơ chế xoay vòng PoF đem lại sự mượt mà và khả năng chia sẻ tác vụ ra đồng đều cho Liên Minh nhanh gấp đôi trên mỗi nút rẽ nhánh.
-
-## FAQ
-
-* **Chuyện gì xảy ra khi Leader bị ngắt mạng (Drop)?** Sẽ dẫn đến quá trình Timeout / View-Change do layer mạng xử lý, rồi tiếp tục bỏ qua vòng hiện tại và bầu Node kế tiếp. Hệ thống luân phiên (Modulo Rotation) không có Leader nào giữ vai trò vĩnh viễn.
-
-## Liên quan
-
-* Cơ chế Consensus Core: [Base Consensus](base_consensus.md)
-* Đồng thuận Proof of Authority (PoA): [PoA Consensus](poa.md)
+**Proof of Federation (PoF)** là giao thức đồng thuận được thiết kế dành riêng cho các mạng liên minh (**Consortium**), nơi nhiều tổ chức (ngân hàng, bệnh viện, đối tác cung ứng) cùng tham gia quản trị mà không có một đơn vị nào nắm quyền kiểm soát tuyệt đối. PoF kết hợp tính hiệu năng của PoA với tính bảo mật của cơ chế biểu quyết số đông (Quorum).
 
 ---
 
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
+## Cơ chế Hoạt động
 
-    **FACT**
+PoF sử dụng mô hình luân phiên kết hợp với xác thực đa chữ ký:
+1.  **Xoay vòng Lãnh đạo (Leader Rotation)**: Leader có quyền đề xuất khối được xác định bằng công thức toán học xác định: `Leader = Validators[BlockIndex % TotalValidators]`. Điều này ngăn chặn bất kỳ nút nào chiếm quyền điều hành vĩnh viễn.
+2.  **Biểu quyết Quorum**: Để một khối được coi là hợp lệ, nó không chỉ cần chữ ký của Leader mà còn cần sự xác nhận của một số lượng nút tối thiểu trong liên minh (thường là **2/3 + 1**).
+3.  **Danh sách Validator Sắp xếp**: Danh sách các nút tham gia được tự động sắp xếp theo ID để đảm bảo tính nhất quán của lịch trình tạo khối trên toàn mạng lưới.
 
-    * Tồn tại logic bắt Quorum số lượng trong `_get_required_quorum_count`.
-    * ID Array `validators` được hệ thống bảo đảm luôn trong trạng thái sắp xếp `sort()` ngay khi nạp.
-    
-    **DECISION**
+---
 
-    * Quyết định chuẩn xác minh Quorum của Federation Blockchain tuân thủ mô hình 2/3 (Byzantine-style Quorum Requirement) để tạo nền tảng an toàn đa tác nhân.
-    
-    **ASSUMPTION**
-    
-    * Giả định rằng mạng chỉ chứa đựng lượng nhỏ các Node không trực tiếp phản hồi ác ý, mà có thể bị trì trệ thời gian hoặc đứt gãy kết nối mạng nội bộ; nên không cần dùng đến 1 thuật toán Consensus hoàn toàn phi tập trung (PoW).
-    
-    **INVARIANT**
-    
-    * Nếu người sinh (signer) cố ý chốt block khi chưa đến lượt mình (sai BlockIndex trong Modulo ValidatorCount), Block sẽ bị vứt bỏ hoàn toàn trong bước `validate_block`.
-    
-    **EDGE CASES**
-    
-    * Nếu mảng chữ ký (`signatures`) thu thập từ mạng vượt yêu cầu số lượng, `verify_quorum_signatures` sớm ngắt lệnh kiểm tra ngay khi đủ Quorum để tối ưu thời gian. Dư thừa chữ ký được xử lý ổn thoả.
+## Các tính năng nổi bật
+
+<div class="grid cards" markdown>
+
+*   :material-account-group:{ .lg .middle } __Quản trị Đa phương__
+
+    ---
+
+    Loại bỏ điểm yếu tập trung (Single Point of Failure). Nếu Leader hiện tại gặp sự cố, quyền tạo khối sẽ tự động chuyển cho nút tiếp theo trong chu kỳ.
+
+*   :material-vote-outline:{ .lg .middle } __Biểu quyết Quorum__
+
+    ---
+
+    Cung cấp lớp bảo mật bổ sung bằng cách yêu cầu sự đồng thuận của đa số tổ chức thành viên trước khi chốt dữ liệu.
+
+*   :material-scale-balance:{ .lg .middle } __Công bằng & Minh bạch__
+
+    ---
+
+    Mỗi tổ chức thành viên đều có cơ hội đóng góp và kiểm soát sổ cái ngang hàng nhau thông qua lịch trình được định sẵn.
+
+</div>
+
+---
+
+## Tham số cấu hình
+
+| Tham số | Ý nghĩa | Mặc định |
+| :--- | :--- | :--- |
+| `min_validators` | Số lượng nút tối thiểu để mạng hoạt động. | `3` |
+| `block_interval` | Chu kỳ tạo khối mục tiêu. | `5.0` giây |
+| `enforce_rotation` | Bắt buộc xoay vòng leader sau mỗi khối. | `True` |
+
+---
+
+## Luồng Xác thực Khối
+
+```mermaid
+graph TD
+    A[Block Proposed by Leader] --> B{Verify Leader Identity}
+    B -- Correct Leader --> C[Collect Quorum Signatures]
+    C --> D{Signatures >= 2/3 + 1?}
+    D -- Yes --> E[Commit Block to Ledger]
+    D -- No --> F[Reject & Wait for Next Leader]
+    B -- Wrong Leader --> G[Reject Block]
+```
+
+---
+
+## Ưu điểm và Hạn chế
+
+*   **Ưu điểm**: Phù hợp cho mạng liên minh đa bên, chống lại sự chi phối của một nhóm nhỏ, tính sẵn sàng cao.
+*   **Hạn chế**: Tốn thêm băng thông mạng để thu thập chữ ký Quorum so với PoA, hiệu năng giảm nhẹ khi số lượng Validator tăng quá lớn.
+
+---
+
+## Liên quan
+
+*   [Đồng thuận dựa trên thẩm quyền (PoA)](./poa.md)
+*   [Kiến trúc mạng P2P](../modules/network.md)
+*   [Hệ thống bảo mật (Security)](../security/auth-access.md)

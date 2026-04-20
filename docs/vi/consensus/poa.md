@@ -1,97 +1,91 @@
 ---
-title: Proof of Authority - PoA
-description: Đồng thuận hiệu năng cao dành cho các tổ chức được nhận dạng (Authorized Entities).
+title: "Proof of Authority (PoA)"
+description: "Giao thức đồng thuận dựa trên thẩm quyền: Hiệu năng tối đa, Định danh nút và Luân phiên Round-Robin."
 icon: material/account-check-outline
 ---
 
-# Proof of Authority - PoA (`hierachain/consensus/proof_of_authority.py`)
+# Proof of Authority (`hierachain/consensus/proof_of_authority.py`)
 
-## Mục đích
+## Tổng quan
 
-PoA trong HieraChain Ledger là cơ chế sinh khối cho mạng chính (`Main Chain`) hoặc chuỗi phụ (`Sub-Chains`) dựa trên thẩm quyền. Không giải nén các tính toán tìm kiếm (mining) nặng nề, PoA dành cho các node có danh tính nhằm mang lại hiệu suất tạo khối tuyệt đối cao và an toàn cho doanh nghiệp (ví dụ mạng nội bộ hoặc hệ sinh thái một tập đoàn).
+**Proof of Authority (PoA)** là giao thức đồng thuận dựa trên danh tính, được tối ưu hóa cho các mạng blockchain riêng tư hoặc mạng nội bộ doanh nghiệp. Thay vì giải quyết các bài toán mật mã phức tạp (như mining), PoA dựa vào một nhóm các nút được cấp quyền (**Authorities**) để xác thực và đóng khối, giúp đạt được tốc độ giao dịch cực nhanh với độ trễ tối thiểu.
 
-## Kiến trúc & khái niệm
+---
 
-* Lớp `ProofOfAuthority` kế thừa `BaseConsensus` (`hierachain/consensus/proof_of_authority.py`).
-* Xác định Authorities thông qua định danh `authority_id` và Public Key (sở hữu mã xác minh chữ ký).
-* Phân bổ tạo khối theo lịch quy ước (`Round-Robin`) giữa các node để tối ưu công bằng tính toán.
-* Áp dụng Zero-Knowledge (ZK Proof) để đảm bảo thông tin nội bộ của khối thuộc Enterprise được bảo mật hoàn toàn.
+## Nguyên lý hoạt động
 
-## API công khai (Public API)
+Giao thức hoạt động dựa trên sự tin tưởng vào danh tính của các nút tham gia:
+1.  **Định danh nút**: Mỗi Authority được gán một `authority_id` và một cặp khóa ký số duy nhất.
+2.  **Lịch trình luân phiên (Round-Robin)**: Hệ thống sử dụng thuật toán tuần tự để xác định nút nào có quyền tạo khối tiếp theo dựa trên chỉ số khối (`BlockIndex % TotalAuthorities`).
+3.  **Xác thực chữ ký**: Mỗi khối mới phải được ký bởi Authority được chỉ định. Các nút khác sẽ xác thực chữ ký này trước khi chấp nhận khối vào sổ cái.
 
-* `add_authority(authority_id: str, metadata: dict[str, Any] | None = None) -> bool`: Chấp thuận danh tính mới sinh khối.
-* `remove_authority(authority_id: str) -> bool`: Loại bỏ Authority khỏi tập hợp đồng thuận.
-* `is_authority(authority_id: str) -> bool`: Kiểm tra Node có thuộc tập hợp tạo khối hay không.
-* `can_create_block(authority_id: str | None = None) -> bool`: Trả về `True` nếu thuộc Authority.
-* `validate_block(block: Block, previous_block: Block) -> bool`: Tiến trình xác nhận thời gian sinh khối, sự kiện cấu trúc và chữ ký hợp lệ.
-* `get_next_authority(current_block_index: int) -> str | None`: Cho ra thuật toán luân phiên Round-Robin.
+---
 
-Ví dụ thêm Node sinh khối mới:
+## Các tính năng chính
+
+<div class="grid cards" markdown>
+
+*   :material-lightning-bolt:{ .lg .middle } __Hiệu năng Đột phá__
+
+    ---
+
+    Khối được tạo ngay lập tức theo chu kỳ cấu hình (`block_interval`), phù hợp cho các ứng dụng yêu cầu phản hồi thời gian thực.
+
+*   :material-account-multiple-check:{ .lg .middle } __Quản trị Danh tính__
+
+    ---
+
+    Hỗ trợ thêm/xóa Authority linh hoạt thông qua API, cho phép thay đổi cấu hình mạng mà không cần dừng hệ thống.
+
+*   :material-shield-sync:{ .lg .middle } __Tính Toàn vẹn Tuyệt đối__
+
+    ---
+
+    Mọi khối đều mang chữ ký số của một tổ chức được xác thực, loại bỏ hoàn toàn rủi ro từ các nút vô danh hoặc giả mạo.
+
+</div>
+
+---
+
+## Tham số cấu hình quan trọng
+
+| Tham số | Ý nghĩa | Mặc định |
+| :--- | :--- | :--- |
+| `block_interval` | Khoảng thời gian tối thiểu giữa hai khối. | `10.0` giây |
+| `max_authorities` | Số lượng nút Authority tối đa trong mạng. | `100` |
+| `require_signature` | Bắt buộc phải có chữ ký hợp lệ để chấp nhận khối. | `True` |
+
+---
+
+## Ví dụ triển khai
 
 ```python
 from hierachain.consensus import ProofOfAuthority
 
+# Khởi tạo giao thức PoA
 poa = ProofOfAuthority()
-poa.add_authority("node_1", metadata={"public_key": "Bằng chứng..."})
-print(poa.is_authority("node_1"))  # True
+
+# Cấp quyền cho các nút tham gia đồng thuận
+poa.add_authority("node_hq", metadata={"org": "Headquarters", "pubkey": "..."})
+poa.add_authority("node_branch_1", metadata={"org": "Branch 01", "pubkey": "..."})
+
+# Kiểm tra quyền tạo khối của nút hiện tại
+if poa.can_create_block("node_hq"):
+    # Tiến hành đóng khối...
+    pass
 ```
-
-## Cấu hình
-
-* Config cơ bản nội bộ của thuật toán nằm trong `self.config` với chu kỳ tối thiểu `block_interval: 10.0` giây, cấm `mining`, `coin_transfer`, v.v...
-* Ràng buộc cấu hình `require_authority_signature` chỉ cho phép lưu trạng thái khi AuthNode ký khối thành công. Khả năng giám sát giới hạn lên đến `max_authorities: 100` node.
-
-## Tính năng & hạn chế
-
-* **Tính năng**: Tiết kiệm tài nguyên; khối được xác nhận ngay lập tức theo `block_interval`; an toàn trên môi trường định danh thực (KYC/Enterprise).
-* **Hạn chế**: Không phù hợp để vận hành Permissionless (các Blockchain mở như Bitcoin, mà bất kỳ ai cũng có thể vào giải mã/bỏ phiếu).
-
-## Bảo mật & quyền truy cập (nếu áp dụng)
-
-* Toàn bộ khối đều được bảo vệ và xác nhận thông qua chữ ký của node tạo lập `_create_authority_signature`.
-* Chữ ký băm cùng các đối tượng (Hash khối, Authority ID, Timestamp). Quá trình xác thực ngược lại bởi hàm `verify_signature` của module Security hệ thống.
-
-## Xử lý lỗi & khắc phục
-
-* Ký khối thất bại khi thiếu Public Key, hoặc Signature sai, hệ thống lập tức từ chối và ghi log trả về `False`.
-* Nếu khối bị sinh ra nhanh hơn thời gian quy định (thấp hơn `block_interval / 2`), tiến trình validate báo lỗi chống DDos nội bộ.
-
-## Hiệu năng
-
-* Khả năng xử lý lượng giao dịch (TPS) vô cùng cao và ổn định vì được xử lý qua nhóm các Authority có cấu hình máy chủ mạnh.
-
-## FAQ
-
-* **Liệu có thể loại bỏ hay thay đổi luân phiên Authority không?** Có, bằng API `add_authority` và `remove_authority` trong lúc blockchain đang chạy. Nhưng quá trình này sẽ không ảnh hưởng luồng (vẫn chạy bình thường trên số node còn lại).
-
-## Liên quan
-
-* Cơ chế Consensus Core: [Base Consensus](base_consensus.md)
-* Đồng thuận Proof of Federation(PoF): [PoF Consensus](pof.md)
 
 ---
 
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
+## Ưu điểm và Hạn chế
 
-    **FACT**
-    
-    * File `hierachain/consensus/proof_of_authority.py` triển khai Round-Robin cho thuật toán Proof-of-Authority bằng phương thức `get_next_authority`.
-    * Cấm các event type phục vụ tiền điện tử (`mining`, `transaction`).
-    
-    **DECISION**
-    
-    * PoA được mặc định sử dụng cho HieraChain khi khối doanh nghiệp được quản lý ở mạng đơn tổ chức (Single-Orgs) hoặc mạng tập đoàn nơi các Node được chỉ định sẵn sinh block.
-    * Chấp nhận không kiểm tra chữ ký cho các máy Client nếu `metadata` bỏ trống Public Key (phù hợp cho Unit Test). Tuy nhiên, trên Production, `metadata` Public Key luôn bắt buộc.
-    
-    **ASSUMPTION**
-    
-    * Giả định rủi ro mạng (phân mảnh nội bộ) và node ác ý thấp vì đã được chỉ định bằng danh tính.
-    
-    **INVARIANT**
-    
-    * Nếu quá trình ký `consensus_finalization` thiếu vắng ID hoặc sai Public Key, kết quả xác nhận khối vĩnh viễn không vượt qua.
-    * Difficulty cho PoA luôn trả về 1.0.
-    
-    **EDGE CASES**
-    
-    * Khi `authorities` rỗng (Chưa node nào cấu hình định danh), quá trình gọi API lấy người kế tiếp sẽ trả về `None` – blockchain không sinh khối đồng thuận.
+*   **Ưu điểm**: Tiết kiệm tài nguyên (không cần CPU mạnh để đào), thông lượng cao, quản trị minh bạch.
+*   **Hạn chế**: Tính phi tập trung thấp hơn so với BFT, chỉ phù hợp cho mạng có sự tin tưởng nhất định giữa các thành viên.
+
+---
+
+## Liên quan
+
+*   [Giao diện chuẩn (Base Consensus)](./base_consensus.md)
+*   [Đồng thuận liên minh (PoF)](./pof.md)
+*   [Kiến trúc phân cấp](../modules/hierarchical.md)

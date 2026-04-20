@@ -1,94 +1,73 @@
 ---
-title: Base Consensus
-description: Giao diện chuẩn (Abstract Base Class) cho tất cả các cơ chế đồng thuận trong hệ thống HieraChain.
+title: "Base Consensus Interface"
+description: "Giao diện chuẩn (Abstract Base Class) định nghĩa quy tắc đồng thuận và kiểm soát nội dung doanh nghiệp."
 icon: material/puzzle-outline
 ---
 
 # Base Consensus (`hierachain/consensus/base_consensus.py`)
 
-## Mục đích
+## Tổng quan
 
-`BaseConsensus` cung cấp một lớp trừu tượng định nghĩa các API tiêu chuẩn mà mọi cơ chế đồng thuận (như PoA, PoF) đều phải tuân theo. Điều này đảm bảo tính nhất quán của mô hình hướng sự kiện (event-based) và hỗ trợ kiến trúc phân cấp của HieraChain (Main Chain / Sub-Chain).
-
-## Kiến trúc & khái niệm
-
-* Lớp `BaseConsensus` (nằm tại `hierachain/consensus/base_consensus.py`) định nghĩa các abstract methods cơ bản.
-* Nó hoạt động như một lớp lọc, kiểm tra sự kiện để loại bỏ các thuật ngữ tiền điện tử không phù hợp với ngữ cảnh doanh nghiệp (như `mining`, `coin`, `wallet`).
-* Tích hợp chuẩn giao tiếp mật mã Zero-Knowledge (ZK Proof) để xác thực tính hợp lệ của block mà không làm lộ dữ liệu nội bộ gốc.
-
-## API công khai (Public API)
-
-* `validate_block(block: Block, previous_block: Block) -> bool`: (Abstract) Xác thực khối theo quy tắc đồng thuận.
-* `finalize_block(block: Block) -> Block`: (Abstract) Chốt khối bằng cách đính kèm chữ ký/nonce/bằng chứng phù hợp.
-* `can_create_block(authority_id: str | None = None) -> bool`: (Abstract) Kiểm tra quyền tạo khối.
-* `validate_event_for_consensus(event: dict[str, Any]) -> bool`: Xác minh cấu trúc sự kiện và lọc thuật ngữ cấm.
-* `get_consensus_info() -> dict[str, Any]`: Trả về thông tin cấu hình và trạng thái của consensus.
-* `update_config(config: dict[str, Any]) -> None`: Cập nhật linh hoạt cấu hình ngay tại runtime.
-
-Ví dụ sử dụng (tích hợp trong custom consensus):
-
-```python
-from hierachain.consensus import BaseConsensus
-
-
-class MyCustomConsensus(BaseConsensus):
-    def validate_block(self, block, previous_block):
-        return super().validate_event_for_consensus(block.to_event_list()[0])
-```
-
-## Cấu hình
-
-* Config nội bộ của consensus (lưu trong `self.config`), có thể cập nhật trong thời gian chạy.
-* Hỗ trợ ZK tuân theo `settings.ENABLE_ZK_PROOFS` từ `hierachain/config/settings.py`.
-
-## Tính năng & hạn chế
-
-* **Hỗ trợ Zero-Knowledge**: Phương thức `_verify_block_zk_proof` mặc định cho phép các triển khai đồng thuận xác minh tính đúng đắn của giao dịch bị che giấu.
-* **Doanh nghiệp hóa**: Tính năng lọc từ khóa cấm loại bỏ các rủi ro việc dùng HieraChain như một phương tiện tiền điện tử rác.
-
-## Bảo mật & quyền truy cập (nếu áp dụng)
-
-* BaseConsensus loại trừ (`EXCLUDED_CONTENT_FIELDS`) những trường như chữ ký (`signature`), băm (`hash`), ROOT (`merkle_root`), hay ZK proof (`zk_proof`) ra khỏi vòng lọc từ, để đảm bảo tính sinh ngẫu nhiên của các chuỗi ký tự mật mã.
-
-## Xử lý lỗi & khắc phục
-
-* Nếu block chứa từ khóa tiền điện tử trong `details`, hệ thống lập tức báo lỗi cấu trúc (cụ thể trả về `False` khi validate).
-
-## Hiệu năng
-
-* Quá trình kiểm tra ZK Proof tiêu tốn lượng tính toán nhất định nếu được kích hoạt; nhưng tối ưu nhất quán và dễ mở rộng.
-
-## FAQ
-
-* **Tại sao cần loại trừ từ vựng?** Để nhất quán với mục tiêu Blockchain Doanh Nghiệp (Enterprise Blockchain).
-
-## Liên quan
-
-* Đồng thuận Proof of Authority (PoA): [PoA Consensus](poa.md)
-* Đồng thuận Proof of Federation(PoF): [PoF Consensus](pof.md)
+`BaseConsensus` là lớp cơ sở trừu tượng (Abstract Base Class) định nghĩa bộ khung tiêu chuẩn cho mọi thuật toán đồng thuận trong hệ thống HieraChain. Nó đảm bảo tính nhất quán giữa các giao thức khác nhau (PoA, PoF, BFT) và thực thi các quy tắc nghiệp vụ cốt lõi của một nền tảng blockchain doanh nghiệp.
 
 ---
 
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
+## Các nhiệm vụ cốt lõi
 
-    **FACT**
-    
-    * Mã nguồn hiện diện tại: `hierachain/consensus/base_consensus.py`.
-    * Tự động gọi hàm `_is_event_structure_valid` để rà soát sự kiện block.
-    
-    **DECISION**
-    
-    * Mọi cơ chế đồng thuận trong HieraChain bắt buộc kế thừa `BaseConsensus`.
-    * Bất kì Blockchain nào thuộc HieraChain (Main chain/Sub-chain) đều áp dụng bộ quy tắc kiểm tra từ khóa này.
-    
-    **ASSUMPTION**
-    
-    * Giả định hệ thống quản lý Block có cấu trúc Event-based (`block.to_event_list()`).
-    
-    **INVARIANT**
-    
-    * Nếu ZK Proof đang bật ở mức settings, mọi proof gửi lên phải hợp lệ với state cũ (`previous_state`) và state mới (`current_state`) của sự kiện chốt đồng thuận (`consensus_finalization`).
-    
-    **EDGE CASES**
-    
-    * Mất `zk_proof` nhưng `settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN` = `True`, hệ thống sẽ ghi log cảnh báo và trả về `False` (block không hợp lệ).
+<div class="grid cards" markdown>
+
+*   :material-gavel:{ .lg .middle } __Định nghĩa Giao thức__
+
+    ---
+
+    Thiết lập các phương thức bắt buộc như `validate_block`, `finalize_block` và `can_create_block` để các module tầng trên (như Ordering Service) có thể tương tác đồng nhất.
+
+*   :material-filter-check:{ .lg .middle } __Kiểm soát Nội dung (Enterprise Filtering)__
+
+    ---
+
+    Tự động quét và loại bỏ các sự kiện chứa thuật ngữ tiền điện tử cấm (`mining`, `coin`, `token`, `wallet`). Đây là lớp bảo vệ quan trọng để duy trì mục đích sử dụng doanh nghiệp của HieraChain.
+
+*   :material-shield-link-variant:{ .lg .middle } __Xác thực Toàn vẹn__
+
+    ---
+
+    Tích hợp các cơ chế xác thực mã băm (Hash), chữ ký số và hỗ trợ Zero-Knowledge (ZK) Proof để đảm bảo dữ liệu khối không bị thay đổi.
+
+</div>
+
+---
+
+## API trừu tượng (Abstract Methods)
+
+Mọi thuật toán đồng thuận kế thừa từ `BaseConsensus` phải triển khai các phương thức sau:
+
+| Phương thức | Ý nghĩa |
+| :--- | :--- |
+| `validate_block(block, prev_block)` | Xác thực tính hợp lệ của khối mới so với khối trước đó. |
+| `finalize_block(block)` | Thực hiện các bước cuối cùng (ký số, gán nonce) trước khi lưu khối. |
+| `can_create_block(node_id)` | Kiểm tra xem nút hiện tại có quyền tạo khối hay không. |
+| `get_consensus_info()` | Trả về thông tin trạng thái và cấu hình hiện tại của giao thức. |
+
+---
+
+## Quy tắc Lọc sự kiện (Event Validation)
+
+Hệ thống thực thi việc lọc từ khóa cấm một cách nghiêm ngặt:
+*   **Dữ liệu bị kiểm tra**: Tất cả các trường trong `details` và nội dung sự kiện.
+*   **Trường loại trừ**: Các trường mật mã như `signature`, `hash`, `merkle_root` và `zk_proof` được bỏ qua để tránh nhận diện nhầm các chuỗi ký tự ngẫu nhiên.
+*   **Hành động**: Nếu phát hiện từ khóa vi phạm, phương thức `validate_event_for_consensus` sẽ trả về `False`, dẫn đến việc khối bị từ chối.
+
+---
+
+## Tích hợp Zero-Knowledge (ZK)
+
+`BaseConsensus` cung cấp các hàm hỗ trợ xác thực bằng chứng ZK (`_verify_block_zk_proof`). Khi `settings.ENABLE_ZK_PROOFS` được bật, mọi khối đồng thuận phải mang theo bằng chứng hợp lệ để chứng minh tính đúng đắn của các thay đổi trạng thái mà không cần tiết lộ dữ liệu thô.
+
+---
+
+## Liên quan
+
+*   [Đồng thuận PoA](./poa.md)
+*   [Đồng thuận PoF](./pof.md)
+*   [Dịch vụ sắp xếp (Ordering)](./ordering.md)

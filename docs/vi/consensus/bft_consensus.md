@@ -1,229 +1,107 @@
 ---
-title: BFT Consensus module
-description: Byzantine Fault Tolerance — Cơ chế đồng thuận chịu lỗi Byzantine, bảo đảm tính nhất quán cho mạng lưới.
+title: "BFT Consensus"
+description: "Đồng thuận chịu lỗi Byzantine (PBFT): An toàn tuyệt đối, Chống tấn công giả mạo và Cơ chế View Change tự động."
 icon: material/shield-key
 ---
 
-# BFT Consensus module (`hierachain/consensus/bft/*`)
+# BFT Consensus (`hierachain/consensus/bft/*`)
 
-## Mục đích
+## Tổng quan
 
-BFT Consensus là cơ chế đồng thuận chịu lỗi Byzantine, cho phép hệ thống HieraChain hoạt động chính xác ngay cả khi có đến `f` nodes bị lỗi hoặc thực hiện hành vi độc hại, trong tổng số `3f + 1` nodes. Đoạn mã này tập trung cung cấp lõi bảo mật đồng thuận mạng ngang hàng.
+**BFT Consensus** là cơ chế đồng thuận chịu lỗi Byzantine cao cấp của HieraChain, cho phép hệ thống duy trì tính nhất quán ngay cả khi một phần các nút (`f`) bị lỗi hoặc có hành vi độc hại (phá hoại dữ liệu, từ chối dịch vụ). Hệ thống tuân thủ công thức `n >= 3f + 1`, đảm bảo an ninh tối đa cho các chuỗi Main Chain hoặc các liên minh doanh nghiệp (Consortium).
 
-## Kiến trúc & khái niệm
+---
+
+## Kiến trúc Module BFT
+
+Hệ thống được chia nhỏ thành các thành phần chuyên biệt để đảm bảo tính module hóa và dễ bảo trì:
 
 <div class="grid cards" markdown>
 
-* :material-handshake:{ .lg .middle } __BFT Consensus__
+*   :material-gavel:{ .lg .middle } __BFT Engine__
 
     ---
 
-    __File__: `hierachain/consensus/bft/consensus.py`
+    __File__: `consensus.py`
 
-  * Lớp giao tiếp chính (`BFTConsensus`) xử lý vòng đời của đồng thuận PBFT.
-  * Thực thi các pha: Pre-Prepare, Prepare, và Commit.
-  * Đầu mối lưu và tiếp nhận Operation từ hệ thống vào quá trình bỏ phiếu.
+    Thực thi lõi giao thức **PBFT** với quy trình 3 pha (3-phase commit): **Pre-prepare**, **Prepare**, và **Commit**.
 
-* :material-security:{ .lg .middle } __Cryptographic Operations__
+*   :material-refresh-circle:{ .lg .middle } __View Manager__
 
     ---
 
-    __File__: `hierachain/consensus/bft/cryptographic.py`
+    __File__: `view_manager.py`
 
-  * Ký và xác minh chữ ký điện tử (`Ed25519`) cho Data payload.
-  * Hash thông điệp nhằm tạo Proof xác thực dữ liệu bất biến.
-  * Tích hợp thuật toán Zero-Knowledge Proof (ZK).
+    Tự động phát hiện lỗi của nút Primary và kích hoạt quy trình **View Change** để bầu chọn Leader mới, đảm bảo hệ thống không bị dừng.
 
-* :material-network:{ .lg .middle } __Network Transport__
+*   :material-swap-horizontal-bold:{ .lg .middle } __BFT Network__
 
     ---
 
-    __File__: `hierachain/consensus/bft/network.py`
+    __File__: `network.py`
 
-  * Chịu trách nhiệm truyền thông tin sử dụng ZeroMQ (ZMQ).
-  * Hỗ trợ quảng bá `broadcast` P2P hoặc định tuyến `forward_to_primary`.
+    Lớp truyền thông chuyên biệt sử dụng **ZeroMQ**, hỗ trợ quảng bá (Broadcast) và định tuyến thông điệp đồng thuận với độ trễ cực thấp.
 
-* :material-monitor-eye:{ .lg .middle } __View Manager__
-
-    ---
-
-    __File__: `hierachain/consensus/bft/view_manager.py`
-
-  * Quản lý trạng thái Node và Timeout để kích hoạt luân chuyển Primary Node.
-  * Tiến hành xác thực `validate_view_change_proof`.
-
-* :material-code-tags:{ .lg .middle } __Types & Enums__
+*   :material-key-variant:{ .lg .middle } __BFT Crypto__
 
     ---
 
-    __File__: `hierachain/consensus/bft/types.py`
+    __File__: `cryptographic.py`
 
-  * Định nghĩa đối tượng lõi `BFTMessage` và enum trạng thái vòng đời BFT (`ConsensusState`, `MessageType`).
+    Xử lý ký số Ed25519, băm (Hashing) và xác thực bằng chứng **Zero-Knowledge (ZK)** cho từng thông điệp đồng thuận.
 
 </div>
 
-## Các thành phần chính
+---
 
-### 1. BFTConsensus (Main Class)
+## Quy trình Đồng thuận PBFT (Protocol Flow)
 
-__File__: `hierachain/consensus/bft/consensus.py`
-
-Lớp lõi thực thi chu trình BFT:
-
-```python
-from hierachain.consensus import BFTConsensus
-
-bft = BFTConsensus(
-    node_id="node_1",
-    all_nodes=["node_1", "node_2", "node_3", "node_4"],  # 3f+1 = 4 → f=1
-    key_pair=key_pair,
-    chain=sub_chain,
-    f=1,
-    view_change_timeout=10.0
-)
-
-# Đẩy một operation vào chu trình đồng thuận
-operation = {"entity_id": "order_001", "event_type": "CREATE_ORDER"}
-bft.submit_operation(operation)
-```
-
-BFT chỉ commit operation khi đã thu được đủ `2f + 1` messages hợp lệ cho pha hiện tại.
-
-### 2. BFT Cryptographic Operations
-
-__File__: `hierachain/consensus/bft/cryptographic.py`
-
-```python
-from hierachain.consensus.bft.cryptographic import (
-    sign_message,
-    verify_message_signature,
-    hash_request,
-    verify_operation_zk_proof
-)
-
-# Ký xác nhận thông điệp để gửi ra Network
-sign_message(message, key_provider)
-
-# Xác minh lại thông điệp nhận từ Network qua Public Keys
-is_valid = verify_message_signature(message, public_keys)
-```
-
-### 3. Network Transport
-
-__File__: `hierachain/consensus/bft/network.py`
-
-Giao tiếp với độ trễ cực thấp:
-
-```python
-from hierachain.consensus.bft import broadcast
-
-# Quảng bá thông điệp BFT tới toàn bộ Endpoints cấu hình 
-broadcast(
-    sender_node=zmq_node,
-    message=bft_message,
-    all_node_endpoints=endpoints
-)
-```
-
-### 4. View Change Manager
-
-__File__: `hierachain/consensus/bft/view_manager.py`
-
-```python
-from hierachain.consensus.bft.view_manager import (
-    validate_view_change_proof,
-    start_view_change_timer
-)
-
-# Hệ thống tự động thiết lập view_change nếu time out xảy ra
-# và đòi hỏi Proof bao hàm 2f+1 signatures
-is_valid_proof = validate_view_change_proof(view=1, proof=proof_list, f=1, node_public_keys=keys,
-                                            verify_sig_func=verify_message_signature)
-```
-
-## Luồng xử lý (Protocol Flow)
+Hệ thống yêu cầu sự đồng thuận của ít nhất `2f + 1` nút trước khi thực thi lệnh:
 
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant P as Primary
-    participant R1 as Replica 1
-    participant R2 as Replica 2
-
-    C->>P: Request
-    P->>R1: Pre-Prepare
-    P->>R2: Pre-Prepare
-
-    R1-->>P: Prepare
-    R1-->>R2: Prepare
-    R2-->>P: Prepare
-    R2-->>R1: Prepare
-
-    P-->>R1: Commit
-    P-->>R2: Commit
-    R1-->>P: Commit
-    R1-->>R2: Commit
-    R2-->>P: Commit
-    R2-->>R1: Commit
-
-    Note over P,R2: Execute Operation
-    P->>C: Reply
+    participant P as Primary (Leader)
+    participant R as Replicas (Nodes)
+    
+    C->>P: Request Operation
+    P->>R: 1. PRE-PREPARE (Seq, View, Digest)
+    R->>R: Validate & Sign
+    R->>P: 2. PREPARE (Quorum 2f)
+    R->>R: 2. PREPARE (Broadcast)
+    P->>R: 3. COMMIT (Quorum 2f+1)
+    R->>R: Execute & Commit to Ledger
+    R->>C: Reply (Optional)
 ```
-
-## Cấu hình
-
-```python
-BFT_CONFIG = {
-    "f": 1,                          # Hệ số rủi ro chịu đựng được f < n/3
-    "view_change_timeout": 10.0,     # Timeout Timeout để đổi Primary
-    "message_timeout": 5.0,          # Khoảng chờ độ trễ Node
-    "checkpoint_interval": 100,      # Block đánh dấu để giải phóng State
-    "strictness": "high",            
-    "enable_zk_proofs": False,       # Zero-Knowledge
-}
-```
-
-## FAQ
-
-!!! question "Làm sao để tích hợp BFT vào một Sub-Chain mới?"
-
-    Bạn có thể khởi tạo instance của `BFTConsensus(...)` và truyền vào `SubChain(consensus=bft)` ở cấp độ quản lý Hierarchy. Sub-Chain sẽ nhường quyền chốt Block lại cho BFT xử lý tự động theo P2P.
-
-!!! question "BFT khác PoF (Proof of Federation) như thế nào?"
-
-    BFT chống lỗi phá hoại (từ chối dịch vụ hoặc thay đổi data, tốn nhiều Network băng thông). Trong khi PoF dựa trên xoay vòng và niềm tin, tốc độ nhanh hơn, nhưng nếu một node bị chi phối thì tính ổn định bị thao túng mạnh hơn bft.
-
-## Liên quan
-
-* Tổng quan kiến trúc: [Tổng quan](../architecture/overview.md)
-* Thuật ngữ: [Thuật ngữ](../glossary.md)
 
 ---
 
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
+## Các cơ chế Bảo vệ Nâng cao
 
-    **FACT**
+### 1. View Change Proof
+Khi một nút nhận thấy Leader hiện tại không hoạt động (Timeout), nó sẽ yêu cầu thay đổi View. Quy trình này đòi hỏi bằng chứng (**Proof**) bao gồm ít nhất `2f + 1` chữ ký từ các nút khác, ngăn chặn việc đảo chính trái phép.
 
-    * Mã nguồn thực thi thuộc nhóm: `hierachain/consensus/bft/*.py` (consensus, cryptographic, network, view_manager, types).
-    * Network implementation chạy qua ZeroMQ dựa trên các hàm `send_via_zmq` và `broadcast` thay vì HTTP phổ thông.
+### 2. Sequence Number & Nonce
+Mỗi thông điệp BFT đều có số thứ tự tăng dần và một giá trị ngẫu nhiên (Nonce) duy nhất để chống lại các cuộc tấn công phát lại (**Replay Attacks**).
 
-    **DECISION**
+### 3. ZK Integration
+Hệ thống hỗ trợ xác thực bằng chứng Zero-Knowledge ngay trong pha `Pre-prepare`, cho phép kiểm tra tính hợp lệ của dữ liệu mà không cần tiết lộ nội dung chi tiết trong quá trình bầu chọn.
 
-    * Chia nhỏ logic BFT (thay vì dồn vào 1 file) để tuân thủ tính module hoá tốt hơn, giúp Network/Crypto độc lập ra khỏi State Machine Consensus.
-    * Áp dụng PBFT (Practical Byzantine Fault Tolerance) làm công thức thiết kế. Yêu cầu `3f + 1` Node để kháng được `f` Node độc hại.
-    * Template tài liệu Grid Cards (mkdocs material) áp dụng đồng nhất qua thư mục `ordering` / `bft`.
+---
 
-    **ASSUMPTION**
+## Cấu hình BFT
 
-    * Network duy trì Partial Synchrony (Độ trễ có giới hạn trong vòng cho phép của View Timeout).
-    * Đồng hồ tự duy trì sự đồng bộ ở khoảng NTP < 100ms.
+| Tham số | Ý nghĩa | Mặc định |
+| :--- | :--- | :--- |
+| `f` | Số lượng lỗi tối đa có thể chịu đựng | `1` (Yêu cầu ít nhất 4 nodes) |
+| `view_change_timeout` | Thời gian chờ Leader phản hồi | `30.0` giây |
+| `strictness` | Mức độ kiểm tra chữ ký | `high` |
+| `enable_zk_proofs` | Bật xác thực ZK trong BFT | `false` |
 
-    **INVARIANT**
+---
 
-    * Core BFT chỉ thực thi lệnh Execute Transaction khi xác nhận nhận đủ `2f + 1` Commit messages minh bạch từ các tham gia.
-    * Sequence ID là tăng đơn điệu theo thời gian để chặn replay-attacks.
+## Liên quan
 
-    **EDGE CASES**
-
-    * View Change Collision: Nếu Node liên tục chuyển View do bị thao túng, mạng vẫn ưu tiên `NEW_VIEW` chứa tập hợp Valid Proof đúng của số lớn `2f + 1`.
-    * Message cũ: BFT Dropped lập tức với Log Reject dành cho các Packet đến từ View hoặc Seq cũ hơn Session.
+*   [Mạng lưới P2P (Network)](../modules/network.md)
+*   [Xác thực chữ ký (Security)](../security/keys-certs.md)
+*   [Dịch vụ sắp xếp (Ordering)](./ordering.md)
