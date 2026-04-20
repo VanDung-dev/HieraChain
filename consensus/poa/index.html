@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Đồng thuận hiệu năng cao dành cho các tổ chức được nhận dạng (Authorized Entities).">
+        <meta name="description" content="Giao thức đồng thuận dựa trên thẩm quyền: Hiệu năng tối đa, Định danh nút và Luân phiên Round-Robin.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -31,7 +31,7 @@
     
     
       
-        <title>Proof of Authority - PoA - HieraChain Docs</title>
+        <title>Proof of Authority (PoA) - HieraChain Docs</title>
       
     
     
@@ -87,7 +87,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#proof-of-authority-poa-hierachainconsensusproof_of_authoritypy" class="md-skip">
+        <a href="#proof-of-authority-hierachainconsensusproof_of_authoritypy" class="md-skip">
           Bỏ qua
         </a>
       
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Proof of Authority - PoA
+              Proof of Authority (PoA)
             
           </span>
         </div>
@@ -295,6 +295,25 @@
           
   
   Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/authorization-access-control/" class="md-tabs__link">
+          
+  
+  Hệ thống Bảo mật
 
         </a>
       </li>
@@ -939,6 +958,8 @@
       
         
       
+        
+      
     
     
     
@@ -1049,11 +1070,41 @@
   
   
     <li class="md-nav__item">
+      <a href="../../modules/consensus/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../modules/security/" class="md-nav__link">
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1473,12 +1524,263 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m1.39 18.36 1.77-1.76L4.58 18l1.06-1.05-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.42 1.41L10.59 12l-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.41 1.41 1.07-1.06-1.42-1.41 1.42-1.42L18 6.7l1.07-1.06-2.47-2.48 1.76-1.77 4.25 4.25L5.64 22.61z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg>
   
   <span class="md-ellipsis">
     
   
     Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hệ thống Bảo mật
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hệ thống Bảo mật
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization-access-control/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization & Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/lockdown-logging/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockdown & Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/fault-tolerance-integrity/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault-tolerance & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/risk-analyzer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/encryption-keys/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption & Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/decentralized-zkp/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Zero-Knowledge Proofs
   
 
     
@@ -1534,10 +1836,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
             
   
   
@@ -1555,8 +1857,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1668,10 +1970,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -1679,10 +1981,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#nguyen-ly-hoat-ong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Nguyên lý hoạt động
       
     </span>
   </a>
@@ -1690,10 +1992,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#cac-tinh-nang-chinh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        Các tính năng chính
       
     </span>
   </a>
@@ -1701,10 +2003,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#tham-so-cau-hinh-quan-trong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Tham số cấu hình quan trọng
       
     </span>
   </a>
@@ -1712,10 +2014,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#vi-du-trien-khai" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Ví dụ triển khai
       
     </span>
   </a>
@@ -1723,43 +2025,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap-neu-ap-dung" class="md-nav__link">
+  <a href="#uu-iem-va-han-che" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bảo mật &amp; quyền truy cập (nếu áp dụng)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hiệu năng
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#faq" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FAQ
+        Ưu điểm và Hạn chế
       
     </span>
   </a>
@@ -1923,10 +2192,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -1944,8 +2213,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2306,10 +2575,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2327,8 +2596,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2733,10 +3002,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2754,8 +3023,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2920,10 +3189,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -2941,8 +3210,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3105,10 +3374,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -3126,8 +3395,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3275,10 +3544,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -3286,10 +3555,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#nguyen-ly-hoat-ong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Nguyên lý hoạt động
       
     </span>
   </a>
@@ -3297,10 +3566,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#cac-tinh-nang-chinh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        Các tính năng chính
       
     </span>
   </a>
@@ -3308,10 +3577,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#tham-so-cau-hinh-quan-trong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Tham số cấu hình quan trọng
       
     </span>
   </a>
@@ -3319,10 +3588,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#vi-du-trien-khai" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Ví dụ triển khai
       
     </span>
   </a>
@@ -3330,43 +3599,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap-neu-ap-dung" class="md-nav__link">
+  <a href="#uu-iem-va-han-che" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bảo mật &amp; quyền truy cập (nếu áp dụng)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hiệu năng
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#faq" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FAQ
+        Ưu điểm và Hạn chế
       
     </span>
   </a>
@@ -3415,92 +3651,93 @@
   
 
 
-<h1 id="proof-of-authority-poa-hierachainconsensusproof_of_authoritypy">Proof of Authority - PoA (<code>hierachain/consensus/proof_of_authority.py</code>)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>PoA trong HieraChain Ledger là cơ chế sinh khối cho mạng chính (<code>Main Chain</code>) hoặc chuỗi phụ (<code>Sub-Chains</code>) dựa trên thẩm quyền. Không giải nén các tính toán tìm kiếm (mining) nặng nề, PoA dành cho các node có danh tính nhằm mang lại hiệu suất tạo khối tuyệt đối cao và an toàn cho doanh nghiệp (ví dụ mạng nội bộ hoặc hệ sinh thái một tập đoàn).</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
+<h1 id="proof-of-authority-hierachainconsensusproof_of_authoritypy">Proof of Authority (<code>hierachain/consensus/proof_of_authority.py</code>)</h1>
+<h2 id="tong-quan">Tổng quan</h2>
+<p><strong>Proof of Authority (PoA)</strong> là giao thức đồng thuận dựa trên danh tính, được tối ưu hóa cho các mạng blockchain riêng tư hoặc mạng nội bộ doanh nghiệp. Thay vì giải quyết các bài toán mật mã phức tạp (như mining), PoA dựa vào một nhóm các nút được cấp quyền (<strong>Authorities</strong>) để xác thực và đóng khối, giúp đạt được tốc độ giao dịch cực nhanh với độ trễ tối thiểu.</p>
+<hr />
+<h2 id="nguyen-ly-hoat-ong">Nguyên lý hoạt động</h2>
+<p>Giao thức hoạt động dựa trên sự tin tưởng vào danh tính của các nút tham gia:
+1.  <strong>Định danh nút</strong>: Mỗi Authority được gán một <code>authority_id</code> và một cặp khóa ký số duy nhất.
+2.  <strong>Lịch trình luân phiên (Round-Robin)</strong>: Hệ thống sử dụng thuật toán tuần tự để xác định nút nào có quyền tạo khối tiếp theo dựa trên chỉ số khối (<code>BlockIndex % TotalAuthorities</code>).
+3.  <strong>Xác thực chữ ký</strong>: Mỗi khối mới phải được ký bởi Authority được chỉ định. Các nút khác sẽ xác thực chữ ký này trước khi chấp nhận khối vào sổ cái.</p>
+<hr />
+<h2 id="cac-tinh-nang-chinh">Các tính năng chính</h2>
+<div class="grid cards">
 <ul>
-<li>Lớp <code>ProofOfAuthority</code> kế thừa <code>BaseConsensus</code> (<code>hierachain/consensus/proof_of_authority.py</code>).</li>
-<li>Xác định Authorities thông qua định danh <code>authority_id</code> và Public Key (sở hữu mã xác minh chữ ký).</li>
-<li>Phân bổ tạo khối theo lịch quy ước (<code>Round-Robin</code>) giữa các node để tối ưu công bằng tính toán.</li>
-<li>Áp dụng Zero-Knowledge (ZK Proof) để đảm bảo thông tin nội bộ của khối thuộc Enterprise được bảo mật hoàn toàn.</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 15H6l7-14v8h5l-7 14z"/></svg></span> <strong>Hiệu năng Đột phá</strong></p>
+<hr />
+<p>Khối được tạo ngay lập tức theo chu kỳ cấu hình (<code>block_interval</code>), phù hợp cho các ứng dụng yêu cầu phản hồi thời gian thực.</p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 17v2H7v-2s0-4 6-4 6 4 6 4m-3-9a3 3 0 1 0-3 3 3 3 0 0 0 3-3m3.2 5.06A5.6 5.6 0 0 1 21 17v2h3v-2s0-3.45-4.8-3.94M18 5a2.9 2.9 0 0 0-.89.14 5 5 0 0 1 0 5.72A2.9 2.9 0 0 0 18 11a3 3 0 0 0 0-6M7.34 8.92l1.16 1.41-4.75 4.75-2.75-3 1.16-1.16 1.59 1.58z"/></svg></span> <strong>Quản trị Danh tính</strong></p>
+<hr />
+<p>Hỗ trợ thêm/xóa Authority linh hoạt thông qua API, cho phép thay đổi cấu hình mạng mà không cần dừng hệ thống.</p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 12a6.4 6.4 0 0 1 2.87.67A12 12 0 0 0 21 11V5l-9-4-9 4v6c0 5.55 3.84 10.74 9 12 .35-.09.7-.2 1-.32a6.42 6.42 0 0 1-1.5-4.18A6.5 6.5 0 0 1 18 12m0 2.5V13l-2.25 2.25L18 17.5V16a2.5 2.5 0 0 1 2.24 3.62l1.09 1.09A4 4 0 0 0 18 14.5m0 6.5a2.5 2.5 0 0 1-2.24-3.62l-1.09-1.09A4 4 0 0 0 18 22.5V24l2.25-2.25L18 19.5Z"/></svg></span> <strong>Tính Toàn vẹn Tuyệt đối</strong></p>
+<hr />
+<p>Mọi khối đều mang chữ ký số của một tổ chức được xác thực, loại bỏ hoàn toàn rủi ro từ các nút vô danh hoặc giả mạo.</p>
+</li>
 </ul>
-<h2 id="api-cong-khai-public-api">API công khai (Public API)</h2>
-<ul>
-<li><code>add_authority(authority_id: str, metadata: dict[str, Any] | None = None) -&gt; bool</code>: Chấp thuận danh tính mới sinh khối.</li>
-<li><code>remove_authority(authority_id: str) -&gt; bool</code>: Loại bỏ Authority khỏi tập hợp đồng thuận.</li>
-<li><code>is_authority(authority_id: str) -&gt; bool</code>: Kiểm tra Node có thuộc tập hợp tạo khối hay không.</li>
-<li><code>can_create_block(authority_id: str | None = None) -&gt; bool</code>: Trả về <code>True</code> nếu thuộc Authority.</li>
-<li><code>validate_block(block: Block, previous_block: Block) -&gt; bool</code>: Tiến trình xác nhận thời gian sinh khối, sự kiện cấu trúc và chữ ký hợp lệ.</li>
-<li><code>get_next_authority(current_block_index: int) -&gt; str | None</code>: Cho ra thuật toán luân phiên Round-Robin.</li>
-</ul>
-<p>Ví dụ thêm Node sinh khối mới:</p>
+</div>
+<hr />
+<h2 id="tham-so-cau-hinh-quan-trong">Tham số cấu hình quan trọng</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Tham số</th>
+<th style="text-align: left;">Ý nghĩa</th>
+<th style="text-align: left;">Mặc định</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>block_interval</code></td>
+<td style="text-align: left;">Khoảng thời gian tối thiểu giữa hai khối.</td>
+<td style="text-align: left;"><code>10.0</code> giây</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>max_authorities</code></td>
+<td style="text-align: left;">Số lượng nút Authority tối đa trong mạng.</td>
+<td style="text-align: left;"><code>100</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>require_signature</code></td>
+<td style="text-align: left;">Bắt buộc phải có chữ ký hợp lệ để chấp nhận khối.</td>
+<td style="text-align: left;"><code>True</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="vi-du-trien-khai">Ví dụ triển khai</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProofOfAuthority</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">poa</span> <span class="o">=</span> <span class="n">ProofOfAuthority</span><span class="p">()</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">poa</span><span class="o">.</span><span class="n">add_authority</span><span class="p">(</span><span class="s2">&quot;node_1&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;public_key&quot;</span><span class="p">:</span> <span class="s2">&quot;Bằng chứng...&quot;</span><span class="p">})</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">poa</span><span class="o">.</span><span class="n">is_authority</span><span class="p">(</span><span class="s2">&quot;node_1&quot;</span><span class="p">))</span>  <span class="c1"># True</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Khởi tạo giao thức PoA</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">poa</span> <span class="o">=</span> <span class="n">ProofOfAuthority</span><span class="p">()</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Cấp quyền cho các nút tham gia đồng thuận</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">poa</span><span class="o">.</span><span class="n">add_authority</span><span class="p">(</span><span class="s2">&quot;node_hq&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;org&quot;</span><span class="p">:</span> <span class="s2">&quot;Headquarters&quot;</span><span class="p">,</span> <span class="s2">&quot;pubkey&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span><span class="p">})</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">poa</span><span class="o">.</span><span class="n">add_authority</span><span class="p">(</span><span class="s2">&quot;node_branch_1&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;org&quot;</span><span class="p">:</span> <span class="s2">&quot;Branch 01&quot;</span><span class="p">,</span> <span class="s2">&quot;pubkey&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span><span class="p">})</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># Kiểm tra quyền tạo khối của nút hiện tại</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">if</span> <span class="n">poa</span><span class="o">.</span><span class="n">can_create_block</span><span class="p">(</span><span class="s2">&quot;node_hq&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="c1"># Tiến hành đóng khối...</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="k">pass</span>
 </code></pre></div>
-<h2 id="cau-hinh">Cấu hình</h2>
+<hr />
+<h2 id="uu-iem-va-han-che">Ưu điểm và Hạn chế</h2>
 <ul>
-<li>Config cơ bản nội bộ của thuật toán nằm trong <code>self.config</code> với chu kỳ tối thiểu <code>block_interval: 10.0</code> giây, cấm <code>mining</code>, <code>coin_transfer</code>, v.v...</li>
-<li>Ràng buộc cấu hình <code>require_authority_signature</code> chỉ cho phép lưu trạng thái khi AuthNode ký khối thành công. Khả năng giám sát giới hạn lên đến <code>max_authorities: 100</code> node.</li>
-</ul>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
-<ul>
-<li><strong>Tính năng</strong>: Tiết kiệm tài nguyên; khối được xác nhận ngay lập tức theo <code>block_interval</code>; an toàn trên môi trường định danh thực (KYC/Enterprise).</li>
-<li><strong>Hạn chế</strong>: Không phù hợp để vận hành Permissionless (các Blockchain mở như Bitcoin, mà bất kỳ ai cũng có thể vào giải mã/bỏ phiếu).</li>
-</ul>
-<h2 id="bao-mat-quyen-truy-cap-neu-ap-dung">Bảo mật &amp; quyền truy cập (nếu áp dụng)</h2>
-<ul>
-<li>Toàn bộ khối đều được bảo vệ và xác nhận thông qua chữ ký của node tạo lập <code>_create_authority_signature</code>.</li>
-<li>Chữ ký băm cùng các đối tượng (Hash khối, Authority ID, Timestamp). Quá trình xác thực ngược lại bởi hàm <code>verify_signature</code> của module Security hệ thống.</li>
-</ul>
-<h2 id="xu-ly-loi-khac-phuc">Xử lý lỗi &amp; khắc phục</h2>
-<ul>
-<li>Ký khối thất bại khi thiếu Public Key, hoặc Signature sai, hệ thống lập tức từ chối và ghi log trả về <code>False</code>.</li>
-<li>Nếu khối bị sinh ra nhanh hơn thời gian quy định (thấp hơn <code>block_interval / 2</code>), tiến trình validate báo lỗi chống DDos nội bộ.</li>
-</ul>
-<h2 id="hieu-nang">Hiệu năng</h2>
-<ul>
-<li>Khả năng xử lý lượng giao dịch (TPS) vô cùng cao và ổn định vì được xử lý qua nhóm các Authority có cấu hình máy chủ mạnh.</li>
-</ul>
-<h2 id="faq">FAQ</h2>
-<ul>
-<li><strong>Liệu có thể loại bỏ hay thay đổi luân phiên Authority không?</strong> Có, bằng API <code>add_authority</code> và <code>remove_authority</code> trong lúc blockchain đang chạy. Nhưng quá trình này sẽ không ảnh hưởng luồng (vẫn chạy bình thường trên số node còn lại).</li>
-</ul>
-<h2 id="lien-quan">Liên quan</h2>
-<ul>
-<li>Cơ chế Consensus Core: <a href="../base_consensus/">Base Consensus</a></li>
-<li>Đồng thuận Proof of Federation(PoF): <a href="../pof/">PoF Consensus</a></li>
+<li><strong>Ưu điểm</strong>: Tiết kiệm tài nguyên (không cần CPU mạnh để đào), thông lượng cao, quản trị minh bạch.</li>
+<li><strong>Hạn chế</strong>: Tính phi tập trung thấp hơn so với BFT, chỉ phù hợp cho mạng có sự tin tưởng nhất định giữa các thành viên.</li>
 </ul>
 <hr />
-<details class="info">
-<summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
-<p><strong>FACT</strong></p>
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>File <code>hierachain/consensus/proof_of_authority.py</code> triển khai Round-Robin cho thuật toán Proof-of-Authority bằng phương thức <code>get_next_authority</code>.</li>
-<li>Cấm các event type phục vụ tiền điện tử (<code>mining</code>, <code>transaction</code>).</li>
+<li><a href=".././base_consensus/">Giao diện chuẩn (Base Consensus)</a></li>
+<li><a href=".././pof/">Đồng thuận liên minh (PoF)</a></li>
+<li><a href="../../modules/hierarchical/">Kiến trúc phân cấp</a></li>
 </ul>
-<p><strong>DECISION</strong></p>
-<ul>
-<li>PoA được mặc định sử dụng cho HieraChain khi khối doanh nghiệp được quản lý ở mạng đơn tổ chức (Single-Orgs) hoặc mạng tập đoàn nơi các Node được chỉ định sẵn sinh block.</li>
-<li>Chấp nhận không kiểm tra chữ ký cho các máy Client nếu <code>metadata</code> bỏ trống Public Key (phù hợp cho Unit Test). Tuy nhiên, trên Production, <code>metadata</code> Public Key luôn bắt buộc.</li>
-</ul>
-<p><strong>ASSUMPTION</strong></p>
-<ul>
-<li>Giả định rủi ro mạng (phân mảnh nội bộ) và node ác ý thấp vì đã được chỉ định bằng danh tính.</li>
-</ul>
-<p><strong>INVARIANT</strong></p>
-<ul>
-<li>Nếu quá trình ký <code>consensus_finalization</code> thiếu vắng ID hoặc sai Public Key, kết quả xác nhận khối vĩnh viễn không vượt qua.</li>
-<li>Difficulty cho PoA luôn trả về 1.0.</li>
-</ul>
-<p><strong>EDGE CASES</strong></p>
-<ul>
-<li>Khi <code>authorities</code> rỗng (Chưa node nào cấu hình định danh), quá trình gọi API lấy người kế tiếp sẽ trả về <code>None</code> – blockchain không sinh khối đồng thuận.</li>
-</ul>
-</details>
 
 
 

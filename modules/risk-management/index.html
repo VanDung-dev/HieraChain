@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Phát hiện, chấm điểm và giảm thiểu rủi ro: risk_analyzer, mitigation_strategies, audit_logger — bám sát hierachain/risk_management/*.">
+        <meta name="description" content="Phát hiện, Chấm điểm và Giảm thiểu rủi ro tự động: Risk Analyzer, Mitigation Engine, và Immutable Audit Trail.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -31,7 +31,7 @@
     
     
       
-        <title>Risk Management module - HieraChain Docs</title>
+        <title>Risk Management Module - HieraChain Docs</title>
       
     
     
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Risk Management module
+              Risk Management Module
             
           </span>
         </div>
@@ -297,6 +297,25 @@
           
   
   Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/authorization-access-control/" class="md-tabs__link">
+          
+  
+  Hệ thống Bảo mật
 
         </a>
       </li>
@@ -941,6 +960,8 @@
       
         
       
+        
+      
     
     
     
@@ -1054,11 +1075,41 @@
   
   
     <li class="md-nav__item">
+      <a href="../consensus/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../security/" class="md-nav__link">
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1419,10 +1470,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -1430,10 +1481,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#kien-truc-quan-tri-rui-ro-tap-trung" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Kiến trúc Quản trị Rủi ro Tập trung
       
     </span>
   </a>
@@ -1441,10 +1492,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#vong-oi-quan-ly-rui-ro-risk-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        Vòng đời Quản lý Rủi ro (Risk Lifecycle)
       
     </span>
   </a>
@@ -1452,10 +1503,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#phan-loai-rui-ro-va-nguong-canh-bao" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Phân loại Rủi ro và Ngưỡng Cảnh báo
       
     </span>
   </a>
@@ -1463,43 +1514,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#vi-du-trien-khai" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Ví dụ Triển khai
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ví dụ Triển khai">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thuc-hien-phan-tich-rui-ro-toan-dien" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thực hiện phân tích rủi ro toàn diện
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#2-kich-hoat-ke-hoach-giam-thieu-tu-ong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bảo mật &amp; quyền truy cập
+        2. Kích hoạt kế hoạch giảm thiểu tự động
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
+  <a href="#nhat-ky-kiem-toan-va-tinh-toan-ven" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hiệu năng
+        Nhật ký Kiểm toán và Tính toàn vẹn
       
     </span>
   </a>
@@ -1627,12 +1684,263 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m1.39 18.36 1.77-1.76L4.58 18l1.06-1.05-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.42 1.41L10.59 12l-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.41 1.41 1.07-1.06-1.42-1.41 1.42-1.42L18 6.7l1.07-1.06-2.47-2.48 1.76-1.77 4.25 4.25L5.64 22.61z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg>
   
   <span class="md-ellipsis">
     
   
     Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hệ thống Bảo mật
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hệ thống Bảo mật
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization-access-control/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization & Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/lockdown-logging/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockdown & Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/fault-tolerance-integrity/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault-tolerance & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/risk-analyzer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/encryption-keys/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption & Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/decentralized-zkp/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Zero-Knowledge Proofs
   
 
     
@@ -1683,10 +1991,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -1704,8 +2012,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1912,10 +2220,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -1933,8 +2241,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2295,10 +2603,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2316,8 +2624,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2722,10 +3030,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2743,8 +3051,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2909,10 +3217,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -2930,8 +3238,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3094,10 +3402,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -3115,8 +3423,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3264,10 +3572,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -3275,10 +3583,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#kien-truc-quan-tri-rui-ro-tap-trung" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Kiến trúc Quản trị Rủi ro Tập trung
       
     </span>
   </a>
@@ -3286,10 +3594,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#vong-oi-quan-ly-rui-ro-risk-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        Vòng đời Quản lý Rủi ro (Risk Lifecycle)
       
     </span>
   </a>
@@ -3297,10 +3605,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#phan-loai-rui-ro-va-nguong-canh-bao" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Phân loại Rủi ro và Ngưỡng Cảnh báo
       
     </span>
   </a>
@@ -3308,43 +3616,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#vi-du-trien-khai" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Ví dụ Triển khai
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ví dụ Triển khai">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thuc-hien-phan-tich-rui-ro-toan-dien" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thực hiện phân tích rủi ro toàn diện
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#2-kich-hoat-ke-hoach-giam-thieu-tu-ong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bảo mật &amp; quyền truy cập
+        2. Kích hoạt kế hoạch giảm thiểu tự động
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
+  <a href="#nhat-ky-kiem-toan-va-tinh-toan-ven" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hiệu năng
+        Nhật ký Kiểm toán và Tính toàn vẹn
       
     </span>
   </a>
@@ -3394,89 +3708,136 @@
 
 
 <h1 id="risk-management-module-hierachainrisk_management">Risk Management Module (<code>hierachain/risk_management/*</code>)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>Giám sát và quản trị rủi ro trong quá trình vận hành hệ thống: phát hiện bất thường, chấm điểm rủi ro, kích hoạt chiến lược giảm thiểu và ghi audit.</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
+<h2 id="tong-quan">Tổng quan</h2>
+<p>Module <strong>Risk Management</strong> là trung tâm kiểm soát an ninh và vận hành của HieraChain. Nó không chỉ giám sát các dấu hiệu bất thường mà còn chủ động đưa ra các chiến lược giảm thiểu (Mitigation) và ghi nhật ký kiểm toán (Audit) không thể thay đổi để đảm bảo tính minh bạch và tuân thủ cao nhất cho doanh nghiệp.</p>
+<hr />
+<h2 id="kien-truc-quan-tri-rui-ro-tap-trung">Kiến trúc Quản trị Rủi ro Tập trung</h2>
+<p>Hệ thống hoạt động dựa trên sự phối hợp chặt chẽ của ba thành phần cốt lõi:</p>
+<div class="grid cards">
 <ul>
-<li>Risk Analyzer: <code>hierachain/risk_management/risk_analyzer.py</code> — phân tích tín hiệu/metrics/sự kiện để phát hiện rủi ro.</li>
-<li>Mitigation Strategies: <code>hierachain/risk_management/mitigation_strategies.py</code> — tập hợp chiến lược phản ứng (giảm tải, cô lập, tạm ngưng, degrade…).</li>
-<li>Audit Logger: <code>hierachain/risk_management/audit_logger.py</code> — ghi vết chuẩn hóa phục vụ kiểm toán.</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 22v-2h3v-3h2v3.5c0 .39-.16.74-.46 1.04s-.65.46-1.04.46zM7 22H3.5c-.39 0-.74-.16-1.04-.46S2 20.89 2 20.5V17h2v3h3zM17 2h3.5c.39 0 .74.16 1.04.46s.46.65.46 1.04V7h-2V4h-3zM7 2v2H4v3H2V3.5c0-.39.16-.74.46-1.04S3.11 2 3.5 2zm3.5 4C13 6 15 8 15 10.5c0 .88-.25 1.7-.69 2.4l3.26 3.26-1.41 1.41-3.26-3.26c-.7.44-1.52.69-2.4.69C8 15 6 13 6 10.5S8 6 10.5 6m0 2a2.5 2.5 0 0 0 0 5 2.5 2.5 0 0 0 0-5"/></svg></span> <strong>Risk Analyzer</strong></p>
+<hr />
+<p><strong>File</strong>: <code>risk_analyzer.py</code></p>
+<ul>
+<li>Phân tích rủi ro đa miền: Đồng thuận, Bảo mật, Hiệu năng và Lưu trữ.</li>
+<li>Đánh giá rủi ro dựa trên <strong>Severity</strong> (Mức độ nghiêm trọng) và <strong>Likelihood</strong> (Khả năng xảy ra).</li>
+<li>Tự động đề xuất các khuyến nghị giảm thiểu.</li>
 </ul>
-<h2 id="api-cong-khai-public-api">API công khai (Public API)</h2>
-<p>Mô tả chữ ký tiêu biểu (mang tính tài liệu):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">RiskAnalyzer</span><span class="p">:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  <span class="n">analyze_consensus_risks</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">RiskAssessment</span><span class="p">]</span>  <span class="c1"># Kiểm tra số lượng node BFT, timeout</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  <span class="n">analyze_security_risks</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">RiskAssessment</span><span class="p">]</span>   <span class="c1"># Hết hạn certificate, brute force</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  <span class="n">analyze_performance_risks</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">RiskAssessment</span><span class="p">]</span> <span class="c1"># CPU/RAM cao, tràn event pool</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  <span class="n">analyze_storage_risks</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">RiskAssessment</span><span class="p">]</span>     <span class="c1"># Kích thước World State, sao lưu quá hạn</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">class</span><span class="w"> </span><span class="nc">MitigationStrategies</span><span class="p">:</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  <span class="c1"># Các chiến lược tự động</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  <span class="n">add_validator_nodes</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>       <span class="c1"># Thêm node để đảm bảo n &gt;= 3f + 1</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  <span class="n">renew_certificates</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>        <span class="c1"># Gia hạn chứng chỉ sắp hết hạn</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  <span class="n">scale_processing_capacity</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="c1"># Mở rộng tài nguyên khi tải cao</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>  <span class="n">execute_backup</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>            <span class="c1"># Sao lưu dữ liệu khẩn cấp</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>  <span class="n">implement_rate_limiting</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>   <span class="c1"># Chặn brute force</span>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 4.68c.5 0 .95.43.95.95v3.48L18 13.26v1.27l-5.05-1.58v3.47l1.26.95v.95L12 17.68l-2.21.64v-.95l1.26-.95v-3.47L6 14.53v-1.27l5.05-3.15V6.63c0-.52.45-.95.95-.95"/></svg></span> <strong>Mitigation Manager</strong></p>
+<hr />
+<p><strong>File</strong>: <code>mitigation_strategies.py</code></p>
+<ul>
+<li>Lập kế hoạch giảm thiểu (Mitigation Plan) dựa trên các rủi ro đã phát hiện.</li>
+<li>Thực thi các hành động khắc phục tự động (Scale-out, Renew Certs, Backup...).</li>
+<li>Quản lý độ ưu tiên và phụ thuộc giữa các hành động.</li>
+</ul>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 13c-1.4 0-2.8 1.1-2.8 2.5V17c-.6 0-1.2.6-1.2 1.2v3.5c0 .7.6 1.3 1.2 1.3h5.5c.7 0 1.3-.6 1.3-1.2v-3.5c0-.7-.6-1.3-1.2-1.3v-1.5c0-1.4-1.4-2.5-2.8-2.5m0 1.2c.8 0 1.5.5 1.5 1.3V17h-3v-1.5c0-.8.7-1.3 1.5-1.3M6 2c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h6v-3.8c0-1 .4-1.7 1-2.2.1-.1.2-.1.2-.2v-.3c0-2.7 2.4-4.5 4.8-4.5.7 0 1.4.2 2 .4V8l-6-6zm7 1.5L18.5 9H13z"/></svg></span> <strong>Audit Logger</strong></p>
+<hr />
+<p><strong>File</strong>: <code>audit_logger.py</code></p>
+<ul>
+<li>Ghi vết toàn bộ vòng đời rủi ro theo chuẩn <strong>JSONL</strong>.</li>
+<li>Đảm bảo tính toàn vẹn dữ liệu bằng hàm băm <strong>SHA-256</strong>.</li>
+<li>Hỗ trợ truy vấn và tạo báo cáo phục vụ kiểm toán tuân thủ (Compliance).</li>
+</ul>
+</li>
+</ul>
+</div>
+<hr />
+<h2 id="vong-oi-quan-ly-rui-ro-risk-lifecycle">Vòng đời Quản lý Rủi ro (Risk Lifecycle)</h2>
+<pre class="mermaid"><code>graph TD
+    subgraph "Detection Phase"
+        A[Monitoring Signals] --&gt; B[Risk Analyzer]
+        B --&gt; C{Risk Detected?}
+    end
+
+    subgraph "Mitigation Phase"
+        C -- Yes --&gt; D[Mitigation Manager]
+        D --&gt; E[Create Plan]
+        E --&gt; F[Execute Actions]
+    end
+
+    subgraph "Audit Phase"
+        B -- Log Detection --&gt; G[(Immutable Audit Logs)]
+        F -- Log Results --&gt; G
+        G --&gt; H[Verification &amp; Compliance]
+    end</code></pre>
+<hr />
+<h2 id="phan-loai-rui-ro-va-nguong-canh-bao">Phân loại Rủi ro và Ngưỡng Cảnh báo</h2>
+<p>HieraChain định nghĩa các ngưỡng (Thresholds) nghiêm ngặt để kích hoạt phân tích:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Lĩnh vực</th>
+<th style="text-align: left;">Chỉ số kiểm tra</th>
+<th style="text-align: left;">Ngưỡng rủi ro</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Consensus</strong></td>
+<td style="text-align: left;">Số lượng Node BFT</td>
+<td style="text-align: left;"><code>&lt; 3f + 1</code> (Critical)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Security</strong></td>
+<td style="text-align: left;">Hạn chứng chỉ (MSP)</td>
+<td style="text-align: left;"><code>&lt; 30 ngày</code> (High)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Performance</strong></td>
+<td style="text-align: left;">CPU/RAM Usage</td>
+<td style="text-align: left;"><code>&gt; 85%</code> (High)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Storage</strong></td>
+<td style="text-align: left;">Lần cuối Backup</td>
+<td style="text-align: left;"><code>&gt; 24 giờ</code> (High)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="vi-du-trien-khai">Ví dụ Triển khai</h2>
+<h3 id="1-thuc-hien-phan-tich-rui-ro-toan-dien">1. Thực hiện phân tích rủi ro toàn diện</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.risk_management</span><span class="w"> </span><span class="kn">import</span> <span class="n">RiskAnalyzer</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">analyzer</span> <span class="o">=</span> <span class="n">RiskAnalyzer</span><span class="p">()</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Thu thập dữ liệu hệ thống</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">system_snapshot</span> <span class="o">=</span> <span class="n">get_system_snapshot</span><span class="p">()</span> 
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">risks</span> <span class="o">=</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">perform_comprehensive_analysis</span><span class="p">(</span><span class="n">system_snapshot</span><span class="p">)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="k">if</span> <span class="n">risks</span><span class="p">[</span><span class="s1">&#39;security&#39;</span><span class="p">]:</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Phát hiện </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">risks</span><span class="p">[</span><span class="s1">&#39;security&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> rủi ro bảo mật!&quot;</span><span class="p">)</span>
 </code></pre></div>
-<p>Ví dụ sử dụng (mô tả):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">analyzer</span> <span class="o">=</span> <span class="n">RiskAnalyzer</span><span class="p">()</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">score</span> <span class="o">=</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">analyze_event</span><span class="p">({</span><span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;production_complete&quot;</span><span class="p">,</span> <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{}})</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">if</span> <span class="n">score</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;risk&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.8</span><span class="p">:</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  <span class="n">MitigationStrategies</span><span class="p">()</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="s2">&quot;degrade_service&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;high_risk&quot;</span><span class="p">})</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  <span class="n">AuditLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;mitigation&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;degrade_service&quot;</span><span class="p">,</span> <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">score</span><span class="p">})</span>
+<h3 id="2-kich-hoat-ke-hoach-giam-thieu-tu-ong">2. Kích hoạt kế hoạch giảm thiểu tự động</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.risk_management.mitigation_strategies</span><span class="w"> </span><span class="kn">import</span> <span class="n">MitigationManager</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">mitigation_mgr</span> <span class="o">=</span> <span class="n">MitigationManager</span><span class="p">()</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Tạo kế hoạch dựa trên danh sách rủi ro</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">plan</span> <span class="o">=</span> <span class="n">mitigation_mgr</span><span class="o">.</span><span class="n">create_mitigation_plan</span><span class="p">(</span><span class="n">risks</span><span class="p">[</span><span class="s1">&#39;performance&#39;</span><span class="p">])</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Thực thi bất đồng bộ để không ảnh hưởng luồng chính</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">results</span> <span class="o">=</span> <span class="n">mitigation_mgr</span><span class="o">.</span><span class="n">execute_mitigation_plan</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="n">async_execution</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
-<h2 id="cau-hinh">Cấu hình</h2>
+<hr />
+<h2 id="nhat-ky-kiem-toan-va-tinh-toan-ven">Nhật ký Kiểm toán và Tính toàn vẹn</h2>
+<p>Mọi sự kiện trong module đều được lưu trữ với cấu trúc định danh duy nhất (Correlation ID) và được bảo vệ chống thay đổi:</p>
 <ul>
-<li>Có thể kết hợp với <code>settings.RATE_LIMIT_ENABLED</code> hoặc guard để giảm tải khi rủi ro cao.</li>
-<li>Tích hợp <code>monitoring/performance_monitor.py</code> làm nguồn metrics.</li>
-</ul>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
-<ul>
-<li>Tính năng: phát hiện sớm, phản ứng nhanh, ghi audit.</li>
-<li>Hạn chế: cần tuỳ chỉnh rule/model theo domain; mặc định chỉ là khung.</li>
-</ul>
-<h2 id="bao-mat-quyen-truy-cap">Bảo mật &amp; quyền truy cập</h2>
-<ul>
-<li>Audit không ghi lộ dữ liệu nhạy cảm; tham chiếu <code>security/secure_logging.py</code>, <code>security/sanitization.py</code>.</li>
-</ul>
-<h2 id="xu-ly-loi-khac-phuc">Xử lý lỗi &amp; khắc phục</h2>
-<ul>
-<li>Nếu chiến lược giảm thiểu thất bại, ghi audit và fallback sang chiến lược an toàn hơn.</li>
-</ul>
-<h2 id="hieu-nang">Hiệu năng</h2>
-<ul>
-<li>Phân tích theo lô (batch) hoặc theo dòng (stream) tùy quy mô; tránh block luồng chính.</li>
-</ul>
-<h2 id="lien-quan">Liên quan</h2>
-<ul>
-<li>Monitoring: <a href="../monitoring/">Monitoring</a></li>
-<li>Error Mitigation: <a href="../error-mitigation/">Error Mitigation</a></li>
-<li>Config (tham chiếu): <a href="../../reference/config/">Config</a></li>
+<li><strong>Hashing</strong>: Mỗi bản ghi audit chứa hash SHA-256 của nội dung, cho phép phát hiện hành vi can thiệp vào log.</li>
+<li><strong>Rotation</strong>: Tự động xoay vòng log (100MB) và nén dữ liệu cũ để tối ưu lưu trữ.</li>
+<li><strong>Retention</strong>: Mặc định lưu trữ nhật ký trong 90 ngày (có thể cấu hình).</li>
 </ul>
 <hr />
-<details class="info">
-<summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
-<p><strong>FACT</strong></p>
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Thành phần nằm tại <code>hierachain/risk_management/{risk_analyzer.py, mitigation_strategies.py, audit_logger.py}</code>.</li>
+<li><a href=".././monitoring/">Giám sát hiệu năng (Monitoring)</a></li>
+<li><a href=".././security/">Bảo mật và Danh tính (Security)</a></li>
+<li><a href=".././error-mitigation/">Xử lý lỗi hệ thống (Error Mitigation)</a></li>
 </ul>
-<p><strong>DECISION</strong></p>
-<ul>
-<li>Gắn Risk Management với Monitoring để có nguồn metrics tin cậy; mọi hành động giảm thiểu phải ghi audit.</li>
-</ul>
-<p><strong>ASSUMPTION</strong></p>
-<ul>
-<li>Hệ thống có yêu cầu kiểm toán và phân tích nguyên nhân (post‑mortem) sau sự cố.</li>
-</ul>
-<p><strong>INVARIANT</strong></p>
-<ul>
-<li>Mọi quyết định giảm thiểu phải có log/audit tương ứng; không bỏ ghi vết.</li>
-</ul>
-<p><strong>EDGE CASES</strong></p>
-<ul>
-<li>False positive/negative từ phân tích rủi ro → cần ngưỡng linh hoạt và whitelist/override theo môi trường.</li>
-</ul>
-</details>
 
 
 

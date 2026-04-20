@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Giảm thiểu lỗi và phục hồi: validator, data_validator, phân loại lỗi, journal, rollback, recovery — bám sát hierachain/error_mitigation/*.">
+        <meta name="description" content="Hệ thống giảm thiểu rủi ro và phục hồi sau sự cố: Validation, Journaling, Rollback và Automated Recovery.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -31,7 +31,7 @@
     
     
       
-        <title>Error Mitigation module - HieraChain Docs</title>
+        <title>Error Mitigation Module - HieraChain Docs</title>
       
     
     
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Error Mitigation module
+              Error Mitigation Module
             
           </span>
         </div>
@@ -297,6 +297,25 @@
           
   
   Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/authorization-access-control/" class="md-tabs__link">
+          
+  
+  Hệ thống Bảo mật
 
         </a>
       </li>
@@ -941,6 +960,8 @@
       
         
       
+        
+      
     
     
     
@@ -1054,11 +1075,41 @@
   
   
     <li class="md-nav__item">
+      <a href="../consensus/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../security/" class="md-nav__link">
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1209,10 +1260,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -1220,10 +1271,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#kien-truc-phong-thu-a-tang" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Kiến trúc Phòng thủ Đa tầng
       
     </span>
   </a>
@@ -1231,71 +1282,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-mo-ta-khai-quat" class="md-nav__link">
+  <a href="#chien-luoc-phan-loai-loi-error-classification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (mô tả khái quát)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="API công khai (mô tả khái quát)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#journaling-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Journaling Example
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#recovery-engine" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recovery Engine
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#luong-xu-ly-loi-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Luồng xử lý lỗi (Workflow)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vi-du-trien-khai" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ví dụ triển khai
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tính năng &amp; hạn chế
+        Chiến lược Phân loại Lỗi (Error Classification)
       
     </span>
   </a>
@@ -1303,10 +1293,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
+  <a href="#nhat-ky-giao-dich-transaction-journal" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bảo mật &amp; quyền truy cập
+        Nhật ký Giao dịch (Transaction Journal)
       
     </span>
   </a>
@@ -1314,10 +1304,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
+  <a href="#quy-trinh-khac-phuc-su-co-recovery-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hiệu năng
+        Quy trình Khắc phục Sự cố (Recovery Workflow)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quan-ly-iem-khoi-phuc-snapshot-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quản lý Điểm khôi phục (Snapshot Management)
       
     </span>
   </a>
@@ -1655,12 +1656,263 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m1.39 18.36 1.77-1.76L4.58 18l1.06-1.05-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.42 1.41L10.59 12l-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.41 1.41 1.07-1.06-1.42-1.41 1.42-1.42L18 6.7l1.07-1.06-2.47-2.48 1.76-1.77 4.25 4.25L5.64 22.61z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg>
   
   <span class="md-ellipsis">
     
   
     Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hệ thống Bảo mật
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hệ thống Bảo mật
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization-access-control/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization & Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/lockdown-logging/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockdown & Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/fault-tolerance-integrity/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault-tolerance & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/risk-analyzer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/encryption-keys/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption & Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/decentralized-zkp/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Zero-Knowledge Proofs
   
 
     
@@ -1711,10 +1963,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -1732,8 +1984,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1940,10 +2192,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -1961,8 +2213,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2323,10 +2575,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2344,8 +2596,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2750,10 +3002,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2771,8 +3023,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2937,10 +3189,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -2958,8 +3210,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3122,10 +3374,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -3143,8 +3395,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3292,10 +3544,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -3303,10 +3555,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#kien-truc-phong-thu-a-tang" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Kiến trúc Phòng thủ Đa tầng
       
     </span>
   </a>
@@ -3314,71 +3566,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-mo-ta-khai-quat" class="md-nav__link">
+  <a href="#chien-luoc-phan-loai-loi-error-classification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (mô tả khái quát)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="API công khai (mô tả khái quát)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#journaling-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Journaling Example
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#recovery-engine" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recovery Engine
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#luong-xu-ly-loi-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Luồng xử lý lỗi (Workflow)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vi-du-trien-khai" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ví dụ triển khai
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tính năng &amp; hạn chế
+        Chiến lược Phân loại Lỗi (Error Classification)
       
     </span>
   </a>
@@ -3386,10 +3577,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
+  <a href="#nhat-ky-giao-dich-transaction-journal" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bảo mật &amp; quyền truy cập
+        Nhật ký Giao dịch (Transaction Journal)
       
     </span>
   </a>
@@ -3397,10 +3588,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
+  <a href="#quy-trinh-khac-phuc-su-co-recovery-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hiệu năng
+        Quy trình Khắc phục Sự cố (Recovery Workflow)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quan-ly-iem-khoi-phuc-snapshot-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quản lý Điểm khôi phục (Snapshot Management)
       
     </span>
   </a>
@@ -3450,158 +3652,134 @@
 
 
 <h1 id="error-mitigation-module-hierachainerror_mitigation">Error Mitigation Module (<code>hierachain/error_mitigation/*</code>)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>Giảm thiểu tác động của lỗi và hỗ trợ phục hồi an toàn khi vận hành: xác thực dữ liệu đầu vào, phân loại lỗi, ghi journal bền vững, cơ chế rollback/trả về trạng thái hợp lệ và recovery theo kịch bản.</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
+<h2 id="tong-quan">Tổng quan</h2>
+<p>Module <strong>Error Mitigation</strong> đóng vai trò là "lưới an toàn" của HieraChain, đảm bảo hệ thống luôn duy trì tính toàn vẹn và khả năng tự phục hồi (resilience) trước các sự cố phần cứng, phần mềm hoặc mạng. Hệ thống này kết hợp các kỹ thuật ghi nhật ký bền vững (Durability), phân loại lỗi thông minh và các kịch bản phục hồi tự động.</p>
+<hr />
+<h2 id="kien-truc-phong-thu-a-tang">Kiến trúc Phòng thủ Đa tầng</h2>
+<div class="grid cards">
 <ul>
-<li>Validator: <code>hierachain/error_mitigation/validator.py</code>, <code>data_validator.py</code> — kiểm tra tính hợp lệ dữ liệu/sự kiện.</li>
-<li>Phân loại lỗi: <code>error_classifier.py</code> — xác định mức độ/rủi ro để chọn chiến lược xử lý.</li>
-<li>Journal: <code>journal.py</code> — ghi log giao dịch/hoạt động bền vững để khôi phục.</li>
-<li>Rollback: <code>rollback_manager.py</code> — hoàn tác world state về mốc an toàn.</li>
-<li>Recovery: <code>recovery_engine.py</code> — quy trình phục hồi theo loại sự cố (mạng, DB, đồng thuận...).</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg></span> <strong>Validation Layer</strong></p>
+<hr />
+<p><strong>Files</strong>: <code>validator.py</code>, <code>data_validator.py</code></p>
+<ul>
+<li><strong>Validator</strong>: Kiểm tra cấu trúc Block/Event theo Ledger guidelines.</li>
+<li><strong>DataValidator</strong>: Xác thực sâu logic nghiệp vụ, schema Arrow và tính hợp lệ của dữ liệu đầu vào.</li>
 </ul>
-<h2 id="api-cong-khai-mo-ta-khai-quat">API công khai (mô tả khái quát)</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">Validator/DataValidator</span><span class="p">:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">validate(event|tx) -&gt; Result(errors, warnings)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nt">ErrorClassifier</span><span class="p">:</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">classify(error) -&gt; {level, action}</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nt">Journal</span><span class="p">:</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">append(entry)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">replay(from_offset)</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="nt">RollbackManager</span><span class="p">:</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">snapshot()</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">rollback(to_snapshot)</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="nt">RecoveryEngine</span><span class="p">:</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">recover(context)</span><span class="w">  </span><span class="c1"># chọn kịch bản phù hợp</span>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.04 13.13c.14 0 .27.06.38.17l1.28 1.28c.22.21.22.56 0 .77l-1 1-2.05-2.05 1-1c.11-.11.25-.17.39-.17m-1.97 1.75 2.05 2.05L15.06 23H13v-2.06zM3 7V5h2V4a2 2 0 0 1 2-2h6v7l2.5-1.5L18 9V2h1c1.05 0 2 .95 2 2v6L11 20v2H7c-1.05 0-2-.95-2-2v-1H3v-2h2v-4H3v-2h2V7zm2 0h2V5H5zm0 4v2h2v-2zm0 6v2h2v-2z"/></svg></span> <strong>Durable Journaling</strong></p>
+<hr />
+<p><strong>File</strong>: <code>journal.py</code></p>
+<ul>
+<li>Sử dụng <strong>Apache Arrow</strong> để ghi nhật ký giao dịch với tốc độ cực cao.</li>
+<li>Cơ chế <strong>Append-only</strong> đảm bảo dữ liệu không bị ghi đè.</li>
+<li>Đảm bảo tính bền vững (Persistence) trước khi sự kiện được commit vào chuỗi.</li>
+</ul>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.5 8H12v5l4.28 2.54.72-1.21-3.5-2.08zM13 3a9 9 0 0 0-9 9H1l3.96 4.03L9 12H6a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.9 8.9 0 0 0 13 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9"/></svg></span> <strong>Rollback &amp; Snapshots</strong></p>
+<hr />
+<p><strong>File</strong>: <code>rollback_manager.py</code></p>
+<ul>
+<li>Quản lý các điểm khôi phục (Snapshots) cho toàn bộ hệ thống hoặc từng thành phần.</li>
+<li>Tự động tạo snapshot định kỳ (Auto-snapshot).</li>
+<li>Xác thực tính toàn vẹn của dữ liệu trước khi thực hiện rollback.</li>
+</ul>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.5 5.6 5 7l1.4-2.5L5 2l2.5 1.4L10 2 8.6 4.5 10 7zm12 9.8L22 14l-1.4 2.5L22 19l-2.5-1.4L17 19l1.4-2.5L17 14zM22 2l-1.4 2.5L22 7l-2.5-1.4L17 7l1.4-2.5L17 2l2.5 1.4zm-8.66 10.78 2.44-2.44-2.12-2.12-2.44 2.44zm1.03-5.49 2.34 2.34c.39.37.39 1.02 0 1.41L5.04 22.71c-.39.39-1.04.39-1.41 0l-2.34-2.34c-.39-.37-.39-1.02 0-1.41L12.96 7.29c.39-.39 1.04-.39 1.41 0"/></svg></span> <strong>Adaptive Recovery</strong></p>
+<hr />
+<p><strong>File</strong>: <code>recovery_engine.py</code></p>
+<ul>
+<li>Tự động xử lý lỗi mạng (Network Recovery) và phân đoạn mạng (Partition Detection).</li>
+<li>Phục hồi trạng thái đồng thuận (Consensus Recovery) khi Leader gặp sự cố.</li>
+<li>Tích hợp <strong>AutoScaler</strong> để mở rộng tài nguyên dựa trên tải hệ thống.</li>
+</ul>
+</li>
+</ul>
+</div>
+<hr />
+<h2 id="chien-luoc-phan-loai-loi-error-classification">Chiến lược Phân loại Lỗi (Error Classification)</h2>
+<p>Lớp <code>ErrorClassifier</code> không chỉ log lỗi mà còn đưa ra các chiến lược ứng phó (Mitigation Strategies) dựa trên mức độ nghiêm trọng:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Mức độ</th>
+<th style="text-align: left;">Ý nghĩa</th>
+<th style="text-align: left;">Hành động đề xuất</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>INFO / WARNING</strong></td>
+<td style="text-align: left;">Thông tin hoặc lỗi nhẹ</td>
+<td style="text-align: left;">Log &amp; Continue</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>ERROR</strong></td>
+<td style="text-align: left;">Lỗi xử lý giao dịch</td>
+<td style="text-align: left;">RETRY / REJECT</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>CRITICAL</strong></td>
+<td style="text-align: left;">Lỗi dữ liệu / nhất quán</td>
+<td style="text-align: left;">ROLLBACK &amp; QUARANTINE</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FATAL</strong></td>
+<td style="text-align: left;">Lỗi hệ thống nghiêm trọng</td>
+<td style="text-align: left;">EMERGENCY SHUTDOWN</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="nhat-ky-giao-dich-transaction-journal">Nhật ký Giao dịch (Transaction Journal)</h2>
+<p>HieraChain sử dụng <strong>Apache Arrow</strong> IPC format cho Journaling để đạt được hiệu năng tối ưu:</p>
+<ol>
+<li><strong>Durable Write</strong>: Sự kiện được ghi xuống disk và thực hiện <code>fsync</code> trước khi tiếp tục.</li>
+<li><strong>Schema Enforcement</strong>: Đảm bảo mọi bản ghi trong journal đều tuân thủ schema sự kiện lõi.</li>
+<li><strong>Replay Ability</strong>: Khi hệ thống khởi động lại sau sự cố, Journal có thể "diễn lại" (replay) các sự kiện chưa được commit để khôi phục trạng thái.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransactionJournal</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Khởi tạo journal an toàn (chống Path Traversal)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">TransactionJournal</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">&quot;data/journal&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Ghi sự kiện bền vững</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">journal</span><span class="o">.</span><span class="n">log_event</span><span class="p">(</span><span class="n">event_dict</span><span class="p">)</span>
 </code></pre></div>
-<h4 id="journaling-example">Journaling Example</h4>
-<p><strong>File</strong>: <code>hierachain/error_mitigation/journal.py</code></p>
-<p>Ghi nhật ký hoạt động để đảm bảo khả năng hoàn tác/phục hồi:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">Journal</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;ordering_journal&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># Ghi nhận thao tác trước khi thực hiện</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">journal</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;op&quot;</span><span class="p">:</span> <span class="s2">&quot;create_block&quot;</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">})</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Khi cần phục hồi (replay)</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">entries</span> <span class="o">=</span> <span class="n">journal</span><span class="o">.</span><span class="n">read_all</span><span class="p">()</span>
-</code></pre></div>
-<h4 id="recovery-engine">Recovery Engine</h4>
-<p><strong>File</strong>: <code>hierachain/error_mitigation/recovery_engine.py</code></p>
-<p>Tự động hóa quy trình khắc phục sự cố:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.recovery_engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecoveryEngine</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">RecoveryEngine</span><span class="p">()</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Kích hoạt quy trình phục hồi dựa trên ngữ cảnh lỗi</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">engine</span><span class="o">.</span><span class="n">recover</span><span class="p">(</span><span class="n">error_type</span><span class="o">=</span><span class="s2">&quot;consensus_timeout&quot;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;node_id&quot;</span><span class="p">:</span> <span class="s2">&quot;node-1&quot;</span><span class="p">})</span>
-</code></pre></div>
-<h3 id="luong-xu-ly-loi-workflow">Luồng xử lý lỗi (Workflow)</h3>
-<pre class="mermaid"><code>sequenceDiagram
-    participant App as Application
-    participant Val as Validator
-    participant Class as ErrorClassifier
-    participant Jrnl as Journal
-    participant Rec as Recovery/Rollback
+<hr />
+<h2 id="quy-trinh-khac-phuc-su-co-recovery-workflow">Quy trình Khắc phục Sự cố (Recovery Workflow)</h2>
+<p>Khi một lỗi được phát hiện, hệ thống sẽ thực hiện luồng xử lý sau:</p>
+<pre class="mermaid"><code>graph TD
+    A[Sự cố xảy ra] --&gt; B{ErrorClassifier}
+    B --&gt;|Mức độ Thấp| C[Ghi Log &amp; Tiếp tục]
+    B --&gt;|Mức độ Trung bình| D[Tự động Retry / Recovery Engine]
+    B --&gt;|Mức độ Cao| E[Rollback về Snapshot gần nhất]
 
-    App-&gt;&gt;Val: validate(event)
-    alt Dữ liệu không hợp lệ
-        Val--&gt;&gt;App: ValidationError
-        App-&gt;&gt;Class: classify(error)
-        Class--&gt;&gt;App: ErrorStrategy (Level, Action)
-    end
+    D --&gt; D1[Network Recovery]
+    D --&gt; D2[Consensus Recovery]
+    D --&gt; D3[Auto Scaling]
 
-    App-&gt;&gt;Jrnl: append(operation_log)
-
-    alt Lỗi nghiêm trọng (Critical)
-        App-&gt;&gt;Rec: recover(context) / rollback(snapshot)
-        Rec--&gt;&gt;App: Recovery Status
-    end</code></pre>
-<h3 id="vi-du-trien-khai">Ví dụ triển khai</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.validator</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataValidator</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.error_classifier</span><span class="w"> </span><span class="kn">import</span> <span class="n">ErrorClassifier</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Journal</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.rollback_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">RollbackManager</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">handle_transaction</span><span class="p">(</span><span class="n">tx_data</span><span class="p">):</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="c1"># 1. Validate Input</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">validator</span> <span class="o">=</span> <span class="n">DataValidator</span><span class="p">()</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">validation_result</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">tx_data</span><span class="p">)</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">validation_result</span><span class="o">.</span><span class="n">is_valid</span><span class="p">:</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>        <span class="c1"># 2. Classify Error nếu có vấn đề</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>        <span class="n">classifier</span> <span class="o">=</span> <span class="n">ErrorClassifier</span><span class="p">()</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>        <span class="n">strategy</span> <span class="o">=</span> <span class="n">classifier</span><span class="o">.</span><span class="n">classify</span><span class="p">(</span><span class="n">validation_result</span><span class="o">.</span><span class="n">error</span><span class="p">)</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>        <span class="c1"># 3. Xử lý theo chiến lược (ví dụ: Rollback)</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>        <span class="k">if</span> <span class="n">strategy</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;ROLLBACK&quot;</span><span class="p">:</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>            <span class="c1"># Ghi nhận sự kiện vào Journal trước khi tác động</span>
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>            <span class="n">journal</span> <span class="o">=</span> <span class="n">Journal</span><span class="p">()</span>
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>            <span class="n">journal</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>                <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;rollback_triggered&quot;</span><span class="p">,</span> 
-<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>                <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">validation_result</span><span class="o">.</span><span class="n">error</span><span class="p">),</span>
-<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>                <span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="n">strategy</span><span class="o">.</span><span class="n">level</span>
-<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>            <span class="p">})</span>
-<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>
-<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>            <span class="c1"># Thực hiện Rollback về điểm an toàn</span>
-<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>            <span class="n">rollback_mgr</span> <span class="o">=</span> <span class="n">RollbackManager</span><span class="p">()</span>
-<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>            <span class="n">success</span> <span class="o">=</span> <span class="n">rollback_mgr</span><span class="o">.</span><span class="n">rollback</span><span class="p">(</span><span class="n">to_snapshot</span><span class="o">=</span><span class="s2">&quot;last_safe_checkpoint&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Rolled back: </span><span class="si">{</span><span class="n">success</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>
-<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>    <span class="k">return</span> <span class="s2">&quot;Transaction processed&quot;</span>
-</code></pre></div>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
+    E --&gt; F[Xác thực tính toàn vẹn sau Rollback]
+    F --&gt; G[Replay Journal để khôi phục dữ liệu thiếu]</code></pre>
+<hr />
+<h2 id="quan-ly-iem-khoi-phuc-snapshot-management">Quản lý Điểm khôi phục (Snapshot Management)</h2>
+<p><code>RollbackManager</code> hỗ trợ nhiều loại Snapshot khác nhau:</p>
 <ul>
-<li>Tính năng: từng lớp độc lập, có thể cắm vào pipeline ghi block.</li>
-<li>Hạn chế: cần cấu hình chiến lược cụ thể theo môi trường/SLAs.</li>
-</ul>
-<h2 id="bao-mat-quyen-truy-cap">Bảo mật &amp; quyền truy cập</h2>
-<ul>
-<li>Journal chứa dữ liệu nhạy cảm có thể cần mã hoá/kiểm soát quyền đọc.</li>
-</ul>
-<h2 id="hieu-nang">Hiệu năng</h2>
-<ul>
-<li>Journal nên batch/async để giảm độ trễ.</li>
-<li>Rollback cần ảnh hưởng atomically tới world state và cache.</li>
-</ul>
-<h2 id="lien-quan">Liên quan</h2>
-<ul>
-<li>Storage: <a href="../storage/">Storage</a></li>
-<li>Guides/Khả năng tin cậy: (sẽ thêm) <a href="../../guides/reliability/">Độ tin cậy</a></li>
+<li><strong>CONFIGURATION</strong>: Chỉ backup các tệp cấu hình hệ thống.</li>
+<li><strong>CHAIN_STATE</strong>: Backup trạng thái của Main Chain và các Sub-Chains.</li>
+<li><strong>CONSENSUS_STATE</strong>: Lưu trữ View Number và thông tin Leader hiện tại.</li>
+<li><strong>FULL_SYSTEM</strong>: Chụp ảnh toàn bộ trạng thái hệ thống.</li>
 </ul>
 <hr />
-<details class="info">
-<summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
-<p><strong>FACT</strong></p>
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Các tệp hiện diện: <code>hierachain/error_mitigation/{validator.py, data_validator.py, error_classifier.py, journal.py, rollback_manager.py, recovery_engine.py}</code>.</li>
+<li><a href=".././adapters/">Hệ thống Lưu trữ (Storage)</a></li>
+<li><a href=".././core/">Kiến trúc Lõi (Core)</a></li>
+<li><a href=".././cluster/">Hệ thống Cluster</a></li>
 </ul>
-<p><strong>DECISION</strong></p>
-<ul>
-<li>Tách vai trò rõ: validate → classify → journal → rollback/recover.</li>
-<li>Cho phép cấu hình chính sách theo mức rủi ro.</li>
-</ul>
-<p><strong>ASSUMPTION</strong></p>
-<ul>
-<li>Ứng dụng triển khai backpressure khi lỗi lặp lại.</li>
-<li>Môi trường cung cấp storage bền cho journal.</li>
-</ul>
-<p><strong>INVARIANT</strong></p>
-<ul>
-<li>Rollback phải đưa hệ thống về trạng thái hợp lệ đã được snapshot.</li>
-<li>Journal ghi trước các thao tác quan trọng để đảm bảo khả năng khôi phục.</li>
-</ul>
-<p><strong>EDGE CASES</strong></p>
-<ul>
-<li>Journal hỏng/mất một phần: cần checksum và cơ chế bỏ qua entry hỏng an toàn.</li>
-<li>Rollback giữa chừng: đảm bảo idempotent và không làm hỏng thêm trạng thái.</li>
-</ul>
-</details>
 
 
 

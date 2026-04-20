@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="HieraChain security module: MSP/Identity, API Key & Policy, Key Management, Certificate/Integrity, Sanitization, Secure Logging, Resource Guard, ZK, Verify.">
+        <meta name="description" content="Tổng quan về hệ thống bảo mật đa tầng: MSP, Policy Engine, Key Management và ZK Proofs.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://docs.hierachain.org/modules/security/">
       
       
-        <link rel="prev" href="../hierarchical/">
+        <link rel="prev" href="../consensus/">
       
       
         <link rel="next" href="../api/">
@@ -31,7 +31,7 @@
     
     
       
-        <title>Security module - HieraChain Docs</title>
+        <title>Security Module - HieraChain Docs</title>
       
     
     
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Security module
+              Security Module
             
           </span>
         </div>
@@ -297,6 +297,25 @@
           
   
   Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/authorization-access-control/" class="md-tabs__link">
+          
+  
+  Hệ thống Bảo mật
 
         </a>
       </li>
@@ -941,6 +960,8 @@
       
         
       
+        
+      
     
     
     
@@ -1051,6 +1072,36 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../consensus/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1067,7 +1118,7 @@
           
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1087,7 +1138,7 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1119,10 +1170,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -1130,10 +1181,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#6-tru-cot-bao-mat-chinh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        6 Trụ cột Bảo mật chính
       
     </span>
   </a>
@@ -1141,165 +1192,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#tich-hop-he-thong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="API công khai (Public API)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#msp-securitymsppy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MSP (security/msp.py)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#identity-securityidentitypy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Identity (security/identity.py)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#api-keys-policy-verifier" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        API Keys, Policy, Verifier
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#key-provider-backup" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key Provider &amp; Backup
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#certificate-integrity-sanitization-zk" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Certificate, Integrity, Sanitization, ZK
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#chi-tiet-modules-moi" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Chi tiết modules mới
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Chi tiết modules mới">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#brute-force-protector" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Brute Force Protector
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#certificate-manager" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Certificate Manager
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#key-backup-manager" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key Backup Manager
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#resource-guard" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Resource Guard
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#secure-logger-sanitization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Secure Logger &amp; Sanitization
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#master-key-provider" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Master Key Provider
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Cấu hình
+        Tích hợp Hệ thống
       
     </span>
   </a>
@@ -1307,54 +1203,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#cau-hinh-bao-mat" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bảo mật &amp; quyền truy cập
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hiệu năng
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#faq" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FAQ
+        Cấu hình Bảo mật
       
     </span>
   </a>
@@ -1782,12 +1634,263 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m1.39 18.36 1.77-1.76L4.58 18l1.06-1.05-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.42 1.41L10.59 12l-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.41 1.41 1.07-1.06-1.42-1.41 1.42-1.42L18 6.7l1.07-1.06-2.47-2.48 1.76-1.77 4.25 4.25L5.64 22.61z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg>
   
   <span class="md-ellipsis">
     
   
     Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hệ thống Bảo mật
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hệ thống Bảo mật
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization-access-control/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization & Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/lockdown-logging/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockdown & Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/fault-tolerance-integrity/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault-tolerance & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/risk-analyzer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/encryption-keys/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption & Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/decentralized-zkp/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Zero-Knowledge Proofs
   
 
     
@@ -1838,10 +1941,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -1859,8 +1962,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2067,10 +2170,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -2088,8 +2191,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2450,10 +2553,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2471,8 +2574,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2877,10 +2980,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2898,8 +3001,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3064,10 +3167,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -3085,8 +3188,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3249,10 +3352,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -3270,8 +3373,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3419,10 +3522,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -3430,10 +3533,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#6-tru-cot-bao-mat-chinh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        6 Trụ cột Bảo mật chính
       
     </span>
   </a>
@@ -3441,165 +3544,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#tich-hop-he-thong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="API công khai (Public API)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#msp-securitymsppy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        MSP (security/msp.py)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#identity-securityidentitypy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Identity (security/identity.py)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#api-keys-policy-verifier" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        API Keys, Policy, Verifier
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#key-provider-backup" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key Provider &amp; Backup
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#certificate-integrity-sanitization-zk" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Certificate, Integrity, Sanitization, ZK
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#chi-tiet-modules-moi" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Chi tiết modules mới
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Chi tiết modules mới">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#brute-force-protector" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Brute Force Protector
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#certificate-manager" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Certificate Manager
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#key-backup-manager" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key Backup Manager
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#resource-guard" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Resource Guard
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#secure-logger-sanitization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Secure Logger &amp; Sanitization
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#master-key-provider" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Master Key Provider
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Cấu hình
+        Tích hợp Hệ thống
       
     </span>
   </a>
@@ -3607,54 +3555,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#cau-hinh-bao-mat" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bảo mật &amp; quyền truy cập
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hiệu năng
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#faq" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FAQ
+        Cấu hình Bảo mật
       
     </span>
   </a>
@@ -3704,454 +3608,74 @@
 
 
 <h1 id="security-module-hierachainsecurity">Security Module (<code>hierachain/security/*</code>)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>Mô-đun Security cung cấp các năng lực bảo mật cấp doanh nghiệp cho HieraChain: quản trị danh tính và thành viên (MSP), quản lý khóa và API key, chính sách cấp quyền (Policy Engine), xác thực yêu cầu (API Key Verifier), bảo vệ tài nguyên (Resource Guard), ghi log an toàn (Secure Logging), quản lý chứng chỉ/CRL, kiểm tra toàn vẹn (Integrity), làm sạch dữ liệu đầu vào/ra (Sanitization), và hỗ trợ Zero‑Knowledge (ZK) cho chứng minh/truy vết tin cậy.</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
+<h2 id="tong-quan">Tổng quan</h2>
+<p>Module <strong>Security</strong> cung cấp các năng lực bảo mật cấp doanh nghiệp cho HieraChain. Thay vì dựa vào một lớp bảo vệ duy nhất, HieraChain triển khai chiến lược <strong>Phòng thủ đa tầng (Defense-in-Depth)</strong>, bao trùm từ xác thực danh tính, kiểm soát truy cập, bảo vệ tài nguyên cho đến các công nghệ tiên tiến như Zero-Knowledge Proofs.</p>
+<hr />
+<h2 id="6-tru-cot-bao-mat-chinh">6 Trụ cột Bảo mật chính</h2>
+<p>Kiến trúc bảo mật được cấu thành từ 6 luồng chính phối hợp chặt chẽ:</p>
+<div class="grid cards">
 <ul>
 <li>
-<p>MSP &amp; Identity:</p>
-<ul>
-<li><code>security/msp.py</code>: <code>HierarchicalMSP</code> quản trị Entity, Role, Policy và cấp phát/hủy Certificate nội bộ.</li>
-<li><code>security/identity.py</code>: <code>IdentityManager</code> quản lý Organization, User, Role, xác thực Identity và chữ ký User.</li>
-</ul>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg></span> <strong>Authorization &amp; Access</strong></p>
+<hr />
+<p>Quản trị danh tính (MSP), xác thực API Key và kiểm soát truy cập dựa trên thuộc tính (ABAC).
+<a href="../../security/authorization-access-control/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Chi tiết</a></p>
 </li>
 <li>
-<p>API Key &amp; Policy:</p>
-<ul>
-<li><code>security/key_manager.py</code>: <code>KeyManager</code> tạo, thu hồi, kiểm tra API Key và quyền truy cập theo resource.</li>
-<li><code>security/policy_engine.py</code>: <code>PolicyEngine</code> đánh giá tập Policy (allow/deny) trên context giàu thông tin.</li>
-<li><code>security/verify/api_key_verifier.py</code>: <code>APIKeyVerifier</code>/<code>ResourcePermissionChecker</code> tích hợp FastAPI để xác thực/ủy quyền theo API Key.</li>
-</ul>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg></span> <strong>Lockdown &amp; Logging</strong></p>
+<hr />
+<p>Cơ chế phong tỏa khẩn cấp cụm (Cluster) và hệ thống ghi nhật ký an toàn chống giả mạo.
+<a href="../../security/lockdown-logging/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Chi tiết</a></p>
 </li>
 <li>
-<p>Key Providers &amp; Backup:</p>
-<ul>
-<li><code>security/key_provider.py</code>: <code>LocalKeyProvider</code>, <code>FileVaultProvider</code> (AES-GCM, dẫn xuất Key) cung cấp chữ ký và Public Key ở dạng hex.</li>
-<li><code>security/key_backup_manager.py</code>: <code>KeyBackupManager</code> sao lưu/khôi phục Key (mã hóa, hash toàn vẹn, đa vị trí, dọn dẹp vòng đời).</li>
-</ul>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg></span> <strong>Integrity &amp; Guard</strong></p>
+<hr />
+<p>Bảo vệ tài nguyên chống DoS và kiểm tra tính toàn vẹn của mã nguồn/cấu hình khi khởi động.
+<a href="../../security/fault-tolerance-integrity/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Chi tiết</a></p>
 </li>
 <li>
-<p>Logging &amp; Guard:</p>
-<ul>
-<li><code>security/secure_logging.py</code>: Logger an toàn, chuẩn hóa cấu trúc, tự động ẩn/sanitize dữ liệu nhạy cảm.</li>
-<li><code>security/resource_guard.py</code>: Middleware chặn tải khi CPU/RAM vượt ngưỡng (DoS/load‑shedding), sử dụng <code>monitoring/PerformanceMonitor</code>.</li>
-</ul>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg></span> <strong>Risk &amp; Sanitization</strong></p>
+<hr />
+<p>Phân tích hành vi bất thường (Anomaly Detection) và làm sạch dữ liệu đầu vào chống Injection.
+<a href="../../security/risk-analyzer/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Chi tiết</a></p>
 </li>
 <li>
-<p>Chứng chỉ &amp; Toàn vẹn:</p>
-<ul>
-<li><code>security/certificate.py</code>: <code>CertificateManager</code>, <code>CertificateValidator</code>, CRL quản trị chứng chỉ doanh nghiệp.</li>
-<li><code>security/integrity.py</code>: <code>ChecksumValidator</code>, <code>verify_startup_integrity()</code> để xác minh toàn vẹn mã/tài sản.</li>
-</ul>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg></span> <strong>Encryption &amp; Keys</strong></p>
+<hr />
+<p>Quản lý vòng đời khóa mã hóa (Ed25519, AES-GCM) và chứng chỉ số chuẩn doanh nghiệp (X.509).
+<a href="../../security/encryption-keys/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Chi tiết</a></p>
 </li>
 <li>
-<p>Sanitization &amp; ZK:</p>
-<ul>
-<li><code>security/sanitization.py</code>: Hàm sanitize/validate cho chuỗi, dict, số, timestamp…</li>
-<li><code>security/zk_prover.py</code> và <code>security/verify/zk_verifier.py</code>: Tạo và xác minh ZK proof (mock/production mode).</li>
-</ul>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg></span> <strong>Zero-Knowledge Proofs</strong></p>
+<hr />
+<p>Bảo mật dữ liệu riêng tư xuyên chuỗi bằng công nghệ chứng minh không tiết lộ thông tin (ZKP).
+<a href="../../security/decentralized-zkp/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Chi tiết</a></p>
 </li>
 </ul>
-<p>Sơ đồ khái quát:</p>
-<pre class="mermaid"><code>graph LR
-    Client[Client]
-    API[API Server]
-    Verifier[APIKeyVerifier + PolicyEngine]
-    Core[HieraChain Core]
-    KM[KeyManager]
-    IM[Identity/MSP]
-    SL[SecureLogger]
-    RG[ResourceGuard]
-
-    Client --&gt; API
-    API --&gt; Verifier
-    Verifier -- Allow? --&gt; Core
-    Verifier -.-&gt; KM
-    Verifier -.-&gt; IM
-    API -.-&gt; SL
-    API -.-&gt; RG</code></pre>
-<h2 id="api-cong-khai-public-api">API công khai (Public API)</h2>
-<h3 id="msp-securitymsppy">MSP (<code>security/msp.py</code>)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">HierarchicalMSP</span><span class="p">:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  <span class="fm">__init__</span><span class="p">(</span><span class="n">organization_id</span><span class="p">,</span> <span class="n">ca_config</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  <span class="n">register_entity</span><span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span> <span class="n">role</span><span class="p">,</span> <span class="n">attributes</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  <span class="n">validate_identity</span><span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">credentials</span><span class="p">)</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  <span class="n">authorize_action</span><span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  <span class="n">revoke_entity</span><span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;administrative&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  <span class="n">define_role</span><span class="p">(</span><span class="n">role_name</span><span class="p">,</span> <span class="n">permissions</span><span class="p">,</span> <span class="n">policies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cert_validity_days</span><span class="o">=</span><span class="mi">365</span><span class="p">)</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  <span class="n">get_entity_info</span><span class="p">(</span><span class="n">entity_id</span><span class="p">);</span> <span class="n">get_audit_log</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="identity-securityidentitypy">Identity (<code>security/identity.py</code>)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">IdentityManager</span><span class="p">:</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  <span class="n">register_organization</span><span class="p">(</span><span class="n">org_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">participants</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  <span class="n">register_user</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">org_id</span><span class="p">,</span> <span class="n">role</span><span class="p">,</span> <span class="n">public_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  <span class="n">validate_identity</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">required_role</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  <span class="n">verify_user_signature</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">signature</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  <span class="n">update_user_role</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">new_role</span><span class="p">);</span> <span class="n">remove_user</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>  <span class="n">get_user_info</span><span class="p">(</span><span class="n">user_id</span><span class="p">);</span> <span class="n">get_organization_info</span><span class="p">(</span><span class="n">org_id</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="api-keys-policy-verifier">API Keys, Policy, Verifier</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">KeyManager</span><span class="p">:</span>  <span class="c1"># security/key_manager.py</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  <span class="n">create_key</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">permissions</span><span class="p">,</span> <span class="n">app_details</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">expires_in</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">api_key</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  <span class="n">is_valid</span><span class="p">(</span><span class="n">api_key</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">;</span> <span class="n">is_revoked</span><span class="p">(</span><span class="n">api_key</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  <span class="n">has_permission</span><span class="p">(</span><span class="n">api_key</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  <span class="n">revoke_key</span><span class="p">(</span><span class="n">api_key</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">class</span><span class="w"> </span><span class="nc">PolicyEngine</span><span class="p">:</span>  <span class="c1"># security/policy_engine.py</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  <span class="n">register_policy</span><span class="p">(</span><span class="n">policy</span><span class="p">);</span> <span class="n">unregister_policy</span><span class="p">(</span><span class="n">policy_id</span><span class="p">)</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  <span class="n">evaluate_policy</span><span class="p">(</span><span class="n">policy_id</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">{</span><span class="n">effect</span><span class="p">,</span> <span class="n">reasons</span><span class="p">}</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  <span class="n">evaluate_policy_set</span><span class="p">(</span><span class="n">set_name</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">combination_logic</span><span class="o">=</span><span class="s2">&quot;all_allow&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="k">class</span><span class="w"> </span><span class="nc">APIKeyVerifier</span><span class="p">:</span>  <span class="c1"># security/verify/api_key_verifier.py</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>  <span class="fm">__call__</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">Security</span><span class="p">(</span><span class="n">Header</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n">context</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>  <span class="n">require_permission</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FastAPI</span> <span class="n">dependency</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="k">class</span><span class="w"> </span><span class="nc">BruteForceProtector</span><span class="p">:</span>  <span class="c1"># security/brute_force_protector.py</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>  <span class="n">record_failure</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span> <span class="n">key_prefix</span><span class="o">=</span><span class="s2">&quot;unknown&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>  <span class="c1"># Returns True if locked out</span>
-<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>  <span class="n">is_locked_out</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>  <span class="n">get_remaining_lockout</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span>
-<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>  <span class="n">reset</span><span class="p">(</span><span class="n">ip</span><span class="p">);</span> <span class="n">get_failure_count</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span>
-<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>
-<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="k">class</span><span class="w"> </span><span class="nc">MasterKeyProvider</span><span class="p">:</span>  <span class="c1"># security/master_key_provider.py</span>
-<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>  <span class="n">get_master_key</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>  <span class="c1"># 32-byte AES-256 key</span>
-<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>  <span class="nd">@staticmethod</span> <span class="n">check_key_file_security</span><span class="p">(</span><span class="n">key_file</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">warnings</span><span class="p">]</span>
-</code></pre></div>
-<h3 id="key-provider-backup">Key Provider &amp; Backup</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">FileVaultProvider</span><span class="p">(</span><span class="n">KeyProvider</span><span class="p">):</span>  <span class="c1"># security/key_provider.py</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  <span class="n">public_key_hex</span><span class="p">();</span> <span class="n">sign</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">hex_signature</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  <span class="nd">@classmethod</span> <span class="n">create_vault</span><span class="p">(</span><span class="n">vault_path</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">KeyBackupManager</span><span class="p">:</span>  <span class="c1"># security/key_backup_manager.py</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  <span class="n">backup_keys</span><span class="p">(</span><span class="n">public_key</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span> <span class="n">key_type</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">backup_id</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  <span class="n">restore_keys</span><span class="p">(</span><span class="n">backup_id</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">public_key</span><span class="p">,</span> <span class="n">private_key</span><span class="p">)</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  <span class="n">list_backups</span><span class="p">(</span><span class="n">key_type</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  <span class="n">verify_backup_integrity</span><span class="p">(</span><span class="n">backup_id</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-</code></pre></div>
-<h3 id="certificate-integrity-sanitization-zk">Certificate, Integrity, Sanitization, ZK</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">CertificateManager</span><span class="p">:</span>  <span class="c1"># security/certificate.py</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  <span class="n">store_certificate</span><span class="p">(</span><span class="n">cert</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">storage_id</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  <span class="n">validate_certificate_by_id</span><span class="p">(</span><span class="n">storage_id</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">{</span><span class="n">valid</span><span class="p">,</span> <span class="n">reasons</span><span class="p">}</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  <span class="n">revoke_certificate</span><span class="p">(</span><span class="n">storage_id</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;unspecified&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">verify_startup_integrity</span><span class="p">(</span><span class="n">abort_on_failure</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># security/integrity.py</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># security/sanitization.py</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">sanitize_for_output</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="s2">&quot;general&quot;</span><span class="p">);</span> <span class="n">sanitize_string</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">context</span><span class="p">);</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="n">validate_timestamp</span><span class="p">(</span><span class="n">ts</span><span class="p">);</span> <span class="n">validate_numeric_bounds</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="o">...</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="k">class</span><span class="w"> </span><span class="nc">ZKProver</span> <span class="o">/</span> <span class="n">ZKVerifier</span>  <span class="c1"># security/zk_prover.py &amp; security/verify/zk_verifier.py</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>  <span class="n">generate_proof</span><span class="p">(</span><span class="o">...</span><span class="p">);</span> <span class="n">verify</span><span class="p">(</span><span class="n">proof</span><span class="p">,</span> <span class="n">public_inputs</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="chi-tiet-modules-moi">Chi tiết modules mới</h3>
-<h4 id="brute-force-protector">Brute Force Protector</h4>
-<p><strong>File</strong>: <code>security/brute_force_protector.py</code></p>
-<p>Module bảo vệ chống brute-force attacks trên API key authentication:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.brute_force_protector</span><span class="w"> </span><span class="kn">import</span> <span class="n">BruteForceProtector</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># Khởi tạo với cấu hình</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">protector</span> <span class="o">=</span> <span class="n">BruteForceProtector</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="s2">&quot;max_failures&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>          <span class="c1"># Max failed attempts trước lockout</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="s2">&quot;lockout_duration&quot;</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span>    <span class="c1"># Lockout duration (giây) = 15 phút</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="s2">&quot;tracking_window&quot;</span><span class="p">:</span> <span class="mi">300</span>      <span class="c1"># Time window (giây) = 5 phút</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="p">})</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="c1"># Tích hợp với API key verification</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">verify_api_key</span><span class="p">(</span><span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">client_ip</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    <span class="c1"># Check if IP is locked out</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    <span class="k">if</span> <span class="n">protector</span><span class="o">.</span><span class="n">is_locked_out</span><span class="p">(</span><span class="n">client_ip</span><span class="p">):</span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>        <span class="n">remaining</span> <span class="o">=</span> <span class="n">protector</span><span class="o">.</span><span class="n">get_remaining_lockout</span><span class="p">(</span><span class="n">client_ip</span><span class="p">)</span>
-<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
-<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>            <span class="n">status_code</span><span class="o">=</span><span class="mi">429</span><span class="p">,</span>
-<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>            <span class="n">detail</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Too many failed attempts. Locked out for </span><span class="si">{</span><span class="n">remaining</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">s&quot;</span>
-<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>        <span class="p">)</span>
-<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>
-<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>    <span class="c1"># Validate API key</span>
-<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">key_manager</span><span class="o">.</span><span class="n">is_valid</span><span class="p">(</span><span class="n">api_key</span><span class="p">):</span>
-<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>        <span class="c1"># Record failure</span>
-<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>        <span class="n">is_locked</span> <span class="o">=</span> <span class="n">protector</span><span class="o">.</span><span class="n">record_failure</span><span class="p">(</span>
-<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>            <span class="n">ip</span><span class="o">=</span><span class="n">client_ip</span><span class="p">,</span>
-<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>            <span class="n">key_prefix</span><span class="o">=</span><span class="n">api_key</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span>  <span class="c1"># First 8 chars for logging</span>
-<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a>        <span class="p">)</span>
-<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a>        <span class="k">if</span> <span class="n">is_locked</span><span class="p">:</span>
-<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a>            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;IP </span><span class="si">{</span><span class="n">client_ip</span><span class="si">}</span><span class="s2"> locked out after brute-force detection&quot;</span><span class="p">)</span>
-<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a>        <span class="k">return</span> <span class="kc">False</span>
-<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a>
-<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a>    <span class="c1"># Success - no need to record</span>
-<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a>    <span class="k">return</span> <span class="kc">True</span>
-<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a>
-<a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a><span class="c1"># Manual reset (admin action)</span>
-<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a><span class="n">protector</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">ip</span><span class="o">=</span><span class="s2">&quot;192.168.1.100&quot;</span><span class="p">)</span>
-<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a>
-<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a><span class="c1"># Check failure count</span>
-<a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a><span class="n">count</span> <span class="o">=</span> <span class="n">protector</span><span class="o">.</span><span class="n">get_failure_count</span><span class="p">(</span><span class="n">ip</span><span class="o">=</span><span class="s2">&quot;192.168.1.100&quot;</span><span class="p">)</span>
-<a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current failures: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">/5&quot;</span><span class="p">)</span>
-</code></pre></div>
-<p><strong>[FACT]</strong> Features:</p>
+</div>
+<hr />
+<h2 id="tich-hop-he-thong">Tích hợp Hệ thống</h2>
+<p>Mọi thành phần của HieraChain đều được bảo vệ bởi các lớp an ninh này:</p>
 <ul>
-<li><strong>In-memory tracking</strong>: Thread-safe dict với automatic cleanup</li>
-<li><strong>Configurable thresholds</strong>: Max failures, lockout duration, tracking window</li>
-<li><strong>Security logging</strong>: Log brute-force patterns với SecureLogger</li>
-<li><strong>Auto-cleanup</strong>: Periodic cleanup để prevent memory growth</li>
-</ul>
-<p><strong>[DECISION]</strong> BruteForceProtector dùng in-memory storage vì:</p>
-<ul>
-<li>Low latency (&lt; 1ms lookup)</li>
-<li>No external dependencies</li>
-<li>Sufficient for single-node deployments</li>
-<li>Có thể extend sang Redis cho distributed systems</li>
-</ul>
-<p><strong>[EDGE CASE]</strong> Distributed deployment: Mỗi node có tracking riêng → attacker có thể bypass bằng cách rotate IPs across nodes. Giải pháp: dùng shared Redis store.</p>
-<h4 id="certificate-manager">Certificate Manager</h4>
-<p><strong>File</strong>: <code>security/certificate.py</code></p>
-<p>Quản lý chứng chỉ doanh nghiệp và danh sách thu hồi (CRL):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.certificate</span><span class="w"> </span><span class="kn">import</span> <span class="n">CertificateManager</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">cert_mgr</span> <span class="o">=</span> <span class="n">CertificateManager</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">&quot;./certs&quot;</span><span class="p">,</span> <span class="n">ca_path</span><span class="o">=</span><span class="s2">&quot;ca.pem&quot;</span><span class="p">)</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># Lưu trữ chứng chỉ mới</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">storage_id</span> <span class="o">=</span> <span class="n">cert_mgr</span><span class="o">.</span><span class="n">store_certificate</span><span class="p">(</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">cert_data</span><span class="o">=</span><span class="s2">&quot;---BEGIN CERTIFICATE---...&quot;</span><span class="p">,</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="s2">&quot;node-1&quot;</span><span class="p">,</span> <span class="s2">&quot;org&quot;</span><span class="p">:</span> <span class="s2">&quot;org-A&quot;</span><span class="p">}</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="p">)</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="c1"># Xác thực</span>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="n">result</span> <span class="o">=</span> <span class="n">cert_mgr</span><span class="o">.</span><span class="n">validate_certificate_by_id</span><span class="p">(</span><span class="n">storage_id</span><span class="p">)</span>
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;valid&quot;</span><span class="p">]:</span>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Certificate is valid and trusted&quot;</span><span class="p">)</span>
-<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="c1"># Thu hồi</span>
-<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="n">cert_mgr</span><span class="o">.</span><span class="n">revoke_certificate</span><span class="p">(</span><span class="n">storage_id</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;key_compromise&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h4 id="key-backup-manager">Key Backup Manager</h4>
-<p><strong>File</strong>: <code>security/key_backup_manager.py</code></p>
-<p>Sao lưu và khôi phục khóa an toàn (mã hóa bằng Master Key):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.key_backup_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyBackupManager</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">backup_mgr</span> <span class="o">=</span> <span class="n">KeyBackupManager</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">&quot;./backups&quot;</span><span class="p">,</span> <span class="n">master_key</span><span class="o">=</span><span class="n">master_key</span><span class="p">)</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1"># Sao lưu</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">backup_id</span> <span class="o">=</span> <span class="n">backup_mgr</span><span class="o">.</span><span class="n">backup_keys</span><span class="p">(</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="n">public_key</span><span class="o">=</span><span class="s2">&quot;0xabc...&quot;</span><span class="p">,</span> 
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="n">private_key</span><span class="o">=</span><span class="s2">&quot;0x123...&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    <span class="n">key_type</span><span class="o">=</span><span class="s2">&quot;identity&quot;</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="p">)</span>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="c1"># Khôi phục</span>
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="n">pub</span><span class="p">,</span> <span class="n">priv</span> <span class="o">=</span> <span class="n">backup_mgr</span><span class="o">.</span><span class="n">restore_keys</span><span class="p">(</span><span class="n">backup_id</span><span class="p">)</span>
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>
-<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="c1"># Kiểm tra toàn vẹn</span>
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="n">is_intact</span> <span class="o">=</span> <span class="n">backup_mgr</span><span class="o">.</span><span class="n">verify_backup_integrity</span><span class="p">(</span><span class="n">backup_id</span><span class="p">)</span>
-</code></pre></div>
-<h4 id="resource-guard">Resource Guard</h4>
-<p><strong>File</strong>: <code>security/resource_guard.py</code></p>
-<p>Middleware bảo vệ hệ thống trước tình trạng quá tải (DoS protection):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.resource_guard</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResourceGuardMiddleware</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Tích hợp vào FastAPI</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">app</span><span class="o">.</span><span class="n">add_middleware</span><span class="p">(</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="n">ResourceGuardMiddleware</span><span class="p">,</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="n">cpu_threshold</span><span class="o">=</span><span class="mf">85.0</span><span class="p">,</span>    <span class="c1"># Chặn yêu cầu nếu CPU &gt; 85%</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="n">memory_threshold</span><span class="o">=</span><span class="mf">90.0</span><span class="p">,</span> <span class="c1"># Chặn yêu cầu nếu RAM &gt; 90%</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>    <span class="n">whitelist_ips</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">]</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="p">)</span>
-</code></pre></div>
-<h4 id="secure-logger-sanitization">Secure Logger &amp; Sanitization</h4>
-<p><strong>File</strong>: <code>security/secure_logging.py</code>, <code>security/sanitization.py</code></p>
-<p>Ghi log an toàn và làm sạch dữ liệu:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.secure_logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">SecureLogger</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.sanitization</span><span class="w"> </span><span class="kn">import</span> <span class="n">sanitize_for_output</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">SecureLogger</span><span class="p">(</span><span class="s2">&quot;API&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="c1"># Dữ liệu nhạy cảm sẽ tự động bị ẩn hoặc băm</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">user_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;user_id&quot;</span><span class="p">:</span> <span class="s2">&quot;U123&quot;</span><span class="p">,</span> <span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="s2">&quot;secret-key&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="s2">&quot;test@example.com&quot;</span><span class="p">}</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;User request processed&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;payload&quot;</span><span class="p">:</span> <span class="n">user_data</span><span class="p">})</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="c1"># Output: {... &quot;api_key&quot;: &quot;[SENSITIVE]&quot;, &quot;email&quot;: &quot;t***@example.com&quot; ...}</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="c1"># Sanitization trước khi trả về client</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="n">clean_data</span> <span class="o">=</span> <span class="n">sanitize_for_output</span><span class="p">(</span><span class="n">user_data</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="s2">&quot;public_api&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h4 id="master-key-provider">Master Key Provider</h4>
-<p><strong>File</strong>: <code>security/master_key_provider.py</code></p>
-<p>Module quản lý master encryption key cho backup system:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.master_key_provider</span><span class="w"> </span><span class="kn">import</span> <span class="n">MasterKeyProvider</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># Khởi tạo với auto mode (default)</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>  <span class="c1"># &quot;env&quot; | &quot;file&quot; | &quot;auto&quot;</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="s2">&quot;key_file&quot;</span><span class="p">:</span> <span class="s2">&quot;config/master_backup_key.key&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    <span class="s2">&quot;env_var&quot;</span><span class="p">:</span> <span class="s2">&quot;HRC_MASTER_BACKUP_KEY&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    <span class="s2">&quot;environment&quot;</span><span class="p">:</span> <span class="s2">&quot;product&quot;</span>  <span class="c1"># &quot;dev&quot; | &quot;product&quot; | &quot;test&quot;</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="p">})</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="c1"># Load master key</span>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="n">master_key</span> <span class="o">=</span> <span class="n">provider</span><span class="o">.</span><span class="n">get_master_key</span><span class="p">()</span>  <span class="c1"># 32-byte AES-256 key</span>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="c1"># Sử dụng với KeyBackupManager</span>
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.key_backup_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyBackupManager</span>
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>
-<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="n">backup_manager</span> <span class="o">=</span> <span class="n">KeyBackupManager</span><span class="p">(</span>
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>    <span class="n">storage_dir</span><span class="o">=</span><span class="s2">&quot;./backups&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>    <span class="n">master_key</span><span class="o">=</span><span class="n">master_key</span>  <span class="c1"># From MasterKeyProvider</span>
-<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="p">)</span>
-<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>
-<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="c1"># Security checks</span>
-<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="n">warnings</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="o">.</span><span class="n">check_key_file_security</span><span class="p">(</span>
-<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>    <span class="n">key_file</span><span class="o">=</span><span class="s2">&quot;config/master_backup_key.key&quot;</span>
-<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="p">)</span>
-<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="k">for</span> <span class="n">warning</span> <span class="ow">in</span> <span class="n">warnings</span><span class="p">:</span>
-<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warning</span><span class="p">)</span>
-</code></pre></div>
-<p><strong>Source Resolution Order</strong> (<code>source="auto"</code>):</p>
-<ol>
-<li><strong>Environment variable</strong> (<code>HRC_MASTER_BACKUP_KEY</code>): Base64-encoded 32-byte key</li>
-<li><strong>File</strong> (<code>config/master_backup_key.key</code>): Raw binary or base64-encoded</li>
-<li><strong>Auto-generate</strong>: Generate new key và save to file</li>
-</ol>
-<p><strong>Best Practices</strong>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Production: Dùng environment variable</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="c1"># Set in shell:</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="c1"># export HRC_MASTER_BACKUP_KEY=$(openssl rand -base64 32)</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;env&quot;</span><span class="p">,</span>  <span class="c1"># Force env var only</span>
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="s2">&quot;environment&quot;</span><span class="p">:</span> <span class="s2">&quot;product&quot;</span>
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="p">})</span>
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="c1"># Development: Dùng file</span>
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>    <span class="s2">&quot;key_file&quot;</span><span class="p">:</span> <span class="s2">&quot;config/dev_master_key.key&quot;</span>
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="p">})</span>
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="c1"># Testing: Auto-generate</span>
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="n">provider</span> <span class="o">=</span> <span class="n">MasterKeyProvider</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>    <span class="s2">&quot;environment&quot;</span><span class="p">:</span> <span class="s2">&quot;test&quot;</span>
-<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="p">})</span>
-</code></pre></div>
-<p><strong>[FACT]</strong> Security checks performed:</p>
-<ul>
-<li><strong>File location</strong>: Warn nếu key file ở project root hoặc public directories</li>
-<li><strong>File permissions</strong>: Warn nếu readable by group/others (Unix)</li>
-<li><strong>Environment</strong>: Recommend env var cho production</li>
-<li><strong>Key length</strong>: Validate exactly 32 bytes (AES-256)</li>
-</ul>
-<p><strong>[INVARIANT]</strong> Master key phải:</p>
-<ul>
-<li>Exactly 32 bytes (256 bits)</li>
-<li>Cryptographically random (generated via <code>secrets.token_bytes()</code>)</li>
-<li>Persistent across restarts</li>
-<li>Protected by OS-level permissions</li>
-</ul>
-<p><strong>[EDGE CASE]</strong> Key rotation: Để rotate master key:</p>
-<ol>
-<li>Decrypt tất cả backups với old key</li>
-<li>Generate new master key</li>
-<li>Re-encrypt tất cả backups với new key</li>
-<li>Update environment variable / file</li>
-<li>Restart services</li>
-</ol>
-<h2 id="cau-hinh">Cấu hình</h2>
-<ul>
-<li>Bật/tắt xác thực API key, tham số ngưỡng ResourceGuard, chế độ ZK… được lấy từ <code>hierachain/config/settings.py</code> (xem Reference/Config – sẽ thêm).</li>
-<li>Khuyến nghị: lưu vault/backup key tại thư mục an toàn, đặt biến môi trường cho mật khẩu và đường dẫn.</li>
-</ul>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
-<ul>
-<li>
-<p>Tính năng:</p>
-</li>
-<li>
-<p>Ed25519 mặc định (tạo/chứng thực chữ ký), hỗ trợ batch verify.</p>
-</li>
-<li>API key có thể thu hồi; phân quyền theo resource; policy engine có cache kết quả theo context.</li>
-<li>FileVault (AES-GCM + KDF) cho khóa riêng; sao lưu nhiều vị trí + kiểm tra toàn vẹn.</li>
-<li>Secure logging với sanitize; ResourceGuard giảm tải khi hệ thống căng thẳng.</li>
-<li>
-<p>Hỗ trợ ZK proof ở mức hạ tầng (mock/production mode, public inputs chuẩn hóa).</p>
-</li>
-<li>
-<p>Hạn chế/lưu ý:</p>
-</li>
-<li>
-<p>ECDSA trong <code>SignatureVerifier</code> hiện là placeholder; mặc định dùng Ed25519.</p>
-</li>
-<li>ZK production phụ thuộc key/circuit ngoài; repo này thiết kế hook/placeholder.</li>
-</ul>
-<h2 id="bao-mat-quyen-truy-cap">Bảo mật &amp; quyền truy cập</h2>
-<ul>
-<li>Đường vào API nên kèm <code>APIKeyVerifier</code> cho mọi endpoint thay đổi trạng thái (xem Reference/API v1).</li>
-<li>Chính sách truy cập nên được ánh xạ theo resource domain, kết hợp vai trò (MSP/Identity) và API key permissions.</li>
-<li>Dữ liệu nhạy cảm trong log phải đi qua <code>SecureLogger</code> hoặc sanitization trước khi ghi.</li>
-</ul>
-<h2 id="xu-ly-loi-khac-phuc">Xử lý lỗi &amp; khắc phục</h2>
-<ul>
-<li>Các lỗi bảo mật phát sinh (khóa/CRL/Integrity/Policy) nên được phân loại và chuyển tiếp tới <code>error_mitigation/*</code> để ghi journal/rollback nếu cần.</li>
-<li><code>KeyBackupManager</code> hỗ trợ khôi phục khoá sau sự cố; <code>integrity.verify_startup_integrity</code> phát hiện thay đổi bất thường trước khi khởi động.</li>
-</ul>
-<h2 id="hieu-nang">Hiệu năng</h2>
-<ul>
-<li><code>PolicyEngine</code> và xác thực API key được thiết kế có cache theo context và TTL hợp lý.</li>
-<li><code>verify_batch_signatures</code> hỗ trợ kiểm chứng chữ ký hàng loạt.</li>
-</ul>
-<h2 id="faq">FAQ</h2>
-<ul>
-<li>“Có thể dùng ECDSA thay Ed25519 không?” → Có thể mở rộng, hiện mặc định Ed25519; ECDSA cần hoàn thiện phần triển khai.</li>
-<li>“Tôi có cần ResourceGuard?” → Khuyến nghị trong môi trường public/áp lực tải cao để giảm DoS.</li>
-<li>“ZK production có sẵn chưa?” → API/hook sẵn sàng; cần cung cấp proving/verification key và circuit phù hợp.</li>
-</ul>
-<h2 id="lien-quan">Liên quan</h2>
-<ul>
-<li>Tham chiếu API v1: <a href="../../reference/api-v1/">API v1</a></li>
-<li>Kiến trúc tổng quan: <a href="../../architecture/overview/">Tổng quan</a></li>
-<li>Cấu hình (sẽ thêm): <a href="../../reference/config/">Config</a></li>
+<li><strong>API Server</strong>: Sử dụng <code>ResourceGuard</code> và <code>APIKeyVerifier</code> làm middleware bảo vệ đầu tiên.</li>
+<li><strong>Consensus</strong>: Mọi thông điệp đồng thuận đều được ký số và kiểm tra tính toàn vẹn.</li>
+<li><strong>Storage</strong>: Dữ liệu nhạy cảm được mã hóa trước khi lưu và làm sạch khi truy vấn.</li>
 </ul>
 <hr />
-<details class="info">
-<summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
-<p><strong>FACT</strong></p>
+<h2 id="cau-hinh-bao-mat">Cấu hình Bảo mật</h2>
+<p>Các thiết lập quan trọng được quản lý tập trung tại <code>hierachain/config/settings.py</code>:</p>
 <ul>
-<li><code>security/msp.py</code>: <code>HierarchicalMSP</code> triển khai đăng ký thực thể, xác thực danh tính, ủy quyền hành động; có audit log nội bộ.</li>
-<li><code>security/identity.py</code>: <code>IdentityManager</code> xác thực vai trò, kiểm chứng chữ ký người dùng thông qua <code>security_utils.verify_signature</code>.</li>
-<li><code>security/key_manager.py</code>: Quản lý API key (tạo, cache, thu hồi, kiểm tra quyền resource).</li>
-<li><code>security/policy_engine.py</code>: <code>Policy</code>, <code>PolicyRule</code>, <code>PolicyCondition</code>, <code>PolicyEngine</code> đánh giá context và lưu audit log.</li>
-<li><code>security/verify/api_key_verifier.py</code>: Tích hợp FastAPI Security, cung cấp dependency <code>require_permission(resource)</code>.</li>
-<li><code>security/key_provider.py</code>: <code>LocalKeyProvider</code>, <code>FileVaultProvider</code> xuất public key hex và ký dữ liệu; <code>create_vault</code> tạo kho.</li>
-<li><code>security/key_backup_manager.py</code>: Sao lưu/khôi phục khóa, kiểm tra toàn vẹn (hash), CRON dọn dẹp.</li>
-<li><code>security/secure_logging.py</code>: <code>SecureLogger</code> và <code>sanitize_for_log</code> để ẩn dữ liệu nhạy cảm trong log/audit.</li>
-<li><code>security/resource_guard.py</code>: <code>ResourceGuardMiddleware</code> chặn yêu cầu khi CPU/RAM vượt ngưỡng.</li>
-<li><code>security/certificate.py</code>: <code>CertificateManager</code>, <code>CertificateValidator</code>, CRL (thu hồi) và thống kê chứng chỉ.</li>
-<li><code>security/integrity.py</code>: <code>ChecksumValidator</code>, <code>verify_startup_integrity()</code> cho manifest hash và kiểm chứng khởi động.</li>
-<li><code>security/sanitization.py</code>: Hàm sanitize/validate cho input/output.</li>
-<li><code>security/zk_prover.py</code>, <code>security/verify/zk_verifier.py</code>: Hạ tầng tạo/xác minh ZK proof (mock/production).</li>
+<li><code>AUTH_ENABLED</code>: Bật/tắt xác thực API.</li>
+<li><code>HRC_CLUSTER_SECRET</code>: Mã bí mật cho các lệnh điều khiển cụm.</li>
+<li><code>HRC_ENABLE_ZK_PROOFS</code>: Kích hoạt xác thực bằng chứng ZK.</li>
 </ul>
-<p><strong>DECISION</strong></p>
+<hr />
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Mặc định tiêu chuẩn chữ ký là Ed25519; ECDSA là tùy chọn mở rộng.</li>
-<li>Mọi endpoint thay đổi trạng thái phải gắn dependency xác thực/ủy quyền dựa trên API key.</li>
-<li>Bắt buộc sanitize dữ liệu nhạy cảm trước khi log/audit; dùng <code>SecureLogger</code>.</li>
-<li>Khuyến nghị bật ResourceGuard trong môi trường sản xuất và cấu hình ngưỡng phù hợp.</li>
+<li><a href="../../architecture/security/">Kiến trúc bảo mật (Architecture)</a></li>
+<li><a href=".././network/">Mạng lưới P2P (Network Security)</a></li>
+<li><a href=".././monitoring/">Giám sát và Cảnh báo (Monitoring)</a></li>
 </ul>
-<p><strong>ASSUMPTION</strong></p>
-<ul>
-<li>Hệ thống có nguồn entropy an toàn để sinh khóa.</li>
-<li>Mật khẩu kho/vault và khóa master backup được quản trị qua biến môi trường/secret manager.</li>
-<li>Đồng hồ hệ thống đủ tin cậy để audit/timestamp có ý nghĩa.</li>
-</ul>
-<p><strong>INVARIANT</strong></p>
-<ul>
-<li>Chữ ký số phải được kiểm chứng theo biểu diễn JSON chuẩn hóa (sort_keys, loại bỏ <code>signature</code>).</li>
-<li>API key đã thu hồi không được phép truy cập bất kỳ resource nào.</li>
-<li>Manifest toàn vẹn nếu bất kỳ thay đổi file được phát hiện → báo lỗi và dừng (nếu cấu hình abort).</li>
-</ul>
-<p><strong>EDGE CASES</strong></p>
-<ul>
-<li>API key hết hạn nhưng còn cache → cần TTL hợp lý và cơ chế invalidation.</li>
-<li>Vault file bị hỏng/khác phiên bản KDF → báo lỗi rõ ràng, không làm lộ khóa.</li>
-<li>ZK proof ở chế độ mock không dùng cho production; phải cảnh báo rõ trong logs.</li>
-</ul>
-</details>
 
 
 
@@ -4192,7 +3716,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
         
           
-          <a href="../hierarchical/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Hierarchical">
+          <a href="../consensus/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Consensus">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -4202,7 +3726,7 @@
                 Trước
               </span>
               <div class="md-ellipsis">
-                Hierarchical
+                Consensus
               </div>
             </div>
           </a>

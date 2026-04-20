@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Cụm và đồng bộ liên tầng: cluster_manager, cross_level_sync, lockdown_protocol, state_sync_manager — bám sát hierachain/cluster/*.">
+        <meta name="description" content="Quản lý cụm node, cơ chế đồng bộ trạng thái phân tán và giao thức phong tỏa (lockdown) an toàn.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -31,7 +31,7 @@
     
     
       
-        <title>Cluster module - HieraChain Docs</title>
+        <title>Cluster Module - HieraChain Docs</title>
       
     
     
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Cluster module
+              Cluster Module
             
           </span>
         </div>
@@ -297,6 +297,25 @@
           
   
   Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/authorization-access-control/" class="md-tabs__link">
+          
+  
+  Hệ thống Bảo mật
 
         </a>
       </li>
@@ -941,6 +960,8 @@
       
         
       
+        
+      
     
     
     
@@ -1054,11 +1075,41 @@
   
   
     <li class="md-nav__item">
+      <a href="../consensus/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../security/" class="md-nav__link">
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1359,10 +1410,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -1370,10 +1421,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#kien-truc-cac-thanh-phan-chinh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Kiến trúc &amp; Các thành phần chính
       
     </span>
   </a>
@@ -1381,10 +1432,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-mang-tinh-mo-ta" class="md-nav__link">
+  <a href="#giao-thuc-phong-toa-khoi-phuc-lockdown-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (mang tính mô tả)
+        Giao thức Phong tỏa &amp; Khôi phục (Lockdown &amp; Recovery)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Giao thức Phong tỏa &amp; Khôi phục (Lockdown &amp; Recovery)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-bo-phieu-quorum-quorum-voting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Bỏ phiếu Quorum (Quorum Voting)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-bao-cao-hoi-tho-cuoi-quarantine-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Báo cáo "Hơi thở cuối" (Quarantine Report)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-bao-mat-thong-iep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Bảo mật thông điệp
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#co-che-ong-bo-trang-thai-state-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cơ chế Đồng bộ Trạng thái (State Synchronization)
       
     </span>
   </a>
@@ -1392,21 +1493,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#vi-du-cau-hinh-su-dung" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Ví dụ cấu hình &amp; Sử dụng
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ví dụ cấu hình &amp; Sử dụng">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cau-hinh-bien-moi-truong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cấu hình biến môi trường
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#su-dung-clustermanager-trong-ma-nguon" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Sử dụng ClusterManager trong mã nguồn
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quan-sat-suc-khoe-cum-health-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quan sát sức khỏe cụm (Health Metrics)
       
     </span>
   </a>
@@ -1594,12 +1723,263 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m1.39 18.36 1.77-1.76L4.58 18l1.06-1.05-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.42 1.41L10.59 12l-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.41 1.41 1.07-1.06-1.42-1.41 1.42-1.42L18 6.7l1.07-1.06-2.47-2.48 1.76-1.77 4.25 4.25L5.64 22.61z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg>
   
   <span class="md-ellipsis">
     
   
     Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hệ thống Bảo mật
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hệ thống Bảo mật
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization-access-control/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization & Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/lockdown-logging/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockdown & Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/fault-tolerance-integrity/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault-tolerance & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/risk-analyzer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/encryption-keys/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption & Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/decentralized-zkp/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Zero-Knowledge Proofs
   
 
     
@@ -1650,10 +2030,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -1671,8 +2051,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1879,10 +2259,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -1900,8 +2280,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2262,10 +2642,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2283,8 +2663,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2689,10 +3069,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2710,8 +3090,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2876,10 +3256,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -2897,8 +3277,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3061,10 +3441,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -3082,8 +3462,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3231,10 +3611,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -3242,10 +3622,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#kien-truc-cac-thanh-phan-chinh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Kiến trúc &amp; Các thành phần chính
       
     </span>
   </a>
@@ -3253,10 +3633,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-mang-tinh-mo-ta" class="md-nav__link">
+  <a href="#giao-thuc-phong-toa-khoi-phuc-lockdown-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (mang tính mô tả)
+        Giao thức Phong tỏa &amp; Khôi phục (Lockdown &amp; Recovery)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Giao thức Phong tỏa &amp; Khôi phục (Lockdown &amp; Recovery)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-bo-phieu-quorum-quorum-voting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Bỏ phiếu Quorum (Quorum Voting)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-bao-cao-hoi-tho-cuoi-quarantine-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Báo cáo "Hơi thở cuối" (Quarantine Report)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-bao-mat-thong-iep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Bảo mật thông điệp
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#co-che-ong-bo-trang-thai-state-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cơ chế Đồng bộ Trạng thái (State Synchronization)
       
     </span>
   </a>
@@ -3264,21 +3694,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#vi-du-cau-hinh-su-dung" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Ví dụ cấu hình &amp; Sử dụng
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ví dụ cấu hình &amp; Sử dụng">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cau-hinh-bien-moi-truong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cấu hình biến môi trường
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#su-dung-clustermanager-trong-ma-nguon" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Sử dụng ClusterManager trong mã nguồn
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quan-sat-suc-khoe-cum-health-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quan sát sức khỏe cụm (Health Metrics)
       
     </span>
   </a>
@@ -3328,115 +3786,108 @@
 
 
 <h1 id="cluster-module-hierachaincluster">Cluster Module (<code>hierachain/cluster/*</code>)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>Quản lý cụm (cluster) và cơ chế đồng bộ trạng thái giữa các tầng/phân cấp để đảm bảo tính nhất quán hệ thống trong môi trường phân tán.</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
+<h2 id="tong-quan">Tổng quan</h2>
+<p>Module <strong>Cluster</strong> là bộ não điều phối sự phối hợp giữa các node trong mạng lưới HieraChain. Nó đảm bảo hệ thống hoạt động như một thực thể thống nhất, duy trì tính nhất quán dữ liệu xuyên suốt các tầng phân cấp và cung cấp các cơ chế bảo vệ khẩn cấp khi phát hiện dấu hiệu bất thường.</p>
+<hr />
+<h2 id="kien-truc-cac-thanh-phan-chinh">Kiến trúc &amp; Các thành phần chính</h2>
+<p>Hệ thống được thiết kế theo mô hình phi tập trung với các thành phần chuyên biệt:</p>
 <div class="grid cards">
 <ul>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-2H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-7zM4 3h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1m5 4h1V5H9zm0 8h1v-2H9zM5 5v2h2V5zm0 8v2h2v-2z"/></svg></span> <strong>Cluster Manager</strong></p>
 <hr />
-<p><strong>File</strong>: <code>hierachain/cluster/cluster_manager.py</code></p>
+<p><strong>File</strong>: <code>cluster_manager.py</code></p>
 <ul>
-<li>Điều phối node/role trong cụm.</li>
-<li>Quản lý vòng đời node, election leader.</li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.4 7.5c.8.8.8 2.1 0 2.8l-2.8 2.8-7.8-7.8 2.8-2.8c.8-.8 2.1-.8 2.8 0l1.8 1.8 3-3 1.4 1.4-3 3zm-5.8 5.8-1.4-1.4-2.8 2.8-2.1-2.1 2.8-2.8-1.4-1.4-2.8 2.8-1.5-1.4-2.8 2.8c-.8.8-.8 2.1 0 2.8l1.8 1.8-4 4 1.4 1.4 4-4 1.8 1.8c.8.8 2.1.8 2.8 0l2.8-2.8-1.4-1.4z"/></svg></span> <strong>Cross‑Level Sync</strong></p>
-<hr />
-<p><strong>File</strong>: <code>hierachain/cluster/cross_level_sync.py</code></p>
-<ul>
-<li>Đồng bộ trạng thái giữa các tầng (cross‑level).</li>
-<li>Đảm bảo tính nhất quán liên tầng.</li>
+<li>Theo dõi sức khỏe (Health tracking) của toàn bộ node.</li>
+<li>Cơ chế Heartbeat để phát hiện node ngoại tuyến.</li>
+<li>Quản lý bỏ phiếu Quorum (2/3 majority).</li>
 </ul>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg></span> <strong>Lockdown Protocol</strong></p>
 <hr />
-<p><strong>File</strong>: <code>hierachain/cluster/lockdown_protocol.py</code></p>
+<p><strong>File</strong>: <code>lockdown_protocol.py</code></p>
 <ul>
-<li>Cơ chế hạn chế/tạm dừng an toàn khi có sự cố nghiêm trọng.</li>
-<li>Bảo vệ tính toàn vẹn hệ thống trong trạng thái khẩn cấp.</li>
+<li>Giao thức truyền tin Gossip qua P2P (ZMQ).</li>
+<li>Bảo mật bằng chữ ký HMAC-SHA256 (<code>HRC_CLUSTER_SECRET</code>).</li>
+<li>Cơ chế "Quarantine Report" (Báo cáo cách ly).</li>
 </ul>
 </li>
 <li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 12v1.5a4 4 0 0 1 4 4c0 .82-.25 1.58-.67 2.21l-1.09-1.09c.17-.34.26-.72.26-1.12A2.5 2.5 0 0 0 19 15v1.5l-2.25-2.25zm0 11v-1.5a4 4 0 0 1-4-4c0-.82.25-1.58.67-2.21l1.09 1.09c-.17.34-.26.72-.26 1.12A2.5 2.5 0 0 0 19 20v-1.5l2.25 2.25zM12 3c4.42 0 8 1.79 8 4s-3.58 4-8 4-8-1.79-8-4 3.58-4 8-4M4 9c0 2.21 3.58 4 8 4 1.11 0 2.17-.11 3.14-.32-.95.86-1.64 1.99-1.96 3.28L12 16c-4.42 0-8-1.79-8-4zm16 0v2h-.5l-.6.03c.7-.6 1.1-1.29 1.1-2.03M4 14c0 2.21 3.58 4 8 4l1-.03c.09 1.06.42 2.03.95 2.91L12 21c-4.42 0-8-1.79-8-4z"/></svg></span> <strong>State Sync Manager</strong></p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 12v1.5a4 4 0 0 1 4 4c0 .82-.25 1.58-.67 2.21l-1.09-1.09c.17-.34.26-.72.26-1.12A2.5 2.5 0 0 0 19 15v1.5l-2.25-2.25zm0 11v-1.5a4 4 0 0 1-4-4c0-.82.25-1.58.67-2.21l1.09 1.09c-.17.34-.26.72-.26 1.12A2.5 2.5 0 0 0 19 20v-1.5l2.25 2.25zM12 3c4.42 0 8 1.79 8 4s-3.58 4-8 4-8-1.79-8-4 3.58-4 8-4M4 9c0 2.21 3.58 4 8 4 1.11 0 2.17-.11 3.14-.32-.95.86-1.64 1.99-1.96 3.28L12 16c-4.42 0-8-1.79-8-4zm16 0v2h-.5l-.6.03c.7-.6 1.1-1.29 1.1-2.03M4 14c0 2.21 3.58 4 8 4l1-.03c.09 1.06.42 2.03.95 2.91L12 21c-4.42 0-8-1.79-8-4z"/></svg></span> <strong>State Sync (Resurrection)</strong></p>
 <hr />
-<p><strong>File</strong>: <code>hierachain/cluster/state_sync_manager.py</code></p>
+<p><strong>File</strong>: <code>state_sync_manager.py</code></p>
 <ul>
-<li>Quản lý đồng bộ trạng thái giữa các node.</li>
-<li>Checkpoint và khôi phục trạng thái.</li>
+<li>Khôi phục trạng thái sau sự cố hoặc phong tỏa.</li>
+<li>Cơ chế "Gap-fill" (Lấp đầy khoảng trống) block.</li>
+<li>Xác thực block nhận được từ đồng đẳng (peers).</li>
+</ul>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.4 7.5c.8.8.8 2.1 0 2.8l-2.8 2.8-7.8-7.8 2.8-2.8c.8-.8 2.1-.8 2.8 0l1.8 1.8 3-3 1.4 1.4-3 3zm-5.8 5.8-1.4-1.4-2.8 2.8-2.1-2.1 2.8-2.8-1.4-1.4-2.8 2.8-1.5-1.4-2.8 2.8c-.8.8-.8 2.1 0 2.8l1.8 1.8-4 4 1.4 1.4 4-4 1.8 1.8c.8.8 2.1.8 2.8 0l2.8-2.8-1.4-1.4z"/></svg></span> <strong>Cross-Level Sync</strong></p>
+<hr />
+<p><strong>File</strong>: <code>cross_level_sync.py</code></p>
+<ul>
+<li>Đồng bộ bằng chứng (proofs) giữa Main Chain và Sub-Chains.</li>
+<li>Đảm bảo tính toàn vẹn của cây phân cấp doanh nghiệp.</li>
 </ul>
 </li>
 </ul>
 </div>
-<h2 id="api-cong-khai-mang-tinh-mo-ta">API công khai (mang tính mô tả)</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">ClusterManager</span><span class="p">:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  <span class="n">register_node</span><span class="p">(</span><span class="n">node_id</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  <span class="n">unregister_node</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  <span class="n">vote_lockdown</span><span class="p">(</span><span class="n">node_id</span><span class="p">,</span> <span class="n">reason</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  <span class="n">vote_recovery</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">class</span><span class="w"> </span><span class="nc">StateSyncManager</span><span class="p">:</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  <span class="n">sync_from</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  <span class="n">checkpoint</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1">#### Cross-Level Sync</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="o">**</span><span class="n">File</span><span class="o">**</span><span class="p">:</span> <span class="err">`</span><span class="n">hierachain</span><span class="o">/</span><span class="n">cluster</span><span class="o">/</span><span class="n">cross_level_sync</span><span class="o">.</span><span class="n">py</span><span class="err">`</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">Cơ</span> <span class="n">chế</span> <span class="n">đồng</span> <span class="n">bộ</span> <span class="n">trạng</span> <span class="n">thái</span> <span class="n">giữa</span> <span class="n">Main</span> <span class="n">Chain</span> <span class="n">và</span> <span class="n">Sub</span><span class="o">-</span><span class="n">Chains</span><span class="p">:</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="err">```</span><span class="n">python</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.cluster.cross_level_sync</span><span class="w"> </span><span class="kn">import</span> <span class="n">CrossLevelSync</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">sync</span> <span class="o">=</span> <span class="n">CrossLevelSync</span><span class="p">(</span><span class="n">hierarchy_manager</span><span class="p">)</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="c1"># Đồng bộ proof từ Sub-chain lên Main-chain</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="n">sync</span><span class="o">.</span><span class="n">sync_subchain_to_main</span><span class="p">(</span><span class="s2">&quot;supply_chain&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="c1"># Kiểm tra tính nhất quán liên tầng</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="n">is_consistent</span> <span class="o">=</span> <span class="n">sync</span><span class="o">.</span><span class="n">verify_cross_level_integrity</span><span class="p">(</span><span class="s2">&quot;supply_chain&quot;</span><span class="p">)</span>
+<hr />
+<h2 id="giao-thuc-phong-toa-khoi-phuc-lockdown-recovery">Giao thức Phong tỏa &amp; Khôi phục (Lockdown &amp; Recovery)</h2>
+<p>Đây là cơ chế an ninh tối thượng của HieraChain để bảo vệ sổ cái khi có tấn công hoặc lỗi hệ thống nghiêm trọng.</p>
+<h3 id="1-bo-phieu-quorum-quorum-voting">1. Bỏ phiếu Quorum (Quorum Voting)</h3>
+<p>Hệ thống yêu cầu đa số tuyệt đối (<strong>2/3 số node</strong>) đồng thuận để thay đổi trạng thái cụm:
+*   <strong>Lockdown</strong>: Tạm dừng mọi hoạt động ghi mới để bảo vệ dữ liệu hiện có.
+*   <strong>Recovery</strong>: Tái khởi động hệ thống sau khi đã xử lý xong sự cố.</p>
+<h3 id="2-bao-cao-hoi-tho-cuoi-quarantine-report">2. Báo cáo "Hơi thở cuối" (Quarantine Report)</h3>
+<p>Trước khi một node thực hiện phong tỏa và xóa bộ nhớ đệm (event pool), nó sẽ phát đi một <code>QuarantineReport</code> chứa dấu vân tay (fingerprints) của các sự kiện chưa được ghi. Điều này giúp các node khác đối chiếu và phát hiện lỗ hổng dữ liệu sau khi khôi phục.</p>
+<h3 id="3-bao-mat-thong-iep">3. Bảo mật thông điệp</h3>
+<p>Mọi thông điệp trong cụm (Lockdown, Vote, Sync) đều phải được ký bằng <strong>HMAC-SHA256</strong> sử dụng khóa bí mật dùng chung <code>HRC_CLUSTER_SECRET</code>. Các thông điệp không hợp lệ hoặc hết hạn (&gt;300s) sẽ bị loại bỏ ngay lập tức.</p>
+<hr />
+<h2 id="co-che-ong-bo-trang-thai-state-synchronization">Cơ chế Đồng bộ Trạng thái (State Synchronization)</h2>
+<p>Khi một node mới gia nhập hoặc một node vừa khôi phục từ trạng thái phong tỏa, nó sẽ thực hiện quy trình <strong>Resurrection</strong>:</p>
+<ol>
+<li><strong>Xác định khoảng trống (Gap Identification)</strong>: Đối chiếu chỉ số (index) block cuối cùng với các peers.</li>
+<li><strong>Yêu cầu dữ liệu (Sync Request)</strong>: Gửi yêu cầu lấp đầy khoảng trống cho các node lành mạnh.</li>
+<li><strong>Xác thực đa tầng (Verification)</strong>: Mỗi block nhận về đều được kiểm tra hash chaining và chữ ký bởi <code>BlockVerifier</code>.</li>
+<li><strong>Hợp nhất (Merging)</strong>: Chỉ các dữ liệu hợp lệ mới được ghi vào database địa phương.</li>
+</ol>
+<hr />
+<h2 id="vi-du-cau-hinh-su-dung">Ví dụ cấu hình &amp; Sử dụng</h2>
+<h3 id="cau-hinh-bien-moi-truong">Cấu hình biến môi trường</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">HRC_CLUSTER_SECRET</span><span class="o">=</span><span class="s2">&quot;your-super-secret-hmac-key&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nv">HRC_QUORUM_THRESHOLD</span><span class="o">=</span><span class="m">0</span>.66<span class="w">  </span><span class="c1"># Tương đương 2/3</span>
 </code></pre></div>
-<h2 id="cau-hinh">Cấu hình</h2>
+<h3 id="su-dung-clustermanager-trong-ma-nguon">Sử dụng ClusterManager trong mã nguồn</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.cluster.cluster_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClusterManager</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">ClusterManager</span><span class="p">(</span><span class="n">node_id</span><span class="o">=</span><span class="s2">&quot;node-01&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># Đăng ký node đồng đẳng</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">manager</span><span class="o">.</span><span class="n">register_node</span><span class="p">(</span><span class="s2">&quot;node-02&quot;</span><span class="p">,</span> <span class="s2">&quot;192.168.1.10:5000&quot;</span><span class="p">,</span> <span class="n">auth_token</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Bỏ phiếu phong tỏa khi phát hiện rủi ro</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="k">if</span> <span class="n">manager</span><span class="o">.</span><span class="n">vote_lockdown</span><span class="p">(</span><span class="s2">&quot;node-01&quot;</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;Phát hiện giả mạo hash&quot;</span><span class="p">):</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Quorum reached - Hệ thống đang chuyển sang trạng thái LOCKDOWN&quot;</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="quan-sat-suc-khoe-cum-health-metrics">Quan sát sức khỏe cụm (Health Metrics)</h2>
+<p><code>ClusterManager</code> cung cấp đối tượng <code>ClusterHealthMetrics</code> cho phép theo dõi:</p>
 <ul>
-<li>Tham chiếu <code>hierachain/config/settings.py</code> (CROSS_LEVEL_SYNC_*, LOG_LEVEL, v.v.).</li>
-</ul>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
-<ul>
-<li>Tính năng: đồng bộ liên tầng, chế độ lockdown an toàn khi rủi ro.</li>
-<li>Hạn chế: đòi hỏi hạ tầng ổn định và chính sách leader rõ ràng.</li>
-</ul>
-<h2 id="lien-quan">Liên quan</h2>
-<ul>
-<li>Architecture/Hierarchy: <a href="../../architecture/hierarchy/">Phân cấp (chi tiết)</a></li>
-<li>Monitoring: <a href="../monitoring/">Monitoring</a></li>
+<li><code>total_nodes</code>: Tổng số node trong cấu hình.</li>
+<li><code>healthy_nodes</code>: Số node đang hoạt động và gửi heartbeat đều đặn.</li>
+<li><code>is_in_lockdown</code>: Trạng thái phong tỏa hiện tại của toàn cụm.</li>
+<li><code>lockdown_votes</code>: Số phiếu bầu phong tỏa hiện tại.</li>
 </ul>
 <hr />
-<details class="info">
-<summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
-<p><strong>FACT</strong></p>
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Thư mục: <code>hierachain/cluster/{cluster_manager.py, cross_level_sync.py, lockdown_protocol.py, state_sync_manager.py}</code>.</li>
+<li><a href="../../network/p2p/">P2P Networking</a></li>
+<li><a href="../../security/identity/">Security Identity</a></li>
+<li><a href="../../architecture/hierarchy/">Hierarchical Architecture</a></li>
 </ul>
-<p><strong>DECISION</strong></p>
-<ul>
-<li>Khi phát hiện bất thường, kích hoạt Lockdown Protocol để bảo vệ tính toàn vẹn.</li>
-</ul>
-<p><strong>ASSUMPTION</strong></p>
-<ul>
-<li>Có sẵn kênh truyền thông tin cậy giữa các node trong cụm.</li>
-</ul>
-<p><strong>INVARIANT</strong></p>
-<ul>
-<li>Đồng bộ trạng thái phải idempotent, checkpoint có thể khôi phục.</li>
-</ul>
-<p><strong>EDGE CASES</strong></p>
-<ul>
-<li>Mất leader hoặc split‑brain → cần cơ chế bầu lại/hoà giải.</li>
-</ul>
-</details>
 
 
 

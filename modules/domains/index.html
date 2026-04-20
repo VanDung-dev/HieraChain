@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Miền nghiệp vụ chung: chains/events/utils — base_chain, domain_chain, base_event, domain_event, cross_chain_validator, entity_tracer.">
+        <meta name="description" content="Cung cấp nền tảng nghiệp vụ (Generic Domains): Quản lý vòng đời thực thể, truy vết xuyên chuỗi và kiểm soát tuân thủ.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -31,7 +31,7 @@
     
     
       
-        <title>Domains module - HieraChain Docs</title>
+        <title>Domains Module - HieraChain Docs</title>
       
     
     
@@ -87,7 +87,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#domains-module-hierachaindomainsgeneric" class="md-skip">
+        <a href="#domains-module-hierachaindomains" class="md-skip">
           Bỏ qua
         </a>
       
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Domains module
+              Domains Module
             
           </span>
         </div>
@@ -297,6 +297,25 @@
           
   
   Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/authorization-access-control/" class="md-tabs__link">
+          
+  
+  Hệ thống Bảo mật
 
         </a>
       </li>
@@ -941,6 +960,8 @@
       
         
       
+        
+      
     
     
     
@@ -1054,11 +1075,41 @@
   
   
     <li class="md-nav__item">
+      <a href="../consensus/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../security/" class="md-nav__link">
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1389,10 +1440,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Tổng quan
       
     </span>
   </a>
@@ -1400,22 +1451,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai" class="md-nav__link">
+  <a href="#cac-thanh-phan-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai
+        Các thành phần cốt lõi
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="API công khai">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quan-ly-nghiep-vu-domain-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quản lý Nghiệp vụ (Domain Management)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quản lý Nghiệp vụ (Domain Management)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#basechain" class="md-nav__link">
+  <a href="#vong-oi-thuc-the-entity-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
       
-        BaseChain
+        Vòng đời thực thể (Entity Lifecycle)
       
     </span>
   </a>
@@ -1423,44 +1485,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#domainchain" class="md-nav__link">
+  <a href="#chi-so-van-hanh-operation-metrics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        DomainChain
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#entitytracer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        EntityTracer
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#crosschainvalidator" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        CrossChainValidator
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="CrossChainValidator">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#cross-chain-validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Cross-Chain Validation
+        Chỉ số vận hành (Operation Metrics)
       
     </span>
   </a>
@@ -1471,17 +1499,12 @@
     </nav>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
         <li class="md-nav__item">
-  <a href="#event-types-uoc-ho-tro" class="md-nav__link">
+  <a href="#co-che-giao-dich-hai-pha-two-phase-commit-2pc" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Event Types được hỗ trợ
+        Cơ chế Giao dịch Hai pha (Two-Phase Commit - 2PC)
       
     </span>
   </a>
@@ -1489,10 +1512,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#kiem-soat-tuan-thu-va-bao-mat" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Kiểm soát Tuân thủ và Bảo mật
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Kiểm soát Tuân thủ và Bảo mật">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ngan-chan-thuat-ngu-tien-ma-hoa-cryptocurrency-terminology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ngăn chặn Thuật ngữ Tiền mã hóa (Cryptocurrency Terminology)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#truy-vet-xuyen-chuoi-cross-chain-tracing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Truy vết xuyên chuỗi (Cross-Chain Tracing)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cac-loai-su-kien-chuan-hoa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Các loại sự kiện chuẩn hóa
       
     </span>
   </a>
@@ -1650,12 +1712,263 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m1.39 18.36 1.77-1.76L4.58 18l1.06-1.05-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.42 1.41L10.59 12l-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.41 1.41 1.07-1.06-1.42-1.41 1.42-1.42L18 6.7l1.07-1.06-2.47-2.48 1.76-1.77 4.25 4.25L5.64 22.61z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg>
   
   <span class="md-ellipsis">
     
   
     Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hệ thống Bảo mật
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hệ thống Bảo mật
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization-access-control/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization & Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/lockdown-logging/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockdown & Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/fault-tolerance-integrity/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault-tolerance & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/risk-analyzer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/encryption-keys/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption & Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/decentralized-zkp/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Zero-Knowledge Proofs
   
 
     
@@ -1706,10 +2019,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -1727,8 +2040,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1935,10 +2248,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -1956,8 +2269,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2318,10 +2631,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2339,8 +2652,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2745,10 +3058,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2766,8 +3079,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2932,10 +3245,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -2953,8 +3266,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3117,10 +3430,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -3138,8 +3451,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3287,10 +3600,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Tổng quan
       
     </span>
   </a>
@@ -3298,22 +3611,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai" class="md-nav__link">
+  <a href="#cac-thanh-phan-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai
+        Các thành phần cốt lõi
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="API công khai">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quan-ly-nghiep-vu-domain-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quản lý Nghiệp vụ (Domain Management)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quản lý Nghiệp vụ (Domain Management)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#basechain" class="md-nav__link">
+  <a href="#vong-oi-thuc-the-entity-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
       
-        BaseChain
+        Vòng đời thực thể (Entity Lifecycle)
       
     </span>
   </a>
@@ -3321,44 +3645,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#domainchain" class="md-nav__link">
+  <a href="#chi-so-van-hanh-operation-metrics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        DomainChain
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#entitytracer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        EntityTracer
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#crosschainvalidator" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        CrossChainValidator
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="CrossChainValidator">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#cross-chain-validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Cross-Chain Validation
+        Chỉ số vận hành (Operation Metrics)
       
     </span>
   </a>
@@ -3369,17 +3659,12 @@
     </nav>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
         <li class="md-nav__item">
-  <a href="#event-types-uoc-ho-tro" class="md-nav__link">
+  <a href="#co-che-giao-dich-hai-pha-two-phase-commit-2pc" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Event Types được hỗ trợ
+        Cơ chế Giao dịch Hai pha (Two-Phase Commit - 2PC)
       
     </span>
   </a>
@@ -3387,10 +3672,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#kiem-soat-tuan-thu-va-bao-mat" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Kiểm soát Tuân thủ và Bảo mật
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Kiểm soát Tuân thủ và Bảo mật">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ngan-chan-thuat-ngu-tien-ma-hoa-cryptocurrency-terminology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ngăn chặn Thuật ngữ Tiền mã hóa (Cryptocurrency Terminology)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#truy-vet-xuyen-chuoi-cross-chain-tracing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Truy vết xuyên chuỗi (Cross-Chain Tracing)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cac-loai-su-kien-chuan-hoa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Các loại sự kiện chuẩn hóa
       
     </span>
   </a>
@@ -3439,239 +3763,142 @@
   
 
 
-<h1 id="domains-module-hierachaindomainsgeneric">Domains Module (<code>hierachain/domains/generic/*</code>)</h1>
-<p>Mô‑đun cung cấp khung chung cho các miền nghiệp vụ (generic domains) để chuẩn hoá cách xây dựng chuỗi và sự kiện domain. Module này mở rộng từ SubChain và BaseEvent để cung cấp các tính năng nghiệp vụ chung.</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
+<h1 id="domains-module-hierachaindomains">Domains Module (<code>hierachain/domains/*</code>)</h1>
+<h2 id="tong-quan">Tổng quan</h2>
+<p>Module <strong>Domains</strong> là lớp trung gian quan trọng kết nối hạ tầng Blockchain lõi với các quy trình nghiệp vụ thực tế của doanh nghiệp. Nó cung cấp các khuôn mẫu (templates) chuẩn hóa để xây dựng các chuỗi nghiệp vụ (Sub-Chains), quản lý vòng đời của các thực thể (Entities), và đảm bảo tính nhất quán dữ liệu trên toàn hệ thống HieraChain.</p>
+<hr />
+<h2 id="cac-thanh-phan-cot-loi">Các thành phần cốt lõi</h2>
 <div class="grid cards">
 <ul>
 <li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10.59 13.41c.41.39.41 1.03 0 1.42-.39.39-1.03.39-1.42 0a5.003 5.003 0 0 1 0-7.07l3.54-3.54a5.003 5.003 0 0 1 7.07 0 5.003 5.003 0 0 1 0 7.07l-1.49 1.49c.01-.82-.12-1.64-.4-2.42l.47-.48a2.98 2.98 0 0 0 0-4.24 2.98 2.98 0 0 0-4.24 0l-3.53 3.53a2.98 2.98 0 0 0 0 4.24m2.82-4.24c.39-.39 1.03-.39 1.42 0a5.003 5.003 0 0 1 0 7.07l-3.54 3.54a5.003 5.003 0 0 1-7.07 0 5.003 5.003 0 0 1 0-7.07l1.49-1.49c-.01.82.12 1.64.4 2.43l-.47.47a2.98 2.98 0 0 0 0 4.24 2.98 2.98 0 0 0 4.24 0l3.53-3.53a2.98 2.98 0 0 0 0-4.24.973.973 0 0 1 0-1.42"/></svg></span> <strong>BaseChain</strong></p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10.59 13.41c.41.39.41 1.03 0 1.42-.39.39-1.03.39-1.42 0a5.003 5.003 0 0 1 0-7.07l3.54-3.54a5.003 5.003 0 0 1 7.07 0 5.003 5.003 0 0 1 0 7.07l-1.49 1.49c.01-.82-.12-1.64-.4-2.42l.47-.48a2.98 2.98 0 0 0 0-4.24 2.98 2.98 0 0 0-4.24 0l-3.53 3.53a2.98 2.98 0 0 0 0 4.24m2.82-4.24c.39-.39 1.03-.39 1.42 0a5.003 5.003 0 0 1 0 7.07l-3.54 3.54a5.003 5.003 0 0 1-7.07 0 5.003 5.003 0 0 1 0-7.07l1.49-1.49c-.01.82.12 1.64.4 2.43l-.47.47a2.98 2.98 0 0 0 0 4.24 2.98 2.98 0 0 0 4.24 0l3.53-3.53a2.98 2.98 0 0 0 0-4.24.973.973 0 0 1 0-1.42"/></svg></span> <strong>Business Chains</strong></p>
 <hr />
-<p><strong>File</strong>: <code>hierachain/domains/generic/chains/base_chain.py</code></p>
+<p><strong>Files</strong>: <code>base_chain.py</code>, <code>domain_chain.py</code></p>
 <ul>
-<li>Lớp trừu tượng (abstract class) mở rộng SubChain.</li>
-<li>Đăng ký entity, quản lý vòng đời entity.</li>
-<li>Xử lý event mặc định: operation_start, operation_complete, status_update, resource_assigned, quality_check, approval, compliance_check.</li>
-<li>Hỗ trợ domain_rules và event_handlers tùy biến.</li>
+<li>Lớp trừu tượng cho các quy trình nghiệp vụ chuyên biệt.</li>
+<li>Tích hợp sẵn quản lý trạng thái thực thể (Registration, Status Update).</li>
+<li>Cơ chế <strong>Two-Phase Commit (2PC)</strong> cho giao dịch xuyên chuỗi.</li>
 </ul>
 </li>
 <li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 14c-3.36 0-4.46 1.35-4.82 2.24C9.25 16.7 10 17.76 10 19a3 3 0 0 1-3 3 3 3 0 0 1-3-3c0-1.31.83-2.42 2-2.83V7.83A2.99 2.99 0 0 1 4 5a3 3 0 0 1 3-3 3 3 0 0 1 3 3c0 1.31-.83 2.42-2 2.83v5.29c.88-.65 2.16-1.12 4-1.12 2.67 0 3.56-1.34 3.85-2.23A3.01 3.01 0 0 1 14 7a3 3 0 0 1 3-3 3 3 0 0 1 3 3c0 1.34-.88 2.5-2.09 2.86C17.65 11.29 16.68 14 13 14m-6 4a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1M7 4a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1m10 2a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1"/></svg></span> <strong>DomainChain</strong></p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 19H5V8h14m0-5h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m-2.47 8.06L15.47 10l-4.88 4.88-2.12-2.12-1.06 1.06L10.59 17z"/></svg></span> <strong>Enterprise Events</strong></p>
 <hr />
-<p><strong>File</strong>: <code>hierachain/domains/generic/chains/domain_chain.py</code></p>
+<p><strong>Files</strong>: <code>base_event.py</code>, <code>domain_event.py</code></p>
 <ul>
-<li>Hiện thực cụ thể của BaseChain cho các kịch bản business phổ biến.</li>
-<li>OperationMetricsTracker: theo dõi metrics vận hành (started, completed, quality_passed, approvals_granted).</li>
-<li>Cung cấp factory functions: <code>create_resource_allocation()</code>, <code>create_quality_check()</code>, <code>create_status_update()</code>, <code>create_approval()</code>, <code>create_compliance_check()</code>.</li>
+<li>Chuẩn hóa sự kiện doanh nghiệp: Approval, Quality Check, Compliance.</li>
+<li>Tự động xác thực cấu trúc sự kiện theo quy tắc Ledger.</li>
+<li>Factory functions để tạo sự kiện nhanh chóng và chính xác.</li>
 </ul>
 </li>
 <li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 19H5V8h14m-3-7v2H8V1H6v2H5c-1.11 0-2 .89-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-1V1"/></svg></span> <strong>BaseEvent</strong></p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 9a3 3 0 0 1 3 3 3 3 0 0 1-3 3 3 3 0 0 1-3-3 3 3 0 0 1 3-3m5.86 10.31C16.23 21.22 14.28 22.45 12 23c-2.56-.61-4.7-2.07-6.42-4.37C3.86 16.34 3 13.8 3 11V5l9-4 9 4v6c0 2.39-.64 4.61-1.92 6.67l-2.91-2.91c.52-.79.83-1.76.83-2.76a5 5 0 0 0-5-5 5 5 0 0 0-5 5 5 5 0 0 0 5 5c1 0 1.97-.31 2.76-.83z"/></svg></span> <strong>Integrity Utils</strong></p>
 <hr />
-<p><strong>File</strong>: <code>hierachain/domains/generic/events/base_event.py</code></p>
+<p><strong>Files</strong>: <code>cross_chain_validator.py</code>, <code>entity_tracer.py</code></p>
 <ul>
-<li>Lớp trừu tượng cho tất cả event trong HieraChain.</li>
-<li>Sử dụng <code>entity_id</code> làm metadata field (không phải block identifier).</li>
-<li>Validate event structure theo Ledger guidelines.</li>
-<li>Trường: entity_id, event_type, details, timestamp.</li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 19H5V8h14m-3-7v2H8V1H6v2H5c-1.11 0-2 .89-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-1V1m-1 11h-5v5h5z"/></svg></span> <strong>DomainEvent</strong></p>
-<hr />
-<p><strong>File</strong>: <code>hierachain/domains/generic/events/domain_event.py</code></p>
-<ul>
-<li>Event domain-specific mở rộng BaseEvent.</li>
-<li>Thêm trường <code>domain_type</code> để phân biệt domain.</li>
-<li>Validation domain-specific: kiểm tra domain_type hợp lệ.</li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m23 12-2.44-2.78.34-3.68-3.61-.82-1.89-3.18L12 3 8.6 1.54 6.71 4.72l-3.61.81.34 3.68L1 12l2.44 2.78-.34 3.69 3.61.82 1.89 3.18L12 21l3.4 1.46 1.89-3.18 3.61-.82-.34-3.68zm-13 5-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9z"/></svg></span> <strong>CrossChainValidator</strong></p>
-<hr />
-<p><strong>File</strong>: <code>hierachain/domains/generic/utils/cross_chain_validator.py</code></p>
-<ul>
-<li>Validate tính nhất quán giữa Main Chain và Sub-Chains.</li>
-<li>Kiểm tra operation consistency: operation_start/operation_complete khớp nhau.</li>
-<li>Kiểm tra status consistency: trạng thái entity hợp lệ.</li>
-<li>Sử dụng HierarchyManager và EntityTracer để truy vết cross-chain.</li>
-</ul>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 10H5L3 8l2-2h6V3l1-1 1 1v1h6l2 2-2 2h-6v2h6l2 2-2 2h-6v6a2 2 0 0 1 2 2H9a2 2 0 0 1 2-2z"/></svg></span> <strong>EntityTracer</strong></p>
-<hr />
-<p><strong>File</strong>: <code>hierachain/domains/generic/utils/entity_tracer.py</code></p>
-<ul>
-<li>Truy vết entity qua nhiều Sub-Chains.</li>
-<li>Xây dựng timeline: stage tracking (in_progress, completed, quality_approved, approved).</li>
-<li>Phương thức: <code>trace_entity_in_chain()</code>, <code>trace_entity_across_chains()</code>.</li>
+<li><strong>Cross-Chain Validator</strong>: Phát hiện mâu thuẫn logic giữa các chuỗi.</li>
+<li><strong>Entity Tracer</strong>: Truy vết toàn bộ lịch sử của một đối tượng trên mọi Sub-Chain.</li>
+<li><strong>Compliance Scanner</strong>: Quét và ngăn chặn thuật ngữ tiền mã hóa.</li>
 </ul>
 </li>
 </ul>
 </div>
-<h2 id="api-cong-khai">API công khai</h2>
-<h3 id="basechain">BaseChain</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">BaseChain</span><span class="p">(</span><span class="n">SubChain</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">domain_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">register_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">entity_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_domain_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">BaseEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_operation_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_operation_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_status_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_resource_allocation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_quality_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_approval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_compliance_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+<hr />
+<h2 id="quan-ly-nghiep-vu-domain-management">Quản lý Nghiệp vụ (Domain Management)</h2>
+<h3 id="vong-oi-thuc-the-entity-lifecycle">Vòng đời thực thể (Entity Lifecycle)</h3>
+<p>Mọi <code>DomainChain</code> đều hỗ trợ quản lý trạng thái thực thể một cách tự động thông qua các trình xử lý sự kiện (Event Handlers) mặc định:</p>
+<ol>
+<li><strong>Registration</strong>: Đăng ký thực thể mới vào chuỗi nghiệp vụ.</li>
+<li><strong>Status Tracking</strong>: Theo dõi trạng thái hiện tại (ví dụ: <code>In Production</code>, <code>Quality Passed</code>, <code>Shipped</code>).</li>
+<li><strong>Resource Allocation</strong>: Gắn kết tài nguyên (nhân lực, máy móc, nguyên liệu) với thực thể.</li>
+<li><strong>Compliance Monitoring</strong>: Ghi nhận các kết quả kiểm tra tuân thủ quy định.</li>
+</ol>
+<h3 id="chi-so-van-hanh-operation-metrics">Chỉ số vận hành (Operation Metrics)</h3>
+<p>Hệ thống tự động theo dõi các KPI quan trọng thông qua <code>OperationMetricsTracker</code>:
+*   <strong>Success Rate</strong>: Tỷ lệ hoàn thành công việc thành công.
+*   <strong>Quality Pass Rate</strong>: Tỷ lệ đạt kiểm tra chất lượng.
+*   <strong>Approval Rate</strong>: Tỷ lệ phê duyệt từ cấp quản lý.
+*   <strong>Compliance Violations</strong>: Số lượng vi phạm quy trình được phát hiện.</p>
+<hr />
+<h2 id="co-che-giao-dich-hai-pha-two-phase-commit-2pc">Cơ chế Giao dịch Hai pha (Two-Phase Commit - 2PC)</h2>
+<p>Để đảm bảo tính nhất quán khi thực hiện các hoạt động ảnh hưởng đến nhiều chuỗi khác nhau, <code>DomainChain</code> tích hợp giao thức 2PC:</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Source as Source Chain
+    participant Target as Target Chain
+
+    Note over Source, Target: Pha 1: Chuẩn bị (Prepare)
+    Source-&gt;&gt;Target: Prepare Transaction (ID, Payload)
+    Target--&gt;&gt;Source: Prepared OK / Reject
+
+    Note over Source, Target: Pha 2: Thực thi (Commit/Rollback)
+    alt All chains prepared
+        Source-&gt;&gt;Target: Commit Transaction
+        Target-&gt;&gt;Target: Execute &amp; Finalize Block
+    else Failure detected
+        Source-&gt;&gt;Target: Rollback Transaction
+        Target-&gt;&gt;Target: Discard Pending Data
+    end</code></pre>
+<hr />
+<h2 id="kiem-soat-tuan-thu-va-bao-mat">Kiểm soát Tuân thủ và Bảo mật</h2>
+<h3 id="ngan-chan-thuat-ngu-tien-ma-hoa-cryptocurrency-terminology">Ngăn chặn Thuật ngữ Tiền mã hóa (Cryptocurrency Terminology)</h3>
+<p>Theo triết lý HieraChain, <code>CrossChainValidator</code> thực hiện quét nghiêm ngặt và đánh dấu các vi phạm nếu phát hiện thuật ngữ liên quan đến tiền mã hóa trong dữ liệu sự kiện:
+*   <strong>Danh sách cấm</strong>: <code>transaction</code>, <code>mining</code>, <code>coin</code>, <code>token</code>, <code>wallet</code>, <code>address</code>, <code>amount</code>, <code>fee</code>, v.v.
+*   <strong>Hành động</strong>: Ghi nhận vi phạm vào báo cáo tuân thủ hệ thống (<code>Ledger_compliance</code>).</p>
+<h3 id="truy-vet-xuyen-chuoi-cross-chain-tracing">Truy vết xuyên chuỗi (Cross-Chain Tracing)</h3>
+<p><code>EntityTracer</code> cho phép người quản trị tái hiện lại toàn bộ "hành trình" của một thực thể qua nhiều phòng ban/chuỗi khác nhau:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.domains.generic.utils.entity_tracer</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntityTracer</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">tracer</span> <span class="o">=</span> <span class="n">EntityTracer</span><span class="p">(</span><span class="n">hierarchy_manager</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Lấy lịch sử thực thể &quot;ORDER-789&quot; trên toàn bộ hệ thống</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">trace_results</span> <span class="o">=</span> <span class="n">tracer</span><span class="o">.</span><span class="n">trace_entity_across_chains</span><span class="p">(</span><span class="s2">&quot;ORDER-789&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">for</span> <span class="n">chain_name</span><span class="p">,</span> <span class="n">events</span> <span class="ow">in</span> <span class="n">trace_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hoạt động tại </span><span class="si">{</span><span class="n">chain_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2"> sự kiện.&quot;</span><span class="p">)</span>
 </code></pre></div>
-<h3 id="domainchain">DomainChain</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DomainChain</span><span class="p">(</span><span class="n">BaseChain</span><span class="p">):</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">domain_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_operation_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span>  <span class="c1"># started, completed, quality_passed ratio, approval ratio</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_compliance_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span>
-</code></pre></div>
-<h3 id="entitytracer">EntityTracer</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">EntityTracer</span><span class="p">:</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hierarchy_manager</span><span class="p">:</span> <span class="n">HierarchyManager</span><span class="p">)</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">trace_entity_in_chain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">chain_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">trace_entity_across_chains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]</span>
-</code></pre></div>
-<h3 id="crosschainvalidator">CrossChainValidator</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">CrossChainValidator</span><span class="p">:</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hierarchy_manager</span><span class="p">:</span> <span class="n">HierarchyManager</span><span class="p">,</span> <span class="n">entity_tracer</span><span class="p">:</span> <span class="n">EntityTracer</span><span class="p">)</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate_chain_consistency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chain_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate_cross_chain_operations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1">#### Entity Tracer Example</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">Truy</span> <span class="n">vết</span> <span class="n">một</span> <span class="n">lô</span> <span class="n">hàng</span> <span class="p">(</span><span class="n">Shipment</span><span class="p">)</span> <span class="n">qua</span> <span class="n">nhiều</span> <span class="n">phòng</span> <span class="n">ban</span> <span class="p">(</span><span class="n">Sub</span><span class="o">-</span><span class="n">chains</span><span class="p">):</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="err">```</span><span class="n">python</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.domains.generic.utils.entity_tracer</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntityTracer</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="n">tracer</span> <span class="o">=</span> <span class="n">EntityTracer</span><span class="p">(</span><span class="n">hierarchy_manager</span><span class="p">)</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="c1"># Truy vết thực thể &quot;SHIPMENT-123&quot; trên toàn mạng lưới</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="n">history</span> <span class="o">=</span> <span class="n">tracer</span><span class="o">.</span><span class="n">trace_entity_across_chains</span><span class="p">(</span><span class="s2">&quot;SHIPMENT-123&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="k">for</span> <span class="n">chain</span><span class="p">,</span> <span class="n">events</span> <span class="ow">in</span> <span class="n">history</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chain: </span><span class="si">{</span><span class="n">chain</span><span class="si">}</span><span class="s2">, Events count: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h4 id="cross-chain-validation">Cross-Chain Validation</h4>
-<p>Kiểm tra xem dữ liệu ở Sub-chain có khớp với Proof ở Main chain không:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.domains.generic.utils.cross_chain_validator</span><span class="w"> </span><span class="kn">import</span> <span class="n">CrossChainValidator</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">validator</span> <span class="o">=</span> <span class="n">CrossChainValidator</span><span class="p">(</span><span class="n">hierarchy_manager</span><span class="p">,</span> <span class="n">tracer</span><span class="p">)</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">report</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_chain_consistency</span><span class="p">(</span><span class="s2">&quot;logistics_chain&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="k">if</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;is_consistent&quot;</span><span class="p">]:</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Dữ liệu chuỗi logistics hoàn toàn nhất quán.&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h2 id="event-types-uoc-ho-tro">Event Types được hỗ trợ</h2>
+<hr />
+<h2 id="cac-loai-su-kien-chuan-hoa">Các loại sự kiện chuẩn hóa</h2>
 <table>
 <thead>
 <tr>
-<th>Event Type</th>
-<th>Mô tả</th>
-<th>Details keys</th>
+<th style="text-align: left;">Loại sự kiện</th>
+<th style="text-align: left;">Vai trò nghiệp vụ</th>
+<th style="text-align: left;">Các trường chi tiết (Details)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>operation_start</td>
-<td>Bắt đầu thao tác</td>
-<td>operation_type, operator</td>
+<td style="text-align: left;"><code>operation_start</code></td>
+<td style="text-align: left;">Bắt đầu quy trình</td>
+<td style="text-align: left;"><code>operation_type</code>, <code>operator_id</code></td>
 </tr>
 <tr>
-<td>operation_complete</td>
-<td>Hoàn thành thao tác</td>
-<td>operation_type, result</td>
+<td style="text-align: left;"><code>quality_check</code></td>
+<td style="text-align: left;">Kiểm tra chất lượng</td>
+<td style="text-align: left;"><code>check_type</code>, <code>check_result</code>, <code>inspector_id</code></td>
 </tr>
 <tr>
-<td>status_update</td>
-<td>Cập nhật trạng thái</td>
-<td>status, previous_status</td>
+<td style="text-align: left;"><code>approval</code></td>
+<td style="text-align: left;">Phê duyệt quản lý</td>
+<td style="text-align: left;"><code>approval_type</code>, <code>approval_status</code>, <code>approver_id</code></td>
 </tr>
 <tr>
-<td>resource_assigned</td>
-<td>Phân bổ tài nguyên</td>
-<td>resource_type, quantity</td>
+<td style="text-align: left;"><code>compliance_check</code></td>
+<td style="text-align: left;">Kiểm tra tuân thủ</td>
+<td style="text-align: left;"><code>compliance_type</code>, <code>compliance_status</code>, <code>regulation_ref</code></td>
 </tr>
 <tr>
-<td>quality_check</td>
-<td>Kiểm tra chất lượng</td>
-<td>check_result, checker</td>
-</tr>
-<tr>
-<td>approval</td>
-<td>Phê duyệt</td>
-<td>approval_status, approver</td>
-</tr>
-<tr>
-<td>compliance_check</td>
-<td>Kiểm tra tuân thủ</td>
-<td>compliance_type, compliance_status</td>
+<td style="text-align: left;"><code>resource_assigned</code></td>
+<td style="text-align: left;">Phân bổ tài nguyên</td>
+<td style="text-align: left;"><code>resource_id</code>, <code>resource_type</code>, <code>allocation_type</code></td>
 </tr>
 </tbody>
 </table>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
-<ul>
-<li>
-<p><strong>Tính năng</strong>: </p>
-<ul>
-<li>Khung sẵn có giúp xây dựng domain nhanh</li>
-<li>Có sẵn tiện ích truy vết entity cross-chain</li>
-<li>Validation nhất quán giữa các chain</li>
-<li>Operation metrics tự động</li>
-</ul>
-</li>
-<li>
-<p><strong>Hạn chế</strong>: </p>
-<ul>
-<li>Tuỳ chỉnh sâu cho domain cụ thể cần mở rộng lớp cơ sở</li>
-<li>Domain chain phụ thuộc vào SubChain và HierarchyManager</li>
-</ul>
-</li>
-</ul>
+<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Hierarchical module: <a href="../hierarchical/">Hierarchical</a></li>
-<li>API v1: <a href="../../reference/api-v1/">API v1</a></li>
-<li>Glossary: <a href="../../glossary/">Thuật ngữ</a></li>
+<li><a href=".././hierarchical/">Hệ thống Phân cấp (Hierarchical)</a></li>
+<li><a href=".././core/">Cấu trúc Blockchain Lõi (Core)</a></li>
+<li><a href="../../integration/erp_adapters/">Hướng dẫn Tích hợp ERP</a></li>
 </ul>
-<hr />
-<details class="info">
-<summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
-<p><strong>FACT</strong></p>
-<ul>
-<li>Thư mục: <code>hierachain/domains/generic/{chains, events, utils}</code>.</li>
-<li>BaseChain mở rộng <code>hierachain.hierarchical.sub_chain.SubChain</code>.</li>
-<li>BaseEvent sử dụng <code>hierachain.core.utils.validate_event_structure</code>.</li>
-</ul>
-<p><strong>DECISION</strong></p>
-<ul>
-<li>Chuẩn hoá domain qua lớp cơ sở để tăng khả năng tái sử dụng và kiểm thử.</li>
-<li>Entity ID là metadata field, không phải block identifier.</li>
-<li>Sử dụng factory functions cho việc tạo event thay vì trực tiếp gọi constructor.</li>
-</ul>
-<p><strong>ASSUMPTION</strong></p>
-<ul>
-<li>Mỗi domain sẽ định nghĩa schema sự kiện tối thiểu tương thích với Core/Event.</li>
-<li>HierarchyManager đã được khởi tạo trước khi sử dụng EntityTracer.</li>
-</ul>
-<p><strong>INVARIANT</strong></p>
-<ul>
-<li>Domain Event khi ghi vào Chain phải đáp ứng schema và bất biến Core (hash/Merkle xác định).</li>
-<li>entity_id phải nhất quán khi truy vết across chains.</li>
-</ul>
-<p><strong>EDGE CASES</strong></p>
-<ul>
-<li>Truy vết thực thể qua nhiều sub‑chain cần ràng buộc định danh nhất quán (entity_id).</li>
-<li>Operation without start: báo warning nhưng không reject.</li>
-<li>Concurrent operations: ghi nhận inconsistency.</li>
-</ul>
-</details>
 
 
 

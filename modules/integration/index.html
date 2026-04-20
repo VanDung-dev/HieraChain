@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Enterprise/ERP integration and Arrow client: arrow_client, enterprise, erp_ledger, types — bám sát hierachain/integration/*.">
+        <meta name="description" content="Cầu nối hệ thống doanh nghiệp (ERP Integration) và Apache Arrow Client: Tích hợp SAP, Oracle, Dynamics và tối ưu hóa dữ liệu cột.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -31,7 +31,7 @@
     
     
       
-        <title>Integration module - HieraChain Docs</title>
+        <title>Integration Module - HieraChain Docs</title>
       
     
     
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Integration module
+              Integration Module
             
           </span>
         </div>
@@ -297,6 +297,25 @@
           
   
   Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/authorization-access-control/" class="md-tabs__link">
+          
+  
+  Hệ thống Bảo mật
 
         </a>
       </li>
@@ -941,6 +960,8 @@
       
         
       
+        
+      
     
     
     
@@ -1054,11 +1075,41 @@
   
   
     <li class="md-nav__item">
+      <a href="../consensus/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../security/" class="md-nav__link">
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1329,10 +1380,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -1340,10 +1391,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#cac-thanh-phan-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Các thành phần cốt lõi
       
     </span>
   </a>
@@ -1351,22 +1402,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-mang-tinh-mo-ta" class="md-nav__link">
+  <a href="#cong-cu-anh-xa-du-lieu-mapping-engine" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (mang tính mô tả)
+        Công cụ Ánh xạ Dữ liệu (Mapping Engine)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="API công khai (mang tính mô tả)">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#luong-ong-bo-du-lieu-synchronization-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Luồng Đồng bộ dữ liệu (Synchronization Flow)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vi-du-trien-khai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ Triển khai
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ví dụ Triển khai">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arrow-client-example" class="md-nav__link">
+  <a href="#1-cau-hinh-mapping-cho-sap" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Arrow Client Example
+        1. Cấu hình Mapping cho SAP
       
     </span>
   </a>
@@ -1374,10 +1447,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#erp-adapter-implementation" class="md-nav__link">
+  <a href="#2-khoi-chay-ong-bo-tu-ong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ERP Adapter Implementation
+        2. Khởi chạy Đồng bộ tự động
       
     </span>
   </a>
@@ -1390,21 +1463,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#hieu-nang-va-bao-mat" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tính năng &amp; hạn chế
+        Hiệu năng và Bảo mật
       
     </span>
   </a>
@@ -1622,12 +1684,263 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m1.39 18.36 1.77-1.76L4.58 18l1.06-1.05-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.42 1.41L10.59 12l-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.41 1.41 1.07-1.06-1.42-1.41 1.42-1.42L18 6.7l1.07-1.06-2.47-2.48 1.76-1.77 4.25 4.25L5.64 22.61z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg>
   
   <span class="md-ellipsis">
     
   
     Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hệ thống Bảo mật
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hệ thống Bảo mật
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization-access-control/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization & Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/lockdown-logging/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockdown & Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/fault-tolerance-integrity/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault-tolerance & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/risk-analyzer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/encryption-keys/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption & Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/decentralized-zkp/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Zero-Knowledge Proofs
   
 
     
@@ -1678,10 +1991,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -1699,8 +2012,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1907,10 +2220,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -1928,8 +2241,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2290,10 +2603,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2311,8 +2624,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2717,10 +3030,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2738,8 +3051,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2904,10 +3217,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -2925,8 +3238,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3089,10 +3402,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -3110,8 +3423,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3259,10 +3572,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -3270,10 +3583,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#cac-thanh-phan-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Các thành phần cốt lõi
       
     </span>
   </a>
@@ -3281,22 +3594,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-mang-tinh-mo-ta" class="md-nav__link">
+  <a href="#cong-cu-anh-xa-du-lieu-mapping-engine" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (mang tính mô tả)
+        Công cụ Ánh xạ Dữ liệu (Mapping Engine)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="API công khai (mang tính mô tả)">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#luong-ong-bo-du-lieu-synchronization-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Luồng Đồng bộ dữ liệu (Synchronization Flow)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vi-du-trien-khai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ Triển khai
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ví dụ Triển khai">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arrow-client-example" class="md-nav__link">
+  <a href="#1-cau-hinh-mapping-cho-sap" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Arrow Client Example
+        1. Cấu hình Mapping cho SAP
       
     </span>
   </a>
@@ -3304,10 +3639,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#erp-adapter-implementation" class="md-nav__link">
+  <a href="#2-khoi-chay-ong-bo-tu-ong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ERP Adapter Implementation
+        2. Khởi chạy Đồng bộ tự động
       
     </span>
   </a>
@@ -3320,21 +3655,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#hieu-nang-va-bao-mat" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tính năng &amp; hạn chế
+        Hiệu năng và Bảo mật
       
     </span>
   </a>
@@ -3384,83 +3708,152 @@
 
 
 <h1 id="integration-module-hierachainintegration">Integration Module (<code>hierachain/integration/*</code>)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>Cung cấp lớp tích hợp với hệ thống doanh nghiệp/ERP và các client tiện ích (Arrow client) để trao đổi dữ liệu với HieraChain một cách ổn định và có kiểm soát.</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
+<h2 id="tong-quan">Tổng quan</h2>
+<p>Module <strong>Integration</strong> là "cánh cửa" cho phép HieraChain hoạt động như một lớp bổ sung (Plugin Layer) cho hạ tầng Web2 hiện có của doanh nghiệp. Nó cung cấp các công cụ mạnh mẽ để kết nối, trích xuất và chuẩn hóa dữ liệu từ các hệ thống ERP hàng đầu thế giới (SAP, Oracle, Microsoft Dynamics) vào sổ cái blockchain với hiệu suất cao nhất.</p>
+<hr />
+<h2 id="cac-thanh-phan-cot-loi">Các thành phần cốt lõi</h2>
+<div class="grid cards">
 <ul>
-<li>Arrow Client: <code>hierachain/integration/arrow_client.py</code> — client thao tác dữ liệu dạng cột với Apache Arrow.</li>
-<li>ERP Ledger: <code>hierachain/integration/erp_ledger.py</code> — khung tích hợp ERP, chuẩn hoá adapter.</li>
-<li>Doanh nghiệp: <code>hierachain/integration/enterprise.py</code> — mẫu/khuôn cho tích hợp nghiệp vụ doanh nghiệp.</li>
-<li>Kiểu dữ liệu: <code>hierachain/integration/types.py</code> — các kiểu/contract dữ liệu tích hợp.</li>
-<li>ERP Adapters: <code>hierachain/integration/erp_adapters/*</code> — adapter cụ thể cho hệ thống ERP.</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18a6 6 0 0 1-6-6c0-1 .25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12a8 8 0 0 0 8 8v3l4-4-4-4m0-11V1L8 5l4 4V6a6 6 0 0 1 6 6c0 1-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12a8 8 0 0 0-8-8"/></svg></span> <strong>ERP Integration Ledger</strong></p>
+<hr />
+<p><strong>File</strong>: <code>erp_ledger.py</code></p>
+<ul>
+<li>Trung tâm điều phối việc tích hợp với các hệ thống ERP.</li>
+<li><strong>Mapping Engine</strong>: Ánh xạ dữ liệu phức tạp từ ERP sang Blockchain.</li>
+<li><strong>Sync Scheduler</strong>: Lập lịch đồng bộ tự động với cơ chế Retry thông minh.</li>
 </ul>
-<h2 id="api-cong-khai-mang-tinh-mo-ta">API công khai (mang tính mô tả)</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">ERPAdapter</span><span class="p">:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  <span class="n">pull</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  <span class="n">push</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-</code></pre></div>
-<h4 id="arrow-client-example">Arrow Client Example</h4>
-<p><strong>File</strong>: <code>hierachain/integration/arrow_client.py</code></p>
-<p>Xuất dữ liệu hiệu năng cao sang định dạng Apache Arrow:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.integration.arrow_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrowClient</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">ArrowClient</span><span class="p">()</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">pa</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]),</span> <span class="n">pa</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">])]</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">table</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_arrays</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">])</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Ghi dữ liệu ra file arrow</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">client</span><span class="o">.</span><span class="n">write_table</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="s2">&quot;export_data.arrow&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h4 id="erp-adapter-implementation">ERP Adapter Implementation</h4>
-<p><strong>File</strong>: <code>hierachain/integration/erp_adapters/base.py</code></p>
-<p>Dự án cung cấp sẵn các adapter như <code>ODataAdapter</code>, <code>RestAdapter</code>. Bạn có thể tùy biến:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.integration.erp_ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">ERPAdapter</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyCustomERP</span><span class="p">(</span><span class="n">ERPAdapter</span><span class="p">):</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">pull</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>        <span class="c1"># Logic gọi API từ SAP/Oracle...</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        <span class="k">return</span> <span class="p">[{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;data&quot;</span><span class="p">}]</span>
-</code></pre></div>
-<h2 id="cau-hinh">Cấu hình</h2>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 18v2h4v-2zm0-4v2h10v-2zm6 4v2h4v-2zm6-4v2h4v-2zm0 4v2h4v-2zM2 22V8l5 4V8l5 4V8l5 4 1-10h3l1 10v10z"/></svg></span> <strong>Enterprise Adapters</strong></p>
+<hr />
+<p><strong>File</strong>: <code>enterprise.py</code></p>
 <ul>
-<li>Tham chiếu <code>hierachain/config/settings.py</code> phần Integration (<code>ERP_INTEGRATION_ENABLED</code>, <code>SUPPORTED_ERP_SYSTEMS</code>).</li>
-<li>Endpoint/API khoá bảo mật: xem trang Security/Config nếu adapter cần gọi HTTP bên ngoài.</li>
+<li>Các bộ kết nối (Adapters) chuẩn hóa cho <strong>SAP</strong>, <strong>Oracle</strong>, và <strong>Dynamics</strong>.</li>
+<li>Hỗ trợ cấu hình qua biến môi trường để đảm bảo bảo mật thông tin kết nối.</li>
+<li>Xử lý xác thực và kết nối đến các API doanh nghiệp.</li>
 </ul>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m0 8v4h8v-4zm0 6v4h8v-4zM8 4v4h8V4z"/></svg></span> <strong>Arrow Client</strong></p>
+<hr />
+<p><strong>File</strong>: <code>arrow_client.py</code></p>
 <ul>
-<li>Tính năng: chuẩn hoá giao diện tích hợp, hỗ trợ Arrow để hiệu quả IO.</li>
-<li>Hạn chế: adapter cụ thể cần hiện thực theo hệ thống đích; mặc định chỉ là khung.</li>
+<li>Tối ưu hóa việc trao đổi dữ liệu khối lượng lớn bằng định dạng cột <strong>Apache Arrow</strong>.</li>
+<li>Tăng tốc độ IO và giảm mức tiêu thụ bộ nhớ khi xử lý báo cáo hoặc trích xuất dữ liệu.</li>
 </ul>
-<h2 id="lien-quan">Liên quan</h2>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 22v-2h3v-3h2v3.5c0 .39-.16.74-.46 1.04s-.65.46-1.04.46zM7 22H3.5c-.39 0-.74-.16-1.04-.46S2 20.89 2 20.5V17h2v3h3zM17 2h3.5c.39 0 .74.16 1.04.46s.46.65.46 1.04V7h-2V4h-3zM7 2v2H4v3H2V3.5c0-.39.16-.74.46-1.04S3.11 2 3.5 2zm3.5 4C13 6 15 8 15 10.5c0 .88-.25 1.7-.69 2.4l3.26 3.26-1.41 1.41-3.26-3.26c-.7.44-1.52.69-2.4.69C8 15 6 13 6 10.5S8 6 10.5 6m0 2a2.5 2.5 0 0 0 0 5 2.5 2.5 0 0 0 0-5"/></svg></span> <strong>Change Detector</strong></p>
+<hr />
+<p><strong>File</strong>: <code>erp_ledger.py</code></p>
 <ul>
-<li>Storage (Arrow/World State): <a href="../storage/">Storage</a></li>
-<li>Config: <a href="../../reference/config/">Config</a></li>
+<li>Tự động phát hiện sự thay đổi giữa các trạng thái dữ liệu trong ERP.</li>
+<li>Chỉ ghi nhận những thay đổi có ý nghĩa (Delta) lên blockchain để tối ưu không gian lưu trữ.</li>
+</ul>
+</li>
+</ul>
+</div>
+<hr />
+<h2 id="cong-cu-anh-xa-du-lieu-mapping-engine">Công cụ Ánh xạ Dữ liệu (Mapping Engine)</h2>
+<p>Mapping Engine cho phép định nghĩa các quy tắc chuyển đổi linh hoạt cho từng trường dữ liệu:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Transformer</th>
+<th style="text-align: left;">Chức năng</th>
+<th style="text-align: left;">Ví dụ chuyển đổi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>date</code></td>
+<td style="text-align: left;">Chuẩn hóa định dạng thời gian</td>
+<td style="text-align: left;"><code>12/04/2024</code> → <code>ISO-8601</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>amount</code></td>
+<td style="text-align: left;">Chuyển đổi kiểu số và tiền tệ</td>
+<td style="text-align: left;"><code>5000</code> → <code>5000.0</code> (Float)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>status</code></td>
+<td style="text-align: left;">Ánh xạ trạng thái nghiệp vụ</td>
+<td style="text-align: left;"><code>REQ</code> → <code>REQUESTED</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>id</code></td>
+<td style="text-align: left;">Thêm tiền tố định danh</td>
+<td style="text-align: left;"><code>123</code> → <code>ERP_123</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>boolean</code></td>
+<td style="text-align: left;">Chuyển đổi logic</td>
+<td style="text-align: left;"><code>1/Yes/On</code> → <code>True</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="luong-ong-bo-du-lieu-synchronization-flow">Luồng Đồng bộ dữ liệu (Synchronization Flow)</h2>
+<p>Hệ thống sử dụng <code>SyncScheduler</code> để đảm bảo dữ liệu blockchain luôn được cập nhật từ ERP:</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant ERP as ERP System (SAP/Oracle)
+    participant Sync as SyncScheduler
+    participant Map as MappingEngine
+    participant HRC as HieraChain Ledger
+
+    Sync-&gt;&gt;ERP: Poll for changes (Interval)
+    ERP--&gt;&gt;Sync: Return ERP Events
+
+    loop Per Event
+        Sync-&gt;&gt;Map: Translate ERP -&gt; Blockchain
+        Map-&gt;&gt;Map: Apply Transformers (ID, Date, etc.)
+        Map--&gt;&gt;Sync: Normalized Event
+        Sync-&gt;&gt;HRC: Submit Event to Sub-Chain
+    end
+
+    Note over Sync, HRC: Nếu lỗi: Tự động Retry với Exponential Backoff</code></pre>
+<hr />
+<h2 id="vi-du-trien-khai">Ví dụ Triển khai</h2>
+<h3 id="1-cau-hinh-mapping-cho-sap">1. Cấu hình Mapping cho SAP</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">sap_mapping</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="s2">&quot;material.document_number&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="s2">&quot;source_path&quot;</span><span class="p">:</span> <span class="s2">&quot;material.event_type&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="s2">&quot;transformer&quot;</span><span class="p">:</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;mapping&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;GR&quot;</span><span class="p">:</span> <span class="s2">&quot;GOODS_RECEIPT&quot;</span><span class="p">}}</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="p">},</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="s2">&quot;details.quantity&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="s2">&quot;source_path&quot;</span><span class="p">:</span> <span class="s2">&quot;material.qty&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="s2">&quot;transformer&quot;</span><span class="p">:</span> <span class="s2">&quot;amount&quot;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="p">}</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="2-khoi-chay-ong-bo-tu-ong">2. Khởi chạy Đồng bộ tự động</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.integration.erp_ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">ERPIntegrationLedger</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">ledger</span> <span class="o">=</span> <span class="n">ERPIntegrationLedger</span><span class="p">()</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Bắt đầu đồng bộ profile &#39;SAP_Logistics&#39; mỗi 60 giây</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">ledger</span><span class="o">.</span><span class="n">start_scheduled_sync</span><span class="p">(</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">profile_name</span><span class="o">=</span><span class="s2">&quot;SAP_Logistics&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">interval_seconds</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">chain</span><span class="o">=</span><span class="n">sub_chain_instance</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="hieu-nang-va-bao-mat">Hiệu năng và Bảo mật</h2>
+<ul>
+<li><strong>Hiệu năng</strong>: Sử dụng <code>ThreadPoolExecutor</code> để xử lý đồng bộ nhiều profile ERP cùng lúc mà không gây nghẽn.</li>
+<li><strong>Bảo mật</strong>: Thông tin định danh và mật khẩu ERP được quản lý qua biến môi trường (ví dụ: <code>HRC_SAP_PASSWORD</code>), tuân thủ nguyên tắc không lưu secret trong mã nguồn.</li>
+<li><strong>Tính bền vững</strong>: Cơ chế Retry với Exponential Backoff giúp hệ thống tự phục hồi khi kết nối ERP bị gián đoạn tạm thời.</li>
 </ul>
 <hr />
-<details class="info">
-<summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
-<p><strong>FACT</strong></p>
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Thư mục: <code>hierachain/integration/{arrow_client.py, enterprise.py, erp_ledger.py, types.py, erp_adapters/*}</code>.</li>
+<li><a href=".././hierarchical/">Hệ thống Phân cấp (Hierarchical)</a></li>
+<li><a href=".././core/">Cấu trúc Blockchain Lõi (Core)</a></li>
+<li><a href=".././error-mitigation/">Xử lý lỗi và Giảm thiểu rủi ro</a></li>
 </ul>
-<p><strong>DECISION</strong></p>
-<ul>
-<li>Ưu tiên chuẩn hoá adapter qua khung <code>erp_ledger.py</code> để giảm lệch giữa hệ thống.</li>
-</ul>
-<p><strong>ASSUMPTION</strong></p>
-<ul>
-<li>Hệ thống đích có cơ chế xác thực/giới hạn tốc độ; adapter cần tôn trọng và log đầy đủ.</li>
-</ul>
-<p><strong>INVARIANT</strong></p>
-<ul>
-<li>Dữ liệu qua adapter phải được chuẩn hoá schema trước khi ghi sự kiện vào Sub‑Chain.</li>
-</ul>
-<p><strong>EDGE CASES</strong></p>
-<ul>
-<li>Sai khác schema giữa ERP và HieraChain → cần lớp ánh xạ/biến đổi rõ ràng.</li>
-</ul>
-</details>
 
 
 

@@ -37,6 +37,9 @@
         <loc>https://docs.hierachain.org/modules/hierarchical/</loc>
       </url>
       <url>
+        <loc>https://docs.hierachain.org/modules/consensus/</loc>
+      </url>
+      <url>
         <loc>https://docs.hierachain.org/modules/security/</loc>
       </url>
       <url>
@@ -80,6 +83,24 @@
       </url>
       <url>
         <loc>https://docs.hierachain.org/modules/units/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/security/authorization-access-control/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/security/lockdown-logging/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/security/fault-tolerance-integrity/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/security/risk-analyzer/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/security/encryption-keys/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/security/decentralized-zkp/</loc>
       </url>
       <url>
         <loc>https://docs.hierachain.org/consensus/base_consensus/</loc>

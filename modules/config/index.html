@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Tổng quan module cấu hình: settings, logging; phân biệt với Reference/config (biến môi trường).">
+        <meta name="description" content="Quản lý cấu hình hệ thống, bảo mật bí mật (Secret Management) và định dạng log chuẩn hóa cho HieraChain.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -31,7 +31,7 @@
     
     
       
-        <title>Config module - HieraChain Docs</title>
+        <title>Config Module - HieraChain Docs</title>
       
     
     
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Config module
+              Config Module
             
           </span>
         </div>
@@ -297,6 +297,25 @@
           
   
   Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/authorization-access-control/" class="md-tabs__link">
+          
+  
+  Hệ thống Bảo mật
 
         </a>
       </li>
@@ -941,6 +960,8 @@
       
         
       
+        
+      
     
     
     
@@ -1054,11 +1075,41 @@
   
   
     <li class="md-nav__item">
+      <a href="../consensus/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../security/" class="md-nav__link">
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1449,10 +1500,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -1460,10 +1511,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#cac-thanh-phan-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Các thành phần cốt lõi
       
     </span>
   </a>
@@ -1471,10 +1522,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#quan-ly-cau-hinh-theo-moi-truong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        Quản lý cấu hình theo môi trường
       
     </span>
   </a>
@@ -1482,10 +1533,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#secret-manager-quan-ly-bi-mat" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Secret Manager (Quản lý Bí mật)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Secret Manager (Quản lý Bí mật)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vi-du-su-dung-trong-ma-nguon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ sử dụng trong mã nguồn:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backends-ho-tro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backends hỗ trợ:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ghi-log-chuan-hoa-observability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ghi log chuẩn hóa (Observability)
       
     </span>
   </a>
@@ -1493,43 +1583,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#kiem-chung-cau-hinh-validation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bảo mật &amp; quyền truy cập
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hiệu năng
+        Kiểm chứng cấu hình (Validation)
       
     </span>
   </a>
@@ -1627,12 +1684,263 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m1.39 18.36 1.77-1.76L4.58 18l1.06-1.05-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.42 1.41L10.59 12l-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.41 1.41 1.07-1.06-1.42-1.41 1.42-1.42L18 6.7l1.07-1.06-2.47-2.48 1.76-1.77 4.25 4.25L5.64 22.61z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg>
   
   <span class="md-ellipsis">
     
   
     Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hệ thống Bảo mật
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hệ thống Bảo mật
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization-access-control/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization & Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/lockdown-logging/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockdown & Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/fault-tolerance-integrity/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault-tolerance & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/risk-analyzer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/encryption-keys/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption & Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/decentralized-zkp/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Zero-Knowledge Proofs
   
 
     
@@ -1683,10 +1991,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -1704,8 +2012,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1912,10 +2220,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -1933,8 +2241,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2295,10 +2603,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2316,8 +2624,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2722,10 +3030,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2743,8 +3051,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2909,10 +3217,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -2930,8 +3238,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3094,10 +3402,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -3115,8 +3423,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3264,10 +3572,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -3275,10 +3583,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#cac-thanh-phan-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Các thành phần cốt lõi
       
     </span>
   </a>
@@ -3286,10 +3594,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#quan-ly-cau-hinh-theo-moi-truong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        Quản lý cấu hình theo môi trường
       
     </span>
   </a>
@@ -3297,10 +3605,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#secret-manager-quan-ly-bi-mat" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Secret Manager (Quản lý Bí mật)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Secret Manager (Quản lý Bí mật)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vi-du-su-dung-trong-ma-nguon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ sử dụng trong mã nguồn:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backends-ho-tro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backends hỗ trợ:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ghi-log-chuan-hoa-observability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ghi log chuẩn hóa (Observability)
       
     </span>
   </a>
@@ -3308,43 +3655,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#kiem-chung-cau-hinh-validation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bảo mật &amp; quyền truy cập
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hiệu năng
+        Kiểm chứng cấu hình (Validation)
       
     </span>
   </a>
@@ -3394,82 +3708,118 @@
 
 
 <h1 id="config-module-hierachainconfig">Config Module (<code>hierachain/config/*</code>)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>Đóng gói cấu hình hệ thống ở dạng Pythonic, cung cấp API truy cập/kiểm chứng cấu hình cho các thành phần khác của HieraChain.</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
+<h2 id="tong-quan">Tổng quan</h2>
+<p>Module <strong>Config</strong> là trung tâm điều khiển của HieraChain, chịu trách nhiệm quản lý hàng trăm tham số vận hành, đảm bảo tính bảo mật của các khóa bí mật và cung cấp cơ chế ghi log chuẩn hóa cho cả môi trường phát triển và vận hành thực tế.</p>
+<hr />
+<h2 id="cac-thanh-phan-cot-loi">Các thành phần cốt lõi</h2>
+<div class="grid cards">
 <ul>
-<li>Settings: <code>hierachain/config/settings.py</code> — lớp <code>Settings</code> và biến <code>settings</code> (theo môi trường: dev/test/product), cùng hàm <code>get_settings()</code>.</li>
-<li>Logging: <code>hierachain/config/logging.py</code> — (nếu áp dụng) cấu hình logging chuẩn.</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 17v2h6v-2zM3 5v2h10V5zm10 16v-2h8v-2h-8v-2h-2v6zM7 9v2H3v2h4v2h2V9zm14 4v-2H11v2zm-6-4h2V7h4V5h-4V3h-2z"/></svg></span> <strong>Settings Management</strong></p>
+<hr />
+<p><strong>File</strong>: <code>settings.py</code></p>
+<ul>
+<li>Hệ thống cấu hình dựa trên môi trường (<code>HRC_ENV</code>).</li>
+<li>Tự động kiểm chứng (validation) tính hợp lệ của tham số.</li>
+<li>Phân tách cấu hình theo nhóm: Blockchain, Consensus, Storage, P2P, v.v.</li>
 </ul>
-<h2 id="api-cong-khai-public-api">API công khai (Public API)</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.config.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span><span class="p">,</span> <span class="n">get_settings</span>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg></span> <strong>Secret Manager</strong></p>
+<hr />
+<p><strong>File</strong>: <code>secret_manager.py</code></p>
+<ul>
+<li>Truy xuất bí mật (secrets) độc lập với hạ tầng.</li>
+<li>Hỗ trợ backends: Environment, HashiCorp Vault, AWS Secrets Manager.</li>
+<li>Tự động fallback linh hoạt.</li>
+</ul>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 9.5 7.5 14h-5zM3 4h4v4H3zm2 16a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2M9 5v2h12V5zm0 14h12v-2H9zm0-6h12v-2H9z"/></svg></span> <strong>Structured Logging</strong></p>
+<hr />
+<p><strong>File</strong>: <code>logging.py</code></p>
+<ul>
+<li>Định dạng <strong>Text</strong> cho lập trình viên (màu sắc, dễ đọc).</li>
+<li>Định dạng <strong>JSON</strong> cho môi trường Production (phù hợp với ELK, Cloud Logging).</li>
+<li>Hỗ trợ nhúng Request ID để truy vết lỗi.</li>
+</ul>
+</li>
+</ul>
+</div>
+<hr />
+<h2 id="quan-ly-cau-hinh-theo-moi-truong">Quản lý cấu hình theo môi trường</h2>
+<p>HieraChain sử dụng biến môi trường <code>HRC_ENV</code> để tự động chuyển đổi giữa các cấu hình tối ưu:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Môi trường</th>
+<th style="text-align: left;">Giá trị <code>HRC_ENV</code></th>
+<th style="text-align: left;">Đặc điểm chính</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Development</strong></td>
+<td style="text-align: left;"><code>dev</code> (Mặc định)</td>
+<td style="text-align: left;">Log level DEBUG, lưu trữ SQLite/Memory, cho phép CORS từ mọi nơi.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Production</strong></td>
+<td style="text-align: left;"><code>product</code></td>
+<td style="text-align: left;">Ép buộc xác thực (Auth), HSTS, P2P Strict Trust, log định dạng JSON.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Testing</strong></td>
+<td style="text-align: left;"><code>test</code></td>
+<td style="text-align: left;">Cấu hình cực nhanh, block size nhỏ, mặc định lưu trữ Memory.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="secret-manager-quan-ly-bi-mat">Secret Manager (Quản lý Bí mật)</h2>
+<p>Đây là thành phần quan trọng để bảo vệ các khóa nhạy cảm như <code>HRC_CLUSTER_SECRET</code> hoặc <code>IPFS_ENCRYPTION_KEY</code>.</p>
+<h3 id="vi-du-su-dung-trong-ma-nguon">Ví dụ sử dụng trong mã nguồn:</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.config.secret_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">SecretManager</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">cfg</span> <span class="o">=</span> <span class="n">settings</span>  <span class="c1"># thể hiện cấu hình global theo env</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">api</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_api_config</span><span class="p">()</span>        <span class="c1"># {&quot;version&quot;: ..., &quot;host&quot;: ..., &quot;port&quot;: ...}</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">cons</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get_consensus_config</span><span class="p">()</span> <span class="c1"># {&quot;type&quot;: ..., &quot;validator_timeout&quot;: ...}</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">errs</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">validate_config</span><span class="p">()</span>      <span class="c1"># list lỗi cấu hình (nếu có)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">sm</span> <span class="o">=</span> <span class="n">SecretManager</span><span class="p">()</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Tự động lấy từ Vault, AWS hoặc Env tùy theo cấu hình</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">cluster_key</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">get_secret</span><span class="p">(</span><span class="s2">&quot;HRC_CLUSTER_SECRET&quot;</span><span class="p">)</span>
 </code></pre></div>
-<p>Mô tả các trường quan trọng (ví dụ):</p>
+<h3 id="backends-ho-tro">Backends hỗ trợ:</h3>
+<ol>
+<li><strong>Environment (<code>env</code>)</strong>: Mặc định, đọc trực tiếp từ biến môi trường.</li>
+<li><strong>Vault (<code>vault</code>)</strong>: Kết nối tới HashiCorp Vault KV v2.</li>
+<li><strong>AWS (<code>aws</code>)</strong>: Kết nối tới AWS Secrets Manager.</li>
+</ol>
+<hr />
+<h2 id="ghi-log-chuan-hoa-observability">Ghi log chuẩn hóa (Observability)</h2>
+<p>Bạn có thể thay đổi định dạng log thông qua biến môi trường <code>HRC_LOG_FORMAT</code>:</p>
 <ul>
-<li>Blockchain: <code>BLOCK_SIZE_LIMIT</code>, <code>PROOF_SUBMISSION_INTERVAL</code></li>
-<li>Consensus: <code>CONSENSUS_TYPE</code>, <code>BFT_ENABLED</code>, <code>BFT_NODE_COUNT</code></li>
-<li>Storage: <code>DEFAULT_STORAGE_BACKEND</code>, <code>DATABASE_URL</code>, <code>REDIS_*</code></li>
-<li>Security: <code>AUTH_ENABLED</code>, <code>API_KEY_*</code>, <code>HSTS_*</code>, <code>RATE_LIMIT_*</code>, <code>MSP_ENABLED</code></li>
-<li>API: <code>API_VERSION</code>, <code>API_HOST</code>, <code>API_PORT</code></li>
-<li>ZK Proofs: <code>ENABLE_ZK_PROOFS</code>, <code>ZK_*</code></li>
-<li>K8s/Proof Aggregation/Rebalance/Cross‑level Sync: các biến <code>K8S_*</code>, <code>PROOF_*</code>, <code>REBALANCE_*</code>, <code>CROSS_LEVEL_*</code></li>
-</ul>
-<h2 id="cau-hinh">Cấu hình</h2>
-<ul>
-<li>Tham chiếu chi tiết biến môi trường: xem trang <a href="../../reference/config/">Reference/Config</a>.</li>
-<li>Chọn môi trường bằng <code>HRC_ENV</code> (<code>dev</code>/<code>test</code>/<code>product</code>).</li>
-</ul>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
-<ul>
-<li>Tính năng: tập trung hóa cấu hình, có kiểm chứng tối thiểu (<code>validate_config</code>).</li>
-<li>Hạn chế: một số giá trị cần override qua biến môi trường khi triển khai thực tế (API host/port, DB, CORS…).</li>
-</ul>
-<h2 id="bao-mat-quyen-truy-cap">Bảo mật &amp; quyền truy cập</h2>
-<ul>
-<li>Không ghi log secret/khóa; dùng biến môi trường/secret manager để cấp phát giá trị nhạy cảm.</li>
-</ul>
-<h2 id="xu-ly-loi-khac-phuc">Xử lý lỗi &amp; khắc phục</h2>
-<ul>
-<li><code>validate_config()</code> trả về danh sách lỗi để phát hiện cấu hình sai ngay khi khởi động.</li>
-</ul>
-<h2 id="hieu-nang">Hiệu năng</h2>
-<ul>
-<li>Truy cập cấu hình là O(1); không gây overhead đáng kể.</li>
-</ul>
-<h2 id="lien-quan">Liên quan</h2>
-<ul>
-<li>Tham chiếu Config: <a href="../../reference/config/">Config</a></li>
-<li>Kiến trúc Bảo mật: <a href="../../architecture/security/">Bảo mật (chuyên sâu)</a></li>
+<li>
+<p><strong>Dành cho Dev (<code>text</code>)</strong>:
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>INFO  hierachain.api.server  Starting HieraChain Node on localhost:2661...
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Dành cho Ops (<code>json</code>)</strong>:
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-03-20T10:00:00&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;level&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;INFO&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;logger&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hierachain.api&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Node started&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;request_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;abc-123&quot;</span><span class="p">}</span>
+</code></pre></div></p>
+</li>
 </ul>
 <hr />
-<details class="info">
-<summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
-<p><strong>FACT</strong></p>
+<h2 id="kiem-chung-cau-hinh-validation">Kiểm chứng cấu hình (Validation)</h2>
+<p>HieraChain thực hiện kiểm tra cấu hình ngay khi khởi động để tránh các lỗi vận hành tiềm ẩn:</p>
 <ul>
-<li>Các hằng/số và phương thức cấu hình định nghĩa trong <code>hierachain/config/settings.py</code> (có <code>Settings</code>, <code>ProductionSettings</code>, <code>DevelopmentSettings</code>, <code>TestingSettings</code>, <code>get_settings()</code>, <code>settings</code>).</li>
+<li><strong><code>validate_config()</code></strong>: Kiểm tra các giá trị logic (ví dụ: Port phải từ 1-65535, Block size &gt; 0).</li>
+<li><strong><code>check_security_config()</code></strong>: Cảnh báo nếu các thiết lập bảo mật trong môi trường Production không đủ an toàn (ví dụ: Tắt Auth hoặc bật CORS-all).</li>
 </ul>
-<p><strong>DECISION</strong></p>
+<hr />
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Phân tách "module overview" (trang này) và "reference biến môi trường" (trang Reference/config) để tài liệu dễ tra cứu.</li>
+<li><a href="../../reference/config/">Biến môi trường (Reference)</a></li>
+<li><a href="../../architecture/security/">Kiến trúc Bảo mật</a></li>
+<li><a href=".././monitoring/">Hệ thống Monitoring</a></li>
 </ul>
-<p><strong>ASSUMPTION</strong></p>
-<ul>
-<li>Môi trường triển khai có thể cung cấp biến môi trường phù hợp (Docker/K8s/CI/CD).</li>
-</ul>
-<p><strong>INVARIANT</strong></p>
-<ul>
-<li>Các biến bắt buộc phải hợp lệ (port trong 1..65535, backend thuộc {memory, redis, sqlite}, …).</li>
-</ul>
-<p><strong>EDGE CASES</strong></p>
-<ul>
-<li>Thiết lập mâu thuẫn (ví dụ bật BFT nhưng số node &lt; 3f+1) cần phát hiện sớm và cảnh báo.</li>
-</ul>
-</details>
 
 
 

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Lớp truyền thông và tin cậy ngang hàng: ZMQ transport, kết nối an toàn, quản lý độ tin cậy peer.">
+        <meta name="description" content="Hạ tầng truyền thông P2P hiệu năng cao: ZeroMQ Transport, Bảo mật CurveZMQ, và Xác thực MSP/Ed25519.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -31,7 +31,7 @@
     
     
       
-        <title>Network module - HieraChain Docs</title>
+        <title>Network Module - HieraChain Docs</title>
       
     
     
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Network module
+              Network Module
             
           </span>
         </div>
@@ -297,6 +297,25 @@
           
   
   Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/authorization-access-control/" class="md-tabs__link">
+          
+  
+  Hệ thống Bảo mật
 
         </a>
       </li>
@@ -941,6 +960,8 @@
       
         
       
+        
+      
     
     
     
@@ -1054,11 +1075,41 @@
   
   
     <li class="md-nav__item">
+      <a href="../consensus/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../security/" class="md-nav__link">
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1299,10 +1350,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -1310,10 +1361,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#kien-truc-bao-mat-a-tang-layered-security" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Kiến trúc Bảo mật Đa tầng (Layered Security)
       
     </span>
   </a>
@@ -1321,22 +1372,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#cac-thanh-phan-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        Các thành phần cốt lõi
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="API công khai (Public API)">
+    <nav class="md-nav" aria-label="Các thành phần cốt lõi">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#message-cryptographic-chi-tiet" class="md-nav__link">
+  <a href="#1-zmq-transport-zmq_transportpy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Message Cryptographic (Chi tiết)
+        1. ZMQ Transport (zmq_transport.py)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-secure-connection-manager-secure_connectionpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Secure Connection Manager (secure_connection.py)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-peer-trust-manager-peer_trust_managerpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Peer Trust Manager (peer_trust_manager.py)
       
     </span>
   </a>
@@ -1349,10 +1422,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#quy-trinh-thiet-lap-ket-noi-an-toan-secure-handshake" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Quy trình Thiết lập Kết nối An toàn (Secure Handshake)
       
     </span>
   </a>
@@ -1360,43 +1433,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#vi-du-su-dung" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Ví dụ sử dụng
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ví dụ sử dụng">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-khoi-tao-node-bao-mat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Khởi tạo Node Bảo mật
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#2-gui-thong-iep-co-ky-so" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bảo mật &amp; quyền truy cập
+        2. Gửi thông điệp có ký số
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
+  <a href="#cau-hinh-p2p-environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hiệu năng
+        Cấu hình P2P (Environment Variables)
       
     </span>
   </a>
@@ -1644,12 +1723,263 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m1.39 18.36 1.77-1.76L4.58 18l1.06-1.05-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.42 1.41L10.59 12l-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.41 1.41 1.07-1.06-1.42-1.41 1.42-1.42L18 6.7l1.07-1.06-2.47-2.48 1.76-1.77 4.25 4.25L5.64 22.61z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg>
   
   <span class="md-ellipsis">
     
   
     Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hệ thống Bảo mật
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hệ thống Bảo mật
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization-access-control/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization & Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/lockdown-logging/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockdown & Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/fault-tolerance-integrity/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault-tolerance & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/risk-analyzer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/encryption-keys/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption & Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/decentralized-zkp/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Zero-Knowledge Proofs
   
 
     
@@ -1700,10 +2030,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -1721,8 +2051,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1929,10 +2259,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -1950,8 +2280,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2312,10 +2642,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2333,8 +2663,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2739,10 +3069,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2760,8 +3090,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2926,10 +3256,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -2947,8 +3277,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3111,10 +3441,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -3132,8 +3462,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3281,10 +3611,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -3292,10 +3622,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#kien-truc-bao-mat-a-tang-layered-security" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Kiến trúc Bảo mật Đa tầng (Layered Security)
       
     </span>
   </a>
@@ -3303,22 +3633,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#cac-thanh-phan-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        Các thành phần cốt lõi
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="API công khai (Public API)">
+    <nav class="md-nav" aria-label="Các thành phần cốt lõi">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#message-cryptographic-chi-tiet" class="md-nav__link">
+  <a href="#1-zmq-transport-zmq_transportpy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Message Cryptographic (Chi tiết)
+        1. ZMQ Transport (zmq_transport.py)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-secure-connection-manager-secure_connectionpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Secure Connection Manager (secure_connection.py)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-peer-trust-manager-peer_trust_managerpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Peer Trust Manager (peer_trust_manager.py)
       
     </span>
   </a>
@@ -3331,10 +3683,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#quy-trinh-thiet-lap-ket-noi-an-toan-secure-handshake" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Quy trình Thiết lập Kết nối An toàn (Secure Handshake)
       
     </span>
   </a>
@@ -3342,43 +3694,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#vi-du-su-dung" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Ví dụ sử dụng
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ví dụ sử dụng">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-khoi-tao-node-bao-mat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Khởi tạo Node Bảo mật
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#2-gui-thong-iep-co-ky-so" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bảo mật &amp; quyền truy cập
+        2. Gửi thông điệp có ký số
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
+  <a href="#cau-hinh-p2p-environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hiệu năng
+        Cấu hình P2P (Environment Variables)
       
     </span>
   </a>
@@ -3428,250 +3786,137 @@
 
 
 <h1 id="network-module-hierachainnetwork">Network Module (<code>hierachain/network/*</code>)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>Cung cấp hạ tầng truyền thông giữa các thành phần/nút của HieraChain: gửi/nhận thông điệp, thiết lập kết nối an toàn, và quản lý độ tin cậy giữa các peer.</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
-<ul>
-<li>Vận chuyển (Transport): <code>network/zmq_transport.py</code> — triển khai dựa trên ZeroMQ cho giao tiếp không đồng bộ, phù hợp mô hình pub/sub, push/pull.</li>
-<li>Client/Abstraction: <code>network/network_client.py</code> — bao bọc thao tác gửi/nhận, quản lý endpoint.</li>
-<li>Kết nối an toàn: <code>network/secure_connection.py</code> — lớp tiện ích cho bảo mật đường truyền (mã hóa/handshake ở mức ứng dụng nếu cần).</li>
-<li><strong>Message Cryptographic</strong> (mới): <code>network/message_cryptographic.py</code> — ký và xác thực P2P messages với Ed25519, replay protection (timestamp + nonce).</li>
-<li>Niềm tin ngang hàng: <code>network/peer_trust_manager.py</code> — quản lý trạng thái peer (độ tin cậy, blacklist/graylist, tạm ngắt).</li>
-</ul>
-<p>Sơ đồ đơn giản:</p>
-<pre class="mermaid"><code>graph LR
-    Sub[Sub-Chain]
-    Order[Ordering Service]
-    Main[Main Chain]
-    NetClient[Network Client]
-
-    Sub -- ZMQ Push --&gt; Order
-    Order -- ZMQ Pub --&gt; Sub
-    Sub -- ZMQ Req --&gt; Main
-    Main -- ZMQ Rep --&gt; Sub
-
-    subgraph Network Layer
-        NetClient
-        SecureConnection
-        PeerTrust
-    end
-
-    Sub -.-&gt; NetClient
-    Main -.-&gt; NetClient</code></pre>
-<h2 id="api-cong-khai-public-api">API công khai (Public API)</h2>
-<p>Mức mô tả (rút gọn, tham khảo tên lớp/hàm trong mã nguồn):</p>
-<ul>
-<li>ZmqNode: khởi tạo với <code>node_id</code>, <code>port</code>, <code>host</code>; hỗ trợ đăng ký peer (<code>register_peer</code>), gửi <code>send_direct</code>, <code>broadcast</code> qua <code>DEALER</code>, nhận dữ liệu tự động cấu hình qua hàm callback (<code>set_handler</code>). Hỗ trợ Replay Protection sẵn (qua <code>nonce</code> và <code>timestamp</code>).</li>
-<li>NetworkClient: cấu hình danh sách endpoint, phương thức <code>publish</code>, <code>subscribe</code>, <code>request</code>, <code>respond</code> (tùy thực thi).</li>
-<li>SecureConnection: tạo/ký/xác minh thông điệp, bọc thêm lớp mã hóa nếu thiết lập.</li>
-<li><strong>MessageCryptographic</strong>: ký messages (<code>sign_message</code>), verify signatures (<code>verify_message</code>), handshake signing/verification.</li>
-<li>PeerTrustManager: cập nhật điểm tin cậy, đánh dấu peer xấu, chính sách retry/backoff.</li>
-</ul>
-<p>Ví dụ mô tả (pseudocode):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.network.zmq_transport</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZmqNode</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="c1"># Khởi tạo hai Node</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">node_A</span> <span class="o">=</span> <span class="n">ZmqNode</span><span class="p">(</span><span class="n">node_id</span><span class="o">=</span><span class="s2">&quot;node_A&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">5555</span><span class="p">)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">node_B</span> <span class="o">=</span> <span class="n">ZmqNode</span><span class="p">(</span><span class="n">node_id</span><span class="o">=</span><span class="s2">&quot;node_B&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">5556</span><span class="p">)</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="c1"># Cài đặt bộ xử lý thông điệp</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">node_B</span><span class="o">.</span><span class="n">set_handler</span><span class="p">(</span><span class="k">lambda</span> <span class="n">msg</span><span class="p">,</span> <span class="n">sender</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Nhận từ </span><span class="si">{</span><span class="n">sender</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="k">await</span> <span class="n">node_A</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="k">await</span> <span class="n">node_B</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="c1"># Đăng ký peer và gửi tin</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">node_A</span><span class="o">.</span><span class="n">register_peer</span><span class="p">(</span><span class="s2">&quot;node_B&quot;</span><span class="p">,</span> <span class="s2">&quot;tcp://127.0.0.1:5556&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">msg</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;event&quot;</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="s2">&quot;nonce&quot;</span><span class="p">:</span> <span class="s2">&quot;abc1234&quot;</span><span class="p">}</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="k">await</span> <span class="n">node_A</span><span class="o">.</span><span class="n">send_direct</span><span class="p">(</span><span class="s2">&quot;node_B&quot;</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="message-cryptographic-chi-tiet">Message Cryptographic (Chi tiết)</h3>
-<p><strong>File</strong>: <code>network/message_cryptographic.py</code></p>
-<p>Module cung cấp cryptographic signing và verification cho P2P messages:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.network.message_cryptographic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">sign_message</span><span class="p">,</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">verify_message</span><span class="p">,</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">sign_handshake_payload</span><span class="p">,</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">verify_handshake_signature</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">)</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.security.security_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyPair</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># Khởi tạo keypair (Ed25519)</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">keypair</span> <span class="o">=</span> <span class="n">KeyPair</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">sender_id</span> <span class="o">=</span> <span class="s2">&quot;node_1&quot;</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="c1"># 1. Sign a P2P message</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;consensus_vote&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="s2">&quot;block_hash&quot;</span><span class="p">:</span> <span class="s2">&quot;0x123abc...&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="s2">&quot;vote&quot;</span><span class="p">:</span> <span class="s2">&quot;approve&quot;</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="p">}</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="n">signed_msg</span> <span class="o">=</span> <span class="n">sign_message</span><span class="p">(</span>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="n">payload</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span>
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">keypair</span><span class="o">=</span><span class="n">keypair</span><span class="p">,</span>
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>    <span class="n">sender_id</span><span class="o">=</span><span class="n">sender_id</span>
-<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="p">)</span>
-<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>
-<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="c1"># Signed message structure:</span>
-<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="c1"># {</span>
-<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="c1">#   &quot;payload&quot;: {...},</span>
-<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="c1">#   &quot;timestamp&quot;: 1234567890.123,</span>
-<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="c1">#   &quot;nonce&quot;: &quot;uuid-string&quot;,</span>
-<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="c1">#   &quot;sender_id&quot;: &quot;node_1&quot;,</span>
-<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="c1">#   &quot;signature&quot;: &quot;hex-signature&quot;</span>
-<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="c1"># }</span>
-<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>
-<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="c1"># 2. Send via ZMQ</span>
-<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="n">zmq_transport</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">signed_msg</span><span class="p">)</span>
-<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>
-<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="c1"># 3. Receive and verify</span>
-<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="n">received_msg</span> <span class="o">=</span> <span class="n">zmq_transport</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
-<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a>
-<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="c1"># Get sender&#39;s public key from peer trust manager</span>
-<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="n">public_key_hex</span> <span class="o">=</span> <span class="n">peer_trust_manager</span><span class="o">.</span><span class="n">get_public_key</span><span class="p">(</span>
-<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a>    <span class="n">received_msg</span><span class="p">[</span><span class="s2">&quot;sender_id&quot;</span><span class="p">]</span>
-<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="p">)</span>
-<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a>
-<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="c1"># Verify signature</span>
-<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="n">is_valid</span> <span class="o">=</span> <span class="n">verify_message</span><span class="p">(</span>
-<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a>    <span class="n">message</span><span class="o">=</span><span class="n">received_msg</span><span class="p">,</span>
-<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a>    <span class="n">public_key_hex</span><span class="o">=</span><span class="n">public_key_hex</span>
-<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a><span class="p">)</span>
-<a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a>
-<a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a><span class="k">if</span> <span class="n">is_valid</span><span class="p">:</span>
-<a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a>    <span class="c1"># Process message</span>
-<a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a>    <span class="n">process_consensus_vote</span><span class="p">(</span><span class="n">received_msg</span><span class="p">[</span><span class="s2">&quot;payload&quot;</span><span class="p">])</span>
-<a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a><span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid signature from </span><span class="si">{</span><span class="n">received_msg</span><span class="p">[</span><span class="s1">&#39;sender_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-57" name="__codelineno-1-57" href="#__codelineno-1-57"></a>    <span class="n">peer_trust_manager</span><span class="o">.</span><span class="n">record_failure</span><span class="p">(</span><span class="n">received_msg</span><span class="p">[</span><span class="s2">&quot;sender_id&quot;</span><span class="p">])</span>
-<a id="__codelineno-1-58" name="__codelineno-1-58" href="#__codelineno-1-58"></a>
-<a id="__codelineno-1-59" name="__codelineno-1-59" href="#__codelineno-1-59"></a><span class="c1"># 4. Handshake signing (for connection establishment)</span>
-<a id="__codelineno-1-60" name="__codelineno-1-60" href="#__codelineno-1-60"></a><span class="n">handshake_data</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-1-61" name="__codelineno-1-61" href="#__codelineno-1-61"></a>    <span class="s2">&quot;node_id&quot;</span><span class="p">:</span> <span class="s2">&quot;node_1&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-62" name="__codelineno-1-62" href="#__codelineno-1-62"></a>    <span class="s2">&quot;protocol_version&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-63" name="__codelineno-1-63" href="#__codelineno-1-63"></a>    <span class="s2">&quot;capabilities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;consensus&quot;</span><span class="p">,</span> <span class="s2">&quot;storage&quot;</span><span class="p">]</span>
-<a id="__codelineno-1-64" name="__codelineno-1-64" href="#__codelineno-1-64"></a><span class="p">}</span>
-<a id="__codelineno-1-65" name="__codelineno-1-65" href="#__codelineno-1-65"></a>
-<a id="__codelineno-1-66" name="__codelineno-1-66" href="#__codelineno-1-66"></a><span class="n">handshake_sig</span> <span class="o">=</span> <span class="n">sign_handshake_payload</span><span class="p">(</span><span class="n">handshake_data</span><span class="p">,</span> <span class="n">keypair</span><span class="p">)</span>
-<a id="__codelineno-1-67" name="__codelineno-1-67" href="#__codelineno-1-67"></a>
-<a id="__codelineno-1-68" name="__codelineno-1-68" href="#__codelineno-1-68"></a><span class="c1"># Send handshake</span>
-<a id="__codelineno-1-69" name="__codelineno-1-69" href="#__codelineno-1-69"></a><span class="n">handshake_msg</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-1-70" name="__codelineno-1-70" href="#__codelineno-1-70"></a>    <span class="o">**</span><span class="n">handshake_data</span><span class="p">,</span>
-<a id="__codelineno-1-71" name="__codelineno-1-71" href="#__codelineno-1-71"></a>    <span class="s2">&quot;signature&quot;</span><span class="p">:</span> <span class="n">handshake_sig</span>
-<a id="__codelineno-1-72" name="__codelineno-1-72" href="#__codelineno-1-72"></a><span class="p">}</span>
-<a id="__codelineno-1-73" name="__codelineno-1-73" href="#__codelineno-1-73"></a><span class="n">zmq_transport</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">handshake_msg</span><span class="p">)</span>
-<a id="__codelineno-1-74" name="__codelineno-1-74" href="#__codelineno-1-74"></a>
-<a id="__codelineno-1-75" name="__codelineno-1-75" href="#__codelineno-1-75"></a><span class="c1"># Verify handshake (receiver side)</span>
-<a id="__codelineno-1-76" name="__codelineno-1-76" href="#__codelineno-1-76"></a><span class="n">received_handshake</span> <span class="o">=</span> <span class="n">zmq_transport</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
-<a id="__codelineno-1-77" name="__codelineno-1-77" href="#__codelineno-1-77"></a><span class="n">sig</span> <span class="o">=</span> <span class="n">received_handshake</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;signature&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-78" name="__codelineno-1-78" href="#__codelineno-1-78"></a><span class="n">sender_pubkey</span> <span class="o">=</span> <span class="n">lookup_public_key</span><span class="p">(</span><span class="n">received_handshake</span><span class="p">[</span><span class="s2">&quot;node_id&quot;</span><span class="p">])</span>
-<a id="__codelineno-1-79" name="__codelineno-1-79" href="#__codelineno-1-79"></a>
-<a id="__codelineno-1-80" name="__codelineno-1-80" href="#__codelineno-1-80"></a><span class="k">if</span> <span class="n">verify_handshake_signature</span><span class="p">(</span><span class="n">received_handshake</span><span class="p">,</span> <span class="n">sig</span><span class="p">,</span> <span class="n">sender_pubkey</span><span class="p">):</span>
-<a id="__codelineno-1-81" name="__codelineno-1-81" href="#__codelineno-1-81"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Handshake verified, connection established&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-82" name="__codelineno-1-82" href="#__codelineno-1-82"></a><span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-1-83" name="__codelineno-1-83" href="#__codelineno-1-83"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Handshake failed, rejecting connection&quot;</span><span class="p">)</span>
-</code></pre></div>
-<p><strong>[FACT]</strong> Message Cryptographic features:</p>
-<ul>
-<li><strong>Ed25519 signatures</strong>: Fast, secure digital signatures (128-bit security)</li>
-<li><strong>Canonical serialization</strong>: Deterministic JSON serialization (sorted keys) for consistent signing</li>
-<li><strong>Replay protection</strong>: Timestamp + UUID nonce prevent replay attacks</li>
-<li><strong>Handshake support</strong>: Separate signing for connection establishment</li>
-</ul>
-<p><strong>[INVARIANT]</strong> Signed message structure:</p>
-<ul>
-<li>Must contain: <code>payload</code>, <code>timestamp</code>, <code>nonce</code>, <code>sender_id</code>, <code>signature</code></li>
-<li><code>timestamp</code> must be Unix timestamp (float)</li>
-<li><code>nonce</code> must be unique UUID string</li>
-<li><code>signature</code> must be hex-encoded Ed25519 signature</li>
-</ul>
-<p><strong>[DECISION]</strong> Dùng Ed25519 thay vì RSA/ECDSA vì:</p>
-<ul>
-<li>Faster signing/verification (~10x faster than RSA-2048)</li>
-<li>Smaller signatures (64 bytes vs 256 bytes for RSA)</li>
-<li>Better security properties (immunity to timing attacks)</li>
-<li>Native support in Python via <code>cryptography</code> library</li>
-</ul>
-<p><strong>[EDGE CASE]</strong> Clock skew: Nếu sender và receiver có clock skew lớn (&gt;5 minutes), timestamp validation có thể fail. Giải pháp:</p>
-<ul>
-<li>Sync clocks với NTP</li>
-<li>Accept messages trong time window (±5 minutes)</li>
-<li>Log warnings nếu detect large clock skew</li>
-</ul>
-<p><strong>[EDGE CASE]</strong> Nonce collision: UUID v4 có xác suất collision ~10^-36, effectively zero cho practical purposes. Nếu cần stronger guarantee, dùng counter-based nonce + timestamp.</p>
-<h2 id="cau-hinh">Cấu hình</h2>
-<ul>
-<li>Endpoint/ports do dịch vụ triển khai quyết định; có thể tham chiếu từ biến môi trường riêng (không cố định trong <code>settings.py</code>).</li>
-<li>Khi tích hợp Ordering Service (xem Architecture/Consensus), cấu hình phải thống nhất giữa các thành phần.</li>
-</ul>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
+<h2 id="tong-quan">Tổng quan</h2>
+<p>Module <strong>Network</strong> là lớp xương sống cho phép các nút (Nodes) trong mạng lưới HieraChain giao tiếp với nhau. Được thiết kế với triết lý "Bảo mật đa tầng" (Defense-in-Depth), module này kết hợp sức mạnh truyền tải của <strong>ZeroMQ</strong> với các thuật toán mật mã hiện đại để đảm bảo mọi thông điệp đều được mã hóa, xác thực và chống giả mạo.</p>
+<hr />
+<h2 id="kien-truc-bao-mat-a-tang-layered-security">Kiến trúc Bảo mật Đa tầng (Layered Security)</h2>
+<p>HieraChain không chỉ dựa vào một lớp bảo mật duy nhất mà kết hợp ba lớp bảo vệ độc lập:</p>
+<div class="grid cards">
 <ul>
 <li>
-<p>Tính năng:</p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13c.34 0 .67.04 1 .09V10a2 2 0 0 0-2-2h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6a2 2 0 0 0-2 2v10c0 1.11.89 2 2 2h7.81c-.51-.88-.81-1.9-.81-3 0-3.31 2.69-6 6-6M9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9zm3 11a2 2 0 1 1 2-2c0 1.11-.89 2-2 2m10.5.25L17.75 22 15 19l1.16-1.16 1.59 1.59 3.59-3.59z"/></svg></span> <strong>Lớp 1: CurveZMQ (Transport)</strong></p>
+<hr />
+<p><strong>Công nghệ</strong>: Curve25519</p>
 <ul>
-<li>Giao tiếp không đồng bộ, phù hợp throughput cao.</li>
-<li>Có lớp tiện ích để tăng cứng bảo mật ở mức ứng dụng.</li>
-<li>Quản lý độ tin cậy peer (tối thiểu) để giảm nhiễu.</li>
+<li>Mã hóa toàn bộ đường truyền giữa các Socket ZeroMQ.</li>
+<li>Đảm bảo tính riêng tư (Privacy) và chống nghe lén trên mạng Web2.</li>
+<li>Sử dụng khóa ephemeral để đảm bảo Forward Secrecy.</li>
 </ul>
 </li>
 <li>
-<p>Hạn chế:</p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.1 12.5 1.4 1.41-6.53 6.59L12.5 17l1.4-1.41 2.07 2.08zM10 17l3 3H3v-2c0-2.21 3.58-4 8-4l1.89.11zm1-13a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4"/></svg></span> <strong>Lớp 2: MSP Handshake (Identity)</strong></p>
+<hr />
+<p><strong>Công nghệ</strong>: Ed25519 + Certificates</p>
 <ul>
-<li>ZeroMQ không tự cung cấp cơ chế phân tán/HA hoàn chỉnh; cần bổ sung orchestration.</li>
-<li>Bảo mật đầu-cuối cần cấu hình khóa/chính sách rõ ràng.</li>
+<li>Xác thực danh tính nút thông qua chứng chỉ MSP (Membership Service Provider).</li>
+<li>Chỉ cho phép các nút thuộc tổ chức (Organization) hợp lệ tham gia mạng lưới.</li>
+<li>Quy trình Handshake 2 bước: <code>INIT</code> và <code>ACK</code>.</li>
+</ul>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 12a6.4 6.4 0 0 1 2.87.67A12 12 0 0 0 21 11V5l-9-4-9 4v6c0 5.55 3.84 10.74 9 12 .35-.09.7-.2 1-.32a6.42 6.42 0 0 1-1.5-4.18A6.5 6.5 0 0 1 18 12m0 2.5V13l-2.25 2.25L18 17.5V16a2.5 2.5 0 0 1 2.24 3.62l1.09 1.09A4 4 0 0 0 18 14.5m0 6.5a2.5 2.5 0 0 1-2.24-3.62l-1.09-1.09A4 4 0 0 0 18 22.5V24l2.25-2.25L18 19.5Z"/></svg></span> <strong>Lớp 3: Integrity &amp; Replay Protection</strong></p>
+<hr />
+<p><strong>Công nghệ</strong>: Ed25519 + Nonce + Timestamp</p>
+<ul>
+<li>Mọi thông điệp P2P đều được ký số (Digital Signature).</li>
+<li>Chống tấn công lặp lại (Replay Attacks) bằng cách kiểm tra Nonce duy nhất và Timestamp trong cửa sổ cho phép (60s).</li>
 </ul>
 </li>
 </ul>
-<h2 id="bao-mat-quyen-truy-cap">Bảo mật &amp; quyền truy cập</h2>
+</div>
+<hr />
+<h2 id="cac-thanh-phan-cot-loi">Các thành phần cốt lõi</h2>
+<h3 id="1-zmq-transport-zmq_transportpy">1. ZMQ Transport (<code>zmq_transport.py</code>)</h3>
+<p>Hiện thực hóa mô hình P2P không đồng bộ sử dụng Socket <strong>ROUTER</strong> (để nhận) và <strong>DEALER</strong> (để gửi). </p>
 <ul>
-<li>Kết hợp với <code>security/*</code> để ký/xác minh thông điệp hoặc thiết lập khóa phiên.</li>
-<li>Thận trọng với cấu hình bind/connect hở Internet; triển khai trong mạng tin cậy hoặc sau lớp proxy/TLS.</li>
+<li><strong>Hiệu năng</strong>: Xử lý hàng nghìn thông điệp mỗi giây với độ trễ cực thấp.</li>
+<li><strong>Identity Management</strong>: Quản lý định danh các nút ở mức socket để định tuyến chính xác.</li>
 </ul>
-<h2 id="xu-ly-loi-khac-phuc">Xử lý lỗi &amp; khắc phục</h2>
+<h3 id="2-secure-connection-manager-secure_connectionpy">2. Secure Connection Manager (<code>secure_connection.py</code>)</h3>
+<p>Điều phối quy trình thiết lập kết nối an toàn:</p>
+<ol>
+<li>Thiết lập kênh mã hóa Curve25519.</li>
+<li>Thực hiện Handshake để trao đổi và xác thực chứng chỉ MSP.</li>
+<li>Quản lý danh sách các Peer đã được xác thực (<code>authenticated_peers</code>).</li>
+</ol>
+<h3 id="3-peer-trust-manager-peer_trust_managerpy">3. Peer Trust Manager (<code>peer_trust_manager.py</code>)</h3>
+<p>Quản lý độ tin cậy của các nút lân cận:</p>
 <ul>
-<li>Retry/backoff khi mất kết nối; ghi nhận sự cố vào audit/monitoring.</li>
-<li>Kết hợp <code>monitoring/*</code> để phát cảnh báo khi số lần lỗi vượt ngưỡng.</li>
-</ul>
-<h2 id="hieu-nang">Hiệu năng</h2>
-<ul>
-<li>ZMQ hỗ trợ mô hình hàng đợi nhẹ; tinh chỉnh high-water mark, batch, và affinity nếu cần.</li>
-<li>Tách kênh nóng (hot path) và lạnh (cold path) để tránh nghẽn.</li>
-</ul>
-<h2 id="lien-quan">Liên quan</h2>
-<ul>
-<li>Architecture/Consensus (Ordering): <a href="../../architecture/consensus/">Consensus &amp; Ordering</a></li>
-<li>Security: <a href="../security/">Security</a></li>
-<li>Monitoring: <a href="../monitoring/">Monitoring</a></li>
+<li><strong>Policy Enforcement</strong>: Áp dụng các chính sách <code>strict</code> (chỉ cho phép allowlist) hoặc <code>discovery</code> (cho phép tự động khám phá).</li>
+<li><strong>Reputation</strong>: Đánh dấu và ngắt kết nối với các Peer có hành vi xấu (sai chữ ký, gửi thông điệp rác).</li>
 </ul>
 <hr />
-<details class="info">
-<summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
-<p><strong>FACT</strong></p>
+<h2 id="quy-trinh-thiet-lap-ket-noi-an-toan-secure-handshake">Quy trình Thiết lập Kết nối An toàn (Secure Handshake)</h2>
+<pre class="mermaid"><code>sequenceDiagram
+    participant NodeA as Node A (Initiator)
+    participant NodeB as Node B (Responder)
+
+    Note over NodeA, NodeB: 1. Curve25519 Encrypted Channel Established
+
+    NodeA-&gt;&gt;NodeB: HANDSHAKE_INIT (MSP Cert + Ed25519 Sig)
+
+    Note right of NodeB: Verify Trust Policy&lt;br/&gt;Verify MSP Certificate&lt;br/&gt;Verify Handshake Signature
+
+    NodeB--&gt;&gt;NodeA: HANDSHAKE_ACK (Success + Ed25519 Sig)
+
+    Note left of NodeA: Verify ACK Signature
+
+    Note over NodeA, NodeB: 2. Authenticated P2P Channel Ready</code></pre>
+<hr />
+<h2 id="vi-du-su-dung">Ví dụ sử dụng</h2>
+<h3 id="1-khoi-tao-node-bao-mat">1. Khởi tạo Node Bảo mật</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.network.secure_connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">SecureConnectionManager</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Khởi tạo manager tích hợp MSP</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">secure_node</span> <span class="o">=</span> <span class="n">SecureConnectionManager</span><span class="p">(</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">node_id</span><span class="o">=</span><span class="s2">&quot;node_001&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">port</span><span class="o">=</span><span class="mi">5001</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">msp</span><span class="o">=</span><span class="n">msp_instance</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">identity_mgr</span><span class="o">=</span><span class="n">identity_instance</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</code></pre></div>
+<h3 id="2-gui-thong-iep-co-ky-so">2. Gửi thông điệp có ký số</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Tự động ký và gửi qua kênh đã mã hóa</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;block_proposal&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">}}</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">send_secure</span><span class="p">(</span><span class="s2">&quot;peer_002&quot;</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="cau-hinh-p2p-environment-variables">Cấu hình P2P (Environment Variables)</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Biến môi trường</th>
+<th style="text-align: left;">Chức năng</th>
+<th style="text-align: left;">Giá trị khuyến nghị (Prod)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>HRC_P2P_TRUST_POLICY</code></td>
+<td style="text-align: left;">Chính sách tin cậy</td>
+<td style="text-align: left;"><code>strict</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>HRC_P2P_REQUIRE_SIGNATURES</code></td>
+<td style="text-align: left;">Bắt buộc chữ ký Ed25519</td>
+<td style="text-align: left;"><code>true</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>HRC_P2P_ALLOWLIST</code></td>
+<td style="text-align: left;">Danh sách Peer ID tin cậy</td>
+<td style="text-align: left;">(Danh sách ID cụ thể)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Mã nguồn mạng: <code>hierachain/network/{zmq_transport.py, network_client.py, secure_connection.py, peer_trust_manager.py}</code>.</li>
+<li><a href=".././security/">Bảo mật và MSP (Security)</a></li>
+<li><a href="../../consensus/bft_consensus/">Đồng thuận BFT (Consensus)</a></li>
+<li><a href=".././monitoring/">Giám sát mạng (Monitoring)</a></li>
 </ul>
-<p><strong>DECISION</strong></p>
-<ul>
-<li>Ưu tiên ZMQ cho đơn giản và thông lượng; bảo mật ở mức ứng dụng thông qua ký/xác minh và (tùy chọn) mã hóa.</li>
-</ul>
-<p><strong>ASSUMPTION</strong></p>
-<ul>
-<li>Môi trường triển khai cho phép mở cổng mạng liên quan; firewall đã được cấu hình.</li>
-</ul>
-<p><strong>INVARIANT</strong></p>
-<ul>
-<li>Thông điệp phải tuần tự hóa xác định trước khi ký/xác minh.</li>
-<li>Cấu hình endpoint nhất quán giữa các thành phần.</li>
-</ul>
-<p><strong>EDGE CASES</strong></p>
-<ul>
-<li>Mất kết nối lặp lại → cần backoff và chuyển kênh.</li>
-<li>Peer có hành vi xấu → đưa vào blacklist tạm thời qua PeerTrustManager.</li>
-</ul>
-</details>
 
 
 

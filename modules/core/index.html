@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Core HieraChain module: Block, Blockchain, Schema, Utils, Caching, Domain Contract, Parallel Engine.">
+        <meta name="description" content="Kiến trúc nền tảng của HieraChain: Block, Blockchain, Apache Arrow, Caching và Parallel Processing.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -31,7 +31,7 @@
     
     
       
-        <title>Core module - HieraChain Docs</title>
+        <title>Core Module - HieraChain Docs</title>
       
     
     
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Core module
+              Core Module
             
           </span>
         </div>
@@ -297,6 +297,25 @@
           
   
   Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/authorization-access-control/" class="md-tabs__link">
+          
+  
+  Hệ thống Bảo mật
 
         </a>
       </li>
@@ -941,6 +960,8 @@
       
         
       
+        
+      
     
     
     
@@ -1059,10 +1080,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -1070,10 +1091,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#cac-thanh-phan-nen-tang" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Các thành phần nền tảng
       
     </span>
   </a>
@@ -1081,77 +1102,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#kien-truc-block-high-performance-event-storage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        Kiến trúc Block (High-Performance Event Storage)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="API công khai (Public API)">
+    <nav class="md-nav" aria-label="Kiến trúc Block (High-Performance Event Storage)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#block" class="md-nav__link">
+  <a href="#uu-iem-vuot-troi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Block
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#blockchain" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Blockchain
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#schemas" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Schemas
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#caching" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Caching
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#domain-contract" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Domain Contract
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#parallel-engine" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Parallel Engine
+        Ưu điểm vượt trội:
       
     </span>
   </a>
@@ -1164,10 +1130,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#blockchain-co-che-chong-tac-nghen-deadlock-prevention" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Blockchain &amp; Cơ chế Chống Tắc nghẽn (Deadlock Prevention)
       
     </span>
   </a>
@@ -1175,10 +1141,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#he-thong-caching-a-tang" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Hệ thống Caching đa tầng
       
     </span>
   </a>
@@ -1186,10 +1152,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
+  <a href="#parallel-processing-engine" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bảo mật &amp; quyền truy cập
+        Parallel Processing Engine
       
     </span>
   </a>
@@ -1197,32 +1163,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
+  <a href="#hop-ong-mien-domain-contract" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hiệu năng
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#faq" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FAQ
+        Hợp đồng Miền (Domain Contract)
       
     </span>
   </a>
@@ -1286,11 +1230,41 @@
   
   
     <li class="md-nav__item">
+      <a href="../consensus/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../security/" class="md-nav__link">
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1710,12 +1684,263 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m1.39 18.36 1.77-1.76L4.58 18l1.06-1.05-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.42 1.41L10.59 12l-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.41 1.41 1.07-1.06-1.42-1.41 1.42-1.42L18 6.7l1.07-1.06-2.47-2.48 1.76-1.77 4.25 4.25L5.64 22.61z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg>
   
   <span class="md-ellipsis">
     
   
     Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hệ thống Bảo mật
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hệ thống Bảo mật
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization-access-control/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization & Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/lockdown-logging/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockdown & Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/fault-tolerance-integrity/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault-tolerance & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/risk-analyzer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/encryption-keys/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption & Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/decentralized-zkp/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Zero-Knowledge Proofs
   
 
     
@@ -1766,10 +1991,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -1787,8 +2012,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1995,10 +2220,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -2016,8 +2241,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2378,10 +2603,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2399,8 +2624,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2805,10 +3030,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2826,8 +3051,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2992,10 +3217,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -3013,8 +3238,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3177,10 +3402,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -3198,8 +3423,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3347,10 +3572,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -3358,10 +3583,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#cac-thanh-phan-nen-tang" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Các thành phần nền tảng
       
     </span>
   </a>
@@ -3369,77 +3594,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#kien-truc-block-high-performance-event-storage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        Kiến trúc Block (High-Performance Event Storage)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="API công khai (Public API)">
+    <nav class="md-nav" aria-label="Kiến trúc Block (High-Performance Event Storage)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#block" class="md-nav__link">
+  <a href="#uu-iem-vuot-troi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Block
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#blockchain" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Blockchain
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#schemas" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Schemas
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#caching" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Caching
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#domain-contract" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Domain Contract
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#parallel-engine" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Parallel Engine
+        Ưu điểm vượt trội:
       
     </span>
   </a>
@@ -3452,10 +3622,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#blockchain-co-che-chong-tac-nghen-deadlock-prevention" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Blockchain &amp; Cơ chế Chống Tắc nghẽn (Deadlock Prevention)
       
     </span>
   </a>
@@ -3463,10 +3633,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#he-thong-caching-a-tang" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Hệ thống Caching đa tầng
       
     </span>
   </a>
@@ -3474,10 +3644,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap" class="md-nav__link">
+  <a href="#parallel-processing-engine" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bảo mật &amp; quyền truy cập
+        Parallel Processing Engine
       
     </span>
   </a>
@@ -3485,32 +3655,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
+  <a href="#hop-ong-mien-domain-contract" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hiệu năng
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#faq" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FAQ
+        Hợp đồng Miền (Domain Contract)
       
     </span>
   </a>
@@ -3560,281 +3708,126 @@
 
 
 <h1 id="core-module-hierachaincore">Core Module (<code>hierachain/core/*</code>)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>Core Module cung cấp cấu trúc dữ liệu và thuật toán nền tảng: <code>Block</code>, <code>Blockchain</code>, schema Arrow, băm/Merkle, và tiện ích hiệu năng. Đây là lớp thấp nhất mà các tầng <code>hierarchical/*</code> dựa vào.</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
-<ul>
-<li>Block sử dụng Apache Arrow để lưu trữ Event theo dạng cột, tối ưu truy vấn/bộ nhớ.</li>
-<li>Blockchain quản lý Chain: tạo genesis, thêm Block/Event, kiểm tra tính hợp lệ và thống kê.</li>
-<li>Schema chuẩn hoá cấu trúc Event và Block để tương thích đa ngôn ngữ.</li>
-<li>Hash/Merkle đảm bảo tính toàn vẹn dữ liệu, phục vụ tạo Proof ở cấp Sub-Chain.</li>
-</ul>
-<pre class="mermaid"><code>classDiagram
-    direction LR
-    class Blockchain {
-        +list chain
-        +list pending_events
-        +add_event(event)
-        +finalize_block()
-        +is_chain_valid()
-    }
-    class Block {
-        +int index
-        +float timestamp
-        +list events
-        +string previous_hash
-        +string hash
-        +calculate_hash()
-    }
-
-    Blockchain "1" *-- "many" Block</code></pre>
-<h2 id="api-cong-khai-public-api">API công khai (Public API)</h2>
-<h3 id="block">Block</h3>
-<p>file: <code>hierachain/core/block.py</code></p>
-<p>Chữ ký quan trọng (rút gọn, dạng mô tả):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Block</span><span class="p">:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  <span class="fm">__init__</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">previous_hash</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">nonce</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">merkle_root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">creator_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">signature</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  <span class="n">events</span>  <span class="c1"># property: trả về pyarrow.Table</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  <span class="n">calculate_merkle_root</span><span class="p">()</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  <span class="n">calculate_hash</span><span class="p">()</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  <span class="n">get_events_by_entity</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  <span class="n">get_events_by_type</span><span class="p">(</span><span class="n">event_type</span><span class="p">)</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  <span class="n">to_event_list</span><span class="p">()</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  <span class="n">validate_structure</span><span class="p">()</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  <span class="n">to_dict</span><span class="p">()</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  <span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</code></pre></div>
-<p>Ví dụ tối thiểu:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  <span class="c1"># Ví dụ (không đầy đủ import):</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  <span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.block</span><span class="w"> </span><span class="kn">import</span> <span class="n">Block</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  <span class="n">events</span> <span class="o">=</span> <span class="p">[{</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>      <span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PROD-001&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>      <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;production_complete&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>      <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="mf">1703088000.0</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>      <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;quantity&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>  <span class="c1"># sẽ được chuẩn hoá thành Map(str,str)</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>      <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  <span class="p">}]</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>  <span class="n">blk</span> <span class="o">=</span> <span class="n">Block</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">events</span><span class="o">=</span><span class="n">events</span><span class="p">,</span> <span class="n">previous_hash</span><span class="o">=</span><span class="s2">&quot;&lt;genesis-hash&gt;&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>  <span class="n">blk_hash</span> <span class="o">=</span> <span class="n">blk</span><span class="o">.</span><span class="n">calculate_hash</span><span class="p">()</span>
-</code></pre></div>
-<h3 id="blockchain">Blockchain</h3>
-<p>file: <code>hierachain/core/blockchain.py</code></p>
-<p>Chữ ký quan trọng:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Blockchain</span><span class="p">:</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  <span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Blockchain&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  <span class="n">create_genesis_block</span><span class="p">()</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  <span class="n">get_latest_block</span><span class="p">()</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  <span class="n">add_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  <span class="n">create_block</span><span class="p">(</span><span class="n">events</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  <span class="n">add_block</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  <span class="n">finalize_block</span><span class="p">()</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  <span class="n">is_valid_new_block</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  <span class="n">is_chain_valid</span><span class="p">()</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>  <span class="n">get_events_by_entity</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>  <span class="n">get_events_by_type</span><span class="p">(</span><span class="n">event_type</span><span class="p">)</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>  <span class="n">get_events_by_filter</span><span class="p">(</span><span class="n">filter_func</span><span class="p">)</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>  <span class="n">get_chain_stats</span><span class="p">()</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>  <span class="n">to_dict</span><span class="p">()</span>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>  <span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</code></pre></div>
-<p>Ví dụ tối thiểu:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.blockchain</span><span class="w"> </span><span class="kn">import</span> <span class="n">Blockchain</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">bc</span> <span class="o">=</span> <span class="n">Blockchain</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;ExampleChain&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">bc</span><span class="o">.</span><span class="n">create_genesis_block</span><span class="p">()</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">bc</span><span class="o">.</span><span class="n">add_event</span><span class="p">({</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="s2">&quot;PROD-001&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;quality_checked&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="mf">1703089000.0</span><span class="p">,</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">},</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">})</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="n">bc</span><span class="o">.</span><span class="n">finalize_block</span><span class="p">()</span>  <span class="c1"># đóng block hiện tại (nếu đủ điều kiện)</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="k">assert</span> <span class="n">bc</span><span class="o">.</span><span class="n">is_chain_valid</span><span class="p">()</span>
-</code></pre></div>
-<h3 id="schemas">Schemas</h3>
-<p>file: <code>hierachain/core/schemas.py</code></p>
-<p>Event schema (rút gọn):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">EVENT_SCHEMA</span> <span class="o">=</span> <span class="n">schema</span><span class="p">([</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  <span class="p">(</span><span class="s1">&#39;entity_id&#39;</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  <span class="p">(</span><span class="s1">&#39;event&#39;</span><span class="p">,</span> <span class="n">string</span><span class="p">),</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  <span class="p">(</span><span class="s1">&#39;timestamp&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  <span class="p">(</span><span class="s1">&#39;details&#39;</span><span class="p">,</span> <span class="nb">map</span><span class="o">&lt;</span><span class="n">string</span><span class="p">,</span> <span class="n">string</span><span class="o">&gt;</span><span class="p">),</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  <span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">binary</span><span class="p">),</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="p">])</span>
-</code></pre></div>
-<p>Block header schema và transaction schema cũng được định nghĩa nhằm chuẩn hoá lưu trữ và tương thích liên ngôn ngữ.</p>
-<h3 id="caching">Caching</h3>
-<p>file: <code>hierachain/core/caching.py</code></p>
-<p>Hệ thống caching nâng cao với nhiều chính sách loại bỏ và hỗ trợ TTL:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">AdvancedCache</span><span class="p">:</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  <span class="fm">__init__</span><span class="p">(</span><span class="n">max_size</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">eviction_policy</span><span class="o">=</span><span class="s2">&quot;lru&quot;</span><span class="p">)</span>  <span class="c1"># lru, lfu, fifo, ttl</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  <span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  <span class="nb">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">ttl</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  <span class="n">delete</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  <span class="n">clear</span><span class="p">()</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>  <span class="n">get_stats</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span>  <span class="c1"># hits, misses, hit_ratio, size</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  <span class="n">cleanup_ttl</span><span class="p">()</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="k">class</span><span class="w"> </span><span class="nc">BlockchainCacheManager</span><span class="p">:</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  <span class="fm">__init__</span><span class="p">(</span><span class="n">chain</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>  <span class="n">get_block</span><span class="p">(</span><span class="n">chain_name</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>       <span class="c1"># 42x faster khi cached</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>  <span class="n">get_entity_events</span><span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">chain_type</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>  <span class="c1"># 18.9x faster</span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>  <span class="n">get_events_for_block</span><span class="p">(</span><span class="n">chain_name</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
-<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>  <span class="n">get_cache_stats</span><span class="p">()</span>
-<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>  <span class="n">warm_cache</span><span class="p">(</span><span class="n">entity_ids</span><span class="p">)</span>
-<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>  <span class="n">optimize_cache</span><span class="p">()</span>
-<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>  <span class="n">shutdown</span><span class="p">()</span>
-</code></pre></div>
-<p>Ví dụ:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.caching</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockchainCacheManager</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">cache_mgr</span> <span class="o">=</span> <span class="n">BlockchainCacheManager</span><span class="p">(</span><span class="n">hierarchy_manager</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="s2">&quot;block_cache_size&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="s2">&quot;entity_cache_size&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="s2">&quot;default_ttl&quot;</span><span class="p">:</span> <span class="mi">300</span>  <span class="c1"># 5 phút</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">})</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">events</span> <span class="o">=</span> <span class="n">cache_mgr</span><span class="o">.</span><span class="n">get_entity_events</span><span class="p">(</span><span class="s2">&quot;PROD-001&quot;</span><span class="p">)</span>  <span class="c1"># cached lookup</span>
-</code></pre></div>
-<h3 id="domain-contract">Domain Contract</h3>
-<p>file: <code>hierachain/core/domain_contract.py</code></p>
-<p>Hệ thống hợp đồng miền với quản lý vòng đời và versioning:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">ContractStatus</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  <span class="n">DEVELOPMENT</span><span class="p">,</span> <span class="n">TESTING</span><span class="p">,</span> <span class="n">ACTIVE</span><span class="p">,</span> <span class="n">DEPRECATED</span><span class="p">,</span> <span class="n">DISABLED</span><span class="p">,</span> <span class="n">ARCHIVED</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">DomainContract</span><span class="p">:</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  <span class="fm">__init__</span><span class="p">(</span><span class="n">contract_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span> <span class="n">domain_type</span><span class="o">=</span><span class="s2">&quot;generic&quot;</span><span class="p">)</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  <span class="c1"># Lifecycle</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  <span class="n">activate</span><span class="p">();</span> <span class="n">deprecate</span><span class="p">(</span><span class="n">reason</span><span class="p">);</span> <span class="n">disable</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  <span class="n">get_status_info</span><span class="p">()</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  <span class="c1"># Versioning</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>  <span class="n">upgrade_version</span><span class="p">(</span><span class="n">new_version</span><span class="p">,</span> <span class="n">migration_func</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  <span class="c1"># Execution</span>
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>  <span class="n">execute</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">result</span>
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>  <span class="n">register_handler</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">handler_func</span><span class="p">)</span>
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>  <span class="c1"># Storage</span>
-<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>  <span class="n">storage</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">);</span> <span class="n">storage</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>  <span class="c1"># Events</span>
-<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>  <span class="n">get_execution_history</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</code></pre></div>
-<p>Ví dụ:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.domain_contract</span><span class="w"> </span><span class="kn">import</span> <span class="n">DomainContract</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">contract</span> <span class="o">=</span> <span class="n">DomainContract</span><span class="p">(</span><span class="s2">&quot;supply_contract&quot;</span><span class="p">,</span> <span class="s2">&quot;Supply Chain Contract&quot;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.0.0&quot;</span><span class="p">)</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">contract</span><span class="o">.</span><span class="n">register_handler</span><span class="p">(</span><span class="s2">&quot;validate_shipment&quot;</span><span class="p">,</span> <span class="n">validate_fn</span><span class="p">)</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">contract</span><span class="o">.</span><span class="n">activate</span><span class="p">()</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">result</span> <span class="o">=</span> <span class="n">contract</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;validate_shipment&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;shipment_id&quot;</span><span class="p">:</span> <span class="s2">&quot;SHIP-001&quot;</span><span class="p">})</span>
-</code></pre></div>
-<h3 id="parallel-engine">Parallel Engine</h3>
-<p>file: <code>hierachain/core/parallel_engine.py</code></p>
-<p>Xử lý song song với worker pools và các chính sách xử lý chuyên biệt:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">ProcessingPolicy</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  <span class="n">DEFAULT</span><span class="p">,</span> <span class="n">VALIDATION</span><span class="p">,</span> <span class="n">INDEXING</span><span class="p">,</span> <span class="n">BATCH</span><span class="p">,</span> <span class="n">PRIORITY</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">ParallelProcessingEngine</span><span class="p">:</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>  <span class="fm">__init__</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>  <span class="c1"># Processing</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>  <span class="n">process_batch</span><span class="p">(</span><span class="n">data_batch</span><span class="p">,</span> <span class="n">processor_func</span><span class="p">,</span> <span class="n">policy</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ProcessingResult</span><span class="p">]</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>  <span class="n">process_chunks</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">processor_func</span><span class="p">,</span> <span class="n">policy</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>  <span class="c1"># Block operations</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>  <span class="n">parallel_validate_blocks</span><span class="p">(</span><span class="n">blocks</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ProcessingResult</span><span class="p">]</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>  <span class="n">parallel_index_events</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>  <span class="n">parallel_hash_blocks</span><span class="p">(</span><span class="n">blocks</span><span class="p">)</span>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>  <span class="c1"># Pool management</span>
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>  <span class="n">create_worker_pool</span><span class="p">(</span><span class="n">pool_name</span><span class="p">,</span> <span class="n">max_workers</span><span class="p">,</span> <span class="n">pool_type</span><span class="o">=</span><span class="s2">&quot;thread&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>  <span class="n">register_policy</span><span class="p">(</span><span class="n">policy_name</span><span class="p">,</span> <span class="n">policy_func</span><span class="p">)</span>
-<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>  <span class="n">get_engine_stats</span><span class="p">()</span>
-<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>  <span class="n">shutdown</span><span class="p">()</span>
-</code></pre></div>
-<p>Ví dụ:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.parallel_engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParallelProcessingEngine</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">ParallelProcessingEngine</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">results</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">parallel_validate_blocks</span><span class="p">(</span><span class="n">blocks</span><span class="p">)</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">engine</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
-</code></pre></div>
-<h2 id="cau-hinh">Cấu hình</h2>
-<ul>
-<li>Core không yêu cầu cấu hình riêng biệt; các tuỳ chọn thường ở tầng trên (ví dụ <code>hierachain/config/settings.py</code>) hoặc tại Sub-Chain/Ordering.</li>
-</ul>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
+<h2 id="tong-quan">Tổng quan</h2>
+<p>Module <strong>Core</strong> là trái tim của HieraChain Ledger, cung cấp các cấu trúc dữ liệu và công cụ xử lý hiệu năng cao nhất. Tại đây, công nghệ <strong>Apache Arrow</strong> được tích hợp sâu để quản lý hàng triệu sự kiện với tốc độ cực nhanh, kết hợp với hệ thống Caching đa tầng và Parallel Engine để đảm bảo khả năng mở rộng (scalability) ở cấp độ doanh nghiệp.</p>
+<hr />
+<h2 id="cac-thanh-phan-nen-tang">Các thành phần nền tảng</h2>
+<div class="grid cards">
 <ul>
 <li>
-<p>Tính năng:</p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3C8.59 3 5.69 4.07 4.54 5.57l5.25 5.25c.71.11 1.43.18 2.21.18 4.42 0 8-1.79 8-4s-3.58-4-8-4M3.92 7.08 2.5 8.5 5 11H0v2h5l-2.5 2.5 1.42 1.42L8.84 12M20 9c0 2.21-3.58 4-8 4-.66 0-1.3-.05-1.91-.13l-2.47 2.47c1.26.41 2.76.66 4.38.66 4.42 0 8-1.79 8-4m0 2c0 2.21-3.58 4-8 4-2.28 0-4.33-.5-5.79-1.25l-1.68 1.68C5.68 19.93 8.59 21 12 21c4.42 0 8-1.79 8-4"/></svg></span> <strong>Block &amp; Apache Arrow</strong></p>
+<hr />
+<p><strong>File</strong>: <code>block.py</code></p>
 <ul>
-<li>Lưu trữ sự kiện bằng Apache Arrow, hiệu quả bộ nhớ.</li>
-<li>Băm và Merkle root xác định (deterministic) để phục vụ proof.</li>
-<li>Truy vấn theo entity/type/filter trên chuỗi.</li>
+<li>Lưu trữ sự kiện theo mô hình cột (columnar storage).</li>
+<li>Lọc dữ liệu bằng Arrow Compute (nhanh hơn 10-50x so với Python list).</li>
+<li>Hashing và Merkle Root xác định (deterministic).</li>
 </ul>
 </li>
 <li>
-<p>Hạn chế/ghi chú:</p>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10.59 13.41c.41.39.41 1.03 0 1.42-.39.39-1.03.39-1.42 0a5.003 5.003 0 0 1 0-7.07l3.54-3.54a5.003 5.003 0 0 1 7.07 0 5.003 5.003 0 0 1 0 7.07l-1.49 1.49c.01-.82-.12-1.64-.4-2.42l.47-.48a2.98 2.98 0 0 0 0-4.24 2.98 2.98 0 0 0-4.24 0l-3.53 3.53a2.98 2.98 0 0 0 0 4.24m2.82-4.24c.39-.39 1.03-.39 1.42 0a5.003 5.003 0 0 1 0 7.07l-3.54 3.54a5.003 5.003 0 0 1-7.07 0 5.003 5.003 0 0 1 0-7.07l1.49-1.49c-.01.82.12 1.64.4 2.43l-.47.47a2.98 2.98 0 0 0 0 4.24 2.98 2.98 0 0 0 4.24 0l3.53-3.53a2.98 2.98 0 0 0 0-4.24.973.973 0 0 1 0-1.42"/></svg></span> <strong>Blockchain &amp; Safety</strong></p>
+<hr />
+<p><strong>File</strong>: <code>blockchain.py</code></p>
 <ul>
-<li>Payload <code>data</code> dạng nhị phân; người dùng cần tự tuần tự hoá phù hợp.</li>
-<li><code>details</code> chuẩn hoá về Map(str,str); giá trị phi chuỗi sẽ được chuyển thành chuỗi.</li>
+<li>Quản lý chuỗi khối, genesis và bộ nhớ đệm (pending pool).</li>
+<li><strong>Deadlock Detection</strong>: Tự động phát hiện và xử lý tắc nghẽn khóa (lock contention).</li>
+<li>Chỉ mục hóa Entity (Entity Indexing) cho truy vấn O(1).</li>
+</ul>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg></span> <strong>Parallel Engine</strong></p>
+<hr />
+<p><strong>File</strong>: <code>parallel_engine.py</code></p>
+<ul>
+<li>Xử lý song song dựa trên chính sách (Policy-driven).</li>
+<li>Worker pools chuyên biệt cho Validation, Indexing và Batch processing.</li>
+<li>Tự động chia nhỏ dữ liệu (Chunking) để tối ưu bộ nhớ.</li>
+</ul>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41s-1.03.39-1.42.01A9.97 9.97 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13"/></svg></span> <strong>Advanced Caching</strong></p>
+<hr />
+<p><strong>File</strong>: <code>caching.py</code></p>
+<ul>
+<li>Caching 3 tầng: Block, Event và Entity.</li>
+<li>Chính sách loại bỏ: <strong>LRU</strong>, <strong>LFU</strong>, <strong>FIFO</strong>, <strong>TTL</strong>.</li>
+<li>Tăng tốc truy xuất block lên tới <strong>42 lần</strong>.</li>
 </ul>
 </li>
 </ul>
-<h2 id="bao-mat-quyen-truy-cap">Bảo mật &amp; quyền truy cập</h2>
-<ul>
-<li>Bảo mật ở lớp Core chủ yếu liên quan tính toàn vẹn (hash/Merkle). Kiểm soát truy cập nằm ở tầng <code>security/*</code> và <code>api/*</code>.</li>
-</ul>
-<h2 id="xu-ly-loi-khac-phuc">Xử lý lỗi &amp; khắc phục</h2>
-<ul>
-<li>Các lớp chuỗi (Sub-Chain/Main Chain) kết hợp cơ chế <code>journal</code>, <code>rollback_manager</code>, <code>recovery_engine</code> ở tầng <code>error_mitigation/*</code>.</li>
-</ul>
-<h2 id="hieu-nang">Hiệu năng</h2>
-<ul>
-<li>Apache Arrow (cột) giúp giảm overhead chuyển đổi và tăng tốc truy vấn.</li>
-<li>Hash/Merkle tối ưu hoá để tính toán nhanh trên danh sách sự kiện.</li>
-</ul>
-<h2 id="faq">FAQ</h2>
-<div class="admonition question">
-<p class="admonition-title">Tại sao dùng Arrow?</p>
-<p>Giảm chi phí chuyển đổi, tăng hiệu quả bộ nhớ và phù hợp khối lượng sự kiện lớn.</p>
 </div>
-<div class="admonition question">
-<p class="admonition-title">Có thể nhúng dữ liệu tuỳ ý?</p>
-<p>Có, qua trường <code>data</code> (binary). Khuyến nghị giới hạn kích thước và tuần tự JSON/binary hợp lý.</p>
-</div>
-<h2 id="lien-quan">Liên quan</h2>
+<hr />
+<h2 id="kien-truc-block-high-performance-event-storage">Kiến trúc Block (High-Performance Event Storage)</h2>
+<p>HieraChain không lưu trữ block theo dạng JSON phẳng thông thường. Mỗi block bên trong là một <code>pyarrow.Table</code>.</p>
+<h3 id="uu-iem-vuot-troi">Ưu điểm vượt trội:</h3>
+<ol>
+<li><strong>Hiệu quả bộ nhớ</strong>: Arrow sử dụng bố cục bộ nhớ tối ưu, giảm overhead của Python objects.</li>
+<li><strong>Truy vấn thần tốc</strong>: Việc tìm kiếm sự kiện theo <code>entity_id</code> hoặc <code>event_type</code> được thực hiện trực tiếp trong tầng C++ của Arrow.</li>
+<li><strong>Tính nhất quán</strong>: Trường <code>data</code> lưu trữ payload gốc dưới dạng Binary, đảm bảo tính toàn vẹn tuyệt đối khi băm.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Ví dụ truy vấn nhanh trên Block</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">entity_events</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">get_events_by_entity</span><span class="p">(</span><span class="s2">&quot;PROD-123&quot;</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="blockchain-co-che-chong-tac-nghen-deadlock-prevention">Blockchain &amp; Cơ chế Chống Tắc nghẽn (Deadlock Prevention)</h2>
+<p>HieraChain được thiết kế để chạy trong môi trường đa luồng (multi-threaded). <code>Blockchain</code> tích hợp một <strong>Deadlock Detector</strong> để giám sát các thao tác khóa luồng:</p>
 <ul>
-<li>Kiến trúc tổng quan: <a href="../../architecture/overview/">Tổng quan</a></li>
-<li>Thuật ngữ: <a href="../../glossary/">Thuật ngữ</a></li>
+<li><strong>Monitor</strong>: Theo dõi thời gian chờ khóa luồng (threshold mặc định 3s).</li>
+<li><strong>Safe Lock</strong>: Cơ chế <code>safe_lock(timeout)</code> giúp hệ thống không bị treo vô hạn khi xảy ra tranh chấp tài nguyên.</li>
+<li><strong>Recovery</strong>: Tự động kích hoạt callback khi phát hiện rủi ro deadlock.</li>
 </ul>
 <hr />
-<details class="info">
-<summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
-<p><strong>FACT</strong></p>
+<h2 id="he-thong-caching-a-tang">Hệ thống Caching đa tầng</h2>
+<p>Lớp <code>BlockchainCacheManager</code> cung cấp khả năng tăng tốc đáng kinh ngạc cho các thao tác đọc:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Loại Cache</th>
+<th style="text-align: left;">Chính sách mặc định</th>
+<th style="text-align: left;">Hiệu năng cải thiện</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Block Cache</strong></td>
+<td style="text-align: left;">LRU (Least Recently Used)</td>
+<td style="text-align: left;"><strong>~42x</strong> (Truy xuất block theo index)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Event Cache</strong></td>
+<td style="text-align: left;">TTL (Time To Live)</td>
+<td style="text-align: left;">Tối ưu cho các API truy vấn sự kiện mới nhất.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Entity Cache</strong></td>
+<td style="text-align: left;">LFU (Least Frequently Used)</td>
+<td style="text-align: left;"><strong>~18.9x</strong> (Truy vết lịch sử một đối tượng)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="parallel-processing-engine">Parallel Processing Engine</h2>
+<p>Để xử lý hàng ngàn sự kiện mỗi giây, Core cung cấp một động cơ xử lý song song thông minh:</p>
 <ul>
-<li><code>Block</code> (Arrow Table nội bộ) và các phương thức: <code>calculate_hash</code>, <code>calculate_merkle_root</code>, <code>to_event_list</code>, <code>validate_structure</code>, ... (xem <code>core/block.py</code>).</li>
-<li><code>Blockchain</code> cung cấp: <code>create_genesis_block</code>, <code>add_event</code>, <code>finalize_block</code>, <code>is_chain_valid</code>, <code>get_chain_stats</code>, ... (xem <code>core/blockchain.py</code>).</li>
-<li>Schema sự kiện/block nằm tại <code>core/schemas.py</code> (bao gồm <code>get_event_schema</code>, <code>get_block_header_schema</code>, <code>get_transaction_schema</code>, <code>get_block_schema</code>).</li>
-<li>Caching: <code>core/caching.py</code> (<code>AdvancedCache</code>, <code>BlockchainCacheManager</code> với hiệu năng tăng 18-42x khi cached).</li>
-<li>Domain Contract: <code>core/domain_contract.py</code> (<code>DomainContract</code> với lifecycle, versioning, storage).</li>
-<li>Parallel Engine: <code>core/parallel_engine.py</code> (<code>ParallelProcessingEngine</code>, <code>WorkerPool</code> với đa chính sách xử lý).</li>
+<li><strong>Validation Pool</strong>: Chuyên dụng để kiểm tra chữ ký và Merkle root của block.</li>
+<li><strong>CPU Intensive Pool</strong>: Sử dụng <code>ProcessPoolExecutor</code> để thực hiện các phép tính băm nặng.</li>
+<li><strong>Policy-driven</strong>: Hệ thống tự động chọn pool phù hợp dựa trên loại tác vụ (ví dụ: tác vụ <code>indexing</code> sẽ có ưu tiên thấp hơn tác vụ <code>priority</code>).</li>
 </ul>
-<p><strong>DECISION</strong></p>
+<hr />
+<h2 id="hop-ong-mien-domain-contract">Hợp đồng Miền (Domain Contract)</h2>
+<p>Lớp <code>DomainContract</code> cho phép định nghĩa các quy tắc kinh doanh:</p>
 <ul>
-<li>Chuẩn hoá sự kiện qua Arrow Schema để tương thích đa ngôn ngữ và tối ưu hiệu năng.</li>
-<li>Duy trì hash/Merkle xác định phục vụ bằng chứng ở tầng Hierarchical.</li>
+<li><strong>Lifecycle</strong>: Quản lý trạng thái từ <code>DEVELOPMENT</code> -&gt; <code>ACTIVE</code> -&gt; <code>DEPRECATED</code>.</li>
+<li><strong>Versioning</strong>: Hỗ trợ nâng cấp phiên bản hợp đồng và di trú dữ liệu (migration).</li>
+<li><strong>Storage</strong>: Mỗi hợp đồng có không gian lưu trữ key-value riêng biệt.</li>
 </ul>
-<p><strong>ASSUMPTION</strong></p>
+<hr />
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Người dùng cung cấp sự kiện có đầy đủ trường cần thiết theo schema.</li>
-<li>Ứng dụng tầng trên chịu trách nhiệm kiểm soát truy cập và xác thực.</li>
+<li><a href="../../architecture/hierarchy/">Hierarchical Architecture</a></li>
+<li><a href="../../reference/benchmarks/">Performance Benchmarking</a></li>
+<li><a href=".././security/">Security Verifiers</a></li>
 </ul>
-<p><strong>INVARIANT</strong></p>
-<ul>
-<li>Hàm băm và merkle root phải xác định với cùng dữ liệu đầu vào.</li>
-<li>Chuỗi hợp lệ khi tất cả liên kết <code>previous_hash</code> nối nhau chính xác và mỗi block vượt qua kiểm chứng cấu trúc.</li>
-</ul>
-<p><strong>EDGE CASES</strong></p>
-<ul>
-<li>Sự kiện thiếu trường bắt buộc → <code>validate_structure</code> hoặc logic thêm block cần phát hiện và từ chối.</li>
-<li>Giá trị <code>details</code> phi chuỗi → sẽ được chuyển sang chuỗi; cần chú ý khi so sánh.</li>
-</ul>
-</details>
 
 
 

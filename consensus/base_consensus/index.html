@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Giao diện chuẩn (Abstract Base Class) cho tất cả các cơ chế đồng thuận trong hệ thống HieraChain.">
+        <meta name="description" content="Giao diện chuẩn (Abstract Base Class) định nghĩa quy tắc đồng thuận và kiểm soát nội dung doanh nghiệp.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://docs.hierachain.org/consensus/base_consensus/">
       
       
-        <link rel="prev" href="../../modules/units/">
+        <link rel="prev" href="../../security/decentralized-zkp/">
       
       
         <link rel="next" href="../poa/">
@@ -31,7 +31,7 @@
     
     
       
-        <title>Base Consensus - HieraChain Docs</title>
+        <title>Base Consensus Interface - HieraChain Docs</title>
       
     
     
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Base Consensus
+              Base Consensus Interface
             
           </span>
         </div>
@@ -295,6 +295,25 @@
           
   
   Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../security/authorization-access-control/" class="md-tabs__link">
+          
+  
+  Hệ thống Bảo mật
 
         </a>
       </li>
@@ -939,6 +958,8 @@
       
         
       
+        
+      
     
     
     
@@ -1049,11 +1070,41 @@
   
   
     <li class="md-nav__item">
+      <a href="../../modules/consensus/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Consensus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../modules/security/" class="md-nav__link">
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12h7c-.53 4.11-3.28 7.78-7 8.92zH5V6.3l7-3.11M12 1 3 5v6c0 5.55 3.84 10.73 9 12 5.16-1.27 9-6.45 9-12V5z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7m0 1.2c-.8 0-1.5.5-1.5 1.3V11h3V9.5c0-.8-.7-1.3-1.5-1.3"/></svg>
   
   <span class="md-ellipsis">
     
@@ -1473,12 +1524,263 @@
         
   
   
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m1.39 18.36 1.77-1.76L4.58 18l1.06-1.05-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.42 1.41L10.59 12l-1.42-1.41 1.42-1.42 2.47 2.48 1.06-1.06-2.47-2.48 1.41-1.41 1.41 1.41 1.07-1.06-1.42-1.41 1.42-1.42L18 6.7l1.07-1.06-2.47-2.48 1.76-1.77 4.25 4.25L5.64 22.61z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg>
   
   <span class="md-ellipsis">
     
   
     Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hệ thống Bảo mật
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hệ thống Bảo mật
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization-access-control/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4m6 10.2c0-.96.5-1.86 1.2-2.46v-.24c0-.39.07-.76.18-1.12-1.03-.24-2.17-.38-3.38-.38-4.42 0-8 1.79-8 4v2h10zm10 .1v3.5c0 .6-.6 1.2-1.3 1.2h-5.5c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2v-1.5c0-1.4 1.4-2.5 2.8-2.5s2.8 1.1 2.8 2.5V17c.6 0 1.2.6 1.2 1.3m-2.5-2.8c0-.8-.7-1.3-1.5-1.3s-1.5.5-1.5 1.3V17h3z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization & Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/lockdown-logging/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m6-9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h1V6c0-2.8 2.2-5 5-5s5 2.2 5 5v2zm-6-5C8.3 3 7 4.3 7 6v2h6V6c0-1.7-1.3-3-3-3m12 10h-2V7h2zm0 4h-2v-2h2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Lockdown & Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/fault-tolerance-integrity/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault-tolerance & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/risk-analyzer/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-1.66C8.07 16.13 6 13 6 9.67v-4L12 3l6 2.67v4c0 3.33-2.07 6.46-5 7.67zM12 5 8 6.69V10h4zm0 5v6c1.91-.47 4-2.94 4-5v-1z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Analyzer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/encryption-keys/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Encryption & Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/decentralized-zkp/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Zero-Knowledge Proofs
   
 
     
@@ -1534,10 +1836,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
             
   
   
@@ -1555,8 +1857,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1638,10 +1940,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -1649,10 +1951,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#cac-nhiem-vu-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Các nhiệm vụ cốt lõi
       
     </span>
   </a>
@@ -1660,10 +1962,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#api-truu-tuong-abstract-methods" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        API trừu tượng (Abstract Methods)
       
     </span>
   </a>
@@ -1671,10 +1973,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#quy-tac-loc-su-kien-event-validation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Quy tắc Lọc sự kiện (Event Validation)
       
     </span>
   </a>
@@ -1682,54 +1984,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#tich-hop-zero-knowledge-zk" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap-neu-ap-dung" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bảo mật &amp; quyền truy cập (nếu áp dụng)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hiệu năng
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#faq" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FAQ
+        Tích hợp Zero-Knowledge (ZK)
       
     </span>
   </a>
@@ -1923,10 +2181,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -1944,8 +2202,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2306,10 +2564,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2327,8 +2585,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2733,10 +2991,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2754,8 +3012,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2920,10 +3178,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -2941,8 +3199,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3105,10 +3363,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -3126,8 +3384,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3275,10 +3533,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#tong-quan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Tổng quan
       
     </span>
   </a>
@@ -3286,10 +3544,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kien-truc-khai-niem" class="md-nav__link">
+  <a href="#cac-nhiem-vu-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Kiến trúc &amp; khái niệm
+        Các nhiệm vụ cốt lõi
       
     </span>
   </a>
@@ -3297,10 +3555,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api-cong-khai-public-api" class="md-nav__link">
+  <a href="#api-truu-tuong-abstract-methods" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API công khai (Public API)
+        API trừu tượng (Abstract Methods)
       
     </span>
   </a>
@@ -3308,10 +3566,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh" class="md-nav__link">
+  <a href="#quy-tac-loc-su-kien-event-validation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình
+        Quy tắc Lọc sự kiện (Event Validation)
       
     </span>
   </a>
@@ -3319,54 +3577,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#tich-hop-zero-knowledge-zk" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bao-mat-quyen-truy-cap-neu-ap-dung" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bảo mật &amp; quyền truy cập (nếu áp dụng)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xu-ly-loi-khac-phuc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Xử lý lỗi &amp; khắc phục
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hieu-nang" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hiệu năng
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#faq" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FAQ
+        Tích hợp Zero-Knowledge (ZK)
       
     </span>
   </a>
@@ -3416,88 +3630,74 @@
 
 
 <h1 id="base-consensus-hierachainconsensusbase_consensuspy">Base Consensus (<code>hierachain/consensus/base_consensus.py</code>)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p><code>BaseConsensus</code> cung cấp một lớp trừu tượng định nghĩa các API tiêu chuẩn mà mọi cơ chế đồng thuận (như PoA, PoF) đều phải tuân theo. Điều này đảm bảo tính nhất quán của mô hình hướng sự kiện (event-based) và hỗ trợ kiến trúc phân cấp của HieraChain (Main Chain / Sub-Chain).</p>
-<h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
+<h2 id="tong-quan">Tổng quan</h2>
+<p><code>BaseConsensus</code> là lớp cơ sở trừu tượng (Abstract Base Class) định nghĩa bộ khung tiêu chuẩn cho mọi thuật toán đồng thuận trong hệ thống HieraChain. Nó đảm bảo tính nhất quán giữa các giao thức khác nhau (PoA, PoF, BFT) và thực thi các quy tắc nghiệp vụ cốt lõi của một nền tảng blockchain doanh nghiệp.</p>
+<hr />
+<h2 id="cac-nhiem-vu-cot-loi">Các nhiệm vụ cốt lõi</h2>
+<div class="grid cards">
 <ul>
-<li>Lớp <code>BaseConsensus</code> (nằm tại <code>hierachain/consensus/base_consensus.py</code>) định nghĩa các abstract methods cơ bản.</li>
-<li>Nó hoạt động như một lớp lọc, kiểm tra sự kiện để loại bỏ các thuật ngữ tiền điện tử không phù hợp với ngữ cảnh doanh nghiệp (như <code>mining</code>, <code>coin</code>, <code>wallet</code>).</li>
-<li>Tích hợp chuẩn giao tiếp mật mã Zero-Knowledge (ZK Proof) để xác thực tính hợp lệ của block mà không làm lộ dữ liệu nội bộ gốc.</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m2.3 20.28 9.6-9.6-1.4-1.42-.72.71a.996.996 0 0 1-1.41 0l-.71-.71a.996.996 0 0 1 0-1.41l5.66-5.66a.996.996 0 0 1 1.41 0l.71.71c.39.39.39 1.02 0 1.41l-.71.69 1.42 1.43a.996.996 0 0 1 1.41 0c.39.39.39 1.03 0 1.42l1.41 1.41.71-.71c.39-.39 1.03-.39 1.42 0l.7.71c.39.39.39 1.03 0 1.42l-5.65 5.65c-.39.39-1.03.39-1.42 0l-.7-.7a.99.99 0 0 1 0-1.42l.7-.71-1.41-1.41-9.61 9.61a.996.996 0 0 1-1.41 0c-.39-.39-.39-1.03 0-1.42M20 19a2 2 0 0 1 2 2v1H12v-1a2 2 0 0 1 2-2z"/></svg></span> <strong>Định nghĩa Giao thức</strong></p>
+<hr />
+<p>Thiết lập các phương thức bắt buộc như <code>validate_block</code>, <code>finalize_block</code> và <code>can_create_block</code> để các module tầng trên (như Ordering Service) có thể tương tác đồng nhất.</p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 12v7.88c.04.3-.06.62-.29.83a.996.996 0 0 1-1.41 0L8.29 18.7a.99.99 0 0 1-.29-.83V12h-.03L2.21 4.62a1 1 0 0 1 .17-1.4c.19-.14.4-.22.62-.22h14c.22 0 .43.08.62.22a1 1 0 0 1 .17 1.4L12.03 12zm5.75 9L15 18l1.16-1.16 1.59 1.59 3.59-3.59 1.16 1.41z"/></svg></span> <strong>Kiểm soát Nội dung (Enterprise Filtering)</strong></p>
+<hr />
+<p>Tự động quét và loại bỏ các sự kiện chứa thuật ngữ tiền điện tử cấm (<code>mining</code>, <code>coin</code>, <code>token</code>, <code>wallet</code>). Đây là lớp bảo vệ quan trọng để duy trì mục đích sử dụng doanh nghiệp của HieraChain.</p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm2.28 13.08-2.02 2.02c-.6.6-1.39.9-2.18.9s-1.58-.3-2.18-.9a3.09 3.09 0 0 1 0-4.36l1.25-1.24-.01.56c0 .44.07.89.22 1.31l.05.13-.37.37c-.28.28-.44.66-.44 1.05 0 .4.16.77.44 1.05.56.56 1.53.56 2.09 0l2.01-2.01c.29-.29.44-.66.44-1.05 0-.41-.15-.77-.43-1.05a.83.83 0 0 1-.25-.57c0-.21.1-.41.25-.56.3-.31.85-.3 1.13 0 .58.58.9 1.35.9 2.17 0 .83-.32 1.6-.9 2.18m2.82-2.82-1.25 1.24.01-.56c0-.44-.07-.88-.22-1.3l-.04-.14.36-.37c.29-.28.44-.63.44-1.05 0-.39-.15-.76-.43-1.04-.57-.57-1.54-.57-2.1 0l-2.01 2.01c-.28.28-.44.65-.44 1.05s.15.76.44 1.04c.14.15.24.36.24.57 0 .22-.1.42-.25.57-.15.16-.35.22-.56.22-.2 0-.41-.07-.57-.22a3.054 3.054 0 0 1 0-4.36l2.02-2.02a3.09 3.09 0 0 1 4.36 0c.58.6.9 1.36.9 2.18s-.32 1.6-.9 2.18"/></svg></span> <strong>Xác thực Toàn vẹn</strong></p>
+<hr />
+<p>Tích hợp các cơ chế xác thực mã băm (Hash), chữ ký số và hỗ trợ Zero-Knowledge (ZK) Proof để đảm bảo dữ liệu khối không bị thay đổi.</p>
+</li>
 </ul>
-<h2 id="api-cong-khai-public-api">API công khai (Public API)</h2>
-<ul>
-<li><code>validate_block(block: Block, previous_block: Block) -&gt; bool</code>: (Abstract) Xác thực khối theo quy tắc đồng thuận.</li>
-<li><code>finalize_block(block: Block) -&gt; Block</code>: (Abstract) Chốt khối bằng cách đính kèm chữ ký/nonce/bằng chứng phù hợp.</li>
-<li><code>can_create_block(authority_id: str | None = None) -&gt; bool</code>: (Abstract) Kiểm tra quyền tạo khối.</li>
-<li><code>validate_event_for_consensus(event: dict[str, Any]) -&gt; bool</code>: Xác minh cấu trúc sự kiện và lọc thuật ngữ cấm.</li>
-<li><code>get_consensus_info() -&gt; dict[str, Any]</code>: Trả về thông tin cấu hình và trạng thái của consensus.</li>
-<li><code>update_config(config: dict[str, Any]) -&gt; None</code>: Cập nhật linh hoạt cấu hình ngay tại runtime.</li>
-</ul>
-<p>Ví dụ sử dụng (tích hợp trong custom consensus):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.consensus</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseConsensus</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyCustomConsensus</span><span class="p">(</span><span class="n">BaseConsensus</span><span class="p">):</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">previous_block</span><span class="p">):</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">validate_event_for_consensus</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">to_event_list</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
-</code></pre></div>
-<h2 id="cau-hinh">Cấu hình</h2>
-<ul>
-<li>Config nội bộ của consensus (lưu trong <code>self.config</code>), có thể cập nhật trong thời gian chạy.</li>
-<li>Hỗ trợ ZK tuân theo <code>settings.ENABLE_ZK_PROOFS</code> từ <code>hierachain/config/settings.py</code>.</li>
-</ul>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
-<ul>
-<li><strong>Hỗ trợ Zero-Knowledge</strong>: Phương thức <code>_verify_block_zk_proof</code> mặc định cho phép các triển khai đồng thuận xác minh tính đúng đắn của giao dịch bị che giấu.</li>
-<li><strong>Doanh nghiệp hóa</strong>: Tính năng lọc từ khóa cấm loại bỏ các rủi ro việc dùng HieraChain như một phương tiện tiền điện tử rác.</li>
-</ul>
-<h2 id="bao-mat-quyen-truy-cap-neu-ap-dung">Bảo mật &amp; quyền truy cập (nếu áp dụng)</h2>
-<ul>
-<li>BaseConsensus loại trừ (<code>EXCLUDED_CONTENT_FIELDS</code>) những trường như chữ ký (<code>signature</code>), băm (<code>hash</code>), ROOT (<code>merkle_root</code>), hay ZK proof (<code>zk_proof</code>) ra khỏi vòng lọc từ, để đảm bảo tính sinh ngẫu nhiên của các chuỗi ký tự mật mã.</li>
-</ul>
-<h2 id="xu-ly-loi-khac-phuc">Xử lý lỗi &amp; khắc phục</h2>
-<ul>
-<li>Nếu block chứa từ khóa tiền điện tử trong <code>details</code>, hệ thống lập tức báo lỗi cấu trúc (cụ thể trả về <code>False</code> khi validate).</li>
-</ul>
-<h2 id="hieu-nang">Hiệu năng</h2>
-<ul>
-<li>Quá trình kiểm tra ZK Proof tiêu tốn lượng tính toán nhất định nếu được kích hoạt; nhưng tối ưu nhất quán và dễ mở rộng.</li>
-</ul>
-<h2 id="faq">FAQ</h2>
-<ul>
-<li><strong>Tại sao cần loại trừ từ vựng?</strong> Để nhất quán với mục tiêu Blockchain Doanh Nghiệp (Enterprise Blockchain).</li>
-</ul>
+</div>
+<hr />
+<h2 id="api-truu-tuong-abstract-methods">API trừu tượng (Abstract Methods)</h2>
+<p>Mọi thuật toán đồng thuận kế thừa từ <code>BaseConsensus</code> phải triển khai các phương thức sau:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Phương thức</th>
+<th style="text-align: left;">Ý nghĩa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>validate_block(block, prev_block)</code></td>
+<td style="text-align: left;">Xác thực tính hợp lệ của khối mới so với khối trước đó.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>finalize_block(block)</code></td>
+<td style="text-align: left;">Thực hiện các bước cuối cùng (ký số, gán nonce) trước khi lưu khối.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>can_create_block(node_id)</code></td>
+<td style="text-align: left;">Kiểm tra xem nút hiện tại có quyền tạo khối hay không.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>get_consensus_info()</code></td>
+<td style="text-align: left;">Trả về thông tin trạng thái và cấu hình hiện tại của giao thức.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="quy-tac-loc-su-kien-event-validation">Quy tắc Lọc sự kiện (Event Validation)</h2>
+<p>Hệ thống thực thi việc lọc từ khóa cấm một cách nghiêm ngặt:
+*   <strong>Dữ liệu bị kiểm tra</strong>: Tất cả các trường trong <code>details</code> và nội dung sự kiện.
+*   <strong>Trường loại trừ</strong>: Các trường mật mã như <code>signature</code>, <code>hash</code>, <code>merkle_root</code> và <code>zk_proof</code> được bỏ qua để tránh nhận diện nhầm các chuỗi ký tự ngẫu nhiên.
+*   <strong>Hành động</strong>: Nếu phát hiện từ khóa vi phạm, phương thức <code>validate_event_for_consensus</code> sẽ trả về <code>False</code>, dẫn đến việc khối bị từ chối.</p>
+<hr />
+<h2 id="tich-hop-zero-knowledge-zk">Tích hợp Zero-Knowledge (ZK)</h2>
+<p><code>BaseConsensus</code> cung cấp các hàm hỗ trợ xác thực bằng chứng ZK (<code>_verify_block_zk_proof</code>). Khi <code>settings.ENABLE_ZK_PROOFS</code> được bật, mọi khối đồng thuận phải mang theo bằng chứng hợp lệ để chứng minh tính đúng đắn của các thay đổi trạng thái mà không cần tiết lộ dữ liệu thô.</p>
+<hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li>Đồng thuận Proof of Authority (PoA): <a href="../poa/">PoA Consensus</a></li>
-<li>Đồng thuận Proof of Federation(PoF): <a href="../pof/">PoF Consensus</a></li>
+<li><a href=".././poa/">Đồng thuận PoA</a></li>
+<li><a href=".././pof/">Đồng thuận PoF</a></li>
+<li><a href=".././ordering/">Dịch vụ sắp xếp (Ordering)</a></li>
 </ul>
-<hr />
-<details class="info">
-<summary>Thông tin kỹ thuật bổ sung (Metadata)</summary>
-<p><strong>FACT</strong></p>
-<ul>
-<li>Mã nguồn hiện diện tại: <code>hierachain/consensus/base_consensus.py</code>.</li>
-<li>Tự động gọi hàm <code>_is_event_structure_valid</code> để rà soát sự kiện block.</li>
-</ul>
-<p><strong>DECISION</strong></p>
-<ul>
-<li>Mọi cơ chế đồng thuận trong HieraChain bắt buộc kế thừa <code>BaseConsensus</code>.</li>
-<li>Bất kì Blockchain nào thuộc HieraChain (Main chain/Sub-chain) đều áp dụng bộ quy tắc kiểm tra từ khóa này.</li>
-</ul>
-<p><strong>ASSUMPTION</strong></p>
-<ul>
-<li>Giả định hệ thống quản lý Block có cấu trúc Event-based (<code>block.to_event_list()</code>).</li>
-</ul>
-<p><strong>INVARIANT</strong></p>
-<ul>
-<li>Nếu ZK Proof đang bật ở mức settings, mọi proof gửi lên phải hợp lệ với state cũ (<code>previous_state</code>) và state mới (<code>current_state</code>) của sự kiện chốt đồng thuận (<code>consensus_finalization</code>).</li>
-</ul>
-<p><strong>EDGE CASES</strong></p>
-<ul>
-<li>Mất <code>zk_proof</code> nhưng <code>settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN</code> = <code>True</code>, hệ thống sẽ ghi log cảnh báo và trả về <code>False</code> (block không hợp lệ).</li>
-</ul>
-</details>
 
 
 
@@ -3538,7 +3738,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
         
           
-          <a href="../../modules/units/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Units">
+          <a href="../../security/decentralized-zkp/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Decentralized Zero-Knowledge Proofs">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -3548,7 +3748,7 @@
                 Trước
               </span>
               <div class="md-ellipsis">
-                Units
+                Decentralized Zero-Knowledge Proofs
               </div>
             </div>
           </a>
