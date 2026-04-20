@@ -119,7 +119,7 @@ class SignatureVerifier:
         item_data = entry.get('item')
         pk = entry.get('public_key')
 
-        if not item_data or not pk or 'signature' not in item_data:
+        if not isinstance(item_data, dict) or not isinstance(pk, str) or 'signature' not in item_data:
             return {}
 
         if item_type == 'tx':

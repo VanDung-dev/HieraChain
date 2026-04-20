@@ -337,7 +337,10 @@ def get_zk_verifier() -> ZKVerifier:
     global _default_verifier
     if _default_verifier is None:
         _default_verifier = ZKVerifier()
-    return _default_verifier
+    
+    verifier = _default_verifier
+    assert verifier is not None
+    return verifier
 
 
 def reset_zk_verifier() -> None:

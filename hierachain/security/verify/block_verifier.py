@@ -69,7 +69,7 @@ def _verify_signature(message: bytes, signature: str, public_key: bytes) -> bool
     """Verify signature using cryptography library."""
     try:
         from cryptography.hazmat.primitives import hashes, serialization
-        from cryptography.hazmat.primitives.asymmetric import ec, padding
+        from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa, ed25519, ed448
         from cryptography.exceptions import InvalidSignature
     except ImportError:
         logger.warning("cryptography library not available for signature verification")
@@ -85,9 +85,15 @@ def _verify_signature(message: bytes, signature: str, public_key: bytes) -> bool
         # Verify based on key type
         if isinstance(pub_key, ec.EllipticCurvePublicKey):
             pub_key.verify(sig_bytes, message, ec.ECDSA(hashes.SHA256()))
-        else:
-            # RSA fallback
+        elif isinstance(pub_key, rsa.RSAPublicKey):
             pub_key.verify(sig_bytes, message, padding.PKCS1v15(), hashes.SHA256())
+        elif isinstance(pub_key, ed25519.Ed25519PublicKey):
+            pub_key.verify(sig_bytes, message)
+        elif isinstance(pub_key, ed448.Ed448PublicKey):
+            pub_key.verify(sig_bytes, message)
+        else:
+            logger.error("Unsupported public key type for block verification: %s", type(pub_key))
+            return False
 
         return True
 
@@ -474,7 +480,10 @@ def get_block_verifier(strict_mode: bool = True) -> BlockVerifier:
     global _default_verifier
     if _default_verifier is None:
         _default_verifier = BlockVerifier(strict_mode=strict_mode)
-    return _default_verifier
+    
+    verifier = _default_verifier
+    assert verifier is not None
+    return verifier
 
 
 def verify_block(block: Any, previous_block: Any | None = None) -> bool:

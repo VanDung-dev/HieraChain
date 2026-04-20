@@ -9,10 +9,10 @@ protected resources.
 
 import time
 import sys
-import os
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import APIKeyHeader, APIKeyQuery
-from typing import Any
+from typing import Any, cast, Union
+from pathlib import Path
 
 from hierachain.security.key_manager import KeyManager
 from hierachain.security.secure_logging import get_security_logger
@@ -20,7 +20,10 @@ from hierachain.security.brute_force_protector import BruteForceProtector
 from hierachain.config.settings import get_settings
 
 # Add the project root to the path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+_file_path = __file__
+if _file_path is not None:
+    root_path = Path(_file_path).resolve().parents[2]
+    sys.path.append(str(root_path))
 
 logger = get_security_logger()
 
@@ -40,8 +43,9 @@ def _get_system_context() -> dict:
 
 def _extract_client_ip(request: Request) -> str:
     """Extract client IP from request for brute-force tracking."""
-    if request and request.client:
-        return request.client.host
+    client = request.client if request else None
+    if client is not None:
+        return client.host
     return "unknown"
 
 
@@ -123,6 +127,9 @@ class APIKeyVerifier:
         
         api_key = await self._extract_api_key(request, api_key)
         self._validate_api_key_present(api_key, client_ip)
+        
+        # Narrow api_key to str for Mypy
+        assert api_key is not None
         
         key_prefix = _get_key_prefix(api_key)
         await self._verify_key_validity(api_key, key_prefix, client_ip)
@@ -250,9 +257,9 @@ class APIKeyVerifier:
         """
         def permission_dependency(context: dict = Depends(self)) -> dict:
             # Extract API key from context
-            api_key = getattr(context, '_api_key', None)
+            api_key = context.get('_api_key')
             
-            if api_key and not self.check_resource_permission(api_key, resource):
+            if api_key and not self.check_resource_permission(cast(str, api_key), resource):
                 raise HTTPException(
                     status_code=403,
                     detail=(
@@ -300,66 +307,75 @@ def _get_active_verifier() -> Any:
 
 
 async def require_event_access(
-    request: Request, context: dict | None = Depends(_get_active_verifier)
+    request: Request,
+    context: Union[dict, APIKeyVerifier, None] = Depends(_get_active_verifier)
 ) -> dict:
     """
     Require permission to access event-related endpoints.
     """
     if context is None:
-        return {} # Auth disabled
-    
-    # We must explicitly call the verifier if it wasn't resolved fully
-    if callable(context) and isinstance(context, APIKeyVerifier):
-        context = await context(request)
+        return {}  # Auth disabled
 
-    if not ResourcePermissionChecker.has_permission(context, 'events'):
+    auth_context: dict
+    if isinstance(context, APIKeyVerifier):
+        auth_context = await context(request)
+    else:
+        auth_context = context
+
+    if not ResourcePermissionChecker.has_permission(auth_context, 'events'):
         raise HTTPException(
             status_code=403,
             detail="Access to event operations requires 'events' permission."
         )
-    return context
+    return auth_context
 
 
 async def require_chain_access(
     request: Request,
-    context: dict | None = Depends(_get_active_verifier)
+    context: Union[dict, APIKeyVerifier, None] = Depends(_get_active_verifier)
 ) -> dict:
     """
     Require permission to access chain-related endpoints.
     """
     if context is None:
-        return {} # Auth disabled
-        
-    if callable(context) and isinstance(context, APIKeyVerifier):
-        context = await context(request)
+        return {}  # Auth disabled
 
-    if not ResourcePermissionChecker.has_permission(context, 'chains'):
+    auth_context: dict
+    if isinstance(context, APIKeyVerifier):
+        auth_context = await context(request)
+    else:
+        auth_context = context
+
+    if not ResourcePermissionChecker.has_permission(auth_context, 'chains'):
         raise HTTPException(
             status_code=403,
             detail="Access to chain operations requires 'chains' permission."
         )
-    return context
+    return auth_context
 
 
 async def require_proof_access(
     request: Request,
-    context: dict | None = Depends(_get_active_verifier)
+    context: Union[dict, APIKeyVerifier, None] = Depends(_get_active_verifier)
 ) -> dict:
     """
     Require permission to access proof submission endpoints.
     """
     if context is None:
-        return {} # Auth disabled
-        
-    if callable(context) and isinstance(context, APIKeyVerifier):
-        context = await context(request)
+        return {}  # Auth disabled
 
-    if not ResourcePermissionChecker.has_permission(context, 'proofs'):
+    auth_context: dict
+    if isinstance(context, APIKeyVerifier):
+        auth_context = await context(request)
+    else:
+        auth_context = context
+
+    if not ResourcePermissionChecker.has_permission(auth_context, 'proofs'):
         raise HTTPException(
             status_code=403,
             detail="Access to proof operations requires 'proofs' permission."
         )
-    return context
+    return auth_context
 
 
 def _has_event_permission(context: dict) -> bool:
