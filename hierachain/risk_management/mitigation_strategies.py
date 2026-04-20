@@ -744,6 +744,6 @@ def _calculate_average_duration(manager: MitigationManager) -> float:
     durations = [
         r.end_time - r.start_time
         for r in manager.execution_history
-        if r.end_time and r.start_time
+        if r.end_time is not None
     ]
     return sum(durations) / len(durations) if durations else 0.0

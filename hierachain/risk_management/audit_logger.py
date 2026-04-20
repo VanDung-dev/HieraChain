@@ -12,7 +12,7 @@ import logging
 import hashlib
 import threading
 import uuid
-from typing import Any, Callable
+from typing import Any, Callable, cast
 from dataclasses import dataclass, asdict
 from enum import Enum
 from pathlib import Path
@@ -142,21 +142,18 @@ class AuditFilter:
     
     def matches(self, event: AuditEvent) -> bool:
         """Check if event matches filter criteria."""
-        criteria = [
-            (self.event_types, lambda: event.event_type in self.event_types),
-            (self.severity_levels, lambda: event.severity in self.severity_levels),
-            (
-                self.source_components,
-                lambda: event.source_component in self.source_components
-            ),
-            (self.user_ids, lambda: event.user_id in self.user_ids),
-            (
-                self.time_range,
-                lambda: self.time_range[0] <= event.timestamp <= self.time_range[1]
-            )
-        ]
-        
-        return all(condition() for field, condition in criteria if field is not None)
+        if self.event_types is not None and event.event_type not in self.event_types:
+            return False
+        if self.severity_levels is not None and event.severity not in self.severity_levels:
+            return False
+        if self.source_components is not None and event.source_component not in self.source_components:
+            return False
+        if self.user_ids is not None and event.user_id not in self.user_ids:
+            return False
+        if self.time_range is not None:
+            if not (self.time_range[0] <= event.timestamp <= self.time_range[1]):
+                return False
+        return True
 
 
 class AuditStorage:
@@ -374,7 +371,7 @@ class AuditLogger:
         self.logger = logging.getLogger(__name__)
         self.alert_handlers: list[Callable[[AuditEvent], None]] = []
         self.event_processors: list[Callable[[AuditEvent], AuditEvent]] = []
-        self._stats = {
+        self._stats: dict[str, Any] = {
             'total_events': 0,
             'events_by_type': {},
             'events_by_severity': {}
@@ -600,12 +597,12 @@ class AuditLogger:
         self._stats['total_events'] += 1
         
         event_type = event.event_type.value
-        self._stats['events_by_type'][event_type] = \
-            self._stats['events_by_type'].get(event_type, 0) + 1
+        events_by_type = cast(dict[str, int], self._stats['events_by_type'])
+        events_by_type[event_type] = events_by_type.get(event_type, 0) + 1
         
         severity = event.severity.value
-        self._stats['events_by_severity'][severity] = \
-            self._stats['events_by_severity'].get(severity, 0) + 1
+        events_by_severity = cast(dict[str, int], self._stats['events_by_severity'])
+        events_by_severity[severity] = events_by_severity.get(severity, 0) + 1
     
     def _process_alerts(self, event: AuditEvent):
         """Process real-time alerts for critical events."""
