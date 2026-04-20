@@ -75,32 +75,3 @@ Nếu bật xác thực API key (production), thêm header theo `settings.API_KE
 * API module: [API](../modules/api.md)
 * Reference API v1: [API v1](../reference/api-v1.md)
 * Config: [Config](../reference/config.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Router chính nằm ở `hierachain/api/v1/endpoints.py`; schema Pydantic ở `hierachain/api/v1/schemas.py`.
-    * Server khởi chạy bằng `python -m hierachain.api.server` (mặc định cổng 2661).
-
-    **DECISION**
-
-    * Tuân thủ mẫu DI sẵn có (lazy singleton `HierarchyManager`/`EntityTracer`) để truy cập tài nguyên hệ thống.
-    * Tài liệu hướng dẫn ưu tiên ví dụ tối thiểu và kiểm thử `curl`.
-
-    **ASSUMPTION**
-
-    * Môi trường đã cài đặt đầy đủ dependencies và cấu hình cổng mặc định.
-    * Nếu bật AUTH, client sẽ gửi API key đúng vị trí (header/query theo cấu hình).
-
-    **INVARIANT**
-
-    * Endpoint mới cần trả về JSON hợp lệ và mô tả qua schema khi phù hợp.
-    * Không phá vỡ URL hiện hữu; tuân thủ prefix `/api/v1`.
-
-    **EDGE CASES**
-
-    * Thiếu schema hoặc khai báo sai `response_model` → tài liệu OpenAPI sai, dễ gây nhầm lẫn client.
-    * Quên thêm API key khi AUTH bật → 401/403.

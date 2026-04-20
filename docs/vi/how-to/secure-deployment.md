@@ -175,33 +175,3 @@ for w in warnings:
 * Mô‑đun Security: [Security](../modules/security.md)
 * Kiến trúc Bảo mật: [Bảo mật (chuyên sâu)](../architecture/security.md)
 * Tham chiếu Cấu hình: [Config](../reference/config.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Các biến bảo mật/cấu hình đọc từ `hierachain/config/settings.py` (AUTH, CORS, HSTS, Rate Limit, API Key…).
-    * `ResourceGuardMiddleware` từ chối yêu cầu khi tài nguyên hệ thống vượt ngưỡng.
-
-    **DECISION**
-
-    * Production phải bật AUTH, HSTS, CORS hạn chế, và (khuyến nghị) Rate Limit.
-    * Dùng API key làm baseline; có thể nâng cấp lên OAuth/mTLS ở lớp edge/gateway.
-
-    **ASSUMPTION**
-
-    * Hệ thống triển khai sau reverse proxy có TLS terminator.
-    * Secrets được quản trị bởi công cụ chuyên dụng (K8s Secret, Vault, AWS/GCP Secret Manager).
-
-    **INVARIANT**
-
-    * Yêu cầu thay đổi trạng thái phải qua xác thực khi `AUTH_ENABLED=true`.
-    * Log không ghi lộ dữ liệu nhạy cảm.
-
-    **EDGE CASES**
-
-    * Thiếu/nhầm header API key → 401/403.
-    * CORS cấu hình sai → lỗi preflight/blocked by CORS policy.
-    * Ngưỡng ResourceGuard quá chặt → false positive 503; cần điều chỉnh phù hợp workload.

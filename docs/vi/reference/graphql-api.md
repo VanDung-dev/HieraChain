@@ -91,28 +91,3 @@ mutation CreateNewEvent {
   }
 }
 ```
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Mã nguồn tài liệu tham chiếu: `hierachain/api/graphql/schema.py` (Python >= 3.10 theo `pyproject.toml`).
-    * Framework triển khai: `graphene`.
-
-    **DECISION**
-
-    * Dùng Markdown, tách rõ các khối FACT / DECISION / ASSUMPTION / INVARIANT / EDGE CASES.
-
-    **ASSUMPTION**
-
-    * Người đọc có hiểu biết cơ bản về cấu trúc GraphQL và dùng công cụ như GrapQL Playground hoặc Apollo Studio.
-
-    **INVARIANT**
-
-    * Chuỗi JSON truyền vào trường tĩnh `details` phải bọc ngoặc kép dạng String trong query.
-
-    **EDGE CASES**
-
-    * Nhập sai format JSON của `details` sẽ làm mutation bị chặn đứng ngầm ở back-end với lỗi `Invalid JSON in details`.

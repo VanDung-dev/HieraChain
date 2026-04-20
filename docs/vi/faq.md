@@ -47,27 +47,3 @@ icon: material/frequently-asked-questions
 
 !!! question "Quy trình phát hành?"
     Dựa trên `setuptools_scm`; xem `docs/vi/dev/release-process.md`.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Tham số/cấu hình lấy từ `hierachain/config/settings.py`; API tại `hierachain/api/*`.
-
-    **DECISION**
-
-    * Trả lời ngắn gọn, liên kết chi tiết tới trang chuyên đề.
-
-    **ASSUMPTION**
-
-    * Độc giả quen dùng curl/Python cơ bản.
-
-    **INVARIANT**
-
-    * FAQ không được mâu thuẫn với tài liệu và mã nguồn.
-
-    **EDGE CASES**
-
-    * Câu trả lời có thể thay đổi theo phiên bản; luôn tham chiếu mã/tài liệu tương ứng phiên bản đang chạy.

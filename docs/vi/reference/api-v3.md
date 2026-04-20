@@ -13,7 +13,7 @@ Mô tả các endpoint REST trong phiên bản API v3 (System & Admin) dùng cho
 ## Tổng quan endpoint
 
 * POST `/api/v3/verify-identity` — Xác minh danh tính node bằng cách ký vào một chuỗi challenge. (Yêu cầu xác thực)
-* GET `/api/v3/status` — Lấy báo cáo chi tiết về trạng thái node. (**Public Access** - Không yêu cầu API Key)
+* GET `/api/v3/status` — Lấy báo cáo chi tiết về trạng thái node. (Yêu cầu API Key nếu `AUTH_ENABLED=true`)
 
 ## Schema chính (trích từ `hierachain/api/v3/schemas.py`)
 
@@ -114,31 +114,3 @@ curl -s http://localhost:2661/api/v3/status
 
 * Config: [Config](config.md) (Xem cấu hình `VALIDATOR_IDENTITY_PATH`)
 * Security: [Security](../modules/security.md) (Về Key Provider và Identity)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Endpoint có thật trong `hierachain/api/v3/endpoints.py`: `/verify-identity`, `/status`.
-    * Schema Pydantic nằm tại `hierachain/api/v3/schemas.py`.
-
-    **DECISION**
-
-    * API v3 tập trung vào "System & Admin", tách biệt với các thao tác chain (v1/v2).
-    * `/api/v3/status` được mở công khai để các hệ thống giám sát (Monitoring) dễ dàng lấy dữ liệu.
-
-    **ASSUMPTION**
-
-    * Node phải được cấu hình identity (file key) trước khi khởi chạy. Nếu thiếu, các endpoint yêu cầu định danh sẽ trả về 401.
-
-    **INVARIANT**
-
-    * `uptime` được tính từ lúc `HierarchyManager` khởi động.
-    * `VerifyIdentityResponse` luôn trả lại `challenge` gốc để đối chiếu.
-
-    **EDGE CASES**
-
-    * Không tìm thấy file identity → Trả về **401 Unauthorized**. Quản trị viên cần kiểm tra `VALIDATOR_IDENTITY_PATH`.
-    * Lỗi crypto khi ký → Trả về 500.

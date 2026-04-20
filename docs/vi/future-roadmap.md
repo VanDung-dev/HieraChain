@@ -37,25 +37,3 @@ Bạn có thể sử dụng thư viện Consensus viết bằng Rust:
 ---
 
 *Tài liệu này nhằm định hướng cho các Developer muốn tối ưu hóa hiệu năng HieraChain vượt giới hạn của Python hiện tại.*
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Python GIL hiện tại giới hạn hiệu năng CPU-bound của HieraChain.
-    * `hrc-core` là giải pháp thay thế viết bằng Rust.
-
-    **DECISION**
-
-    * Duy trì Python làm giao diện chính (Interface) vì tính dễ dùng.
-    * Dịch chuyển các tác vụ nặng (Consensus, Crypto) xuống tầng Rust (Extension Module) theo lộ trình.
-
-    **ASSUMPTION**
-
-    * Python 3.14+ (Free-threading) có thể sẽ ổn định vào năm 2027-2028.
-    * Cộng đồng doanh nghiệp ưu tiên hiệu năng/ổn định hơn là sự thuần khiết ngôn ngữ.
-
-    **INVARIANT**
-
-    * Mọi module Rust phải có Python binding (PyO3).
-    * API Python không thay đổi (Backward Compatibility) khi chuyển đổi backend.

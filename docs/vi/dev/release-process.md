@@ -34,28 +34,3 @@ twine check dist/*
 
 * Tóm tắt thay đổi chính của mã và tài liệu.
 * Link tới các PR liên quan; liệt kê điểm phá vỡ (breaking changes) nếu có.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * `setuptools_scm` được cấu hình trong `pyproject.toml`.
-    * Dự án dùng nhiều giấy phép (Apache-2.0 hoặc MIT) — xem README/Licenses.
-
-    **DECISION**
-
-    * Chỉ publish tài liệu sau khi docs/vi ổn định và qua review.
-
-    **ASSUMPTION**
-
-    * Có quyền push thẻ và quyền publish gói (nếu áp dụng).
-
-    **INVARIANT**
-
-    * Tag phiên bản phải khớp nội dung; không cập nhật docs sau khi đã gắn thẻ nếu chưa tăng phiên bản.
-
-    **EDGE CASES**
-
-    * Chênh lệch thẻ/commit gây sai phiên bản suy luận → kiểm tra lại lịch sử Git trước khi build.

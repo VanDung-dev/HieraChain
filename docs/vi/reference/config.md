@@ -206,36 +206,3 @@ HRC_IPFS_ENABLED=true
 HRC_IPFS_HOST=/ip4/ipfs/tcp/5001
 HRC_IPFS_ENCRYPTION_KEY=your_32_byte_hex_key_here
 ```
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Nguồn sự thật: `hierachain/config/settings.py` định nghĩa tất cả hằng số và đọc biến môi trường bằng `os.getenv`.
-    * `get_settings()` chọn lớp cấu hình theo `HRC_ENV` với các lớp: `DevelopmentSettings`, `TestingSettings`, `ProductionSettings`.
-    * Invariants kiểm tra trong `validate_config()`: `BLOCK_SIZE_LIMIT > 0`, `PROOF_SUBMISSION_INTERVAL > 0`, `VALIDATOR_TIMEOUT > 0`, `DEFAULT_STORAGE_BACKEND ∈ {memory, redis, sqlite}`, `API_PORT ∈ [1, 65535]`.
-
-    **DECISION**
-
-    * Dùng prefix `HRC_` cho mọi biến môi trường riêng của HieraChain.
-    * Production bắt buộc bật `AUTH_ENABLED`, vô hiệu `CORS_ALLOW_ALL`, khuyến nghị bật HSTS và Rate Limiting.
-    * Tài liệu trình bày mặc định như trong mã; mọi ví dụ phải dùng giá trị hợp lệ theo `validate_config()`.
-
-    **ASSUMPTION**
-
-    * Biến môi trường được truyền vào process trước khi ứng dụng khởi động (systemd, Docker env, hoặc `.env` + `python-dotenv`).
-    * Khi dùng Redis/DB, network nội bộ ổn định và thông số kết nối hợp lệ.
-
-    **INVARIANT**
-
-    * API_PORT luôn thuộc [1, 65535]; vi phạm sẽ bị `validate_config()` báo lỗi.
-    * DEFAULT_STORAGE_BACKEND chỉ là một trong `memory|redis|sqlite`.
-    * Production luôn cưỡng bức `AUTH_ENABLED=True` (theo lớp `ProductionSettings`).
-
-    **EDGE CASES**
-
-    * Thiết lập mâu thuẫn: `CORS_ALLOW_ALL=true` cùng lúc đặt `CORS_ORIGINS` ở production → ưu tiên policy production (khuyến nghị tắt `ALLOW_ALL`).
-    * Sai phạm dải port (`API_PORT=0` hoặc >65535) → ứng dụng phải từ chối cấu hình.
-    * Bật ZK ở `production` nhưng thiếu đường dẫn key/circuit → cần quy trình kiểm tra trước khi enable.

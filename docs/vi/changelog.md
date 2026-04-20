@@ -90,30 +90,3 @@ Phiên bản này đánh dấu việc hoàn thiện định hướng kiến trú
 
         * Sửa lỗi Chain Rehydration giúp khôi phục trạng thái chính xác sau khi restart.
         * Cải thiện độ tin cậy của CI/CD với matrix testing và xử lý flaky tests.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Ngày tháng theo UTC; ghi nhận các thay đổi quan trọng của HieraChain.
-    * Mỗi phiên bản được chia thành 2 phần: **Improvements** (cải tiến, tính năng mới) và **Fix** (sửa lỗi, khắc phục sự cố).
-
-    **DECISION**
-
-    * Phân loại thay đổi theo nhóm **Improvements** và **Fix** để dễ theo dõi.
-    * Sử dụng collapsible blocks (`???`) để ẩn/hiện nội dung, giúp tài liệu gọn gàng.
-    * Trước khi có bản release chính thức, changelog tập trung vào development milestones.
-
-    **ASSUMPTION**
-
-    * Các PR tương ứng đã được merge vào nhánh chính.
-
-    **INVARIANT**
-
-    * Khi có bản release chính thức (v0.0.1+), sẽ sử dụng semantic versioning.
-
-    **EDGE CASES**
-
-    * Mô tả có thể rút gọn khi thay đổi nhỏ; chi tiết xem lịch sử Git/PR.

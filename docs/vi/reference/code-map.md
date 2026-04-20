@@ -27,7 +27,7 @@ Tài liệu này ánh xạ các khái niệm (Concepts) trong tài liệu kỹ t
 | **Block Manager** | `hierachain/consensus/ordering/block_manager.py` | Quản lý lifecycle của block trong hệ thống ordering. |
 | **Proof of Authority** | `hierachain/consensus/proof_of_authority.py` | Cơ chế đồng thuận PoA (dùng cho Dev/Testnet). |
 | **Proof of Federation** | `hierachain/consensus/proof_of_federation.py` | Cơ chế đồng thuận PoF (đa tổ chức). |
-| **BFT Consensus** | `hierachain/hierarchical/consensus/bft_consensus.py` | Đồng thuận chịu lỗi Byzantine (cho môi trường Production). |
+| **BFT Consensus** | `hierachain/consensus/bft/consensus.py` | Đồng thuận chịu lỗi Byzantine (cho môi trường Production). |
 
 ## API & Interfaces
 
@@ -105,27 +105,3 @@ Tài liệu này ánh xạ các khái niệm (Concepts) trong tài liệu kỹ t
 | **Integration (ERP)** | `hierachain/integration/enterprise.py` | Kết nối với hệ thống doanh nghiệp bên ngoài. |
 | **Domains** | `hierachain/domains/` | Logic nghiệp vụ Domain-specific (chains, events, utils). |
 | **Units** | `hierachain/units/` | Quản lý phiên bản và semantic versioning. |
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-    
-    * Tài liệu này đóng vai trò "Index" giúp AI định vị context khi đọc code.
-    * Cấu trúc thư mục phản ánh kiến trúc Modular Monolith.
-
-    **DECISION**
-    
-    * Gom nhóm module theo chức năng nghiệp vụ (Business Capability) thay vì lớp kỹ thuật.
-    * Duy trì sự tách biệt rõ ràng giữa `core` (dùng chung) và `hierarchical` (logic phân cấp).
-
-    **ASSUMPTION**
-    
-    * Các file path được liệt kê là tương đối so với root project.
-    * AI Agent phải tra cứu bảng này trước khi thực hiện các thay đổi kiến trúc.
-
-    **INVARIANT**
-    
-    * **Immutability**: Block đã commit là bất biến, không được sửa đổi (`add_block`).
-    * **Hierarchy**: Sub-chain **phải** gửi Proof lên Main-chain; Main-chain **không** lưu dữ liệu thô.
-    * **Ordering**: Mọi Event phải đi qua `OrderingService` để lấy `sequence_number`.
-    * **Error Handling**: Mọi lỗi Logic phải raise `HieraChainError` (hoặc subclass).

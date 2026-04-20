@@ -71,33 +71,3 @@ python demo/demo_explorer.py
 ```
 
 Sau đó truy cập [http://localhost:2661/explorer](http://localhost:2661/explorer) (yêu cầu server API đang chạy).
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Các script demo nằm trong thư mục gốc `demo/`.
-    * Yêu cầu môi trường Python >= 3.10.
-    * Hầu hết demo cần khởi tạo `HierarchyManager` (Main Chain) trước.
-
-    **DECISION**
-
-    * Chạy script trực tiếp từ thư mục gốc để đảm bảo các import nội bộ từ `hierachain` hoạt động đúng.
-    * Tách riêng các demo theo tính năng (Consensus, Security, IPFS) để dễ kiểm tra độc lập.
-
-    **ASSUMPTION**
-
-    * Người chạy demo đã cài đặt đầy đủ dependencies qua `pip install -e .`.
-    * Biến môi trường `.env` đã được cấu hình nếu demo yêu cầu database hoặc IPFS thật.
-
-    **INVARIANT**
-
-    * Demo không làm thay đổi dữ liệu thật nếu đang chạy ở mode `MemoryStorage`.
-    * Mọi demo đều phải dọn dẹp (cleanup) tài nguyên hoặc log sau khi kết thúc nếu chạy thành công.
-
-    **EDGE CASES**
-
-    * Chạy demo IPFS khi server IPFS local chưa bật → script sẽ tự động chuyển sang mock mode hoặc báo lỗi kết nối.
-    * Chạy nhiều demo cùng lúc trên cùng một database file → có thể gây lock database (nếu dùng SQLite).

@@ -107,32 +107,3 @@ Tham chiếu chữ ký và status code: xem [Reference: API v1](../reference/api
 * Kiến trúc phân cấp: [Tổng quan](../architecture/overview.md)
 * Mô-đun Hierarchical: [Hierarchical](../modules/hierarchical.md)
 * Tham chiếu API v1: [API v1](../reference/api-v1.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * `HierarchyManager` có các phương thức: `create_sub_chain`, `start_operation`, `complete_operation`, `submit_proof_to_main_chain` (xem `hierarchical/hierarchy_manager.py`).
-    * API v1 có các endpoint: `POST /api/v1/chains/{chain_name}/create`, `POST /api/v1/chains/{chain_name}/events`, `POST /api/v1/chains/{chain_name}/submit-proof` (xem `api/v1/endpoints.py`).
-
-    **DECISION**
-
-    * Hướng dẫn ưu tiên ví dụ tối thiểu và an toàn, tránh phụ thuộc cấu hình phức tạp.
-    * Sử dụng tên chain chữ thường/không dấu (`[a-zA-Z0-9_\-]+`) theo kiểm tra đầu vào của endpoint.
-
-    **ASSUMPTION**
-
-    * Server chạy local ở cổng 2661, không bật xác thực API key trong môi trường dev.
-    * Đồng hồ hệ thống đủ chính xác để timestamp hợp lệ.
-
-    **INVARIANT**
-
-    * Phải tạo sub-chain trước khi gửi sự kiện/proof.
-    * Payload sự kiện phải có `entity_id`, `event_type`, `details` (nếu có) theo schema API v1.
-
-    **EDGE CASES**
-
-    * Tạo trùng tên sub-chain → trả `False` ở Python API hoặc lỗi 409/500 tuỳ triển khai REST (hiện trả 201 nếu tạo mới, 500 nếu lỗi khác).
-    * Gửi proof khi chưa có block/sự kiện → proof rỗng hoặc thất bại; nên ghi tối thiểu một sự kiện trước.

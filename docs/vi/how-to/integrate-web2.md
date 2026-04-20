@@ -179,36 +179,3 @@ Xem chi tiết tại: [Integration Module](../modules/integration.md).
 
 * Tham chiếu API v1: [API v1](../reference/api-v1.md)
 * Integration Module: [Integration](../modules/integration.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Giao tiếp qua REST API (HTTP) hoặc Integration SDK (Python).
-    * API mặc định chạy tại cổng 2661; endpoints chính bắt đầu bằng `/api/v1`.
-    * `HierarchyManager` là entry-point chính khi dùng SDK.
-
-    **DECISION**
-
-    * Sử dụng REST API cho các ứng dụng Web/Mobile (Web2) để đảm bảo Loose Coupling.
-    * Sử dụng SDK cho các service nội bộ cần hiệu năng cao (High Performance).
-    * Khuyến nghị mô hình Async/Queue cho các thao tác ghi dữ liệu từ Web2.
-
-    **ASSUMPTION**
-
-    * Ứng dụng Web2 tự quản lý xác thực người dùng cuối (End-User Auth).
-    * API Key được bảo vệ an toàn phía server-side (không lộ ở client-side code).
-    * Mạng kết nối giữa Web2 App và HieraChain Node ổn định.
-
-    **INVARIANT**
-
-    * Dữ liệu đã ghi vào Block là bất biến.
-    * Sub-Chain phải được khởi tạo trước khi ghi sự kiện.
-
-    **EDGE CASES**
-
-    * Mất kết nối mạng/Timeout: Cần cơ chế Retry.
-    * Sai format dữ liệu: API trả về 400 Bad Request.
-    * Quá tải hệ thống: API có thể trả về 429 hoặc 503.

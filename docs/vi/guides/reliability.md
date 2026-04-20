@@ -27,28 +27,3 @@ icon: material/check-decagram
 * Áp dụng journal cho thao tác thay đổi trạng thái quan trọng.
 * Đặt ngưỡng, thời gian chờ hợp lý cho retry; đảm bảo idempotency key.
 * Dùng metrics/alert để phát hiện vòng lặp retry bất thường.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Bộ giảm thiểu lỗi ở `hierachain/error_mitigation/*` cung cấp journal/rollback/recovery.
-    * Các module cluster/sync (nếu dùng) giúp đồng bộ đa tầng.
-
-    **DECISION**
-
-    * Ưu tiên idempotency và rollback rõ ràng trước khi tăng tần suất retry.
-
-    **ASSUMPTION**
-
-    * Storage/DB hỗ trợ ghi bền vững và checkpoint.
-
-    **INVARIANT**
-
-    * Recovery không làm sai lệch tính toàn vẹn chuỗi hoặc hash/Merkle.
-
-    **EDGE CASES**
-
-    * Retry không kiểm soát gây DoS ngược; rollback thiếu checkpoint gây mất dữ liệu mới.

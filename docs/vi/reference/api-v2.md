@@ -121,28 +121,3 @@ Nếu bật xác thực API key (production), thêm header theo `settings.API_KE
 * API v1: [API v1](api-v1.md)
 * Kiến trúc Bảo mật: [Bảo mật (chuyên sâu)](../architecture/security.md)
 * Modules: [API](../modules/api.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Router v2 ở `hierachain/api/v2/endpoints.py`; server có điều kiện đăng ký v2 trong `api/server.py`.
-    * Tests/instrumentation tham chiếu các đường dẫn `/api/v2/*`.
-
-    **DECISION**
-
-    * Tài liệu nêu các endpoint cốt lõi và ví dụ tối thiểu; chi tiết payload tuỳ theo schema/triển khai cụ thể.
-
-    **ASSUMPTION**
-
-    * Client kèm API key ở production; dữ liệu nhạy cảm dùng private collections/channels phù hợp.
-
-    **INVARIANT**
-
-    * Endpoint không làm rò rỉ thông tin qua lỗi/stacktrace; log được sanitize.
-
-    **EDGE CASES**
-
-    * Tên kênh/collection không hợp lệ phải được chuẩn hoá/validate; dữ liệu riêng tư lớn cần hạn chế kích thước.

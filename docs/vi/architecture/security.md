@@ -21,7 +21,7 @@ Kiến trúc phòng vệ được cấu thành từ 6 luồng chính phối hợ
 * **Lockdown & Logging**: 
 
     * `hierachain/security/secure_logging.py` — Tamper-evident log, che mờ dữ liệu PII.
-    * `hierachain/cluster/cluster_lockdown_manager.py` — Phong tỏa (Lockdown) khẩn cấp bằng Quorum.
+    * `hierachain/cluster/lockdown_protocol.py` — Phong tỏa (Lockdown) khẩn cấp bằng Quorum (chứa lớp `ClusterLockdownManager`).
 
 * **Fault-tolerance & Integrity**: 
 
@@ -103,33 +103,3 @@ sequenceDiagram
 * Mô‑đun Security: [Security](../modules/security.md)
 * Tham chiếu Config: [Config](../reference/config.md)
 * API v1: [API v1](../reference/api-v1.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * `ResourceGuardMiddleware` từ chối request khi CPU/RAM vượt ngưỡng (503) — xem `security/resource_guard.py`.
-    * `IdentityManager` quản lý org/user/role; xác minh chữ ký qua `security/verify/signature_verifier.py`.
-    * Biến bảo mật được lấy từ env thông qua `config/settings.py`.
-
-    **DECISION**
-
-    * Bật AUTH/HSTS/CORS/Rate Limit ở môi trường production theo mặc định an toàn.
-    * Dùng API key đơn giản (header `X-API-Key`) làm baseline; nâng cấp OAuth/mTLS tùy nhu cầu.
-
-    **ASSUMPTION**
-
-    * Đã có kênh phân phối/luân chuyển API key an toàn (secret manager).
-    * Đồng hồ NTP đồng bộ để log/audit có thể đối chiếu chính xác.
-
-    **INVARIANT**
-
-    * Yêu cầu thay đổi trạng thái phải được xác thực/ủy quyền khi bật `AUTH_ENABLED`.
-    * Log/audit không ghi lộ dữ liệu bí mật; mọi dữ liệu nhạy cảm được làm sạch (sanitize).
-
-    **EDGE CASES**
-
-    * API key bị lộ → cần cơ chế thu hồi/rotate; log/audit phải truy vết được.
-    * DoS về tài nguyên → ResourceGuard chủ động từ chối; khuyến nghị rate limit ở edge/proxy.

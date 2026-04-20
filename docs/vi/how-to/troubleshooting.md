@@ -101,32 +101,3 @@ Trang này cung cấp checklist và các bước chẩn đoán nhanh cho các l�
 
 * Bật mức log phù hợp, xem `settings.LOG_LEVEL`.
 * Dùng `risk_management/audit_logger.py` cho vết kiểm toán.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Port/API mặc định trong `hierachain/config/settings.py` (API_PORT=2661).
-    * Regex tên Sub-Chain và endpoints ở `hierachain/api/v1/endpoints.py`.
-    * Middleware `ResourceGuardMiddleware` trong `hierachain/security/resource_guard.py`.
-
-    **DECISION**
-
-    * Ưu tiên chẩn đoán theo lớp: Config → API → Storage → Security → Performance.
-    * Sử dụng curl/CLI đơn giản để tái hiện và cô lập vấn đề.
-
-    **ASSUMPTION**
-
-    * Môi trường đã cài đủ dependencies, network local ổn định.
-
-    **INVARIANT**
-
-    * FACT phải bám sát đường dẫn mã nguồn thực tế.
-    * Không tắt bảo mật ở production chỉ để vượt qua lỗi tạm thời.
-
-    **EDGE CASES**
-
-    * Port bị chiếm bởi tiến trình khác → đổi `HRC_API_PORT`.
-    * Dữ liệu `details` dạng phức tạp gây lỗi serialize → chuẩn hoá về chuỗi.

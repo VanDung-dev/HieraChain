@@ -151,33 +151,3 @@ blockchain.is_chain_valid()
 
 * Core module: [Core](../modules/core.md)
 * API v1: [API v1](api-v1.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Các schema được định nghĩa trong `hierachain/core/schemas.py` với hằng: `EVENT_SCHEMA`, `BLOCK_HEADER_SCHEMA`, `TRANSACTION_SCHEMA`, và hàm `get_block_schema()` trả về schema Block đầy đủ.
-    * `Block.events` lưu trữ nội bộ dưới dạng `pyarrow.Table`; ví dụ chuyển đổi có trong `core/block.py`.
-
-    **DECISION**
-
-    * Tài liệu dùng notation giản lược (schema([...])) để mô tả; hiện trạng thực tế là PyArrow schema.
-    * Trường `details` tiêu chuẩn hoá về map<string,string> để đơn giản ví dụ và tương thích API.
-
-    **ASSUMPTION**
-
-    * API/Client sẽ chuyển `data` (binary) sang base64 khi cần đưa vào JSON.
-    * Dấu thời gian sử dụng epoch (float giây) trên hệ thống có đồng bộ NTP cơ bản.
-
-    **INVARIANT**
-
-    * Hash/Merkle phải xác định (deterministic) cho cùng tập sự kiện và thứ tự.
-    * Các trường bắt buộc: `entity_id`, `event`, `timestamp` (Event); `tx_id`, `entity_id`, `event_type`, `timestamp` (Transaction).
-
-    **EDGE CASES**
-
-    * `details` chứa giá trị phức tạp (list, dict lồng) sẽ bị chuyển thành chuỗi → cần quy ước hoá trước khi ghi.
-    * `data` lớn có thể tác động hiệu năng serialize; cân nhắc lưu ngoài và tham chiếu bằng metadata.
-    * Khác biệt endianness/precision float giữa nền tảng: cần chuẩn hoá khi ký/hashing.

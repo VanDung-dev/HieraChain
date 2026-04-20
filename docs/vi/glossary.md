@@ -48,28 +48,3 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | Certificate | Chứng chỉ | Quản lý chứng chỉ X.509; `hierachain/security/certificate.py`. |
 
 Mục này sẽ tiếp tục cập nhật và là nguồn tham chiếu cho việc dịch sang tiếng Anh.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Thuật ngữ xuất phát từ các thành phần có thật trong `hierachain/*` (xem đường dẫn file tương ứng).
-
-    **DECISION**
-
-    * Duy trì cặp VI/EN song song để thuận tiện dịch tài liệu.
-    * Sử dụng từ viết tắt (MSP, BFT, PoA...) làm thuật ngữ tiếng Việt cho các khái niệm chuyên ngành dài, vì chúng phổ biến và tự nhiên hơn khi giao tiếp kỹ thuật.
-
-    **ASSUMPTION**
-
-    * Thuật ngữ có thể mở rộng theo nhu cầu của từng trang.
-
-    **INVARIANT**
-
-    * Định nghĩa phải nhất quán trên toàn bộ tài liệu.
-
-    **EDGE CASES**
-
-    * Trùng tên/khác ngữ cảnh: cần chú thích rõ ngữ cảnh sử dụng.

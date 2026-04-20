@@ -86,33 +86,3 @@ Trang này hướng dẫn hai con đường: (A) chỉ cấu hình để chọn 
 * Mô‑đun Hierarchical: [Hierarchical](../modules/hierarchical.md)
 * Tham chiếu Config: [Config](../reference/config.md)
 * API v1: [API v1](../reference/api-v1.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Các tệp liên quan: `core/consensus/{base_consensus.py, proof_of_authority.py, proof_of_federation.py}`, `hierarchical/consensus/bft_consensus.py`.
-    * Cấu hình đồng thuận đọc từ `hierachain/config/settings.py` (`CONSENSUS_TYPE`, `BFT_ENABLED`, …).
-
-    **DECISION**
-
-    * Ưu tiên cấu hình để chọn cơ chế sẵn có trước khi mở rộng bằng mã mới.
-    * Nếu thêm cơ chế mới, tuân thủ giao diện `BaseConsensus` và quy ước hashing/Merkle.
-
-    **ASSUMPTION**
-
-    * Mạng/đồng hồ ổn định; có log để kiểm chứng quá trình đề xuất/commit block.
-    * Môi trường dev có thể thay đổi biến môi trường và restart dịch vụ nhanh chóng.
-
-    **INVARIANT**
-
-    * Hash/Merkle phải xác định; block hợp lệ không bị thay đổi sau commit.
-    * Luồng Sub‑Chain → Main Chain luôn gửi được proof hợp lệ (hoặc phát hiện lỗi rõ ràng).
-
-    **EDGE CASES**
-
-    * Sai cấu hình `HRC_CONSENSUS_TYPE` → fallback hoặc lỗi rõ ràng khi khởi tạo.
-    * Giao diện mới không tương thích `BaseConsensus` → lỗi runtime; cần test unit tối thiểu.
-    * Ordering BFT bị trễ/out‑of‑order → cần chiến lược retry và idempotency khi submit proof.

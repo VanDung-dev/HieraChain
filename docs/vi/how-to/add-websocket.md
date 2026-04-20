@@ -217,34 +217,3 @@ Response:
 * API Module: [API](../modules/api.md)
 * Reference API v1: [API v1](../reference/api-v1.md)
 * WebSocket Source: `hierachain/api/websocket_manager.py`, `hierachain/api/websocket_endpoints.py`
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * WebSocket endpoint tại `hierachain/api/websocket_endpoints.py`.
-    * WebSocketManager tại `hierachain/api/websocket_manager.py`.
-    * Server chạy cùng port 2661 với HTTP API.
-
-    **DECISION**
-
-    * Sử dụng JSON cho messages để dễ tích hợp đa ngôn ngữ.
-    * Hỗ trợ per-chain và per-event-type subscriptions.
-    * Ping/pong cho connection health.
-
-    **ASSUMPTION**
-
-    * Client tự xử lý reconnection khi mất kết nối.
-    * Server WebSocket dùng same authentication với REST API.
-
-    **INVARIANT**
-
-    * Messages luôn là JSON hợp lệ.
-    * Subscriptions được quản lý per-connection.
-
-    **EDGE CASES**
-
-    * Large number of connections → kiểm tra `ws_manager._connections` memory usage.
-    * Slow clients → server có thể drop connection nếu buffer full.

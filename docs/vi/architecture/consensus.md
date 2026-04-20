@@ -71,35 +71,3 @@ HRC_ZK_REQUIRED_MAINCHAIN=false
 * Hierarchical module: [Hierarchical](../modules/hierarchical.md)
 * Data Models: [Data Models](../reference/data-models.md)
 * Config: [Config](../reference/config.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Tệp PoA: `hierachain/consensus/proof_of_authority.py`; PoF: `hierachain/consensus/proof_of_federation.py`; Base: `hierachain/consensus/base_consensus.py`.
-    * BFT: `hierachain/hierarchical/consensus/bft_consensus.py`.
-    * Ordering Service: `hierachain/consensus/ordering_service.py`.
-    * Cấu hình đồng thuận đọc từ `hierachain/config/settings.py` (ví dụ `CONSENSUS_TYPE`, `VALIDATOR_TIMEOUT`, `BFT_ENABLED`).
-
-    **DECISION**
-
-    * Ưu tiên dùng PoA cho môi trường dev và PoF/BFT cho môi trường consortium/production.
-    * Mọi Sub‑Chain phải qua Ordering trước khi đóng block để đảm bảo tính xác định thứ tự.
-
-    **ASSUMPTION**
-
-    * Đồng hồ hệ thống các node đủ đồng bộ để timestamp không gây sai lệch kiểm toán.
-    * Mạng ổn định hoặc có cơ chế retry/idempotency ở tầng giao tiếp.
-
-    **INVARIANT**
-
-    * Block hợp lệ phải có thứ tự sự kiện xác định và hash/Merkle nhất quán.
-    * Khi `BFT_ENABLED=true`, commit phải tuân thủ điều kiện an toàn của thuật toán BFT tương ứng.
-
-    **EDGE CASES**
-
-    * Mất đồng thuận/timeout kéo dài → cần cơ chế view‑change/leader‑election (nếu có) hoặc chuyển chế độ an toàn.
-    * Sự kiện đến trễ/out‑of‑order → Ordering phải xếp đúng thứ tự trước khi đóng Block.
-    * Thay đổi cấu hình `CONSENSUS_TYPE` khi hệ thống đang chạy → cần quy trình nâng cấp/di trú an toàn.

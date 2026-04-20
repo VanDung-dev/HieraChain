@@ -174,27 +174,3 @@ pytest -v -m integration
 * Unit: kiểm tra lớp/hàm đơn lẻ (core, security, storage...).
 * Integration: kiểm tra luồng end‑to‑end qua API v1/v2.
 * Scenarios: kịch bản nghiệp vụ (ví dụ tạo sub‑chain → ghi event → submit proof → truy vết entity).
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Cấu hình pytest, markers lấy từ `pyproject.toml` của repo.
-
-    **DECISION**
-
-    * Viết test theo 3 tầng (unit/integration/scenarios) và dùng markers để chọn lọc khi chạy CI.
-
-    **ASSUMPTION**
-
-    * Môi trường dev có đủ dependencies (xem `requirements_dev.txt`).
-
-    **INVARIANT**
-
-    * Test không phụ thuộc thứ tự chạy; dữ liệu test phải được dọn dẹp.
-
-    **EDGE CASES**
-
-    * Flaky test do timeout/tải nặng: thêm backoff hoặc mock phù hợp.

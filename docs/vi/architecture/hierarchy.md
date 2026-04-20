@@ -60,37 +60,3 @@ graph TD
 * Đồng thuận & Sắp xếp: [Consensus & Ordering](consensus.md)
 * Hierarchical module: [Hierarchical](../modules/hierarchical.md)
 * Config: [Config](../reference/config.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Các tệp chính: `hierachain/hierarchical/{main_chain.py, sub_chain.py, hierarchy_manager.py, channel.py, multi_org.py, private_data.py, transaction_manager.py, proof_aggregation.py, rebalancer.py}`.
-    * `HierarchyManager` khởi tạo `MainChain`, quản lý `sub_chains`, có `CrossChainTransactionManager`.
-    * Neo proof từ Sub‑Chain lên Main Chain (Merkle root/hash) theo luồng đã mô tả.
-    * Cấu hình tái cân bằng, gom proof đọc từ `hierachain/config/settings.py`.
-
-    **DECISION**
-
-    * Main Chain chỉ lưu proof/metadata, không lưu dữ liệu domain chi tiết.
-    * Luôn áp dụng Ordering trước khi đóng block ở Sub‑Chain để đảm bảo tính xác định.
-    * Kênh/đa tổ chức sử dụng chính sách tạo kênh “majority” mặc định (có thể thay đổi qua config).
-
-    **ASSUMPTION**
-
-    * Môi trường mạng ổn định; có cơ chế retry/idempotency khi gửi proof/giao dịch 2PC.
-    * Tổ chức/thành viên được quản trị qua mô‑đun Security (MSP/Identity/Policy).
-
-    **INVARIANT**
-
-    * Block đã commit là bất biến; mọi thay đổi đến từ block mới.
-    * Quan hệ hash/previous_hash của Chain phải liên tục và hợp lệ.
-    * Proof gửi lên Main Chain phải xác minh được và ánh xạ đúng Sub‑Chain nguồn.
-
-    **EDGE CASES**
-
-    * Lỗi giao dịch liên chuỗi (một bên thất bại) → 2PC phải rollback an toàn.
-    * Gián đoạn gửi proof → cần retry idempotent, tránh bản ghi trùng.
-    * Tái cân bằng trong giờ cao điểm → cần cơ chế “cooldown” để giảm dao động.

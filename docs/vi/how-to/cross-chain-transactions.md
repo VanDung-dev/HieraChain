@@ -63,33 +63,3 @@ tx_id = manager.initiate_transaction(
 ```
 
 Điều này sẽ kích hoạt `_execute_2pc` tự động và đồng bộ trực tiếp trong logic quản lý mà không cần thêm thao tác phụ từ phía client.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Mã nguồn tài liệu tham chiếu: `hierachain/*` (Python >= 3.10 theo `pyproject.toml`).
-    * Script CLI: `hrc` (định nghĩa tại `[project.scripts]` trong `pyproject.toml`).
-    * API server: `hierachain/api/server.py` (có thể chạy bằng `python -m hierachain.api.server`).
-
-    **DECISION**
-
-    * Dùng Markdown, tách rõ các khối FACT / DECISION / ASSUMPTION / INVARIANT / EDGE CASES.
-    * Tổ chức nội dung theo khung chuẩn thống nhất.
-
-    **ASSUMPTION**
-
-    * Người đọc đã cài Python 3.10+ và có quyền truy cập internet để cài dependencies.
-    * Môi trường phát triển sử dụng `venv` hoặc công cụ tương đương.
-
-    **INVARIANT**
-
-    * FACT phải bám sát mã nguồn hiện tại (tên file, chữ ký API, đường dẫn).
-    * Không pha trộn nội dung tiếp thị trong tài liệu kỹ thuật.
-
-    **EDGE CASES**
-
-    * Khác biệt shell giữa Windows (PowerShell) và Linux/macOS (bash) khi kích hoạt venv.
-    * Mạng nội bộ hạn chế có thể ảnh hưởng quá trình cài gói.

@@ -26,7 +26,7 @@ config = HieraChainClientConfig(
 
 ### Các phương thức chính
 
-#### `submit_event(chain_name: str, event_data: dict) -> EventResult`
+#### `submit_event(chain_name: str, event_data: dict[str, Any]) -> EventResult`
 
 Gửi một sự kiện mới vào một sub-chain cụ thể.
 
@@ -119,8 +119,7 @@ Nếu Node server báo trả về Header `X-Lockdown-Mode: true` (Hệ thống �
 
 ```python
 # Đẩy Submit Event cho Giao dịch
-result = client.submit_event({
-    "chain_name": "main_chain",
+result = client.submit_event("main_chain", {
     "entity_id": "user_sysadmin",
     "event": "update_config"
 })
@@ -129,28 +128,3 @@ print("Đẩy thành công vào block, Message ID:", result.event_id)
 # Lấy Block bằng hash
 block = client.get_block(block_id="8f2a9d...")
 ```
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Mã nguồn tài liệu tham chiếu: `hierachain/sdk/client.py` (Python >= 3.10 theo `pyproject.toml`).
-    * Thư viện yêu cầu: `requests`, `aiohttp`.
-
-    **DECISION**
-
-    * Dùng Markdown, tách rõ các khối FACT / DECISION / ASSUMPTION / INVARIANT / EDGE CASES.
-
-    **ASSUMPTION**
-
-    * Người đọc là Developer cấp trung, nắm rõ khái niệm coroutines/async-await trong Python.
-
-    **INVARIANT**
-
-    * Không được tự ý wrap vòng `while True: Try... Except` quanh client vì Client đã có sẵn Retry nội suy.
-
-    **EDGE CASES**
-
-    * Chạy multi-threading đè lên instance AsyncClient sẽ gặp rắc rối Session chia sẻ I/O.

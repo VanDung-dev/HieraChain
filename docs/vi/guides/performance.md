@@ -39,28 +39,3 @@ icon: material/speedometer
 
 * Dùng `monitoring/performance_monitor.py` để lấy metrics CPU/RAM.
 * Bật `ResourceGuardMiddleware` để shed load trong đỉnh tải.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Tham số cache/song song hoá nằm trong `hierachain/config/settings.py`.
-    * Lưu trữ Arrow trong `hierachain/core/block.py` và schema ở `core/schemas.py`.
-
-    **DECISION**
-
-    * Ưu tiên batch và Arrow; tránh payload `data` lớn nếu không cần.
-
-    **ASSUMPTION**
-
-    * Tải thực tế có tính bùng nổ; cần khả năng shed load.
-
-    **INVARIANT**
-
-    * Tối ưu không được phá vỡ tính xác định của hash/Merkle.
-
-    **EDGE CASES**
-
-    * TTL cache quá ngắn gây miss liên tục; batch quá lớn gây spike bộ nhớ.

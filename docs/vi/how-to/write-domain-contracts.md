@@ -65,29 +65,3 @@ contract.register_event_handler(
 ```
 
 Điều này giúp tách biệt rõ ràng việc kiểm tra, đối soát và phê duyệt (approval) qua từng module riêng rẽ.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Mã nguồn tài liệu tham chiếu: `hierachain/core/domain_contract.py` (Python >= 3.10 theo `pyproject.toml`).
-    * Đối tượng tham chiếu: `DomainContract`, `ContractLifecycle`, `ContractStorage`.
-
-    **DECISION**
-
-    * Dùng Markdown, tách rõ các khối FACT / DECISION / ASSUMPTION / INVARIANT / EDGE CASES.
-    * Gắn chặt tài liệu này vào phần How-to để Dev tập trung vào triển khai code.
-
-    **ASSUMPTION**
-
-    * Người đọc đã cài Python 3.10+ và hiểu kỹ năng viết block callback/hàm con.
-
-    **INVARIANT**
-
-    * FACT phải bám sát cấu trúc của state model hiện tại (VD như 6 states của Lifecycle).
-
-    **EDGE CASES**
-
-    * Quản lý số lượng phiên bản nếu thay đổi quá nhiều sẽ tốn bộ nhớ. Mặc định `max_version_history` là 10.

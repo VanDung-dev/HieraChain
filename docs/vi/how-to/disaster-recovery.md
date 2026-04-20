@@ -65,33 +65,3 @@ Cụm BFT của HieraChain (với thuật toán dựa trên View Change) tự ch
 
 * **Sự cố Leader bị Node-down**: Nếu Leader gặp crash, timeout (không broadcast block mới đúng hạn), các Validators sẽ gửi tin nhắn kháng nghị. Khi đạt trên `2f + 1` tin nhắn kháng nghị, hệ thống khởi tạo **View Change**, chuyển qua Leader tiếp theo (ví dụ: `Leader_ID = View_Number % Total_Nodes`).
 * **Sự cố Network Partition (Chia cắt mạng)**: Nếu mạng bị chia làm 2 mảnh, mảnh không chiếm đa số (***< 2f + 1***) sẽ tự động ngừng (Halt). Mảng lớn hơn (trên 66% số node) tiếp tục giao dịch. Khi kết nối khôi phục, mảnh nhỏ hơn tự động gọi API P2P để đồng bộ (Sync Blocks) với nhánh dài nhất.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Mã nguồn tài liệu tham chiếu: `hierachain/*` (Python >= 3.10 theo `pyproject.toml`).
-    * Script CLI: `hrc` (định nghĩa tại `[project.scripts]` trong `pyproject.toml`).
-    * API server: `hierachain/api/server.py` (có thể chạy bằng `python -m hierachain.api.server`).
-
-    **DECISION**
-
-    * Dùng Markdown, tách rõ các khối FACT / DECISION / ASSUMPTION / INVARIANT / EDGE CASES.
-    * Tổ chức nội dung theo khung chuẩn thống nhất.
-
-    **ASSUMPTION**
-
-    * Người đọc đã cài Python 3.10+ và có quyền truy cập internet để cài dependencies.
-    * Môi trường phát triển sử dụng `venv` hoặc công cụ tương đương.
-
-    **INVARIANT**
-
-    * FACT phải bám sát mã nguồn hiện tại (tên file, chữ ký API, đường dẫn).
-    * Không pha trộn nội dung tiếp thị trong tài liệu kỹ thuật.
-
-    **EDGE CASES**
-
-    * Khác biệt shell giữa Windows (PowerShell) và Linux/macOS (bash) khi kích hoạt venv.
-    * Mạng nội bộ hạn chế có thể ảnh hưởng quá trình cài gói.

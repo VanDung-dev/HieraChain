@@ -93,25 +93,3 @@ Quy trình xử lý dữ liệu từ Client đến khi được lưu vào Chain:
 * **Apache Arrow**: Dùng cho lưu trữ nội bộ (Internal Storage) và truyền tải giữa các Node (Performance).
 * **JSON**: Dùng cho Client API (REST) để dễ dàng tích hợp với Web/Mobile App.
 * **Protobuf/gRPC**: (Tùy chọn) Dùng cho giao tiếp nội bộ giữa các microservices hiệu năng cao.
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-    
-    * Hệ thống sử dụng Apache Arrow (pyarrow) để định nghĩa Schema (`hierachain/core/schemas.py`).
-    * Dữ liệu được lưu trữ dưới dạng Columnar để tối ưu hóa truy vấn phân tích (OLAP).
-
-    **DECISION**
-    
-    * Sử dụng `entity_id` làm khóa chính logic thay vì `block_hash` để hỗ trợ truy xuất lịch sử thực thể (Traceability).
-    * Tách biệt `Event` (Nghiệp vụ) và `Transaction` (Kỹ thuật/Bảo mật) để linh hoạt trong thiết kế API.
-    * **Terminology**: `Transaction` được định nghĩa là **Technical Envelope** (gói dữ liệu kỹ thuật) chứa Event + Signature + Proof, **KHÔNG** phải là giao dịch tài chính (Financial Transfer).
-
-    **ASSUMPTION**
-    
-    * Mọi dữ liệu đầu vào đều phải được validate qua `pydantic` hoặc `pyarrow` schema trước khi xử lý.
-
-    **INVARIANT**
-    
-    * Block đã commit vào Chain là bất biến (Immutable).
-    * Mọi Event trong Block phải có cùng `merkle_root` được ghi trong Header.

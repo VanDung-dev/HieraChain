@@ -40,28 +40,3 @@ icon: material/shield-star
 * [ ] Rate limit tại API gateway/ngay trên app (khi cần).
 * [ ] Nhật ký không chứa dữ liệu nhạy cảm; bật sanitize.
 * [ ] Cơ chế thu hồi API key khi bị lộ; audit đầy đủ.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Biến cấu hình bảo mật ở `hierachain/config/settings.py`.
-    * Xác thực API key ở `security/verify/api_key_verifier.py`.
-
-    **DECISION**
-
-    * Mặc định an toàn ở production: bật AUTH, HSTS, rate limit; CORS hạn chế.
-
-    **ASSUMPTION**
-
-    * Có proxy/ingress hỗ trợ TLS, rate limit, WAF.
-
-    **INVARIANT**
-
-    * Không ghi lộ secrets vào log; dữ liệu nhạy cảm phải được làm sạch.
-
-    **EDGE CASES**
-
-    * Bật CORS rộng ở production gây rủi ro CSRF/XSS chuỗi chéo.

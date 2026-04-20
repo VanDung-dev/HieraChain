@@ -49,27 +49,3 @@ tracer_form_ui = explorer.render(component_id="entity_tracer")
 ```
 
 Với cấu trúc JSON cực kì logic, nhà lập trình Front-end (React/Vue/HTML5) dễ dàng "xào nấu" render ra các ô card hiển thị số dư, block tương ứng mà không phải tốn sức ghép truy vấn tay.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Mã nguồn tài liệu tham chiếu: `hierachain/api/blockchain_explorer.py` (Python >= 3.10 theo `pyproject.toml`).
-
-    **DECISION**
-
-    * Tổ chức nội dung tập trung vào hướng dẫn giải đáp chức năng Component render ra UI từ core backend.
-
-    **ASSUMPTION**
-
-    * Developer có kiến thức về cách ánh xạ JSON Response sang Component DOM phía trình duyệt.
-
-    **INVARIANT**
-
-    * Phải load tham số `total_events` trực tiếp nếu muốn `O(1)` performance (khuyến cáo trong hàm `render_summary`).
-
-    **EDGE CASES**
-
-    * Khối lượng truy vết entity có thể mất tài nguyên nếu gọi liên tục vào tệp `sub-chain` khi node chạy hàng tỷ events.

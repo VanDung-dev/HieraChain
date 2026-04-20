@@ -122,31 +122,3 @@ Nếu bạn muốn đóng góp bản vá bảo mật, vui lòng phối hợp qua
 ## Quy tắc ứng xử (Code of Conduct)
 
 Chúng tôi cam kết xây dựng môi trường mở, thân thiện và tôn trọng. Vui lòng giữ thái độ chuyên nghiệp và lịch sự trong mọi tương tác.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Ngôn ngữ: Python >= 3.10.
-    * Script CLI: `hrc`.
-    * Tài liệu tham chiếu: `README.md`, `pyproject.toml`.
-
-    **DECISION**
-
-    * Tiêu chuẩn tài liệu 5 khối (FACT/DECISION/ASSUMPTION/INVARIANT/EDGE CASES).
-    * Commit message theo cấu trúc `scope: summary`.
-
-    **ASSUMPTION**
-
-    * Contributor cài được môi trường Python 3.10+ và các công cụ dev cơ bản.
-
-    **INVARIANT**
-
-    * PR không làm gãy build/test hiện có.
-    * Tài liệu phải bám sát mã nguồn hiện tại.
-
-    **EDGE CASES**
-
-    * PR quá lớn hoặc chứa nhiều thay đổi không liên quan sẽ bị yêu cầu tách nhỏ.

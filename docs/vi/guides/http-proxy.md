@@ -78,29 +78,3 @@ HRC_TRUSTED_PROXIES=127.0.0.1,192.168.1.100
 *(Nếu hệ thống NGINX chạy khác máy chủ, hãy điền IP của máy NGINX vào đây hoặc dùng `*` nếu mạng nội bộ hoàn toàn khép kín).*
 
 Lớp bảo mật này tự động sử dụng tùy chọn `forwarded_allow_ips` của Uvicorn để chấp nhận Header `X-Forwarded-For`. All done! Hệ thống của bạn đã đạt chuẩn doanh nghiệp.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Uvicorn chỉ hỗ trợ HTTP/1.1 và WebSockets, không hỗ trợ native HTTP/2 & HTTP/3.
-    * Khai báo Proxy Headers đi qua cấu hình môi trường `HRC_TRUSTED_PROXIES` trong `hierachain/config/settings.py`.
-
-    **DECISION**
-
-    * KHÔNG nhúng Hypercorn/aioquic trực tiếp vào API nhằm giữ code base ổn định, thay vào đó áp dụng mô hình Reverse Proxy Offloading.
-
-    **ASSUMPTION**
-
-    * Cơ sở hạ tầng cloud / firewall của doanh nghiệp có cho phép lưu lượng UDP Port 443 khi muốn bật HTTP/3 QUIC.
-    * Proxy (ví dụ NGINX) luôn được cấp tải chứng chỉ TLS (SSL Certificate) hợp lệ cho tên miền dịch vụ.
-
-    **INVARIANT**
-
-    * Các headers proxy như `X-Forwarded-For` luôn phải bị từ chối nếu bị spoofed từ mạng Internet bên ngoài. API Server chỉ phân giải proxy origin (Client IP) từ các node được khai báo tường minh trong `HRC_TRUSTED_PROXIES`.
-
-    **EDGE CASES**
-
-    * Cổng UDP 443 bị block bới IPS/IDS: Client sẽ liên tục timeout. Phương thức chống chịu là browser sẽ tự động fallback về HTTP/2 hoặc HTTP/1.1 thông qua TCP. Lỗi hạ tầng ko ảnh hưởng đến Blockchain ledger.

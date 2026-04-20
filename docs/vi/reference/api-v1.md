@@ -234,34 +234,3 @@ curl -s "http://localhost:2661/api/v1/chains/supply_chain/blocks?limit=5&offset=
 * Kiến trúc tổng quan: [Tổng quan](../architecture/overview.md)
 * Hierarchical module: [Hierarchical](../modules/hierarchical.md)
 * Core module: [Core](../modules/core.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Endpoint có thật trong `hierachain/api/v1/endpoints.py` như: `/health`, `/chains`, `/chains/{chain_name}/create`, `/chains/{chain_name}/events`, `/chains/{chain_name}/submit-proof`, `/chains/{chain_name}/stats`, `/chains/{chain_name}/blocks`, `/entities/{entity_id}/trace`.
-    * Schema Pydantic nằm tại `hierachain/api/v1/schemas.py` (EventRequest/Response, ChainInfoResponse, ProofSubmissionResponse, EntityTraceResponse, ChainStatsResponse, ...).
-
-    **DECISION**
-
-    * Tài liệu ưu tiên phản ánh hành vi hiện tại của mã nguồn; ví dụ curl tối giản, không ràng buộc cơ chế xác thực cụ thể tại đây (xem thêm phần Security khi có).
-    * Sử dụng định dạng JSON đơn giản, trường thời gian là số thực (epoch seconds) theo hiện trạng.
-
-    **ASSUMPTION**
-
-    * Server mặc định phục vụ tại `http://localhost:2661` theo README; cổng có thể thay đổi qua cấu hình.
-    * Môi trường đã khởi tạo `Main Chain` khi cần, hoặc endpoint tạo Sub-Chain sẽ tự khởi tạo Main Chain nếu thiếu.
-
-    **INVARIANT**
-
-    * Main Chain không lưu dữ liệu domain; chỉ lưu proof/metadata.
-    * Tên chuỗi hợp lệ phải an toàn (sanitize) trước khi tạo Sub-Chain.
-    * Cấu trúc JSON phản hồi giữ tính nhất quán giữa các lần gọi với cùng dữ liệu đầu vào.
-
-    **EDGE CASES**
-
-    * `chain_name` chứa ký tự không hợp lệ → 400.
-    * Sub-Chain không tồn tại khi thêm sự kiện/gửi proof → 404.
-    * Thiếu `to_event_list()` trong Block → fallback Arrow Table để tránh crash.
