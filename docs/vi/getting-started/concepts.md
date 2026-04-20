@@ -37,24 +37,33 @@ graph TD
 ```mermaid
 classDiagram
     direction LR
+    class HierarchyManager {
+        +MainChain main_chain
+        +dict sub_chains
+        +create_sub_chain()
+        +start_operation()
+    }
     class Blockchain {
-        +list blocks
+        +list chain
         +add_block()
-        +get_block()
+        +get_latest_block()
     }
     class Block {
-        +Header header
-        +list events
+        +int index
+        +hash hash
         +hash previous_hash
+        +list events
         +hash merkle_root
     }
     class Event {
         +string entity_id
-        +string event_type
-        +json details
-        +timestamp created_at
+        +string event
+        +float timestamp
+        +dict details
     }
     
+    HierarchyManager "1" *-- "1" Blockchain : main_chain
+    HierarchyManager "1" *-- "many" Blockchain : sub_chains
     Blockchain "1" *-- "many" Block
     Block "1" *-- "many" Event
 ```
@@ -78,30 +87,3 @@ classDiagram
 * Bắt đầu nhanh: [Bắt đầu nhanh](quickstart.md)
 * Kiến trúc tổng quan: [Tổng quan](../architecture/overview.md)
 * Thuật ngữ: [Thuật ngữ](../glossary.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Event/Block/Transaction schema được định nghĩa trong `hierachain/core/schemas.py` (Arrow).
-    * Hai lớp chuỗi: `Main Chain` (lưu proof) và `Sub-Chain` (lưu event chi tiết).
-
-    **DECISION**
-
-    * Tài liệu dùng mô hình sự kiện (event-driven) thay vì giao dịch tiền mã hóa.
-    * Luôn tách FACT/DECISION/ASSUMPTION/INVARIANT/EDGE CASES.
-
-    **ASSUMPTION**
-
-    * Người đọc đã quen kiến trúc dịch vụ và khái niệm hash/Merkle cơ bản.
-
-    **INVARIANT**
-
-    * Block đã commit là bất biến; Proof phải xác định (deterministic) với cùng dữ liệu.
-
-    **EDGE CASES**
-
-    * Sự kiện đến trễ/out-of-order cần Ordering Service sắp xếp trước khi đóng block.
-    * Mất kết nối khi gửi proof lên Main Chain cần cơ chế retry/idempotent.

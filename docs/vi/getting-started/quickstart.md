@@ -13,7 +13,11 @@ Tài liệu này tóm tắt các bước tối thiểu để bạn chạy thử 
 Để bắt đầu nhanh nhất, bạn chỉ cần cài đặt gói qua PIP:
 
 ```bash
-pip install HieraChain
+# Cách 1: Cài đặt qua PIP truyền thống
+pip install .
+
+# Cách 2: Sử dụng uv (Khuyên dùng)
+uv sync
 ```
 
 Nếu bạn muốn phát triển mã nguồn, vui lòng xem hướng dẫn [Cài đặt chi tiết](install.md).
@@ -39,23 +43,30 @@ Mặc định server phục vụ tại `http://localhost:2661`. Mở `http://loc
 Ví dụ tối thiểu bên dưới minh họa cách tạo một `Sub-Chain`, ghi nhận sự kiện, và gửi bằng chứng lên `Main Chain`.
 
 ```python
-from hierachain.hierarchical import hierarchy_manager
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 
-# Khởi tạo manager
-manager = hierarchy_manager.HierarchyManager()
+# 1. Khởi tạo Hierarchy Manager (Quản lý các chuỗi)
+manager = HierarchyManager()
 
-# Tạo một sub-chain theo domain (yêu cầu tên và loại domain)
+# 2. Tạo một sub-chain cho domain cụ thể (ví dụ: chuỗi cung ứng)
+# Tham số: tên chuỗi, loại domain (generic, v.v.)
 manager.create_sub_chain("supply_chain", "generic")
 
-# Ghi nhận một Event domain (sử dụng start_operation hoặc lấy sub_chain direct)
-success = manager.start_operation("supply_chain", "PROD-001", "production_complete", {
-    "quantity": 100
-})
+# 3. Ghi nhận một hoạt động nghiệp vụ (Event) vào Sub-Chain
+# Tham số: tên chuỗi, ID thực thể, loại sự kiện, dữ liệu chi tiết
+success = manager.start_operation(
+    "supply_chain", 
+    "PROD-100", 
+    "production_start", 
+    {"location": "Factory-A", "operator": "user_01"}
+)
 
-# Gửi Proof lên Main Chain (sử dụng đúng tên hàm submit_proof_to_main_chain)
+# 4. Neo bằng chứng (Proof) từ Sub-Chain lên Main Chain
+# Điều này giúp bảo chứng tính toàn vẹn của Sub-Chain trên Main Chain
 proof_success = manager.submit_proof_to_main_chain("supply_chain")
-print("success=", success)
-print("proof_success=", proof_success)
+
+print(f"Ghi sự kiện: {'Thành công' if success else 'Thất bại'}")
+print(f"Neo Proof: {'Thành công' if proof_success else 'Thất bại'}")
 ```
 
 ## Dùng CLI (tuỳ chọn)
@@ -69,28 +80,3 @@ hrc --help
 * Tìm hiểu chi tiết kiến trúc: [Tổng quan](../architecture/overview.md)
 * Xem mô-đun cốt lõi: [Core](../modules/core.md)
 * Xem thêm ví dụ kiểm thử trong [Kiểm thử](../dev/testing.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * API server khởi chạy bằng `python -m hierachain.api.server` (mặc định cổng 2661).
-    * CLI `hrc` được đăng ký trong `pyproject.toml`.
-
-    **DECISION**
-
-    * Quickstart chỉ trình bày luồng tối thiểu, chi tiết API/Schema sẽ để trong mục Reference.
-
-    **ASSUMPTION**
-
-    * Hệ thống đã cài dependencies cần thiết theo hướng dẫn cài đặt.
-
-    **INVARIANT**
-
-    * Ví dụ phải sát với chữ ký/lớp hiện có trong `hierachain/*`.
-
-    **EDGE CASES**
-    
-    * Người dùng không bật venv dẫn đến dùng sai phiên bản Python hoặc PATH.

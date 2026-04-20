@@ -13,13 +13,41 @@ Tài liệu này hướng dẫn các cách để cài đặt và thiết lập H
 Đây là cách nhanh nhất và đơn giản nhất để bắt đầu sử dụng HieraChain như một thư viện hoặc chạy server.
 
 ```bash
-pip install HieraChain
+# Lưu ý: Hiện tại dự án đang trong giai đoạn phát triển, khuyên dùng cài đặt từ mã nguồn.
+pip install .
 ```
 
 Sau khi cài đặt, bạn có thể kiểm tra bằng lệnh:
 
 ```bash
 hrc --help
+```
+
+### Sử dụng `uv` (Khuyên dùng cho hiệu năng cao)
+
+`uv` là công cụ quản lý package Python hiện đại viết bằng Rust, nhanh hơn pip từ 10-100 lần.
+
+**Cài đặt uv:**
+=== "Linux/macOS"
+    ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+=== "Windows (PowerShell)"
+    ```powershell
+    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+    ```
+
+**Thiết lập dự án với uv:**
+```bash
+# Tạo môi trường ảo và cài đặt tất cả dependencies (bao gồm dev)
+uv sync
+
+# Hoặc cài đặt thủ công vào môi trường ảo hiện có với các tùy chọn bổ sung:
+# uv pip install -e ".[dev,doc]"
+
+# Kích hoạt môi trường ảo
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\Activate.ps1  # Windows
 ```
 
 ## Cài đặt từ mã nguồn (Dành cho nhà phát triển)
@@ -76,6 +104,19 @@ python -m hierachain.api.server
 ```
 
 Nếu server khởi chạy thành công, bạn có thể mở tài liệu tương tác tại: `http://localhost:2661/docs`.
+
+## Chạy Kiểm thử (Testing)
+
+> [!WARNING]
+> Không nên chạy tất cả các test cùng lúc để tránh xung đột tài nguyên. Khuyên dùng chạy theo từng file hoặc từng thư mục unit/integration.
+
+```bash
+# Chạy unit tests
+python -m pytest tests/unit -v
+
+# Chạy integration tests
+python -m pytest tests/integration -v
+```
 
 ## Chạy Server
 
@@ -174,32 +215,3 @@ deactivate  # thoát môi trường ảo (nếu đang bật)
 * Không chạy được `hrc`: kiểm tra đã kích hoạt venv và `pip install -e .` thành công.
 * Lỗi biên dịch gói phụ thuộc: đảm bảo có build tools phù hợp (ví dụ: trên Windows cài Build Tools for Visual Studio nếu cần).
 * Cổng API 2661 bận: điều chỉnh cấu hình trong `hierachain/config/settings.py` hoặc tắt tiến trình chiếm cổng.
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * `requires-python = ">=3.10"` (xem `pyproject.toml`).
-    * Script CLI `hrc` cấu hình tại `[project.scripts]` trong `pyproject.toml`.
-    * API server có thể chạy bằng `python -m hierachain.api.server` (mặc định phục vụ tại `http://localhost:2661`).
-
-    **DECISION**
-
-    * Khuyến nghị dùng môi trường ảo `venv` để cô lập gói.
-    * Cài đặt ở chế độ editable (`pip install -e .`) cho vòng lặp dev nhanh.
-
-    **ASSUMPTION**
-
-    * Máy phát triển có quyền truy cập PyPI; tường lửa không chặn.
-    * Người dùng có quyền cài đặt gói hệ thống phụ thuộc (nếu cần).
-
-    **INVARIANT**
-
-    * Hướng dẫn cài đặt luôn bám thông tin từ `pyproject.toml` và `README_vi.md` của repository hiện tại.
-
-    **EDGE CASES**
-
-    * Khác biệt lệnh kích hoạt venv giữa bash và PowerShell.
-    * Môi trường doanh nghiệp có proxy: cần cấu hình `pip` với biến môi trường `HTTP_PROXY`/`HTTPS_PROXY`.
