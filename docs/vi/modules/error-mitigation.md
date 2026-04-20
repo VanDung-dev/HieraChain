@@ -1,181 +1,131 @@
 ---
-title: "Error Mitigation module"
-description: "Giảm thiểu lỗi và phục hồi: validator, data_validator, phân loại lỗi, journal, rollback, recovery — bám sát hierachain/error_mitigation/*."
+title: "Error Mitigation Module"
+description: "Hệ thống giảm thiểu rủi ro và phục hồi sau sự cố: Validation, Journaling, Rollback và Automated Recovery."
 icon: material/bug
 ---
 
 # Error Mitigation Module (`hierachain/error_mitigation/*`)
 
-## Mục đích
+## Tổng quan
 
-Giảm thiểu tác động của lỗi và hỗ trợ phục hồi an toàn khi vận hành: xác thực dữ liệu đầu vào, phân loại lỗi, ghi journal bền vững, cơ chế rollback/trả về trạng thái hợp lệ và recovery theo kịch bản.
-
-## Kiến trúc & khái niệm
-
-* Validator: `hierachain/error_mitigation/validator.py`, `data_validator.py` — kiểm tra tính hợp lệ dữ liệu/sự kiện.
-* Phân loại lỗi: `error_classifier.py` — xác định mức độ/rủi ro để chọn chiến lược xử lý.
-* Journal: `journal.py` — ghi log giao dịch/hoạt động bền vững để khôi phục.
-* Rollback: `rollback_manager.py` — hoàn tác world state về mốc an toàn.
-* Recovery: `recovery_engine.py` — quy trình phục hồi theo loại sự cố (mạng, DB, đồng thuận...).
-
-## API công khai (mô tả khái quát)
-
-```yaml
-Validator/DataValidator:
-  validate(event|tx) -> Result(errors, warnings)
-
-ErrorClassifier:
-  classify(error) -> {level, action}
-
-Journal:
-  append(entry)
-  replay(from_offset)
-
-RollbackManager:
-  snapshot()
-  rollback(to_snapshot)
-
-RecoveryEngine:
-  recover(context)  # chọn kịch bản phù hợp
-```
-
-#### Journaling Example
-
-**File**: `hierachain/error_mitigation/journal.py`
-
-Ghi nhật ký hoạt động để đảm bảo khả năng hoàn tác/phục hồi:
-
-```python
-from hierachain.error_mitigation.journal import Journal
-
-journal = Journal(name="ordering_journal")
-
-# Ghi nhận thao tác trước khi thực hiện
-journal.append({"op": "create_block", "index": 100})
-
-# Khi cần phục hồi (replay)
-entries = journal.read_all()
-```
-
-#### Recovery Engine
-
-**File**: `hierachain/error_mitigation/recovery_engine.py`
-
-Tự động hóa quy trình khắc phục sự cố:
-
-```python
-from hierachain.error_mitigation.recovery_engine import RecoveryEngine
-
-engine = RecoveryEngine()
-
-# Kích hoạt quy trình phục hồi dựa trên ngữ cảnh lỗi
-engine.recover(error_type="consensus_timeout", context={"node_id": "node-1"})
-```
-
-### Luồng xử lý lỗi (Workflow)
-
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant Val as Validator
-    participant Class as ErrorClassifier
-    participant Jrnl as Journal
-    participant Rec as Recovery/Rollback
-
-    App->>Val: validate(event)
-    alt Dữ liệu không hợp lệ
-        Val-->>App: ValidationError
-        App->>Class: classify(error)
-        Class-->>App: ErrorStrategy (Level, Action)
-    end
-    
-    App->>Jrnl: append(operation_log)
-    
-    alt Lỗi nghiêm trọng (Critical)
-        App->>Rec: recover(context) / rollback(snapshot)
-        Rec-->>App: Recovery Status
-    end
-```
-
-### Ví dụ triển khai
-
-```python
-from hierachain.error_mitigation.validator import DataValidator
-from hierachain.error_mitigation.error_classifier import ErrorClassifier
-from hierachain.error_mitigation.journal import Journal
-from hierachain.error_mitigation.rollback_manager import RollbackManager
-
-def handle_transaction(tx_data):
-    # 1. Validate Input
-    validator = DataValidator()
-    validation_result = validator.validate(tx_data)
-
-    if not validation_result.is_valid:
-        # 2. Classify Error nếu có vấn đề
-        classifier = ErrorClassifier()
-        strategy = classifier.classify(validation_result.error)
-        
-        # 3. Xử lý theo chiến lược (ví dụ: Rollback)
-        if strategy.action == "ROLLBACK":
-            # Ghi nhận sự kiện vào Journal trước khi tác động
-            journal = Journal()
-            journal.append({
-                "event": "rollback_triggered", 
-                "reason": str(validation_result.error),
-                "strategy": strategy.level
-            })
-            
-            # Thực hiện Rollback về điểm an toàn
-            rollback_mgr = RollbackManager()
-            success = rollback_mgr.rollback(to_snapshot="last_safe_checkpoint")
-            return f"Rolled back: {success}"
-            
-    return "Transaction processed"
-```
-
-## Tính năng & hạn chế
-
-* Tính năng: từng lớp độc lập, có thể cắm vào pipeline ghi block.
-* Hạn chế: cần cấu hình chiến lược cụ thể theo môi trường/SLAs.
-
-## Bảo mật & quyền truy cập
-
-* Journal chứa dữ liệu nhạy cảm có thể cần mã hoá/kiểm soát quyền đọc.
-
-## Hiệu năng
-
-* Journal nên batch/async để giảm độ trễ.
-* Rollback cần ảnh hưởng atomically tới world state và cache.
-
-## Liên quan
-
-* Storage: [Storage](storage.md)
-* Guides/Khả năng tin cậy: (sẽ thêm) [Độ tin cậy](../guides/reliability.md)
+Module **Error Mitigation** đóng vai trò là "lưới an toàn" của HieraChain, đảm bảo hệ thống luôn duy trì tính toàn vẹn và khả năng tự phục hồi (resilience) trước các sự cố phần cứng, phần mềm hoặc mạng. Hệ thống này kết hợp các kỹ thuật ghi nhật ký bền vững (Durability), phân loại lỗi thông minh và các kịch bản phục hồi tự động.
 
 ---
 
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
+## Kiến trúc Phòng thủ Đa tầng
 
-    **FACT**
+<div class="grid cards" markdown>
 
-    * Các tệp hiện diện: `hierachain/error_mitigation/{validator.py, data_validator.py, error_classifier.py, journal.py, rollback_manager.py, recovery_engine.py}`.
+*   :material-shield-check:{ .lg .middle } __Validation Layer__
 
-    **DECISION**
+    ---
 
-    * Tách vai trò rõ: validate → classify → journal → rollback/recover.
-    * Cho phép cấu hình chính sách theo mức rủi ro.
+    __Files__: `validator.py`, `data_validator.py`
 
-    **ASSUMPTION**
+    * **Validator**: Kiểm tra cấu trúc Block/Event theo Ledger guidelines.
+    * **DataValidator**: Xác thực sâu logic nghiệp vụ, schema Arrow và tính hợp lệ của dữ liệu đầu vào.
 
-    * Ứng dụng triển khai backpressure khi lỗi lặp lại.
-    * Môi trường cung cấp storage bền cho journal.
+*   :material-notebook-edit:{ .lg .middle } __Durable Journaling__
 
-    **INVARIANT**
+    ---
 
-    * Rollback phải đưa hệ thống về trạng thái hợp lệ đã được snapshot.
-    * Journal ghi trước các thao tác quan trọng để đảm bảo khả năng khôi phục.
+    __File__: `journal.py`
 
-    **EDGE CASES**
+    * Sử dụng **Apache Arrow** để ghi nhật ký giao dịch với tốc độ cực cao.
+    * Cơ chế **Append-only** đảm bảo dữ liệu không bị ghi đè.
+    * Đảm bảo tính bền vững (Persistence) trước khi sự kiện được commit vào chuỗi.
 
-    * Journal hỏng/mất một phần: cần checksum và cơ chế bỏ qua entry hỏng an toàn.
-    * Rollback giữa chừng: đảm bảo idempotent và không làm hỏng thêm trạng thái.
+*   :material-history:{ .lg .middle } __Rollback & Snapshots__
+
+    ---
+
+    __File__: `rollback_manager.py`
+
+    * Quản lý các điểm khôi phục (Snapshots) cho toàn bộ hệ thống hoặc từng thành phần.
+    * Tự động tạo snapshot định kỳ (Auto-snapshot).
+    * Xác thực tính toàn vẹn của dữ liệu trước khi thực hiện rollback.
+
+*   :material-auto-fix:{ .lg .middle } __Adaptive Recovery__
+
+    ---
+
+    __File__: `recovery_engine.py`
+
+    * Tự động xử lý lỗi mạng (Network Recovery) và phân đoạn mạng (Partition Detection).
+    * Phục hồi trạng thái đồng thuận (Consensus Recovery) khi Leader gặp sự cố.
+    * Tích hợp **AutoScaler** để mở rộng tài nguyên dựa trên tải hệ thống.
+
+</div>
+
+---
+
+## Chiến lược Phân loại Lỗi (Error Classification)
+
+Lớp `ErrorClassifier` không chỉ log lỗi mà còn đưa ra các chiến lược ứng phó (Mitigation Strategies) dựa trên mức độ nghiêm trọng:
+
+| Mức độ | Ý nghĩa | Hành động đề xuất |
+| :--- | :--- | :--- |
+| **INFO / WARNING** | Thông tin hoặc lỗi nhẹ | Log & Continue |
+| **ERROR** | Lỗi xử lý giao dịch | RETRY / REJECT |
+| **CRITICAL** | Lỗi dữ liệu / nhất quán | ROLLBACK & QUARANTINE |
+| **FATAL** | Lỗi hệ thống nghiêm trọng | EMERGENCY SHUTDOWN |
+
+---
+
+## Nhật ký Giao dịch (Transaction Journal)
+
+HieraChain sử dụng **Apache Arrow** IPC format cho Journaling để đạt được hiệu năng tối ưu:
+
+1.  **Durable Write**: Sự kiện được ghi xuống disk và thực hiện `fsync` trước khi tiếp tục.
+2.  **Schema Enforcement**: Đảm bảo mọi bản ghi trong journal đều tuân thủ schema sự kiện lõi.
+3.  **Replay Ability**: Khi hệ thống khởi động lại sau sự cố, Journal có thể "diễn lại" (replay) các sự kiện chưa được commit để khôi phục trạng thái.
+
+```python
+from hierachain.error_mitigation.journal import TransactionJournal
+
+# Khởi tạo journal an toàn (chống Path Traversal)
+journal = TransactionJournal(storage_dir="data/journal")
+
+# Ghi sự kiện bền vững
+journal.log_event(event_dict)
+```
+
+---
+
+## Quy trình Khắc phục Sự cố (Recovery Workflow)
+
+Khi một lỗi được phát hiện, hệ thống sẽ thực hiện luồng xử lý sau:
+
+```mermaid
+graph TD
+    A[Sự cố xảy ra] --> B{ErrorClassifier}
+    B -->|Mức độ Thấp| C[Ghi Log & Tiếp tục]
+    B -->|Mức độ Trung bình| D[Tự động Retry / Recovery Engine]
+    B -->|Mức độ Cao| E[Rollback về Snapshot gần nhất]
+    
+    D --> D1[Network Recovery]
+    D --> D2[Consensus Recovery]
+    D --> D3[Auto Scaling]
+    
+    E --> F[Xác thực tính toàn vẹn sau Rollback]
+    F --> G[Replay Journal để khôi phục dữ liệu thiếu]
+```
+
+---
+
+## Quản lý Điểm khôi phục (Snapshot Management)
+
+`RollbackManager` hỗ trợ nhiều loại Snapshot khác nhau:
+
+*   **CONFIGURATION**: Chỉ backup các tệp cấu hình hệ thống.
+*   **CHAIN_STATE**: Backup trạng thái của Main Chain và các Sub-Chains.
+*   **CONSENSUS_STATE**: Lưu trữ View Number và thông tin Leader hiện tại.
+*   **FULL_SYSTEM**: Chụp ảnh toàn bộ trạng thái hệ thống.
+
+---
+
+## Liên quan
+
+*   [Hệ thống Lưu trữ (Storage)](./adapters.md)
+*   [Kiến trúc Lõi (Core)](./core.md)
+*   [Hệ thống Cluster](./cluster.md)

@@ -1,262 +1,139 @@
 ---
-title: "Network module"
-description: "Lớp truyền thông và tin cậy ngang hàng: ZMQ transport, kết nối an toàn, quản lý độ tin cậy peer."
+title: "Network Module"
+description: "Hạ tầng truyền thông P2P hiệu năng cao: ZeroMQ Transport, Bảo mật CurveZMQ, và Xác thực MSP/Ed25519."
 icon: material/access-point-network
 ---
 
 # Network Module (`hierachain/network/*`)
 
-## Mục đích
+## Tổng quan
 
-Cung cấp hạ tầng truyền thông giữa các thành phần/nút của HieraChain: gửi/nhận thông điệp, thiết lập kết nối an toàn, và quản lý độ tin cậy giữa các peer.
-
-## Kiến trúc & khái niệm
-
-* Vận chuyển (Transport): `network/zmq_transport.py` — triển khai dựa trên ZeroMQ cho giao tiếp không đồng bộ, phù hợp mô hình pub/sub, push/pull.
-* Client/Abstraction: `network/network_client.py` — bao bọc thao tác gửi/nhận, quản lý endpoint.
-* Kết nối an toàn: `network/secure_connection.py` — lớp tiện ích cho bảo mật đường truyền (mã hóa/handshake ở mức ứng dụng nếu cần).
-* **Message Cryptographic** (mới): `network/message_cryptographic.py` — ký và xác thực P2P messages với Ed25519, replay protection (timestamp + nonce).
-* Niềm tin ngang hàng: `network/peer_trust_manager.py` — quản lý trạng thái peer (độ tin cậy, blacklist/graylist, tạm ngắt).
-
-Sơ đồ đơn giản:
-
-```mermaid
-graph LR
-    Sub[Sub-Chain]
-    Order[Ordering Service]
-    Main[Main Chain]
-    NetClient[Network Client]
-    
-    Sub -- ZMQ Push --> Order
-    Order -- ZMQ Pub --> Sub
-    Sub -- ZMQ Req --> Main
-    Main -- ZMQ Rep --> Sub
-    
-    subgraph Network Layer
-        NetClient
-        SecureConnection
-        PeerTrust
-    end
-    
-    Sub -.-> NetClient
-    Main -.-> NetClient
-```
-
-## API công khai (Public API)
-
-Mức mô tả (rút gọn, tham khảo tên lớp/hàm trong mã nguồn):
-
-* ZmqNode: khởi tạo với `node_id`, `port`, `host`; hỗ trợ đăng ký peer (`register_peer`), gửi `send_direct`, `broadcast` qua `DEALER`, nhận dữ liệu tự động cấu hình qua hàm callback (`set_handler`). Hỗ trợ Replay Protection sẵn (qua `nonce` và `timestamp`).
-* NetworkClient: cấu hình danh sách endpoint, phương thức `publish`, `subscribe`, `request`, `respond` (tùy thực thi).
-* SecureConnection: tạo/ký/xác minh thông điệp, bọc thêm lớp mã hóa nếu thiết lập.
-* **MessageCryptographic**: ký messages (`sign_message`), verify signatures (`verify_message`), handshake signing/verification.
-* PeerTrustManager: cập nhật điểm tin cậy, đánh dấu peer xấu, chính sách retry/backoff.
-
-Ví dụ mô tả (pseudocode):
-
-```python
-import asyncio
-from hierachain.network.zmq_transport import ZmqNode
-
-async def main():
-    # Khởi tạo hai Node
-    node_A = ZmqNode(node_id="node_A", port=5555)
-    node_B = ZmqNode(node_id="node_B", port=5556)
-    
-    # Cài đặt bộ xử lý thông điệp
-    node_B.set_handler(lambda msg, sender: print(f"Nhận từ {sender}: {msg}"))
-    
-    await node_A.start()
-    await node_B.start()
-    
-    # Đăng ký peer và gửi tin
-    node_A.register_peer("node_B", "tcp://127.0.0.1:5556")
-    msg = {"type": "event", "timestamp": time.time(), "nonce": "abc1234"}
-    await node_A.send_direct("node_B", msg)
-```
-
-### Message Cryptographic (Chi tiết)
-
-**File**: `network/message_cryptographic.py`
-
-Module cung cấp cryptographic signing và verification cho P2P messages:
-
-```python
-from hierachain.network.message_cryptographic import (
-    sign_message,
-    verify_message,
-    sign_handshake_payload,
-    verify_handshake_signature
-)
-from hierachain.security.security_utils import KeyPair
-
-# Khởi tạo keypair (Ed25519)
-keypair = KeyPair.generate()
-sender_id = "node_1"
-
-# 1. Sign a P2P message
-payload = {
-    "type": "consensus_vote",
-    "block_hash": "0x123abc...",
-    "vote": "approve"
-}
-
-signed_msg = sign_message(
-    payload=payload,
-    keypair=keypair,
-    sender_id=sender_id
-)
-
-# Signed message structure:
-# {
-#   "payload": {...},
-#   "timestamp": 1234567890.123,
-#   "nonce": "uuid-string",
-#   "sender_id": "node_1",
-#   "signature": "hex-signature"
-# }
-
-# 2. Send via ZMQ
-zmq_transport.send(signed_msg)
-
-# 3. Receive and verify
-received_msg = zmq_transport.recv()
-
-# Get sender's public key from peer trust manager
-public_key_hex = peer_trust_manager.get_public_key(
-    received_msg["sender_id"]
-)
-
-# Verify signature
-is_valid = verify_message(
-    message=received_msg,
-    public_key_hex=public_key_hex
-)
-
-if is_valid:
-    # Process message
-    process_consensus_vote(received_msg["payload"])
-else:
-    logger.warning(f"Invalid signature from {received_msg['sender_id']}")
-    peer_trust_manager.record_failure(received_msg["sender_id"])
-
-# 4. Handshake signing (for connection establishment)
-handshake_data = {
-    "node_id": "node_1",
-    "protocol_version": "1.0",
-    "capabilities": ["consensus", "storage"]
-}
-
-handshake_sig = sign_handshake_payload(handshake_data, keypair)
-
-# Send handshake
-handshake_msg = {
-    **handshake_data,
-    "signature": handshake_sig
-}
-zmq_transport.send(handshake_msg)
-
-# Verify handshake (receiver side)
-received_handshake = zmq_transport.recv()
-sig = received_handshake.pop("signature")
-sender_pubkey = lookup_public_key(received_handshake["node_id"])
-
-if verify_handshake_signature(received_handshake, sig, sender_pubkey):
-    print("Handshake verified, connection established")
-else:
-    print("Handshake failed, rejecting connection")
-```
-
-**[FACT]** Message Cryptographic features:
-
-* **Ed25519 signatures**: Fast, secure digital signatures (128-bit security)
-* **Canonical serialization**: Deterministic JSON serialization (sorted keys) for consistent signing
-* **Replay protection**: Timestamp + UUID nonce prevent replay attacks
-* **Handshake support**: Separate signing for connection establishment
-
-**[INVARIANT]** Signed message structure:
-
-* Must contain: `payload`, `timestamp`, `nonce`, `sender_id`, `signature`
-* `timestamp` must be Unix timestamp (float)
-* `nonce` must be unique UUID string
-* `signature` must be hex-encoded Ed25519 signature
-
-**[DECISION]** Dùng Ed25519 thay vì RSA/ECDSA vì:
-
-* Faster signing/verification (~10x faster than RSA-2048)
-* Smaller signatures (64 bytes vs 256 bytes for RSA)
-* Better security properties (immunity to timing attacks)
-* Native support in Python via `cryptography` library
-
-**[EDGE CASE]** Clock skew: Nếu sender và receiver có clock skew lớn (>5 minutes), timestamp validation có thể fail. Giải pháp:
-
-* Sync clocks với NTP
-* Accept messages trong time window (±5 minutes)
-* Log warnings nếu detect large clock skew
-
-**[EDGE CASE]** Nonce collision: UUID v4 có xác suất collision ~10^-36, effectively zero cho practical purposes. Nếu cần stronger guarantee, dùng counter-based nonce + timestamp.
-
-## Cấu hình
-
-* Endpoint/ports do dịch vụ triển khai quyết định; có thể tham chiếu từ biến môi trường riêng (không cố định trong `settings.py`).
-* Khi tích hợp Ordering Service (xem Architecture/Consensus), cấu hình phải thống nhất giữa các thành phần.
-
-## Tính năng & hạn chế
-
-* Tính năng:
-
-    * Giao tiếp không đồng bộ, phù hợp throughput cao.
-    * Có lớp tiện ích để tăng cứng bảo mật ở mức ứng dụng.
-    * Quản lý độ tin cậy peer (tối thiểu) để giảm nhiễu.
-
-* Hạn chế:
-
-     * ZeroMQ không tự cung cấp cơ chế phân tán/HA hoàn chỉnh; cần bổ sung orchestration.
-     * Bảo mật đầu-cuối cần cấu hình khóa/chính sách rõ ràng.
-
-## Bảo mật & quyền truy cập
-
-* Kết hợp với `security/*` để ký/xác minh thông điệp hoặc thiết lập khóa phiên.
-* Thận trọng với cấu hình bind/connect hở Internet; triển khai trong mạng tin cậy hoặc sau lớp proxy/TLS.
-
-## Xử lý lỗi & khắc phục
-
-* Retry/backoff khi mất kết nối; ghi nhận sự cố vào audit/monitoring.
-* Kết hợp `monitoring/*` để phát cảnh báo khi số lần lỗi vượt ngưỡng.
-
-## Hiệu năng
-
-* ZMQ hỗ trợ mô hình hàng đợi nhẹ; tinh chỉnh high-water mark, batch, và affinity nếu cần.
-* Tách kênh nóng (hot path) và lạnh (cold path) để tránh nghẽn.
-
-## Liên quan
-
-* Architecture/Consensus (Ordering): [Consensus & Ordering](../architecture/consensus.md)
-* Security: [Security](security.md)
-* Monitoring: [Monitoring](monitoring.md)
+Module **Network** là lớp xương sống cho phép các nút (Nodes) trong mạng lưới HieraChain giao tiếp với nhau. Được thiết kế với triết lý "Bảo mật đa tầng" (Defense-in-Depth), module này kết hợp sức mạnh truyền tải của **ZeroMQ** với các thuật toán mật mã hiện đại để đảm bảo mọi thông điệp đều được mã hóa, xác thực và chống giả mạo.
 
 ---
 
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
+## Kiến trúc Bảo mật Đa tầng (Layered Security)
 
-    **FACT**
+HieraChain không chỉ dựa vào một lớp bảo mật duy nhất mà kết hợp ba lớp bảo vệ độc lập:
 
-    * Mã nguồn mạng: `hierachain/network/{zmq_transport.py, network_client.py, secure_connection.py, peer_trust_manager.py}`.
+<div class="grid cards" markdown>
 
-    **DECISION**
+*   :material-lock-check:{ .lg .middle } __Lớp 1: CurveZMQ (Transport)__
 
-    * Ưu tiên ZMQ cho đơn giản và thông lượng; bảo mật ở mức ứng dụng thông qua ký/xác minh và (tùy chọn) mã hóa.
+    ---
 
-    **ASSUMPTION**
+    __Công nghệ__: Curve25519
 
-    * Môi trường triển khai cho phép mở cổng mạng liên quan; firewall đã được cấu hình.
+    * Mã hóa toàn bộ đường truyền giữa các Socket ZeroMQ.
+    * Đảm bảo tính riêng tư (Privacy) và chống nghe lén trên mạng Web2.
+    * Sử dụng khóa ephemeral để đảm bảo Forward Secrecy.
 
-    **INVARIANT**
+*   :material-account-check:{ .lg .middle } __Lớp 2: MSP Handshake (Identity)__
 
-    * Thông điệp phải tuần tự hóa xác định trước khi ký/xác minh.
-    * Cấu hình endpoint nhất quán giữa các thành phần.
+    ---
 
-    **EDGE CASES**
+    __Công nghệ__: Ed25519 + Certificates
 
-    * Mất kết nối lặp lại → cần backoff và chuyển kênh.
-    * Peer có hành vi xấu → đưa vào blacklist tạm thời qua PeerTrustManager.
+    * Xác thực danh tính nút thông qua chứng chỉ MSP (Membership Service Provider).
+    * Chỉ cho phép các nút thuộc tổ chức (Organization) hợp lệ tham gia mạng lưới.
+    * Quy trình Handshake 2 bước: `INIT` và `ACK`.
+
+*   :material-shield-sync:{ .lg .middle } __Lớp 3: Integrity & Replay Protection__
+
+    ---
+
+    __Công nghệ__: Ed25519 + Nonce + Timestamp
+
+    * Mọi thông điệp P2P đều được ký số (Digital Signature).
+    * Chống tấn công lặp lại (Replay Attacks) bằng cách kiểm tra Nonce duy nhất và Timestamp trong cửa sổ cho phép (60s).
+
+</div>
+
+---
+
+## Các thành phần cốt lõi
+
+### 1. ZMQ Transport (`zmq_transport.py`)
+Hiện thực hóa mô hình P2P không đồng bộ sử dụng Socket **ROUTER** (để nhận) và **DEALER** (để gửi). 
+
+*   **Hiệu năng**: Xử lý hàng nghìn thông điệp mỗi giây với độ trễ cực thấp.
+*   **Identity Management**: Quản lý định danh các nút ở mức socket để định tuyến chính xác.
+
+### 2. Secure Connection Manager (`secure_connection.py`)
+Điều phối quy trình thiết lập kết nối an toàn:
+
+1.  Thiết lập kênh mã hóa Curve25519.
+2.  Thực hiện Handshake để trao đổi và xác thực chứng chỉ MSP.
+3.  Quản lý danh sách các Peer đã được xác thực (`authenticated_peers`).
+
+### 3. Peer Trust Manager (`peer_trust_manager.py`)
+Quản lý độ tin cậy của các nút lân cận:
+
+*   **Policy Enforcement**: Áp dụng các chính sách `strict` (chỉ cho phép allowlist) hoặc `discovery` (cho phép tự động khám phá).
+*   **Reputation**: Đánh dấu và ngắt kết nối với các Peer có hành vi xấu (sai chữ ký, gửi thông điệp rác).
+
+---
+
+## Quy trình Thiết lập Kết nối An toàn (Secure Handshake)
+
+```mermaid
+sequenceDiagram
+    participant NodeA as Node A (Initiator)
+    participant NodeB as Node B (Responder)
+
+    Note over NodeA, NodeB: 1. Curve25519 Encrypted Channel Established
+    
+    NodeA->>NodeB: HANDSHAKE_INIT (MSP Cert + Ed25519 Sig)
+    
+    Note right of NodeB: Verify Trust Policy<br/>Verify MSP Certificate<br/>Verify Handshake Signature
+    
+    NodeB-->>NodeA: HANDSHAKE_ACK (Success + Ed25519 Sig)
+    
+    Note left of NodeA: Verify ACK Signature
+    
+    Note over NodeA, NodeB: 2. Authenticated P2P Channel Ready
+```
+
+---
+
+## Ví dụ sử dụng
+
+### 1. Khởi tạo Node Bảo mật
+```python
+from hierachain.network.secure_connection import SecureConnectionManager
+
+# Khởi tạo manager tích hợp MSP
+secure_node = SecureConnectionManager(
+    node_id="node_001",
+    port=5001,
+    msp=msp_instance,
+    identity_mgr=identity_instance
+)
+
+await secure_node.start()
+```
+
+### 2. Gửi thông điệp có ký số
+```python
+# Tự động ký và gửi qua kênh đã mã hóa
+payload = {"event": "block_proposal", "data": {...}}
+await secure_node.send_secure("peer_002", payload)
+```
+
+---
+
+## Cấu hình P2P (Environment Variables)
+
+| Biến môi trường | Chức năng | Giá trị khuyến nghị (Prod) |
+| :--- | :--- | :--- |
+| `HRC_P2P_TRUST_POLICY` | Chính sách tin cậy | `strict` |
+| `HRC_P2P_REQUIRE_SIGNATURES` | Bắt buộc chữ ký Ed25519 | `true` |
+| `HRC_P2P_ALLOWLIST` | Danh sách Peer ID tin cậy | (Danh sách ID cụ thể) |
+
+---
+
+## Liên quan
+
+*   [Bảo mật và MSP (Security)](./security.md)
+*   [Đồng thuận BFT (Consensus)](../consensus/bft_consensus.md)
+*   [Giám sát mạng (Monitoring)](./monitoring.md)

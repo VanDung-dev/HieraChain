@@ -1,452 +1,173 @@
 ---
-title: "API module"
-description: "Module REST API v1/v2/v3: server, router, schemas và ví dụ curl — bám sát hierachain/api/*."
+title: "API Module"
+description: "Hệ thống API đa giao thức: REST v1/v2/v3, GraphQL và WebSocket. Tích hợp bảo mật đa lớp và quản lý dữ liệu IPFS."
 icon: material/api
 ---
 
 # API Module (`hierachain/api/*`)
 
-## Mục đích
+## Tổng quan
 
-Cung cấp giao diện HTTP để tương tác với hệ thống HieraChain: quản lý chuỗi, ghi sự kiện, gửi proof, truy vết thực thể, lấy thống kê/khối.
+Module **API** là cổng giao tiếp chính giữa thế giới bên ngoài và nhân blockchain HieraChain. Hệ thống được xây dựng trên nền tảng **FastAPI**, cung cấp hiệu năng cực cao và hỗ trợ đồng thời nhiều phương thức tương tác: RESTful, GraphQL và WebSocket.
 
-## Kiến trúc & khái niệm
+### Các thành phần cốt lõi
 
-* Server: `hierachain/api/server.py` (khởi tạo FastAPI, wiring router, middleware).
-* Router v1/v2/v3: Các phiên bản REST API tương ứng.
-* Explorer: `hierachain/api/blockchain_explorer.py` (Giao diện trực quan hóa và phân tích dữ liệu).
-* GraphQL: `hierachain/api/graphql/` (Truy vấn linh hoạt với cơ chế bảo mật nâng cao).
-* Storage Wrapper: `hierachain/api/storage/` (Tích hợp IPFS và mã hóa cho dữ liệu lớn off-chain).
-* Dependency Injection: lazy singleton `HierarchyManager` / `EntityTracer`.
-* Bảo vệ tài nguyên: `ResourceGuardMiddleware` và `APIKeyVerifier`.
-
-## API công khai (v1)
-
-Định nghĩa trong `hierachain/api/v1/endpoints.py` (prefix `/api/v1`).
-
-* GET `/health` → tình trạng service.
-* GET `/chains` → danh sách chuỗi (main + sub), block_count, latest_block_hash.
-* POST `/chains/{chain_name}/events` → thêm sự kiện vào sub-chain.
-* POST `/chains/{chain_name}/submit-proof` → gửi proof từ sub-chain lên main chain.
-* GET `/entities/{entity_id}/trace` → truy vết thực thể (toàn bộ hoặc trong một chain qua query `chain_name`).
-* GET `/chains/{chain_name}/stats` → thống kê chuỗi.
-* POST `/chains/{chain_name}/create` → tạo sub-chain mới.
-* GET `/chains/{chain_name}/blocks` → lấy các block (có phân trang `limit`, `offset`).
-
-Các schema phản hồi/yêu cầu chính nằm ở `hierachain/api/v1/schemas.py`:
-
-* `EventRequest`, `EventResponse`
-* `ChainInfoResponse`, `ProofSubmissionResponse`
-* `EntityTraceResponse`, `ChainStatsResponse`
-* `CreateChainRequest`, `CreateChainResponse`
-
-## API công khai (v2) — Enterprise Features
-
-Định nghĩa trong `hierachain/api/v2/endpoints.py` (prefix `/api/v2`), cung cấp các tính năng enterprise:
-
-### Channels & Private Data
-
-* `POST /channels` → tạo channel để giao tiếp an toàn giữa các tổ chức.
-* `GET /channels/{channel_id}` → lấy thông tin channel.
-* `POST /channels/{channel_id}/private-collections` → tạo private data collection.
-* `POST /private-data` → thêm dữ liệu riêng tư vào collection.
-
-### Domain Contracts
-
-* `POST /contracts` → tạo domain contract mới với versioning.
-* `POST /contracts/execute` → thực thi contract với event.
-
-### Organization Management
-
-* `POST /organizations` → đăng ký tổ chức với MSP.
-* `GET /organizations/{org_id}` → lấy thông tin tổ chức.
-
-Schemas chính (`api/v2/schemas.py`):
-
-* `ChannelCreateRequest`, `PrivateCollectionCreateRequest`
-* `ContractCreateRequest`, `ContractExecuteRequest`
-* `OrganizationRequest`
-
-## API công khai (v3)
-
-Định nghĩa trong `hierachain/api/v3/endpoints.py` (prefix `/api/v3`), dành cho System Admin.
-
-* POST `/verify-identity` → xác minh danh tính node (ký challenge).
-* GET `/status` → báo cáo trạng thái node, uptime, số chain active.
-
-Các schema chính nằm ở `hierachain/api/v3/schemas.py`:
-
-* `VerifyIdentityRequest`, `VerifyIdentityResponse`
-* `NodeStatusResponse`
-
-## WebSocket API — Real-time Events
-
-Định nghĩa trong `hierachain/api/websocket/`, cung cấp kết nối real-time qua WebSocket.
-
-### Kết nối
-
-* **Endpoint**: `ws://localhost:2661/ws`
-* **Protocol**: JSON messages
-* **Authentication**: Optional — thêm query param `?token=<api_key>` nếu bật AUTH
-
-### Message Format
-
-```json
-// Client → Server (subscribe)
-{"action": "subscribe", "chain_name": "supply_chain", "event_type": null}
-
-// Client → Server (unsubscribe)
-{"action": "unsubscribe", "chain_name": "supply_chain"}
-
-// Client → Server (ping)
-{"action": "ping"}
-
-// Server → Client (block event)
-{"type": "new_block", "chain_name": "supply_chain", "data": {...}}
-
-// Server → Client (event)
-{"type": "new_event", "chain_name": "supply_chain", "data": {...}}
-
-// Server → Client (pong)
-{"type": "pong", "timestamp": 1234567890}
-```
-
-### Subscriptions
-
-* **Per-chain**: Nhận tất cả events/blocks từ một chain cụ thể
-
-    ```json
-    {"action": "subscribe", "chain_name": "supply_chain"}
-    ```
-  
-* **Per-event-type**: Nhận events theo loại (ví dụ: `production_complete`)
-
-    ```json
-    {"action": "subscribe", "chain_name": "supply_chain", "event_type": "production_complete"}
-    ```
-  
-* **Unsubscribe**: Huỷ subscription
-
-    ```json
-    {"action": "unsubscribe", "chain_name": "supply_chain"}
-    ```
-
-### Ví dụ JavaScript
-
-```javascript
-const ws = new WebSocket('ws://localhost:2661/ws');
-
-ws.onopen = () => {
-  console.log('Connected to HieraChain WebSocket');
-  // Subscribe to chain events
-  ws.send(JSON.stringify({
-    action: 'subscribe',
-    chain_name: 'supply_chain'
-  }));
-};
-
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  console.log('Received:', data.type, data);
-};
-
-// Keep alive with ping every 30 seconds
-setInterval(() => {
-  ws.send(JSON.stringify({ action: 'ping' }));
-}, 30000);
-```
-
-### Kiến trúc
-
-* `websocket_manager.py`: Quản lý connection lifecycle, subscriptions, broadcasting
-
-    * `WebSocketManager`: Singleton quản lý tất cả connections
-    * `connect()` / `disconnect()`: Thêm/xoá connection
-    * `subscribe()` / `unsubscribe()`: Quản lý subscriptions
-    * `broadcast_to_chain()`: Gửi message tới subscribers của một chain
-
-* `websocket_endpoints.py`: FastAPI WebSocket endpoints
-
-    * `/ws`: Main WebSocket endpoint
-    * `/ws/status`: Connection stats
-
-### Cấu hình
-
-Các biến liên quan (xem `hierachain/config/settings.py`):
-
-* Không có cấu hình riêng — WebSocket sử dụng cùng host/port với HTTP API
-
-## Blockchain Explorer (`hierachain/api/blockchain_explorer.py`)
-
-Cung cấp khả năng quan sát và phân tích dữ liệu chuỗi trực quan cho nhà phát triển.
-
-### Các thành phần chính (Components)
-
-* **`ChainOverviewComponent`**: 
-
-    *   Xem tổng quan số lượng block, sự kiện trên Main Chain và tất cả Sub-Chains.
-    *   Theo dõi hoạt động gần đây (5 blocks mới nhất).
-  
-* **`EntityTracerComponent`**:
-
-    *   Truy vết vòng đời của một thực thể (`entity_id`) xuyên suốt hệ thống phân cấp.
-    *   Hỗ trợ giải mã **CID IPFS** trực tiếp trên giao diện nếu dữ liệu được lưu off-chain.
-  
-* **`EventAnalyticsComponent`**:
-
-    *   Thống kê loại sự kiện (Event Types).
-    *   Biểu đồ dòng thời gian hoạt động (Activity Timeline) trong 24 giờ qua.
-    *   Phân bổ sự kiện giữa các chuỗi (Chain Distribution).
-  
-* **`ProofVisualizerComponent`**:
-
-    *   Trực quan hóa luồng gửi Proof từ Sub-Chain lên Main Chain.
-    *   Kiểm tra trạng thái xác thực và sơ đồ cây phân cấp hệ thống.
-
-### Tích hợp IPFS
-
-Explorer tự động phát hiện các chỉ số dữ liệu off-chain (IPFS indicators) và cung cấp nút bấm để phân giải dữ liệu từ mạng IPFS Swarm (đã được giải mã AES-256-GCM).
-
-## GraphQL API — Query & Mutation
-
-Định nghĩa trong `hierachain/api/graphql/schema.py`, cung cấp giao diện GraphQL để truy vấn và thao tác dữ liệu.
-
-### Kết nối
-
-* **Endpoint**: `http://localhost:2661/graphql` (nếu được bật trong server)
-* **Library**: Sử dụng `graphene` (Python)
-
-### GraphQL Types
-
-* `EventType`: entity_id, event_type, details (JSON string), timestamp, signature
-* `BlockType`: index, hash, previous_hash, timestamp, nonce, events, metadata
-* `BlockMetadataType`: chain_name, events_count, validator_signatures
-* `ChainStatusType`: chain_name, block_count, latest_block_index, latest_block_hash, status
-
-### GraphQL Queries
-
-```graphql
-# Lấy một block cụ thể
-query {
-  block(chainName: "supply_chain", blockIndex: 0) {
-    index
-    hash
-    timestamp
-    events {
-      entityId
-      eventType
-      timestamp
-    }
-  }
-}
-
-# Lấy nhiều blocks với phân trang
-query {
-  blocks(chainName: "supply_chain", fromIndex: 0, toIndex: 10, limit: 5) {
-    index
-    hash
-    timestamp
-  }
-}
-
-# Lấy events với bộ lọc
-query {
-  events(chainName: "supply_chain", entityId: "PROD-001", eventType: "created", fromTimestamp: 1700000000, toTimestamp: 1800000000, limit: 10) {
-    entityId
-    eventType
-    details
-    timestamp
-  }
-}
-
-# Lấy trạng thái chain
-query {
-  chainStatus(chainName: "supply_chain") {
-    chainName
-    blockCount
-    latestBlockIndex
-    latestBlockHash
-    status
-  }
-}
-
-# Lấy tất cả chains
-query {
-  allChains {
-    chainName
-    blockCount
-    status
-  }
-}
-```
-
-### GraphQL Mutations
-
-```graphql
-# Thêm event vào chain
-mutation {
-  addEvent(event: {
-    chainName: "supply_chain"
-    entityId: "PROD-001"
-    eventType: "created"
-    details: "{\"key\": \"value\"}"
-  }) {
-    success
-    blockIndex
-    error
-  }
-}
-```
-
-### Helper Functions
-
-* `_filter_event()`: Hàm nội bộ lọc events theo các tiêu chí (entity_id, event_type, from_timestamp, to_timestamp). Sử dụng `all()` với generator expression để giảm cyclomatic complexity.
-* `_to_event_type()`, `_to_block_type()`, `_to_chain_status()`: Chuyển đổi từ objects nội bộ sang GraphQL types.
-
-### Bảo mật GraphQL (`hierachain/api/graphql/security.py`)
-
-HieraChain triển khai các lớp bảo mật nghiêm ngặt để bảo vệ endpoint GraphQL:
-
-1. **Giới hạn độ sâu (Query Depth Limit)**: 
-
-    *   Tối đa **10 cấp** lồng nhau. Ngăn chặn các truy vấn đệ quy gây cạn kiệt tài nguyên.
-   
-2. **Phân tích độ phức tạp (Complexity Analysis)**: 
-
-    *   Ngưỡng tối đa: **1000 điểm**.
-    *   Tính điểm dựa trên số lượng field, các phép toán danh sách (`limit`, `first`), và fragment.
-   
-3. **Chặn Introspection**: 
-
-    *   Tự động vô hiệu hóa các truy vấn `__schema` và `__type` trong môi trường **Production**.
-   
-4. **Rate Limiting**: 
-
-    *   Giới hạn **10 requests mỗi phút** cho mỗi IP (độc lập với giới hạn của REST API).
-
-> [!IMPORTANT]
-> Các cơ chế này giúp ngăn chặn các cuộc tấn công DoS dựa trên truy vấn phức tạp (Resource Exhaustion attacks).
-
-### Kiến trúc
-
-* `schema.py`: Định nghĩa types, queries, mutations và schema GraphQL
-* Sử dụng `graphene` library cho Python
-* Tích hợp với `HierarchyManager` qua `get_hierarchy_manager()`
-
-## Ví dụ curl
-
-```bash
-# 1. Health
-curl -s http://localhost:2661/api/v1/health
-
-# 2. Tạo sub-chain (nếu chưa có)
-curl -s -X POST http://localhost:2661/api/v1/chains/supply_chain/create
-
-# 3. Ghi sự kiện
-curl -s -X POST http://localhost:2661/api/v1/chains/supply_chain/events \
-  -H 'Content-Type: application/json' \
-  -d '{
-        "entity_id": "PROD-001",
-        "event_type": "production_complete",
-        "details": {"quantity": 100}
-      }'
-
-# 4. Gửi proof
-curl -s -X POST http://localhost:2661/api/v1/chains/supply_chain/submit-proof
-
-# 5. Truy vết thực thể trên tất cả chuỗi
-curl -s "http://localhost:2661/api/v1/entities/PROD-001/trace"
-
-# 6. Lấy block của sub-chain (phân trang)
-curl -s "http://localhost:2661/api/v1/chains/supply_chain/blocks?limit=5&offset=0"
-```
-
-Nếu bật xác thực API key (production), thêm header theo `settings.API_KEY_NAME` (mặc định `X-API-Key`):
-
-```bash
-  -H 'X-API-Key: <your-key>'
-```
-
-## Cấu hình
-
-Các biến cấu hình liên quan (xem `hierachain/config/settings.py`):
-
-* `API_HOST` (mặc định `localhost`), `API_PORT` (mặc định `2661`).
-* `AUTH_ENABLED` (bật xác thực API key ở production).
-* `API_KEY_LOCATION` (`header`|`query`), `API_KEY_NAME` (mặc định `X-API-Key`).
-* CORS/HSTS/RateLimit: `HRC_CORS_*`, `HRC_HSTS_*`, `HRC_RATE_LIMIT*`.
-
-## Tính năng & hạn chế
-
-* Tính năng:
-
-    * Các endpoint cốt lõi để thao tác chuỗi và quan sát dữ liệu.
-    * Truy vết thực thể (`EntityTracer`) trên nhiều chain.
-    * Fallback an toàn khi serialize events từ Arrow Table.
-
-* Hạn chế:
-
-    * Một số endpoint dùng mô phỏng (ví dụ submit proof ở chế độ không có ZK thực) — cần cấu hình/triển khai bổ sung nếu bật ZK.
-
-## Bảo mật & quyền truy cập
-
-* Xác thực API key (tuỳ môi trường): `security/verify/api_key_verifier.py`.
-* Bảo mật GraphQL: Cơ chế Depth/Complexity/Introspection bảo vệ chống lại các truy vấn độc hại.
-* Lưu trữ an toàn: Dữ liệu lớn được mã hóa AES-256-GCM trước khi đẩy lên IPFS (xem [Storage](storage.md)).
-* Bảo vệ tài nguyên: `ResourceGuardMiddleware` có thể từ chối request khi CPU/RAM vượt ngưỡng.
-* Chính sách/role: tích hợp qua `security/identity.py`, `policy_engine.py`.
-
-## Xử lý lỗi & khắc phục
-
-* Trả về HTTP status và thông điệp rõ ràng (400, 404, 500) qua `HTTPException`.
-* Khuyến nghị bật rate limit và audit log ở production.
-
-## Hiệu năng
-
-* Đường đi ngắn nhất từ endpoint → HierarchyManager/Sub-Chain/Main-Chain.
-* Sử dụng PyArrow trong core cho lưu trữ sự kiện; endpoint có fallback `to_pylist()` để tránh crash khi thiếu `to_event_list()`.
-
-## FAQ
-
-!!! question "Tại sao event body không có timestamp?"
-    Server sinh timestamp (epoch) tại thời điểm ghi.
-
-!!! question "Có cần tạo Main Chain trước?"
-    `HierarchyManager` sẽ tự đảm bảo tạo/khởi tạo khi cần.
-
-## Liên quan
-
-* Reference API v1: [API v1](../reference/api-v1.md)
-* Reference API v3: [API v3](../reference/api-v3.md)
-* Config: [Config](../reference/config.md)
-* Hierarchical module: [Hierarchical](hierarchical.md)
+* **FastAPI Server (`server.py`)**: Điểm khởi chạy, cấu hình Middleware, Authentication và tích hợp Router.
+* **Versioned REST API**: Chia làm 3 phiên bản (v1, v2, v3) phục vụ các mục đích khác nhau từ cốt lõi đến quản trị hệ thống.
+* **GraphQL Endpoint**: Cung cấp khả năng truy vấn linh hoạt với cơ chế bảo mật (Depth/Complexity limit).
+* **WebSocket Gateway**: Truyền tải sự kiện (events/blocks) thời gian thực theo mô hình Publish/Subscribe.
+* **IPFS Integration**: Xử lý minh bạch dữ liệu on-chain và off-chain (IPFS + AES-256-GCM).
 
 ---
 
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
+## Kiến trúc & Bảo mật (Middleware Layer)
 
-    **FACT**
+HieraChain API triển khai một lớp Middleware bảo mật đa tầng để đảm bảo an toàn cho dữ liệu doanh nghiệp:
 
-    * Các endpoint và schema nằm tại `hierachain/api/v1/{endpoints.py, schemas.py}`.
-    * Endpoint chính: `/health`, `/chains`, `/chains/{name}/events`, `/chains/{name}/submit-proof`, `/entities/{id}/trace`, `/chains/{name}/stats`, `/chains/{name}/create`, `/chains/{name}/blocks`.
+### Bảo mật HTTP
 
-    **DECISION**
+* **Security Headers**: Tự động thêm các header bảo mật như CSP (Content Security Policy), HSTS, X-Frame-Options (DENY), và X-Content-Type-Options (nosniff).
+* **Payload Limit**: Giới hạn kích thước body request (mặc định 5MB) để ngăn chặn tấn công DoS.
+* **CORS Management**: Kiểm soát truy cập từ các origin không xác định, đặc biệt nghiêm ngặt trong môi trường Production.
 
-    * Sử dụng DI kiểu lazy singleton cho `HierarchyManager`/`EntityTracer` để tránh chi phí khởi tạo lặp.
-    * Tài liệu minh hoạ bằng curl tối thiểu, không phụ thuộc công cụ ngoài.
+### Kiểm soát lưu lượng (Rate Limiting)
 
-    **ASSUMPTION**
+Hỗ trợ hai backend lưu trữ cho bộ đếm Rate Limit:
 
-    * Cổng mặc định 2661; người dùng chưa bật AUTH ở môi trường phát triển.
-    * Nếu bật AUTH, client sẽ đính kèm API key đúng header/tên.
+* **In-memory**: Phù hợp cho node đơn lẻ.
+* **Redis**: Phù hợp cho cụm node (cluster) cần đồng bộ trạng thái giới hạn.
 
-    **INVARIANT**
+*Mặc định*: 60 requests/phút (có thể cấu hình qua `HRC_RATE_LIMIT_REQUESTS_PER_MINUTE`).
 
-    * Yêu cầu thay đổi trạng thái phải trải qua xác thực (khi `AUTH_ENABLED=true`).
-    * Dữ liệu trả về từ endpoint phải serialize an toàn, không crash nếu không có `to_event_list()`.
+### Xác thực (Authentication)
 
-    **EDGE CASES**
+Sử dụng `APIKeyVerifier` để kiểm tra quyền truy cập dựa trên API Key. Cơ chế này có thể bật/tắt qua biến môi trường `HRC_AUTH_ENABLED`.
 
-    * Tên chain chứa ký tự không hợp lệ → endpoint trả 400 (regex kiểm tra tên).
-    * Sub-chain chưa tồn tại → 404.
-    * Quá tải tài nguyên (CPU/RAM) → 503 khi dùng `ResourceGuardMiddleware`.
+---
+
+## REST API Reference
+
+### v1: Core Ledger (Cốt lõi)
+
+Tập trung vào các hoạt động blockchain cơ bản:
+
+* `GET /api/v1/health`: Kiểm tra tình trạng node.
+* `GET /api/v1/chains`: Liệt kê tất cả Main Chain và Sub-Chains.
+* `POST /api/v1/chains/{name}/events`: Thêm sự kiện (tự động xử lý IPFS nếu dữ liệu lớn).
+* `GET /api/v1/entities/{id}/trace`: Truy vết thực thể xuyên suốt các chain trong hệ thống phân cấp.
+* `GET /api/v1/chains/{name}/blocks`: Lấy danh sách block (hỗ trợ phân trang và giải mã CID IPFS).
+
+### v2: Enterprise Features (Tính năng doanh nghiệp)
+
+Cung cấp các công cụ nâng cao cho quy trình kinh doanh phức tạp:
+
+* **Channels**: Tạo kênh giao tiếp riêng tư giữa các tổ chức (`POST /api/v2/channels`).
+* **Private Data**: Quản lý bộ sưu tập dữ liệu riêng tư (`Private Data Collections`) không công khai trên sổ cái chung.
+* **Domain Contracts**: Triển khai và thực thi hợp đồng thông minh theo nghiệp vụ đặc thù.
+* **Organizations**: Đăng ký và quản lý danh tính tổ chức qua MSP.
+
+### v3: System & Admin (Quản trị)
+
+Dành riêng cho việc quản lý node và vận hành hệ thống:
+
+* `POST /api/v3/verify-identity`: Node ký một challenge để chứng minh danh tính với hệ thống quản lý.
+* `GET /api/v3/status`: Báo cáo chi tiết uptime, số lượng chain active, phiên bản và tình trạng bản quyền.
+
+---
+
+## GraphQL API
+
+Endpoint: `/graphql`
+
+GraphQL được khuyến khích sử dụng khi client cần truy vấn dữ liệu phức tạp hoặc cần tối ưu hóa băng thông (chọn lọc field).
+
+### Cơ chế bảo mật đặc thù
+
+* **Query Depth Limit**: Tối đa 10 cấp độ lồng nhau.
+* **Complexity Analysis**: Giới hạn 1000 điểm cho mỗi truy vấn (tính dựa trên số lượng field và phép toán).
+* **Introspection Control**: Tự động tắt tính năng khám phá schema (`__schema`) trong môi trường Production.
+
+### Ví dụ truy vấn (Lazy-loading IPFS)
+
+Khi truy vấn event, bạn có thể quyết định có giải mã dữ liệu từ IPFS hay không thông qua tham số `resolveCid`.
+
+```graphql
+query {
+  events(chainName: "supply_chain", entityId: "PROD-001", resolveCid: true) {
+    eventType
+    details  # Sẽ được tự động fetch từ IPFS và giải mã nếu cần
+    timestamp
+    isOffchain
+  }
+}
+```
+
+---
+
+## WebSocket (Real-time Streaming)
+
+Endpoint: `/ws`
+
+HieraChain sử dụng WebSocket để đẩy dữ liệu mới đến client ngay khi block được cam kết hoặc có event mới phát sinh.
+
+### Các loại message chính
+
+* **Client -> Server**
+    * `subscribe`: Đăng ký nhận tin từ một chain cụ thể hoặc theo loại event.
+    * `ping`: Duy trì kết nối.
+* **Server -> Client**
+    * `block_added`: Thông báo có block mới kèm theo data rút gọn.
+    * `event`: Đẩy thông tin event chi tiết đến subscribers.
+    * `subscribed`: Xác nhận đăng ký thành công.
+
+---
+
+## Blockchain Explorer
+
+Tích hợp sẵn tại `blockchain_explorer.py`, explorer cung cấp giao diện dashboard cho các nhà vận hành:
+
+* **Monitor**: Theo dõi tốc độ sinh block và event theo thời gian thực.
+* **Visualizer**: Trực quan hóa cấu hình cây phân cấp giữa Main Chain và các Sub-Chains.
+* **IPFS Decoder**: Cho phép người quản trị có quyền truy cập giải mã nhanh các CID trực tiếp trên trình duyệt.
+
+---
+
+## Quan sát & Giám sát (Observability)
+
+* **X-Request-ID**: Mỗi request được gán một UUID duy nhất trong header để truy vết log.
+* **Metrics**: Tích hợp sẵn endpoint `/metrics` (Prometheus format) để theo dõi các chỉ số:
+
+    * Số lượng request thành công/thất bại.
+    * Thời gian phản hồi (Latency) trung bình.
+    * Tình trạng bộ nhớ và CPU của API server.
+
+---
+
+## Hướng dẫn sử dụng nhanh (curl)
+
+### Ghi sự kiện vào chuỗi
+
+```bash
+curl -X POST http://localhost:2661/api/v1/chains/my_chain/events \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your_secret_key" \
+  -d '{
+    "entity_id": "ITEM-123",
+    "event_type": "quality_check",
+    "details": {"status": "passed", "inspector": "AI-Agent"}
+  }'
+```
+
+### Truy vết thực thể (Trace)
+
+```bash
+curl "http://localhost:2661/api/v1/entities/ITEM-123/trace?resolve_cid=true"
+```
+
+---
+
+## Liên quan
+
+* [Hierarchical Structure](./hierarchical.md)
+* [Storage & IPFS Integration](./storage.md)
+* [Security & Identity](../security/keys-certs.md)

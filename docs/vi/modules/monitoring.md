@@ -1,118 +1,155 @@
 ---
-title: "Monitoring module"
-description: "Giám sát hiệu năng và cảnh báo: PerformanceMonitor, metrics, alert system — bám sát hierachain/monitoring/*."
+title: "Monitoring Module"
+description: "Giám sát hiệu năng toàn diện (Observability) và Hệ thống cảnh báo thông minh: PerformanceMonitor, Anomaly Detection, và Alert Escalation."
 icon: material/chart-line
 ---
 
 # Monitoring Module (`hierachain/monitoring/*`)
 
-## Mục đích
+## Tổng quan
 
-Theo dõi tình trạng hệ thống (CPU, RAM, thông lượng sự kiện/khối) và phát hiện sớm tình trạng bất thường để cảnh báo hoặc giảm tải.
-
-## Kiến trúc & khái niệm
-
-* Trình giám sát: `hierachain/monitoring/performance_monitor.py` — thu thập số liệu thời gian thực.
-* Thước đo: `performance_metrics.py` — định nghĩa/tổng hợp metrics.
-* Cảnh báo: `alert_system.py` — quy tắc cảnh báo, tích hợp kênh thông báo.
-* Tích hợp middleware: `security/resource_guard.py` có thể dùng metrics để quyết định từ chối request khi quá tải.
-
-## API công khai (mô tả khái quát)
-
-```yaml
-AlertSystem:
-  add_rule(name, predicate, action)
-  evaluate(metrics)
-```
-
-### Performance Metrics & Monitor
-
-**File**: `hierachain/monitoring/performance_monitor.py`, `performance_metrics.py`
-
-Thu thập và tổng hợp chỉ số hệ thống:
-
-```python
-from hierachain.monitoring.performance_monitor import PerformanceMonitor
-
-monitor = PerformanceMonitor(interval=5.0)
-monitor.start_monitoring()
-
-# Lấy metrics hiện tại
-stats = monitor.get_current_metrics()
-print(f"CPU: {stats.cpu_usage}%, RAM: {stats.memory_usage}%")
-```
-
-### Alert System
-
-**File**: `hierachain/monitoring/alert_system.py`
-
-Hệ thống cảnh báo dựa trên ngưỡng chỉ số:
-
-```python
-from hierachain.monitoring.alert_system import AlertSystem
-
-alerts = AlertSystem()
-
-# Thêm quy tắc cảnh báo
-alerts.add_rule(
-    name="High CPU",
-    predicate=lambda m: m["cpu_usage"] > 90.0,
-    action=lambda m: print(f"ALERT: CPU is too high! {m['cpu_usage']}%")
-)
-
-# Đánh giá metrics
-alerts.evaluate(stats)
-```
-
-### Ví dụ (mô tả):
-
-```python
-from hierachain.monitoring.performance_monitor import PerformanceMonitor
-mon = PerformanceMonitor()
-mon.start_monitoring()
-metrics = mon.get_current_metrics()
-```
-
-## Tính năng & hạn chế
-
-* Tính năng: thu thập định kỳ, tích hợp guard, dễ mở rộng điểm đo.
-* Hạn chế: yêu cầu thread/timer; cần tối ưu overhead ở môi trường tải cao.
-
-## Bảo mật & quyền truy cập
-
-* Metrics có thể lộ thông tin vận hành; chỉ cung cấp cho vai trò phù hợp.
-
-## Hiệu năng
-
-* Lấy mẫu (sampling) với chu kỳ phù hợp; tránh tần suất quá dày.
-
-## Liên quan
-
-* Resource Guard: [Security](security.md)
-* API: [API](api.md)
+Module **Monitoring** cung cấp khả năng quan sát (Observability) 360 độ cho hệ thống HieraChain. Nó không chỉ theo dõi các chỉ số hạ tầng truyền thống (CPU, RAM, Disk) mà còn giám sát sâu các chỉ số đặc thù của blockchain như thông lượng sự kiện (throughput), thời gian đóng khối, và tỷ lệ thành công của đồng thuận BFT.
 
 ---
 
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
+## Các thành phần chính
 
-    **FACT**
+<div class="grid cards" markdown>
 
-    * Các tệp hiện diện: `hierachain/monitoring/{performance_monitor.py, performance_metrics.py, alert_system.py}`.
-    * `ResourceGuardMiddleware` sử dụng `PerformanceMonitor` để quyết định từ chối request khi CPU/RAM vượt ngưỡng.
+*   :material-monitor-dashboard:{ .lg .middle } __Performance Monitor__
 
-    **DECISION**
+    ---
 
-    * Kết nối giám sát với guard để chủ động giảm tải khi gần ngưỡng.
+    __File__: `performance_monitor.py`
 
-    **ASSUMPTION**
+    * Thu thập chỉ số thời gian thực từ hệ thống và các tiến trình HieraChain.
+    * Hỗ trợ chỉ số tùy chỉnh (Custom Metrics) qua các hàm callback.
+    * Tính toán **Health Score** để đánh giá sức khỏe hệ thống tức thì.
 
-    * Hệ thống log/metrics backend (Prometheus/ELK) có thể được tích hợp bổ sung.
+*   :material-bell-ring:{ .lg .middle } __Alert System__
 
-    **INVARIANT**
+    ---
 
-    * Thu thập metrics không được làm gián đoạn xử lý chính; overhead phải kiểm soát được.
+    __File__: `alert_system.py`
 
-    **EDGE CASES**
+    * Quản lý vòng đời cảnh báo: Từ phát hiện, thông báo đến xác nhận và giải quyết.
+    * Hỗ trợ nhiều kênh thông báo: **Email (SMTP/TLS)** và **Webhooks**.
+    * Cơ chế **Escalation** (Leo thang) tự động khi cảnh báo không được xử lý.
 
-    * Đồng hồ hệ thống lệch dẫn đến timestamp metrics sai; cần đồng bộ NTP.
-    * Tần suất lấy mẫu quá dày gây nhiễu và tốn CPU.
+*   :material-graph:{ .lg .middle } __Anomaly Detector__
+
+    ---
+
+    __File__: `alert_system.py`
+
+    * Phát hiện các hành vi bất thường dựa trên thuật toán **Z-Score**.
+    * Phân tích lịch sử dữ liệu trong các cửa sổ thời gian (Sliding Windows) để xác định độ lệch chuẩn.
+    * Giúp phát hiện sớm các cuộc tấn công DDoS hoặc nghẽn thắt nút cổ chai.
+
+*   :material-chart-bar:{ .lg .middle } __Blockchain Metrics__
+
+    ---
+
+    __File__: `performance_metrics.py`
+
+    * **Throughput**: Số lượng sự kiện xử lý trên mỗi giây (EPS).
+    * **Latency**: Thời gian trung bình để một sự kiện được xác thực và đóng khối.
+    * **Consensus Health**: Tỷ lệ vòng đồng thuận thành công và thời gian hội tụ.
+
+</div>
+
+---
+
+## Quy trình Giám sát và Cảnh báo
+
+Hệ thống hoạt động theo một vòng lặp liên tục để đảm bảo tính sẵn sàng cao:
+
+```mermaid
+graph LR
+    subgraph "Data Collection"
+        A[System Metrics]
+        B[Blockchain Metrics]
+        C[Custom Callbacks]
+    end
+
+    subgraph "Processing Engine"
+        D[Performance Monitor]
+        E[Anomaly Detector]
+    end
+
+    subgraph "Response Layer"
+        F[Health Report]
+        G[Alert Manager]
+    end
+
+    A & B & C --> D
+    D --> E
+    E --> G
+    D --> F
+    G --> H[Email/Webhook Notification]
+```
+
+---
+
+## Chỉ số Sức khỏe Hệ thống (Health Score)
+
+HieraChain tính toán điểm số sức khỏe tổng thể (0-100) dựa trên các trọng số và ngưỡng cảnh báo:
+
+| Trạng thái | Điểm số | Ý nghĩa |
+| :--- | :--- | :--- |
+| **Excellent** | 90 - 100 | Hệ thống hoạt động hoàn hảo, không có cảnh báo. |
+| **Good** | 70 - 89 | Hoạt động ổn định, có thể có một vài cảnh báo nhẹ. |
+| **Poor** | < 70 | Hiệu năng bị ảnh hưởng rõ rệt, cần kiểm tra. |
+| **Critical** | N/A | Có ít nhất một chỉ số ở mức **Critical Alert**. |
+
+---
+
+## Ví dụ Triển khai
+
+### 1. Khởi chạy Giám sát Hiệu năng
+```python
+from hierachain.monitoring import PerformanceMonitor
+
+monitor = PerformanceMonitor(config={"collection_interval": 10.0})
+monitor.start_monitoring()
+
+# Lấy báo cáo sức khỏe tức thì
+health_score, status = monitor.get_health_score()
+print(f"System Health: {status} ({health_score}/100)")
+```
+
+### 2. Định nghĩa Quy tắc Cảnh báo (Alert Rules)
+```python
+from hierachain.monitoring.alert_system import AlertRule, AlertSeverity, AlertCategory
+
+rule = AlertRule(
+    rule_id="TPS_DROP",
+    name="Thông lượng giảm mạnh",
+    description="Thông lượng sự kiện giảm xuống dưới mức tối thiểu",
+    category=AlertCategory.PERFORMANCE,
+    metric_name="event_throughput",
+    condition="less_than",
+    threshold=10.0,
+    severity=AlertSeverity.CRITICAL,
+    escalation_time=600  # Leo thang sau 10 phút nếu không xử lý
+)
+alert_manager.add_alert_rule(rule)
+```
+
+---
+
+## Thông báo và Leo thang (Escalation)
+
+Khi một cảnh báo được tạo ra mà không được **Acknowledge** (Xác nhận) trong khoảng thời gian quy định:
+
+1.  Hệ thống sẽ tự động tăng mức độ nghiêm trọng (ví dụ từ WARNING lên CRITICAL).
+2.  Gửi thông báo bổ sung đến các danh sách người nhận khẩn cấp qua kênh Email/Webhook.
+3.  Ghi nhật ký chi tiết vào hệ thống Audit để phục vụ điều tra sau sự cố.
+
+---
+
+## Liên quan
+
+*   [Quản lý rủi ro (Risk Management)](./risk-management.md)
+*   [Bảo mật và Resource Guard](./security.md)
+*   [Cấu hình hệ thống (Config)](./config.md)

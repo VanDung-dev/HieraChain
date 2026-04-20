@@ -1,148 +1,152 @@
 ---
-title: "Adapters module"
-description: "Các adapter lưu trữ/cơ sở dữ liệu: SQLite, File, Redis — tích hợp IO theo mô hình Adapter Pattern."
+title: "Adapters Module"
+description: "Các adapter lưu trữ/cơ sở dữ liệu: SQLite, File (Parquet/Arrow), Redis — Tích hợp IO linh hoạt theo mô hình Adapter Pattern."
 icon: material/vector-polyline
 ---
 
 # Adapters Module (`hierachain/adapters/*`)
 
-## Mục đích
+## 1. Tổng quan
 
-Chuẩn hóa điểm nối (IO boundary) giữa HieraChain và hệ thống lưu trữ/cơ sở dữ liệu bên dưới thông qua các adapter có thể hoán đổi. Giúp triển khai linh hoạt tùy môi trường: file hệ thống, Redis, hoặc SQLite.
+Module **Adapters** đóng vai trò là lớp trừu tượng hóa (Abstraction Layer) cho việc lưu trữ dữ liệu trong HieraChain. Thay vì ràng buộc logic nghiệp vụ vào một loại cơ sở dữ liệu cụ thể, HieraChain sử dụng **Adapter Pattern** để cho phép thay đổi backend lưu trữ một cách linh hoạt mà không cần sửa đổi mã nguồn cốt lõi.
 
-## Kiến trúc & khái niệm
+### Vai trò chính
 
-* Adapter Pattern: Mỗi backend hiện thực giao diện đọc/ghi thống nhất cho dữ liệu/khối/trạng thái.
-* Phân loại:
+* **Chuẩn hóa IO**: Cung cấp giao diện thống nhất để lưu trữ block, event, metadata và proof.
+* **Linh hoạt triển khai**: Hỗ trợ từ môi trường phát triển (SQLite/File) đến môi trường sản xuất hiệu năng cao (Redis/Parquet).
+* **Tối ưu hóa truy vấn**: Mỗi adapter được thiết kế để tối ưu cho một kiểu truy vấn nhất định (ví dụ: File adapter tối ưu cho việc truy vết entity trên quy mô lớn).
 
-    * Database: `adapters/database/sqlite_adapter.py` — truy cập kho SQLite (và có thể mở rộng RDBMS khác).
-    * Storage:
+---
 
-        * `adapters/storage/file_storage.py` — lưu/đọc tệp khối, snapshot, đính kèm.
-        * `adapters/storage/redis_storage.py` — lưu đệm/tra cứu nhanh qua Redis.
+## 2. Các Adapter hiện có
 
-* Ràng buộc: Các adapter không tự áp đặt logic đồng thuận hay bảo mật; chúng triển khai thao tác IO theo hợp đồng đã định.
+HieraChain cung cấp ba loại adapter chính, chia thành hai nhóm: `database` và `storage`.
 
-## API công khai (Public API)
+### 2.1 SQLite Database Adapter (`adapters/database/sqlite_adapter.py`)
 
-Mức mô tả (rút gọn, tham khảo tên lớp/hàm trong mã nguồn):
+Sử dụng SQLite làm backend cho các hệ thống yêu cầu tính toàn vẹn dữ liệu quan hệ và truy vấn SQL linh hoạt.
 
-    * Khởi tạo adapter với cấu hình (đường dẫn DB/file, host/port Redis, timeouts...).
-    * Giao diện đọc/ghi bản ghi/block/snapshot theo khóa/ID.
-    * Quản lý vòng đời tài nguyên: mở/kết nối → dùng → đóng/flush.
+* **Công nghệ**: SQLite3.
+* **Cấu trúc Schema**:
 
-Ví dụ mô tả (giả định):
+    * `chains`: Lưu thông tin định danh và loại chuỗi (Main/Sub).
+    * `blocks`: Lưu trữ header của block, mã băm và metadata.
+    * `events`: Lưu chi tiết các sự kiện nghiệp vụ dưới dạng JSON.
+    * `proofs`: Lưu vết các bằng chứng cross-chain giữa Sub-Chain và Main Chain.
 
-```python
-data = store.read("blocks/0001.json")
+* **Ưu điểm**: Hỗ trợ ACID, quản lý quan hệ giữa các thực thể tốt, dễ dàng sao lưu (single file).
+* **Tối ưu**: Có sẵn các chỉ mục (indexes) trên `entity_id`, `event_type`, và `timestamp`.
+
+### 2.2 File Storage Adapter (`adapters/storage/file_storage.py`)
+
+Adapter hiệu năng cao dành cho dữ liệu lớn, sử dụng định dạng file chuyên dụng cho phân tích.
+
+* **Công nghệ**: **Apache Parquet** và **PyArrow**.
+* **Cấu trúc lưu trữ**:
+
+    * `blocks/`: Lưu trữ block dưới dạng file `.parquet` nén (Zstd). Mỗi block là một bảng Arrow.
+    * `events/`: Duy trì bộ chỉ mục sự kiện (Event Index) cho phép truy tìm (tracing) cực nhanh.
+    * `chains/`: Lưu metadata chuỗi dưới dạng JSON.
+
+* **Ưu điểm**: Tốc độ đọc/ghi cực nhanh, nén dữ liệu tốt, hỗ trợ **Column Pruning** (chỉ đọc các cột cần thiết).
+* **Tính năng đặc biệt**:
+
+    * `BatchBlockWriter`: Buffer dữ liệu để ghi hàng loạt, giảm thiểu I/O overhead.
+    * `get_entity_events_optimized`: Sử dụng Arrow Dataset để quét dữ liệu trên nhiều file block đồng thời.
+
+### 2.3 Redis Storage Adapter (`adapters/storage/redis_storage.py`)
+
+Phù hợp cho các node yêu cầu phản hồi thời gian thực (Real-time) và truy cập dữ liệu nóng (Hot data).
+
+* **Công nghệ**: Redis (In-memory data structure).
+* **Cấu trúc dữ liệu**:
+
+    * **Hashes**: Lưu trữ block và metadata.
+    * **Sorted Sets (ZSET)**: Lưu chỉ mục block theo index và sự kiện của entity theo timestamp.
+    * **Sets**: Quản lý danh sách các chuỗi và thực thể duy nhất.
+
+* **Ưu điểm**: Độ trễ (latency) cực thấp, hỗ trợ đếm số liệu thống kê (statistics) theo thời gian thực.
+* **Sử dụng**: Thường được dùng làm cache hoặc database chính cho các node giao dịch tần suất cao.
+
+---
+
+## 3. So sánh các Adapter
+
+| Đặc điểm | SQLiteAdapter | FileStorageAdapter | RedisStorageAdapter |
+| :--- | :--- | :--- | :--- |
+| **Loại lưu trữ** | Cơ sở dữ liệu quan hệ | File hệ thống (Parquet) | Bộ nhớ (In-memory) |
+| **Phù hợp nhất** | ERP Integration, Audit | Big Data, Phân tích truy vết | Real-time Dashboard, High-speed Node |
+| **Tốc độ ghi** | Trung bình | Rất nhanh (với Batch) | Cực nhanh |
+| **Tốc độ truy vấn** | Nhanh (SQL) | Cực nhanh (Analytical) | Nhanh nhất (Point lookup) |
+| **Tính bền vững** | Cao (ACID) | Cao (File-based) | Phụ thuộc cấu hình Redis RDB/AOF |
+| **Dependencies** | Không (Built-in Python) | `pyarrow` | `redis-py` |
+
+---
+
+## 4. Hướng dẫn sử dụng
+
+### Cấu hình qua Settings
+
+Bạn có thể chọn adapter mặc định thông qua biến môi trường hoặc file cấu hình:
+
+```bash
+# Chọn backend lưu trữ
+export HRC_STORAGE_BACKEND=sqlite  # Hoặc "redis", "file"
+export DATABASE_URL="sqlite:///my_ledger.db"
 ```
 
-### Database Adapters
+### Sử dụng trong mã nguồn
 
-**File**: `adapters/database/sqlite_adapter.py`
-
-Adapter cho cơ sở dữ liệu quan hệ (RDBMS), mặc định là SQLite:
+#### Sử dụng SQLite
 
 ```python
 from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 
-# Khởi tạo với đường dẫn tệp DB (mặc định: hierachain.db)
-db_adapter = SQLiteAdapter(database_path="hierachain.db")
-
-# Thao tác dữ liệu cấp cao (khớp với Ledger guidelines)
-db_adapter.store_chain(chain_instance)
-stats = db_adapter.get_chain_statistics("supply_chain")
-events = db_adapter.get_entity_events("PROD-001")
+adapter = SQLiteAdapter("data/ledger.db")
+# Lấy thống kê chuỗi
+stats = adapter.get_chain_statistics("supply_chain_v1")
+print(f"Tổng số block: {stats['total_blocks']}")
 ```
 
-**Lưu ý**: `SQLiteAdapter` hỗ trợ tự động khởi tạo schema và quản lý chỉ mục (indexes) tối ưu cho việc truy vấn theo `entity_id`.
-
-### Storage Adapters
-
-**File**: `adapters/storage/file_storage.py` và `adapters/storage/redis_storage.py`
+#### Sử dụng File (Parquet)
 
 ```python
-# File Storage (Lưu trữ khối Parquet)
-from hierachain.adapters.storage.file_storage import FileStorageAdapter
-file_store = FileStorageAdapter(storage_path="blockchain_data")
-file_store.store_block("main_chain", block_dict)
+from hierachain.adapters.storage.file_storage import FileStorageAdapter, BatchBlockWriter
 
-# Redis Storage (Cache và tra cứu nóng)
-from hierachain.adapters.storage.redis_storage import RedisStorageAdapter
-redis_store = RedisStorageAdapter(host="localhost", port=6379)
-redis_store.store_block("sub_chain_1", block_data)
+storage = FileStorageAdapter(storage_path="./blockchain_data")
+
+# Ghi hàng loạt blocks để tối ưu hiệu năng
+with BatchBlockWriter(storage, "main_chain", batch_size=100) as writer:
+    for block in new_blocks:
+        writer.add(block)
 ```
-
-## Cấu hình
-
-* Tham khảo `hierachain/config/settings.py`:
-    * `DEFAULT_STORAGE_BACKEND`: memory | redis | sqlite
-    * Thông số Redis: `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB`
-    * `DATABASE_URL`: ví dụ `sqlite:///hierachain.db`
-* Biến môi trường tương ứng có thể ghi đè giá trị mặc định (xem trang Reference/Config).
-
-## Tính năng & hạn chế
-
-* Tính năng:
-
-    * Thay thế backend nhanh chóng mà không đổi luồng nghiệp vụ.
-    * Kết hợp nhiều adapter: Redis (cache) + SQLite/File (bền vững).
-
-* Hạn chế:
-
-    * File/SQLite phù hợp môi trường đơn nút; môi trường phân tán cần backend đồng bộ/HA.
-
-## Bảo mật & quyền truy cập
-
-* Adapter bản thân không triển khai xác thực/ủy quyền; ràng buộc bảo mật thực thi ở tầng `security/*` và `api/*`.
-* Đường dẫn file và thông tin kết nối cần bảo vệ qua biến môi trường/secret manager.
-
-## Xử lý lỗi & khắc phục
-
-* Nên kết hợp với `error_mitigation/*` (journal, rollback, recovery) để đảm bảo phục hồi khi IO lỗi.
-* Cơ chế retry/backoff khi kết nối Redis/DB thất bại (tùy adapter).
-
-## Hiệu năng
-
-* Redis cho tra cứu nóng (hot path) và cache L1/L2.
-* File/SQLite phù hợp throughput trung bình; quy mô lớn cân nhắc RDBMS/NoSQL chuyên dụng.
-
-## Liên quan
-
-* Storage module: [Storage](storage.md)
-* Config (tham chiếu): [Config](../reference/config.md)
-* Error Mitigation: [Error Mitigation](error-mitigation.md)
 
 ---
 
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
+## 5. Bảo mật & An toàn dữ liệu
 
-    **FACT**
+### Chống tấn công Path Traversal (CWE-22)
 
-    * Có các tệp adapter trong `hierachain/adapters/`: 
-        * `database/sqlite_adapter.py`
-        * `storage/file_storage.py`
-        * `storage/redis_storage.py`
+Tất cả các adapter đều thực hiện kiểm tra nghiêm ngặt tên chuỗi (chain name) và đường dẫn:
 
-    * Cấu hình liên quan nằm ở `hierachain/config/settings.py` (DATABASE_URL, REDIS_*).
+* Chỉ cho phép ký tự alphanumeric, dấu gạch dưới `_` và gạch ngang `-`.
+* Ngăn chặn các ký tự điều hướng như `..` để đảm bảo dữ liệu không bị ghi đè ngoài thư mục chỉ định.
 
-    **DECISION**
+### Secure Logging
 
-    * Sử dụng Adapter Pattern để cô lập lớp IO khỏi logic chuỗi và đồng thuận.
-    * Ưu tiên cấu hình qua biến môi trường để triển khai linh hoạt.
+Việc ghi log trong các adapter được thực hiện qua `SecureLogger`, đảm bảo không lộ các thông tin nhạy cảm của doanh nghiệp trong file log hệ thống.
 
-    **ASSUMPTION**
+---
 
-    * Môi trường phát triển sử dụng SQLite/File; môi trường staging/production có thể dùng Redis/RDBMS.
-    * Quyền truy cập file hệ thống/Redis/DB đã được cấp.
+## 6. Xử lý lỗi & Bảo trì
 
-    **INVARIANT**
+* **Cleanup**: Cả ba adapter đều hỗ trợ phương thức `cleanup_old_data(days_to_keep)` để tự động dọn dẹp các khối dữ liệu cũ hoặc log không cần thiết theo chính sách lưu trữ của doanh nghiệp.
+* **Data Integrity**: Khi sử dụng `FileStorageAdapter`, mã băm (hash) của block được lưu trực tiếp trong metadata của file Parquet, cho phép kiểm tra tính toàn vẹn ngay khi load file mà không cần đọc toàn bộ nội dung.
 
-    * Hợp đồng đọc/ghi của adapter phải ổn định (không thay đổi hành vi ở cùng phiên bản).
-    * Dữ liệu ghi ra phải toàn vẹn; lỗi ghi phải được báo hiệu để tầng trên quyết định rollback.
+---
 
-    **EDGE CASES**
+## Liên quan
 
-    * Mất quyền ghi thư mục dữ liệu → thao tác lưu file thất bại.
-    * Redis không khả dụng → cần fallback/bật chế độ memory.
-    * Lỗi khóa/tập tin bị khóa (file lock) trên Windows.
+* [Core Concepts - Blockchain](../architecture.md)
+* [Storage Module](./storage.md)
+* [Security Overview](./security.md)

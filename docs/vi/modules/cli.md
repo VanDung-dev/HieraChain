@@ -1,95 +1,139 @@
 ---
-title: "CLI module"
-description: "Công cụ dòng lệnh hrc và các nhóm lệnh: chain, node, event, store, verify — bám sát hierachain/cli/*."
+title: "CLI Module"
+description: "Hướng dẫn sử dụng công cụ dòng lệnh hrc để quản lý chuỗi, sự kiện, node và bảo mật trong HieraChain."
 icon: material/console
 ---
 
 # CLI Module (`hierachain/cli/*`)
 
-## Mục đích
+## Tổng quan
 
-Cung cấp công cụ dòng lệnh thống nhất (`hrc`) để thao tác nhanh với HieraChain trong môi trường dev/ops/script.
+Module **CLI** cung cấp công cụ dòng lệnh mạnh mẽ mang tên `hrc`, giúp các nhà vận hành và phát triển tương tác nhanh chóng với hệ thống HieraChain mà không cần qua giao diện web hoặc gọi API thủ công. 
 
-## Kiến trúc & khái niệm
+Công cụ được xây dựng trên thư viện **Click**, hỗ trợ phân nhóm lệnh logic, gợi ý lệnh (tab-completion) và xử lý tham số chặt chẽ.
 
-* Entry point: `pyproject.toml` → `[project.scripts] hrc = hierachain.cli.__init__:hrc`
-* Nhóm lệnh chính: `hierachain/cli/{chain.py, node.py, event.py, store.py, verify.py}`
-* Cấu hình CLI: `settings.CLI_CONFIG_FILE` (mặc định `chains.json`), `settings.CLI_LOG_LEVEL`
+### Cách cài đặt & Khởi chạy
 
-## Sử dụng cơ bản
+Khi cài đặt HieraChain ở chế độ phát triển (`pip install -e .`), lệnh `hrc` sẽ được đăng ký vào hệ thống. Bạn có thể kiểm tra bằng cách:
 
 ```bash
 hrc --help
 ```
 
-Ví dụ (mang tính minh họa):
+---
 
-```bash
-# Tạo Sub-Chain nhanh (tùy command hỗ trợ)
-hrc chain create supply_chain --type generic
+## Nhóm lệnh chính
 
-# Ghi sự kiện
-hrc event add supply_chain --entity PROD-001 --type production_complete --details quantity=100
+Hệ thống CLI của HieraChain được chia thành các nhóm chức năng riêng biệt:
 
-# Gửi proof lên Main Chain
-hrc chain submit-proof supply_chain
+### Nhóm lệnh `chain` (Quản lý Chuỗi)
 
-# Truy vết thực thể
-hrc event trace PROD-001 --chain supply_chain
+Dùng để khởi tạo và theo dõi cấu trúc phân cấp của các chuỗi.
 
-# Kiểm tra chữ ký khối/sự kiện
-hrc verify signature --file block.json --pubkey <hex>
-```
+*   **`hrc chain create`**: Tạo một Sub-Chain mới.
 
-## Cấu hình
+    *   *Tham số*: `[supply_chain|healthcare|finance|manufacturing]`
+    *   *Option*: `--name` (Bắt buộc), `--parent` (Mặc định: `main`).
 
-* File cấu hình CLI: `chains.json` (mặc định theo `settings.CLI_CONFIG_FILE`).
-* Mức log: `settings.CLI_LOG_LEVEL` (ví dụ `INFO`).
+*   **`hrc chain list`**: Liệt kê toàn bộ các chuỗi hiện có và số lượng block của chúng.
+*   **`hrc chain submit-proof`**: Gửi bằng chứng mã hóa từ Sub-Chain lên Main Chain để xác thực liên chuỗi.
 
-## Tính năng & hạn chế
+### Nhóm lệnh `event` (Quản lý Sự kiện)
 
-* Tính năng: thao tác nhanh; dễ script hóa; phù hợp CI/CD.
-* Hạn chế: phụ thuộc chức năng CLI đã được triển khai trong các module `cli/*`.
+Dùng để ghi và truy vấn các hoạt động kinh doanh.
 
-## Bảo mật & quyền truy cập
+*   **`hrc event add`**: Thêm một sự kiện vào chuỗi.
 
-* Không in ra secret/API key trên console; sử dụng biến môi trường/secret manager khi cần.
+    *   *Tham số*: `<chain_name>`, `[start_operation|complete_operation|quality_check|status_change]`
+    *   *Option*: `--entity-id` (Bắt buộc), `--details` (Chuỗi JSON mô tả chi tiết sự kiện).
 
-## Xử lý lỗi & khắc phục
+*   **`hrc event show`**: Hiển thị lịch sử sự kiện trong một chuỗi.
 
-* Lệnh phải trả mã lỗi rõ ràng (exit code ≠ 0) khi thất bại; ghi log tối thiểu.
+    *   *Option*: `--entity-id` (Lọc theo thực thể cụ thể).
 
-## Hiệu năng
+### Nhóm lệnh `key` (Quản lý Khóa)
 
-* Các thao tác CLI thường là lệnh ngắn; tránh vòng lặp nặng trên máy User.
+Dùng để tạo và kiểm tra các cặp khóa Ed25519 cho Validator.
 
-## Liên quan
+*   **`hrc key generate`**: Tạo cặp khóa mới.
 
-* API v1 (thay thế/cổ điển qua HTTP): [API v1](../reference/api-v1.md)
-* Config: [Config (Module)](config.md)
+    *   *Option*: `--output` (Mặc định: `validator_key.json`), `--format` (json/hex).
+
+*   **`hrc key show`**: Hiển thị thông tin khóa từ file (che dấu khóa bí mật).
+*   **`hrc key verify`**: Kiểm tra tính hợp lệ của cặp khóa (khớp giữa khóa công khai và bí mật).
+
+### Nhóm lệnh `node` (Quản lý Node)
+
+Dùng để vận hành node API.
+
+*   **`hrc node start`**: Khởi chạy server FastAPI.
+
+    *   *Option*: `--host`, `--port`, `--reload` (Dành cho phát triển).
+
+*   **`hrc node init`**: Khởi tạo thư mục dữ liệu và cấu hình mặc định cho node mới.
+
+### Nhóm lệnh `verify` (Kiểm định)
+
+Công cụ dành cho kiểm toán viên để kiểm tra tính toàn vẹn của sổ cái.
+
+*   **`hrc verify chain`**: Kiểm tra cấu trúc liên kết giữa các block (hash chaining).
+*   **`hrc verify signatures`**: Kiểm tra toàn bộ chữ ký số của các block và sự kiện trong cơ sở dữ liệu.
+
+    *   *Option*: `--limit` (Chỉ kiểm tra N block gần nhất), `--db` (Đường dẫn cơ sở dữ liệu).
 
 ---
 
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
+## Ví dụ sử dụng thực tế
 
-    **FACT**
+### 1. Khởi tạo hệ thống và tạo chuỗi cung ứng
 
-    * Entry point CLI `hrc` được đăng ký trong `pyproject.toml` trỏ tới `hierachain.cli.__init__:hrc`.
-    * Nhóm lệnh CLI được bố trí trong `hierachain/cli/*`.
+```bash
+# Khởi tạo dữ liệu node
+hrc node init --data-dir ./my_data
 
-    **DECISION**
+# Tạo chuỗi cung ứng linh kiện
+hrc chain create supply_chain --name logistics_01 --parent main
+```
 
-    * Duy trì CLI như công cụ automation/dev tiện dụng song song với API HTTP.
+### 2. Ghi nhận quy trình sản xuất
 
-    **ASSUMPTION**
+```bash
+# Bắt đầu sản xuất thực thể ITEM-99
+hrc event add logistics_01 start_operation --entity-id ITEM-99 --details '{"line": "A1"}'
 
-    * User có quyền shell và đã kích hoạt môi trường Python phù hợp.
+# Hoàn tất và gửi proof lên Main Chain
+hrc chain submit-proof logistics_01
+```
 
-    **INVARIANT**
+### 3. Kiểm định an toàn dữ liệu
 
-    * CLI không làm lộ thông tin nhạy cảm ra stdout/stderr.
+```bash
+# Kiểm tra 100 block gần nhất xem có bị sửa đổi không
+hrc verify signatures --limit 100
+```
 
-    **EDGE CASES**
+---
 
-    * Thiếu quyền ghi đọc file cấu hình → báo lỗi và hướng dẫn khắc phục.
-    * Endpoint API không reachable (khi CLI phụ thuộc API) → hiển thị gợi ý kiểm tra cổng/tường lửa.
+## Cấu hình & Biến môi trường
+
+CLI ưu tiên đọc cấu hình từ file `chains.json` hoặc file được chỉ định qua option toàn cục:
+
+```bash
+hrc --config custom_config.json chain list
+```
+
+---
+
+## Nguyên tắc thiết kế (Developer Notes)
+
+1.  **Tính nguyên tử**: Mỗi lệnh CLI phải thực hiện một nhiệm vụ duy nhất và trả về Exit Code phù hợp (0: Thành công, >0: Thất bại).
+2.  **Bảo mật**: Không bao giờ in khóa bí mật đầy đủ ra màn hình. Sử dụng mặt nạ (masking) khi hiển thị thông tin nhạy cảm.
+3.  **Tương thích Scripting**: Kết quả đầu ra của các lệnh `list` hoặc `show` được định dạng để dễ dàng xử lý bằng `grep`, `awk` hoặc `jq`.
+
+---
+
+## Liên quan
+
+*   [API Documentation](./api.md)
+*   [Storage Adapters](./adapters.md)
+*   [Security & Verify](../security/identity.md)

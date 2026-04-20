@@ -1,178 +1,103 @@
 ---
-title: "Storage module"
-description: "Module lưu trữ: world state, backend bộ nhớ/SQL, cấu hình và lưu ý hiệu năng — bám sát hierachain/storage/*."
+title: "Storage Module"
+description: "Hệ thống lưu trữ đa tầng: World State, SQL Persistence, Redis Indexing và IPFS Off-chain."
 icon: material/database
 ---
 
 # Storage Module (`hierachain/storage/*`)
 
-## Mục đích
+## Tổng quan
 
-Quản lý lưu trữ trạng thái (world state) và lịch sử Block/Event với các backend linh hoạt (in-memory, SQL, Redis tùy cấu hình), cân bằng giữa hiệu năng và độ bền dữ liệu.
+Module **Storage** chịu trách nhiệm quản lý toàn bộ dữ liệu của HieraChain, từ lịch sử các khối (Blocks) và sự kiện (Events) đến trạng thái hiện tại của các thực thể nghiệp vụ (**World State**). Hệ thống được thiết kế với kiến trúc pluggable, cho phép thay đổi backend lưu trữ linh hoạt dựa trên yêu cầu về hiệu năng và quy mô của doanh nghiệp.
 
-## Kiến trúc & khái niệm
+---
 
-* World State: ảnh chụp trạng thái hiện tại của dữ liệu (truy vấn nhanh, cập nhật theo block). File tham chiếu: `hierachain/storage/world_state.py`.
-* Backend lưu trữ:
+## Kiến trúc Lưu trữ Đa tầng
 
-    * In-memory: `hierachain/storage/memory_storage.py` — tốc độ cao, không bền.
-    * SQL: `hierachain/storage/sql_backend.py` — bền vững, hỗ trợ SQLite/PostgreSQL.
-    * IPFS (Off-chain): `hierachain/api/storage/ipfs_client.py` — Lưu trữ dữ liệu lớn ngoài chuỗi (Event details, Contract code).
-    * (Tùy chọn) Mô hình dữ liệu ORM: `hierachain/storage/models.py`.
+HieraChain chia lưu trữ thành hai lớp chính để tối ưu hóa giữa tính bền vững và tốc độ truy vấn:
 
-#### SQLAlchemy Data Models
+<div class="grid cards" markdown>
 
-**File**: `hierachain/storage/models.py`
+*   :material-state-machine:{ .lg .middle } __World State Layer__
 
-HieraChain sử dụng SQLAlchemy để quản lý schema database:
+    ---
 
-* **ChainModel**: Lưu trữ thông tin về các chuỗi (Main/Sub-chain).
-* **BlockModel**: Chứa header của block (index, hash, prev_hash, timestamp).
-* **EventModel**: Lưu trữ chi tiết từng sự kiện trong block (event_id, type, data JSON).
-* **ChainStateModel**: Lưu trữ World State dưới dạng Key-Value (JSON).
+    __File__: `world_state.py`
 
-* Cấu hình qua `hierachain/config/settings.py` (DEFAULT_STORAGE_BACKEND, DATABASE_URL, REDIS_* nếu có, HRC_IPFS_*).
+    * Lưu trữ giá trị hiện tại của các thực thể (ví dụ: trạng thái của một kiện hàng).
+    * Cập nhật theo thời gian thực từ các khối mới thông qua cơ chế xử lý sự kiện (`creation`, `update`, `status_change`).
+    * Hỗ trợ **Caching** và **Indexing** để phản hồi truy vấn tức thì.
 
-## Lưu trữ IPFS (Off-chain Storage)
+*   :material-database-sync:{ .lg .middle } __Persistence Layer (Adapters)__
 
-HieraChain tích hợp IPFS để xử lý các payload lớn mà không làm ảnh hưởng đến hiệu năng của Blockchain.
+    ---
 
-### Đặc điểm chính
-* **Mã hóa AES-256-GCM**: Dữ liệu được mã hóa cục bộ trước khi tải lên IPFS.
-* **Content Addressing (CID)**: Blockchain chỉ lưu mã hash CID trỏ đến dữ liệu trên IPFS.
-* **Private Swarm**: Hỗ trợ mạng IPFS doanh nghiệp riêng tư để đảm bảo an toàn dữ liệu.
-* **Auto-Pinning**: Tự động ghim dữ liệu để tránh bị xóa bởi cơ chế Garbage Collection của IPFS.
+    __File__: `storage/sql_backend.py`, `adapters/database/*`, `adapters/storage/*`
 
-### Module tham chiếu
+    * **SQL Backend**: Lưu trữ khối và sự kiện bền vững (SQLite qua `sqlite_adapter.py`).
+    * **Redis Adapter**: Tối ưu cho việc đánh chỉ mục (indexing) thực thể.
+    * **File Adapter**: Lưu trữ dạng file Parquet cho dữ liệu lớn.
 
-* `hierachain/api/storage/ipfs_client.py`: Client giao tiếp với IPFS daemon.
-* `hierachain/api/storage/encryption.py`: Xử lý mã hóa/giải mã dữ liệu.
-* `hierachain/api/storage/utils.py`: Các hàm tiện ích kiểm tra CID và chuẩn hóa dữ liệu.
+*   :material-cloud-sync:{ .lg .middle } __Off-chain Storage (IPFS)__
 
-## API công khai (mô tả khái quát)
+    ---
 
-```yaml
-WorldState:
-  update_from_block(block)
-  get_entity_state(entity_id)
-  query_by_index(index_name, value)
+    __File__: `api/storage/ipfs_client.py`
 
-MemoryStorage/SqlBackend:
-  save_block(block)
-  load_block(index|hash)
-  iterate_blocks(offset, limit)
-  save_world_state(snapshot)
-  load_world_state()
-```
+    * Lưu trữ các dữ liệu lớn (như tài liệu đính kèm, chi tiết sự kiện phức tạp).
+    * Chỉ lưu mã băm (CID) lên blockchain để tiết kiệm không gian và tối ưu hiệu năng.
+    * Tích hợp mã hóa **AES-256-GCM** trước khi tải lên.
 
-Ví dụ (mô tả):
+</div>
 
-```python
-from hierachain.storage.world_state import WorldState
-ws = WorldState(storage=MemoryStorage() | SqlBackend(...))
-ws.apply_block(block)
-entity = ws.get_entity("PROD-001")
-```
+---
 
-## Cấu hình
+## Luồng xử lý Cập nhật Trạng thái
 
-* `DEFAULT_STORAGE_BACKEND`: memory | redis | sqlite (xem `settings.py`).
-* `DATABASE_URL`: ví dụ `sqlite:///hierachain.db` hoặc URL PostgreSQL.
-* `WORLD_STATE_CACHE_SIZE`: điều chỉnh cache world state.
-
-## Tính năng & hạn chế
-
-* Tính năng:
-
-    * Lưu trữ block bền (SQL) và truy vấn nhanh (in-memory).
-    * Tách world state và lịch sử khối để tối ưu đọc/ghi.
-
-* Hạn chế/ghi chú:
-
-    * In-memory không bền, mất dữ liệu khi khởi động lại.
-    * SQL cần migration và quản lý kết nối phù hợp.
-
-## Bảo mật & quyền truy cập
-
-* Kết nối DB nên dùng tài khoản ít quyền và TLS khi khả dụng.
-* Dữ liệu nhạy cảm nên mã hoá ở tầng ứng dụng nếu lưu ngoài chuỗi.
-
-## Xử lý lỗi & khắc phục
-
-* Khi DB lỗi kết nối, khuyến nghị cơ chế retry backoff.
-* Có thể kết hợp `error_mitigation/journal.py` để phục hồi.
-
-## Hiệu năng
-
-* Batch ghi block để giảm overhead transaction.
-* Sử dụng chỉ mục phù hợp cho bảng block/events ở SQL.
-* Điều chỉnh kích thước cache theo tải hệ thống.
-
-### Storage Adapters
-
-HieraChain hỗ trợ các adapter lưu trữ sau:
-
-| Adapter | Class | Mục đích |
-| :--- | :--- | :--- |
-| **SQLite** | `SQLiteAdapter` | Lưu trữ World State, Metadata và chỉ mục thực thể. |
-| **File** | `FileStorageAdapter` | Lưu trữ dữ liệu khối dưới dạng tệp Parquet hiệu năng cao. |
-| **Redis** | `RedisStorageAdapter` | Lưu trữ cache, hàng đợi sự kiện và tra cứu nhanh. |
-
-Mẫu khởi tạo chuẩn:
-
-```python
-from hierachain.adapters.storage.file_storage import FileStorageAdapter
-
-# Khởi tạo lưu trữ tệp chuyên dụng cho Blocks
-block_storage = FileStorageAdapter(storage_path="./blockchain_data")
+```mermaid
+graph TD
+    A[New Block Committed] --> B[World State Manager]
+    B --> C{Extract Events}
+    C --> D[Apply Business Logic]
+    D --> E[Update State Cache]
+    E --> F[Persist to Backend]
+    F --> G[(SQL / Redis / Memory)]
 ```
 
 ---
-**Xem thêm**: [Module Adapters](adapters.md) để biết chi tiết về cách viết Adapter tùy chỉnh.
 
-#### Redis Storage
+## Các Model dữ liệu cốt lõi (`models.py`)
 
-file: `hierrachain/adapters/storage/redis_storage.py`
+HieraChain sử dụng SQLAlchemy để định nghĩa cấu trúc dữ liệu bền vững:
 
-```python
-class RedisStorage:
-  __init__(host="localhost", port=6379, db=0)
-  set(key, value, ttl=None); get(key); delete(key)
-  exists(key); keys(pattern="*")
-  push(list_key, value); pop(list_key)
-```
+*   **BlockModel**: Lưu trữ index, hash, previous\_hash và metadata của khối.
+*   **EventModel**: Lưu trữ chi tiết sự kiện, liên kết với block hash và entity ID.
+*   **ChainStateModel**: Lưu trữ các cặp Key-Value đại diện cho trạng thái của chuỗi.
+
+---
+
+## Cấu hình Backend (Environment Variables)
+
+| Biến môi trường | Ý nghĩa | Giá trị khả dụng |
+| :--- | :--- | :--- |
+| `HRC_STORAGE_BACKEND` | Loại backend lưu trữ | `sqlite`, `redis`, `memory`, `file` |
+| `DATABASE_URL` | Chuỗi kết nối DB | `sqlite:///hierachain.db`, `postgresql://...` |
+| `LOG_SQL_DETAIL` | Ghi log SQL chi tiết | `true`, `false` (Khuyến nghị `false` cho Prod) |
+
+---
+
+## Tính năng Nâng cao
+
+### 1. Tính Toàn vẹn và Idempotency
+`SqlStorageBackend` được thiết kế để xử lý các yêu cầu trùng lặp (Idempotency) một cách an toàn thông qua việc kiểm tra ràng buộc duy nhất (Unique Constraint), đảm bảo hệ thống luôn ổn định ngay cả khi gặp sự cố mạng gây gửi lại khối.
+
+### 2. Truy vấn theo Chỉ mục (Indexing)
+Mọi thực thể trong World State đều được tự động đánh chỉ mục theo `entity_id` và `timestamp`. Khi sử dụng Redis Adapter, các chỉ mục này được lưu dưới dạng **Sorted Sets**, cho phép truy vấn lịch sử thay đổi của một thực thể cực nhanh.
+
+---
 
 ## Liên quan
 
-* Config: [Config](../reference/config.md)
-* Core: [Core](core.md)
-* Error Mitigation: [Error Mitigation](error-mitigation.md)
-
----
-
-??? info "Thông tin kỹ thuật bổ sung (Metadata)"
-
-    **FACT**
-
-    * Các tệp mô-đun lưu trữ hiện diện: `hierachain/storage/{sql_backend.py, memory_storage.py, world_state.py, models.py}`.
-    * Các tuỳ chọn cấu hình liên quan nằm tại `hierachain/config/settings.py` (DEFAULT_STORAGE_BACKEND, DATABASE_URL, REDIS_*...).
-
-    **DECISION**
-
-    * Tách World State (đọc nhanh) khỏi lịch sử khối (bền), cho phép chọn backend theo môi trường.
-    * Khuyến nghị SQL cho production, in-memory cho dev/test.
-
-    **ASSUMPTION**
-
-    * Ứng dụng triển khai migration khi dùng SQL.
-    * Hệ thống có cơ chế giám sát/khôi phục khi backend gặp sự cố.
-
-    **INVARIANT**
-
-    * Ghi block phải theo thứ tự và atomically ảnh hưởng tới world state tương ứng.
-    * Dữ liệu block đã commit không chỉnh sửa; chỉ append.
-
-    **EDGE CASES**
-
-    * Mất kết nối DB giữa chừng: cần rollback transaction và retry an toàn.
-    * Kích thước block lớn gây chậm: cần batch/stream hoặc tăng tài nguyên DB.
+*   [Core Module (Block & Blockchain)](./core.md)
+*   [Integration (Tích hợp ERP)](./integration.md)
+*   [Monitoring (Giám sát hiệu năng)](./monitoring.md)
