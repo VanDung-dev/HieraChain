@@ -99,6 +99,12 @@ docker build --no-cache -t hierachain:latest -f docker/Dockerfile .
 # Create Kind cluster
 kind create cluster --config docker/kind-config.yaml
 
+# Resource limit for each Node of K8s (1 CPU, 1GiB RAM)
+docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-control-plane
+docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker
+docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker2
+docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker3
+
 # Load image into cluster
 kind load docker-image hierachain:latest --name hiera-cluster
 
