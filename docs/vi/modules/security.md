@@ -23,7 +23,7 @@ Kiến trúc bảo mật được cấu thành từ 6 luồng chính phối hợ
     ---
 
     Quản trị danh tính (MSP), xác thực API Key và kiểm soát truy cập dựa trên thuộc tính (ABAC).
-    [:octicons-arrow-right-24: Chi tiết](../security/auth-access.md)
+    [:octicons-arrow-right-24: Chi tiết](../security/authorization-access-control.md)
 
 *   :material-lock-alert:{ .lg .middle } __Lockdown & Logging__
 
@@ -37,28 +37,28 @@ Kiến trúc bảo mật được cấu thành từ 6 luồng chính phối hợ
     ---
 
     Bảo vệ tài nguyên chống DoS và kiểm tra tính toàn vẹn của mã nguồn/cấu hình khi khởi động.
-    [:octicons-arrow-right-24: Chi tiết](../security/integrity-guard.md)
+    [:octicons-arrow-right-24: Chi tiết](../security/fault-tolerance-integrity.md)
 
 *   :material-security-network:{ .lg .middle } __Risk & Sanitization__
 
     ---
 
     Phân tích hành vi bất thường (Anomaly Detection) và làm sạch dữ liệu đầu vào chống Injection.
-    [:octicons-arrow-right-24: Chi tiết](./security/risk-sanitization.md)
+    [:octicons-arrow-right-24: Chi tiết](../security/risk-analyzer.md)
 
 *   :material-key-chain:{ .lg .middle } __Encryption & Keys__
 
     ---
 
     Quản lý vòng đời khóa mã hóa (Ed25519, AES-GCM) và chứng chỉ số chuẩn doanh nghiệp (X.509).
-    [:octicons-arrow-right-24: Chi tiết](./security/keys-certs.md)
+    [:octicons-arrow-right-24: Chi tiết](../security/encryption-keys.md)
 
 *   :material-brain:{ .lg .middle } __Zero-Knowledge Proofs__
 
     ---
 
     Bảo mật dữ liệu riêng tư xuyên chuỗi bằng công nghệ chứng minh không tiết lộ thông tin (ZKP).
-    [:octicons-arrow-right-24: Chi tiết](./security/zk-proofs.md)
+    [:octicons-arrow-right-24: Chi tiết](../security/decentralized-zkp.md)
 
 </div>
 

@@ -170,4 +170,4 @@ curl "http://localhost:2661/api/v1/entities/ITEM-123/trace?resolve_cid=true"
 
 * [Hierarchical Structure](./hierarchical.md)
 * [Storage & IPFS Integration](./storage.md)
-* [Security & Identity](../security/keys-certs.md)
+* [Security & Identity](../security/encryption-keys.md)
