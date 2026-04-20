@@ -51,9 +51,8 @@ def get_version(version: Tuple[int, int, int, str, int] | None = None) -> str:
     Returns:
         PEP 440-compliant version string
     """
-    if version is None:
-        version = VERSION
-    major, minor, micro, releaselevel, serial = version
+    v = version if version is not None else VERSION
+    major, minor, micro, releaselevel, serial = v
     base = _format_base_version(major, minor, micro)
     suffix = _format_release_suffix(releaselevel, serial)
     return base + suffix
@@ -72,9 +71,8 @@ def get_complete_version(
     Returns:
         Version tuple
     """
-    if version is None:
-        version = VERSION
-    return version
+    v = version if version is not None else VERSION
+    return v
 
 
 def get_major_version(version: Tuple[int, int, int, str, int] | None = None) -> str:
@@ -88,9 +86,8 @@ def get_major_version(version: Tuple[int, int, int, str, int] | None = None) -> 
     Returns:
         Major version string (e.g., "5.2")
     """
-    if version is None:
-        version = VERSION
-    major, minor, _, _, _ = version
+    v = version if version is not None else VERSION
+    major, minor, _, _, _ = v
     return f"{major}.{minor}"
 
 
@@ -105,9 +102,8 @@ def get_documentation_status(version: Tuple[int, int, int, str, int] | None) -> 
     Returns:
         Documentation status string
     """
-    if version is None:
-        version = VERSION
-    _, _, _, releaselevel, _ = version
+    v = version if version is not None else VERSION
+    _, _, _, releaselevel, _ = v
     
     if releaselevel == "alpha":
         return "under development"
