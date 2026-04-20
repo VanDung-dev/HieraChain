@@ -12,7 +12,7 @@ and the network transport (ZeroMQ). It handles:
 import zmq
 import zmq.auth
 import logging
-from typing import Any
+from typing import Any, cast
 
 from hierachain.config.settings import get_settings
 from hierachain.network.zmq_transport import ZmqNode
@@ -135,7 +135,9 @@ def validate_msp_from_message(
         )
         return False
 
-    if not verify_msp_certificate(msp, identity_mgr, cert_id, sender_msp_id):
+    if not verify_msp_certificate(
+        msp, identity_mgr, cast(str, cert_id), cast(str, sender_msp_id)
+    ):
         logger.warning(
             "Handshake rejected from %s: "
             "Invalid MSP certificate '%s'.",
@@ -158,14 +160,16 @@ def validate_handshake_signature_from_message(
 
     if sender_public_key and signature:
         handshake_data = {k: v for k, v in message.items() if k != "signature"}
-        if not verify_handshake_signature(handshake_data, signature, sender_public_key):
+        if not verify_handshake_signature(
+            handshake_data, cast(str, signature), cast(str, sender_public_key)
+        ):
             logger.warning(
                 "Handshake rejected from %s: Invalid cryptographic signature.",
                 sender_id,
             )
             return False
 
-        peer_public_keys[sender_id] = sender_public_key
+        peer_public_keys[sender_id] = cast(str, sender_public_key)
         return True
 
     if require_signatures:
@@ -199,8 +203,8 @@ def register_dynamic_peer(
     )
     transport.register_peer(
         sender_id,
-        return_addr,
-        public_key=transport_key.encode("utf-8"),
+        cast(str, return_addr),
+        public_key=cast(str, transport_key).encode("utf-8"),
     )
 
 
@@ -464,7 +468,9 @@ class SecureConnectionManager:
 
         if sender_public_key and signature:
             ack_data = {k: v for k, v in message.items() if k != "signature"}
-            if not verify_handshake_signature(ack_data, signature, sender_public_key):
+            if not verify_handshake_signature(
+                ack_data, cast(str, signature), cast(str, sender_public_key)
+            ):
                 logger.warning(
                     "Handshake ACK from %s has invalid signature, rejecting.",
                     sender_id,
@@ -472,7 +478,7 @@ class SecureConnectionManager:
                 return
 
             # Store verified public key
-            self.peer_public_keys[sender_id] = sender_public_key
+            self.peer_public_keys[sender_id] = cast(str, sender_public_key)
         elif self.require_signatures:
             logger.warning(
                 "Handshake ACK from %s missing "

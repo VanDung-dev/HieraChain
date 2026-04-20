@@ -15,7 +15,7 @@ import json
 import time
 import uuid
 import logging
-from typing import Any
+from typing import Any, cast
 
 from hierachain.security.security_utils import KeyPair, verify_signature
 
@@ -105,12 +105,23 @@ def verify_message(message: dict[str, Any], public_key_hex: str) -> bool:
         sender_id = message.get("sender_id")
         signature = message.get("signature")
 
-        if any(v is None for v in [payload, ts, nonce, sender_id, signature]):
+        if (
+            payload is None
+            or ts is None
+            or nonce is None
+            or sender_id is None
+            or signature is None
+        ):
             logger.warning("Message missing required fields for verification")
             return False
 
-        signable = create_signable_payload(payload, ts, nonce, sender_id)
-        return verify_signature(public_key_hex, signable, signature)
+        signable = create_signable_payload(
+            cast(dict[str, Any], payload),
+            cast(float, ts),
+            cast(str, nonce),
+            cast(str, sender_id)
+        )
+        return verify_signature(public_key_hex, signable, cast(str, signature))
 
     except Exception as e:
         logger.error("Message verification failed: %s", e)

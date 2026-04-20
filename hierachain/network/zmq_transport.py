@@ -12,9 +12,10 @@ import zmq
 import zmq.asyncio
 import json
 import asyncio
+import inspect
 import time
 import logging
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 logger = logging.getLogger(__name__)
 
@@ -82,16 +83,17 @@ class ZmqNode:
     async def start(self) -> None:
         """Start the node: bind listener and start receiver loop."""
         try:
-            self.router = self.ctx.socket(zmq.ROUTER)
-            self.router.setsockopt(zmq.IDENTITY, self.node_id.encode('utf-8'))
-            
+            router = self.ctx.socket(zmq.ROUTER)
+            self.router = router
+            router.setsockopt(zmq.IDENTITY, self.node_id.encode('utf-8'))
+
             # Enable CurveZMQ for Server (ROUTER)
             if self.server_secret:
-                self.router.setsockopt(zmq.CURVE_SERVER, 1)
-                self.router.setsockopt(zmq.CURVE_SECRETKEY, self.server_secret)
+                router.setsockopt(zmq.CURVE_SERVER, 1)
+                router.setsockopt(zmq.CURVE_SECRETKEY, self.server_secret)
                 logger.info("Node %s: Security Enabled (CurveZMQ Server)", self.node_id)
-            
-            self.router.bind(self.address)
+
+            router.bind(self.address)
             logger.info("Node %s listening on %s", self.node_id, self.address)
             
             # Start receiver loop in background
@@ -175,14 +177,15 @@ def _is_valid_replay(node: ZmqNode, message_data: dict[str, Any]) -> bool:
         return False
 
     now = time.time()
+    ts_val = float(cast(Any, timestamp))
 
-    if abs(now - timestamp) > node.replay_tolerance:
+    if abs(now - ts_val) > node.replay_tolerance:
         logger.warning(
-            "Message timestamp out of tolerance: %s (now=%s)", timestamp, now
+            "Message timestamp out of tolerance: %s (now=%s)", ts_val, now
         )
         return False
 
-    entry = (timestamp, nonce)
+    entry = (ts_val, str(nonce))
     if entry in node.replay_buffer:
         logger.warning("Replay detected: %s", nonce)
         return False
@@ -208,7 +211,7 @@ async def _get_or_create_dealer(node: ZmqNode, peer_id: str) -> zmq.asyncio.Sock
     socket.setsockopt(zmq.IDENTITY, node.node_id.encode('utf-8'))
 
     if node.server_secret and node.server_public and peer_public_key:
-        socket.setsockopt(zmq.CURVE_SERVERKEY, peer_public_key)
+        socket.setsockopt(zmq.CURVE_SERVERKEY, cast(bytes, peer_public_key))
         socket.setsockopt(zmq.CURVE_PUBLICKEY, node.server_public)
         socket.setsockopt(zmq.CURVE_SECRETKEY, node.server_secret)
 
@@ -282,7 +285,7 @@ async def _process_message_data(
         return
 
     try:
-        if asyncio.iscoroutinefunction(handler):
+        if inspect.iscoroutinefunction(handler):
             await handler(message_data, sender_id)
         else:
             handler(message_data, sender_id)

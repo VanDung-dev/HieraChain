@@ -224,8 +224,9 @@ class NetworkClientSync:
 
     def __enter__(self) -> NetworkClientSync:
         """Context manager entry."""
-        self._loop = asyncio.new_event_loop()
-        self._loop.run_until_complete(self._async_client.start())
+        loop = asyncio.new_event_loop()
+        self._loop = loop
+        loop.run_until_complete(self._async_client.start())
         return self
 
     def __exit__(
