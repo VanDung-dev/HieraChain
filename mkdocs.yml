@@ -83,6 +83,7 @@ nav:
   - Modules:
       - Core: modules/core.md
       - Hierarchical: modules/hierarchical.md
+      - Consensus: modules/consensus.md
       - Security: modules/security.md
       - API: modules/api.md
       - Storage: modules/storage.md
@@ -98,6 +99,13 @@ nav:
       - CLI: modules/cli.md
       - SDK: modules/sdk.md
       - Units: modules/units.md
+  - Hệ thống Bảo mật:
+      - Authorization & Access Control: security/authorization-access-control.md
+      - Lockdown & Logging: security/lockdown-logging.md
+      - Fault-tolerance & Integrity: security/fault-tolerance-integrity.md
+      - Risk Analyzer: security/risk-analyzer.md
+      - Encryption & Keys: security/encryption-keys.md
+      - Decentralized Zero-Knowledge Proofs: security/decentralized-zkp.md
   - Cơ chế đồng thuận:
       - Base Consensus: consensus/base_consensus.md
       - Proof of Authority: consensus/poa.md
