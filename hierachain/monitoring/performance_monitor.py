@@ -132,10 +132,10 @@ def _collect_disk_psutil() -> dict[str, float]:
 
     if disk_io:
         metrics.update({
-            'disk_read_bytes': disk_io.read_bytes,
-            'disk_write_bytes': disk_io.write_bytes,
-            'disk_read_count': disk_io.read_count,
-            'disk_write_count': disk_io.write_count
+            'disk_read_bytes': float(disk_io.read_bytes),
+            'disk_write_bytes': float(disk_io.write_bytes),
+            'disk_read_count': float(disk_io.read_count),
+            'disk_write_count': float(disk_io.write_count)
         })
 
     return metrics
@@ -147,11 +147,11 @@ def _collect_network_psutil() -> dict[str, float]:
     network_connections = len(psutil.net_connections())
 
     return {
-        'network_bytes_sent': network_io.bytes_sent,
-        'network_bytes_recv': network_io.bytes_recv,
-        'network_packets_sent': network_io.packets_sent,
-        'network_packets_recv': network_io.packets_recv,
-        'network_connections_count': network_connections
+        'network_bytes_sent': float(network_io.bytes_sent),
+        'network_bytes_recv': float(network_io.bytes_recv),
+        'network_packets_sent': float(network_io.packets_sent),
+        'network_packets_recv': float(network_io.packets_recv),
+        'network_connections_count': float(network_connections)
     }
 
 
@@ -166,11 +166,12 @@ class SystemMetricsCollector:
     def collect_cpu_metrics(self) -> dict[str, float]:
         """Collect CPU usage metrics"""
         try:
+            cpu_count = psutil.cpu_count()
             return {
-                'cpu_usage_total': psutil.cpu_percent(interval=0.1),
-                'cpu_usage_process': self.process.cpu_percent(),
-                'cpu_count': psutil.cpu_count(),
-                'load_average_1m': (
+                'cpu_usage_total': float(psutil.cpu_percent(interval=0.1)),
+                'cpu_usage_process': float(self.process.cpu_percent()),
+                'cpu_count': float(cpu_count if cpu_count is not None else 0),
+                'load_average_1m': float(
                     psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0.0
                 )
             }
@@ -192,12 +193,12 @@ class SystemMetricsCollector:
         process_memory = self.process.memory_info()
         
         return {
-            'memory_usage_percent': virtual_memory.percent,
-            'memory_total': virtual_memory.total,
-            'memory_available': virtual_memory.available,
-            'memory_used': virtual_memory.used,
-            'process_memory_rss': process_memory.rss,
-            'process_memory_vms': process_memory.vms
+            'memory_usage_percent': float(virtual_memory.percent),
+            'memory_total': float(virtual_memory.total),
+            'memory_available': float(virtual_memory.available),
+            'memory_used': float(virtual_memory.used),
+            'process_memory_rss': float(process_memory.rss),
+            'process_memory_vms': float(process_memory.vms)
         }
 
     def collect_disk_metrics(self) -> dict[str, float]:
@@ -557,13 +558,14 @@ class PerformanceMonitor:
         self.monitoring_active = True
         self.shutdown_event.clear()
         
-        self.monitoring_thread = threading.Thread(
+        thread = threading.Thread(
             target=_monitoring_loop,
             name="PerformanceMonitor",
             args=(self,),
         )
-        self.monitoring_thread.daemon = True
-        self.monitoring_thread.start()
+        thread.daemon = True
+        self.monitoring_thread = thread
+        thread.start()
         
         self.logger.info("Performance monitoring started")
     

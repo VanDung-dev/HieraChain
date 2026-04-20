@@ -19,7 +19,7 @@ Usage (in request processing code)::
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,11 @@ def _import_prometheus() -> Any:
 
 _prom = _import_prometheus()
 
+
+_REQUEST_COUNTER: Any | None = None
+_LATENCY_HISTOGRAM: Any | None = None
+_EVENTS_COUNTER: Any | None = None
+_BLOCKS_COUNTER: Any | None = None
 
 if _prom is not None:
     _REQUEST_COUNTER = _prom.Counter(
@@ -62,11 +67,6 @@ if _prom is not None:
         "Total blocks created across all chains",
         ["chain_id"],
     )
-else:
-    _REQUEST_COUNTER = None
-    _LATENCY_HISTOGRAM = None
-    _EVENTS_COUNTER = None
-    _BLOCKS_COUNTER = None
 
 
 class PrometheusMetrics:
@@ -88,24 +88,28 @@ class PrometheusMetrics:
             status:  HTTP status code.
             latency: Request duration in seconds.
         """
-        if _REQUEST_COUNTER is not None:
-            _REQUEST_COUNTER.labels(
+        counter = _REQUEST_COUNTER
+        if counter is not None:
+            cast(Any, counter).labels(
                 method=method, path=path, status=str(status)
             ).inc()
-        if _LATENCY_HISTOGRAM is not None:
-            _LATENCY_HISTOGRAM.labels(method=method, path=path).observe(latency)
+        histogram = _LATENCY_HISTOGRAM
+        if histogram is not None:
+            cast(Any, histogram).labels(method=method, path=path).observe(latency)
 
     @staticmethod
     def inc_events_submitted(chain_id: str = "unknown") -> None:
         """Increment the events-submitted counter for a chain."""
-        if _EVENTS_COUNTER is not None:
-            _EVENTS_COUNTER.labels(chain_id=chain_id).inc()
+        counter = _EVENTS_COUNTER
+        if counter is not None:
+            cast(Any, counter).labels(chain_id=chain_id).inc()
 
     @staticmethod
     def inc_blocks_created(chain_id: str = "unknown") -> None:
         """Increment the blocks-created counter for a chain."""
-        if _BLOCKS_COUNTER is not None:
-            _BLOCKS_COUNTER.labels(chain_id=chain_id).inc()
+        counter = _BLOCKS_COUNTER
+        if counter is not None:
+            cast(Any, counter).labels(chain_id=chain_id).inc()
 
     @property
     def available(self) -> bool:

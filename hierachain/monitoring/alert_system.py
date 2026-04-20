@@ -12,7 +12,7 @@ import threading
 import smtplib
 import json
 import statistics
-from typing import Any, Tuple
+from typing import Any, Tuple, cast
 from dataclasses import dataclass, asdict
 from enum import Enum
 from email.mime.text import MIMEText
@@ -284,15 +284,16 @@ class WebhookNotifier:
         
     def send_alert(self, alert: Alert) -> bool:
         """Send alert via webhook"""
-        if not self.enabled or not self.webhook_url:
+        webhook_url = self.webhook_url
+        if not self.enabled or not webhook_url:
             return False
         
         try:
-            import requests
+            import httpx
             
             payload = alert.to_dict()
-            response = requests.post(
-                self.webhook_url,
+            response = httpx.post(
+                cast(str, webhook_url),
                 json=payload,
                 headers=self.headers,
                 timeout=10
@@ -637,9 +638,13 @@ def _trim_alert_history(manager: AlertManager) -> None:
 
 def _update_alert_stats(manager: AlertManager, alert: Alert) -> None:
     """Update alert statistics"""
-    manager.stats['total_alerts'] += 1
-    manager.stats['alerts_by_severity'][alert.severity.value] += 1
-    manager.stats['alerts_by_category'][alert.category.value] += 1
+    manager.stats['total_alerts'] = cast(int, manager.stats['total_alerts']) + 1
+    
+    severity_stats = cast(defaultdict, manager.stats['alerts_by_severity'])
+    severity_stats[alert.severity.value] += 1
+    
+    category_stats = cast(defaultdict, manager.stats['alerts_by_category'])
+    category_stats[alert.category.value] += 1
 
 
 def _schedule_alert_escalation(
