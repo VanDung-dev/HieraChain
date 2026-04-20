@@ -108,11 +108,15 @@ class ArrowClient:
         
         # 3. Send Message (Length + Data)
         length = len(ipc_bytes)
+        sock = self.sock
+        if sock is None:
+            raise ConnectionError("Socket not connected after connection attempt")
+            
         try:
             # Send 4-byte length (Big Endian)
-            self.sock.sendall(struct.pack('>I', length))
+            sock.sendall(struct.pack('>I', length))
             # Send payload
-            self.sock.sendall(ipc_bytes)
+            sock.sendall(ipc_bytes)
             
             # 4. Receive Response
             # Read 4-byte length
@@ -132,9 +136,13 @@ class ArrowClient:
 
     def _recv_all(self, n: int) -> bytearray:
         """Helper to receive exactly n bytes."""
+        sock = self.sock
+        if sock is None:
+            raise ConnectionError("Socket not connected")
+            
         data = bytearray()
         while len(data) < n:
-            packet = self.sock.recv(n - len(data))
+            packet = sock.recv(n - len(data))
             if not packet:
                 raise ConnectionError("Socket connection closed unexpectedly")
             data.extend(packet)

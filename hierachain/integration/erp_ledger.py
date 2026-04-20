@@ -290,8 +290,11 @@ class ERPIntegrationLedger:
             
             adapter = adapter_class(profile.get("config", {}))
             
+            # Use local non-nullable variable for Mypy
+            sync_profile = profile
+            
             def sync_task():
-                return self._execute_sync(profile_name, profile, adapter, chain)
+                return self._execute_sync(profile_name, sync_profile, adapter, chain)
             
             # Schedule the task
             task_id = self.sync_scheduler.schedule_task(
@@ -528,7 +531,7 @@ class EventTranslator:
 
 def _handle_complex_rule(erp_event: dict[str, Any], rule: dict[str, Any]) -> Any:
     """Handle a complex mapping rule with potential transformer"""
-    source_path = rule.get("source_path")
+    source_path = str(rule.get("source_path", ""))
     if not source_path:
         return None
         
