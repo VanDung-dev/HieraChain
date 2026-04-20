@@ -45,14 +45,14 @@ def _build_block_model(block_data: dict[str, Any]) -> BlockModel:
         previous_hash=block_data['previous_hash'],
         timestamp=block_data['timestamp'],
         metadata_json=metadata,
-        chain_name=block_data.get('chain_name')
+        chain_name=str(block_data.get('chain_name', ''))
     )
 
 
 def _build_event_models(block_data: dict[str, Any]) -> list[EventModel]:
     """Create a list of EventModel instances from block data dictionary."""
     block_hash = block_data['hash']
-    chain_name = block_data.get('chain_name')
+    chain_name = str(block_data.get('chain_name', ''))
 
     events = []
     for event_data in block_data.get('events', []):

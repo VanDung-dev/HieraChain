@@ -54,10 +54,10 @@ class WorldState:
     def _apply_event_to_state(self, current_state: dict, event: dict) -> dict:
         """Apply a single event to the current state."""
         event_type = event.get("event")
-        handler = self._EVENT_HANDLERS.get(event_type)
-        
-        if handler:
-            current_state.update(handler(event))
+        if isinstance(event_type, str):
+            handler = self._EVENT_HANDLERS.get(event_type)
+            if handler:
+                current_state.update(handler(event))
         
         current_state["last_updated"] = event["timestamp"]
         return current_state
