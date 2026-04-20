@@ -233,12 +233,12 @@ def _cleanup_old_backups(metadata: dict, retention_period: int, remove_backup):
 def _find_backup_file(backup_id: str, metadata: dict, base_dir: str = "backups/keys") -> str | None:
     """Find the backup file for given backup ID."""
     entry = metadata.get(backup_id)
-    if not entry:
+    if not isinstance(entry, dict):
         return None
 
     primary_path = entry.get("file_path")
-    if primary_path and os.path.exists(primary_path):
-        return primary_path
+    if isinstance(primary_path, (str, os.PathLike)) and os.path.exists(primary_path):
+        return str(primary_path)
 
     for location in entry.get("locations", []):
         file_path = os.path.join(base_dir, location, f"{backup_id}.enc")
@@ -555,7 +555,7 @@ class KeyBackupManager:
         
         # Remove from primary backup directory
         primary_file = metadata.get("file_path")
-        if primary_file and os.path.exists(primary_file):
+        if isinstance(primary_file, (str, os.PathLike)) and os.path.exists(primary_file):
             os.remove(primary_file)
         
         # Remove from metadata

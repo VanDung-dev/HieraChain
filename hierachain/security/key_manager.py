@@ -10,6 +10,7 @@ import time
 import json
 import hashlib
 import secrets
+from typing import cast
 
 from hierachain.security.secure_logging import SecureLogger
 
@@ -270,8 +271,12 @@ class KeyManager:
         if not cached:
             return None
         
-        if time.time() - cached['cached_at'] < cached['ttl']:
-            return cached['data']
+        cached_at = cached.get('cached_at')
+        ttl = cached.get('ttl')
+        
+        if isinstance(cached_at, (int, float)) and isinstance(ttl, (int, float)):
+            if time.time() - cached_at < ttl:
+                return cast(dict, cached.get('data'))
         
         # Cache expired
         del self.key_cache[api_key]
@@ -295,7 +300,9 @@ class KeyManager:
         # Redis-like storage
         try:
             data = self.storage.get(f"api_key:{api_key}")
-            return json.loads(data) if data else None
+            if isinstance(data, (str, bytes, bytearray)):
+                return json.loads(data)
+            return None
         except (json.JSONDecodeError, TypeError) as e:
             logger.error("Error decoding key data from storage", error=str(e))
             return None

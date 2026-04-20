@@ -147,13 +147,21 @@ class PolicyCondition:
                 case ComparisonOperator.LESS_OR_EQUAL:
                     return attribute_value <= self.value
                 case ComparisonOperator.CONTAINS:
-                    return self.value in attribute_value
+                    if isinstance(attribute_value, (str, list, dict, set)):
+                        return self.value in attribute_value
+                    return False
                 case ComparisonOperator.NOT_CONTAINS:
-                    return self.value not in attribute_value
+                    if isinstance(attribute_value, (str, list, dict, set)):
+                        return self.value not in attribute_value
+                    return True
                 case ComparisonOperator.IN:
-                    return attribute_value in self.value
+                    if isinstance(self.value, (str, list)):
+                        return attribute_value in self.value
+                    return False
                 case ComparisonOperator.NOT_IN:
-                    return attribute_value not in self.value
+                    if isinstance(self.value, (str, list)):
+                        return attribute_value not in self.value
+                    return True
                 case ComparisonOperator.MATCHES:
                     # Use anchors for full match to prevent bypass
                     pattern = str(self.value)

@@ -447,7 +447,10 @@ def get_zk_prover() -> ZKProver:
     global _default_prover
     if _default_prover is None:
         _default_prover = ZKProver()
-    return _default_prover
+    
+    prover = _default_prover
+    assert prover is not None
+    return prover
 
 
 def reset_zk_prover() -> None:

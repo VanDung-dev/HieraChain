@@ -117,11 +117,11 @@ class MasterKeyProvider:
                 - env_var: Name of environment variable
                 - environment: Current environment ("dev", "product", "test")
         """
-        config = config or {}
-        self.source = config.get("source", "auto")
-        self.key_file = config.get("key_file", _DEFAULT_KEY_FILE)
-        self.env_var = config.get("env_var", _ENV_VAR_NAME)
-        self.environment = config.get("environment", "dev")
+        cfg = config or {}
+        self.source = cfg.get("source", "auto")
+        self.key_file = cfg.get("key_file", _DEFAULT_KEY_FILE)
+        self.env_var = cfg.get("env_var", _ENV_VAR_NAME)
+        self.environment = cfg.get("environment", "dev")
         self._master_key: bytes | None = None
 
     def get_master_key(self) -> bytes:
@@ -145,6 +145,7 @@ class MasterKeyProvider:
             # "auto" mode: try env → file → generate
             self._master_key = self._load_auto()
 
+        assert self._master_key is not None
         return self._master_key
 
     def _load_auto(self) -> bytes:

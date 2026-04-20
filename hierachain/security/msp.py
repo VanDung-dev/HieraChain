@@ -260,7 +260,7 @@ class HierarchicalMSP:
             policy=ca_config.get("policy", {})
         )
         self.roles: dict[str, dict[str, Any]] = {}
-        self.policies = OrganizationPolicies()
+        self.policies: OrganizationPolicies = OrganizationPolicies()
         self.audit_log: list[dict[str, Any]] = []
         self.entities: dict[str, dict[str, Any]] = {}
         # Performance optimization flags
@@ -451,7 +451,7 @@ class HierarchicalMSP:
         self,
         role_name: str,
         permissions: list[str],
-        policies: list[str] = None,
+        policy_ids: list[str] | None = None,
         cert_validity_days: int = 365
     ) -> None:
         """
@@ -460,12 +460,12 @@ class HierarchicalMSP:
         Args:
             role_name: Name of the role
             permissions: List of permissions for this role
-            policies: List of policy IDs to apply
+            policy_ids: List of policy IDs to apply
             cert_validity_days: Certificate validity period for this role
         """
         self.roles[role_name] = {
             "permissions": permissions,
-            "policies": policies or [],
+            "policies": policy_ids or [],
             "cert_validity_days": cert_validity_days,
             "created_at": time.time()
         }
@@ -502,7 +502,7 @@ class HierarchicalMSP:
     
     def _initialize_default_roles(self) -> None:
         """Initialize default organizational roles"""
-        default_roles = {
+        default_roles: dict[str, dict[str, Any]] = {
             "admin": {
                 "permissions": [
                     "manage_entities", "view_audit_log", "define_policies",
@@ -531,7 +531,9 @@ class HierarchicalMSP:
                 **role_config,
                 "created_at": time.time()
             }
-            self.policies.assign_role_permissions(role_name, role_config["permissions"])
+            permissions = role_config.get("permissions")
+            if isinstance(permissions, list):
+                self.policies.assign_role_permissions(role_name, permissions)
     
     def _log_event(self, event_type: str, details: dict[str, Any]) -> None:
         """Log an audit event (can be disabled for performance)"""

@@ -221,15 +221,15 @@ class BruteForceProtector:
                 - storage_path: Path for file-based storage (default: "data/brute_force")
                 - redis_url: Redis connection URL (if using redis)
         """
-        config = config or {}
-        self.max_failures = config.get("max_failures", 5)
-        self.lockout_duration = config.get("lockout_duration", 900)
-        self.tracking_window = config.get("tracking_window", 300)
-        
+        cfg = config or {}
+        self.max_failures = cfg.get("max_failures", 5)
+        self.lockout_duration = cfg.get("lockout_duration", 900)
+        self.tracking_window = cfg.get("tracking_window", 300)
+
         # Initialize storage and failure tracking
-        storage_backend = config.get("storage_backend", "file")
-        storage_path = config.get("storage_path", "data/brute_force")
-        redis_url = config.get("redis_url", None)
+        storage_backend = cfg.get("storage_backend", "file")
+        storage_path = cfg.get("storage_path", "data/brute_force")
+        redis_url = cfg.get("redis_url", None)
         
         self._storage = _LockoutStorage(storage_backend, storage_path, redis_url)
         self._tracker = _FailureTracker(self.tracking_window, 60)

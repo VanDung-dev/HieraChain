@@ -133,7 +133,8 @@ class CertificateRevocationList:
 
 def _validate_key_usage(cert: CertificateInfo) -> dict[str, Any]:
     """Validate certificate key usage"""
-    result = {"valid": True, "warnings": []}
+    valid = True
+    warnings: list[str] = []
 
     rules = {
         CertificateType.ROOT_CA: (
@@ -155,13 +156,13 @@ def _validate_key_usage(cert: CertificateInfo) -> dict[str, Any]:
 
     rule = rules.get(cert.certificate_type)
     if not rule:
-        return result
+        return {"valid": valid, "warnings": warnings}
 
     required_usage, checker, warning_message = rule
     if not checker(usage in cert.key_usage for usage in required_usage):
-        result["warnings"].append(warning_message)
+        warnings.append(warning_message)
 
-    return result
+    return {"valid": valid, "warnings": warnings}
 
 
 class CertificateValidator:
@@ -192,50 +193,52 @@ class CertificateValidator:
         Returns:
             Validation result with details
         """
-        validation_result = {
-            "valid": True,
-            "errors": [],
-            "warnings": [],
-            "certificate": cert.subject,
-            "validated_at": time.time()
-        }
+        valid = True
+        errors: list[str] = []
+        warnings: list[str] = []
         
         # Check certificate expiry
         if cert.is_expired():
-            validation_result["valid"] = False
-            validation_result["errors"].append("Certificate has expired")
+            valid = False
+            errors.append("Certificate has expired")
         elif cert.days_until_expiry() <= 30:
-            validation_result["warnings"].append(
+            warnings.append(
                 f"Certificate expires in {cert.days_until_expiry()} days"
             )
         
         # Check if certificate is revoked
         if self.crl.is_revoked(cert.serial_number):
-            validation_result["valid"] = False
-            validation_result["errors"].append("Certificate has been revoked")
+            valid = False
+            errors.append("Certificate has been revoked")
             revocation_info = self.crl.get_revocation_info(cert.serial_number)
             if revocation_info:
-                validation_result["errors"].append(
+                errors.append(
                     f"Revoked on: {revocation_info.get('revocation_date', 'Unknown date')}"
                 )
-                validation_result["errors"].append(
+                errors.append(
                     f"Reason: {revocation_info.get('reason', 'Unspecified')}"
                 )
         
         # Validate certificate chain
         chain_validation = self.validate_certificate_chain(cert)
         if not chain_validation["valid"]:
-            validation_result["valid"] = False
-            validation_result["errors"].extend(chain_validation["errors"])
+            valid = False
+            errors.extend(chain_validation.get("errors", []))
         
-        validation_result["warnings"].extend(chain_validation.get("warnings", []))
+        warnings.extend(chain_validation.get("warnings", []))
         
         # Validate key usage
         key_usage_validation = _validate_key_usage(cert)
         if not key_usage_validation["valid"]:
-            validation_result["warnings"].extend(key_usage_validation["warnings"])
+            warnings.extend(key_usage_validation.get("warnings", []))
         
-        return validation_result
+        return {
+            "valid": valid,
+            "errors": errors,
+            "warnings": warnings,
+            "certificate": cert.subject,
+            "validated_at": time.time()
+        }
     
     def validate_certificate_chain(self, cert: CertificateInfo) -> dict[str, Any]:
         """

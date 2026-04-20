@@ -141,11 +141,14 @@ def _verify_single_item(item: dict[str, Any]) -> bool:
     msg = item.get('message')
     sig = item.get('signature')
     
-    if not pk or not msg or not sig:
+    if not isinstance(pk, str) or not isinstance(sig, str) or msg is None:
         return False
     
     if isinstance(msg, str):
         msg = msg.encode('utf-8')
+    
+    if not isinstance(msg, (bytes, bytearray)):
+        return False
     
     return verify_signature_standalone(pk, msg, sig)
 

@@ -80,10 +80,14 @@ class ChecksumValidator:
         if base_path is None:
             # Default to hierachain package parent directory
             current_file = Path(__file__).resolve()
-            base_path = str(current_file.parent.parent.parent)
+            self.base_path = current_file.parent.parent.parent
+        else:
+            self.base_path = Path(base_path)
 
-        self.base_path = Path(base_path)
-        self.manifest_path = Path(manifest_path or self.base_path / self.MANIFEST_FILE)
+        if manifest_path:
+            self.manifest_path = Path(manifest_path)
+        else:
+            self.manifest_path = self.base_path / self.MANIFEST_FILE
 
         # Directories to verify
         self.protected_dirs = ["hierachain/security", "hierachain/core"]
