@@ -306,12 +306,13 @@ class MultiOrgNetwork:
             
             # System channel includes all organizations
             all_orgs = list(self.organizations.values())
-            self.system_channel = ApplicationChannel(
+            channel = ApplicationChannel(
                 channel_id="system-channel",
                 organizations=all_orgs,
                 config=config
             )
-            return self.system_channel
+            self.system_channel = channel
+            return channel
     
     def create_application_channel(
         self, channel_id: str, participating_orgs: list[str], config: dict[str, Any]

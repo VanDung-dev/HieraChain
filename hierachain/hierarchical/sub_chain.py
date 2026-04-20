@@ -54,7 +54,10 @@ def _generate_zk_proof(name: str, chain: list[Any], latest_block: Any) -> bytes 
 def _get_old_state_root(chain: list[Any]) -> str:
     """Get the state root from the previous block."""
     previous_block = chain[-2] if len(chain) > 1 else None
-    return previous_block.merkle_root if previous_block else "genesis"
+    if previous_block is not None:
+        from typing import cast
+        return cast(Any, previous_block).merkle_root
+    return "genesis"
 
 
 def _try_generate_proof(

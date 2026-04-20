@@ -445,10 +445,11 @@ class SubChainRebalancer:
 
         self._stop_monitoring.clear()
         self._status = RebalanceStatus.MONITORING
-        self._monitor_thread = threading.Thread(
+        monitor_thread = threading.Thread(
             target=self._monitoring_loop, daemon=True
         )
-        self._monitor_thread.start()
+        self._monitor_thread = monitor_thread
+        monitor_thread.start()
         logger.info("Started rebalancer monitoring")
 
     def stop_monitoring(self) -> None:
@@ -612,8 +613,10 @@ class SubChainRebalancer:
                     self.register_subchain(child_id, child)
 
         # Create K8s namespace if manager available
-        if self._k8s_manager:
-            self._k8s_manager.create_namespace(child_id)
+        k8s_manager = self._k8s_manager
+        if k8s_manager is not None:
+            from typing import cast
+            cast(Any, k8s_manager).create_namespace(child_id)
 
         return child
 

@@ -10,7 +10,7 @@ import time
 import logging
 import pyarrow as pa
 import pyarrow.compute as pc
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, cast
 from dataclasses import dataclass
 from enum import Enum
 
@@ -354,7 +354,7 @@ class Channel:
         }
 
         # Event tracking
-        self.event_statistics = {
+        self.event_statistics: dict[str, Any] = {
             "total_events": 0,
             "events_by_type": {},
             "events_by_org": {org_id: 0 for org_id in self.organizations.keys()},
@@ -384,7 +384,7 @@ class Channel:
 
         # Add organization
         self.organizations[organization.org_id] = organization
-        self.event_statistics["events_by_org"][organization.org_id] = 0
+        cast(dict[str, int], self.event_statistics["events_by_org"])[organization.org_id] = 0
 
         # Log channel modification event
         self._log_channel_event(
@@ -501,11 +501,11 @@ class Channel:
 
         # Update statistics
         self.event_statistics["total_events"] += 1
-        self.event_statistics["events_by_org"][submitter_org_id] += 1
+        cast(dict[str, int], self.event_statistics["events_by_org"])[submitter_org_id] += 1
 
         event_type = event.get("event", "unknown")
-        self.event_statistics["events_by_type"][event_type] = (
-            self.event_statistics["events_by_type"].get(event_type, 0) + 1
+        cast(dict[str, int], self.event_statistics["events_by_type"])[event_type] = (
+            cast(dict[str, int], self.event_statistics["events_by_type"]).get(event_type, 0) + 1
         )
         self.last_activity = time.time()
         return True
@@ -565,7 +565,7 @@ class Channel:
             "name": org.name,
             "msp_id": org.msp_id,
             "roles": list(org.roles),
-            "events_submitted": self.event_statistics["events_by_org"].get(org_id, 0),
+            "events_submitted": cast(dict[str, int], self.event_statistics["events_by_org"]).get(org_id, 0),
         }
 
     def update_channel_policy(

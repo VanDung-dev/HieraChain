@@ -9,7 +9,7 @@ This significantly enhances data privacy in enterprise collaborations.
 import time
 import hashlib
 import json
-from typing import Any
+from typing import Any, cast
 from dataclasses import dataclass
 from enum import Enum
 from cryptography.fernet import Fernet, InvalidToken
@@ -145,7 +145,7 @@ class PrivateCollection:
         self.current_block_height = 0
 
         # Configuration settings
-        self.metadata = {
+        self.metadata: dict[str, Any] = {
             "block_to_purge": config.get("block_to_purge", 1000),
             "endorsement_policy": EndorsementPolicy(
                 config.get("endorsement_policy", "MAJORITY")
@@ -162,7 +162,7 @@ class PrivateCollection:
         self.cipher_suite = Fernet(self.encryption_key)
 
         # Statistics
-        self.statistics = {
+        self.statistics: dict[str, Any] = {
             "total_entries": 0,
             "entries_by_org": {org_id: 0 for org_id in organizations.keys()},
             "purged_entries": 0,
@@ -226,7 +226,7 @@ class PrivateCollection:
 
             # Update statistics
             self.statistics["total_entries"] += 1
-            self.statistics["entries_by_org"][submitter_org_id] += 1
+            cast(dict[str, int], self.statistics["entries_by_org"])[submitter_org_id] += 1
             self.last_activity = time.time()
 
             return True
@@ -315,7 +315,7 @@ class PrivateCollection:
             return None
 
         # Return filtered metadata (remove sensitive fields)
-        filtered_metadata = {
+        filtered_metadata: dict[str, Any] = {
             "timestamp": entry.timestamp,
             "block_height": entry.block_height,
             "hash_value": entry.hash_value,
@@ -382,7 +382,7 @@ class PrivateCollection:
             return False
 
         self.organizations[org_id] = organization
-        self.statistics["entries_by_org"][org_id] = 0
+        cast(dict[str, int], self.statistics["entries_by_org"])[org_id] = 0
 
         return True
 
@@ -403,8 +403,8 @@ class PrivateCollection:
         self.organizations.pop(org_id)
 
         # Clean up statistics
-        if org_id in self.statistics["entries_by_org"]:
-            del self.statistics["entries_by_org"][org_id]
+        if org_id in cast(dict[str, int], self.statistics["entries_by_org"]):
+            del cast(dict[str, int], self.statistics["entries_by_org"])[org_id]
 
         return True
 
@@ -446,7 +446,7 @@ class PrivateCollection:
         elif policy == EndorsementPolicy.ANY:
             return len(valid_endorsements) > 0
         elif policy == EndorsementPolicy.SPECIFIC_COUNT:
-            min_endorsements = self.metadata.get("min_endorsements", 2)
+            min_endorsements = cast(int, self.metadata.get("min_endorsements", 2))
             return len(valid_endorsements) >= min_endorsements
         else:
             return len(valid_endorsements) >= 1
@@ -461,10 +461,10 @@ class PrivateCollection:
         Returns:
             True if entry should be purged
         """
-        block_to_purge = self.metadata["block_to_purge"]
+        block_to_purge = cast(int, self.metadata["block_to_purge"])
         if block_to_purge <= 0:
             return False  # No purging configured
-
+ 
         blocks_since_creation = self.current_block_height - entry.block_height
         return blocks_since_creation >= block_to_purge
 
@@ -491,7 +491,7 @@ class PrivateCollection:
         Returns:
             Number of entries purged
         """
-        if self.metadata["block_to_purge"] <= 0:
+        if cast(int, self.metadata["block_to_purge"]) <= 0:
             return 0
 
         keys_to_purge = []

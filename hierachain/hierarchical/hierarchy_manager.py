@@ -555,7 +555,11 @@ class HierarchyManager:
 
         if self.network is None:
             self.network = MultiOrgNetwork()
-        self.network.add_organization(org)
+        
+        # Narrow type for static analysis
+        network = self.network
+        if network is not None:
+            network.add_organization(org)
         return org
 
     def get_organization(self, org_id: str) -> Any:

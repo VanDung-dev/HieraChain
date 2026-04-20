@@ -16,7 +16,7 @@ from hierachain.consensus.proof_of_federation import ProofOfFederation
 from hierachain.core.utils import (
     sanitize_metadata_for_main_chain, validate_proof_metadata,
 )
-from hierachain.core.block import Block
+from hierachain.core.block import Block, table_to_list_of_dicts
 from hierachain.config.settings import settings
 from hierachain.security.verify.zk_verifier import ZKVerifier, ZKVerificationError
 
@@ -133,7 +133,7 @@ def _verify_proof_in_main_chain(
             events = (
                 block.to_event_list()
                 if hasattr(block, "to_event_list")
-                else block.events
+                else table_to_list_of_dicts(block.events)
             )
             if _find_proof_in_events(events, proof_hash, sub_chain_name):
                 return True
@@ -155,7 +155,7 @@ def _get_proofs_by_sub_chain_from_main_chain(
             events = (
                 block.to_event_list()
                 if hasattr(block, "to_event_list")
-                else block.events
+                else table_to_list_of_dicts(block.events)
             )
             proofs.extend(_filter_proofs_by_sub_chain(events, sub_chain_name))
 
