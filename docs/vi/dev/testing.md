@@ -44,70 +44,77 @@ python -m pytest tests -v
 
 ## Kiểm thử chịu tải (Stress Testing)
 
-### Docker
+### Docker Stress Testing
 
-Chạy stress tests trong container (4 node, 1 CPU, 1GiB RAM):
+Run stress tests in Docker containers with 4 HieraChain nodes (1 CPU, 1GiB RAM each):
 
-1. **Build & Chạy (có báo cáo HTML):**
+* Build and run stress tests with HTML report:
 
     ```bash
     docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
     ```
 
-2. **Chạy test mạng thực (gửi request HTTP):**
+* Run real network stress tests (sends actual HTTP requests to nodes):
 
     ```bash
     docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/test_real_network.py -v -s
     ```
 
-3. **Dọn dẹp:**
+* Run without HTML report:
+
+    ```bash
+    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester
+    ```
+
+* Stop and clean up containers:
 
     ```bash
     docker compose -f docker/docker-compose.test.yml down --remove-orphans
     ```
 
-Báo cáo được lưu tại `log/report/`.
+Reports are saved to `log/report/` directory.
 
-### Kubernetes
+### Kubernetes Stress Testing
 
-!!! tip "Khuyến nghị"
-    Dùng Kubernetes cho môi trường giống production.
+Run stress tests in Kubernetes
+
+> **Recommendation:** Use Docker Compose for local dev. Use Kubernetes when you need a production-like environment.
 
 **Quick Start:**
 
-1. **Build & Deploy**
+```bash
+# Build image
+docker build --no-cache -t hierachain:latest -f docker/Dockerfile .
 
-    ```bash
-    docker build --no-cache -t hierachain:latest -f docker/Dockerfile .
-    kind create cluster --name hiera-cluster
-    kind load docker-image hierachain:latest --name hiera-cluster
-    kubectl apply -k docker/k8s/
-    ```
+# Create Kind cluster
+kind create cluster --config docker/kind-config.yaml
 
-2. **Đợi pods sẵn sàng**
+# Resource limit for each Node of K8s (1 CPU, 1GiB RAM)
+docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-control-plane
+docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker
+docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker2
+docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker3
 
-    ```bash
-    kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout=120s
-    ```
+# Load image into cluster
+kind load docker-image hierachain:latest --name hiera-cluster
+kubectl apply -k docker/k8s/
 
-3. **Expose API** (nếu cần test manual)
+# Wait for pods to be ready
+kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout=120s
 
-    ```bash
-    kubectl port-forward service/hierachain-api 32661:2661 -n hierachain --address 0.0.0.0
-    ```
+# Expose the API to local host
+kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
 
-4. **Chạy stress test**
+# Test API  
+curl http://localhost:2661/api/v1/health
 
-    ```bash
-    docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
-    ```
+# Run stress test
+docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
 
-5. **Dọn dẹp**
-
-    ```bash
-    kubectl delete -k docker/k8s/
-    kind delete cluster --name hiera-cluster
-    ```
+# Cleanup
+kubectl delete -k docker/k8s/
+kind delete cluster --name hiera-cluster
+```
 
 ## Công cụ phát triển (Developer Scripts)
 
