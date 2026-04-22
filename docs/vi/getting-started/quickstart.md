@@ -10,17 +10,17 @@ Tài liệu này tóm tắt các bước tối thiểu để bạn chạy thử 
 
 ## Cài đặt nhanh
 
-Để bắt đầu nhanh nhất, bạn chỉ cần cài đặt gói qua PIP:
+Để bắt đầu nhanh nhất, cài đặt HieraChain với tất cả dependencies (bao gồm dev) bằng một trong hai cách:
 
 ```bash
-# Cách 1: Cài đặt qua PIP truyền thống
-pip install .
-
-# Cách 2: Sử dụng uv (Khuyên dùng)
+# Cách 1: Sử dụng uv (khuyên dùng - nhanh nhất)
 uv sync
+
+# Cách 2: Sử dụng pip
+pip install -e .
 ```
 
-Nếu bạn muốn phát triển mã nguồn, vui lòng xem hướng dẫn [Cài đặt chi tiết](install.md).
+> **Lưu ý:** Để biết thêm chi tiết về cài đặt, xem [Cài đặt chi tiết](install.md).
 
 ## Khởi động API server
 

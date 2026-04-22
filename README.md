@@ -59,8 +59,7 @@ python -m venv venv
 source venv/bin/activate  # Linux/macOS (or venv\Scripts\activate on Windows)
 
 # Install dependencies and project in dev mode
-pip install -r requirements.txt
-pip install -e .
+pip install -e .[dev]
 ```
 
 *Modern fast method with `uv` (recommended):*

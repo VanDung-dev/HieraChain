@@ -59,8 +59,7 @@ python -m venv venv
 source venv/bin/activate  # Linux/macOS (hoặc venv\Scripts\activate trên Windows)
 
 # Cài đặt dependencies và dự án ở chế độ dev
-pip install -r requirements.txt
-pip install -e .
+pip install -e .[dev]
 ```
 
 *Phương pháp hiện đại và nhanh với `uv` (khuyên dùng):*

@@ -49,14 +49,8 @@ which python
 #### Using `pip` (traditional method)
 
 ```bash
-# Core dependencies
-pip install -r requirements.txt
-
-# Development & testing dependencies
-pip install -r requirements_dev.txt
-
-# Install the package in development mode
-pip install -e .
+# Install all dependencies (core + dev + test)
+pip install -e ".[dev]"
 ```
 
 #### Using `uv` (recommended, modern fast package manager)

@@ -39,11 +39,17 @@ hrc --help
 
 **Thiết lập dự án với uv:**
 ```bash
-# Tạo môi trường ảo và cài đặt tất cả dependencies (bao gồm dev)
+# Tạo môi trường ảo và đồng bộ dependencies cơ bản
 uv sync
 
-# Hoặc cài đặt thủ công vào môi trường ảo hiện có với các tùy chọn bổ sung:
-# uv pip install -e ".[dev,doc]"
+# Cài đặt kèm theo các nhóm công cụ (extras) cụ thể:
+uv sync --extra dev --extra doc
+
+# Hoặc cài đặt TẤT CẢ extras có trong dự án:
+uv sync --all-extras
+
+# Nếu chỉ muốn cài đặt môi trường production (bỏ qua dev dependencies):
+uv sync --no-dev
 
 # Kích hoạt môi trường ảo
 source .venv/bin/activate  # Linux/macOS
@@ -56,59 +62,66 @@ Nếu bạn muốn đóng góp cho dự án hoặc tùy chỉnh mã nguồn, hã
 
 1. Clone repository và tạo môi trường ảo
 
-```bash
-git clone https://github.com/VanDung-dev/HieraChain.git
-cd HieraChain
-```
-
-Tạo & kích hoạt venv
-
-=== "Linux/macOS"
-
     ```bash
-    python -m venv .venv
-    source .venv/bin/activate
+    git clone https://github.com/VanDung-dev/HieraChain.git
+    cd HieraChain
     ```
-
-=== "Windows (PowerShell)"
-
-    ```powershell
-    python -m venv .venv
-    .venv\Scripts\Activate.ps1
-    ```
+    
+    Tạo & kích hoạt venv
+    
+    === "Linux/macOS"
+    
+        ```bash
+        python -m venv .venv
+        source .venv/bin/activate
+        ```
+    
+    === "Windows (PowerShell)"
+    
+        ```powershell
+        python -m venv .venv
+        .venv\Scripts\Activate.ps1
+        ```
 
 2. Cài dependencies và cài đặt chế độ phát triển
 
-```bash
-# Dependencies tối thiểu
-pip install -r requirements.txt
+    === "Sử dụng UV (Khuyên dùng)"
 
-# Dependencies cho phát triển (tùy chọn)
-pip install -r requirements_dev.txt
+        ```bash
+        # Đồng bộ dependencies cùng với môi trường dev
+        uv sync --extra dev
+        
+        # Hoặc nếu muốn cài thêm doc, test
+        uv sync --all-extras
+        ```
+    
+    === "Sử dụng pip"
 
-# Cài đặt ở chế độ editable
-pip install -e .
-```
+        ```bash
+        # Cài đặt tất cả dependencies (production + dev + test) trong chế độ editable
+        pip install -e ".[dev]"
+        ```
 
-1. Xác minh cài đặt
+3. Xác minh cài đặt
 
-```bash
-# Kiểm tra phiên bản qua importlib.metadata
-python -c "import importlib.metadata as m; print(m.version('HieraChain'))"
-
-# Kiểm tra CLI đã có trong PATH
-hrc --help
-
-# Khởi động API server (tuỳ chọn)
-python -m hierachain.api.server
-```
+    ```bash
+    # Kiểm tra phiên bản qua importlib.metadata
+    python -c "import importlib.metadata as m; print(m.version('HieraChain'))"
+    
+    # Kiểm tra CLI đã có trong PATH
+    hrc --help
+    
+    # Khởi động API server (tuỳ chọn)
+    python -m hierachain.api.server
+    ```
 
 Nếu server khởi chạy thành công, bạn có thể mở tài liệu tương tác tại: `http://localhost:2661/docs`.
 
 ## Chạy Kiểm thử (Testing)
 
-> [!WARNING]
-> Không nên chạy tất cả các test cùng lúc để tránh xung đột tài nguyên. Khuyên dùng chạy theo từng file hoặc từng thư mục unit/integration.
+!!! warning "Cảnh báo"
+
+    Không nên chạy tất cả các test cùng lúc để tránh xung đột tài nguyên. Khuyên dùng chạy theo từng file hoặc từng thư mục unit/integration.
 
 ```bash
 # Chạy unit tests
@@ -116,6 +129,9 @@ python -m pytest tests/unit -v
 
 # Chạy integration tests
 python -m pytest tests/integration -v
+
+# Chạy scenarios tests
+python -m pytest tests/scenarios -v
 ```
 
 ## Chạy Server
@@ -179,11 +195,19 @@ Dự án sử dụng [Zensical](https://zensical.org/) để build tài liệu.
 
 ### Yêu cầu
 
-Đảm bảo đã cài Zensical:
+Đảm bảo đã cài Zensical (dependencies cho docs):
 
-```bash
-pip install zensical
-```
+=== "Sử dụng UV"
+
+    ```bash
+    uv sync --extra doc
+    ```
+
+=== "Sử dụng pip"
+
+    ```bash
+    pip install -e ".[doc]"
+    ```
 
 ### Chạy Server Tài liệu (Local)
 
