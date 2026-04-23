@@ -8,9 +8,17 @@ namespace: hierachain
 resources:
   - namespace.yaml
   - configmap.yaml
-  - persistent-volumes.yaml
-  - node-deployment.yaml
-  - node-service.yaml
+  # ⭐ Production-ready StatefulSet for nodes (stable identity, ordered deployment)
+  - node-statefulset.yaml
+  # ⭐ Headless + API services for StatefulSet
+  - node-statefulset-service.yaml
+  # Note: persistent-volumes.yaml is NOT needed with volumeClaimTemplates
+  # PVCs are auto-provisioned by StatefulSet: data-hierachain-node-0, -1, -2, -3
+  #
+  # Legacy resources (commented out - use StatefulSet instead):
+  # - node-deployment.yaml        # ❌ Deployment (unstable identity)
+  # - node-service.yaml           # ❌ Services for Deployment
+  # - persistent-volumes.yaml     # ❌ Manual PVCs (replaced by volumeClaimTemplates)
 
 # Optional: include stress-tester for testing
 # - stress-tester.yaml
@@ -26,3 +34,14 @@ images:
   - name: hierachain
     newName: hierachain
     newTag: latest
+
+# Common patches for production (optional)
+# patchesStrategicMerge:
+#   - patch-node-statefulset.yaml
+
+# ConfigMapGenerator for environment-specific configs (optional)
+# configMapGenerator:
+#   - name: hierachain-config-override
+#     behavior: merge
+#     literals:
+#       - LOG_LEVEL=DEBUG

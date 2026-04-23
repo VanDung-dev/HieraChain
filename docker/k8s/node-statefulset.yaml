@@ -1,0 +1,122 @@
+# HieraChain Node StatefulSet
+# Provides stable network identity and ordered deployment for blockchain nodes
+# Uses volumeClaimTemplates for automatic PVC provisioning per pod
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hierachain-node
+  namespace: hierachain
+  labels:
+    app: hierachain
+    component: node
+spec:
+  serviceName: hierachain-node-headless
+  replicas: 4
+  selector:
+    matchLabels:
+      app: hierachain
+      component: node
+  template:
+    metadata:
+      labels:
+        app: hierachain
+        component: node
+    spec:
+      # Allow time for HieraChain "Last Breath" broadcast
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: hierachain
+          image: hierachain:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5001
+              name: node-port
+            - containerPort: 2661
+              name: api-port
+          command: ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_PORT
+              value: "5001"
+            - name: PEERS
+              value: "hierachain-node-0.hierachain-node-headless:5002,hierachain-node-1.hierachain-node-headless:5003,hierachain-node-2.hierachain-node-headless:5004,hierachain-node-3.hierachain-node-headless:5005"
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: LOG_LEVEL
+            - name: DATABASE_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: DATABASE_PATH
+            - name: HRC_API_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_API_HOST
+            - name: HRC_RATE_LIMIT
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_RATE_LIMIT
+            - name: HRC_AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_AUTH_ENABLED
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Graceful shutdown - allows "Last Breath" broadcast
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: hierachain-node-data
+  # VolumeClaimTemplates for automatic PVC provisioning per pod
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app: hierachain
+          component: node
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        # For Docker Desktop, use default storage class
+        # For production, specify appropriate storageClassName
+        # storageClassName: standard

@@ -1,0 +1,51 @@
+# HieraChain Node Services for StatefulSet
+# Headless service for stable DNS: node-0, node-1, node-2, node-3
+# Each pod gets: <pod-name>.<service-name>.<namespace>.svc.cluster.local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hierachain-node-headless
+  namespace: hierachain
+  labels:
+    app: hierachain
+    component: node
+spec:
+  selector:
+    app: hierachain
+    component: node
+  ports:
+    - name: node-port
+      port: 5001
+      targetPort: 5001
+    - name: api-port
+      port: 2661
+      targetPort: 2661
+  clusterIP: None # Headless service - no load balancing, direct pod IPs
+  publishNotReadyAddresses: true # Allow DNS resolution of pods before they're ready
+---
+# LoadBalancer service to expose API externally
+# Access via: kubectl port-forward service/hierachain-api 2661:2661 -n hierachain
+apiVersion: v1
+kind: Service
+metadata:
+  name: hierachain-api
+  namespace: hierachain
+  labels:
+    app: hierachain
+    component: api
+spec:
+  type: NodePort
+  selector:
+    app: hierachain
+    component: node
+  ports:
+    - name: api
+      port: 2661
+      targetPort: 2661
+      nodePort: 32661
+  # Optional: session affinity for sticky connections
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800 # 3 hours
