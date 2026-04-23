@@ -1,6 +1,6 @@
-# Sub-chain Deployment Template
+# Sub-chain StatefulSet Template
 # This template is used by K8sNamespaceManager to deploy sub-chain nodes
-# into their isolated namespaces.
+# into their isolated namespaces with stable network identity.
 #
 # Variables (replaced by K8sNamespaceManager):
 #   {{SUBCHAIN_ID}} - Unique identifier for the sub-chain
@@ -10,9 +10,14 @@
 #   {{NODE_PORT}} - Port for inter-node communication
 #   {{API_PORT}} - Port for API access
 #   {{PEERS}} - Comma-separated list of peer addresses
+#   {{STORAGE_SIZE}} - PVC storage size (e.g., "1Gi")
+#   {{CPU_REQUEST}}, {{MEMORY_REQUEST}} - Resource requests
+#   {{CPU_LIMIT}}, {{MEMORY_LIMIT}} - Resource limits
+#   {{LOG_LEVEL}} - Logging level
+#   {{PARENT_CHAIN}} - Parent chain ID
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: "hierachain-{{SUBCHAIN_ID}}"
   namespace: "{{NAMESPACE}}"
@@ -21,6 +26,7 @@ metadata:
     component: subchain
     subchain-id: "{{SUBCHAIN_ID}}"
 spec:
+  serviceName: "hierachain-{{SUBCHAIN_ID}}-headless"
   replicas: "{{REPLICAS}}"
   selector:
     matchLabels:
@@ -46,7 +52,9 @@ spec:
           command: ["hrc", "start", "--host", "0.0.0.0", "--port", "{{API_PORT}}"]
           env:
             - name: NODE_ID
-              value: "{{SUBCHAIN_ID}}"
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: NODE_PORT
               value: "{{NODE_PORT}}"
             - name: PEERS
@@ -91,64 +99,20 @@ spec:
             preStop:
               exec:
                 command: ["/bin/sh", "-c", "sleep 5"]
-      volumes:
-        - name: data
-          persistentVolumeClaim:
-            claimName: "hierachain-{{SUBCHAIN_ID}}-data"
----
-# Service for internal communication
-apiVersion: v1
-kind: Service
-metadata:
-  name: "hierachain-{{SUBCHAIN_ID}}"
-  namespace: "{{NAMESPACE}}"
-  labels:
-    app: hierachain
-    subchain-id: "{{SUBCHAIN_ID}}"
-spec:
-  selector:
-    app: hierachain
-    subchain-id: "{{SUBCHAIN_ID}}"
-  ports:
-    - name: node
-      port: "{{ NODE_PORT }}"
-      targetPort: node-port
-    - name: api
-      port: "{{ API_PORT }}"
-      targetPort: api-port
-  type: ClusterIP
----
-# Headless service for StatefulSet-like DNS
-apiVersion: v1
-kind: Service
-metadata:
-  name: "hierachain-{{SUBCHAIN_ID}}-headless"
-  namespace: "{{NAMESPACE}}"
-  labels:
-    app: hierachain
-    subchain-id: "{{SUBCHAIN_ID}}"
-spec:
-  clusterIP: None
-  selector:
-    app: hierachain
-    subchain-id: "{{SUBCHAIN_ID}}"
-  ports:
-    - name: node
-      port: "{{ NODE_PORT }}"
-      targetPort: node-port
----
-# PersistentVolumeClaim for data storage
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: "hierachain-{{SUBCHAIN_ID}}-data"
-  namespace: "{{NAMESPACE}}"
-  labels:
-    app: hierachain
-    subchain-id: "{{SUBCHAIN_ID}}"
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: "{{STORAGE_SIZE}}"
+      # No explicit volumes - using volumeClaimTemplates below
+  # Automatic PVC provisioning per pod with stable identity
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app: hierachain
+          component: subchain
+          subchain-id: "{{SUBCHAIN_ID}}"
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "{{STORAGE_SIZE}}"
+        # storageClassName can be overridden per deployment
+        # storageClassName: standard
