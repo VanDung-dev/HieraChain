@@ -442,7 +442,7 @@ def get_settings() -> Settings:
     """Get settings based on environment variable"""
     env = os.getenv("HRC_ENV", "dev").lower()
     
-    if env == "product":
+    if env in ("product", "production"):
         return ProductionSettings()
     elif env == "test":
         return TestingSettings()
