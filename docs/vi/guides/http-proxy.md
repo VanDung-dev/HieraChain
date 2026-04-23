@@ -1,80 +1,72 @@
 ---
-title: "Triển khai HTTP/2 & HTTP/3"
-description: "Hướng dẫn cấu hình Reverse Proxy (NGINX/Edge Gateway) để hỗ trợ HTTP/2 và HTTP/3 cho HieraChain."
+title: "Giới hạn Giao thức HTTP & Proxy"
+description: "Giải thích tại sao HieraChain chỉ hỗ trợ HTTP/1.1 và cách tích hợp vào hạ tầng Web2 hiện có."
 icon: material/web
 ---
 
-HieraChain được thiết kế để xử lý giao dịch nội bộ hiệu quả nhất bằng giao thức HTTP/1.1 thông qua `Uvicorn` (FastAPI). Để cung cấp tốc độ mạng tối đa cho người dùng cuối qua HTTP/2 và HTTP/3 (QUIC), HieraChain áp dụng mô hình **Reverse Proxy Offloading**.
+## Tổng quan
 
-## Kiến trúc Mạng Đề Xuất
+HieraChain được thiết kế như một **Plugin Layer** chuyên biệt cho doanh nghiệp, tập trung vào tính bất biến và xác thực dữ liệu thay vì thay thế các hạ tầng Web2 hiện có. Do đó, HieraChain có những quy định nghiêm ngặt về giao thức truyền tải.
 
-Thực tiễn (Best Practice) trong các hệ thống Enterprise là **không** để server Python trực tiếp mở kết nối HTTP/2 và HTTP/3, vốn đi kèm nhiều phức tạp về mã hóa, quản lý chứng chỉ SSL, và xử lý gói tin UDP ở tầng User-space.
+## Tại sao không hỗ trợ HTTP/2 và HTTP/3?
 
-Thay vào đó, bạn nên đặt một **Reverse Proxy** mạnh mẽ như NGINX, Traefik, hoặc AWS ALB ở phía trước (Edge Gateway).
+HieraChain **không hỗ trợ** và **không có kế hoạch hỗ trợ** trực tiếp các giao thức HTTP/2 hoặc HTTP/3 (QUIC) từ bên trong nhân (core). Điều này xuất phát từ triết lý thiết kế "Không tái phát minh bánh xe" (Don't reinvent the wheel) và tối ưu hóa hiệu năng Python.
+
+### 1. Vị trí trong kiến trúc hệ thống
+
+HieraChain không thay thế Cơ sở dữ liệu hiện có mà hoạt động **song song** như một lớp xác thực bổ trợ. Dữ liệu được phân luồng dựa trên nhu cầu về tính bất biến:
+
+* **Dữ liệu thường**: Đi thẳng vào DB Web2 để đạt tốc độ tối đa.
+* **Dữ liệu cần xác thực**: Đi qua HieraChain để tạo bằng chứng số trước khi đồng bộ.
 
 ```mermaid
 graph TD
-    Client[Client Browser / Mobile] -- HTTP/3 QUIC (UDP 443) --> Gateway[NGINX Gateway]
-    Client -- HTTP/2 (TCP 443) --> Gateway
-    Gateway -- HTTP/1.1 (TCP 2661) --> HieraChain[HieraChain API Node]
+    User((Người dùng/Ứng dụng)) --> Web2[Hạ tầng Web2 Enterprise<br/>WAF / LB / Gateway]
+    
+    Web2 -- "Dữ liệu cần xác thực" --> HC[HieraChain API Node]
+    Web2 -- "Dữ liệu thường" --> DB_Web2[(Web2 Database)]
+    
+    subgraph HieraChain_Internal [Hệ sinh thái HieraChain]
+        HC --> DB_HC[(HieraChain Private DB<br/>Lưu trữ bằng chứng)]
+    end
+    
+    HC -. "Kiểm tra & Đối soát" .-> DB_Web2
 ```
 
-## Lợi ích của Kiến Trúc này
+### 2. Triết lý "Plugin Layer"
 
-1. **Hiệu suất mã hóa**: NGINX (viết bằng C) giải mã TLS và đàm phán HTTP/3 cực kỳ nhanh mà không chiếm dụng CPU của Python.
-2. **Quản lý SSL tập trung**: Dễ dàng tích hợp certbot/Let's Encrypt tại một điểm duy nhất.
-3. **Tính ổn định của Blockchain**: HieraChain API Server cực kỳ tinh gọn và chỉ tập trung xử lý Transaction / Block, ngăn chặn các nguy cơ tấn công từ chối dịch vụ (DDoS) thông qua đường hầm QUIC.
+HieraChain được xây dựng để **chạy song hành** và bổ sung giá trị blockchain cho các hệ thống Enterprise Web2 sẵn có:
 
-## Cấu Hình Tham Khảo (NGINX)
+* **Tách biệt luồng dữ liệu**: Không phải mọi dữ liệu đều cần blockchain. HieraChain chỉ xử lý các "sự kiện" (events) quan trọng cần tính bất biến, giúp hệ thống chính không bị quá tải.
+* **Cơ sở dữ liệu riêng biệt**: HieraChain duy trì một DB riêng (World State/Ledger) để lưu trữ bằng chứng phân tán, tách biệt hoàn toàn với DB nghiệp vụ của Web2.
+* **Khả năng kiểm tra chéo**: HieraChain có cơ chế kết nối (read-only) vào DB Web2 để đối soát tính toàn vẹn giữa dữ liệu nghiệp vụ và bằng chứng trên chuỗi.
+* **Bảo mật cổng HTTP**: Việc bảo mật tại cổng giao tiếp (Port 80/443) vẫn được giao cho hạ tầng mạng Web2 đảm nhiệm.
 
-Dưới đây là cấu hình máy chủ NGINX mẫu để phục vụ HTTP/2 và HTTP/3, đồng thời proxy ngược về HieraChain đang chạy ở cổng `2661`.
+### 3. Lý do sử dụng HTTP/1.1
 
-### 1. Chuẩn bị file `nginx.conf`
+* **Tốc độ trong mạng nội bộ**: Trong môi trường mạng tin cậy (Trusted Network) giữa Reverse Proxy và HieraChain, HTTP/1.1 là giao thức đơn giản nhất, ít overhead nhất và đạt hiệu suất cao nhất cho các tác vụ API.
+* **Khả năng tương thích**: 100% các giải pháp API Gateway và Load Balancer hiện nay đều hỗ trợ chuyển tiếp xuống HTTP/1.1 một cách hoàn hảo.
+* **Tập trung tài nguyên**: Thay vì tốn CPU cho việc đàm phán kết nối phức tạp, HieraChain dành toàn bộ tài nguyên cho:
 
-```nginx
-server {
-    # Hỗ trợ HTTP/2 trên TLS
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    * Xác thực chữ ký sự kiện (Event signatures).
+    * Đồng thuận BFT.
+    * Đảm bảo tính toàn vẹn của sổ cái.
 
-    # Hỗ trợ HTTP/3 (QUIC) trên UDP
-    listen 443 quic reuseport;
-    listen [::]:443 quic reuseport;
+## Cách triển khai chuẩn Enterprise
 
-    server_name api.hierachain.io;
+Nếu hệ thống của bạn yêu cầu các tính năng hiện đại như HTTP/2, HTTP/3 hoặc gRPC để tối ưu hóa kết nối từ Client, bạn **bắt buộc** phải sử dụng mô hình **Reverse Proxy Offloading**.
 
-    # Chứng chỉ SSL hợp lệ (Bắt buộc cho HTTP/2 và 3)
-    ssl_certificate /etc/nginx/ssl/cert.pem;
-    ssl_certificate_key /etc/nginx/ssl/key.pem;
+1. **Tầng Web2 (NGINX/Traefik/F5)**: Tiếp nhận kết nối HTTPS (HTTP/2 hoặc HTTP/3 QUIC) từ người dùng, giải mã SSL.
+2. **Tầng HieraChain**: Tiếp nhận yêu cầu đã được giải mã từ Proxy thông qua kết nối HTTP/1.1 siêu tốc.
 
-    # Thông báo cho trình duyệt Client nâng cấp lên HTTP/3
-    add_header Alt-Svc 'h3=":443"; ma=86400';
+!!! important
 
-    location / {
-        # Địa chỉ IP của Container/Máy chủ HieraChain
-        proxy_pass http://hierachain_api:2661;
-        proxy_http_version 1.1;
+    HieraChain sẽ không bao giờ thay thế cho hạ tầng Web2 hiện có. HieraChain được xây dựng để chạy **bên dưới** các hệ thống đó, mang lại khả năng kiểm toán và tính bất biến mà các cơ sở dữ liệu truyền thống còn thiếu.
 
-        # Truyền chính xác IP thực của Client xuống cho HieraChain
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
+## Lưu ý về Bảo mật
 
-### 2. Cấu hình HieraChain Tin Tưởng Proxy
+Dù chỉ chạy HTTP/1.1, HieraChain vẫn duy trì các lớp bảo mật nội tại:
 
-Khi đứng sau NGINX, HieraChain sẽ thấy mọi Request đều có IP xuất phát từ NGINX (ví dụ `127.0.0.1` hoặc IP của Docker Gateway). Để các tính năng như **Rate Limiting** (Giới hạn truy cập) và **Audit Logging** (Ghi dấu vết kiểm toán) hoạt động chuẩn xác với IP người dùng thật, bạn phải định nghĩa các Proxy được tin tưởng.
-
-Thêm biến môi trường sau vào HieraChain (ví dụ trong file `.env`):
-
-```env
-# Mặc định là 127.0.0.1
-HRC_TRUSTED_PROXIES=127.0.0.1,192.168.1.100
-```
-
-*(Nếu hệ thống NGINX chạy khác máy chủ, hãy điền IP của máy NGINX vào đây hoặc dùng `*` nếu mạng nội bộ hoàn toàn khép kín).*
-
-Lớp bảo mật này tự động sử dụng tùy chọn `forwarded_allow_ips` của Uvicorn để chấp nhận Header `X-Forwarded-For`. All done! Hệ thống của bạn đã đạt chuẩn doanh nghiệp.
+* **API Key Verification**: Xác thực quyền truy cập ở mức ứng dụng.
+* **Trusted Proxies**: Chỉ chấp nhận yêu cầu từ các IP của Load Balancer được định nghĩa trước (qua biến `HRC_TRUSTED_PROXIES`).
+* **Payload Sanitization**: Làm sạch dữ liệu đầu vào để chống các cuộc tấn công tầng ứng dụng.
