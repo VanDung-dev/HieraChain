@@ -107,11 +107,27 @@ def _init_k8s_client_impl(manager: Any) -> bool:
 
     try:
         if manager.kubeconfig_path:
+            import os
+            if not os.path.exists(manager.kubeconfig_path):
+                logger.info(
+                    "Kubeconfig not found at %s, falling back to mock mode", 
+                    manager.kubeconfig_path
+                )
+                manager.use_mock = True
+                return True
             config.load_kube_config(config_file=manager.kubeconfig_path)
         else:
             try:
                 config.load_incluster_config()
             except config.ConfigException:
+                import os
+                default_kubeconfig = os.path.expanduser("~/.kube/config")
+                if not os.path.exists(default_kubeconfig):
+                    logger.info(
+                        "No kubeconfig found (not in cluster, no ~/.kube/config), using mock mode"
+                    )
+                    manager.use_mock = True
+                    return True
                 config.load_kube_config()
 
         manager.k8s_client = client.CoreV1Api()
@@ -123,11 +139,10 @@ def _init_k8s_client_impl(manager: Any) -> bool:
         manager.use_mock = True
         return True
     except Exception as e:
-        logger.warning(
-            "Failed to initialize K8s client (%s), falling back to mock mode", e
+        logger.info(
+            "Failed to initialize K8s client (%s), using mock mode", e
         )
         manager.use_mock = True
-        manager.stats["errors"] += 1
         return True
 
 
