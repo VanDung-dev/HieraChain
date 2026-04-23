@@ -56,15 +56,19 @@ class MemoryPressureSyncTest:
             return
 
         try:
-            arrays = []
-            for _ in range(100):
-                arr = pa.array(list(range(10000)), type=pa.int64())
-                arrays.append(arr)
-            table = pa.table({"data": arrays})
+            # Create a large amount of data (approx 10MB per call)
+            # 100 arrays of 10k integers = 1M integers = 8MB (for int64) + overhead
+            arrays = [pa.array(list(range(12500)), type=pa.int64()) for _ in range(100)]
+            
+            # Combine into a single chunked array for the column
+            chunked_arr = pa.chunked_array(arrays)
+            table = pa.Table.from_arrays([chunked_arr], names=["data"])
+            
             self.data_chunks.append(table)
         except Exception as e:
-            logger.warning("PyArrow table creation failed, using mock data: %s", e)
-            self.data_chunks.append(bytearray(int(chunk_size_mb * 1024 * 1024)))
+            logger.error("PyArrow table creation failed: %s", e)
+            # In a stress test, we should FAIL if the core engine component cannot be tested
+            raise RuntimeError(f"Critical failure in stress test: PyArrow could not allocate memory or create table: {e}")
 
     def _pressure_worker(self, interval_seconds: float = 0.5) -> None:
         iteration = 0

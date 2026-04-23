@@ -101,6 +101,19 @@ class RealStressClient:
         self.node_status: dict[str, NodeStatus] = {}
         self.lock = threading.Lock()
         self.results = StressTestResult()
+        self.session = requests.Session()
+        
+        # Set default headers
+        self.session.headers.update({
+            "User-Agent": "HieraChain-Stress-Tester/1.0",
+            "Content-Type": "application/json",
+        })
+        
+        # Add API Key if provided in environment
+        api_key = os.getenv("HRC_API_KEY")
+        if api_key:
+            key_name = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
+            self.session.headers.update({key_name: api_key})
 
         # Initialize node status
         for node in self.nodes:
@@ -116,7 +129,7 @@ class RealStressClient:
 
         try:
             # Use correct API endpoint from hierachain.api.v1.endpoints
-            response = requests.get(
+            response = self.session.get(
                 f"{status.url}/api/v1/health",
                 timeout=self.timeout,
             )
@@ -161,7 +174,7 @@ class RealStressClient:
         start_time = time.time()
         try:
             # Use correct API endpoint: POST /api/v1/chains/{chain_name}/events
-            response = requests.post(
+            response = self.session.post(
                 f"{status.url}/api/v1/chains/{chain_name}/events",
                 json=event,
                 timeout=self.timeout,
@@ -196,7 +209,7 @@ class RealStressClient:
 
         try:
             # Use correct API endpoint: GET /api/v1/chains
-            response = requests.get(
+            response = self.session.get(
                 f"{status.url}/api/v1/chains",
                 timeout=self.timeout,
             )
@@ -213,7 +226,7 @@ class RealStressClient:
             return False
 
         try:
-            response = requests.post(
+            response = self.session.post(
                 f"{status.url}/api/v1/chains/{chain_name}/create",
                 timeout=self.timeout,
             )
