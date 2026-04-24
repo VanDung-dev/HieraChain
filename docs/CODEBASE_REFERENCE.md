@@ -18,15 +18,14 @@ HieraChain is a **hierarchical blockchain enterprise ledger** designed specifica
 
 ### 2. Hierarchical Two-Tier Architecture
 
-```
-┌─────────────────┐
-│   MAIN CHAIN    │  ← Root Authority / Supervisor (like CEO)
-└─────────────────┘
-        │
-        ├──────→ SUB-CHAIN 1 (Supply Chain)
-        ├──────→ SUB-CHAIN 2 (Healthcare)  
-        ├──────→ SUB-CHAIN 3 (Finance)
-        └──────→ Sub-Chains are domain experts (like department heads)
+```mermaid
+graph TD
+    Main["<b>MAIN CHAIN</b><br/>Root Authority / Supervisor<br/>(like CEO)"]
+    
+    Main --> SC1["<b>SUB-CHAIN 1</b><br/>Supply Chain"]
+    Main --> SC2["<b>SUB-CHAIN 2</b><br/>Healthcare"]
+    Main --> SC3["<b>SUB-CHAIN 3</b><br/>Finance"]
+    Main --> Note["Sub-Chains are domain experts<br/>(like department heads)"]
 ```
 
 **Key Design Decision**: The Main Chain **only stores proofs from Sub-Chains**, NOT detailed domain data. This separation ensures:
@@ -106,16 +105,18 @@ The system supports **three consensus mechanisms** configurable via `HRC_CONSENS
 
 #### Ordering Service (`consensus/ordering/`)
 
-```
-┌────────────────────────────────────┐
-│         OrderingService            │ ← Facade (coordinates components)
-├─────────────┬──────────┬───────────┤
-│ Certifier   │ Builder  │ Processor │ ← Specialized Components
-├─────────────┴──────────┴───────────┤
-│ MaintenanceHandler  │   Metrics    │ ← Operational Layer
-├─────────────────────┴──────────────┤
-│     StorageHandler + Journal       │ ← Persistence Layer
-└────────────────────────────────────┘
+```mermaid
+graph TD
+    OS["<b>OrderingService</b><br/>Facade (coordinates components)"] --- C["Certifier"]
+    OS --- B["Builder"]
+    OS --- P["Processor"]
+    OS --- MH["MaintenanceHandler"]
+    OS --- M["Metrics"]
+    OS --- SH["StorageHandler + Journal"]
+    
+    C --- B --- P
+    MH --- M
+    M --- SH
 ```
 
 **Files**: `service.py` (Facade), `certifier.py`, `block_builder.py`, `processor.py`, `maintenance.py`, `storage.py`, `metrics.py`, `recovery.py`, `types.py`, `utils.py`
@@ -141,26 +142,19 @@ The system supports **three consensus mechanisms** configurable via `HRC_CONSENS
 
 This is a critical production-grade feature. When anomalies are detected:
 
-```
-Node detects threat
-    │
-    ▼
-Broadcasts LOCKDOWN_VOTE (signed with HMAC)
-    │
-    ▼
-Peers receive and register votes
-    │
-    ▼
-If 2/3 majority reached → Cluster enters lockdown
-    │
-    ▼
-All nodes halt new event processing
-    │
-    ▼
-Node broadcasts QUARANTINE_REPORT (pending events fingerprint)
-    │
-    ▼
-After recovery: RECOVERY_VOTE → 2/3 majority → Resume
+```mermaid
+flowchart TD
+    A["Node detects threat"] --> B["Broadcasts LOCKDOWN_VOTE<br/>(signed with HMAC)"]
+    B --> C["Peers receive and register votes"]
+    C --> D{2/3 majority?}
+    D -->|Yes| E["Cluster enters lockdown"]
+    D -->|No| C
+    E --> F["All nodes halt new event processing"]
+    F --> G["Node broadcasts QUARANTINE_REPORT<br/>(pending events fingerprint)"]
+    G --> H["After recovery:<br/>RECOVERY_VOTE"]
+    H --> I{2/3 majority?}
+    I -->|Yes| J["Resume"]
+    I -->|No| H
 ```
 
 The `ClusterLockdownManager` uses gossip-style P2P messaging via ZeroMQ with HMAC-signed messages and 5-minute message expiry to prevent replay attacks.
@@ -177,17 +171,14 @@ The `ClusterLockdownManager` uses gossip-style P2P messaging via ZeroMQ with HMA
 
 **AlertManager Architecture**:
 
-```
-Metric Value arrives
-    │
-    ▼
-AnomalyDetector (Z-score, window=100)  ──→  Is anomaly?
-    │                                           │
-    ▼                                           ▼
-Alert Rules evaluated                      Create Alert
-(CPU_HIGH, CONSENSUS_FAILURE, etc.)            │
-    │                                           ▼
-    └──────────────────────────────→  EmailNotifier / WebhookNotifier
+```mermaid
+flowchart TD
+    A["Metric Value arrives"] --> B["AnomalyDetector<br/>(Z-score, window=100)"]
+    B -->|"Is anomaly?"| C{Anomaly?}
+    C -->|Yes| D["Alert Rules evaluated<br/>(CPU_HIGH, CONSENSUS_FAILURE, etc.)"]
+    C -->|No| A
+    D --> E["Create Alert"]
+    E --> F["EmailNotifier / WebhookNotifier"]
 ```
 
 Alert severity levels: `INFO → WARNING → CRITICAL → EMERGENCY`  
@@ -506,30 +497,24 @@ This mirrors enterprise organizational structure: CEO coordinates at high level,
 
 ## System Flow Summary
 
-```
-1. Event Submission (SDK/CLI/API/WebSocket)
-   ↓
-2. Policy Evaluation (PolicyEngine - ABAC access control)
-   ↓
-3. Journal Durability Layer (guarantee persistence first)
-   ↓
-4. Ordering Service (certify, build block, commit)
-   ↓
-5. Consensus Validation (PoA/PoF/BFT + ZK verification)
-   ↓
-6. Storage & Caching (SQL/Redis + LRU/TTL cache)
-   ↓
-7. Proof Submission to Main Chain (if Sub-Chain)
-   ↓
-8. Risk Analysis & Monitoring (concurrent, async)
-   ↓
-9. Alert Dispatch (Email/Webhook if thresholds exceeded)
+```mermaid
+flowchart TD
+    A["1. Event Submission<br/>(SDK/CLI/API/WebSocket)"] --> B["2. Policy Evaluation<br/>(PolicyEngine - ABAC access control)"]
+    B --> C["3. Journal Durability Layer<br/>(guarantee persistence first)"]
+    C --> D["4. Ordering Service<br/>(certify, build block, commit)"]
+    D --> E["5. Consensus Validation<br/>(PoA/PoF/BFT + ZK verification)"]
+    E --> F["6. Storage & Caching<br/>(SQL/Redis + LRU/TTL cache)"]
+    F --> G["7. Proof Submission to Main Chain<br/>(if Sub-Chain)"]
+    G --> H["8. Risk Analysis & Monitoring<br/>(concurrent, async)"]
+    H --> I["9. Alert Dispatch<br/>(Email/Webhook if thresholds exceeded)"]
 ```
 
 **Cluster-level flow (parallel)**:
-```
-Each node ──→ ClusterManager (heartbeat tracking)
-            ──→ ClusterLockdownManager (anomaly → quorum vote → lockdown/recovery)
+
+```mermaid
+flowchart LR
+    Node["Each node"] --> CM["ClusterManager<br/>(heartbeat tracking)"]
+    Node --> CLM["ClusterLockdownManager<br/>(anomaly → quorum vote →<br/>lockdown/recovery)"]
 ```
 
 ---

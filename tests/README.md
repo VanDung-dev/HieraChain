@@ -83,67 +83,33 @@ python -m pytest tests -v
 
 ## Stress Testing
 
-### Docker Stress Testing
+For detailed stress testing instructions (Docker & Kubernetes), please refer to:
 
-Run stress tests in Docker containers with 4 HieraChain nodes (1 CPU, 1GiB RAM each):
+**File:** [`docker/README.md`](../docker/README.md)
 
-**Build and run stress tests with HTML report:**
+This covers:
+
+* Docker Compose setup (4-node cluster, 1 CPU / 1GiB RAM per node)
+* Kubernetes (Kind) setup with resource limits
+* Stress test execution and HTML reports
+* Configuration tuning (rate limiting, log level, storage backend)
+* Troubleshooting common issues
+
+**Quick start (Docker Compose):**
 
 ```bash
-docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
+docker/setup-docker-compose.sh
+docker/run-stress-docker-compose.sh
 ```
 
-**Run real network stress tests (sends actual HTTP requests to nodes):**
+**Quick start (Kubernetes):**
 
 ```bash
-docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/test_real_network.py -v -s
-```
-
-**Run without HTML report:**
-
-```bash
-docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester
-```
-
-**Stop and clean up containers:**
-
-```bash
-docker compose -f docker/docker-compose.test.yml down --remove-orphans
+docker/setup-k8s.sh
+docker/run-stress-k8s.sh
 ```
 
 Reports are saved to `log/report/` directory.
-
----
-
-### Kubernetes Stress Testing
-
-Run stress tests in Kubernetes. **Recommendation:** Use Docker Compose for local development. Use Kubernetes when you need a production-like environment.
-
-**Quick Start:**
-
-```bash
-# Build image & deploy
-docker build --no-cache -t hierachain:latest -f docker/Dockerfile .
-kind create cluster --config docker/kind-config.yaml
-kind load docker-image hierachain:latest --name hiera-cluster
-kubectl apply -k docker/k8s/
-
-# Wait for pods to be ready
-kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout=120s
-
-# Expose the API to local host
-kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
-
-# Test API  
-curl http://localhost:2661/api/v1/health
-
-# Run stress test
-docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
-
-# Cleanup
-kubectl delete -k docker/k8s/
-kind delete cluster --name hiera-cluster
-```
 
 ---
 

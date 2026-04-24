@@ -1,6 +1,8 @@
 # Developer Guide
 
-This guide contains all the information developers need to work with the HieraChain Ledger.
+This guide contains the essential information developers need to get started with the HieraChain Ledger.
+
+For detailed documentation on specific topics, please refer to the links below.
 
 ---
 
@@ -58,6 +60,7 @@ pip install -e ".[dev]"
 `uv` is a modern, extremely fast Python package manager written in Rust. It's **10-100x faster** than pip for dependency resolution and installation.
 
 **Install uv first (if not available):**
+
 ```bash
 # Linux / macOS
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -67,6 +70,7 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 **Setup project with uv:**
+
 ```bash
 # Initialize virtual environment (auto detected)
 uv venv
@@ -78,24 +82,25 @@ source .venv/bin/activate  # Linux/macOS
 # Install ALL dependencies automatically
 uv sync
 
-# Or manually install with specific extras (dev tools, documentation tools)
-# uv pip install -e ".[dev,doc]"
-
 # ✅ This single command replaces all 3 pip commands above
 # It reads pyproject.toml, resolves dependencies, installs everything in dev mode
 ```
 
 This will set up your environment to work with the Ledger.
 
-## Running server
+---
+
+## Running Server
 
 ```bash
 python -m hierachain.api.server
 ```
 
+Server will start at `http://localhost:2661` with API docs at `http://localhost:2661/docs`.
+
 ---
 
-## Using the package
+## Using the Package
 
 After installation, you can import components from the package:
 
@@ -106,214 +111,114 @@ from hierachain.core.blockchain import Blockchain
 
 ---
 
-## Running Demos
+## Detailed Documentation by Topic
 
-The demo files are located in the `demo/` directory. Before running demos, ensure you have installed the package and its dependencies.
+For more detailed information on specific topics, please refer to the following README files:
 
-* **Main Ledger Demonstration** - Showcases core HieraChain features including hierarchical chains, MSP, channels, and private data:
+### 🎯 Running Demos
+**File:** [`demo/README.md`](../demo/README.md)
 
-    ```bash
-    python demo/demo.py
-    ```
+Covers all demo scripts including:
 
-* **Key Backup and Recovery Demonstration** - Demonstrates cryptographic key backup and recovery functionality:
+* Main Ledger Demonstration (hierarchical chains, MSP, channels, private data)
+* Blockchain Explorer Dashboard
+* IPFS Integration for off-chain storage
+* Key Backup & Recovery
+* ZeroMQ BFT Consensus
 
-    ```bash
-    python demo/demo_key_backup.py
-    ```
-
-* **ZeroMQ BFT Consensus Demonstration** - Demonstrates Byzantine Fault Tolerance consensus with ZeroMQ networking:
-
-    ```bash
-    python demo/demo_zmq_consensus.py
-    ```
-
-> **Note**: For demos that create data files, you may want to clean up old data before running:
->
-> ```bash
-> rm -rf demo/data demo/hierachain.db 2>/dev/null
-> ```
-
----
-
-## Running Tests
-
-> **WARNING**: Running all tests simultaneously may cause failures due to resource constraints. It is recommended to run tests per test file instead of grouping them by directories to ensure more accurate and reliable results.
-
-* To run all unit tests:
-
-    ```bash
-    python -m pytest tests/unit -v
-    ```
-
-* To run all integration tests:
-
-    ```bash
-    python -m pytest tests/integration -v
-    ```
-
-* To run all scenario tests:
-
-    ```bash
-    python -m pytest tests/scenarios -v
-    ```
-
-* To run only benchmark tests:
-
-    ```bash
-    python -m pytest tests --benchmark-only -v --benchmark-save=benchmark_report
-    python -m pytest tests --benchmark-only -v --benchmark-histogram=benchmark_report
-    ```
-
-* To run all tests:
-
-    ```bash
-    python -m pytest tests -v
-    ```
-
-### Docker Stress Testing
-
-Run stress tests in Docker containers with 4 HieraChain nodes (1 CPU, 1GiB RAM each):
-
-* Build and run stress tests with HTML report:
-
-    ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
-    ```
-
-* Run real network stress tests (sends actual HTTP requests to nodes):
-
-    ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/test_real_network.py -v -s
-    ```
-
-* Run without HTML report:
-
-    ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester
-    ```
-* Stop and clean up containers:
-
-    ```bash
-    docker compose -f docker/docker-compose.test.yml down --remove-orphans
-    ```
-
-Reports are saved to `log/report/` directory.
-
-### Kubernetes Stress Testing
-
-Run stress tests in Kubernetes
-> **Recommendation:** Use Docker Compose for local dev. Use Kubernetes when you need a production-like environment.
-
-**Quick Start:**
-
+Quick start:
 ```bash
-# Build image
-docker build --no-cache -t hierachain:latest -f docker/Dockerfile .
-
-# Create Kind cluster
-kind create cluster --config docker/kind-config.yaml
-
-# Resource limit for each Node of K8s (1 CPU, 1GiB RAM)
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-control-plane
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker2
-docker update --cpus 1 --memory 1g --memory-swap 1g hiera-cluster-worker3
-
-# Load image into cluster
-kind load docker-image hierachain:latest --name hiera-cluster
-kubectl apply -k docker/k8s/
-
-# Wait for pods to be ready
-kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout=120s
-
-# Expose the API to local host
-kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
-
-# Test API  
-curl http://localhost:2661/api/v1/health
-
-# Run stress test
-docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
-
-# Cleanup
-kubectl delete -k docker/k8s/
-kind delete cluster --name hiera-cluster
+python demo/demo.py
 ```
 
 ---
 
-## Documentation
+### 🧪 Running Tests
 
-The project documentation is built using [zensical](https://zensical.org/).
+**File:** [`tests/README.md`](../tests/README.md)
 
-### Serve Locally
+Covers all test types:
 
-To run the documentation server locally with live reloading:
+* Unit tests, Integration tests, Scenario tests
+* Benchmark tests
+* Docker & Kubernetes stress testing
+* Test fixtures and individual test file execution
+
+Quick start:
+
+```bash
+python -m pytest tests/unit -v
+```
+
+---
+
+### 🐳 Docker & Kubernetes Stress Testing
+
+**File:** [`docker/README.md`](../docker/README.md)
+
+Dedicated to performance benchmarking and stability testing:
+
+* Docker Compose setup (4-node cluster)
+* Kubernetes (Kind) setup with resource limits
+* Stress test execution and reports
+* Configuration tuning
+
+Quick start:
+
+```bash
+docker/setup-docker-compose.sh
+docker/run-stress-docker-compose.sh
+```
+
+---
+
+### 📝 Documentation
+
+**File:** [`docs/README.md`](../docs/README.md)
+
+Covers documentation building with Zensical:
+
+* Local serve with live reload
+* Static site build for production
+* Multi-language support (Vietnamese, English, Russian)
+* Custom domain configuration for GitHub Pages
+
+Quick start:
 
 ```bash
 zensical serve
 ```
 
-Open your browser at `http://127.0.0.1:8000` to view the documentation.
+---
 
-### Build Static Site
+### 🛠️ Developer Scripts
 
-To build the static HTML site (output to `site/` directory):
+**File:** [`scripts/README.md`](../scripts/README.md)
+
+Contains utilities for development and analysis:
+
+* Benchmarking (hashing, throughput)
+* Static code analysis (security, quality, compliance)
+* Security probes (16 different vulnerability tests)
+* Storage verification
+
+Quick start:
 
 ```bash
-zensical build
+python scripts/benchmark_hashing.py
+python -m scripts.static_analysis
 ```
 
-## Developer Scripts
+---
 
-The `scripts/` directory contains additional utilities for development and benchmarking.
+## Quick Reference
 
-### Static Analysis
-
-* To run static code analysis:
-
-    ```bash
-    python -m scripts.static_analysis
-    ```
-
-* To run static code analysis with text output:
-
-    ```bash
-    python -m scripts.static_analysis --format text
-    ```
-
-* To run static code analysis and save results to a file:
-
-    ```bash
-    python -m scripts.static_analysis --output analysis_report.json
-    python -m scripts.static_analysis --format text --output analysis_report.txt
-    ```
-
-### Benchmarking
-
-* **Hashing Performance Benchmark** - Compares Merkle tree hashing vs traditional JSON serialization:
-
-    ```bash
-    python scripts/benchmark_hashing.py
-    ```
-
-* **Throughput Benchmark** - Measures event processing throughput of the OrderingService:
-
-    ```bash
-    python scripts/benchmark_throughput.py --events 1000 --workers 4 --batch-size 100
-    ```
-
-    Options:
-
-    * `--events`: Number of events to process (default: 1000)
-    * `--workers`: Number of worker threads (default: auto-detected)
-    * `--batch-size`: Events per block (default: 100)
-
-### Storage Verification
-
-* **Verify Storage Persistence** - Validates SQLite storage backend persistence:
-
-    ```bash
-    python scripts/verify_storage.py
-    ```
+| Task | Command | Details in |
+|------|---------|------------|
+| Install dependencies | `uv sync` | This file (Installation section) |
+| Run API server | `python -m hierachain.api.server` | This file (Running Server section) |
+| Run demos | `python demo/demo.py` | [`demo/README.md`](../demo/README.md) |
+| Run tests | `python -m pytest tests/unit -v` | [`tests/README.md`](../tests/README.md) |
+| Stress test (Docker) | `docker/run-stress-docker-compose.sh` | [`docker/README.md`](../docker/README.md) |
+| Build documentation | `zensical build` | [`docs/README.md`](../docs/README.md) |
+| Static analysis | `python -m scripts.static_analysis` | [`scripts/README.md`](../scripts/README.md) |

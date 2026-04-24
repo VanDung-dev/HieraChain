@@ -51,7 +51,10 @@ Uses [Kind](https://kind.sigs.k8s.io/) to create a local cluster with specific r
 # Step 1: Initialize cluster and deploy nodes
 docker/setup-k8s.sh
 
-# Step 2: Run the stress test
+# Step 2: Expose the API to local host
+kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
+
+# Step 3: Run the stress test
 docker/run-stress-k8s.sh
 ```
 
