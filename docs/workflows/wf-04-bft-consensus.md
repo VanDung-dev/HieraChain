@@ -1,0 +1,138 @@
+# WF-4: BFT Consensus (3-Phase PBFT)
+
+**Group**: B — Consensus Finalization
+**Trigger**: `HRC_CONSENSUS_TYPE=byzantine_fault_tolerant` — activated automatically during WF-1 block finalization
+**Output**: Block committed by 2f+1 validators, pushed to `commit_queue`
+**Key modules**: `consensus/bft/consensus.py`, `consensus/bft/view_change.py`, `network/zmq_transport.py`
+
+> [← WF-3: Cross-Chain 2PC](./wf-03-cross-chain-2pc.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-5: Cluster Lockdown →](./wf-05-cluster-lockdown.md)
+
+---
+
+## Overview
+
+The **Byzantine Fault-Tolerant (BFT)** consensus mechanism runs 3-phase PBFT when blocks are finalized. It requires `n ≥ 3f + 1` nodes to tolerate `f` faulty or malicious nodes. This replaces the `finalize_block()` step in WF-1 for BFT mode.
+
+For PoA and PoF consensus flows, see [Consensus Mechanisms](./consensus_mechanisms.md).
+
+**Requirement**: Minimum 4 nodes to tolerate 1 Byzantine failure (n=4, f=1: 3×1+1=4).
+
+---
+
+## Flow Diagram — 3-Phase PBFT
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant OS as ⚙️ OrderingService
+    participant L as 👑 Leader Node
+    participant V1 as 🖥️ Validator 1
+    participant V2 as 🖥️ Validator 2
+    participant Vf as 🖥️ Validator f
+
+    OS->>L: Events batch ready → trigger consensus
+
+    rect rgb(255, 245, 200)
+        Note over L,Vf: PHASE 1 — PRE-PREPARE
+        L->>L: Assign sequence number, create PRE-PREPARE message
+        L->>V1: PRE-PREPARE(view, seq, block_digest)
+        L->>V2: PRE-PREPARE(view, seq, block_digest)
+        L->>Vf: PRE-PREPARE(view, seq, block_digest)
+    end
+
+    rect rgb(220, 240, 255)
+        Note over L,Vf: PHASE 2 — PREPARE
+        V1->>V1: Validate PRE-PREPARE, broadcast PREPARE
+        V1->>L: PREPARE(view, seq, digest)
+        V1->>V2: PREPARE(view, seq, digest)
+        V2->>L: PREPARE(view, seq, digest)
+        V2->>V1: PREPARE(view, seq, digest)
+        Note over L: Collect 2f PREPARE votes
+    end
+
+    rect rgb(220, 255, 220)
+        Note over L,Vf: PHASE 3 — COMMIT
+        L->>V1: COMMIT(view, seq, digest)
+        L->>V2: COMMIT(view, seq, digest)
+        V1->>L: COMMIT(view, seq, digest)
+        V2->>L: COMMIT(view, seq, digest)
+        Note over L: Collect 2f+1 COMMIT votes → finalize
+        L->>L: Finalize & sign block
+        L->>OS: Block committed → push to commit_queue
+    end
+```
+
+---
+
+## Flow Diagram — View Change (Leader Failure)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant V1 as 🖥️ Validator 1
+    participant VM as 🔄 BFTViewChangeManager
+    participant NEW as 👑 New Leader
+
+    Note over V1: Leader timeout detected (no PRE-PREPARE received)
+
+    V1->>VM: trigger_view_change(current_view, failed_leader)
+    VM->>VM: view += 1
+    VM->>VM: Broadcast VIEW-CHANGE to all validators
+    VM->>VM: Collect f+1 VIEW-CHANGE votes
+    VM->>NEW: Elect new leader: Validators[new_view % n]
+    NEW->>NEW: Broadcast NEW-VIEW message
+    NEW->>NEW: Restart from Phase 1 — PRE-PREPARE
+```
+
+---
+
+## Step-by-Step Breakdown
+
+| Step | Description |
+|:-----|:------------|
+| **PRE-PREPARE** | Leader assigns sequence number and broadcasts block digest to all validators |
+| **PREPARE** | Each validator validates the PRE-PREPARE, then broadcasts its own PREPARE vote. Leader collects 2f votes |
+| **COMMIT** | Leader broadcasts COMMIT. Each node collects 2f+1 COMMIT votes, then finalizes locally |
+| **View Change** | If leader silent > timeout: validators increment `view`, elect `Validators[view % n]` as new leader |
+
+---
+
+## Consensus Comparison
+
+| Algorithm | Mechanism | Fault Tolerance | Use Case |
+|:----------|:----------|:----------------|:---------|
+| **PoA** | Identity-based, authority signs | Validator reputation | Private / internal networks |
+| **PoF** | Rotating leader, quorum `height % n` | Distributed trust | Consortium / multi-org |
+| **BFT** | 3-phase PBFT | Up to `f` Byzantine nodes in `3f+1` | Critical / adversarial environments |
+
+---
+
+## Error Handling
+
+| Condition | Behavior |
+|:----------|:---------|
+| Leader timeout | View Change triggered, new leader elected (`Validators[new_view % n]`) |
+| Validator sends invalid digest | Vote discarded, not counted toward quorum |
+| Network partition < f nodes | Protocol continues if quorum (2f+1) still reachable |
+| Network partition ≥ f+1 nodes | Protocol halts until partition heals (safety over liveness) |
+
+---
+
+## Key Classes & Methods
+
+| Step | Class / Method | File |
+|:-----|:--------------|:-----|
+| 3-Phase PBFT | `BFTConsensus.run_consensus()` | `consensus/bft/consensus.py` |
+| PRE-PREPARE | `BFTConsensus._send_pre_prepare()` | `consensus/bft/consensus.py` |
+| PREPARE collect | `BFTConsensus._handle_prepare()` | `consensus/bft/consensus.py` |
+| COMMIT finalize | `BFTConsensus._handle_commit()` | `consensus/bft/consensus.py` |
+| View Change | `BFTViewChangeManager.trigger_view_change()` | `consensus/bft/view_change.py` |
+| Transport | `ZmqTransport.send()` / `receive()` | `network/zmq_transport.py` |
+
+---
+
+## See Also
+
+- [Consensus Mechanisms](./consensus_mechanisms.md) — PoA and PoF details
+- [WF-1: Event Submission](./wf-01-event-submission.md) — BFT replaces the `finalize_block()` step
+- [WF-6: Error Mitigation](./wf-06-error-recovery.md) — handles leader failure recovery at system level
