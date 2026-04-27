@@ -30,7 +30,7 @@ sequenceDiagram
     HM->>TM: initiate_cross_chain_transaction(src, dst, payload)
     TM->>TM: Create CrossChainTransaction (UUID, state=PENDING)
 
-    rect rgb(220, 240, 255)
+    rect rgb(0, 0, 0, 0)
         Note over TM,DST: PHASE 1 — PREPARE
         TM->>SRC: prepare_transaction(tx_id, payload, is_source=True)
         SRC->>SRC: Lock resources, validate payload
@@ -43,7 +43,7 @@ sequenceDiagram
         TM->>TM: state = PREPARED
     end
 
-    rect rgb(220, 255, 220)
+    rect rgb(0, 0, 0, 0)
         Note over TM,DST: PHASE 2 — COMMIT
         TM->>SRC: commit_transaction(tx_id)
         SRC-->>TM: True ✅
@@ -66,7 +66,7 @@ sequenceDiagram
     participant SRC as 📦 Source SubChain
     participant DST as 📦 Destination SubChain
 
-    rect rgb(255, 220, 220)
+    rect rgb(0, 0, 0, 0)
         Note over TM,DST: SCENARIO A — Phase 1 Prepare Fails
         TM->>SRC: prepare_transaction(tx_id, payload)
         SRC-->>TM: True ✅
@@ -78,7 +78,7 @@ sequenceDiagram
         TM->>TM: state = ROLLED_BACK ⚠️
     end
 
-    rect rgb(255, 245, 200)
+    rect rgb(0, 0, 0, 0)
         Note over TM,DST: SCENARIO B — Phase 2 Partial Commit Fails
         TM->>SRC: commit_transaction(tx_id)
         SRC-->>TM: True ✅

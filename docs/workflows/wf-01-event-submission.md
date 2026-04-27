@@ -29,35 +29,44 @@ sequenceDiagram
     participant PRF as 🔐 Proof
     participant DB as 💾 Storage
 
-    Client->>API: POST /v1/chains/{name}/events
-    API->>SC: add_event(event_dict)
-    SC->>SC: Validate & stamp timestamp
-    SC->>SC: validate_event_for_consensus()
-    SC->>OS: receive_event(event_data, channel_id)
-    OS->>OS: Push to event_pool (queue)
+    rect rgb(0, 0, 0, 0)
+        Note over Client,API: Phase 1 — Event Submission
+        Client->>API: POST /v1/chains/{name}/events
+        API->>SC: add_event(event_dict)
+        SC->>SC: Validate & stamp timestamp
+        SC->>SC: validate_event_for_consensus()
+        SC->>OS: receive_event(event_data, channel_id)
+        OS->>OS: Push to event_pool (queue)
+    end
 
-    Note over OS: Batch timer OR block_size reached
+    rect rgb(0, 0, 0, 0)
+        Note over OS: Phase 2 — Batching & Finalization
+        Note over OS: Batch timer OR block_size reached
 
-    OS->>OS: force_block_creation()
-    OS->>OS: BlockBuilder.build()
-    OS->>PRF: finalize_block(block, chain_name)
+        OS->>OS: force_block_creation()
+        OS->>OS: BlockBuilder.build()
+        OS->>PRF: finalize_block(block, chain_name)
 
-    Note over PRF: PoA or PoF — see consensus_mechanisms.md
+        Note over PRF: PoA or PoF — see consensus_mechanisms.md
 
-    PRF-->>OS: Finalized Block ✅
-    OS->>OS: Push to commit_queue
+        PRF-->>OS: Finalized Block ✅
+        OS->>OS: Push to commit_queue
+    end
 
-    Note over SC: Background consumer_thread polling
+    rect rgb(0, 0, 0, 0)
+        Note over SC: Phase 3 — Committing & Persistence
+        Note over SC: Background consumer_thread polling
 
-    SC->>OS: get_next_block()
-    OS-->>SC: Block
-    SC->>SC: _process_and_finalize_single_block()
-    SC->>SC: Recalculate index, previous_hash, hash
-    SC->>SC: add_block(finalized_block)
-    SC->>DB: Persist block
-    SC->>SC: auto_submit_proof_if_needed()
+        SC->>OS: get_next_block()
+        OS-->>SC: Block
+        SC->>SC: _process_and_finalize_single_block()
+        SC->>SC: Recalculate index, previous_hash, hash
+        SC->>SC: add_block(finalized_block)
+        SC->>DB: Persist block
+        SC->>SC: auto_submit_proof_if_needed()
 
-    Note over SC: → Triggers WF-2 (Proof Anchoring)
+        Note over SC: → Triggers WF-2 (Proof Anchoring)
+    end
 ```
 
 ---

@@ -28,30 +28,36 @@ sequenceDiagram
 
     Note over SC: Startup OR divergence detected
 
-    SC->>SC: sync_chain()
-    SC->>OS: get_latest_block()
-    OS->>DB: Query latest persisted block
-    DB-->>OS: latest_block (index, hash)
-    OS-->>SC: latest_block_os
+    rect rgb(0, 0, 0, 0)
+        Note over SC: Phase 1 — Detect Divergence
+        SC->>SC: sync_chain()
+        SC->>OS: get_latest_block()
+        OS->>DB: Query latest persisted block
+        DB-->>OS: latest_block (index, hash)
+        OS-->>SC: latest_block_os
+    end
 
-    SC->>SC: Compare: local_latest.index vs db_latest.index
+    rect rgb(0, 0, 0, 0)
+        Note over SC: Phase 2 — Comparison & Rehydration
+        SC->>SC: Compare: local_latest.index vs db_latest.index
 
-    alt Local == DB (same index + same hash)
-        SC->>SC: Already up-to-date. No-op.
-    else Local < DB (node missed blocks during downtime)
-        SC->>DB: get_blocks_from_db(start_index=0)
-        DB-->>SC: All blocks []
-        SC->>SC: Acquire write lock
-        SC->>SC: Clear local chain, reset all counters
-        loop For each block from DB
-            SC->>SC: chain.append(block)
-            SC->>SC: _update_event_statistics(block)
+        alt Local == DB (same index + same hash)
+            SC->>SC: Already up-to-date. No-op.
+        else Local < DB (node missed blocks during downtime)
+            SC->>DB: get_blocks_from_db(start_index=0)
+            DB-->>SC: All blocks []
+            SC->>SC: Acquire write lock
+            SC->>SC: Clear local chain, reset all counters
+            loop For each block from DB
+                SC->>SC: chain.append(block)
+                SC->>SC: _update_event_statistics(block)
+            end
+            SC->>SC: Release write lock
+            SC->>OS: Reset block_history & blocks_created
+        else Local > DB OR hash mismatch
+            SC->>SC: Log WARNING: divergent state detected
+            SC->>DB: Force full rehydration from DB
         end
-        SC->>SC: Release write lock
-        SC->>OS: Reset block_history & blocks_created
-    else Local > DB OR hash mismatch
-        SC->>SC: Log WARNING: divergent state detected
-        SC->>DB: Force full rehydration from DB
     end
 
     SC->>SC: _reset_ordering_service_state()

@@ -32,20 +32,24 @@ sequenceDiagram
     participant CA as 📜 CertificateAuthority
     participant PE as ⚖️ PolicyEngine (WF-10)
 
-    Note over Admin: Phase 1 — Define roles
+    rect rgb(0, 0, 0, 0)
+        Note over Admin: Phase 1 — Define roles
 
-    Admin->>MSP: define_role(role_name, permissions, policy_ids)
-    MSP->>MSP: OrganizationPolicies.assign_role_permissions(role, perms)
+        Admin->>MSP: define_role(role_name, permissions, policy_ids)
+        MSP->>MSP: OrganizationPolicies.assign_role_permissions(role, perms)
+    end
 
-    Note over Admin: Phase 2 — Register entity
+    rect rgb(0, 0, 0, 0)
+        Note over Admin: Phase 2 — Register entity
 
-    Admin->>MSP: register_entity(entity_id, credentials, role, attributes)
-    MSP->>CA: issue_certificate(entity_id, public_key, attributes, valid_days)
-    CA->>CA: _generate_cert_id(entity_id, public_key)
-    CA->>CA: _sign_certificate(cert_id, subject, public_key, ca_key)
-    CA-->>MSP: Certificate { cert_id, valid_until, status=ACTIVE }
-    MSP->>MSP: entities[entity_id] = { certificate, role, status: active }
-    MSP-->>Admin: True ✅
+        Admin->>MSP: register_entity(entity_id, credentials, role, attributes)
+        MSP->>CA: issue_certificate(entity_id, public_key, attributes, valid_days)
+        CA->>CA: _generate_cert_id(entity_id, public_key)
+        CA->>CA: _sign_certificate(cert_id, subject, public_key, ca_key)
+        CA-->>MSP: Certificate { cert_id, valid_until, status=ACTIVE }
+        MSP->>MSP: entities[entity_id] = { certificate, role, status: active }
+        MSP-->>Admin: True ✅
+    end
 ```
 
 ---
@@ -60,17 +64,23 @@ sequenceDiagram
     participant CA as 📜 CertificateAuthority
     participant PE as ⚖️ PolicyEngine (WF-10)
 
-    Caller->>MSP: validate_identity(entity_id, credentials)
-    MSP->>CA: verify_certificate(cert_id)
-    CA->>CA: Check: cert not revoked AND is_valid() (within time window)
-    CA-->>MSP: True / False
-    MSP->>MSP: Match credentials.public_key vs stored certificate
-    MSP-->>Caller: True ✅ (identity confirmed)
+    rect rgb(0, 0, 0, 0)
+        Note over Caller,CA: Phase 1 — Validate Identity
+        Caller->>MSP: validate_identity(entity_id, credentials)
+        MSP->>CA: verify_certificate(cert_id)
+        CA->>CA: Check: cert not revoked AND is_valid() (within time window)
+        CA-->>MSP: True / False
+        MSP->>MSP: Match credentials.public_key vs stored certificate
+        MSP-->>Caller: True ✅ (identity confirmed)
+    end
 
-    Caller->>MSP: authorize_action(entity_id, action, resource)
-    MSP->>MSP: check_permission(role, action)
-    MSP->>MSP: evaluate_policy(policy_id, context) for each role policy
-    MSP-->>Caller: True / False
+    rect rgb(0, 0, 0, 0)
+        Note over Caller,PE: Phase 2 — Authorize Action
+        Caller->>MSP: authorize_action(entity_id, action, resource)
+        MSP->>MSP: check_permission(role, action)
+        MSP->>MSP: evaluate_policy(policy_id, context) for each role policy
+        MSP-->>Caller: True / False
+    end
 
     alt Action authorized
         Caller->>PE: evaluate_policy(policy_id, context_with_role)

@@ -29,7 +29,7 @@ sequenceDiagram
 
     Note over N1: Risk Analyzer detects anomaly
 
-    rect rgb(255, 230, 220)
+    rect rgb(0, 0, 0, 0)
         Note over N1,N3: PHASE 1 — LOCKDOWN VOTING
         N1->>N1: broadcast_lockdown_vote(reason)
         N1->>N2: LOCKDOWN_VOTE { node_id, reason, HMAC-SHA256 }
@@ -44,7 +44,7 @@ sequenceDiagram
         N3->>N3: _trigger_quorum_lockdown()
     end
 
-    rect rgb(255, 245, 200)
+    rect rgb(0, 0, 0, 0)
         Note over N1,OS: PHASE 2 — SYSTEM FREEZE
         N1->>OS: local_lockdown_callback()
         N2->>OS: local_lockdown_callback()
@@ -54,7 +54,7 @@ sequenceDiagram
         N1->>N3: QUARANTINE_REPORT (pending_event_ids, last_block_hash)
     end
 
-    rect rgb(220, 255, 220)
+    rect rgb(0, 0, 0, 0)
         Note over N1,OS: PHASE 3 — RECOVERY VOTING
         N1->>N2: RECOVERY_VOTE
         N1->>N3: RECOVERY_VOTE

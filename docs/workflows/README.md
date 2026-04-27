@@ -139,12 +139,9 @@ flowchart TD
 
     ERP --> WF14
 
-    style WF1 fill:#4a90d9,color:#fff,stroke:#2c5f8a
-    style WF10 fill:#e8a838,color:#fff,stroke:#b07020
-    style WF13 fill:#e05252,color:#fff,stroke:#a02020
-    style WF5 fill:#9b59b6,color:#fff,stroke:#6c3483
-    style WF15 fill:#27ae60,color:#fff,stroke:#1a7a40
-    style WF16 fill:#16a085,color:#fff,stroke:#0e6655
+    WF7["🗂️ WF-7\nEntity Tracing"] -.->|reads| WF1
+
+    ERP --> WF14
 ```
 
 ### Key Interaction Chains

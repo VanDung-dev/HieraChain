@@ -32,20 +32,29 @@ sequenceDiagram
     Trigger->>KBM: backup_keys(public_key, private_key, key_type)
     KBM->>KBM: Sanitize key_type → backup_id = "{key_type}_{timestamp}"
 
-    KBM->>AES: _encrypt_backup_data({ public_key, private_key, ... }, encryption_key)
-    Note right of AES: nonce = secrets.token_bytes(12)<br/>ciphertext = AESGCM.encrypt(nonce, json_data, aad)<br/>output = nonce || ciphertext
-    AES-->>KBM: encrypted_data (bytes)
+    rect rgb(0, 0, 0, 0)
+        Note over KBM,AES: Phase 1 — Encryption
+        KBM->>AES: _encrypt_backup_data({ public_key, private_key, ... }, encryption_key)
+        Note right of AES: nonce = secrets.token_bytes(12)<br/>ciphertext = AESGCM.encrypt(nonce, json_data, aad)<br/>output = nonce || ciphertext
+        AES-->>KBM: encrypted_data (bytes)
+    end
 
-    KBM->>FS: write {backup_id}.enc to primary vault
-    KBM->>KBM: _calculate_integrity_hash(encrypted_data) → SHA-512
-    KBM->>KBM: _verify_integrity(backup_file, expected_hash) → confirm write OK
+    rect rgb(0, 0, 0, 0)
+        Note over KBM,FS: Phase 2 — Write & Integrity Verify
+        KBM->>FS: write {backup_id}.enc to primary vault
+        KBM->>KBM: _calculate_integrity_hash(encrypted_data) → SHA-512
+        KBM->>KBM: _verify_integrity(backup_file, expected_hash) → confirm write OK
+    end
 
-    KBM->>FS: _distribute_to_locations(file, backup_id, locations)
-    Note right of FS: Copy to secondary_vault, tertiary_vault, ...<br/>Each = separate directory / remote path
-    FS-->>KBM: distributed_locations []
+    rect rgb(0, 0, 0, 0)
+        Note over KBM,FS: Phase 3 — Distribution & Metadata
+        KBM->>FS: _distribute_to_locations(file, backup_id, locations)
+        Note right of FS: Copy to secondary_vault, tertiary_vault, ...<br/>Each = separate directory / remote path
+        FS-->>KBM: distributed_locations []
 
-    KBM->>KBM: _update_metadata(backup_id, { timestamp, key_type, hash, locations, file_path })
-    KBM->>KBM: _cleanup_old_backups() — remove backups older than retention_period days
+        KBM->>KBM: _update_metadata(backup_id, { timestamp, key_type, hash, locations, file_path })
+        KBM->>KBM: _cleanup_old_backups() — remove backups older than retention_period days
+    end
     KBM-->>Trigger: backup_id ✅
 ```
 
@@ -62,11 +71,14 @@ sequenceDiagram
     participant FS as 📁 File System / Vault
 
     Trigger->>KBM: restore_keys(backup_id)
-    KBM->>FS: _find_backup_file(backup_id)<br/>Search primary vault, then distributed locations
-    FS-->>KBM: backup_file path
+    rect rgb(0, 0, 0, 0)
+        Note over KBM,FS: Phase 1 — Locate & Integrity Check
+        KBM->>FS: _find_backup_file(backup_id)<br/>Search primary vault, then distributed locations
+        FS-->>KBM: backup_file path
 
-    KBM->>KBM: _get_backup_hash(backup_id) → expected_hash from metadata
-    KBM->>KBM: _calculate_integrity_hash(file_content) → actual_hash
+        KBM->>KBM: _get_backup_hash(backup_id) → expected_hash from metadata
+        KBM->>KBM: _calculate_integrity_hash(file_content) → actual_hash
+    end
 
     alt Integrity OK (actual == expected)
         KBM->>AES: _decrypt_backup_data(encrypted_data, encryption_key)

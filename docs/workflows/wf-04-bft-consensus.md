@@ -32,7 +32,7 @@ sequenceDiagram
 
     OS->>L: Events batch ready → trigger consensus
 
-    rect rgb(255, 245, 200)
+    rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHASE 1 — PRE-PREPARE
         L->>L: Assign sequence number, create PRE-PREPARE message
         L->>V1: PRE-PREPARE(view, seq, block_digest)
@@ -40,7 +40,7 @@ sequenceDiagram
         L->>Vf: PRE-PREPARE(view, seq, block_digest)
     end
 
-    rect rgb(220, 240, 255)
+    rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHASE 2 — PREPARE
         V1->>V1: Validate PRE-PREPARE, broadcast PREPARE
         V1->>L: PREPARE(view, seq, digest)
@@ -50,7 +50,7 @@ sequenceDiagram
         Note over L: Collect 2f PREPARE votes
     end
 
-    rect rgb(220, 255, 220)
+    rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHASE 3 — COMMIT
         L->>V1: COMMIT(view, seq, digest)
         L->>V2: COMMIT(view, seq, digest)
