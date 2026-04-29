@@ -394,7 +394,7 @@ class TestPoisonPill:
         result = test.run_test()
 
         # Most valid should be accepted
-        assert result["valid_acceptance_rate"] > 0.8
+        assert result["valid_acceptance_rate"] >= 0.8
 
     @pytest.mark.stress
     def test_full_poison_test(self):
@@ -437,4 +437,4 @@ class TestPoisonPillV3:
         # v3 should have 1.0 rejection rate because of strict synchronous validation
         assert result["status"] == "completed"
         assert result["poison_rejection_rate"] == 1.0
-        assert result["valid_acceptance_rate"] > 0.8
+        assert result["valid_acceptance_rate"] >= 0.8

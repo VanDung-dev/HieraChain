@@ -72,6 +72,8 @@ def generate_event() -> dict[str, Any]:
             "size": random.randint(100, 1000),
             "timestamp": time.time(),
         },
+        "sender": "0x" + "a" * 64,  # Simulated Ed25519 public key
+        "signature": "0x" + "b" * 128,  # Simulated signature
     }
 
 
@@ -122,35 +124,27 @@ class RealStressClient:
             self.node_status[node_id] = NodeStatus(node_id=node_id, url=url)
 
     def check_health(self, node_id: str) -> bool:
-        """Check if a node is healthy."""
+        """Check if a node is healthy by trying multiple system endpoints."""
         status = self.node_status.get(node_id)
         if not status:
             return False
 
-        try:
-            # Use v3 status for better integrity check if available, fallback to v1
+        # Endpoints to try in order of preference
+        endpoints = ["/api/v3/status", "/api/v1/health", "/"]
+        
+        for endpoint in endpoints:
             try:
-                response = self.session.get(
-                    f"{status.url}/api/v3/status",
-                    timeout=self.timeout,
-                )
+                url = f"{status.url}{endpoint}"
+                response = self.session.get(url, timeout=self.timeout)
                 if response.status_code == 200:
                     status.is_healthy = True
                     return True
             except requests.RequestException:
-                pass
+                continue
 
-            response = self.session.get(
-                f"{status.url}/api/v1/health",
-                timeout=self.timeout,
-            )
-            status.is_healthy = response.status_code == 200
-            return status.is_healthy
-        except requests.RequestException as e:
-            logger.warning(f"Health check failed for {node_id} ({status.url}): {e}")
-            status.is_healthy = False
-            status.last_error = str(e)
-            return False
+        # If we reach here, all endpoints failed
+        status.is_healthy = False
+        return False
 
     def check_all_nodes(self) -> dict[str, bool]:
         """Check health of all nodes."""
@@ -159,16 +153,34 @@ class RealStressClient:
             _results[node_id] = self.check_health(node_id)
         return _results
 
-    def wait_for_nodes(self, timeout: float = 60.0) -> bool:
-        """Wait for all nodes to become healthy."""
-        start = time.time()
-        while time.time() - start < timeout:
-            health = self.check_all_nodes()
-            if all(health.values()):
-                logger.info("All nodes are healthy")
+    def wait_for_nodes(self, timeout: float = 30.0, min_healthy: int | None = None) -> bool:
+        """
+        Wait for nodes to become healthy.
+        
+        Args:
+            timeout: Maximum time to wait in seconds.
+            min_healthy: Minimum number of healthy nodes required. 
+                         If None, requires all nodes to be healthy.
+        """
+        if min_healthy is None:
+            min_healthy = len(self.node_status)
+            
+        logger.info("Waiting for %d/%d nodes to be healthy (timeout=%ds)...", 
+                   min_healthy, len(self.node_status), timeout)
+        
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            healthy_count = 0
+            for node_id in self.node_status:
+                if self.check_health(node_id):
+                    healthy_count += 1
+            
+            if healthy_count >= min_healthy:
+                logger.info("Cluster ready: %d nodes healthy", healthy_count)
                 return True
-            logger.info("Waiting for nodes: %s", health)
-            time.sleep(2)
+            
+            time.sleep(2.0)
+        
         return False
 
     def submit_event(
@@ -463,17 +475,20 @@ class RealStressClient:
         if attempts > 1:
             logger.info("detected single endpoint, attempting creation %d times for LB coverage", attempts)
         
+        success_count = 0
         for i in range(attempts):
             if self.create_chain(node_id, DEFAULT_CHAIN_NAME):
-                logger.info("Chain created on %s (attempt %d)", node_id, i + 1)
-                return True
-            
-            logger.warning("Failed to create chain on %s (attempt %d)", node_id, i + 1)
+                logger.info("Chain created/verified on %s (attempt %d)", node_id, i + 1)
+                success_count += 1
+                if attempts == 1: # Direct node access, one success is enough
+                    return True
+            else:
+                logger.warning("Failed to create chain on %s (attempt %d)", node_id, i + 1)
             
             if attempts > 1:
-                time.sleep(0.5)
+                time.sleep(0.2)
         
-        return False
+        return success_count > 0
 
 
 def run_real_stress_test(

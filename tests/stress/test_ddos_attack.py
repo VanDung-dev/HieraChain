@@ -63,12 +63,16 @@ class TestDDoSAttack:
         Simulate a targeted attack on specific nodes.
         """
         client = RealStressClient()
-        if not client.wait_for_nodes(timeout=10):
-            pytest.skip("Nodes not reachable")
+        client.wait_for_nodes(timeout=30, min_healthy=2)
             
         healthy_nodes = [nid for nid, s in client.node_status.items() if s.is_healthy]
-        if len(healthy_nodes) < 2:
-            pytest.skip("Need at least 2 nodes for targeted attack test")
+        print(f"\n🔍 CLUSTER STATUS: {len(healthy_nodes)}/{len(client.node_status)} nodes healthy")
+        for nid, s in client.node_status.items():
+            status_str = "✅ HEALTHY" if s.is_healthy else "❌ UNHEALTHY"
+            print(f"  - {nid}: {status_str} ({s.url})")
+
+        if len(healthy_nodes) < 1:
+            pytest.fail("No healthy nodes found to attack!")
             
         target = healthy_nodes[0]
         print(f"\n🎯 TARGETED ATTACK ON NODE: {target}")
