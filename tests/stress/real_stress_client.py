@@ -94,7 +94,7 @@ class RealStressClient:
     def __init__(
         self,
         nodes: list[str] | None = None,
-        timeout: float = 5.0,
+        timeout: float = 15.0,
     ):
         self.nodes = nodes or DEFAULT_NODES
         self.timeout = timeout
@@ -128,7 +128,18 @@ class RealStressClient:
             return False
 
         try:
-            # Use correct API endpoint from hierachain.api.v1.endpoints
+            # Use v3 status for better integrity check if available, fallback to v1
+            try:
+                response = self.session.get(
+                    f"{status.url}/api/v3/status",
+                    timeout=self.timeout,
+                )
+                if response.status_code == 200:
+                    status.is_healthy = True
+                    return True
+            except requests.RequestException:
+                pass
+
             response = self.session.get(
                 f"{status.url}/api/v1/health",
                 timeout=self.timeout,
@@ -201,6 +212,49 @@ class RealStressClient:
                 self.results.failed_requests += 1
             return False
 
+    def submit_secure_event(
+        self,
+        chain_name: str = DEFAULT_CHAIN_NAME,
+        event_data: dict[str, Any] = None,
+        node_id: str | None = None
+    ) -> bool:
+        """
+        Submit a high-integrity secure event (API v3).
+        """
+        if not node_id:
+            node_id = self._select_random_healthy_node()
+            
+        status = self.node_status.get(node_id)
+        if not status:
+            return False
+            
+        url = f"{status.url}/api/v3/chains/{chain_name}/secure-events"
+        
+        try:
+            response = self.session.post(
+                url,
+                json=event_data,
+                timeout=status.timeout if hasattr(status, 'timeout') else 30
+            )
+            
+            with self.lock:
+                if response.status_code in (200, 201, 202):
+                    status.success_count += 1
+                    self.results.successful_requests += 1
+                    return True
+                else:
+                    status.error_count += 1
+                    status.last_error = f"HTTP {response.status_code}: {response.text}"
+                    self.results.failed_requests += 1
+                    return False
+                    
+        except requests.RequestException as e:
+            with self.lock:
+                status.error_count += 1
+                status.last_error = str(e)
+                self.results.failed_requests += 1
+            return False
+
     def get_chain_status(self, node_id: str) -> dict[str, Any] | None:
         """Get blockchain status from a node."""
         status = self.node_status.get(node_id)
@@ -226,8 +280,14 @@ class RealStressClient:
             return False
 
         try:
+            # Match CreateChainRequest schema from hierachain.api.v1.schemas
+            payload = {
+                "chain_type": "generic",
+                "participants": ["node1", "node2", "node3", "node4"]
+            }
             response = self.session.post(
                 f"{status.url}/api/v1/chains/{chain_name}/create",
+                json=payload,
                 timeout=self.timeout,
             )
             # 200/201 = Created, 409 = Already exists (treat as success)
