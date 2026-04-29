@@ -2,7 +2,8 @@
 Pydantic schemas for API v3 requests and responses (System Management)
 """
 
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 
 class VerifyIdentityRequest(BaseModel):
@@ -84,3 +85,68 @@ class InjectLicenseResponse(BaseModel):
 
     status: str = Field(..., description="Operation status")
     message: str = Field(..., description="Status message")
+
+
+class SecureEventRequest(BaseModel):
+    """
+    High-integrity event submission schema for API v3.
+    Enforces strict synchronous validation of cryptographic proofs and payload depth.
+    """
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "entity_id": "asset-001",
+                "event_type": "transfer",
+                "details": {"amount": 100, "currency": "HRC"},
+                "sender": "0x1234567890abcdef...",
+                "signature": "0xabcdef1234567890..."
+            }
+        }
+    )
+
+    entity_id: str = Field(..., min_length=1, max_length=128)
+    event_type: str = Field(..., min_length=1, max_length=64)
+    details: dict[str, Any] = Field(default_factory=dict)
+    sender: str = Field(..., description="Hex-encoded sender identity")
+    signature: str = Field(..., description="Hex-encoded digital signature")
+
+    @field_validator('sender', 'signature')
+    @classmethod
+    def validate_hex_format(cls, v: str) -> str:
+        """Enforce strict hex format for cryptographic fields."""
+        if not v.startswith("0x"):
+            raise ValueError("Cryptographic fields must start with '0x' prefix")
+        try:
+            bytes.fromhex(v[2:])
+        except ValueError:
+            raise ValueError("Field must be a valid hex string after '0x' prefix")
+        return v
+
+    @field_validator('details')
+    @classmethod
+    def validate_details_integrity(cls, v: dict[str, Any]) -> dict[str, Any]:
+        """Verify payload integrity, size, and depth to prevent recursion attacks."""
+        import json
+        if len(json.dumps(v)) > 1024 * 1024:
+            raise ValueError("Event details exceed 1MB size limit")
+
+        def check_depth(d, current_depth=0):
+            if current_depth > 10:
+                raise ValueError("Payload depth exceeds maximum limit (10)")
+            if isinstance(d, dict):
+                for value in d.values():
+                    check_depth(value, current_depth + 1)
+            elif isinstance(d, list):
+                for item in d:
+                    check_depth(item, current_depth + 1)
+
+        check_depth(v)
+        return v
+
+
+class SecureEventResponse(BaseModel):
+    """Response schema for high-integrity event submission"""
+    status: str = Field(..., description="Operation status (always 'committed' for v3)")
+    event_hash: str = Field(..., description="Cryptographic hash of the committed event")
+    timestamp: float = Field(..., description="Server-side commit timestamp")
