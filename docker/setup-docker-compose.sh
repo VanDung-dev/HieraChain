@@ -18,27 +18,32 @@ fi
 IMAGE_NAME="hierachain:latest"
 COMPOSE_FILE="docker/docker-compose.test.yml"
 
-# Step 1: Build Docker image
+# Step 1: Generate Node Identities
 echo ""
-echo "[1/4] Building Docker image..."
+echo "[1/5] Generating fresh node identities (cryptographic keys)..."
+python3 scripts/generate_node_identities.py
+
+# Step 2: Build Docker image
+echo ""
+echo "[2/5] Building Docker image..."
 docker build --no-cache -t $IMAGE_NAME -f docker/Dockerfile .
 sleep 5
 
-# Step 2: Stop existing cluster
+# Step 3: Stop existing cluster
 echo ""
-echo "[2/4] Stopping existing cluster..."
+echo "[3/5] Stopping existing cluster..."
 docker compose -f $COMPOSE_FILE down --remove-orphans -v
 sleep 2
 
-# Step 3: Start 4 HieraChain nodes
+# Step 4: Start 4 HieraChain nodes
 echo ""
-echo "[3/4] Starting 4 HieraChain nodes..."
+echo "[4/5] Starting 4 HieraChain nodes..."
 docker compose -f $COMPOSE_FILE up -d
 sleep 5
 
-# Step 4: Check node health
+# Step 5: Check node health
 echo ""
-echo "[4/4] Checking node health..."
+echo "[5/5] Checking node health..."
 for port in 2661 2662 2663 2664; do
     if curl -s "http://localhost:${port}/api/v1/health" > /dev/null 2>&1; then
         echo "  ✅ Node on port $port is healthy"

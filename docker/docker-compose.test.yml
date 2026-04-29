@@ -1,7 +1,7 @@
 # Docker Compose for Stress Testing HieraChain
 # 4 nodes with resource limits (1 CPU, 1GiB RAM each)
 
-version: '3.8'
+# HieraChain Stress Test Environment
 
 services:
   node1:
@@ -10,35 +10,39 @@ services:
       dockerfile: docker/Dockerfile
     container_name: hierachain-node1
     hostname: node1
+    env_file:
+      - ./nodes/node1/peers.env
     environment:
-      - NODE_ID=node1
-      - NODE_PORT=5001
-      - PEERS=node2:5002,node3:5003,node4:5004
+      - HRC_NODE_ID=node1
+      - HRC_AUTH_ENABLED=false
+      - HRC_P2P_PORT=5001
       - LOG_LEVEL=INFO
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
+      - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
+      - HRC_RATE_LIMIT_RPM=10000
+      - HRC_JOURNAL_FSYNC=false
     ports:
       - "5001:5001"
       - "2661:2661"  # API port
     networks:
-      - hierachain-test
+      hierachain-test:
+        ipv4_address: 172.28.0.10
     volumes:
       - node1-data:/app/data
+      - ./nodes/node1:/app/config/identity:ro
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
       interval: 10s
       timeout: 5s
       retries: 3
     restart: unless-stopped
-    command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
+    command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   node2:
     build:
@@ -46,28 +50,32 @@ services:
       dockerfile: docker/Dockerfile
     container_name: hierachain-node2
     hostname: node2
+    env_file:
+      - ./nodes/node2/peers.env
     environment:
-      - NODE_ID=node2
-      - NODE_PORT=5002
-      - PEERS=node1:5001,node3:5003,node4:5004
+      - HRC_NODE_ID=node2
+      - HRC_AUTH_ENABLED=false
+      - HRC_P2P_PORT=5002
       - LOG_LEVEL=INFO
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
+      - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
+      - HRC_RATE_LIMIT_RPM=10000
+      - HRC_JOURNAL_FSYNC=false
     ports:
       - "5002:5002"
       - "2662:2661"
     networks:
-      - hierachain-test
+      hierachain-test:
+        ipv4_address: 172.28.0.11
     volumes:
       - node2-data:/app/data
+      - ./nodes/node2:/app/config/identity:ro
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
       interval: 10s
@@ -76,7 +84,7 @@ services:
     restart: unless-stopped
     depends_on:
       - node1
-    command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
+    command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   node3:
     build:
@@ -84,28 +92,32 @@ services:
       dockerfile: docker/Dockerfile
     container_name: hierachain-node3
     hostname: node3
+    env_file:
+      - ./nodes/node3/peers.env
     environment:
-      - NODE_ID=node3
-      - NODE_PORT=5003
-      - PEERS=node1:5001,node2:5002,node4:5004
+      - HRC_NODE_ID=node3
+      - HRC_AUTH_ENABLED=false
+      - HRC_P2P_PORT=5003
       - LOG_LEVEL=INFO
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
+      - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
+      - HRC_RATE_LIMIT_RPM=10000
+      - HRC_JOURNAL_FSYNC=false
     ports:
       - "5003:5003"
       - "2663:2661"
     networks:
-      - hierachain-test
+      hierachain-test:
+        ipv4_address: 172.28.0.12
     volumes:
       - node3-data:/app/data
+      - ./nodes/node3:/app/config/identity:ro
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
       interval: 10s
@@ -114,7 +126,7 @@ services:
     restart: unless-stopped
     depends_on:
       - node1
-    command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
+    command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   node4:
     build:
@@ -122,28 +134,32 @@ services:
       dockerfile: docker/Dockerfile
     container_name: hierachain-node4
     hostname: node4
+    env_file:
+      - ./nodes/node4/peers.env
     environment:
-      - NODE_ID=node4
-      - NODE_PORT=5004
-      - PEERS=node1:5001,node2:5002,node3:5003
+      - HRC_NODE_ID=node4
+      - HRC_AUTH_ENABLED=false
+      - HRC_P2P_PORT=5004
       - LOG_LEVEL=INFO
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
+      - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
+      - HRC_RATE_LIMIT_RPM=10000
+      - HRC_JOURNAL_FSYNC=false
     ports:
       - "5004:5004"
       - "2664:2661"
     networks:
-      - hierachain-test
+      hierachain-test:
+        ipv4_address: 172.28.0.13
     volumes:
       - node4-data:/app/data
+      - ./nodes/node4:/app/config/identity:ro
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
       interval: 10s
@@ -152,7 +168,7 @@ services:
     restart: unless-stopped
     depends_on:
       - node1
-    command: ["hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
+    command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   # Test runner container
   stress-tester:

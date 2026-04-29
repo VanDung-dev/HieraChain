@@ -1,17 +1,14 @@
 #!/bin/bash
-# HieraChain Stress Test Runner - Docker Compose
-# Runs stress tests on a Docker Compose cluster
+# HieraChain Attack Simulation Runner
+# Focuses on DDoS, Poison Pill, and Real Network Stress
 
-set -e
-
-# Configuration
-DURATION=${1:-60}
-REAL_REQUESTS="true"
+DURATION=${1:-20}
 TARGET="node1:2661,node2:2661,node3:2661,node4:2661"
 COMPOSE_FILE="docker/docker-compose.test.yml"
+REAL_REQUESTS="true"
 
 echo "========================================"
-echo " HieraChain Docker Compose Stress Test"
+echo " HieraChain Attack Simulation"
 echo "========================================"
 echo "Duration: ${DURATION}s"
 echo "Target:   ${TARGET}"
@@ -21,14 +18,13 @@ echo ""
 echo "[1/2] Checking Docker Compose cluster..."
 if ! docker compose -f "$COMPOSE_FILE" ps | grep -q "Up"; then
     echo "ERROR: Docker Compose cluster is not running!"
-    echo "Start it first with: docker/setup-docker-compose.sh"
     exit 1
 fi
 echo "  ✅ Cluster is ready"
 
-# Step 2: Run stress test
+# Step 2: Run targeted attack tests
 echo ""
-echo "[2/2] Starting stress test..."
+echo "[2/2] Launching Attack Simulation..."
 docker compose -f "$COMPOSE_FILE" run --rm stress-tester \
     bash -c "
         export TARGET_NODES='$TARGET'
@@ -41,6 +37,6 @@ docker compose -f "$COMPOSE_FILE" run --rm stress-tester \
 
 echo ""
 echo "========================================"
-echo " Stress test complete!"
+echo " Attack Simulation Complete!"
 echo "========================================"
 echo "Report: log/report/docker_compose_stress_report.html"
