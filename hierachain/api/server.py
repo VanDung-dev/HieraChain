@@ -9,6 +9,7 @@ The server uses FastAPI for high performance and includes proper
 error handling, CORS support, and comprehensive logging.
 """
 
+import os
 import uuid
 import uvicorn
 import redis
@@ -33,8 +34,12 @@ from hierachain.api.graphql.schema import schema as graphql_schema
 from hierachain.api.graphql import security as graphql_security
 from hierachain.config.settings import get_settings
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
+from hierachain.network.network_client import NetworkClient, NetworkClientConfig
 
 logger = logging.getLogger(__name__)
+
+# Global network client
+p2p_client: NetworkClient | None = None
 
 # Endpoints that should bypass authentication and rate limiting
 # These are the system endpoints used for health monitoring and documentation
@@ -83,9 +88,45 @@ async def lifespan(_app: FastAPI):
     # Start WebSocket manager
     await ws_manager.start()
     logger.info("WebSocket manager started")
+
+    # Start P2P network if enabled
+    global p2p_client
+    settings = get_settings()
+    p2p_config = settings.get_p2p_config()
+    
+    if p2p_config["enabled"]:
+        # Load node identity for transport keys
+        from hierachain.security.identity_loader import load_node_identity
+        node_identity = load_node_identity()
+        
+        transport_secret = None
+        transport_public = None
+        if node_identity:
+            transport_secret = node_identity.transport_secret_key
+            transport_public = node_identity.transport_public_key
+            logger.info("Loaded transport keys for node identity: %s", node_identity.node_id)
+        else:
+            logger.warning("No fixed node identity found, will use ephemeral transport keys")
+
+        config = NetworkClientConfig(
+            enabled=True,
+            node_id=settings.NODE_ID,
+            host=p2p_config["host"],
+            port=p2p_config["port"],
+            seed_nodes=p2p_config["seed_nodes"],
+            transport_secret_key=transport_secret,
+            transport_public_key=transport_public
+        )
+        p2p_client = NetworkClient(config)
+        success = await p2p_client.start()
+        if success:
+            logger.info("P2P network layer STARTED for node %s", settings.NODE_ID)
+        else:
+            logger.error("Failed to start P2P network layer")
+    else:
+        logger.info("P2P network layer is DISABLED")
     
     # Log authentication status on startup
-    settings = get_settings()
     if settings.AUTH_ENABLED:
         logger.info("Global API Authentication ENFORCED")
     else:
@@ -101,6 +142,11 @@ async def lifespan(_app: FastAPI):
     # Stop WebSocket manager
     await ws_manager.stop()
     logger.info("WebSocket manager stopped")
+
+    # Stop P2P network
+    if p2p_client:
+        await p2p_client.stop()
+        logger.info("P2P network layer stopped")
 
 
 def _check_cors_config(settings) -> None:
@@ -183,24 +229,30 @@ def add_payload_limit(fast_app: FastAPI):
     """Add payload size limit middleware to the application"""
     @fast_app.middleware("http")
     async def limit_upload_size(request: Request, call_next):
-        # 5 MB limit
-        max_size = 5 * 1024 * 1024
-        content_length = request.headers.get("content-length")
-
-        # Check limit only for methods that typically have payloads
+        # 1 MB limit (prevent DoS)
+        max_size = 1 * 1024 * 1024
+        
+        # Check Content-Length header first
+        content_length_header = request.headers.get("content-length")
         if (
             request.method in ("POST", "PUT", "PATCH")
-            and content_length
-            and int(content_length) > max_size
+            and content_length_header
         ):
-            return JSONResponse(
-                status_code=413,
-                content={
-                    "error": "Payload Too Large",
-                    "message": f"Request body too large. Limit is {max_size} bytes",
-                    "status_code": 413
-                }
-            )
+            try:
+                content_length = int(content_length_header)
+                if content_length > max_size:
+                    return JSONResponse(
+                        status_code=413,
+                        content={
+                            "error": "Payload Too Large",
+                            "message": f"Request body too large. Limit is {max_size} bytes",
+                            "status_code": 413
+                        }
+                    )
+            except ValueError:
+                # Invalid content-length header, let it through or reject?
+                # Better to let it through and let FastAPI handle potential issues
+                pass
             
         return await call_next(request)
 
@@ -635,11 +687,11 @@ def create_app() -> FastAPI:
         **cors_config
     )
 
-    # Add Middlewares
+    # Add Middlewares (order matters: last added runs first)
     add_security_headers(fast_app, settings.env in ("dev", "development"))
-    add_payload_limit(fast_app)
-    add_rate_limit(fast_app, settings)
     add_request_logging(fast_app)
+    add_rate_limit(fast_app, settings)
+    add_payload_limit(fast_app)
 
     # Register Routers and Root Endpoint
     register_routers(fast_app)
@@ -675,8 +727,8 @@ def run_server():
         log_level="info" if not is_debug else "debug",
         log_config=LOGGING_CONFIG,
         server_header=False,
-        timeout_keep_alive=5,   # Mitigate Slowloris: low keep-alive timeout
-        limit_concurrency=100,  # Limit concurrent connections
+        timeout_keep_alive=int(os.getenv("HRC_API_TIMEOUT_KEEP_ALIVE", "15")),
+        limit_concurrency=int(os.getenv("HRC_API_LIMIT_CONCURRENCY", "500")),
         headers=[("Server", "HieraChain")],  # Custom server header
         proxy_headers=True,     # Read X-Forwarded-* headers for Rate Limiters
         forwarded_allow_ips=api_config.get("trusted_proxies", "127.0.0.1")
