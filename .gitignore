@@ -696,3 +696,9 @@ cython_debug/
 backups/
 .benchmarks/
 demo/data/
+
+# HieraChain Docker Node Identities
+docker/nodes/*/identity.json
+docker/nodes/*/peers.env
+docker/nodes/peers.json
+!docker/nodes/README.md
