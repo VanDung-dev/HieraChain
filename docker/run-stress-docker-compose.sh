@@ -7,7 +7,7 @@ set -e
 # Configuration
 DURATION=${1:-60}
 REAL_REQUESTS="true"
-TARGET="node1:2661,node2:2661,node3:2661,node4:2661"
+TARGET="gateway:80"
 COMPOSE_FILE="docker/docker-compose.test.yml"
 
 echo "========================================"

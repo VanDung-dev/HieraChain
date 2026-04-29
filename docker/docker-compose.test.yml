@@ -3,6 +3,18 @@
 
 # HieraChain Stress Test Environment
 
+networks:
+  web2-external:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24
+  hierachain-internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
 services:
   node1:
     build:
@@ -20,13 +32,12 @@ services:
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
-      - HRC_RATE_LIMIT_RPM=10000
+      - HRC_ENV=test
+      - HRC_RATE_LIMIT=false
+      - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
-    ports:
-      - "5001:5001"
-      - "2661:2661"  # API port
     networks:
-      hierachain-test:
+      hierachain-internal:
         ipv4_address: 172.28.0.10
     volumes:
       - node1-data:/app/data
@@ -60,13 +71,12 @@ services:
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
-      - HRC_RATE_LIMIT_RPM=10000
+      - HRC_ENV=test
+      - HRC_RATE_LIMIT=false
+      - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
-    ports:
-      - "5002:5002"
-      - "2662:2661"
     networks:
-      hierachain-test:
+      hierachain-internal:
         ipv4_address: 172.28.0.11
     volumes:
       - node2-data:/app/data
@@ -102,13 +112,12 @@ services:
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
-      - HRC_RATE_LIMIT_RPM=10000
+      - HRC_ENV=test
+      - HRC_RATE_LIMIT=false
+      - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
-    ports:
-      - "5003:5003"
-      - "2663:2661"
     networks:
-      hierachain-test:
+      hierachain-internal:
         ipv4_address: 172.28.0.12
     volumes:
       - node3-data:/app/data
@@ -144,13 +153,12 @@ services:
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
-      - HRC_RATE_LIMIT_RPM=10000
+      - HRC_ENV=test
+      - HRC_RATE_LIMIT=false
+      - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
-    ports:
-      - "5004:5004"
-      - "2664:2661"
     networks:
-      hierachain-test:
+      hierachain-internal:
         ipv4_address: 172.28.0.13
     volumes:
       - node4-data:/app/data
@@ -170,6 +178,28 @@ services:
       - node1
     command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
+  # Enterprise API Gateway (Simulated Web2 Infrastructure)
+  gateway:
+    image: nginx:alpine
+    container_name: hierachain-gateway
+    environment:
+      - EXPLORER_TOKEN=${EXPLORER_TOKEN:-default_token}
+    volumes:
+      - ./default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    ports:
+      - "0.0.0.0:2660:80"  # Accessible from LAN
+    networks:
+      web2-external:
+        ipv4_address: 10.0.0.5
+      hierachain-internal:
+        ipv4_address: 172.28.0.5
+    depends_on:
+      - node1
+      - node2
+      - node3
+      - node4
+    restart: unless-stopped
+
   # Test runner container
   stress-tester:
     build:
@@ -177,11 +207,14 @@ services:
       dockerfile: docker/Dockerfile
     container_name: hierachain-stress-tester
     environment:
-      - TARGET_NODES=node1:2661,node2:2661,node3:2661,node4:2661
+      - TARGET_NODES=10.0.0.5:80,node1:2661,node2:2661,node3:2661,node4:2661
       - TEST_DURATION=60
       - REAL_REQUESTS=true
     networks:
-      - hierachain-test
+      web2-external:
+        ipv4_address: 10.0.0.100
+      hierachain-internal:
+        ipv4_address: 172.28.0.100
     volumes:
       - ../tests/stress:/app/tests/stress
       - ../log:/app/log
@@ -196,13 +229,6 @@ services:
         condition: service_healthy
     profiles:
       - stress-test
-
-networks:
-  hierachain-test:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
 
 volumes:
   node1-data:
