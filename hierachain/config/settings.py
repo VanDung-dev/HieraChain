@@ -35,6 +35,7 @@ class Settings:
     # Ledger version
     VERSION = get_version(VERSION)
     Ledger_NAME = "HieraChain"
+    NODE_ID = os.getenv("HRC_NODE_ID", "default-node")
 
     # Blockchain settings
     BLOCK_SIZE_LIMIT = 1000  # Maximum events per block
@@ -76,6 +77,10 @@ class Settings:
     # Hard limit for DoS protection
     EVENT_POOL_MAX_SIZE = int(os.getenv("HRC_EVENT_POOL_MAX_SIZE", "10000"))
 
+    # Whether to synchronously sync journal to disk (fsync)
+    # Recommended True for production, False for heavy stress testing on slow disks
+    JOURNAL_FSYNC = os.getenv("HRC_JOURNAL_FSYNC", "true").lower() == "true"
+
     # % RAM usage for emergency flush (e.g., 95.0 for 95%)
     RAM_CRITICAL_THRESHOLD = float(os.getenv("HRC_RAM_CRITICAL_THRESHOLD", "95.0"))
     
@@ -104,6 +109,16 @@ class Settings:
     VALIDATOR_IDENTITY_PATH = os.getenv("HRC_VALIDATOR_IDENTITY", "validator_key.json")
 
     # P2P Network settings
+    # Enable P2P network layer
+    P2P_ENABLED = os.getenv("HRC_P2P_ENABLED", "true").lower() == "true"
+    P2P_HOST = os.getenv("HRC_P2P_HOST", "0.0.0.0")
+    P2P_PORT = int(os.getenv("HRC_P2P_PORT", "5555"))
+    # Comma-separated list of seed nodes: node_id@ip:port
+    P2P_PEERS: list[str] = (
+        os.getenv("HRC_PEERS", "").split(",")
+        if os.getenv("HRC_PEERS")
+        else []
+    )
     # Trust policy: "open" (any peer unless blocked), "strict" (allowlist only)
     P2P_TRUST_POLICY = os.getenv("HRC_P2P_TRUST_POLICY", "open")
     # Comma-separated list of trusted peer IDs for strict mode
@@ -302,6 +317,10 @@ class Settings:
     def get_p2p_config(cls) -> dict[str, Any]:
         """Get P2P network security configuration"""
         return {
+            "enabled": cls.P2P_ENABLED,
+            "host": cls.P2P_HOST,
+            "port": cls.P2P_PORT,
+            "seed_nodes": cls.P2P_PEERS,
             "trust_policy": cls.P2P_TRUST_POLICY,
             "peer_allowlist": cls.P2P_PEER_ALLOWLIST,
             "require_signatures": cls.P2P_REQUIRE_SIGNATURES,
