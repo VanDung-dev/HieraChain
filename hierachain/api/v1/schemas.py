@@ -78,6 +78,60 @@ class EventRequest(BaseModel):
         description="Metadata used as AAD during encryption (must match for decryption)"
     )
 
+    # Cryptographic fields
+    sender: str | None = Field(
+        None,
+        description="Public key or identity of the event sender"
+    )
+    signature: str | None = Field(
+        None,
+        description="Cryptographic signature of the event payload"
+    )
+
+    @field_validator('details')
+    @classmethod
+    def validate_details_integrity(cls, v: dict[str, Any] | None) -> dict[str, Any] | None:
+        """Prevent deeply nested structures and oversized payloads."""
+        if v is None:
+            return v
+        
+        # Check size (approximate via string conversion)
+        import json
+        if len(json.dumps(v)) > 1024 * 1024:
+            raise ValueError("Event details exceed 1MB size limit")
+
+        def get_depth(d, level=1):
+            if level > 10:
+                raise ValueError("Event details are too deeply nested (max depth 10)")
+            if not isinstance(d, (dict, list)) or not d:
+                return level
+            if isinstance(d, list):
+                return max((get_depth(item, level + 1) for item in d), default=level)
+            return max((get_depth(val, level + 1) for val in d.values()), default=level)
+            
+        get_depth(v)
+        return v
+
+    @field_validator('sender', 'signature')
+    @classmethod
+    def validate_crypto_fields(cls, v: str | None, info: Any) -> str | None:
+        """Strict validation of sender and signature fields."""
+        if v is None:
+            return v
+            
+        # 1. Hex format check
+        hex_part = v.removeprefix("0x")
+        try:
+            bytes.fromhex(hex_part)
+        except ValueError:
+            raise ValueError(f"{info.field_name} must be a valid hex string")
+            
+        # 2. Minimum length check for security (Ed25519)
+        if len(hex_part) < 64:
+            raise ValueError(f"{info.field_name} too short for cryptographic verification")
+            
+        return v
+
     @field_validator('details_cid')
     @classmethod
     def validate_cid(cls, v: str | None) -> str | None:
