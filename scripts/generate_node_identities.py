@@ -88,7 +88,9 @@ def main():
         
         peers_env_path = os.path.join(base_dir, node_id, "peers.env")
         with open(peers_env_path, "w") as f:
-            f.write(f"HRC_PEERS={','.join(other_peers)}\n")
+            # Escape '$' as '$$' for Docker Compose env_file compatibility
+            peers_list_str = ",".join(other_peers).replace("$", "$$")
+            f.write(f"HRC_PEERS={peers_list_str}\n")
         print(f"Generated peers.env for {node_id} at {peers_env_path}")
 
     # Save a global peer list for convenience
