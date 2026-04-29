@@ -253,11 +253,12 @@ class HierarchyManager:
     - Coordination of cross-chain transactions (via TransactionManager)
     """
 
-    def __init__(self, name: str = "MainChain"):
+    def __init__(self, name: str = "MainChain", node_identity: Any | None = None):
         """Initialize main chain."""
         self.main_chain: MainChain = MainChain(name)
         self.sub_chains: dict[str, DomainChain] = {}
         self.system_started_at: float = time.time()
+        self.node_identity = node_identity
 
         # Configuration
         self.auto_proof_submission: bool = False
