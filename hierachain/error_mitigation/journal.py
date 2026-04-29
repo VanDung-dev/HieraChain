@@ -17,6 +17,7 @@ from pathlib import Path
 import pyarrow as pa
 
 from hierachain.core import schemas
+from hierachain.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -376,9 +377,10 @@ class TransactionJournal:
             # 4. Write Data
             self._file_handle.write(serialized_batch)
 
-            # 5. Flush and Sync
+            # 5. Flush and Sync (conditional based on settings)
             self._file_handle.flush()
-            os.fsync(self._file_handle.fileno())
+            if get_settings().JOURNAL_FSYNC:
+                os.fsync(self._file_handle.fileno())
 
             return True
 
