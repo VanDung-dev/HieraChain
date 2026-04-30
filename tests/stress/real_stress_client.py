@@ -139,11 +139,13 @@ class RealStressClient:
                 if response.status_code == 200:
                     status.is_healthy = True
                     return True
-            except requests.RequestException:
+            except requests.RequestException as e:
+                logger.debug(f"Endpoint {endpoint} failed for {node_id}: {e}")
                 continue
 
         # If we reach here, all endpoints failed
         status.is_healthy = False
+        logger.warning(f"❌ Node {node_id} is UNHEALTHY (all endpoints failed at {status.url})")
         return False
 
     def check_all_nodes(self) -> dict[str, bool]:
