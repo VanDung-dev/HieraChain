@@ -24,7 +24,7 @@ export EXPLORER_TOKEN="hrc_${EXPLORER_TOKEN}"
 # Step 1: Generate Node Identities
 echo ""
 echo "[1/5] Generating fresh node identities (cryptographic keys)..."
-python3 scripts/generate_node_identities.py
+python3 docker/scripts/generate_node_identities.py
 
 # Step 2: Build Docker image
 echo ""

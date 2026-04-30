@@ -22,6 +22,7 @@ COPY .env.HRC.example ./.env
 COPY pyproject.toml uv.lock ./
 COPY tests/ ./tests/
 COPY scripts/ ./scripts/
+COPY docker/scripts/ ./docker/scripts/
 COPY config/ ./config/
 COPY README.md ./
 
