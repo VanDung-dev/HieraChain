@@ -21,6 +21,13 @@ COMPOSE_FILE="docker/docker-compose.test.yml"
 EXPLORER_TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 8 || echo "default")
 export EXPLORER_TOKEN="hrc_${EXPLORER_TOKEN}"
 
+# Step 0: Auto-discover nodes from compose file
+echo "[0/5] Discovering cluster nodes..."
+# Extracts all hostnames from the compose file (excluding the gateway itself)
+HRC_NODES=$(grep "hostname:" $COMPOSE_FILE | awk '{print $2}' | grep -v "gateway" | tr '\n' ',' | sed 's/,$//')
+export HRC_NODES
+echo "  Found nodes: ${HRC_NODES}"
+
 # Step 1: Generate Node Identities
 echo ""
 echo "[1/5] Generating fresh node identities (cryptographic keys)..."
@@ -47,14 +54,19 @@ sleep 5
 # Step 5: Check cluster health via Gateway
 echo ""
 echo "[5/5] Checking cluster health via Gateway..."
-MAX_RETRIES=15
+MAX_RETRIES=20
 RETRY_COUNT=0
 HEALTHY=false
+GATEWAY_NOTIFIED=false
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    # Check gateway health and backend connectivity
+    # Check gateway health first
     if curl -s http://localhost:2660/gateway-health | grep -q "gateway_up"; then
-        echo "  ✅ Gateway is UP"
+        if [ "$GATEWAY_NOTIFIED" = false ]; then
+            echo "  ✅ Gateway is UP"
+            GATEWAY_NOTIFIED=true
+        fi
+        
         # Check if we can reach HieraChain through the gateway
         if curl -s http://localhost:2660/api/v1/health | grep -q "healthy"; then
             echo "  ✅ HieraChain Cluster is READY"
@@ -62,7 +74,13 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             break
         fi
     fi
-    echo "  ... Waiting for cluster to be ready (attempt $((RETRY_COUNT+1))/$MAX_RETRIES)"
+    
+    if [ "$GATEWAY_NOTIFIED" = false ]; then
+        echo "  ... Waiting for Gateway (attempt $((RETRY_COUNT+1))/$MAX_RETRIES)"
+    else
+        echo "  ... Waiting for HieraChain Nodes ($((RETRY_COUNT+1))/$MAX_RETRIES)"
+    fi
+    
     sleep 3
     RETRY_COUNT=$((RETRY_COUNT+1))
 done

@@ -17,6 +17,7 @@ networks:
 
 services:
   node1:
+    image: hierachain:latest
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -44,6 +45,7 @@ services:
     volumes:
       - node1-data:/app/data
       - ./nodes/node1:/app/config/identity:ro
+      - ../log/node1:/app/log
     deploy:
       resources:
         limits:
@@ -58,6 +60,7 @@ services:
     command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   node2:
+    image: hierachain:latest
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -85,6 +88,7 @@ services:
     volumes:
       - node2-data:/app/data
       - ./nodes/node2:/app/config/identity:ro
+      - ../log/node2:/app/log
     deploy:
       resources:
         limits:
@@ -101,6 +105,7 @@ services:
     command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   node3:
+    image: hierachain:latest
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -128,6 +133,7 @@ services:
     volumes:
       - node3-data:/app/data
       - ./nodes/node3:/app/config/identity:ro
+      - ../log/node3:/app/log
     deploy:
       resources:
         limits:
@@ -144,6 +150,7 @@ services:
     command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   node4:
+    image: hierachain:latest
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -171,6 +178,7 @@ services:
     volumes:
       - node4-data:/app/data
       - ./nodes/node4:/app/config/identity:ro
+      - ../log/node4:/app/log
     deploy:
       resources:
         limits:
@@ -192,8 +200,10 @@ services:
     container_name: hierachain-gateway
     environment:
       - EXPLORER_TOKEN=${EXPLORER_TOKEN:-default_token}
+      - HRC_NODES=${HRC_NODES:-node1,node2,node3,node4}
     volumes:
       - ./default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./status.html:/usr/share/nginx/html/status.html:ro
     ports:
       - "0.0.0.0:2660:80"  # Accessible from LAN
     networks:
@@ -210,6 +220,7 @@ services:
 
   # Test runner container
   stress-tester:
+    image: hierachain:latest
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -225,9 +236,9 @@ services:
         ipv4_address: 172.28.0.100
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ../scripts:/app/scripts
+      - ./scripts:/app/docker/scripts
       - ../tests:/app/tests
-      - ./log:/app/log
+      - ../log:/app/log
     depends_on:
       node1:
         condition: service_healthy
