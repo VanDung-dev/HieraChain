@@ -1,55 +1,64 @@
-# HieraChain Docker Image
-# For testing and deployment
+# HieraChain Optimized Docker Image
+# Powered by uv (https://astral.sh/uv)
 
 FROM python:3.12-slim
+
+# Copy uv binary from the official image for maximum performance
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install critical system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libffi-dev \
     iputils-ping \
     iproute2 \
     curl \
-    && curl -fsSL https://get.docker.com | sh \
+    bash \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy source code and project files
-COPY hierachain/ ./hierachain/
-COPY .env.HRC.example ./.env
-COPY pyproject.toml uv.lock ./
-COPY tests/ ./tests/
-COPY scripts/ ./scripts/
-COPY docker/scripts/ ./docker/scripts/
-COPY config/ ./config/
-COPY README.md ./
+# Configuration for uv
+# - UV_COMPILE_BYTECODE: Compile Python files to bytecode for faster startup
+# - UV_LINK_MODE: Use 'copy' instead of hardlinks (safer for Docker layers)
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    LOG_LEVEL=INFO \
+    PATH="/app/.venv/bin:$PATH"
 
-# Provide version for setuptools-scm since .git is not copied
-ARG VERSION=0.0.2
+# Copy project definition files first to leverage Docker layer caching
+COPY pyproject.toml uv.lock ./
+
+# Step 1: Install dependencies only (no source code yet)
+# This layer is cached as long as pyproject.toml and uv.lock remain unchanged.
+# Using --no-install-project to prepare the environment without the app itself.
+# Including 'dev' extra to provide a complete development-ready environment.
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --extra dev
+
+# Step 2: Copy the rest of the application
+COPY . .
+
+# Handle versioning for setuptools-scm (since .git is missing in container)
+# This is typically passed as a --build-arg by the setup script
+ARG VERSION=0.0.1-dev
 ENV SETUPTOOLS_SCM_PRETEND_VERSION=$VERSION
 
-# Install ALL dependencies (production + development) in one optimized step
-RUN pip install uv
-RUN uv sync
+# Step 3: Final sync to install the project in the virtual environment
+# This installs HieraChain in editable mode as defined in pyproject.toml
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --extra dev
 
-# Install the project itself (editable mode for docker)
-RUN uv pip install -e ".[dev]"
-
-# Create data directories
+# Create necessary runtime directories
 RUN mkdir -p /app/data /app/log
 
-# Environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV LOG_LEVEL=INFO
-
-# Expose ports
+# Expose HieraChain standard ports
+# 2661: API | 5555: ZMQ | 26657: BFT/P2P
 EXPOSE 2661 5555 26657
 
-# Install bash shell since slim image only has sh
-RUN apt-get update && apt-get install -y --no-install-recommends bash && rm -rf /var/lib/apt/lists/*
-
-# Default command - activate venv then run node service using sh (available on all images)
-CMD ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
+# Use 'uv run' to execute the CLI directly within the managed environment
+# This ensures all dependencies and the 'hrc' script are correctly resolved.
+CMD ["uv", "run", "hrc", "start", "--host", "0.0.0.0", "--port", "2661"]

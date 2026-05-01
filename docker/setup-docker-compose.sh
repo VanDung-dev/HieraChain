@@ -36,7 +36,13 @@ python3 docker/scripts/generate_node_identities.py
 # Step 2: Build Docker image
 echo ""
 echo "[2/5] Building Docker image..."
-docker build --no-cache -t $IMAGE_NAME -f docker/Dockerfile .
+# Dynamically extract version from the source code
+CURRENT_VERSION=$(python3 -c "import sys; sys.path.insert(0, '.'); from hierachain.units.version import __version__; print(__version__)")
+echo "  Target Version: ${CURRENT_VERSION}"
+
+docker build --no-cache -t $IMAGE_NAME \
+    --build-arg VERSION=${CURRENT_VERSION} \
+    -f docker/Dockerfile .
 sleep 5
 
 # Step 3: Stop existing cluster
