@@ -44,8 +44,4 @@ spec:
       port: 2661
       targetPort: 2661
       nodePort: 32661
-  # Optional: session affinity for sticky connections
-  sessionAffinity: ClientIP
-  sessionAffinityConfig:
-    clientIP:
-      timeoutSeconds: 10800 # 3 hours
+  # sessionAffinity removed to allow load balancing during stress tests

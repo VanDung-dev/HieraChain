@@ -12,6 +12,8 @@ resources:
   - node-statefulset.yaml
   # ⭐ Headless + API services for StatefulSet
   - node-statefulset-service.yaml
+  # ⭐ Independent Web2 node (Simulated ERP Infrastructure)
+  - web2-node.yaml
   # Note: persistent-volumes.yaml is NOT needed with volumeClaimTemplates
   # PVCs are auto-provisioned by StatefulSet: data-hierachain-node-0, -1, -2, -3
   #
