@@ -6,6 +6,25 @@ icon: material/history
 
 # Changelog
 
+## v0.0.3 (2026-05-02)
+
+Phiên bản này tập trung vào sự sẵn sàng cho production thông qua các cải thiện toàn diện về type safety trong `hierachain/`, triển khai Kubernetes StatefulSet, hạ tầng stress testing mạnh mẽ, và tăng cường xác thực bảo mật.
+
+??? note "Improvements (6)"
+
+    * **Tuân thủ Mypy đầy đủ**: Giải quyết các cảnh báo static typing trên các module consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core và cluster.
+    * **Xác thực Signature Ed25519**: Thực thi chiều dài 64-byte nghiêm ngặt cho signature Ed25519 để ngăn chặn việc bypass validation.
+    * **Canonicalization JSON**: Triển khai canonicalization JSON mạnh mẽ cho xác minh signature để đảm bảo các hoạt động cryptographic nhất quán.
+    * **Chuyển đổi StatefulSet**: Di chuyển từ Deployment sang StatefulSet cho deployment node ổn định với identity persistent.
+    * **Bảo mật**: Thêm middleware giới hạn payload, validation timestamp 24h, ngăn chặn API key mặc định trong production, refactor HMAC lockdown protocol.
+    * **Build & Packaging**: Di chuyển quản lý dependency sang uv, pin dependency versions, thêm uv.lock.
+
+??? warning "Fix (1)"
+
+    * **Testing & Ổn định**: Giới hạn message log trong BFT consensus, cải thiện stress test client, sửa bare except clauses trong integration tests, cải thiện IPFS connection handling.
+
+---
+
 ## v0.0.2 (2026-04-04)
 
 Phiên bản này tập trung vào tăng cường bảo mật, khả năng quan sát hệ thống và các cải thiện quan trọng về ổn định cho core package `hierachain/`, giải quyết các vấn đề thực tế phát hiện trong quá trình kiểm thử và đánh giá.
