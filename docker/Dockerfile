@@ -17,6 +17,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     iproute2 \
     curl \
     bash \
+    && ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') \
+    && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl" \
+    && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
+    && rm kubectl \
     && rm -rf /var/lib/apt/lists/*
 
 # Configuration for uv
