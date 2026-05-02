@@ -43,7 +43,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install zensical==0.0.39
+          pip install mkdocs zensical==0.0.39
 
       - name: Build Vietnamese Docs
         run: zensical build -f mkdocs.yml
