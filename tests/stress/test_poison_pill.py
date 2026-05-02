@@ -57,7 +57,7 @@ def generate_valid_event(entity_id: str) -> dict:
         "details": {
             "operation": "process_step",
             "status": "completed",
-            "timestamp": time.time(),
+            "timestamp": int(time.time()),
         },
         "sender": TEST_SENDER_HEX,
     }
@@ -84,7 +84,7 @@ def generate_poison_event(event_id: str, poison_type: str = "invalid_sig") -> di
         "event_type": "poison_event",
         "details": {
             "poison_type": poison_type,
-            "timestamp": time.time(),
+            "timestamp": int(time.time()),
         },
         # These are NOT sent to API, used for local tracking only
         "_is_poison": True,
@@ -133,6 +133,12 @@ class PoisonPillTest:
         self.poison_rejected = 0
         self.poison_accepted = 0  # This should be 0!
         self.lock = threading.Lock()
+        
+        # Shared client to avoid redundant health checks and session overhead
+        from tests.stress.real_stress_client import REAL_REQUESTS, RealStressClient
+        self.client = None
+        if REAL_REQUESTS:
+            self.client = RealStressClient(nodes=self.config["target_nodes"])
 
     def send_event(self, node: str, event: dict) -> dict:
         """Send an event to a node and return the status."""
@@ -148,17 +154,14 @@ class PoisonPillTest:
         payload.pop("_poison_type", None)
         payload.pop("poison_type", None)
         
-        from tests.stress.real_stress_client import REAL_REQUESTS, RealStressClient
-        if REAL_REQUESTS:
-            client = RealStressClient(nodes=[node])
-            # Extract node_id from URL if needed
-            node_id = node.split("//")[-1].split(":")[0].split(".")[0]
-            
+        from tests.stress.real_stress_client import REAL_REQUESTS
+        if REAL_REQUESTS and self.client:
             # API v3 is now mandatory for secure events in production
-            success = client.submit_secure_event(
+            # Pass node_id=None to let the client select a healthy node from its pool
+            success = self.client.submit_secure_event(
                 chain_name=self.config.get("chain_name", "stress_test"),
                 event_data=payload,
-                node_id=node_id
+                node_id=None
             )
             
             elapsed = time.time() - start_time
@@ -251,12 +254,11 @@ class PoisonPillTest:
         concurrent = self.config["concurrent_senders"]
         nodes = self.config["target_nodes"]
 
-        from tests.stress.real_stress_client import REAL_REQUESTS, RealStressClient
-        if REAL_REQUESTS:
+        from tests.stress.real_stress_client import REAL_REQUESTS
+        if REAL_REQUESTS and self.client:
             # Ensure chain exists on all nodes
-            client = RealStressClient(nodes=nodes)
-            client.wait_for_nodes(timeout=30)
-            client.create_chains_on_nodes()
+            self.client.wait_for_nodes(timeout=30)
+            self.client.create_chains_on_nodes()
 
         # Generate events
         logger.info(f"Generating {num_valid} valid + {num_poison} poison events...")

@@ -244,22 +244,29 @@ class RealStressClient:
             
         url = f"{status.url}/api/v3/chains/{chain_name}/secure-events"
         
+        with self.lock:
+            self.results.total_requests += 1
+
         try:
             response = self.session.post(
                 url,
                 json=event_data,
-                timeout=status.timeout if hasattr(status, 'timeout') else 30
+                timeout=30
             )
             
             with self.lock:
                 if response.status_code in (200, 201, 202):
                     status.success_count += 1
                     self.results.successful_requests += 1
+                    self.results.events_submitted += 1
                     return True
                 else:
                     status.error_count += 1
-                    status.last_error = f"HTTP {response.status_code}: {response.text}"
+                    error_msg = f"HTTP {response.status_code}: {response.text[:200]}"
+                    status.last_error = error_msg
                     self.results.failed_requests += 1
+                    # Log failure for debugging 0% acceptance
+                    logger.error(f"Secure event FAILED on {node_id}: {error_msg}")
                     return False
                     
         except requests.RequestException as e:
@@ -267,6 +274,7 @@ class RealStressClient:
                 status.error_count += 1
                 status.last_error = str(e)
                 self.results.failed_requests += 1
+            logger.error(f"Secure event EXCEPTION on {node_id}: {e}")
             return False
 
     def get_chain_status(self, node_id: str) -> dict[str, Any] | None:
@@ -295,14 +303,17 @@ class RealStressClient:
 
         try:
             # Match CreateChainRequest schema from hierachain.api.v1.schemas
+            participants = ["node1", "node2", "node3", "node4"]
+                
             payload = {
                 "chain_type": "generic",
-                "participants": ["node1", "node2", "node3", "node4"]
+                "participants": participants
             }
             response = self.session.post(
                 f"{status.url}/api/v1/chains/{chain_name}/create",
                 json=payload,
                 timeout=self.timeout,
+                headers={"Connection": "close"}
             )
             # 200/201 = Created, 409 = Already exists (treat as success)
             if response.status_code in (200, 201, 409):
@@ -472,7 +483,7 @@ class RealStressClient:
         Returns:
             True if chain was created (or already exists).
         """
-        attempts = 10 if len(self.node_status) == 1 else 1
+        attempts = 50 if len(self.node_status) == 1 else 1
         
         if attempts > 1:
             logger.info("detected single endpoint, attempting creation %d times for LB coverage", attempts)
