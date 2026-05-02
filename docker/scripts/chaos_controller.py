@@ -6,19 +6,46 @@ Uses Docker Engine API via unix socket to avoid dependency on docker CLI.
 
 import json
 import socket
-import sys
 import argparse
 import logging
 import http.client
 
+import os
+import subprocess
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("ChaosController")
+
+class K8sClient:
+    def __init__(self, namespace="hierachain"):
+        self.namespace = namespace
+
+    def exec_run(self, pod_name, cmd):
+        """Execute a command in a pod via kubectl exec."""
+        # Pod names in K8s are hierachain-node-0, etc.
+        # But chaos_controller might receive node1, node2...
+        # So we map them if needed.
+        target_pod = pod_name
+        if pod_name.startswith("hierachain-node") and "-" not in pod_name[15:]:
+            # Convert hierachain-node1 to hierachain-node-0 (k8s is 0-indexed)
+            idx = int(pod_name.replace("hierachain-node", "")) - 1
+            target_pod = f"hierachain-node-{idx}"
+        
+        full_cmd = ["kubectl", "exec", "-n", self.namespace, target_pod, "--"] + cmd
+        try:
+            result = subprocess.run(full_cmd, capture_output=True, text=True, check=True)
+            return result.stdout
+        except subprocess.CalledProcessError as e:
+            logger.error(f"K8s exec failed on {target_pod}: {e.stderr}")
+            return None
 
 class DockerSocketClient:
     def __init__(self, socket_path="/var/run/docker.sock"):
         self.socket_path = socket_path
 
     def post(self, path, body=None):
+        if not os.path.exists(self.socket_path):
+            raise FileNotFoundError(f"Docker socket not found at {self.socket_path}")
         conn = http.client.HTTPConnection("localhost")
         conn.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         conn.sock.connect(self.socket_path)
@@ -31,32 +58,43 @@ class DockerSocketClient:
 
     def exec_run(self, container_name, cmd):
         """Execute a command in a container via Docker API."""
-        # 1. Create exec instance
-        status, data = self.post(f"/v1.41/containers/{container_name}/exec", {
-            "AttachStdout": True,
-            "AttachStderr": True,
-            "Cmd": cmd,
-            "User": "root"
-        })
-        
-        if status != 201:
-            logger.error(f"Failed to create exec on {container_name}: {data}")
-            return None
+        try:
+            # 1. Create exec instance
+            status, data = self.post(f"/v1.41/containers/{container_name}/exec", {
+                "AttachStdout": True,
+                "AttachStderr": True,
+                "Cmd": cmd,
+                "User": "root"
+            })
             
-        exec_id = json.loads(data)["Id"]
-        
-        # 2. Start exec instance
-        status, data = self.post(f"/v1.41/exec/{exec_id}/start", {"Detach": False, "Tty": False})
-        if status != 200:
-            logger.error(f"Failed to start exec on {container_name}: {data}")
-            return None
+            if status != 201:
+                logger.error(f"Failed to create exec on {container_name}: {data}")
+                return None
+                
+            exec_id = json.loads(data)["Id"]
             
-        return data
+            # 2. Start exec instance
+            status, data = self.post(f"/v1.41/exec/{exec_id}/start", {"Detach": False, "Tty": False})
+            if status != 200:
+                logger.error(f"Failed to start exec on {container_name}: {data}")
+                return None
+                
+            return data
+        except Exception as e:
+            logger.error(f"Docker socket error: {e}")
+            return None
 
 class ChaosController:
     def __init__(self):
-        self.nodes = ["hierachain-node1", "hierachain-node2", "hierachain-node3", "hierachain-node4"]
-        self.client = DockerSocketClient()
+        namespace = os.environ.get("K8S_NAMESPACE")
+        if namespace:
+            logger.info(f"Using Kubernetes Mode (Namespace: {namespace})")
+            self.client = K8sClient(namespace)
+            self.nodes = ["hierachain-node-0", "hierachain-node-1", "hierachain-node-2", "hierachain-node-3"]
+        else:
+            logger.info("Using Docker Socket Mode")
+            self.client = DockerSocketClient()
+            self.nodes = ["hierachain-node1", "hierachain-node2", "hierachain-node3", "hierachain-node4"]
 
     def apply_latency(self, node, ms=150, jitter=20, loss=1):
         logger.info(f"Applying WAN simulation to {node}: {ms}ms latency, {jitter}ms jitter, {loss}% loss")
@@ -83,7 +121,7 @@ class ChaosController:
         print(out if out else "No active rules")
 
 def main():
-    parser = argparse.ArgumentParser(description="HieraChain Chaos Controller (Socket Edition)")
+    parser = argparse.ArgumentParser(description="HieraChain Chaos Controller")
     parser.add_argument("action", choices=["apply", "reset", "status"], help="Action to perform")
     parser.add_argument("--node", help="Specific node (default: all)")
     parser.add_argument("--latency", type=int, default=150, help="Latency in ms (default: 150)")
