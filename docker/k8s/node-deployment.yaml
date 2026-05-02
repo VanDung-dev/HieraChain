@@ -47,11 +47,11 @@ spec:
                 name: hierachain-config
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "1Gi"
+              cpu: "1"
             limits:
               memory: "1Gi"
-              cpu: "1000m"
+              cpu: "1"
           volumeMounts:
             - name: data
               mountPath: /app/data
@@ -126,11 +126,11 @@ spec:
                 name: hierachain-config
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "1Gi"
+              cpu: "1"
             limits:
               memory: "1Gi"
-              cpu: "1000m"
+              cpu: "1"
           volumeMounts:
             - name: data
               mountPath: /app/data
@@ -204,11 +204,11 @@ spec:
                 name: hierachain-config
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "1Gi"
+              cpu: "1"
             limits:
               memory: "1Gi"
-              cpu: "1000m"
+              cpu: "1"
           volumeMounts:
             - name: data
               mountPath: /app/data
@@ -282,11 +282,11 @@ spec:
                 name: hierachain-config
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "1Gi"
+              cpu: "1"
             limits:
               memory: "1Gi"
-              cpu: "1000m"
+              cpu: "1"
           volumeMounts:
             - name: data
               mountPath: /app/data

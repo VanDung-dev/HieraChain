@@ -71,11 +71,11 @@ spec:
                   key: HRC_AUTH_ENABLED
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "1Gi"
+              cpu: "1"
             limits:
               memory: "1Gi"
-              cpu: "1000m"
+              cpu: "1"
           volumeMounts:
             - name: data
               mountPath: /app/data
