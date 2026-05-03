@@ -34,7 +34,7 @@ labels:
 # Image configuration - override for different registries
 images:
   - name: hierachain
-    newName: hierachain
+    newName: localhost/hierachain
     newTag: latest
 
 # Common patches for production (optional)
