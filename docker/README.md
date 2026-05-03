@@ -1,98 +1,92 @@
-# 📊 HieraChain Stress Testing
+# 📊 HieraChain Stress Testing Infrastructure
 
-Docker and Kubernetes configurations dedicated to performance benchmarking (throughput) and stability testing of HieraChain under high load.
+HieraChain provides a comprehensive suite of Docker, Kubernetes, and Podman configurations dedicated to high-performance benchmarking (throughput) and stability testing.
 
 > [!IMPORTANT]
-> This directory is intended for **Stress Testing** and performance analysis only. It is NOT a production deployment guide.
+> This infrastructure is optimized for **Stress Testing** and performance analysis. It implements "Guaranteed QoS" and "CPU Pinning" to ensure accurate and jitter-free results.
 
 ---
 
-## 📁 Stress Test Tools
+## 📁 Infrastructure Overview
 
 ```text
 docker/
-├── setup-docker-compose.sh         # Initialize a 4-node cluster (Docker Compose)
-├── run-stress-docker-compose.sh    # Run stress tests on Docker Compose
-├── setup-k8s.sh                    # Initialize a 4-node cluster on Kubernetes (Kind)
+├── setup-docker-compose.sh         # Initialize Docker Compose cluster
+├── run-stress-docker-compose.sh    # Run stress tests on Docker
+├── setup-k8s.sh                    # Initialize K8s cluster (Kind)
 ├── run-stress-k8s.sh               # Run stress tests on Kubernetes
-├── docker-compose.test.yml         # Local cluster configuration
-└── k8s/                            # Kubernetes manifests for testing
+├── setup-podman.sh                 # Initialize Pure Podman cluster
+├── run-stress-podman.sh            # Run stress tests on Podman
+├── setup-podman-k8s.sh             # Initialize Podman K8s (Play Kube)
+├── run-stress-podman-k8s.sh        # Run stress tests on Podman K8s
+├── k8s/                            # Kubernetes manifests (CPU Pinned)
+├── podman-compose.yml              # Podman-optimized configuration
+└── default.podman.conf.template    # Rootless-safe Nginx template
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Deployment Modes
 
-### 1. Using Docker Compose (Fastest)
-
+### 1. Docker Compose (Classic)
 Ideal for testing business logic and basic throughput on a local machine.
-
 ```bash
-# Step 1: Start the 4-node cluster
 docker/setup-docker-compose.sh
-
-# Step 2: Run the stress test (default: 60 seconds)
 docker/run-stress-docker-compose.sh
 ```
 
-**Utility Commands:**
-
-* `docker/setup-docker-compose.sh`: Rebuilds and restarts the cluster.
-* `docker compose -f docker/docker-compose.test.yml logs -f`: View live logs.
-* `docker compose -f docker/docker-compose.test.yml down -v`: Full cleanup.
-
----
-
-### 2. Using Kubernetes (Realistic Simulation)
-
-Uses [Kind](https://kind.sigs.k8s.io/) to create a local cluster with specific resource limits (**1 CPU / 1GB RAM per node**) for accurate benchmarking.
-
+### 2. Kubernetes (Enterprise Simulation)
+Uses [Kind](https://kind.sigs.k8s.io/) or a real cluster. Implements **CPU Pinning** (1 Core per Node) for high-fidelity throughput testing.
 ```bash
-# Step 1: Initialize cluster and deploy nodes
 docker/setup-k8s.sh
-
-# Step 2: Expose the API to local host
-kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
-
-# Step 3: Run the stress test
 docker/run-stress-k8s.sh
 ```
 
-**Cleanup:**
-
+### 3. Podman (Secure & Rootless)
+Designed for enterprise environments with strict security policies. Supports both Compose and Native K8s manifests.
 ```bash
-kind delete cluster --name hiera-cluster
+# Pure Podman (Compose)
+docker/setup-podman.sh
+docker/run-stress-podman.sh
+
+# Podman K8s (Play Kube)
+docker/setup-podman-k8s.sh
+docker/run-stress-podman-k8s.sh
 ```
+
+---
+
+## ⚡ Performance Optimization: CPU Pinning
+
+To ensure HieraChain nodes are not affected by CPU context switching or resource contention, we have implemented **Guaranteed QoS**:
+*   **K8s:** Nodes are configured with `requests == limits` for CPU and RAM using integer values.
+*   **Podman:** Uses `cpuset` to bind each node container to a specific physical core ID.
+*   **Docker:** Uses `cpus: '1.0'` limit to prevent CPU over-subscription.
 
 ---
 
 ## 📈 Analysis & Reports
 
-After each test run, a detailed HTML report is generated for performance analysis:
-
-* **Location:** `log/report/`
-* **Key Metrics:**
-
-    * **EPS (Events Per Second)**: Throughput of events committed to the chain.
-    * **Latency**: Average time for an event to achieve consensus and commit.
-    * **Success Rate**: Percentage of successfully processed events under load.
+Detailed HTML reports are generated in `log/report/` after each run:
+*   **EPS (Events Per Second)**: Real-world throughput.
+*   **Latency**: Time to reach consensus (BFT/PoA).
+*   **Success Rate**: Stability under extreme load.
 
 ---
 
-## ⚙️ Configuration
-
-Performance can be tuned via environment variables in `docker/k8s/configmap.yaml` or `docker/docker-compose.test.yml`:
+## ⚙️ Global Configuration
 
 | Variable | Description | Recommendation |
 | :--- | :--- | :--- |
+| `EXPLORER_TOKEN` | Secure token for monitor access | Auto-generated during setup |
 | `HRC_RATE_LIMIT` | API Rate limiting | Set to `false` for stress testing |
-| `LOG_LEVEL` | Logging verbosity | Use `WARNING` for maximum performance |
-| `HRC_STORAGE_BACKEND` | Storage engine | `sqlite` (default) or `redis` |
+| `LOG_LEVEL` | Logging verbosity | Use `WARNING` for max performance |
 
 ---
 
-## 🔧 Troubleshooting
+## 🔧 Cleanup Commands
 
-* **Nodes not ready**: Check connectivity with `curl http://localhost:2661/api/v1/health`.
-* **429 Errors**: Ensure `HRC_RATE_LIMIT=false` is set in the node configuration.
-* **Resource pressure**: Monitor node CPU/RAM usage with `docker stats`.
+*   **Docker:** `docker compose -f docker/docker-compose.test.yml down -v`
+*   **K8s:** `kind delete cluster --name hiera-cluster`
+*   **Podman:** `podman compose -f docker/podman-compose.yml down -v`
+*   **Podman K8s:** `podman pod rm -f $(podman pod ps -q)`
