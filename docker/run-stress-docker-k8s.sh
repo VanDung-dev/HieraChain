@@ -39,7 +39,7 @@ docker compose -f "$COMPOSE_FILE" run --rm --build stress-tester \
         export REAL_REQUESTS='$REAL_REQUESTS'
         export K8S_NAMESPACE='$NAMESPACE'
         python -m pytest tests/stress/ -v \
-            --html=/app/log/report/k8s_stress_report.html \
+            --html=/app/log/report/docker_k8s_stress_report.html \
             --self-contained-html
     "
 
@@ -47,4 +47,4 @@ echo ""
 echo "========================================"
 echo " Stress test complete!"
 echo "========================================"
-echo "Report: log/report/k8s_stress_report.html"
+echo "Report: log/report/docker_k8s_stress_report.html"
