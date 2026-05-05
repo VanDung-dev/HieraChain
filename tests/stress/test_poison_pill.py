@@ -6,8 +6,6 @@ This test sends events designed to stress:
 - Malformed/invalid signature handling
 - Byzantine event rejection
 - Resource exhaustion prevention
-
-Run with: pytest tests/stress/test_poison_pill.py -v
 """
 
 import time

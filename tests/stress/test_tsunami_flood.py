@@ -6,8 +6,6 @@ This test floods the event pool with massive amounts of events to test:
 - Emergency flush mechanism
 - Memory management and RAM limits
 - Lockdown triggering and recovery
-
-Run with: pytest tests/stress/test_tsunami_flood.py -v
 """
 
 import time
