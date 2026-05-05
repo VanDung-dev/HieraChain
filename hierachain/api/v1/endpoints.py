@@ -54,11 +54,14 @@ _hierarchy_manager: HierarchyManager | None = None
 _entity_tracer: EntityTracer | None = None
 
 
+from hierachain.security.identity_loader import load_node_identity
+
 def get_hierarchy_manager() -> HierarchyManager:
     """Lazy getter for HierarchyManager singleton"""
     global _hierarchy_manager
     if _hierarchy_manager is None:
-        _hierarchy_manager = HierarchyManager()
+        node_identity = load_node_identity()
+        _hierarchy_manager = HierarchyManager(node_identity=node_identity)
     assert _hierarchy_manager is not None
     return _hierarchy_manager
 
@@ -85,6 +88,35 @@ def reset_instances() -> None:
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": time.time()}
+
+
+@router.get("/network/ping/{target_id}")
+async def network_ping(target_id: str):
+    """Ping another node via P2P network"""
+    from hierachain.api.server import p2p_client
+    if not p2p_client:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="P2P network layer is not initialized or disabled"
+        )
+    
+    import uuid
+    success = await p2p_client.send_direct(
+        target_id, 
+        {
+            "type": "ping", 
+            "timestamp": time.time(),
+            "nonce": str(uuid.uuid4())
+        }
+    )
+    
+    if not success:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"success": False, "detail": f"Failed to send ping to {target_id}"}
+        )
+        
+    return {"success": True, "target": target_id, "timestamp": time.time()}
 
 
 @router.get(
@@ -145,6 +177,8 @@ def _build_event_data(
         "entity_id": safe_entity_id,
         "event": safe_event_type,
         "timestamp": time.time(),
+        "sender": event_request.sender,
+        "signature": event_request.signature,
     }
     
     # Add details based on storage type

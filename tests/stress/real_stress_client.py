@@ -72,6 +72,8 @@ def generate_event() -> dict[str, Any]:
             "size": random.randint(100, 1000),
             "timestamp": time.time(),
         },
+        "sender": "0x" + "a" * 64,  # Simulated Ed25519 public key
+        "signature": "0x" + "b" * 128,  # Simulated signature
     }
 
 
@@ -94,7 +96,7 @@ class RealStressClient:
     def __init__(
         self,
         nodes: list[str] | None = None,
-        timeout: float = 5.0,
+        timeout: float = 15.0,
     ):
         self.nodes = nodes or DEFAULT_NODES
         self.timeout = timeout
@@ -122,24 +124,29 @@ class RealStressClient:
             self.node_status[node_id] = NodeStatus(node_id=node_id, url=url)
 
     def check_health(self, node_id: str) -> bool:
-        """Check if a node is healthy."""
+        """Check if a node is healthy by trying multiple system endpoints."""
         status = self.node_status.get(node_id)
         if not status:
             return False
 
-        try:
-            # Use correct API endpoint from hierachain.api.v1.endpoints
-            response = self.session.get(
-                f"{status.url}/api/v1/health",
-                timeout=self.timeout,
-            )
-            status.is_healthy = response.status_code == 200
-            return status.is_healthy
-        except requests.RequestException as e:
-            logger.warning(f"Health check failed for {node_id} ({status.url}): {e}")
-            status.is_healthy = False
-            status.last_error = str(e)
-            return False
+        # Endpoints to try in order of preference
+        endpoints = ["/api/v3/status", "/api/v1/health", "/"]
+        
+        for endpoint in endpoints:
+            try:
+                url = f"{status.url}{endpoint}"
+                response = self.session.get(url, timeout=self.timeout)
+                if response.status_code == 200:
+                    status.is_healthy = True
+                    return True
+            except requests.RequestException as e:
+                logger.debug(f"Endpoint {endpoint} failed for {node_id}: {e}")
+                continue
+
+        # If we reach here, all endpoints failed
+        status.is_healthy = False
+        logger.warning(f"❌ Node {node_id} is UNHEALTHY (all endpoints failed at {status.url})")
+        return False
 
     def check_all_nodes(self) -> dict[str, bool]:
         """Check health of all nodes."""
@@ -148,16 +155,34 @@ class RealStressClient:
             _results[node_id] = self.check_health(node_id)
         return _results
 
-    def wait_for_nodes(self, timeout: float = 60.0) -> bool:
-        """Wait for all nodes to become healthy."""
-        start = time.time()
-        while time.time() - start < timeout:
-            health = self.check_all_nodes()
-            if all(health.values()):
-                logger.info("All nodes are healthy")
+    def wait_for_nodes(self, timeout: float = 30.0, min_healthy: int | None = None) -> bool:
+        """
+        Wait for nodes to become healthy.
+        
+        Args:
+            timeout: Maximum time to wait in seconds.
+            min_healthy: Minimum number of healthy nodes required. 
+                         If None, requires all nodes to be healthy.
+        """
+        if min_healthy is None:
+            min_healthy = len(self.node_status)
+            
+        logger.info("Waiting for %d/%d nodes to be healthy (timeout=%ds)...", 
+                   min_healthy, len(self.node_status), timeout)
+        
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            healthy_count = 0
+            for node_id in self.node_status:
+                if self.check_health(node_id):
+                    healthy_count += 1
+            
+            if healthy_count >= min_healthy:
+                logger.info("Cluster ready: %d nodes healthy", healthy_count)
                 return True
-            logger.info("Waiting for nodes: %s", health)
-            time.sleep(2)
+            
+            time.sleep(2.0)
+        
         return False
 
     def submit_event(
@@ -201,6 +226,57 @@ class RealStressClient:
                 self.results.failed_requests += 1
             return False
 
+    def submit_secure_event(
+        self,
+        chain_name: str = DEFAULT_CHAIN_NAME,
+        event_data: dict[str, Any] = None,
+        node_id: str | None = None
+    ) -> bool:
+        """
+        Submit a high-integrity secure event (API v3).
+        """
+        if not node_id:
+            node_id = self._select_random_healthy_node()
+            
+        status = self.node_status.get(node_id)
+        if not status:
+            return False
+            
+        url = f"{status.url}/api/v3/chains/{chain_name}/secure-events"
+        
+        with self.lock:
+            self.results.total_requests += 1
+
+        try:
+            response = self.session.post(
+                url,
+                json=event_data,
+                timeout=30
+            )
+            
+            with self.lock:
+                if response.status_code in (200, 201, 202):
+                    status.success_count += 1
+                    self.results.successful_requests += 1
+                    self.results.events_submitted += 1
+                    return True
+                else:
+                    status.error_count += 1
+                    error_msg = f"HTTP {response.status_code}: {response.text[:200]}"
+                    status.last_error = error_msg
+                    self.results.failed_requests += 1
+                    # Log failure for debugging 0% acceptance
+                    logger.error(f"Secure event FAILED on {node_id}: {error_msg}")
+                    return False
+                    
+        except requests.RequestException as e:
+            with self.lock:
+                status.error_count += 1
+                status.last_error = str(e)
+                self.results.failed_requests += 1
+            logger.error(f"Secure event EXCEPTION on {node_id}: {e}")
+            return False
+
     def get_chain_status(self, node_id: str) -> dict[str, Any] | None:
         """Get blockchain status from a node."""
         status = self.node_status.get(node_id)
@@ -226,9 +302,18 @@ class RealStressClient:
             return False
 
         try:
+            # Match CreateChainRequest schema from hierachain.api.v1.schemas
+            participants = ["node1", "node2", "node3", "node4"]
+                
+            payload = {
+                "chain_type": "generic",
+                "participants": participants
+            }
             response = self.session.post(
                 f"{status.url}/api/v1/chains/{chain_name}/create",
+                json=payload,
                 timeout=self.timeout,
+                headers={"Connection": "close"}
             )
             # 200/201 = Created, 409 = Already exists (treat as success)
             if response.status_code in (200, 201, 409):
@@ -398,22 +483,25 @@ class RealStressClient:
         Returns:
             True if chain was created (or already exists).
         """
-        attempts = 10 if len(self.node_status) == 1 else 1
+        attempts = 50 if len(self.node_status) == 1 else 1
         
         if attempts > 1:
             logger.info("detected single endpoint, attempting creation %d times for LB coverage", attempts)
         
+        success_count = 0
         for i in range(attempts):
             if self.create_chain(node_id, DEFAULT_CHAIN_NAME):
-                logger.info("Chain created on %s (attempt %d)", node_id, i + 1)
-                return True
-            
-            logger.warning("Failed to create chain on %s (attempt %d)", node_id, i + 1)
+                logger.info("Chain created/verified on %s (attempt %d)", node_id, i + 1)
+                success_count += 1
+                if attempts == 1: # Direct node access, one success is enough
+                    return True
+            else:
+                logger.warning("Failed to create chain on %s (attempt %d)", node_id, i + 1)
             
             if attempts > 1:
-                time.sleep(0.5)
+                time.sleep(0.2)
         
-        return False
+        return success_count > 0
 
 
 def run_real_stress_test(

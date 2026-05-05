@@ -569,6 +569,7 @@ class SubChain(Blockchain):
         name: str,
         domain_type: str = "generic",
         config: dict[str, Any] | None = None,
+        node_identity: Any | None = None,
     ):
         """Initialize a Sub-Chain."""
         if not re.match(r"^[a-zA-Z0-9_\-]+$", name):
@@ -580,6 +581,7 @@ class SubChain(Blockchain):
         super().__init__(name)
         self.domain_type = domain_type
         self.custom_config = config
+        self.node_identity = node_identity
 
         # Dynamic Consensus Loading
         if settings.CONSENSUS_TYPE == "proof_of_federation":
@@ -720,7 +722,7 @@ class SubChain(Blockchain):
         if hasattr(self, "custom_config") and self.custom_config:
             config.update(self.custom_config)
 
-        self.ordering_service = OrderingService(nodes=[local_node], config=config)
+        self.ordering_service = OrderingService(nodes=[local_node], config=config, node_identity=self.node_identity)
 
     def add_event(self, event: dict[str, Any]) -> str:
         """Add event to Sub-Chain."""

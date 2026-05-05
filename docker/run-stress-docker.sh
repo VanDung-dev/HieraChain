@@ -7,7 +7,7 @@ set -e
 # Configuration
 DURATION=${1:-60}
 REAL_REQUESTS="true"
-TARGET="node1:2661,node2:2661,node3:2661,node4:2661"
+TARGET="gateway:80,node1:2661,node2:2661,node3:2661,node4:2661"
 COMPOSE_FILE="docker/docker-compose.test.yml"
 
 echo "========================================"
@@ -31,11 +31,12 @@ echo ""
 echo "[2/2] Starting stress test..."
 docker compose -f "$COMPOSE_FILE" run --rm stress-tester \
     bash -c "
+        mkdir -p /app/log/report
         export TARGET_NODES='$TARGET'
         export TEST_DURATION='$DURATION'
         export REAL_REQUESTS='$REAL_REQUESTS'
-        python -m pytest tests/stress/ -v \
-            --html=/app/log/report/docker_compose_stress_report.html \
+        uv run pytest tests/stress/ -v \
+            --html=/app/log/report/docker_stress_report.html \
             --self-contained-html
     "
 
@@ -43,4 +44,4 @@ echo ""
 echo "========================================"
 echo " Stress test complete!"
 echo "========================================"
-echo "Report: log/report/docker_compose_stress_report.html"
+echo "Report: log/report/docker_stress_report.html"

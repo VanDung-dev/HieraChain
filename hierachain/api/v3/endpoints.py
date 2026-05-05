@@ -4,9 +4,12 @@ API v3 endpoints for System Management
 
 import time
 import os
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import (
+    APIRouter, HTTPException, status, Depends
+)
 from hierachain.api.v3.schemas import (
-    VerifyIdentityRequest, VerifyIdentityResponse, NodeStatusResponse
+    VerifyIdentityRequest, VerifyIdentityResponse, NodeStatusResponse,
+    SecureEventRequest, SecureEventResponse
 )
 from hierachain.units.version import get_version
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
@@ -15,11 +18,12 @@ from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.config.settings import get_settings
 from hierachain.security.key_provider import LocalKeyProvider, CryptoError
 from hierachain.security.secure_logging import SecureLogger
+from hierachain.security.verify.signature_verifier import SignatureVerifier
 
 logger = SecureLogger("hierachain.api.v3")
-
-
 router = APIRouter(prefix="/api/v3", tags=["HieraChain-v3 (System & Admin)"])
+
+verifier = SignatureVerifier()
 
 
 def get_current_key_provider() -> LocalKeyProvider:
@@ -116,3 +120,61 @@ async def get_status(manager: HierarchyManager = Depends(get_hierarchy_manager))
         license_active=license_active,
         uptime=uptime_str
     )
+
+
+@router.post(
+    "/chains/{chain_name}/secure-events",
+    response_model=SecureEventResponse,
+    dependencies=[Depends(require_chain_access)]
+)
+async def add_secure_event(
+    chain_name: str,
+    request: SecureEventRequest,
+    manager: HierarchyManager = Depends(get_hierarchy_manager)
+):
+    """
+    High-integrity event submission.
+    Mandates synchronous validation of signatures and data integrity.
+    """
+    try:
+        # Get target chain
+        chain = manager.get_sub_chain(chain_name)
+        if not chain:
+            raise HTTPException(status_code=404, detail=f"Chain '{chain_name}' not found")
+        
+        # Add event to chain
+        event_data = request.model_dump()
+        
+        # 1. Cryptographic validation using SignatureVerifier
+        # This performs canonicalization and Ed25519/ECDSA verification
+        if not verifier.verify_event_signature(event_data, request.sender):
+            logger.warning(
+                "Secure event signature verification failed",
+                chain=chain_name,
+                sender=request.sender,
+                entity_id=request.entity_id
+            )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Cryptographic signature verification failed. Event integrity cannot be guaranteed."
+            )
+
+        # 2. Add verified event to chain
+        event_hash = chain.add_event(event_data)
+
+        logger.audit(
+            action="submit_secure",
+            resource="event",
+            success=True,
+            chain=chain_name,
+            entity_id=request.entity_id
+        )
+
+        return SecureEventResponse(
+            status="committed", event_hash=event_hash, timestamp=time.time()
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Secure event submission failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

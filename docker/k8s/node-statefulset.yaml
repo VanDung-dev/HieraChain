@@ -34,7 +34,7 @@ spec:
               name: node-port
             - containerPort: 2661
               name: api-port
-          command: ["sh", "-c", ". .venv/bin/activate && uv run hrc start --host 0.0.0.0 --port 2661"]
+          command: ["sh", "-c", ". .venv/bin/activate && POD_INDEX=${HOSTNAME##*-} && export NODE_ID=\"node$(($POD_INDEX + 1))\" && [ -f /app/config/identity/peers.env ] && . /app/config/identity/peers.env; hrc node start --host 0.0.0.0 --port 2661"]
           env:
             - name: NODE_ID
               valueFrom:
@@ -42,8 +42,8 @@ spec:
                   fieldPath: metadata.name
             - name: NODE_PORT
               value: "5001"
-            - name: PEERS
-              value: "hierachain-node-0.hierachain-node-headless:5002,hierachain-node-1.hierachain-node-headless:5003,hierachain-node-2.hierachain-node-headless:5004,hierachain-node-3.hierachain-node-headless:5005"
+            - name: HRC_VALIDATOR_IDENTITY
+              value: "/app/config/identity/identity.json"
             - name: LOG_LEVEL
               valueFrom:
                 configMapKeyRef:
@@ -71,39 +71,89 @@ spec:
                   key: HRC_AUTH_ENABLED
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "1Gi"
+              cpu: "1"
             limits:
               memory: "1Gi"
-              cpu: "1000m"
+              cpu: "1"
           volumeMounts:
             - name: data
               mountPath: /app/data
+            - name: identity-storage
+              mountPath: /app/config/identity
           livenessProbe:
             httpGet:
               path: /api/v1/health
               port: api-port
             initialDelaySeconds: 15
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
+            periodSeconds: 15
+            timeoutSeconds: 15
+            failureThreshold: 5
           readinessProbe:
             httpGet:
               path: /api/v1/health
               port: api-port
             initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 5
           # Graceful shutdown - allows "Last Breath" broadcast
           lifecycle:
             preStop:
               exec:
                 command: ["/bin/sh", "-c", "sleep 5"]
+      initContainers:
+        - name: init-identity
+          image: busybox:latest
+          command:
+            - "sh"
+            - "-c"
+            - |
+              POD_INDEX=${HOSTNAME##*-}
+              echo "Initializing identity for pod index $POD_INDEX"
+              
+              # Copy identity file
+              cp /identities-secret/node-${POD_INDEX}-identity /identity-storage/identity.json
+              
+              # Build HRC_PEERS string for ZMQ BFT consensus
+              # Format: node_id@host:port:pub_key
+              # We build it directly into a file to avoid shell expansion of keys containing special characters like $
+              rm -f /identity-storage/peers.raw
+              for i in 0 1 2 3; do
+                if [ "$i" -eq "$POD_INDEX" ]; then continue; fi
+                
+                PEER_ID="node$(($i + 1))"
+                PEER_NAME="hierachain-node-${i}"
+                PEER_HOST="${PEER_NAME}.hierachain-node-headless"
+                
+                echo -n "${PEER_ID}@${PEER_HOST}:5001:" >> /identity-storage/peers.raw
+                # Extract key and append directly to file
+                grep "transport_public_key" /identities-secret/node-${i}-identity | awk -F'"' '{print $4}' | tr -d '\n' >> /identity-storage/peers.raw
+                echo -n "," >> /identity-storage/peers.raw
+              done
+              
+              # Format as export command with single quotes
+              echo -n "export HRC_PEERS='" > /identity-storage/peers.env
+              cat /identity-storage/peers.raw | sed 's/,$//' >> /identity-storage/peers.env
+              echo "'" >> /identity-storage/peers.env
+              
+              echo "Generated peers.env:"
+              cat /identity-storage/peers.env
+              echo "Identity initialized successfully"
+          volumeMounts:
+            - name: identities-secret
+              mountPath: /identities-secret
+            - name: identity-storage
+              mountPath: /identity-storage
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: hierachain-node-data
+        - name: identities-secret
+          secret:
+            secretName: hierachain-node-identities
+        - name: identity-storage
+          emptyDir: {}
   # VolumeClaimTemplates for automatic PVC provisioning per pod
   volumeClaimTemplates:
     - metadata:

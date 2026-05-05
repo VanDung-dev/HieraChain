@@ -413,15 +413,26 @@ class BFTConsensus:
         error_config: dict[str, Any] | None = None,
         keypair: KeyPair | None = None,
         node_public_keys: dict[str, str] | None = None,
-        zmq_node: ZmqNode | None = None
+        zmq_node: ZmqNode | None = None,
+        node_identity: Any | None = None
     ):
         self.node_id = node_id
         self.all_nodes = all_nodes
         self.f = f
         self.n = len(all_nodes)
-        self.node_public_keys = node_public_keys or {}
+        
+        # Identity and Keys
+        if node_identity:
+            self.node_id = node_identity.node_id
+            self.key_provider = LocalKeyProvider(node_identity.signing_keypair)
+            self.node_public_keys = node_public_keys or {}
+            # Ensure our own public key is in the map
+            self.node_public_keys[self.node_id] = node_identity.signing_public_key
+        else:
+            self.node_public_keys = node_public_keys or {}
+            self.key_provider = LocalKeyProvider(keypair) if keypair else None
+
         self.zmq_node = zmq_node
-        self.key_provider = LocalKeyProvider(keypair) if keypair else None
         self.network_send_function: Callable | None = None
         self.chain: Any | None = None
         self.error_config = error_config or {}

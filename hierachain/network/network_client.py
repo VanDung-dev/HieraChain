@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -43,6 +44,8 @@ class NetworkClientConfig:
     host: str = "127.0.0.1"
     port: int = 5555
     seed_nodes: list[str] = field(default_factory=list)
+    transport_secret_key: bytes | None = None
+    transport_public_key: bytes | None = None
 
 
 class NetworkClient:
@@ -91,15 +94,52 @@ class NetworkClient:
                 node_id=self.config.node_id or "default-node",
                 port=self.config.port,
                 host=self.config.host,
+                server_secret_key=self.config.transport_secret_key,
+                server_public_key=self.config.transport_public_key,
             )
             await self._zmq_node.start()
 
             # Register seed nodes
             for seed in self.config.seed_nodes:
-                if ":" in seed:
-                    peer_id = seed.split(":")[0]
-                    self._zmq_node.register_peer(peer_id, seed)
+                if not seed.strip():
+                    continue
+                
+                peer_id = None
+                address = None
+                pub_key = None
+                
+                if "@" in seed:
+                    # Format: node_id@ip:port[:public_key]
+                    peer_id, rest = seed.split("@", 1)
+                    parts = rest.split(":")
+                    if len(parts) >= 2:
+                        # parts[0] is host, parts[1] is port
+                        address = f"tcp://{parts[0]}:{parts[1]}"
+                        if len(parts) >= 3:
+                            # Join the remaining parts back in case the key has colons
+                            pub_key = ":".join(parts[2:]).encode('utf-8')
+                    else:
+                        address = f"tcp://{rest}"
+                elif ":" in seed:
+                    # Format: ip:port[:public_key]
+                    parts = seed.split(":")
+                    if len(parts) >= 2:
+                        peer_id = parts[0]
+                        address = f"tcp://{parts[0]}:{parts[1]}"
+                        if len(parts) >= 3:
+                            pub_key = ":".join(parts[2:]).encode('utf-8')
+                    else:
+                        peer_id = seed
+                        address = f"tcp://{seed}"
 
+                if peer_id and address:
+                    self._zmq_node.register_peer(peer_id, address, public_key=pub_key)
+                    key_info = " (with public key)" if pub_key else ""
+                    logger.info("Registered seed peer: %s at %s%s", peer_id, address, key_info)
+
+            # Register message handler
+            self._zmq_node.set_handler(self._on_message_received)
+            
             self._is_running = True
             logger.info(
                 "NetworkClient started: %s at %s:%s",
@@ -195,6 +235,33 @@ class NetworkClient:
         if peer_id in self._peers:
             del self._peers[peer_id]
             logger.debug("Unregistered peer: %s", peer_id)
+
+    async def send_direct(self, target_peer_id: str, message: dict[str, Any]) -> bool:
+        """Send a message directly to a peer."""
+        if not self._zmq_node or not self._is_running:
+            return False
+        return await self._zmq_node.send_direct(target_peer_id, message)
+
+    async def broadcast(self, message: dict[str, Any]) -> None:
+        """Broadcast a message to all known peers."""
+        if not self._zmq_node or not self._is_running:
+            return
+        await self._zmq_node.broadcast(message)
+
+    async def _on_message_received(self, message: dict[str, Any], sender_id: str) -> None:
+        """Handle incoming messages."""
+        logger.info("Received message from %s: %s", sender_id, message.get("type"))
+        
+        # Internal ping-pong for testing
+        if message.get("type") == "ping":
+            import uuid
+            pong_msg = {
+                "type": "pong",
+                "timestamp": time.time(),
+                "nonce": str(uuid.uuid4()),
+                "node_id": self.config.node_id
+            }
+            asyncio.create_task(self.send_direct(sender_id, pong_msg))
 
     @property
     def is_running(self) -> bool:

@@ -138,6 +138,12 @@ class SignatureVerifier:
         Try to verify with supported algorithms.
         Attempts Ed25519 first (default standard).
         """
+        # Strip 0x prefix if present (cryptographic libraries expect pure hex)
+        if public_key.startswith("0x"):
+            public_key = public_key[2:]
+        if signature.startswith("0x"):
+            signature = signature[2:]
+
         # 1. Try Ed25519 (PyNaCl) - Fast and standard for HieraChain
         if verify_signature(public_key, message, signature):
             return True
@@ -164,6 +170,12 @@ class SignatureVerifier:
             return False
 
         try:
+            # Strip 0x prefix if present
+            if public_key_hex.startswith("0x"):
+                public_key_hex = public_key_hex[2:]
+            if signature_hex.startswith("0x"):
+                signature_hex = signature_hex[2:]
+
             # Decode hex strings
             pub_key_bytes = bytes.fromhex(public_key_hex)
             sig_bytes = bytes.fromhex(signature_hex)

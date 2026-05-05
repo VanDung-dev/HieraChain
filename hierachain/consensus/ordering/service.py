@@ -33,9 +33,10 @@ class OrderingService:
     Facade for the Ordering Service package.
     Coordinates between specialized components to provide ordering functionality.
     """
-    def __init__(self, config: dict[str, Any], nodes: list[Any] | None = None):
+    def __init__(self, config: dict[str, Any], nodes: list[Any] | None = None, node_identity: Any | None = None):
         self.config = config
         self.nodes = nodes or []
+        self.node_identity = node_identity
         self.status = OrderingStatus.MAINTENANCE
         self.should_stop = threading.Event()
         self.event_pool: Queue[PendingEvent] = Queue()

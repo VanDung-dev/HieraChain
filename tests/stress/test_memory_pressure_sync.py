@@ -4,8 +4,6 @@ Memory Pressure Sync Test - Large Data Load and OOM Prevention.
 This test simulates loading large amounts of data into memory (via pyarrow)
 and verifies that garbage collection and memory management mechanisms
 keep the node from experiencing OOM (Out Of Memory) conditions.
-
-Run with: pytest tests/stress/test_memory_pressure_sync.py -v
 """
 
 import time

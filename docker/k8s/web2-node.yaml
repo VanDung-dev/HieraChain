@@ -1,0 +1,401 @@
+# Web2 Node Configuration for Kubernetes
+# This simulates an Enterprise Web2 Infrastructure (Gateway/ERP)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web2-config
+  namespace: hierachain
+  labels:
+    app: web2-node
+data:
+  # Using .template extension for automatic envsubst in nginx image
+  default.conf.template: |
+    # Load balance across the HieraChain cluster via headless service DNS
+    upstream hierachain_nodes {
+        server hierachain-node-headless:2661;
+        keepalive 32;
+    }
+
+    server {
+        listen 80;
+
+        # DNS resolver for k8s
+        resolver kube-dns.kube-system.svc.cluster.local valid=30s;
+
+        # Standard health check for internal monitors
+        location /web2-status {
+            access_log off;
+            return 200 '{"status": "web2_active", "role": "enterprise_gateway", "cluster_connection": "healthy"}';
+            add_header Content-Type application/json;
+        }
+
+        # Stealth Dashboard & Status (Token Protected)
+        location ~ ^/${EXPLORER_TOKEN}/(?<page>status|explorer)$ {
+            alias /usr/share/nginx/html/;
+            default_type text/html;
+            try_files $page.html =404;
+        }
+
+        # API Pass-through with Load Balancing
+        location /api/ {
+            proxy_pass http://hierachain_nodes;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            proxy_next_upstream error timeout http_502 http_503 http_504;
+            proxy_next_upstream_tries 3;
+            proxy_connect_timeout 5s;
+            proxy_read_timeout 30s;
+        }
+
+        # Node Discovery Endpoint
+        location ~ ^/${EXPLORER_TOKEN}/nodes$ {
+            add_header Content-Type application/json;
+            return 200 "{\"nodes\": \"${HRC_NODES}\"}";
+        }
+
+        # Dynamic Diagnostic Bridge
+        location ~ ^/${EXPLORER_TOKEN}/diag/(?<target_node>[^/]+) {
+            proxy_pass http://$target_node.hierachain-node-headless.hierachain.svc.cluster.local:2661/api/v1/health;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_next_upstream error timeout http_502 http_503 http_504;
+            proxy_next_upstream_tries 3;
+            proxy_connect_timeout 2s;
+            proxy_intercept_errors on;
+            error_page 502 503 504 = @node_error;
+        }
+
+        # Error Handler for Diagnostic Bridge
+        location @node_error {
+            add_header Content-Type application/json;
+            if ($status = 504) {
+                return 200 '{"status": "timeout"}';
+            }
+            return 200 '{"status": "down"}';
+        }
+
+        # Compatibility for legacy monitor path
+        location = /monitor {
+            alias /usr/share/nginx/html/status.html;
+            default_type text/html;
+        }
+
+        # Default Block (Stealth)
+        location / {
+            return 403 '{"error": "Forbidden", "message": "HieraChain Stealth Mode Active"}';
+            add_header Content-Type application/json;
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web2-node
+  namespace: hierachain
+  labels:
+    app: web2-node
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web2-node
+  template:
+    metadata:
+      labels:
+        app: web2-node
+    spec:
+      containers:
+        - name: gateway
+          image: nginx:alpine
+          env:
+            - name: EXPLORER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hierachain-secrets
+                  key: EXPLORER_TOKEN
+            - name: HRC_NODES
+              valueFrom:
+                secretKeyRef:
+                  name: hierachain-secrets
+                  key: HRC_NODES
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          volumeMounts:
+            - name: config-template
+              mountPath: /etc/nginx/templates/default.conf.template
+              subPath: default.conf.template
+            - name: html
+              mountPath: /usr/share/nginx/html/status.html
+              subPath: status.html
+            - name: html
+              mountPath: /usr/share/nginx/html/explorer.html
+              subPath: status.html
+      volumes:
+        - name: config-template
+          configMap:
+            name: web2-config
+        - name: html
+          configMap:
+            name: web2-html
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web2-service
+  namespace: hierachain
+  labels:
+    app: web2-node
+spec:
+  type: NodePort
+  selector:
+    app: web2-node
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      nodePort: 32660
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web2-html
+  namespace: hierachain
+data:
+  status.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>HieraChain | Minimal Monitor</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+        <style>
+            :root {
+                --bg: #0a0a0c;
+                --card: #141417;
+                --text: #e1e1e6;
+                --primary: #5865f2;
+                --success: #00ffa3;
+                --danger: #ff4757;
+                --warning: #ffa502;
+                --border: rgba(255,255,255,0.08);
+            }
+            body { 
+                font-family: "Inter", sans-serif; 
+                background: var(--bg); 
+                color: var(--text); 
+                margin: 0; 
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                min-height: 100vh;
+            }
+            .container { width: 100%; max-width: 900px; padding: 40px 20px; }
+            
+            .header { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+                margin-bottom: 30px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid var(--border);
+            }
+            .header h1 { 
+                margin: 0; 
+                font-size: 20px; 
+                font-weight: 800;
+                color: #fff;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .header h1::before {
+                content: "";
+                width: 10px;
+                height: 10px;
+                background: var(--primary);
+                border-radius: 2px;
+            }
+            
+            .grid { 
+                display: grid; 
+                grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); 
+                gap: 20px; 
+            }
+            
+            .node-card {
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 24px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                transition: all 0.3s ease;
+            }
+            .node-card:hover { border-color: rgba(255,255,255,0.12); }
+            
+            .node-info h3 { margin: 0; font-size: 16px; font-weight: 700; color: #fff; }
+            .node-info p { margin: 4px 0 0; font-family: "JetBrains Mono", monospace; font-size: 11px; color: #444; }
+            
+            .status-group { display: flex; align-items: center; gap: 12px; }
+            .status-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                position: relative;
+            }
+
+            .state-healthy .status-dot { background: var(--success); box-shadow: 0 0 10px var(--success); }
+            .state-healthy .status-dot::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; background: var(--success); opacity: 0.2; animation: pulse 2s infinite; }
+            
+            .state-down .status-dot { background: var(--danger); }
+            .state-starting .status-dot { background: var(--warning); }
+            .state-unresponsive .status-dot { background: var(--warning); opacity: 0.6; }
+
+            .status-text { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+            .state-healthy .status-text { color: var(--success); }
+            .state-down .status-text { color: var(--danger); }
+            .state-starting .status-text { color: var(--warning); }
+
+            @keyframes pulse {
+                0% { transform: scale(1); opacity: 0.2; }
+                100% { transform: scale(2.5); opacity: 0; }
+            }
+
+            .footer { 
+                margin-top: 40px; 
+                text-align: center; 
+                font-size: 10px; 
+                color: #222; 
+                font-family: "JetBrains Mono", monospace;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Cluster Status</h1>
+                <div id="sync-info" style="font-size: 10px; color: #333; font-family: 'JetBrains Mono';">SYNCING...</div>
+            </div>
+
+            <div class="grid" id="node-grid">
+                <!-- Nodes will be dynamically injected here -->
+            </div>
+
+            <div class="footer">HieraChain Monitor</div>
+        </div>
+
+        <script>
+            const currentPath = window.location.pathname;
+            const pathParts = currentPath.split('/').filter(p => p !== "");
+            const token = pathParts.length > 0 ? pathParts[0] : "";
+            let clusterNodes = [];
+            
+            function createNodeCard(nodeId) {
+                const shortName = nodeId.toUpperCase().replace('NODE', 'HC-NODE-');
+                const card = document.createElement('div');
+                card.id = nodeId;
+                card.className = 'node-card state-starting';
+                card.innerHTML = `
+                    <div class="node-info">
+                        <h3>${shortName}</h3>
+                        <p>Identity: ${nodeId}</p>
+                    </div>
+                    <div class="status-group">
+                        <span class="status-text">Starting</span>
+                        <div class="status-dot"></div>
+                    </div>
+                `;
+                return card;
+            }
+
+            async function discoverNodes() {
+                try {
+                    const nodesUrl = token ? `/${token}/nodes` : `nodes`;
+                    const response = await fetch(nodesUrl);
+                    const data = await response.json();
+                    if (data.nodes) {
+                        clusterNodes = data.nodes.split(',');
+                        const grid = document.getElementById("node-grid");
+                        grid.innerHTML = "";
+                        clusterNodes.forEach(nid => {
+                            grid.appendChild(createNodeCard(nid));
+                        });
+                        return true;
+                    }
+                } catch (e) {
+                    console.error("Discovery failed", e);
+                }
+                return false;
+            }
+            
+            async function updateNode(nodeId) {
+                const card = document.getElementById(nodeId);
+                if (!card) return;
+                const statusText = card.querySelector(".status-text");
+                
+                try {
+                    const diagUrl = token ? `/${token}/diag/${nodeId}` : `diag/${nodeId}`;
+                    const response = await fetch(diagUrl);
+                    const data = await response.json();
+                    
+                    card.classList.remove("state-healthy", "state-down", "state-unresponsive", "state-starting");
+                    
+                    if (data.status === "healthy") {
+                        card.classList.add("state-healthy");
+                        statusText.innerText = "Healthy";
+                    } else if (data.status === "down") {
+                        card.classList.add("state-down");
+                        statusText.innerText = "Down";
+                    } else if (data.status === "timeout") {
+                        card.classList.add("state-unresponsive");
+                        statusText.innerText = "Timeout";
+                    } else if (data.status === "starting") {
+                        card.classList.add("state-starting");
+                        statusText.innerText = "Starting";
+                    } else {
+                        card.classList.add("state-down");
+                        statusText.innerText = "Error";
+                    }
+                } catch (e) {
+                    card.classList.remove("state-healthy", "state-starting", "state-unresponsive");
+                    card.classList.add("state-down");
+                    statusText.innerText = "Offline";
+                }
+            }
+
+            async function init() {
+                const success = await discoverNodes();
+                if (!success) {
+                    clusterNodes = ["node1", "node2", "node3", "node4"];
+                    const grid = document.getElementById("node-grid");
+                    clusterNodes.forEach(nid => grid.appendChild(createNodeCard(nid)));
+                }
+                setInterval(refresh, 2000);
+                refresh();
+            }
+
+            function refresh() {
+                clusterNodes.forEach(updateNode);
+                document.getElementById("sync-info").innerText = "LIVE: " + new Date().toLocaleTimeString();
+            }
+
+            init();
+        </script>
+    </body>
+    </html>

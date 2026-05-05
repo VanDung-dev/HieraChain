@@ -1,0 +1,131 @@
+# HieraChain Podman-optimized Cluster
+# Usage: podman-compose -f docker/podman-compose.yml up
+
+networks:
+  hierachain-internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
+services:
+  node1:
+    image: hierachain:latest
+    container_name: hierachain-node1
+    hostname: node1
+    environment:
+      - HRC_NODE_ID=node1
+      - HRC_API_HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+    cpuset: "0"
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.10
+    volumes:
+      - node1-data:/app/data
+      - ./nodes/node1:/app/config/identity:ro
+      - ../log/node1:/app/log
+    command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
+
+  node2:
+    image: hierachain:latest
+    container_name: hierachain-node2
+    hostname: node2
+    environment:
+      - HRC_NODE_ID=node2
+      - HRC_API_HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+    cpuset: "1"
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.11
+    volumes:
+      - node2-data:/app/data
+      - ./nodes/node2:/app/config/identity:ro
+      - ../log/node2:/app/log
+    depends_on:
+      - node1
+    command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
+
+  node3:
+    image: hierachain:latest
+    container_name: hierachain-node3
+    hostname: node3
+    environment:
+      - HRC_NODE_ID=node3
+      - HRC_API_HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+    cpuset: "2"
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.12
+    volumes:
+      - node3-data:/app/data
+      - ./nodes/node3:/app/config/identity:ro
+      - ../log/node3:/app/log
+    depends_on:
+      - node1
+    command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
+
+  node4:
+    image: hierachain:latest
+    container_name: hierachain-node4
+    hostname: node4
+    environment:
+      - HRC_NODE_ID=node4
+      - HRC_API_HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+    cpuset: "3"
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.13
+    volumes:
+      - node4-data:/app/data
+      - ./nodes/node4:/app/config/identity:ro
+      - ../log/node4:/app/log
+    depends_on:
+      - node1
+    command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
+
+  gateway:
+    image: nginx:alpine
+    container_name: hierachain-gateway-podman
+    environment:
+      - EXPLORER_TOKEN=${EXPLORER_TOKEN:-podman_secret}
+      - HRC_NODES=${HRC_NODES:-node1,node2,node3,node4}
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.5
+    volumes:
+      - ./default.podman.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./status.html:/usr/share/nginx/html/status.html:ro
+    ports:
+      - "2660:8080" # Map 2660 host to 8080 container
+    depends_on:
+      - node1
+      - node2
+      - node3
+      - node4
+
+  stress-tester:
+    image: hierachain:latest
+    container_name: hierachain-stress-tester-podman
+    environment:
+      - TARGET_NODES=gateway:8080,node1:2661,node2:2661,node3:2661,node4:2661
+      - TEST_DURATION=60
+      - REAL_REQUESTS=true
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.100
+    volumes:
+      - ../tests:/app/tests
+      - ../log:/app/log
+    profiles:
+      - stress-test
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:
+  node4-data:
+

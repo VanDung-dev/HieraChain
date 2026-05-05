@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HieraChain | Minimal Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0c;
+            --card: #141417;
+            --text: #e1e1e6;
+            --primary: #5865f2;
+            --success: #00ffa3;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --border: rgba(255,255,255,0.08);
+        }
+        body { 
+            font-family: "Inter", sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+        }
+        .container { width: 100%; max-width: 900px; padding: 40px 20px; }
+        
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        .header h1 { 
+            margin: 0; 
+            font-size: 20px; 
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header h1::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); 
+            gap: 20px; 
+        }
+        
+        .node-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        .node-card:hover { border-color: rgba(255,255,255,0.12); }
+        
+        .node-info h3 { margin: 0; font-size: 16px; font-weight: 700; color: #fff; }
+        .node-info p { margin: 4px 0 0; font-family: "JetBrains Mono", monospace; font-size: 11px; color: #444; }
+        
+        .status-group { display: flex; align-items: center; gap: 12px; }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .state-healthy .status-dot { background: var(--success); box-shadow: 0 0 10px var(--success); }
+        .state-healthy .status-dot::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; background: var(--success); opacity: 0.2; animation: pulse 2s infinite; }
+        
+        .state-down .status-dot { background: var(--danger); }
+        .state-starting .status-dot { background: var(--warning); }
+        .state-unresponsive .status-dot { background: var(--warning); opacity: 0.6; }
+
+        .status-text { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .state-healthy .status-text { color: var(--success); }
+        .state-down .status-text { color: var(--danger); }
+        .state-starting .status-text { color: var(--warning); }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.2; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        .footer { 
+            margin-top: 40px; 
+            text-align: center; 
+            font-size: 10px; 
+            color: #222; 
+            font-family: "JetBrains Mono", monospace;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Cluster Status</h1>
+            <div id="sync-info" style="font-size: 10px; color: #333; font-family: 'JetBrains Mono';">SYNCING...</div>
+        </div>
+
+        <div class="grid" id="node-grid">
+            <!-- Nodes will be dynamically injected here -->
+        </div>
+
+        <div class="footer">HieraChain Monitor</div>
+    </div>
+
+    <script>
+        const currentPath = window.location.pathname;
+        const pathParts = currentPath.split('/').filter(p => p !== "");
+        const token = pathParts.length > 0 ? pathParts[0] : "";
+        let clusterNodes = [];
+        
+        // Template for creating a node card
+        function createNodeCard(nodeId) {
+            const shortName = nodeId.toUpperCase().replace('NODE', 'HC-NODE-');
+            const card = document.createElement('div');
+            card.id = nodeId;
+            card.className = 'node-card state-starting';
+            card.innerHTML = `
+                <div class="node-info">
+                    <h3>${shortName}</h3>
+                    <p>Identity: ${nodeId}</p>
+                </div>
+                <div class="status-group">
+                    <span class="status-text">Starting</span>
+                    <div class="status-dot"></div>
+                </div>
+            `;
+            return card;
+        }
+
+        async function discoverNodes() {
+            try {
+                const nodesUrl = token ? `/${token}/nodes` : `nodes`;
+                const response = await fetch(nodesUrl);
+                const data = await response.json();
+                if (data.nodes) {
+                    clusterNodes = data.nodes.split(',');
+                    const grid = document.getElementById("node-grid");
+                    grid.innerHTML = ""; // Clear loader/previous
+                    clusterNodes.forEach(nid => {
+                        grid.appendChild(createNodeCard(nid));
+                    });
+                    return true;
+                }
+            } catch (e) {
+                console.error("Discovery failed", e);
+            }
+            return false;
+        }
+        
+        async function updateNode(nodeId) {
+            const card = document.getElementById(nodeId);
+            if (!card) return;
+            const statusText = card.querySelector(".status-text");
+            
+            try {
+                const diagUrl = token ? `/${token}/diag/${nodeId}` : `diag/${nodeId}`;
+                const response = await fetch(diagUrl);
+                const data = await response.json();
+                
+                card.classList.remove("state-healthy", "state-down", "state-unresponsive", "state-starting");
+                
+                if (data.status === "healthy") {
+                    card.classList.add("state-healthy");
+                    statusText.innerText = "Healthy";
+                } else if (data.status === "down") {
+                    card.classList.add("state-down");
+                    statusText.innerText = "Down";
+                } else if (data.status === "timeout") {
+                    card.classList.add("state-unresponsive");
+                    statusText.innerText = "Timeout";
+                } else if (data.status === "starting") {
+                    card.classList.add("state-starting");
+                    statusText.innerText = "Starting";
+                } else {
+                    card.classList.add("state-down");
+                    statusText.innerText = "Error";
+                }
+            } catch (e) {
+                card.classList.remove("state-healthy", "state-starting", "state-unresponsive");
+                card.classList.add("state-down");
+                statusText.innerText = "Offline";
+            }
+        }
+
+        async function init() {
+            const success = await discoverNodes();
+            if (!success) {
+                // Fallback to default if discovery fails
+                clusterNodes = ["node1", "node2", "node3", "node4"];
+                const grid = document.getElementById("node-grid");
+                clusterNodes.forEach(nid => grid.appendChild(createNodeCard(nid)));
+            }
+            
+            // Start polling
+            setInterval(refresh, 2000);
+            refresh();
+        }
+
+        function refresh() {
+            clusterNodes.forEach(updateNode);
+            document.getElementById("sync-info").innerText = "LIVE: " + new Date().toLocaleTimeString();
+        }
+
+        init();
+    </script>
+</body>
+</html>

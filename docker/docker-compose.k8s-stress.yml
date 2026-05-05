@@ -19,11 +19,12 @@ services:
     environment:
       # Target K8s nodes via NodePort (accessible from host)
       # Docker Desktop: host.docker.internal resolves to host machine
-      - TARGET_NODES=host.docker.internal:2661
+      - TARGET_NODES=host.docker.internal:32661
       - TEST_DURATION=60
       - REAL_REQUESTS=true
     volumes:
       - ../tests/stress:/app/tests/stress
+      - ../docker/scripts:/app/docker/scripts
       - ../log:/app/log
       # Uncomment and adjust path to enable Real K8s Namespace Isolation
       - ~/.kube/config:/root/.kube/config:ro
@@ -38,7 +39,7 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
-    entrypoint: ["sh", "/app/scripts/docker-stress-entrypoint.sh"]
+    entrypoint: ["sh", "/app/docker/scripts/docker-stress-entrypoint.sh"]
     command: >
       python -m pytest tests/stress/ -v
       --html=/app/log/report/k8s_stress_test_report.html

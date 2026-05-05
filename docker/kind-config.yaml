@@ -3,6 +3,14 @@ apiVersion: kind.x-k8s.io/v1alpha4
 name: hiera-cluster
 nodes:
 - role: control-plane
+  extraPortMappings:
+  - containerPort: 32660
+    hostPort: 32660
+    protocol: TCP
+  - containerPort: 32661
+    hostPort: 32661
+    protocol: TCP
+- role: worker
 - role: worker
 - role: worker
 - role: worker
