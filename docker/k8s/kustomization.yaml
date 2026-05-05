@@ -31,11 +31,18 @@ labels:
       app.kubernetes.io/part-of: hierachain
       app.kubernetes.io/managed-by: kustomize
 
-# Image configuration - override for different registries
+# --- Image Configuration ---
+# Default for Docker/Kind (Standard K8s)
 images:
   - name: hierachain
-    newName: localhost/hierachain
+    newName: hierachain
     newTag: latest
+
+# Use this for Podman K8s (uncomment if using 'podman play kube')
+# images:
+#   - name: hierachain
+#     newName: localhost/hierachain
+#     newTag: latest
 
 # Common patches for production (optional)
 # patchesStrategicMerge:
