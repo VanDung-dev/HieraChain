@@ -39,11 +39,12 @@ echo ""
 echo "[2/2] Starting stress test via Podman..."
 podman compose -f "$COMPOSE_FILE" run --rm stress-tester \
     bash -c "
+        mkdir -p /app/log/report
         export TARGET_NODES='$TARGET'
         export TEST_DURATION='$DURATION'
         export REAL_REQUESTS='$REAL_REQUESTS'
         export K8S_NAMESPACE='$NAMESPACE'
-        python -m pytest tests/stress/ -v \
+        uv run python -m pytest tests/stress/ -v \
             --html=/app/log/report/podman_k8s_stress_report.html \
             --self-contained-html
     "

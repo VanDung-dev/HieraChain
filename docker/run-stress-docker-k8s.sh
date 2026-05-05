@@ -34,11 +34,12 @@ echo ""
 echo "[2/2] Starting stress test..."
 docker compose -f "$COMPOSE_FILE" run --rm --build stress-tester \
     bash -c "
+        mkdir -p /app/log/report
         export TARGET_NODES='$TARGET'
         export TEST_DURATION='$DURATION'
         export REAL_REQUESTS='$REAL_REQUESTS'
         export K8S_NAMESPACE='$NAMESPACE'
-        python -m pytest tests/stress/ -v \
+        uv run pytest tests/stress/ -v \
             --html=/app/log/report/docker_k8s_stress_report.html \
             --self-contained-html
     "
