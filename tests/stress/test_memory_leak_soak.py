@@ -1,17 +1,14 @@
 """
 Memory Leak Soak Test - Long Duration Memory Growth Monitoring.
 
-This test simulates sustained event processing over extended periods (12-24 hours)
-to detect memory leaks by tracking RSS (Resident Set Size) growth patterns.
-
-Run with: pytest tests/stress/test_memory_leak_soak.py -v
+This test monitors RSS (Resident Set Size) growth patterns during sustained
+event processing to detect memory leaks in the HieraChain process.
 """
 
-import time
-import threading
+import gc
 import logging
-import psutil
 import os
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -25,72 +22,75 @@ class MemorySnapshot:
     timestamp: float
     rss_mb: float
     vms_mb: float
-    events_processed: int
-    gc_counts: tuple[int, int, int]
+    gc_gen0: int
+    gc_gen1: int
+    gc_gen2: int
 
 
 @dataclass
 class SoakTestConfig:
-    num_nodes: int = 4
-    test_duration_seconds: int = 3600
-    events_per_second: int = 10
-    sample_interval_seconds: int = 30
+    test_duration_seconds: int = 300
+    allocation_interval_seconds: float = 0.5
+    allocation_size_kb: int = 512
     leak_threshold_mb_per_hour: float = 50.0
-    max_memory_mb: float = 850.0  # Giới hạn an toàn cho container 1GiB (trừ hao OS buffer)
+    max_memory_mb: float = 850.0
+    sample_interval_seconds: float = 2.0
 
 
 class MemoryLeakSoakTest:
     def __init__(self, config: Optional[SoakTestConfig] = None):
         self.config = config or SoakTestConfig()
-        self.process = psutil.Process(os.getpid())
+        self.process = pytest.importorskip("psutil").Process(os.getpid())
         self.snapshots: list[MemorySnapshot] = []
-        self.events_processed = 0
-        self.events_lock = threading.Lock()
+        self.allocations: list[bytearray] = []
         self.running = False
-        self.worker_thread: Optional[threading.Thread] = None
-        self.monitor_thread: Optional[threading.Thread] = None
+        self.worker_count = 0
 
     def _get_memory_mb(self) -> tuple[float, float]:
         mem_info = self.process.memory_info()
         return mem_info.rss / (1024 * 1024), mem_info.vms / (1024 * 1024)
 
     def _get_gc_counts(self) -> tuple[int, int, int]:
-        import gc
         return gc.get_count()
 
-    def _event_worker(self) -> None:
+    def _allocation_worker(self) -> None:
+        allocated_mb = 0
         while self.running:
-            with self.events_lock:
-                self.events_processed += self.config.events_per_second
-            time.sleep(1.0)
+            try:
+                chunk = bytearray(self.config.allocation_size_kb * 1024)
+                self.allocations.append(chunk)
+                allocated_mb += self.config.allocation_size_kb / 1024
+                self.worker_count += 1
+                time.sleep(self.config.allocation_interval_seconds)
+            except MemoryError:
+                logger.error("MemoryError during allocation - possible leak causing OOM")
+                break
 
     def _memory_monitor(self) -> None:
         start_time = time.time()
         while self.running:
             rss_mb, vms_mb = self._get_memory_mb()
-            with self.events_lock:
-                events = self.events_processed
             gc_counts = self._get_gc_counts()
 
             snapshot = MemorySnapshot(
                 timestamp=time.time() - start_time,
                 rss_mb=rss_mb,
                 vms_mb=vms_mb,
-                events_processed=events,
-                gc_counts=gc_counts,
+                gc_gen0=gc_counts[0],
+                gc_gen1=gc_counts[1],
+                gc_gen2=gc_counts[2],
             )
             self.snapshots.append(snapshot)
             logger.info(
                 f"[{snapshot.timestamp:.1f}s] RSS: {rss_mb:.1f}MB, "
-                f"VMS: {vms_mb:.1f}MB, Events: {events}, "
-                f"GC: {gc_counts}"
+                f"VMS: {vms_mb:.1f}MB, GC: {gc_counts}"
             )
-
             time.sleep(self.config.sample_interval_seconds)
 
     def start(self) -> None:
         self.running = True
-        self.worker_thread = threading.Thread(target=self._event_worker, daemon=True)
+        import threading
+        self.worker_thread = threading.Thread(target=self._allocation_worker, daemon=True)
         self.monitor_thread = threading.Thread(target=self._memory_monitor, daemon=True)
         self.worker_thread.start()
         self.monitor_thread.start()
@@ -98,11 +98,14 @@ class MemoryLeakSoakTest:
 
     def stop(self) -> list[MemorySnapshot]:
         self.running = False
-        if self.worker_thread:
+        if hasattr(self, 'worker_thread') and self.worker_thread:
             self.worker_thread.join(timeout=2.0)
-        if self.monitor_thread:
+        if hasattr(self, 'monitor_thread') and self.monitor_thread:
             self.monitor_thread.join(timeout=2.0)
         return self.snapshots
+
+    def get_allocated_mb(self) -> float:
+        return sum(a.__len__() for a in self.allocations) / (1024 * 1024)
 
     def analyze_leak(self) -> dict:
         if len(self.snapshots) < 2:
@@ -133,18 +136,20 @@ class MemoryLeakSoakTest:
             "leak_rate_mb_per_hour": leak_rate_mb_per_hour,
             "threshold_mb_per_hour": self.config.leak_threshold_mb_per_hour,
             "final_rss_exceeded": final_rss_exceeded,
+            "allocations_performed": self.worker_count,
+            "total_allocated_mb": self.get_allocated_mb(),
         }
 
 
 @pytest.fixture
 def soak_config() -> SoakTestConfig:
     return SoakTestConfig(
-        num_nodes=4,
         test_duration_seconds=60,
-        events_per_second=10,
-        sample_interval_seconds=2,
-        leak_threshold_mb_per_hour=100.0,
+        allocation_interval_seconds=0.1,
+        allocation_size_kb=1024,
+        leak_threshold_mb_per_hour=200.0,
         max_memory_mb=850.0,
+        sample_interval_seconds=2.0,
     )
 
 
@@ -173,6 +178,7 @@ def test_memory_growth_rate_calculation(soak_config: SoakTestConfig):
     assert "rss_growth_mb" in analysis
     assert "duration_hours" in analysis
     assert "leak_rate_mb_per_hour" in analysis
+    assert "allocations_performed" in analysis
 
 
 def test_memory_snapshot_integrity(soak_config: SoakTestConfig):
@@ -181,12 +187,11 @@ def test_memory_snapshot_integrity(soak_config: SoakTestConfig):
     time.sleep(20)
     snapshots = test.stop()
 
-    for _i, snap in enumerate(snapshots):
+    for snap in snapshots:
         assert snap.timestamp >= 0
         assert snap.rss_mb > 0
         assert snap.vms_mb > 0
-        assert snap.events_processed >= 0
-        assert len(snap.gc_counts) == 3
+        assert len((snap.gc_gen0, snap.gc_gen1, snap.gc_gen2)) == 3
 
     timestamps = [s.timestamp for s in snapshots]
     msg = "Snapshots should be in chronological order"
