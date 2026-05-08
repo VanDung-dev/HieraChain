@@ -205,21 +205,22 @@ async def _get_or_create_dealer(node: ZmqNode, peer_id: str) -> zmq.asyncio.Sock
 
     peer_info = node.peers[peer_id]
     address = peer_info["address"]
-    peer_public_key = peer_info.get("public_key")
+    peer_public_key: bytes | None = peer_info.get("public_key")
 
     socket = node.ctx.socket(zmq.DEALER)
     socket.setsockopt(zmq.IDENTITY, node.node_id.encode('utf-8'))
 
     if node.server_secret and node.server_public and peer_public_key:
+        key_len = len(peer_public_key)
         try:
             logger.debug("Setting CURVE keys for peer %s", peer_id)
-            socket.setsockopt(zmq.CURVE_SERVERKEY, cast(bytes, peer_public_key))
+            socket.setsockopt(zmq.CURVE_SERVERKEY, peer_public_key)
             socket.setsockopt(zmq.CURVE_PUBLICKEY, node.server_public)
             socket.setsockopt(zmq.CURVE_SECRETKEY, node.server_secret)
         except Exception as e:
             logger.error(
                 "Failed to set CURVE keys for %s: %s (key length: %d)",
-                peer_id, e, len(peer_public_key) if peer_public_key else 0
+                peer_id, e, key_len
             )
             raise
 
