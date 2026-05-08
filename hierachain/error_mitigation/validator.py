@@ -6,12 +6,14 @@ validators for consensus, encryption, resources, and other critical system
 components.
 """
 
+from __future__ import annotations
+
 import time
 import json
 import logging
 import hashlib
 import os
-from typing import Any, cast
+from typing import Any, Union, cast
 from datetime import datetime
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -448,7 +450,7 @@ class ResourceValidator:
             f.write(f"{datetime.now().isoformat()}: {json.dumps(scaling_event)}\n")
 
 
-def _validate_arrow_structure(data: pa.Table | pa.RecordBatch) -> None:
+def _validate_arrow_structure(data: Union[pa.Table, pa.RecordBatch]) -> None:
     """Validate required fields in Arrow event data."""
     if "event" not in data.schema.names:
         return
@@ -549,7 +551,7 @@ class APIValidator:
         logger.info("Initialized APIValidator")
 
     def _validate_arrow_recursive(
-        self, data: pa.Array | pa.ChunkedArray, field_name: str
+        self, data: Union[pa.Array, pa.ChunkedArray], field_name: str
     ) -> None:
         """
         Recursively validate Arrow arrays for forbidden terms.
@@ -673,7 +675,7 @@ class APIValidator:
         else:
             self._validate_legacy_object(data)
 
-    def _validate_arrow_object(self, data: pa.Table | pa.RecordBatch) -> None:
+    def _validate_arrow_object(self, data: Union[pa.Table, pa.RecordBatch]) -> None:
         """Validate PyArrow Table or RecordBatch"""
         self._validate_arrow_schema(data)
 
@@ -682,7 +684,7 @@ class APIValidator:
 
         _validate_arrow_structure(data)
 
-    def _validate_arrow_schema(self, data: pa.Table | pa.RecordBatch) -> None:
+    def _validate_arrow_schema(self, data: Union[pa.Table, pa.RecordBatch]) -> None:
         """Check Arrow schema names for forbidden terms."""
         for name in data.schema.names:
             if any(term in name.lower() for term in self.forbidden_terms):
