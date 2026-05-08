@@ -135,52 +135,100 @@ class PolicyCondition:
         try:
             match self.operator:
                 case ComparisonOperator.EQUALS:
-                    return attribute_value == self.value
+                    return self._evaluate_equals(attribute_value)
                 case ComparisonOperator.NOT_EQUALS:
-                    return attribute_value != self.value
+                    return self._evaluate_not_equals(attribute_value)
                 case ComparisonOperator.GREATER_THAN:
-                    return attribute_value > self.value
+                    return self._evaluate_greater_than(attribute_value)
                 case ComparisonOperator.LESS_THAN:
-                    return attribute_value < self.value
+                    return self._evaluate_less_than(attribute_value)
                 case ComparisonOperator.GREATER_OR_EQUAL:
-                    return attribute_value >= self.value
+                    return self._evaluate_greater_or_equal(attribute_value)
                 case ComparisonOperator.LESS_OR_EQUAL:
-                    return attribute_value <= self.value
+                    return self._evaluate_less_or_equal(attribute_value)
                 case ComparisonOperator.CONTAINS:
-                    if isinstance(attribute_value, (str, list, dict, set)):
-                        return self.value in attribute_value
-                    return False
+                    return self._evaluate_contains(attribute_value)
                 case ComparisonOperator.NOT_CONTAINS:
-                    if isinstance(attribute_value, (str, list, dict, set)):
-                        return self.value not in attribute_value
-                    return True
+                    return self._evaluate_not_contains(attribute_value)
                 case ComparisonOperator.IN:
-                    if isinstance(self.value, (str, list)):
-                        return attribute_value in self.value
-                    return False
+                    return self._evaluate_in(attribute_value)
                 case ComparisonOperator.NOT_IN:
-                    if isinstance(self.value, (str, list)):
-                        return attribute_value not in self.value
-                    return True
+                    return self._evaluate_not_in(attribute_value)
                 case ComparisonOperator.MATCHES:
-                    # Use anchors for full match to prevent bypass
-                    pattern = str(self.value)
-                    # If pattern doesn't already have anchors, add them
-                    if not pattern.startswith('^'):
-                        pattern = '^' + pattern
-                    if not pattern.endswith('$'):
-                        pattern = pattern + '$'
-                    return bool(re.match(pattern, str(attribute_value)))
+                    return self._evaluate_matches(attribute_value)
                 case ComparisonOperator.NOT_MATCHES:
-                    # Use anchors for full match to prevent bypass
-                    pattern = str(self.value)
-                    if not pattern.startswith('^'):
-                        pattern = '^' + pattern
-                    if not pattern.endswith('$'):
-                        pattern = pattern + '$'
-                    return not bool(re.match(pattern, str(attribute_value)))
+                    return self._evaluate_not_matches(attribute_value)
         except (TypeError, ValueError, AttributeError):
             return False
+    
+    def _evaluate_equals(self, attribute_value: Any) -> bool:
+        """Evaluate equality comparison."""
+        return attribute_value == self.value
+    
+    def _evaluate_not_equals(self, attribute_value: Any) -> bool:
+        """Evaluate inequality comparison."""
+        return attribute_value != self.value
+    
+    def _evaluate_greater_than(self, attribute_value: Any) -> bool:
+        """Evaluate greater than comparison."""
+        return attribute_value > self.value
+    
+    def _evaluate_less_than(self, attribute_value: Any) -> bool:
+        """Evaluate less than comparison."""
+        return attribute_value < self.value
+    
+    def _evaluate_greater_or_equal(self, attribute_value: Any) -> bool:
+        """Evaluate greater than or equal comparison."""
+        return attribute_value >= self.value
+    
+    def _evaluate_less_or_equal(self, attribute_value: Any) -> bool:
+        """Evaluate less than or equal comparison."""
+        return attribute_value <= self.value
+    
+    def _evaluate_contains(self, attribute_value: Any) -> bool:
+        """Evaluate contains operator - check if value is in attribute."""
+        if isinstance(attribute_value, (str, list, dict, set)):
+            return self.value in attribute_value
+        return False
+    
+    def _evaluate_not_contains(self, attribute_value: Any) -> bool:
+        """Evaluate not contains operator - check if value is not in attribute."""
+        if isinstance(attribute_value, (str, list, dict, set)):
+            return self.value not in attribute_value
+        return True
+    
+    def _evaluate_in(self, attribute_value: Any) -> bool:
+        """Evaluate in operator - check if attribute is in value collection."""
+        if isinstance(self.value, (str, list)):
+            return attribute_value in self.value
+        return False
+    
+    def _evaluate_not_in(self, attribute_value: Any) -> bool:
+        """Evaluate not in operator - check if attribute is not in value collection."""
+        if isinstance(self.value, (str, list)):
+            return attribute_value not in self.value
+        return True
+    
+    def _evaluate_matches(self, attribute_value: Any) -> bool:
+        """Evaluate regex match with anchored pattern."""
+        pattern = str(self.value)
+        pattern = self._add_anchors(pattern)
+        return bool(re.match(pattern, str(attribute_value)))
+    
+    def _evaluate_not_matches(self, attribute_value: Any) -> bool:
+        """Evaluate regex not match with anchored pattern."""
+        pattern = str(self.value)
+        pattern = self._add_anchors(pattern)
+        return not bool(re.match(pattern, str(attribute_value)))
+    
+    @staticmethod
+    def _add_anchors(pattern: str) -> str:
+        """Add start (^) and end ($) anchors to regex pattern if missing."""
+        if not pattern.startswith('^'):
+            pattern = '^' + pattern
+        if not pattern.endswith('$'):
+            pattern = pattern + '$'
+        return pattern
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
@@ -669,25 +717,11 @@ class PolicyEngine:
         }
         
         if combination_logic == "all_allow":
-            # All policies must allow
-            combined_result["effect"] = PolicyEffect.ALLOW.value if all(
-                result["effect"] == PolicyEffect.ALLOW.value
-                for result in policy_results
-            ) else PolicyEffect.DENY.value
+            combined_result["effect"] = self._combine_all_allow(policy_results)
         elif combination_logic == "any_allow":
-            # At least one policy must allow
-            combined_result["effect"] = PolicyEffect.ALLOW.value if any(
-                result["effect"] == PolicyEffect.ALLOW.value
-                for result in policy_results
-            ) else PolicyEffect.DENY.value
+            combined_result["effect"] = self._combine_any_allow(policy_results)
         elif combination_logic == "majority_allow":
-            # Majority of policies must allow
-            allow_count = sum(
-                1 for result in policy_results
-                if result["effect"] == PolicyEffect.ALLOW.value
-            )
-            combined_result["effect"] = PolicyEffect.ALLOW.value \
-                if allow_count > len(policy_results) / 2 else PolicyEffect.DENY.value
+            combined_result["effect"] = self._combine_majority_allow(policy_results)
         else:
             combined_result["effect"] = PolicyEffect.DENY.value
             combined_result["error"] = f"Unknown combination logic: {combination_logic}"
@@ -778,7 +812,33 @@ class PolicyEngine:
         # Limit audit log size
         if len(self.audit_log) > 10000:
             self.audit_log = self.audit_log[-5000:]  # Keep last 5000 entries
-    
+
+    @staticmethod
+    def _combine_all_allow(policy_results: list[dict[str, Any]]) -> str:
+        """Combine results: all must allow."""
+        return PolicyEffect.ALLOW.value if all(
+            result["effect"] == PolicyEffect.ALLOW.value
+            for result in policy_results
+        ) else PolicyEffect.DENY.value
+
+    @staticmethod
+    def _combine_any_allow(policy_results: list[dict[str, Any]]) -> str:
+        """Combine results: at least one must allow."""
+        return PolicyEffect.ALLOW.value if any(
+            result["effect"] == PolicyEffect.ALLOW.value
+            for result in policy_results
+        ) else PolicyEffect.DENY.value
+
+    @staticmethod
+    def _combine_majority_allow(policy_results: list[dict[str, Any]]) -> str:
+        """Combine results: majority must allow."""
+        allow_count = sum(
+            1 for result in policy_results
+            if result["effect"] == PolicyEffect.ALLOW.value
+        )
+        return PolicyEffect.ALLOW.value \
+            if allow_count > len(policy_results) / 2 else PolicyEffect.DENY.value
+
     def __str__(self) -> str:
         """String representation"""
         return (
