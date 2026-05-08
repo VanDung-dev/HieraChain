@@ -134,7 +134,8 @@ class OrderingService:
     ) -> str:
         """Submit a new event for ordering"""
         if self.status in [OrderingStatus.LOCKDOWN, OrderingStatus.SHUTDOWN]:
-            raise Exception(f"Ordering service is in {self.status.value} mode")
+            status_str = str(self.status.value)
+            raise Exception(f"Ordering service is in {status_str} mode")
 
         # Validate event_data is a dictionary
         if not isinstance(event_data, dict):
@@ -241,7 +242,7 @@ class OrderingService:
         leader_node = next((n.node_id for n in self.nodes if n.is_leader), None)
 
         return {
-            "status": self.status.value,
+            "status": str(self.status.value),
             "nodes": {
                 "total": len(self.nodes),
                 "healthy": healthy_nodes,
@@ -268,7 +269,7 @@ class OrderingService:
             pending = self.pending_events[event_id]
             return {
                 "event_id": event_id,
-                "status": pending.status.value,
+                "status": str(pending.status.value),
                 "received_at": pending.received_at,
                 "channel_id": pending.channel_id,
                 "submitter_org": pending.submitter_org,
@@ -280,7 +281,7 @@ class OrderingService:
             processed = self.storage_handler.processed_events[event_id]
             return {
                 "event_id": event_id,
-                "status": processed.status.value,
+                "status": str(processed.status.value),
                 "received_at": processed.received_at,
                 "channel_id": processed.channel_id,
                 "submitter_org": processed.submitter_org,
