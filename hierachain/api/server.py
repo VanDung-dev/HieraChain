@@ -591,7 +591,7 @@ def add_request_logging(fast_app: FastAPI) -> None:
     """
     @fast_app.middleware("http")
     async def request_logging_middleware(request: Request, call_next):
-        request_id = str(uuid.uuid4())
+        request_id = uuid.uuid4().hex
         start = time.perf_counter()
 
         response = await call_next(request)

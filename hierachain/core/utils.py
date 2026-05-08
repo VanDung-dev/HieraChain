@@ -73,7 +73,7 @@ def generate_entity_id(prefix: str = "ENTITY") -> str:
         Unique entity identifier
     """
     timestamp = int(time.time())
-    unique_id = str(uuid.uuid4())[:8]
+    unique_id = uuid.uuid4().hex[:8]
     return f"{prefix}-{timestamp}-{unique_id}"
 
 
@@ -393,7 +393,7 @@ def create_domain_event_template(domain_type: str) -> dict[str, Any]:
     """
     return {
         "entity_id": (
-            f"{domain_type.upper()}-{int(time.time())}-{str(uuid.uuid4())[:8]}"
+            f"{domain_type.upper()}-{int(time.time())}-{uuid.uuid4().hex[:8]}"
         ),
         "event": "template_event",
         "timestamp": time.time(),

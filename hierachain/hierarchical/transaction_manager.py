@@ -147,7 +147,7 @@ class CrossChainTransactionManager:
         Returns:
             Transaction ID.
         """
-        tx_id = str(uuid.uuid4())
+        tx_id = uuid.uuid4().hex
         transaction = CrossChainTransaction(
             transaction_id=tx_id,
             source_chain=source_chain_name,

@@ -100,13 +100,13 @@ async def network_ping(target_id: str):
             detail="P2P network layer is not initialized or disabled"
         )
     
-    import uuid
+    import uuid as uuid_lib
     success = await p2p_client.send_direct(
-        target_id, 
+        target_id,
         {
-            "type": "ping", 
+            "type": "ping",
             "timestamp": time.time(),
-            "nonce": str(uuid.uuid4())
+            "nonce": uuid_lib.uuid4().hex
         }
     )
     

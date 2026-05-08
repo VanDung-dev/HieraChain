@@ -42,7 +42,7 @@ async def websocket_endpoint(
         - {"type": "error", "message": "..."}
         - {"type": "pong"}
     """
-    connection_id = str(uuid.uuid4())
+    connection_id = uuid.uuid4().hex
     
     # Accept the connection
     await websocket.accept()

@@ -39,7 +39,7 @@ class BFTMessage:
     timestamp: float
     signature: str
     data: dict[str, Any] = field(default_factory=dict)
-    nonce: str = field(default_factory=lambda: str(uuid.uuid4()))
+    nonce: str = field(default_factory=lambda: uuid.uuid4().hex)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert message to dictionary for serialization"""

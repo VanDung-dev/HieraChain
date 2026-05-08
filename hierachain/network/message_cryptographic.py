@@ -73,7 +73,7 @@ def sign_message(
         sender_id, and signature fields.
     """
     ts = time.time()
-    nonce = str(uuid.uuid4())
+    nonce = uuid.uuid4().hex
 
     signable = create_signable_payload(payload, ts, nonce, sender_id)
     signature = keypair.sign(signable)

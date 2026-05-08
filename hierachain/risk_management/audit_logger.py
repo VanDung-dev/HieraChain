@@ -397,7 +397,7 @@ class AuditLogger:
     ) -> None:
         """Log risk detection event."""
         event = AuditEvent(
-            event_id=str(uuid.uuid4()),
+            event_id=uuid.uuid4().hex,
             event_type=AuditEventType.RISK_DETECTED,
             severity=AuditSeverity(severity.lower()),
             timestamp=time.time(),
@@ -430,7 +430,7 @@ class AuditLogger:
             severity = AuditSeverity.INFO
         
         event = AuditEvent(
-            event_id=str(uuid.uuid4()),
+            event_id=uuid.uuid4().hex,
             event_type=event_type,
             severity=severity,
             timestamp=time.time(),
@@ -451,7 +451,7 @@ class AuditLogger:
     ) -> None:
         """Log consensus-related event."""
         event = AuditEvent(
-            event_id=str(uuid.uuid4()),
+            event_id=uuid.uuid4().hex,
             event_type=AuditEventType.CONSENSUS_EVENT,
             severity=AuditSeverity(severity.lower()),
             timestamp=time.time(),
@@ -473,7 +473,7 @@ class AuditLogger:
     ) -> None:
         """Log security-related event."""
         event = AuditEvent(
-            event_id=str(uuid.uuid4()),
+            event_id=uuid.uuid4().hex,
             event_type=AuditEventType.SECURITY_EVENT,
             severity=AuditSeverity(severity.lower()),
             timestamp=time.time(),
@@ -497,7 +497,7 @@ class AuditLogger:
     ) -> None:
         """Log performance-related event."""
         event = AuditEvent(
-            event_id=str(uuid.uuid4()),
+            event_id=uuid.uuid4().hex,
             event_type=AuditEventType.PERFORMANCE_EVENT,
             severity=AuditSeverity(severity.lower()),
             timestamp=time.time(),
@@ -524,7 +524,7 @@ class AuditLogger:
     ) -> None:
         """Log user action event."""
         event = AuditEvent(
-            event_id=str(uuid.uuid4()),
+            event_id=uuid.uuid4().hex,
             event_type=AuditEventType.USER_ACTION,
             severity=AuditSeverity.INFO,
             timestamp=time.time(),
@@ -551,7 +551,7 @@ class AuditLogger:
         desc = description or f"Configuration changed: {component}.{parameter}"
         
         event = AuditEvent(
-            event_id=str(uuid.uuid4()),
+            event_id=uuid.uuid4().hex,
             event_type=AuditEventType.CONFIGURATION_CHANGE,
             severity=AuditSeverity.INFO,
             timestamp=time.time(),

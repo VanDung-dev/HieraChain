@@ -258,7 +258,7 @@ class NetworkClient:
             pong_msg = {
                 "type": "pong",
                 "timestamp": time.time(),
-                "nonce": str(uuid.uuid4()),
+                "nonce": uuid.uuid4().hex,
                 "node_id": self.config.node_id
             }
             asyncio.create_task(self.send_direct(sender_id, pong_msg))
