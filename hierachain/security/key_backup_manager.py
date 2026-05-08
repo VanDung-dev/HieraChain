@@ -236,9 +236,11 @@ def _find_backup_file(backup_id: str, metadata: dict, base_dir: str = "backups/k
     if not isinstance(entry, dict):
         return None
 
-    primary_path = entry.get("file_path")
-    if isinstance(primary_path, (str, os.PathLike)) and os.path.exists(primary_path):
-        return str(primary_path)
+    primary_path: str | None = entry.get("file_path")
+    if primary_path is not None:
+        path_str = str(primary_path) if not isinstance(primary_path, str) else primary_path
+        if os.path.exists(path_str):
+            return path_str
 
     for location in entry.get("locations", []):
         file_path = os.path.join(base_dir, location, f"{backup_id}.enc")
@@ -555,8 +557,10 @@ class KeyBackupManager:
         
         # Remove from primary backup directory
         primary_file = metadata.get("file_path")
-        if isinstance(primary_file, (str, os.PathLike)) and os.path.exists(primary_file):
-            os.remove(primary_file)
+        if primary_file is not None:
+            path_str = str(primary_file) if not isinstance(primary_file, str) else primary_file
+            if os.path.exists(path_str):
+                os.remove(path_str)
         
         # Remove from metadata
         del self.metadata[backup_id]
