@@ -423,11 +423,13 @@ class BFTConsensus:
         
         # Identity and Keys
         if node_identity:
-            self.node_id = node_identity.node_id
-            self.key_provider = LocalKeyProvider(node_identity.signing_keypair)
+            self.node_id = getattr(node_identity, 'node_id', node_id)
+            signing_kp = getattr(node_identity, 'signing_keypair', None)
+            self.key_provider = LocalKeyProvider(cast(KeyPair, signing_kp)) if signing_kp else None
             self.node_public_keys = node_public_keys or {}
-            # Ensure our own public key is in the map
-            self.node_public_keys[self.node_id] = node_identity.signing_public_key
+            self.node_public_keys[self.node_id] = getattr(
+                node_identity, 'signing_public_key', ''
+            )
         else:
             self.node_public_keys = node_public_keys or {}
             self.key_provider = LocalKeyProvider(keypair) if keypair else None
