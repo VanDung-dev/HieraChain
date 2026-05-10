@@ -260,35 +260,39 @@ def add_payload_limit(fast_app: FastAPI):
 class RateLimiter:
     """Simple in-memory rate limiter (single-node only)"""
     def __init__(self, requests_per_minute: int):
+        import threading
         self.store: dict = {}
         self.limit = requests_per_minute
+        self._lock = threading.Lock()
 
     def is_allowed(self, ip: str) -> bool:
         now = int(time.time())
-        # Cleanup old entries every minute
-        if now % 60 == 0:
-            self.store = {k: v for k, v in self.store.items() if v[0] > now - 60}
-        
-        start, count = self.store.get(ip, (now, 0))
-        
-        # Reset window if expired
-        if now - start > 60:
-            self.store[ip] = (now, 1)
+        with self._lock:
+            # Cleanup old entries every minute
+            if now % 60 == 0:
+                self.store = {k: v for k, v in self.store.items() if v[0] > now - 60}
+            
+            start, count = self.store.get(ip, (now, 0))
+            
+            # Reset window if expired
+            if now - start > 60:
+                self.store[ip] = (now, 1)
+                return True
+                
+            if count >= self.limit:
+                return False
+                
+            self.store[ip] = (start, count + 1)
             return True
-            
-        if count >= self.limit:
-            return False
-            
-        self.store[ip] = (start, count + 1)
-        return True
 
     def remaining(self, ip: str) -> int:
         """Return remaining requests in the current window."""
         now = int(time.time())
-        start, count = self.store.get(ip, (now, 0))
-        if now - start > 60:
-            return self.limit
-        return max(0, self.limit - count)
+        with self._lock:
+            start, count = self.store.get(ip, (now, 0))
+            if now - start > 60:
+                return self.limit
+            return max(0, self.limit - count)
 
 
 class RedisRateLimiter:
