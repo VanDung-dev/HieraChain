@@ -239,6 +239,10 @@ class IPFSClient:
             EncryptionError: If decryption fails
         """
         try:
+            # Validate CID format (alphanumeric check)
+            if not cid or not all(c.isalnum() for c in cid):
+                raise IPFSError("Invalid CID format")
+
             # Download from IPFS
             with self._get_client() as client:
                 download_data = client.cat(cid)
@@ -250,6 +254,14 @@ class IPFSClient:
                 if nonce is None:
                     raise IPFSError("Nonce is required for decrypting data")
 
+                # Validate nonce format and length
+                if len(nonce) != 24:
+                    raise IPFSError("Invalid nonce length: must be 24 hex characters")
+                try:
+                    nonce_bytes = bytes.fromhex(nonce)
+                except ValueError:
+                    raise IPFSError("Invalid nonce format: must be hex characters")
+
                 # Deserialize metadata for AAD
                 aad = (
                     json.dumps(metadata, sort_keys=True).encode("utf-8")
@@ -257,8 +269,6 @@ class IPFSClient:
                     else None
                 )
 
-                # Decrypt
-                nonce_bytes = bytes.fromhex(nonce)
                 plaintext = self._encryption.decrypt(download_data, nonce_bytes, aad)
 
                 logger.debug(
