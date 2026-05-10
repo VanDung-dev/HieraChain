@@ -189,7 +189,7 @@ class Settings:
     LOG_OUTPUT_FORMAT = os.getenv("HRC_LOG_FORMAT", "text")
     # Enable detailed SQL logging (query echo, verbose DB errors)
     # Should be False in production to avoid leaking DB schema details
-    LOG_SQL_DETAIL = os.getenv("HRC_LOG_SQL_DETAIL", "true").lower() == "true"
+    LOG_SQL_DETAIL = os.getenv("HRC_LOG_SQL_DETAIL", "false").lower() == "true"
     
     # IPFS Storage settings (for off-chain data storage)
     IPFS_ENABLED = os.getenv("HRC_IPFS_ENABLED", "false").lower() == "true"
@@ -515,6 +515,9 @@ def check_security_config() -> list[str]:
     warnings = []
     
     env = s.env
+    
+    if s.__class__.__name__ == "DevelopmentSettings" and os.getenv("HRC_ENV") is None:
+        warnings.append("Configuration Risk: HRC_ENV is unset, defaulting to DevelopmentSettings with disabled authentication!")
     
     if env == "production":
         checks = [
