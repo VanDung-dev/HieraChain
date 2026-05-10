@@ -39,6 +39,9 @@ class IdentityManager:
             config = {}
         
         if not config.get("validate_signatures", True):
+            from hierachain.config.settings import settings
+            if settings.env in ("product", "production"):
+                raise RuntimeError("Security Exception: validate_signatures cannot be disabled in production mode!")
             warnings.warn(
                 "IdentityManager: "
                 "validate_signatures=False is insecure! Use only for testing!",

@@ -39,6 +39,9 @@ class KeyManager:
             config = {}
         
         if not config.get("verify_signatures", True):
+            from hierachain.config.settings import settings
+            if settings.env in ("product", "production"):
+                raise RuntimeError("Security Exception: verify_signatures cannot be disabled in production mode!")
             warnings.warn(
                 "Security: verify_signatures=False is insecure! Use only for testing!",
                 category=UserWarning
@@ -46,8 +49,9 @@ class KeyManager:
         
         self.storage = storage_backend or {}  # In-memory fallback
         self.revoked_keys: set[str] = set()
-        self.key_cache: dict[str, dict] = {}
-        self.permission_cache: dict[str, tuple[float, bool]] = {}  # Cache cho permissions
+        from hierachain.core.caching import AdvancedCache
+        self.key_cache = AdvancedCache(max_size=5000, eviction_policy="ttl")
+        self.permission_cache = AdvancedCache(max_size=10000, eviction_policy="lru")
         self.cache_ttl = 300  # 5 minutes default TTL
         
     def is_valid(self, api_key: str | None) -> bool:
@@ -63,6 +67,9 @@ class KeyManager:
         if not api_key or len(api_key) < 16:
             return False
             
+        if self.is_revoked(api_key):
+            return False
+
         # Check if key exists in storage
         key_data = self._get_key_data(api_key)
         if not key_data:
@@ -98,20 +105,21 @@ class KeyManager:
         Returns:
             bool: True if key has permission, False otherwise
         """
+        if self.is_revoked(api_key):
+            return False
+
         cache_key = f"{api_key}:{resource}"
         
-        # Check permission cache first - optimized with direct dict access
+        # Check permission cache first - optimized with AdvancedCache
         cached = self.permission_cache.get(cache_key)
         if cached is not None:
-            cached_at, result = cached
-            if (time.time() - cached_at) < self.cache_ttl:
-                return result
+            return cached
         
         # Get key data if not in cache
         key_data = self._get_key_data(api_key)
         if not key_data:
             # Cache negative result
-            self.permission_cache[cache_key] = (time.time(), False)
+            self.permission_cache.set(cache_key, False, ttl=self.cache_ttl)
             return False
             
         permissions = key_data.get('permissions', [])
@@ -119,8 +127,8 @@ class KeyManager:
         # Check for wildcard permission or specific resource permission
         result = 'all' in permissions or resource in permissions
         
-        # Cache the result as tuple (cached_at, result) for efficiency
-        self.permission_cache[cache_key] = (time.time(), result)
+        # Cache the result for efficiency
+        self.permission_cache.set(cache_key, result, ttl=self.cache_ttl)
         
         return result
     
@@ -162,11 +170,11 @@ class KeyManager:
         key_data = self._get_key_data(api_key)
         
         if key_data:
-            self.key_cache[api_key] = {
+            self.key_cache.set(api_key, {
                 'data': key_data,
                 'cached_at': time.time(),
                 'ttl': ttl
-            }
+            }, ttl=ttl)
     
     def create_key(
         self,
@@ -220,16 +228,19 @@ class KeyManager:
             api_key: The API key to revoke
         """
         self.revoked_keys.add(api_key)
-        # Remove from cache
-        if api_key in self.key_cache:
+        # Remove from cache safely supporting both AdvancedCache and raw dict
+        if hasattr(self.key_cache, 'delete'):
+            if self.key_cache.contains(api_key):
+                self.key_cache.delete(api_key)
+        elif api_key in self.key_cache:
             del self.key_cache[api_key]
         
         # Clear permission cache for this key
         keys_to_remove = [
-            k for k in self.permission_cache if k.startswith(f"{api_key}:")
+            k for k in self.permission_cache.get_keys() if k.startswith(f"{api_key}:")
         ]
         for key in keys_to_remove:
-            del self.permission_cache[key]
+            self.permission_cache.delete(key)
 
         key_prefix = api_key[:8] if len(api_key) >= 8 else "short"
         logger.security_event(
@@ -270,17 +281,15 @@ class KeyManager:
         cached = self.key_cache.get(api_key)
         if not cached:
             return None
-        
-        cached_at = cached.get('cached_at')
-        ttl = cached.get('ttl')
-        
-        if isinstance(cached_at, (int, float)) and isinstance(ttl, (int, float)):
-            if time.time() - cached_at < ttl:
-                return cast(dict, cached.get('data'))
-        
-        # Cache expired
-        del self.key_cache[api_key]
-        return None
+        # Handle dict wrapper supporting manual expiration for tests
+        if isinstance(cached, dict) and 'data' in cached:
+            cached_at = cached.get('cached_at')
+            ttl = cached.get('ttl')
+            if isinstance(cached_at, (int, float)) and isinstance(ttl, (int, float)):
+                if time.time() - cached_at >= ttl:
+                    return None
+            return cached.get('data')
+        return cached
     
     def _get_from_storage(self, api_key: str) -> dict | None:
         """
