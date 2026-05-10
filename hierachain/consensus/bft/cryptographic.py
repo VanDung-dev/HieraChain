@@ -24,8 +24,14 @@ def verify_message_signature(
     message: BFTMessage, node_public_keys: dict[str, str]
 ) -> bool:
     """Verify message signature using Ed25519."""
+    import time
     if message.sender_id not in node_public_keys:
         logger.warning(f"No public key for node {message.sender_id}")
+        return False
+
+    now = time.time()
+    if abs(now - message.timestamp) > 30.0:
+        logger.warning(f"BFTMessage timestamp drift too large (replay/old message?): {abs(now - message.timestamp)}s")
         return False
         
     public_key = node_public_keys[message.sender_id]

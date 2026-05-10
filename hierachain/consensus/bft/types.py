@@ -59,10 +59,11 @@ class BFTMessage:
         # Include critical fields in the signature
         digest = self.data.get("digest") if self.data else None
 
-        # Base payload: Type:View:Seq:Nonce
+        # Base payload: Type:View:Seq:Nonce:Timestamp
         payload = (
             f"{self.message_type.value}:"
-            f"{self.view}:{self.sequence_number}:{self.nonce}"
+            f"{self.view}:{self.sequence_number}:{self.nonce}:"
+            f"{self.timestamp}"
         )
 
         # Add digest if relevant for the message type
