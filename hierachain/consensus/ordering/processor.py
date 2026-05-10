@@ -91,7 +91,7 @@ def _handle_rejected_event(pending_event: PendingEvent, metrics) -> None:
     """Mark event as rejected and record metric."""
     pending_event.status = EventStatus.REJECTED
     metrics.record_rejected()
-    logger.error(f"Event {pending_event.event_id} REJECTED")
+    logger.debug(f"Event {pending_event.event_id} REJECTED")
 
 
 class OrderingProcessor:

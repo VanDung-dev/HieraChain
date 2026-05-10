@@ -250,7 +250,7 @@ class NetworkClient:
 
     async def _on_message_received(self, message: dict[str, Any], sender_id: str) -> None:
         """Handle incoming messages."""
-        logger.info("Received message from %s: %s", sender_id, message.get("type"))
+        logger.debug("Received message from %s: %s", sender_id, message.get("type"))
         
         # Internal ping-pong for testing
         if message.get("type") == "ping":
