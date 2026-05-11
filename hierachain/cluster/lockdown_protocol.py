@@ -21,6 +21,8 @@ from typing import Callable
 
 logger = logging.getLogger(__name__)
 
+_UNSET = ""
+
 
 class LockdownMessageType(Enum):
     """Types of lockdown-related messages."""
@@ -338,7 +340,7 @@ class ClusterLockdownManager:
             secret_key: Shared secret for message signing.
             quorum_threshold: Fraction of nodes needed for quorum (default 2/3).
         """
-        if not secret_key or secret_key == "default_secret_key":
+        if secret_key is None or secret_key == _UNSET:
             from hierachain.config.secret_manager import SecretManager
             secret_key = SecretManager().get_secret("HRC_CLUSTER_SECRET", default="")
             if not secret_key:
