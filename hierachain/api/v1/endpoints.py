@@ -62,7 +62,8 @@ def get_hierarchy_manager() -> HierarchyManager:
     if _hierarchy_manager is None:
         node_identity = load_node_identity()
         _hierarchy_manager = HierarchyManager(node_identity=node_identity)
-    assert _hierarchy_manager is not None
+    if _hierarchy_manager is None:
+        raise RuntimeError("HierarchyManager initialization failed")
     return _hierarchy_manager
 
 
@@ -73,7 +74,8 @@ def get_entity_tracer(
     global _entity_tracer
     if _entity_tracer is None:
         _entity_tracer = EntityTracer(manager)
-    assert _entity_tracer is not None
+    if _entity_tracer is None:
+        raise RuntimeError("EntityTracer initialization failed")
     return _entity_tracer
 
 

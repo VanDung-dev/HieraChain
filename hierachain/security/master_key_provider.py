@@ -145,7 +145,8 @@ class MasterKeyProvider:
             # "auto" mode: try env → file → generate
             self._master_key = self._load_auto()
 
-        assert self._master_key is not None
+        if self._master_key is None:
+            raise RuntimeError("Master key loading failed - key is None")
         return self._master_key
 
     def _load_auto(self) -> bytes:

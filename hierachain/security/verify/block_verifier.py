@@ -482,7 +482,8 @@ def get_block_verifier(strict_mode: bool = True) -> BlockVerifier:
         _default_verifier = BlockVerifier(strict_mode=strict_mode)
     
     verifier = _default_verifier
-    assert verifier is not None
+    if verifier is None:
+        raise RuntimeError("BlockVerifier initialization failed")
     return verifier
 
 

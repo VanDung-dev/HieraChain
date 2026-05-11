@@ -108,7 +108,8 @@ class PerformanceMetrics:
                 if cls._instance is None:
                     cls._instance = super().__new__(cls)
                     cls._instance._initialized = False
-        assert cls._instance is not None
+        if cls._instance is None:
+            raise RuntimeError("PerformanceMetrics singleton initialization failed")
         return cls._instance
     
     def __init__(self):
