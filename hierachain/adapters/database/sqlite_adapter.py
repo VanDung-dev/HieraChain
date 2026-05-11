@@ -442,31 +442,38 @@ class SQLiteAdapter:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                
-                allowed_fields = {"chain_name", "event_type", "entity_id", "timestamp"}
-                if filter_field not in allowed_fields:
+
+                _FIELD_COLUMNS = {
+                    "chain_name": "chain_name",
+                    "event_type": "event_type",
+                    "entity_id": "entity_id",
+                    "timestamp": "timestamp",
+                }
+                if filter_field not in _FIELD_COLUMNS:
                     logger.warning("Invalid filter field", filter_field=filter_field)
                     return []
 
+                filter_column = _FIELD_COLUMNS[filter_field]
+
                 if chain_name:
-                    cursor.execute(
-                        f"""
+                    query = (
+                        """
                         SELECT chain_name, block_index, entity_id, event_type, timestamp, details
-                        FROM events WHERE {filter_field} = ? AND chain_name = ?
+                        FROM events WHERE chain_name = :cn AND {col} = :fv
                         ORDER BY timestamp
-                        """,
-                        (filter_value, chain_name)
+                        """.replace("{col}", filter_column)
                     )
+                    cursor.execute(query, {"cn": chain_name, "fv": filter_value})
                 else:
-                    cursor.execute(
-                        f"""
+                    query = (
+                        """
                         SELECT chain_name, block_index, entity_id, event_type, timestamp, details
-                        FROM events WHERE {filter_field} = ?
+                        FROM events WHERE {col} = :fv
                         ORDER BY timestamp
-                        """,
-                        (filter_value,)
+                        """.replace("{col}", filter_column)
                     )
-                
+                    cursor.execute(query, {"fv": filter_value})
+
                 rows = cursor.fetchall()
                 return [_create_event_from_row(row) for row in rows]
                 
