@@ -14,7 +14,7 @@ import json
 import time
 import os
 import asyncio
-import random
+import secrets
 import logging
 from typing import Any
 from dataclasses import dataclass
@@ -92,7 +92,7 @@ def _generate_mock_proof(
     # 3. Generate realistic proof size (2KB - 4KB, simulating Groth16/Plonk)
     # Groth16: ~192 bytes, but with padding and metadata: ~2KB
     # Plonk: variable, typically 2KB-4KB
-    proof_size = random.randint(2048, 4096)
+    proof_size = secrets.randbelow(2049) + 2048
 
     # 4. Build proof structure
     magic_bytes = b"mock_zkp_v2\x00"  # 12 bytes header
@@ -316,7 +316,7 @@ class ZKProver:
 
         # Simulate ZK-SNARK proving latency (100-500ms)
         if self.mode == "mock":
-            await asyncio.sleep(random.uniform(0.1, 0.5))
+            await asyncio.sleep(secrets.randbelow(400) / 1000 + 0.1)
 
         return self.generate_proof(
             old_state_root, new_state_root, block_index, events, sub_chain_name
@@ -341,7 +341,7 @@ class ZKProver:
         """
         # Simulate ZK-SNARK verification latency (50-200ms)
         if self.mode == "mock":
-            await asyncio.sleep(random.uniform(0.05, 0.2))
+            await asyncio.sleep(secrets.randbelow(150) / 1000 + 0.05)
             return _verify_mock_proof(proof)
 
         # Production verification (not implemented)
@@ -449,7 +449,8 @@ def get_zk_prover() -> ZKProver:
         _default_prover = ZKProver()
     
     prover = _default_prover
-    assert prover is not None
+    if prover is None:
+        raise RuntimeError("ZKProver initialization failed")
     return prover
 
 
