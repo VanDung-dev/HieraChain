@@ -14,6 +14,7 @@ import uuid
 import uvicorn
 import redis
 import logging
+import traceback
 import time
 from typing import Any, cast
 from fastapi import (
@@ -28,7 +29,6 @@ from hierachain.config.logging import LOGGING_CONFIG
 from hierachain.api.v1.endpoints import router as v1_router
 from hierachain.api.v2.endpoints import router as v2_router
 from hierachain.api.v3.endpoints import router as v3_router
-from hierachain.api.websocket.endpoints import router as ws_router
 from hierachain.api.websocket.manager import ws_manager
 from hierachain.api.graphql.schema import schema as graphql_schema
 from hierachain.api.graphql import security as graphql_security
@@ -51,7 +51,9 @@ EXEMPT_PATHS = {
     "/metrics",
     "/docs",
     "/redoc",
-    "/openapi.json"
+    "/openapi.json",
+    "/ws",
+    "/ws/status",
 }
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -444,10 +446,11 @@ def _register_api_router(fast_app: FastAPI, router, version: str):
 def _register_websocket_router(fast_app: FastAPI):
     """Helper to register WebSocket router with error handling."""
     try:
+        from hierachain.api.websocket.endpoints import router as ws_router
         fast_app.include_router(ws_router)
-        logger.debug("WebSocket router included successfully")
-    except ImportError:
-        logger.warning("WebSocket router not available")
+        logger.info("WebSocket router registered at /ws")
+    except Exception as exc:
+        logger.error("WebSocket router registration FAILED: %s\n%s", exc, traceback.format_exc())
 
 
 async def _validate_graphql_request(
