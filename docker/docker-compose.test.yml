@@ -39,6 +39,7 @@ services:
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
+      - HRC_BLOCK_INTERVAL=1
     networks:
       hierachain-internal:
         ipv4_address: 172.28.0.10
@@ -82,6 +83,7 @@ services:
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
+      - HRC_BLOCK_INTERVAL=1
     networks:
       hierachain-internal:
         ipv4_address: 172.28.0.11
@@ -127,6 +129,7 @@ services:
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
+      - HRC_BLOCK_INTERVAL=1
     networks:
       hierachain-internal:
         ipv4_address: 172.28.0.12
@@ -172,6 +175,7 @@ services:
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
+      - HRC_BLOCK_INTERVAL=1
     networks:
       hierachain-internal:
         ipv4_address: 172.28.0.13
@@ -218,6 +222,26 @@ services:
       - node4
     restart: unless-stopped
 
+  # Redis for storage backend tests
+  redis:
+    image: redis:7-alpine
+    container_name: hierachain-redis
+    hostname: redis
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.50
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
   # Test runner container
   stress-tester:
     image: hierachain:latest
@@ -229,6 +253,8 @@ services:
       - TARGET_NODES=10.0.0.5:80,node1:2661,node2:2661,node3:2661,node4:2661
       - TEST_DURATION=60
       - REAL_REQUESTS=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     networks:
       web2-external:
         ipv4_address: 10.0.0.100
@@ -248,6 +274,8 @@ services:
         condition: service_healthy
       node4:
         condition: service_healthy
+      redis:
+        condition: service_started
     profiles:
       - stress-test
 
