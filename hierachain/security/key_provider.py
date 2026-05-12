@@ -127,7 +127,7 @@ class FileVaultProvider(KeyProvider):
             algorithm=hashes.SHA256(),
             length=32,
             salt=salt,
-            iterations=100000,
+            iterations=310000,
         )
         return base64.urlsafe_b64encode(kdf.derive(self._password.encode()))
 
@@ -220,7 +220,7 @@ class FileVaultProvider(KeyProvider):
             algorithm=hashes.SHA256(),
             length=32,
             salt=salt,
-            iterations=100000,
+            iterations=310000,
         )
         key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
         f = Fernet(key)

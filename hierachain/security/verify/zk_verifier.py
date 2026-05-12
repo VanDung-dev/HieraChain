@@ -339,7 +339,8 @@ def get_zk_verifier() -> ZKVerifier:
         _default_verifier = ZKVerifier()
     
     verifier = _default_verifier
-    assert verifier is not None
+    if verifier is None:
+        raise RuntimeError("ZKVerifier initialization failed")
     return verifier
 
 

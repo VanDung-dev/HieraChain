@@ -129,8 +129,8 @@ class APIKeyVerifier:
         self._validate_api_key_present(api_key, client_ip)
         
         # Narrow api_key to str for Mypy
-        assert api_key is not None
-        
+        if api_key is None:
+            raise ValueError("API key is required")
         key_prefix = _get_key_prefix(api_key)
         await self._verify_key_validity(api_key, key_prefix, client_ip)
         

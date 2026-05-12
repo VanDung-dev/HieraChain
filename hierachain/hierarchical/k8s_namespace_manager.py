@@ -154,7 +154,8 @@ def _create_namespace_real_impl(
 ) -> bool:
     """Create a K8s namespace."""
     k8s = manager.k8s_client
-    assert k8s is not None
+    if k8s is None:
+        raise RuntimeError("K8s client not initialized")
     try:
         manifest = client.V1Namespace(
             metadata=client.V1ObjectMeta(name=name, labels=labels)
@@ -178,7 +179,8 @@ def _create_namespace_real_impl(
 def _delete_namespace_real_impl(manager: Any, name: str) -> bool:
     """Delete a K8s namespace."""
     k8s = manager.k8s_client
-    assert k8s is not None
+    if k8s is None:
+        raise RuntimeError("K8s client not initialized")
     try:
         k8s.delete_namespace(name=name)
         manager.delete_namespace_local(name)
@@ -197,7 +199,8 @@ def _delete_namespace_real_impl(manager: Any, name: str) -> bool:
 def _get_k8s_status_real_impl(manager: Any, name: str) -> NamespaceStatus:
     """Get official K8s namespace status."""
     k8s = manager.k8s_client
-    assert k8s is not None
+    if k8s is None:
+        raise RuntimeError("K8s client not initialized")
     try:
         ns = k8s.read_namespace(name=name)
         phase = ns.status.phase
@@ -224,7 +227,8 @@ def _get_k8s_resources_real_impl(
 ) -> dict[str, Any]:
     """Get real resource information for a namespace."""
     k8s = manager.k8s_client
-    assert k8s is not None
+    if k8s is None:
+        raise RuntimeError("K8s client not initialized")
     try:
         pods = k8s.list_namespaced_pod(namespace=namespace_name)
         ns_info.pod_count = len(pods.items)
@@ -275,7 +279,8 @@ def _provision_sub_chain_deployment_impl(
         return True
 
     apps = manager.apps_client
-    assert apps is not None
+    if apps is None:
+        raise RuntimeError("K8s apps client not initialized")
     try:
         container = client.V1Container(
             name="hierachain-node",
@@ -288,7 +293,7 @@ def _provision_sub_chain_deployment_impl(
                     container_port=deploy_config.api_port, name="api-port",
                 ),
             ],
-            command=[
+            command=[  # nosec B104 - Container networking requires binding to all interfaces
                 "hrc", "start", "--host", "0.0.0.0", "--port",
                 str(deploy_config.api_port),
             ],

@@ -148,7 +148,7 @@ class CacheEntry:
         return time.time() >= self.creation_time + self.ttl
 
 
-class AdvancedCache:
+class AdvancedCache(dict):
     """Advanced caching system with multiple eviction policies"""
     
     def __init__(self, max_size: int = 10000, eviction_policy: str = "lru") -> None:
@@ -159,6 +159,7 @@ class AdvancedCache:
             max_size: Maximum number of items in cache
             eviction_policy: Eviction policy (lru, lfu, fifo, ttl)
         """
+        super().__init__()
         self.max_size = max_size
         self.eviction_policy = EvictionPolicy(eviction_policy)
         self.cache: dict[str, CacheEntry] = {}
@@ -315,14 +316,30 @@ class AdvancedCache:
         cleanup_thread.start()
     
     def cleanup_ttl(self):
-        """Manual cleanup of expired TTL entries"""
+        """Manual cleanup of expired TTL entries in batches to avoid lock contention"""
+        # Step 1: Get keys to check under a quick lock
         with self.lock:
-            expired_keys = [
-                key for key, entry in self.cache.items() if entry.is_expired
-            ]
+            keys = list(self.cache.keys())
+        
+        # Step 2: Check expiration and identify expired keys incrementally to minimize lock hold time
+        expired_keys = []
+        batch_size = 100
+        for i in range(0, len(keys), batch_size):
+            batch = keys[i:i+batch_size]
+            with self.lock:
+                for key in batch:
+                    entry = self.cache.get(key)
+                    if entry and entry.is_expired:
+                        expired_keys.append(key)
+            time.sleep(0.002)  # Yield CPU briefly to other threads
             
-            for key in expired_keys:
-                self._remove_key(key)
+        # Step 3: Remove expired keys in small batches under quick locks
+        for i in range(0, len(expired_keys), batch_size):
+            batch = expired_keys[i:i+batch_size]
+            with self.lock:
+                for key in batch:
+                    self._remove_key(key)
+            time.sleep(0.002)  # Yield CPU briefly to other threads
     
     def get_stats(self) -> dict[str, Any]:
         """Get cache statistics"""
@@ -349,6 +366,31 @@ class AdvancedCache:
         """Check if key exists in cache"""
         with self.lock:
             return key in self.cache and not self.cache[key].is_expired
+
+    def __contains__(self, key: Any) -> bool:
+        return self.contains(str(key))
+
+    def __getitem__(self, key: Any) -> Any:
+        with self.lock:
+            val = self.get(str(key))
+            if val is None:
+                raise KeyError(key)
+            return val
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        self.set(str(key), value)
+
+    def __delitem__(self, key: Any) -> None:
+        with self.lock:
+            if not self.delete(str(key)):
+                raise KeyError(key)
+
+    def __len__(self) -> int:
+        with self.lock:
+            return len(self.cache)
+
+    def keys(self) -> list[str]:
+        return self.get_keys()
 
 
 # ---------------------------------------------------------------------------

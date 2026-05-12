@@ -100,7 +100,7 @@ class ClusterManager:
         heartbeat_timeout: float = 30.0,
         on_lockdown_quorum: Callable[[], None] | None = None,
         on_recovery_quorum: Callable[[], None] | None = None,
-        cluster_secret: str = "",
+        cluster_secret: str | None = None,
     ):
         """
         Initialize cluster manager.

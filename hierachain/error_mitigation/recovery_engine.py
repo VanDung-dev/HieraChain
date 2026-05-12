@@ -236,7 +236,10 @@ class NetworkRecoveryEngine:
             "event": "view_change_initiated",
             "reason": "network_partition",
             "timestamp": time.time(),
-            "network_health": self.monitor_network_health()
+            "network_health": {
+                "partition_detected": self.partition_detected,
+                "avg_latency_ms": sum(self.latency_history) / max(len(self.latency_history), 1)
+            }
         }
 
         logger.info(
