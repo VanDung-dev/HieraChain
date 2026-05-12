@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import requests
+from requests.adapters import HTTPAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,11 @@ class RealStressClient:
         self.results = StressTestResult()
         self.session = requests.Session()
         
+        # Increase connection pool for concurrent workers
+        adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+
         # Set default headers
         self.session.headers.update({
             "User-Agent": "HieraChain-Stress-Tester/1.0",
@@ -117,9 +123,13 @@ class RealStressClient:
             key_name = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
             self.session.headers.update({key_name: api_key})
 
-        # Initialize node status
+        # Initialize node status — exclude gateway (port 80, non-API)
         for node in self.nodes:
-            node_id = node.split(":")[0]
+            parts = node.split(":")
+            port = int(parts[1]) if len(parts) > 1 else 2661
+            if port != 2661:
+                continue
+            node_id = parts[0]
             url = f"http://{node}"
             self.node_status[node_id] = NodeStatus(node_id=node_id, url=url)
 
