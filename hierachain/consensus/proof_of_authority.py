@@ -30,16 +30,17 @@ class ProofOfAuthority(BaseConsensus):
     - No energy-intensive mining (suitable for business applications)
     """
 
-    def __init__(self, name: str = "ProofOfAuthority"):
+    def __init__(self, name: str = "ProofOfAuthority", block_interval: float | None = None):
         """
         Initialize Proof of Authority consensus.
         Args:
             name: Name of the consensus mechanism
+            block_interval: Minimum seconds between blocks (None = use default 10.0)
         """
         super().__init__(name)
         self.authorities: set[str] = set()
         self.authority_metadata: dict[str, dict[str, Any]] = {}
-        self.block_interval: float = 10.0  # Default 10 seconds between blocks
+        self.block_interval: float = block_interval if block_interval is not None else 10.0
         self.config = {
             "block_interval": self.block_interval,
             "require_authority_signature": True,
