@@ -249,7 +249,7 @@ class MainChain(Blockchain):
             self.consensus = ProofOfFederation("MainChain_PoF")
         else:
             # Default back to PoA
-            self.consensus = ProofOfAuthority("MainChain_PoA")
+            self.consensus = ProofOfAuthority("MainChain_PoA", block_interval=settings.BLOCK_INTERVAL)
 
         self.registered_sub_chains: set[str] = set()
         self.sub_chain_metadata: dict[str, dict[str, Any]] = {}
