@@ -46,6 +46,7 @@ class Settings:
     # - "proof_of_authority" (Static/Centralized)
     # - "proof_of_federation" (Dynamic/Consortium)
     CONSENSUS_TYPE = os.getenv("HRC_CONSENSUS_TYPE", "proof_of_authority")
+    BLOCK_INTERVAL = float(os.getenv("HRC_BLOCK_INTERVAL", "10.0"))
     CONSENSUS_FEDERATION_CONFIG: dict[str, Any] = {
         "min_validators": 3,
         "block_interval": 5.0
