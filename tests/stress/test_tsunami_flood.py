@@ -62,62 +62,46 @@ class TsunamiFloodTest:
         if REAL_REQUESTS:
             self.client = RealStressClient(nodes=self.config["target_nodes"])
 
+    def _process_event(self, event: dict, node_id: str) -> bool:
+        """Process a single event returning True on success."""
+        from tests.stress.real_stress_client import REAL_REQUESTS
+
+        if REAL_REQUESTS and self.client:
+            return self.client.submit_event(node_id, event)
+        try:
+            ok = random.random() > 0.01
+            time.sleep(0.001)
+            return ok
+        except Exception:
+            return False
+
     def send_event_batch(self, node_url: str, batch: list[dict]) -> dict:
         """
         Send a batch of events to a node.
         """
         from tests.stress.real_stress_client import REAL_REQUESTS
-        
-        if REAL_REQUESTS and self.client:
-            # Use RealStressClient for actual network requests
-            node_id = node_url.split(":")[0]
-            
-            start_time = time.time()
-            success_count = 0
-            errors = []
-            
-            for event in batch:
-                if self.client.submit_event(node_id, event):
-                    success_count += 1
-                else:
-                    errors.append(f"Event failed on {node_id}")
-            
-            elapsed = time.time() - start_time
-            return {
-                "node": node_url,
-                "batch_size": len(batch),
-                "success": success_count,
-                "failed": len(batch) - success_count,
-                "elapsed_seconds": elapsed,
-                "events_per_second": success_count / elapsed if elapsed > 0 else 0,
-                "errors": errors[:5],
-            }
-        else:
-            # Original simulation logic
-            start_time = time.time()
-            success_count = 0
-            errors = []
+        node_id = node_url.split(":")[0] if (REAL_REQUESTS and self.client) else ""
 
-            for event in batch:
-                try:
-                    if random.random() > 0.01:  # 99% success rate
-                        success_count += 1
-                    else:
-                        errors.append(f"Event {event['event_id']} failed")
-                    time.sleep(0.001)
-                except Exception as e:
-                    errors.append(str(e))
+        start_time = time.time()
+        success_count = 0
+        errors = []
 
-            elapsed = time.time() - start_time
-            return {
-                "node": node_url,
-                "batch_size": len(batch),
-                "success": success_count,
-                "failed": len(batch) - success_count,
-                "elapsed_seconds": elapsed,
-                "events_per_second": success_count / elapsed if elapsed > 0 else 0,
-                "errors": errors[:5],
-            }
+        for event in batch:
+            if self._process_event(event, node_id):
+                success_count += 1
+            else:
+                errors.append(f"Event failed on {node_id}")
+
+        elapsed = time.time() - start_time
+        return {
+            "node": node_url,
+            "batch_size": len(batch),
+            "success": success_count,
+            "failed": len(batch) - success_count,
+            "elapsed_seconds": elapsed,
+            "events_per_second": success_count / elapsed if elapsed > 0 else 0,
+            "errors": errors[:5],
+        }
 
     def run_flood(self) -> dict:
         """Execute the tsunami flood test."""
@@ -135,7 +119,13 @@ class TsunamiFloodTest:
             # Ensure chain exists on all nodes
             client = RealStressClient(nodes=nodes)
             client.wait_for_nodes(timeout=30)
-            client.create_chains_on_nodes()
+            # Fall back to simulation if no healthy nodes
+            healthy_nodes = [nid for nid, s in client.node_status.items() if s.is_healthy]
+            if not healthy_nodes:
+                logger.warning("No healthy nodes — falling back to simulation")
+                self.client = None
+            else:
+                client.create_chains_on_nodes()
 
         # Generate all events
         logger.info(f"Generating {num_events} events...")

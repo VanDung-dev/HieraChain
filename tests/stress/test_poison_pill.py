@@ -417,6 +417,15 @@ if __name__ == "__main__":
 class TestPoisonPillV3:
     """Stress tests for Poison Pill attacks using High Integrity API v3."""
 
+    @pytest.fixture(autouse=True)
+    def check_nodes(self):
+        """Check if nodes are available for real requests."""
+        from tests.stress.real_stress_client import REAL_REQUESTS, RealStressClient
+        if REAL_REQUESTS:
+            client = RealStressClient()
+            if not client.wait_for_nodes(timeout=15):
+                pytest.skip("Nodes not reachable for Poison Pill V3 test")
+
     @pytest.fixture
     def v3_config(self):
         return {
