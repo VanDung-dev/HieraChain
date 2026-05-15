@@ -18,8 +18,16 @@ data:
   DATABASE_PATH: "/app/data/hierachain.db"
 
   # Stress test configuration
+  HRC_STORAGE_BACKEND: "redis"
+  HRC_REDIS_HOST: "hierachain-redis"
+  HRC_REDIS_PORT: "6379"
   HRC_RATE_LIMIT: "false"
+  HRC_RATE_LIMIT_RPM: "100000"
   HRC_AUTH_ENABLED: "false"
+  HRC_JOURNAL_FSYNC: "false"
+  HRC_BLOCK_INTERVAL: "1"
+  HRC_ENV: "test"
+  HRC_P2P_PORT: "5001"
   TEST_DURATION: "60"
   REAL_REQUESTS: "true"
   STRESS_CHAIN_NAME: "stress_test"
