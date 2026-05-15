@@ -11,7 +11,7 @@ services:
       - TEST_DURATION=60
       - REAL_REQUESTS=true
     volumes:
-      - ../tests/stress:/app/tests/stress:ro
+      - ../tests:/app/tests:ro
       - ../docker/scripts:/app/docker/scripts:ro
       - ../log:/app/log
       # Mount kubeconfig for potential chaos testing

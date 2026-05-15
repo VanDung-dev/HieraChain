@@ -23,7 +23,7 @@ services:
       - TEST_DURATION=60
       - REAL_REQUESTS=true
     volumes:
-      - ../tests/stress:/app/tests/stress
+      - ../tests:/app/tests
       - ../docker/scripts:/app/docker/scripts
       - ../log:/app/log
       # Uncomment and adjust path to enable Real K8s Namespace Isolation
