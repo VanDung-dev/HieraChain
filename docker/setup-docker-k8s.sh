@@ -54,9 +54,11 @@ sleep 2
 # Step 3: Set resource limits for Kind nodes
 echo ""
 echo "[3/7] Setting resource limits for Kind nodes..."
-docker update --cpus 1 --memory 1g --memory-swap 1g ${CLUSTER_NAME}-control-plane 2>/dev/null || true
+# Control-plane runs etcd + apiserver + scheduler + controller-manager → needs more headroom
+docker update --cpus 2 --memory 2g --memory-swap 3g ${CLUSTER_NAME}-control-plane 2>/dev/null || true
+# Worker needs: 0.5 CPU / 500MB for system (kubelet, kube-proxy) + 1 CPU / 1GB for HieraChain pod
 for worker in ${CLUSTER_NAME}-worker ${CLUSTER_NAME}-worker2 ${CLUSTER_NAME}-worker3 ${CLUSTER_NAME}-worker4; do
-    docker update --cpus 1 --memory 1g --memory-swap 1g $worker 2>/dev/null || true
+    docker update --cpus 1.5 --memory 1.5g --memory-swap 2.5g $worker 2>/dev/null || true
 done
 
 # Step 4: Load image into cluster
@@ -89,7 +91,7 @@ kubectl apply -k docker/k8s/
 
 # Force restart web2-node to pick up new secrets/configs
 kubectl rollout restart deployment web2-node -n $NAMESPACE
-kubectl rollout status deployment web2-node -n $NAMESPACE --timeout=60s
+kubectl rollout status deployment web2-node -n $NAMESPACE --timeout=300s
 
 # Step 6: Wait for pods
 echo ""
