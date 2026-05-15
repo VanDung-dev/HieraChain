@@ -127,7 +127,7 @@ class RealStressClient:
         for node in self.nodes:
             parts = node.split(":")
             port = int(parts[1]) if len(parts) > 1 else 2661
-            if port != 2661:
+            if port == 80:
                 continue
             node_id = parts[0]
             url = f"http://{node}"
