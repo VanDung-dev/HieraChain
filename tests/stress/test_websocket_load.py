@@ -223,43 +223,33 @@ class TestWebSocketConcurrent:
         if not self.client.wait_for_nodes(timeout=30):
             pytest.skip("No nodes available")
 
+    def _connect_clients(self, tester: WebSocketLoadTest, count: int) -> tuple[int, int]:
+        successful = 0
+        for i in range(count):
+            ok = tester.connect_sync(conn_id=i, chain_name=WS_CHAIN)
+            if ok:
+                successful += 1
+            elif successful == 0 and i == 0:
+                logger.error("First WS connect failed for %s: %s", tester.ws_url, tester.errors.get(i, ["No details"]))
+        return successful, count - successful
+
     def test_many_concurrent_connections(self):
         """Connect N concurrent WebSocket clients."""
         healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
         if not healthy:
             pytest.skip("No healthy nodes")
 
-        status = self.client.node_status[healthy[0]]
-        tester = WebSocketLoadTest(status.url)
-
-        # Connect multiple clients
+        tester = WebSocketLoadTest(self.client.node_status[healthy[0]].url)
         start = time.time()
-        successful = 0
-        failed = 0
-
-        for i in range(self.CONCURRENT_CLIENTS):
-            ok = tester.connect_sync(conn_id=i, chain_name=WS_CHAIN)
-            if ok:
-                successful += 1
-            else:
-                errs = tester.errors.get(i, ["No details"])
-                if successful == 0 and failed == 0:
-                    logger.error("First WS connect failed for %s: %s", tester.ws_url, errs)
-                failed += 1
-
+        successful, failed = self._connect_clients(tester, self.CONCURRENT_CLIENTS)
         elapsed = time.time() - start
 
-        logger.info("WebSocket connections: %d success, %d failed in %.2fs",
-                     successful, failed, elapsed)
-
-        # Verify active connections
+        logger.info("WebSocket connections: %d success, %d failed in %.2fs", successful, failed, elapsed)
         assert successful > 0, "At least some should connect"
 
-        # Send events and measure broadcast delivery
-        if successful > 0:
+        if successful:
             self.client.submit_event(healthy[0], generate_event(), chain_name=WS_CHAIN)
             time.sleep(3)
-
             logger.info("Total messages received by all clients: %d", tester.total_messages)
 
         tester.cleanup()
@@ -301,42 +291,37 @@ class TestWebSocketBroadcastLoad:
         if not self.client.wait_for_nodes(timeout=30):
             pytest.skip("No nodes available")
 
+    def _drain_clients(self, tester: WebSocketLoadTest, count: int) -> None:
+        for i in range(count):
+            tester.read_one_sync(i, timeout=2)
+
+    def _measure_broadcast_round(self, tester: WebSocketLoadTest, count: int, node_id: str) -> float | None:
+        for i in range(count):
+            tester.read_one_sync(i, timeout=0.1)
+        start = time.time()
+        self.client.submit_event(node_id, generate_event(), chain_name=WS_CHAIN)
+        time.sleep(1)
+        for i in range(count):
+            msg = tester.read_one_sync(i, timeout=3)
+            if msg:
+                return (time.time() - start) * 1000
+        return None
+
     def test_broadcast_latency(self):
         """Measure broadcast latency to multiple subscribers."""
         healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
         if not healthy:
             pytest.skip("No healthy nodes")
 
-        status = self.client.node_status[healthy[0]]
-        tester = WebSocketLoadTest(status.url)
+        tester = WebSocketLoadTest(self.client.node_status[healthy[0]].url)
 
-        # Connect 10 clients
         for i in range(10):
             tester.connect_sync(conn_id=i, chain_name=WS_CHAIN)
 
         time.sleep(2)
+        self._drain_clients(tester, 10)
 
-        # Drain initial messages
-        for i in range(10):
-            tester.read_one_sync(i, timeout=2)
-
-            # Send event and measure latency
-        latencies = []
-        for _ in range(10):
-            for i in range(10):
-                tester.read_one_sync(i, timeout=0.1)
-
-            start = time.time()
-            self.client.submit_event(healthy[0], generate_event(), chain_name=WS_CHAIN)
-            time.sleep(1)
-
-            # Measure time to receive broadcast
-            for i in range(10):
-                msg = tester.read_one_sync(i, timeout=3)
-                if msg:
-                    lat = (time.time() - start) * 1000
-                    latencies.append(lat)
-                    break
+        latencies = [lat for _ in range(10) if (lat := self._measure_broadcast_round(tester, 10, healthy[0])) is not None]
 
         if latencies:
             avg_lat = sum(latencies) / len(latencies)

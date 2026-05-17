@@ -33,6 +33,51 @@ pytestmark = pytest.mark.skipif(
 PROOF_CHAIN_PREFIX = os.getenv("PROOF_CHAIN_PREFIX", "proof_stress")
 
 
+def _create_chain(client: RealStressClient, node_id: str, chain_name: str, participants: list[str] | None = None) -> bool:
+    status = client.node_status.get(node_id)
+    if not status:
+        return False
+    try:
+        resp = client.session.post(
+            f"{status.url}/api/v1/chains/{chain_name}/create",
+            params={"chain_type": "generic"},
+            json={"participants": participants or list(client.node_status.keys())},
+            timeout=10,
+        )
+        return resp.status_code in (200, 201, 409)
+    except Exception:
+        return False
+
+
+def _get_chain_stats(client: RealStressClient, node_id: str, chain_name: str) -> dict | None:
+    status = client.node_status.get(node_id)
+    if not status:
+        return None
+    try:
+        resp = client.session.get(f"{status.url}/api/v1/chains/{chain_name}/stats", timeout=10)
+        return resp.json() if resp.status_code == 200 else None
+    except Exception:
+        return None
+
+
+def _get_all_chains(client: RealStressClient, node_id: str) -> list[dict]:
+    status = client.node_status.get(node_id)
+    if not status:
+        return []
+    try:
+        resp = client.session.get(f"{status.url}/api/v1/chains", timeout=10)
+        if resp.status_code != 200:
+            return []
+        data = resp.json()
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            return data.get("chains", data.get("data", []))
+        return []
+    except Exception:
+        return []
+
+
 class TestSubChainLifecycle:
     """Test SubChain lifecycle via API."""
 
@@ -105,7 +150,6 @@ class TestSubChainLifecycle:
             pytest.skip("No healthy nodes")
 
         node_id = healthy[0]
-        status = self.client.node_status[node_id]
         timestamp = int(time.time())
 
         chains = [
@@ -114,43 +158,24 @@ class TestSubChainLifecycle:
             f"{PROOF_CHAIN_PREFIX}_c_{timestamp}",
         ]
 
-        # Create
         for name in chains:
-            resp = self.client.session.post(
-                f"{status.url}/api/v1/chains/{name}/create",
-                params={"chain_type": "generic"},
-                json={"participants": [node_id]},
-                timeout=10,
-            )
-            logger.info("Create %s: HTTP %d", name, resp.status_code)
+            ok = _create_chain(self.client, node_id, name, participants=[node_id])
+            logger.info("Create %s: %s", name, "ok" if ok else "fail")
 
-        # Add events to each
         for name in chains:
             self.client.submit_event(node_id, generate_event(), chain_name=name)
 
         time.sleep(3)
 
-        # Verify each chain only has its own events
         for name in chains:
-            resp = self.client.session.get(
-                f"{status.url}/api/v1/chains/{name}/stats",
-                timeout=10,
-            )
-            if resp.status_code == 200:
-                stats = resp.json()
+            stats = _get_chain_stats(self.client, node_id, name)
+            if stats:
                 logger.info("Chain %s: %d events", name, stats.get("total_events", 0))
 
-        # Verify chain list
-        resp = self.client.session.get(
-            f"{status.url}/api/v1/chains",
-            timeout=10,
-        )
-        if resp.status_code == 200:
-            all_chains = resp.json()
-            chain_names = [c.get("name") for c in all_chains]
-            for name in chains:
-                # Chain may not appear if no block yet
-                logger.info("Chain %s in list: %s", name, name in chain_names)
+        all_chains = _get_all_chains(self.client, node_id)
+        chain_names = [c.get("name") for c in all_chains]
+        for name in chains:
+            logger.info("Chain %s in list: %s", name, name in chain_names)
 
 
 @pytest.mark.stress

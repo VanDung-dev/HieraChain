@@ -38,30 +38,39 @@ class _MemoryAdapter:
             return chain[index] if 0 <= index < len(chain) else None
 
 
+def _load_sqlite():
+    from hierachain.adapters.storage.file_storage import FileStorageAdapter
+    return FileStorageAdapter(storage_path="/tmp/stress_benchmark.db")
+
+
+def _load_redis():
+    from hierachain.adapters.storage.redis_storage import RedisStorageAdapter
+    return RedisStorageAdapter(
+        host=os.getenv("REDIS_HOST", "localhost"),
+        port=int(os.getenv("REDIS_PORT", "6379")),
+    )
+
+
+def _load_memory():
+    return _MemoryAdapter()
+
+
+STORAGE_FACTORIES = {
+    "sqlite": _load_sqlite,
+    "redis": _load_redis,
+    "memory": _load_memory,
+}
+
+
 def _require_storage_adapter(backend: str):
     """Import storage adapter, skip if not available."""
-    if backend == "sqlite":
-        try:
-            from hierachain.adapters.storage.file_storage import FileStorageAdapter
-            return FileStorageAdapter(storage_path="/tmp/stress_benchmark.db")
-        except Exception as e:
-            pytest.skip(f"SQLite adapter not available: {e}")
-    elif backend == "redis":
-        try:
-            from hierachain.adapters.storage.redis_storage import RedisStorageAdapter
-            return RedisStorageAdapter(
-                host=os.getenv("REDIS_HOST", "localhost"),
-                port=int(os.getenv("REDIS_PORT", "6379")),
-            )
-        except Exception as e:
-            pytest.skip(f"Redis adapter not available: {e}")
-    elif backend == "memory":
-        try:
-            return _MemoryAdapter()
-        except Exception as e:
-            pytest.skip(f"Memory storage not available: {e}")
-    else:
+    factory = STORAGE_FACTORIES.get(backend)
+    if not factory:
         pytest.skip(f"Unknown backend: {backend}")
+    try:
+        return factory()
+    except Exception as e:
+        pytest.skip(f"{backend} adapter not available: {e}")
 
 
 def _generate_block(index: int) -> dict:
@@ -121,39 +130,28 @@ class TestStorageBackendSQLite:
         logger.info("SQLite read: %d blocks in %.2fs (%.0f ops/sec)",
                      num_blocks, elapsed, ops)
 
-    def test_sqlite_concurrent_access(self, adapter):
-        """Measure SQLite under concurrent read/write."""
-        chain_name = f"bench_concurrent_{int(time.time())}"
-        num_ops = 200
+    def _run_concurrent_workers(self, adapter, chain_name: str, num_ops: int = 200) -> None:
         lock = threading.Lock()
 
-        def writer(w_id: int):
+        def _writer(w_id: int):
             for i in range(num_ops):
                 with lock:
                     adapter.store_block(chain_name, _generate_block(w_id * num_ops + i))
 
-        def reader():
+        def _reader():
             for _ in range(num_ops):
                 with lock:
-                    try:
-                        adapter.get_block(chain_name, 0)
-                    except Exception:
-                        pass
+                    try: adapter.get_block(chain_name, 0)
+                    except Exception: pass
 
-        threads = []
-        for i in range(4):
-            t = threading.Thread(target=writer, args=(i,))
-            threads.append(t)
-            t.start()
+        threads = [threading.Thread(target=_writer, args=(i,)) for i in range(4)]
+        threads += [threading.Thread(target=_reader) for _ in range(2)]
+        for t in threads: t.start()
+        for t in threads: t.join(timeout=30)
 
-        for _ in range(2):
-            t = threading.Thread(target=reader)
-            threads.append(t)
-            t.start()
-
-        for t in threads:
-            t.join(timeout=30)
-
+    def test_sqlite_concurrent_access(self, adapter):
+        """Measure SQLite under concurrent read/write."""
+        self._run_concurrent_workers(adapter, f"bench_concurrent_{int(time.time())}")
         logger.info("SQLite concurrent test completed")
 
 

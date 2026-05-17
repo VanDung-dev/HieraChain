@@ -103,67 +103,39 @@ class TsunamiFloodTest:
             "errors": errors[:5],
         }
 
-    def run_flood(self) -> dict:
-        """Execute the tsunami flood test."""
-        logger.info("Starting Tsunami Flood Test")
-        logger.info(f"Config: {self.config}")
-
-        start_time = time.time()
-        num_events = self.config["num_events"]
-        batch_size = self.config["batch_size"]
-        concurrent = self.config["concurrent_senders"]
-        nodes = self.config["target_nodes"]
-
+    def _ensure_nodes_ready(self) -> None:
         from tests.stress.real_stress_client import REAL_REQUESTS
-        if REAL_REQUESTS and self.client:
-            # Ensure chain exists on all nodes — use self.client so health status propagates
-            if not self.client.wait_for_nodes(timeout=30):
-                logger.warning("No healthy nodes — falling back to simulation")
-                self.client = None
-            else:
-                healthy_nodes = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
-                if not healthy_nodes:
-                    logger.warning("No healthy nodes — falling back to simulation")
-                    self.client = None
-                elif not self.client.create_chains_on_nodes():
-                    logger.warning("Chain creation failed on healthy nodes — falling back to simulation")
-                    self.client = None
+        if not REAL_REQUESTS or not self.client:
+            return
+        if not self.client.wait_for_nodes(timeout=30):
+            logger.warning("No healthy nodes — falling back to simulation")
+            self.client = None
+            return
+        healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
+        if not healthy:
+            logger.warning("No healthy nodes — falling back to simulation")
+            self.client = None
+        elif not self.client.create_chains_on_nodes():
+            logger.warning("Chain creation failed on healthy nodes — falling back to simulation")
+            self.client = None
 
-        # Generate all events
-        logger.info(f"Generating {num_events} events...")
-        events = [
-            generate_random_event(self.config["event_size_bytes"])
-            for _ in range(num_events)
-        ]
-
-        # Split into batches
-        batches = [
-            events[i:i + batch_size]
-            for i in range(0, len(events), batch_size)
-        ]
-        logger.info(f"Created {len(batches)} batches of {batch_size} events")
-
-        # Send batches concurrently
-        results = []
+    def _execute_batches(self, batches: list, concurrent: int, nodes: list) -> None:
         with ThreadPoolExecutor(max_workers=concurrent) as executor:
-            futures = []
-            for i, batch in enumerate(batches):
-                node = nodes[i % len(nodes)]
-                future = executor.submit(self.send_event_batch, node, batch)
-                futures.append(future)
-
+            futures = [
+                executor.submit(self.send_event_batch, nodes[i % len(nodes)], batch)
+                for i, batch in enumerate(batches)
+            ]
             for future in as_completed(futures):
                 try:
                     result = future.result()
-                    results.append(result)
+                    self.results.append(result)
                     with self.lock:
                         self.sent_count += result["success"]
                         self.failed_count += result["failed"]
                 except Exception as e:
                     logger.error(f"Batch failed: {e}")
 
-        elapsed = time.time() - start_time
-
+    def _build_results(self, num_events: int, elapsed: float, nodes: list, concurrent: int) -> dict:
         return {
             "test_name": "tsunami_flood",
             "status": "completed",
@@ -173,7 +145,7 @@ class TsunamiFloodTest:
             "success_rate": self.sent_count / num_events if num_events > 0 else 0,
             "elapsed_seconds": elapsed,
             "events_per_second": self.sent_count / elapsed if elapsed > 0 else 0,
-            "batches_processed": len(results),
+            "batches_processed": len(self.results),
             "node_metrics": {
                 "num_target_nodes": len(nodes),
                 "target_nodes": nodes,
@@ -182,6 +154,26 @@ class TsunamiFloodTest:
             },
             "config": self.config,
         }
+
+    def run_flood(self) -> dict:
+        """Execute the tsunami flood test."""
+        logger.info("Starting Tsunami Flood Test")
+        logger.info(f"Config: {self.config}")
+
+        num_events = self.config["num_events"]
+        batch_size = self.config["batch_size"]
+        nodes = self.config["target_nodes"]
+        concurrent = self.config["concurrent_senders"]
+
+        start_time = time.time()
+        self._ensure_nodes_ready()
+
+        events = [generate_random_event(self.config["event_size_bytes"]) for _ in range(num_events)]
+        batches = [events[i:i + batch_size] for i in range(0, len(events), batch_size)]
+        logger.info(f"Created {len(batches)} batches of {batch_size} events")
+
+        self._execute_batches(batches, concurrent, nodes)
+        return self._build_results(num_events, time.time() - start_time, nodes, concurrent)
 
 
 # Pytest test cases

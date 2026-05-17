@@ -225,45 +225,37 @@ class TestQuorumLoss:
         if not self.client.wait_for_nodes(timeout=30, min_healthy=4):
             pytest.skip("Need all 4 nodes")
 
+    def _check_lockdown(self, node_id: str) -> bool:
+        status = self.client.node_status.get(node_id)
+        if not status:
+            return False
+        try:
+            resp = self.client.session.post(
+                f"{status.url}/api/v1/chains/{LOCKDOWN_CHAIN}/events",
+                json=generate_event(),
+                timeout=10,
+            )
+            return resp.status_code in (503, 502)
+        except Exception:
+            return False
+
     def test_quorum_loss_blocks_writes(self):
         """Kill 2 nodes, send events — must be rejected (503 lockdown)."""
-        healthy = sorted(
-            [nid for nid, s in self.client.node_status.items() if s.is_healthy]
-        )
+        healthy = sorted(nid for nid, s in self.client.node_status.items() if s.is_healthy)
         assert len(healthy) >= 4
 
         targets = healthy[:2]
         survivors = healthy[2:]
 
-        # Kill 2 nodes
         for t in targets:
             _kill_node(t)
             time.sleep(2)
 
         time.sleep(5)
 
-        # Try sending events to survivor
-        lockdown_detected = False
-        for nid in survivors:
-            try:
-                status = self.client.node_status.get(nid)
-                if not status:
-                    continue
-                event = generate_event()
-                resp = self.client.session.post(
-                    f"{status.url}/api/v1/chains/{LOCKDOWN_CHAIN}/events",
-                    json=event,
-                    timeout=10,
-                )
-                if resp.status_code in (503, 502):
-                    lockdown_detected = True
-                    logger.info("Lockdown detected on %s: HTTP %d", nid, resp.status_code)
-            except Exception as e:
-                logger.info("Request failed on %s: %s", nid, e)
-
+        lockdown_detected = any(self._check_lockdown(nid) for nid in survivors)
         logger.info("Lockdown detected: %s", lockdown_detected)
 
-        # Restart nodes
         for t in targets:
             _restart_node(t)
         self.client.wait_for_nodes(timeout=60)

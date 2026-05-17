@@ -19,12 +19,11 @@ import time
 import logging
 import os
 import pytest
+import requests
 
 from tests.stress.real_stress_client import (
     RealStressClient,
     REAL_REQUESTS,
-    DEFAULT_NODES,
-    DEFAULT_CHAIN_NAME,
     generate_event,
 )
 
@@ -36,6 +35,19 @@ pytestmark = pytest.mark.skipif(
 )
 
 BFT_CHAIN = os.getenv("BFT_CHAIN_NAME", "bft_stress_test")
+
+
+def _first_healthy_response(
+    client: RealStressClient, method: str, path: str, **kwargs
+) -> requests.Response | None:
+    """Make HTTP request to first healthy node. Returns response or None."""
+    for nid, st in client.node_status.items():
+        if st.is_healthy:
+            try:
+                return client.session.request(method, f"{st.url}{path}", **kwargs)
+            except Exception:
+                continue
+    return None
 
 
 def get_block_count(client: RealStressClient, node_id: str) -> int:
@@ -57,37 +69,23 @@ def get_block_count(client: RealStressClient, node_id: str) -> int:
 
 
 def get_chain_list(client: RealStressClient) -> list[dict]:
-    """Get chain list from the first node."""
-    for nid, st in client.node_status.items():
-        if st.is_healthy:
-            try:
-                resp = client.session.get(
-                    f"{st.url}/api/v1/chains",
-                    timeout=10,
-                )
-                if resp.status_code == 200:
-                    return resp.json()
-            except Exception:
-                continue
-    return []
+    """Get chain list from the first healthy node."""
+    resp = _first_healthy_response(client, "GET", "/api/v1/chains", timeout=10)
+    return resp.json() if resp and resp.status_code == 200 else []
 
 
 def create_bft_chain(client: RealStressClient) -> bool:
     """Create a dedicated chain for BFT test."""
-    for nid, st in client.node_status.items():
-        if st.is_healthy:
-            try:
-                resp = client.session.post(
-                    f"{st.url}/api/v1/chains/{BFT_CHAIN}/create",
-                    params={"chain_type": "generic"},
-                    json={"participants": list(client.node_status.keys())},
-                    timeout=10,
-                )
-                if resp.status_code in (200, 201, 409):
-                    logger.info("BFT chain ready on %s", nid)
-                    return True
-            except Exception as e:
-                logger.debug("create chain %s: %s", nid, e)
+    participants = list(client.node_status.keys())
+    resp = _first_healthy_response(
+        client, "POST", f"/api/v1/chains/{BFT_CHAIN}/create",
+        params={"chain_type": "generic"},
+        json={"participants": participants},
+        timeout=10,
+    )
+    if resp and resp.status_code in (200, 201, 409):
+        logger.info("BFT chain ready")
+        return True
     return False
 
 
@@ -188,26 +186,56 @@ class TestBFTViewChange:
         return [nid for nid, s in self.client.node_status.items() if s.is_healthy]
 
     def _infer_primary_node(self) -> str | None:
-        """Determine primary node based on view % n logic."""
-        healthy = self._find_healthy()
-        if not healthy:
-            return None
-        sorted_nodes = sorted(healthy)
-        # Current view is not known via API, guess it's the first node
-        return sorted_nodes[0]
+        sorted_nodes = sorted(self._find_healthy())
+        return sorted_nodes[0] if sorted_nodes else None
+
+    @staticmethod
+    def _run_node_command(primary: str, action: str) -> None:
+        import subprocess
+        container_name = f"hierachain-{primary}"
+        try:
+            ns = os.environ.get("K8S_NAMESPACE")
+            if ns and action == "stop":
+                pod = primary.replace("node", "hierachain-node-")
+                subprocess.run(["kubectl", "delete", "pod", "-n", ns, pod],
+                               capture_output=True, timeout=15)
+            elif ns:
+                subprocess.run(["kubectl", "rollout", "restart", "deployment", "-n", ns],
+                               capture_output=True, timeout=15)
+            else:
+                docker_cmd = "stop" if action == "stop" else "start"
+                subprocess.run(["docker", docker_cmd, container_name],
+                               capture_output=True, timeout=15)
+        except Exception as e:
+            logger.error("Failed to %s %s: %s", action, primary, e)
+
+    def _check_node_recovered(self, node_id: str) -> bool:
+        status = self.client.node_status.get(node_id)
+        if not status:
+            return False
+        try:
+            resp = self.client.session.get(
+                f"{status.url}/api/v1/chains/{BFT_CHAIN}/stats",
+                timeout=5,
+            )
+            return resp.status_code == 200
+        except Exception:
+            return False
+
+    def _poll_recovery(self, node_ids: list[str], start: float) -> float | None:
+        for _ in range(60):
+            if any(self._check_node_recovered(nid) for nid in node_ids):
+                return time.time() - start
+            time.sleep(1)
+        return None
 
     def test_view_change_recovery_time(self):
         """Kill primary, measure cluster recovery time."""
-        import subprocess
-        import json
-
         primary = self._infer_primary_node()
         if not primary:
             pytest.skip("Cannot determine primary node")
 
         logger.info("Inferred primary: %s", primary)
-
-        # Send events steadily
         healthy = self._find_healthy()
         others = [n for n in healthy if n != primary]
 
@@ -215,61 +243,12 @@ class TestBFTViewChange:
         for nid in others:
             self.client.submit_event(nid, event, chain_name=BFT_CHAIN)
 
-        # Kill primary
         logger.info("Killing primary node: %s", primary)
-        container_name = f"hierachain-{primary}"
-        try:
-            if os.environ.get("K8S_NAMESPACE"):
-                pod_name = primary.replace("node", "hierachain-node-")
-                subprocess.run(
-                    ["kubectl", "delete", "pod", "-n", os.environ["K8S_NAMESPACE"], pod_name],
-                    capture_output=True, timeout=15,
-                )
-            else:
-                subprocess.run(
-                    ["docker", "stop", container_name],
-                    capture_output=True, timeout=15,
-                )
-        except Exception as e:
-            logger.error("Failed to kill %s: %s", primary, e)
+        self._run_node_command(primary, "stop")
 
-        # Measure recovery time
-        start_recovery = time.time()
-        recovery_time = None
-
-        for attempt in range(60):
-            try:
-                for nid in others:
-                    status = self.client.node_status.get(nid)
-                    if status:
-                        resp = self.client.session.get(
-                            f"{status.url}/api/v1/chains/{BFT_CHAIN}/stats",
-                            timeout=5,
-                        )
-                        if resp.status_code == 200:
-                            if recovery_time is None:
-                                recovery_time = time.time() - start_recovery
-                            break
-            except Exception:
-                pass
-            time.sleep(1)
-
+        recovery_time = self._poll_recovery(others, time.time())
         logger.info("Recovery time: %.2fs", recovery_time or -1)
         assert recovery_time is not None, "Cluster should recover after view change"
         assert recovery_time < 60, "Recovery should complete within 60s"
 
-        # Restart node
-        try:
-            if os.environ.get("K8S_NAMESPACE"):
-                pod_name = primary.replace("node", "hierachain-node-")
-                subprocess.run(
-                    ["kubectl", "rollout", "restart", "deployment", "-n", os.environ["K8S_NAMESPACE"]],
-                    capture_output=True, timeout=15,
-                )
-            else:
-                subprocess.run(
-                    ["docker", "start", container_name],
-                    capture_output=True, timeout=15,
-                )
-        except Exception:
-            pass
+        self._run_node_command(primary, "start")

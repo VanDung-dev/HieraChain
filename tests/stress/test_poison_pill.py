@@ -255,30 +255,18 @@ class PoisonPillTest:
         sig = event.get("signature", details.get("signature", ""))
         return isinstance(sig, str) and len(sig) >= 66
 
-    def run_test(self) -> dict:
-        """Execute the poison pill test."""
-        logger.info("Starting Poison Pill Test")
-        logger.info(f"Config: {self.config}")
-
-        start_time = time.time()
-        num_valid = self.config["num_valid_events"]
-        num_poison = self.config["num_poison_events"]
-        concurrent = self.config["concurrent_senders"]
-        nodes = self.config["target_nodes"]
-
+    def _ensure_nodes_ready(self) -> None:
         from tests.stress.real_stress_client import REAL_REQUESTS
-        if REAL_REQUESTS and self.client:
-            if not self.client.wait_for_nodes(timeout=30):
-                logger.warning("No healthy nodes — falling back to simulation")
-                self.client = None
-            elif not self.client.create_chains_on_nodes():
-                logger.warning("Chain creation failed on nodes — falling back to simulation")
-                self.client = None
+        if not REAL_REQUESTS or not self.client:
+            return
+        if not self.client.wait_for_nodes(timeout=30):
+            logger.warning("No healthy nodes — falling back to simulation")
+            self.client = None
+        elif not self.client.create_chains_on_nodes():
+            logger.warning("Chain creation failed on nodes — falling back to simulation")
+            self.client = None
 
-        logger.info(f"Generating {num_valid} valid + {num_poison} poison events...")
-        events = self._generate_test_events(num_valid, num_poison)
-        logger.info(f"Total events: {len(events)}")
-
+    def _execute_events(self, events: list, concurrent: int, nodes: list) -> None:
         with ThreadPoolExecutor(max_workers=concurrent) as executor:
             futures = [
                 executor.submit(self.send_event, nodes[i % len(nodes)], event)
@@ -291,18 +279,12 @@ class PoisonPillTest:
                 except Exception as e:
                     logger.error(f"Event failed: {e}")
 
-        elapsed = time.time() - start_time
-
+    def _build_results(self, num_valid: int, num_poison: int, total_events: int, elapsed: float) -> dict:
         from tests.stress.real_stress_client import REAL_REQUESTS
-        # In REAL_REQUESTS mode, the API might accept poison events initially (202) 
-        # because cryptographic validation is often asynchronous in the ordering service.
-        # We only flag a breach if we are in simulation mode or if specifically configured.
-        security_breach = self.poison_accepted > 0 if not REAL_REQUESTS else False
-
         return {
             "test_name": "poison_pill",
             "status": "completed",
-            "total_events": len(events),
+            "total_events": total_events,
             "valid_events": num_valid,
             "poison_events": num_poison,
             "valid_accepted": self.valid_accepted,
@@ -311,9 +293,27 @@ class PoisonPillTest:
             "poison_accepted": self.poison_accepted,
             "valid_acceptance_rate": self.valid_accepted / num_valid if num_valid else 0,
             "poison_rejection_rate": self.poison_rejected / num_poison if num_poison else 0,
-            "security_breach": security_breach,
+            "security_breach": self.poison_accepted > 0 if not REAL_REQUESTS else False,
             "elapsed_seconds": elapsed,
         }
+
+    def run_test(self) -> dict:
+        """Execute the poison pill test."""
+        logger.info("Starting Poison Pill Test")
+        logger.info(f"Config: {self.config}")
+
+        num_valid = self.config["num_valid_events"]
+        num_poison = self.config["num_poison_events"]
+
+        start_time = time.time()
+        self._ensure_nodes_ready()
+        events = self._generate_test_events(num_valid, num_poison)
+        logger.info(f"Total events: {len(events)}")
+
+        self._execute_events(
+            events, self.config["concurrent_senders"], self.config["target_nodes"]
+        )
+        return self._build_results(num_valid, num_poison, len(events), time.time() - start_time)
 
 
 # Pytest test cases

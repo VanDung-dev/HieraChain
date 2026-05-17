@@ -144,37 +144,24 @@ class HierarchyIsolationTest:
             cooldown_seconds=5.0,
         )
 
-        results: dict[str, Any] = {
-            "chains_monitored": 0,
-            "thresholds_checked": 0,
-            "splits_triggered": 0,
-            "errors": [],
-        }
-
         for chain_id, chain in self.subchains.items():
             rebalancer.register_subchain(chain_id, chain)
-            results["chains_monitored"] += 1
 
-        target_chain = list(self.subchains.values())[0]
+        target = list(self.subchains.values())[0]
         for i in range(500):
-            target_chain.add_event({
-                "id": f"event-{i}",
-                "timestamp": time.time(),
-                "data": f"test-{i}",
-            })
+            target.add_event({"id": f"event-{i}", "timestamp": time.time(), "data": f"test-{i}"})
 
+        splits_triggered = 0
         for chain_id in self.subchains:
-            exceeded = rebalancer.check_threshold(chain_id)
-            results["thresholds_checked"] += 1
-            if exceeded:
-                result = rebalancer.split_sub_chain(self.subchains[chain_id])
-                if result.success:
-                    results["splits_triggered"] += 1
+            if rebalancer.check_threshold(chain_id) and rebalancer.split_sub_chain(self.subchains[chain_id]).success:
+                splits_triggered += 1
 
-        stats = rebalancer.get_stats()
-        results["rebalancer_stats"] = stats
-
-        return results
+        return {
+            "chains_monitored": len(self.subchains),
+            "thresholds_checked": len(self.subchains),
+            "splits_triggered": splits_triggered,
+            "rebalancer_stats": rebalancer.get_stats(),
+        }
 
     def test_full_hierarchy_stress(self) -> dict:
         from hierachain.hierarchical.proof_aggregation import ProofAggregator

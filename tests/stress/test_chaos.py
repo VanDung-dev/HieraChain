@@ -67,50 +67,39 @@ def _is_k8s() -> bool:
     return bool(os.environ.get("K8S_NAMESPACE"))
 
 
+K8S_ACTIONS = {
+    "stop": lambda ns, pod, **kw: _run_cmd(["kubectl", "delete", "pod", "-n", ns, pod]),
+    "start": lambda ns, pod, **kw: None,
+    "restart": lambda ns, pod, **kw: _run_cmd(["kubectl", "rollout", "restart", "deployment", "-n", ns]),
+    "network_cut": lambda ns, pod, **kw: _run_cmd(
+        ["kubectl", "exec", "-n", ns, pod, "--", "tc", "qdisc", "add", "dev", "eth0", "root", "netem", "loss", "100%"]),
+    "network_reset": lambda ns, pod, **kw: _run_cmd(
+        ["kubectl", "exec", "-n", ns, pod, "--", "tc", "qdisc", "del", "dev", "eth0", "root"]),
+}
+
+DOCKER_ACTIONS = {
+    "stop": lambda c, **kw: _run_cmd(["docker", "stop", c]),
+    "start": lambda c, **kw: _run_cmd(["docker", "start", c]),
+    "restart": lambda c, **kw: _run_cmd(["docker", "restart", c]),
+    "cpu_throttle": lambda c, **kw: _run_cmd(["docker", "update", "--cpus", kw.get("cpus", "0.1"), c]),
+    "cpu_unthrottle": lambda c, **kw: _run_cmd(["docker", "update", "--cpus", "1.0", c]),
+    "network_cut": lambda c, **kw: _run_cmd(
+        ["docker", "exec", c, "tc", "qdisc", "add", "dev", "eth0", "root", "netem", "loss", "100%"]),
+    "network_reset": lambda c, **kw: _run_cmd(
+        ["docker", "exec", c, "tc", "qdisc", "del", "dev", "eth0", "root"]),
+}
+
+
 def _do(node_id: str, action: str, **kwargs):
-    """Execute chaos action on node.
-
-    Actions: stop, start, restart, cpu_throttle, network_cut, network_reset
-    """
+    """Execute chaos action on node via dispatch table."""
     if _is_k8s():
-        ns = os.environ["K8S_NAMESPACE"]
-        pod = _node_pod(node_id)
-
-        if action == "stop":
-            _run_cmd(["kubectl", "delete", "pod", "-n", ns, pod])
-        elif action == "start":
-            # K8s restarts pod automatically, nothing to do
-            pass
-        elif action == "restart":
-            _run_cmd(["kubectl", "rollout", "restart", "deployment", "-n", ns])
-        elif action == "network_cut":
-            _run_cmd(["kubectl", "exec", "-n", ns, pod, "--",
-                      "tc", "qdisc", "add", "dev", "eth0", "root", "netem",
-                      "loss", "100%"])
-        elif action == "network_reset":
-            _run_cmd(["kubectl", "exec", "-n", ns, pod, "--",
-                      "tc", "qdisc", "del", "dev", "eth0", "root"])
+        fn = K8S_ACTIONS.get(action)
+        if fn:
+            fn(os.environ["K8S_NAMESPACE"], _node_pod(node_id), **kwargs)
     else:
-        container = _node_container(node_id)
-
-        if action == "stop":
-            _run_cmd(["docker", "stop", container])
-        elif action == "start":
-            _run_cmd(["docker", "start", container])
-        elif action == "restart":
-            _run_cmd(["docker", "restart", container])
-        elif action == "cpu_throttle":
-            cpus = kwargs.get("cpus", "0.1")
-            _run_cmd(["docker", "update", "--cpus", cpus, container])
-        elif action == "cpu_unthrottle":
-            _run_cmd(["docker", "update", "--cpus", "1.0", container])
-        elif action == "network_cut":
-            _run_cmd(["docker", "exec", container,
-                      "tc", "qdisc", "add", "dev", "eth0", "root", "netem",
-                      "loss", "100%"])
-        elif action == "network_reset":
-            _run_cmd(["docker", "exec", container,
-                      "tc", "qdisc", "del", "dev", "eth0", "root"])
+        fn = DOCKER_ACTIONS.get(action)
+        if fn:
+            fn(_node_container(node_id), **kwargs)
 
 
 class TestRandomNodeKill:
@@ -122,6 +111,14 @@ class TestRandomNodeKill:
         if not self.client.wait_for_nodes(timeout=30, min_healthy=3):
             pytest.skip("Need at least 3 nodes")
 
+    def _submit_events(self, node_ids: list[str], count: int) -> int:
+        ok = 0
+        for _ in range(count):
+            for nid in node_ids:
+                if self.client.submit_event(nid, generate_event(), chain_name=CHAOS_CHAIN):
+                    ok += 1
+        return ok
+
     def test_random_kill_and_recovery(self):
         """Kill random node, verify cluster survives and recovers."""
         healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
@@ -132,38 +129,21 @@ class TestRandomNodeKill:
 
         logger.info("Killing random node: %s", target)
 
-        # Send events steadily first
-        for _ in range(10):
-            for nid in survivors:
-                self.client.submit_event(nid, generate_event(), chain_name=CHAOS_CHAIN)
-
-        # Kill
+        self._submit_events(survivors, 10)
         _do(target, "stop")
         kill_time = time.time()
-
-        # Wait for cluster to stabilize
         time.sleep(5)
 
-        # Survivors still operational
         for nid in survivors:
             ok = self.client.check_health(nid)
             logger.info("Survivor %s: %s", nid, "alive" if ok else "dead")
 
-        # Send more events
-        post_kill_ok = 0
-        for _ in range(20):
-            for nid in survivors:
-                if self.client.submit_event(nid, generate_event(), chain_name=CHAOS_CHAIN):
-                    post_kill_ok += 1
-
+        post_kill_ok = self._submit_events(survivors, 20)
         logger.info("Events submitted during kill: %d", post_kill_ok)
 
-        # Restart
         _do(target, "start")
         self.client.wait_for_nodes(timeout=60)
-
-        recovery_time = time.time() - kill_time
-        logger.info("Total recovery time: %.2fs", recovery_time)
+        logger.info("Total recovery time: %.2fs", time.time() - kill_time)
 
 
 class TestNetworkPartition:

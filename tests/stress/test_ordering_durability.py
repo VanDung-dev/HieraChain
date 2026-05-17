@@ -20,6 +20,7 @@ import os
 import socket
 import http.client
 import subprocess
+import requests
 import pytest
 
 from tests.stress.real_stress_client import (
@@ -67,6 +68,18 @@ pytestmark = pytest.mark.skipif(
 DURABLE_CHAIN = os.getenv("DURABLE_CHAIN_NAME", "durability_stress_test")
 
 
+def _first_healthy_request(
+    client: RealStressClient, method: str, path: str, **kwargs
+) -> requests.Response | None:
+    for nid, st in client.node_status.items():
+        if st.is_healthy:
+            try:
+                return client.session.request(method, f"{st.url}{path}", **kwargs)
+            except Exception:
+                continue
+    return None
+
+
 def get_event_count(client: RealStressClient, node_id: str) -> int:
     """Get total event count of chain."""
     try:
@@ -86,20 +99,14 @@ def get_event_count(client: RealStressClient, node_id: str) -> int:
 
 def create_durable_chain(client: RealStressClient) -> bool:
     """Create chain for durability test."""
-    for nid, st in client.node_status.items():
-        if st.is_healthy:
-            try:
-                resp = client.session.post(
-                    f"{st.url}/api/v1/chains/{DURABLE_CHAIN}/create",
-                    params={"chain_type": "generic"},
-                    json={"participants": list(client.node_status.keys())},
-                    timeout=10,
-                )
-                if resp.status_code in (200, 201, 409):
-                    return True
-            except Exception:
-                continue
-    return False
+    participants = list(client.node_status.keys())
+    resp = _first_healthy_request(
+        client, "POST", f"/api/v1/chains/{DURABLE_CHAIN}/create",
+        params={"chain_type": "generic"},
+        json={"participants": participants},
+        timeout=10,
+    )
+    return resp is not None and resp.status_code in (200, 201, 409)
 
 
 class TestOrderingThroughput:
@@ -163,6 +170,28 @@ class TestOrderingThroughput:
         results = self._run_throughput_test(duration=20, label="fsync=true")
         assert results["sent"] > 0
 
+    def _poll_event_count(self, node_id: str, before: int, burst: int) -> int:
+        wait = 45 if burst == 50 else 20
+        deadline = time.time() + wait
+        after = before
+        while time.time() < deadline:
+            time.sleep(3)
+            after = get_event_count(self.client, node_id)
+            if after > before:
+                break
+        return after
+
+    def _run_burst(self, node_id: str, burst: int) -> dict:
+        before = get_event_count(self.client, node_id)
+        start = time.time()
+        for _ in range(burst * 10):
+            self.client.submit_event(node_id, generate_event(), chain_name=DURABLE_CHAIN)
+        return {
+            "events_sent": burst * 10,
+            "events_committed": max(0, self._poll_event_count(node_id, before, burst) - before),
+            "elapsed": round(time.time() - start, 3),
+        }
+
     def test_batch_size_effect(self):
         """Send events with different burst rates to observe batch behavior."""
         node_id = next(
@@ -172,31 +201,7 @@ class TestOrderingThroughput:
         if not node_id:
             pytest.skip("No healthy nodes")
 
-        results = {}
-        for burst in [1, 10, 50]:
-            before = get_event_count(self.client, node_id)
-            start = time.time()
-
-            for _ in range(burst * 10):
-                self.client.submit_event(node_id, generate_event(), chain_name=DURABLE_CHAIN)
-
-            elapsed = time.time() - start
-
-            after = 0
-            wait = 45 if burst == 50 else 20
-            deadline = time.time() + wait
-            while time.time() < deadline:
-                time.sleep(3)
-                after = get_event_count(self.client, node_id)
-                if after - before > 0:
-                    break
-
-            results[f"burst_{burst}"] = {
-                "events_sent": burst * 10,
-                "events_committed": max(0, after - before),
-                "elapsed": round(elapsed, 3),
-            }
-
+        results = {f"burst_{b}": self._run_burst(node_id, b) for b in [1, 10, 50]}
         logger.info("Batch size effect: %s", results)
         for k, v in results.items():
             assert v["events_committed"] > 0 or v["events_sent"] <= 5, \
@@ -214,28 +219,12 @@ class TestJournalDurability:
             pytest.skip("No nodes available")
         create_durable_chain(self.client)
 
-    def test_kill_recovery_no_data_loss(self):
-        """Kill container mid-way, restart, verify journal replay."""
-        healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
-        if not healthy:
-            pytest.skip("No healthy nodes")
-
-        node_id = healthy[0]
+    def _kill_node(self, node_id: str) -> None:
         container_name = f"hierachain-{node_id}"
-
-        # Send events before kill
-        logger.info("Sending events before kill...")
-        for i in range(100):
-            self.client.submit_event(node_id, generate_event(), chain_name=DURABLE_CHAIN)
-
-        time.sleep(2)
-
-        # Kill container
-        logger.info("Killing container: %s", container_name)
         if os.environ.get("K8S_NAMESPACE"):
-            pod_name = node_id.replace("node", "hierachain-node-")
+            pod = node_id.replace("node", "hierachain-node-")
             subprocess.run(
-                ["kubectl", "delete", "pod", "-n", os.environ["K8S_NAMESPACE"], pod_name],
+                ["kubectl", "delete", "pod", "-n", os.environ["K8S_NAMESPACE"], pod],
                 capture_output=True, timeout=20,
             )
         else:
@@ -243,41 +232,45 @@ class TestJournalDurability:
             if not ok and _HAS_DOCKER_SOCKET:
                 logger.warning("docker stop may have failed on %s", container_name)
             elif not _HAS_DOCKER_SOCKET:
-                logger.warning(
-                    "Docker socket not available — cannot actually kill %s. "
-                    "Test will verify connectivity only.", container_name
-                )
+                logger.warning("Docker socket not available — cannot actually kill %s. Test will verify connectivity only.", container_name)
 
-        # Wait for container restart
-        logger.info("Waiting for container restart...")
-        time.sleep(10)
-
-        # Restart container
+    def _restart_node(self, node_id: str) -> None:
+        container_name = f"hierachain-{node_id}"
         if not os.environ.get("K8S_NAMESPACE"):
             ok = _container_start(container_name)
             if not ok and _HAS_DOCKER_SOCKET:
                 logger.warning("docker start may have failed on %s", container_name)
 
-        # Wait for node to be healthy again
+    def _log_chains_after_recovery(self, node_id: str) -> None:
+        status = self.client.node_status.get(node_id)
+        if not status or not status.is_healthy:
+            return
+        try:
+            resp = self.client.session.get(f"{status.url}/api/v1/chains", timeout=10)
+            chains = resp.json() if resp.status_code == 200 else []
+            logger.info("Chains after recovery: %s", chains)
+        except Exception as e:
+            logger.warning("Could not fetch chains: %s", e)
+
+    def test_kill_recovery_no_data_loss(self):
+        """Kill container mid-way, restart, verify journal replay."""
+        healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
+        if not healthy:
+            pytest.skip("No healthy nodes")
+
+        node_id = healthy[0]
+
+        for _ in range(100):
+            self.client.submit_event(node_id, generate_event(), chain_name=DURABLE_CHAIN)
+
+        time.sleep(2)
+        self._kill_node(node_id)
+        time.sleep(10)
+        self._restart_node(node_id)
         self.client.wait_for_nodes(timeout=60)
 
-        # Check if node still has events
-        logger.info("Checking data after recovery...")
-        status = self.client.node_status.get(node_id)
-        if status and status.is_healthy:
-            try:
-                resp = self.client.session.get(
-                    f"{status.url}/api/v1/chains",
-                    timeout=10,
-                )
-                chains = resp.json() if resp.status_code == 200 else []
-                logger.info("Chains after recovery: %s", chains)
-            except Exception as e:
-                logger.warning("Could not fetch chains: %s", e)
-
-        # Verify node online
-        assert self.client.check_health(node_id), \
-            f"Node {node_id} should be healthy after recovery"
+        self._log_chains_after_recovery(node_id)
+        assert self.client.check_health(node_id), f"Node {node_id} should be healthy after recovery"
 
 
 @pytest.mark.stress
