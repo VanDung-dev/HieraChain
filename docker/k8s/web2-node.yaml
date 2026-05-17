@@ -14,9 +14,9 @@ data:
     server {
         listen 80;
 
-        # DNS resolver for K8s — uses well-known cluster IP to avoid
-        # chicken-and-egg DNS resolution at nginx startup
-        resolver 10.96.0.10 valid=30s;
+        # DNS resolver for K8s — uses kube-dns service name instead of
+        # hardcoded ClusterIP (which varies across K8s distributions)
+        resolver kube-dns.kube-system.svc.cluster.local valid=30s;
 
         # Cluster upstream resolved at request time (FQDN required with explicit resolver)
         set $hierachain_upstream "hierachain-node-headless.hierachain.svc.cluster.local:2661";
