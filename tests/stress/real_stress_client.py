@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import requests
+import requests.exceptions
 from requests.adapters import HTTPAdapter
 
 logger = logging.getLogger(__name__)
@@ -230,6 +231,24 @@ class RealStressClient:
                     return False
 
         except requests.RequestException as e:
+            # Retry once on ConnectionError (K8s pod cycling behind service)
+            if isinstance(e, requests.exceptions.ConnectionError):
+                try:
+                    response = self.session.post(
+                        f"{status.url}/api/v1/chains/{chain_name}/events",
+                        json=event,
+                        timeout=self.timeout,
+                    )
+                    elapsed = time.time() - start_time
+                    with self.lock:
+                        status.response_times.append(elapsed)
+                        if response.status_code in (200, 201, 202):
+                            status.success_count += 1
+                            self.results.successful_requests += 1
+                            self.results.events_submitted += 1
+                            return True
+                except requests.RequestException:
+                    pass
             with self.lock:
                 status.error_count += 1
                 status.last_error = str(e)
@@ -329,21 +348,80 @@ class RealStressClient:
             if response.status_code in (200, 201, 409):
                 return True
             
-            # Handle 500 error where chain already exists (server returns 500 instead of 409)
-            # This happens in persistent environments like K8s where state is not cleared between tests
-            if response.status_code == 500:
-                logger.info(f"Chain may already exist on {node_id}, treating as success")
-                return True
-
-            logger.warning(f"Create chain failed on {node_id}: {response.status_code} {response.text}")
+            logger.warning(f"Create chain failed on {node_id}: {response.status_code} {response.text[:200]}")
             return False
         except requests.RequestException as e:
-            # Handle timeout errors - in persistent environments like K8s, 
-            # the chain likely already exists from a previous test run
-            if isinstance(e, requests.Timeout):
-                logger.info(f"Timeout creating chain on {node_id}, treating as success (chain may exist)")
-                return True
+            # In K8s with ephemeral pods, a ConnectionError means the pod cycled.
+            # Don't assume chain exists — we'll verify it below.
+            if isinstance(e, (requests.Timeout, requests.exceptions.ConnectionError)):
+                logger.info(
+                    "Chain creation %s on %s — pod may have cycled",
+                    type(e).__name__, node_id
+                )
+                return False
             logger.warning(f"Create chain connection error on {node_id}: {e}")
+            return False
+
+    def verify_chain_exists(self, node_id: str, chain_name: str = DEFAULT_CHAIN_NAME) -> bool:
+        """
+        Verify that a chain exists on a node by querying the chain list.
+
+        In K8s with a NodePort load balancer, the request may hit any pod.
+        This method returns True only if the chain is confirmed to exist.
+
+        Handles both list responses:
+          [{"name": "stress_test", ...}, ...]
+        and dict responses:
+          {"chains": [{"name": "stress_test", ...}, ...], "count": ...}
+
+        Args:
+            node_id: The node identifier.
+            chain_name: Name of the chain to verify.
+
+        Returns:
+            True if the chain exists on at least one pod.
+        """
+        status = self.node_status.get(node_id)
+        if not status:
+            return False
+
+        try:
+            # Query chain list
+            response = self.session.get(
+                f"{status.url}/api/v1/chains",
+                timeout=self.timeout,
+            )
+            if response.status_code != 200:
+                logger.debug("Chain list returned %d on %s", response.status_code, node_id)
+                return False
+
+            data = response.json()
+
+            # Normalize to a list of chain dicts regardless of response shape
+            if isinstance(data, list):
+                chains = data
+            elif isinstance(data, dict):
+                chains = data.get("chains", data.get("data", []))
+            else:
+                chains = []
+
+            if not isinstance(chains, list):
+                logger.debug("Unexpected chain list type %s on %s", type(chains).__name__, node_id)
+                return False
+
+            for chain in chains:
+                if isinstance(chain, dict) and chain.get("name") == chain_name:
+                    logger.info("Chain '%s' verified on %s", chain_name, node_id)
+                    return True
+
+            logger.info(
+                "Chain '%s' NOT found on %s (found %d chains)",
+                chain_name, node_id, len(chains)
+            )
+            return False
+
+        except (requests.RequestException, ValueError, TypeError) as e:
+            logger.debug("Chain verification request failed on %s: %s", node_id, e)
             return False
 
     def run_flood_test(
@@ -486,32 +564,52 @@ class RealStressClient:
     
     def _try_create_chain_on_node(self, node_id: str) -> bool:
         """Try to create chain on a single node with retry logic.
-        
+
+        Attempts chain creation, then falls back to verifying the chain
+        already exists (useful when the K8s NodePort round-robins across pods).
+
         Args:
             node_id: The node identifier.
-            
+
         Returns:
-            True if chain was created (or already exists).
+            True if chain was created or confirmed to already exist.
         """
         attempts = 50 if len(self.node_status) == 1 else 1
-        
+
         if attempts > 1:
             logger.info("detected single endpoint, attempting creation %d times for LB coverage", attempts)
-        
-        success_count = 0
+
+        # Phase 1: Try to create the chain
+        created = False
         for i in range(attempts):
             if self.create_chain(node_id, DEFAULT_CHAIN_NAME):
                 logger.info("Chain created/verified on %s (attempt %d)", node_id, i + 1)
-                success_count += 1
-                if attempts == 1: # Direct node access, one success is enough
+                created = True
+                if attempts == 1:
                     return True
+                break
+            elif self.verify_chain_exists(node_id, DEFAULT_CHAIN_NAME):
+                logger.info("Chain '%s' confirmed via GET on %s", DEFAULT_CHAIN_NAME, node_id)
+                return True
             else:
-                logger.warning("Failed to create chain on %s (attempt %d)", node_id, i + 1)
-            
+                logger.warning(
+                    "Failed to create chain on %s (attempt %d/%d)",
+                    node_id, i + 1, attempts
+                )
+
             if attempts > 1:
                 time.sleep(0.2)
-        
-        return success_count > 0
+
+        if created:
+            return True
+
+        # Phase 2: Final verification pass — chain may exist on a different pod
+        logger.info("Creation attempts exhausted on %s, verifying chain existence...", node_id)
+        if self.verify_chain_exists(node_id, DEFAULT_CHAIN_NAME):
+            logger.info("Chain '%s' confirmed via fallback verification on %s", DEFAULT_CHAIN_NAME, node_id)
+            return True
+
+        return False
 
 
 def run_real_stress_test(

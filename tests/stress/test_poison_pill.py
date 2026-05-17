@@ -35,6 +35,61 @@ DEFAULT_CONFIG = {
     "chain_name": "stress_test"
 }
 
+POISON_CONFIGS = {
+    "invalid_sig": {
+        "payload": "poison_payload",
+        "sender": "0x" + "1" * 64,
+        "signature": "invalid_signature_" + "x" * 64,
+    },
+    "malformed": {
+        "sender": "0x" + "c" * 64,
+        "signature": "0x" + "d" * 64,
+        "malformed_field": "this_should_fail_schema_validation",
+    },
+    "oversized": {
+        "payload": "X" * (2 * 1024 * 1024),
+        "sender": "0x" + "e" * 64,
+        "signature": "0x" + "f" * 64,
+    },
+    "recursive": {
+        "sender": "0x" + "0" * 64,
+        "signature": "0x" + "a" * 64,
+    },
+}
+
+def _build_recursive_dict(depth: int) -> dict:
+    result = {"a": "b"}
+    for _ in range(depth):
+        result = {"next": result}
+    return result
+
+
+def _validate_invalid_sig(event: dict) -> bool:
+    sig = event.get("signature", "")
+    return isinstance(sig, str) and len(sig) >= 64 and not sig.startswith("invalid_")
+
+
+def _validate_malformed(event: dict) -> bool:
+    details = event.get("details", event)
+    return isinstance(details.get("payload"), str) and isinstance(details.get("signature"), str)
+
+
+def _validate_oversized(event: dict) -> bool:
+    payload = event.get("details", {}).get("payload", "")
+    return not (isinstance(payload, str) and len(payload) > 100000)
+
+
+def _validate_recursive(event: dict) -> bool:
+    return False
+
+
+POISON_VALIDATORS = {
+    "invalid_sig": _validate_invalid_sig,
+    "malformed": _validate_malformed,
+    "oversized": _validate_oversized,
+    "recursive": _validate_recursive,
+}
+
 
 # Global test key for signing valid events
 TEST_SIGNING_KEY = nacl.signing.SigningKey.generate()
@@ -84,39 +139,28 @@ def generate_poison_event(event_id: str, poison_type: str = "invalid_sig") -> di
             "poison_type": poison_type,
             "timestamp": int(time.time()),
         },
-        # These are NOT sent to API, used for local tracking only
         "_is_poison": True,
         "_poison_type": poison_type,
     }
 
-    if poison_type == "invalid_sig":
-        base_event["details"]["payload"] = "poison_payload"
-        base_event["sender"] = "0x" + "1" * 64
-        base_event["signature"] = "invalid_signature_" + "x" * 64
+    if poison_type not in POISON_CONFIGS:
+        return base_event
 
-    elif poison_type == "malformed":
-        # Remove mandatory field to trigger 422
-        if "entity_id" in base_event:
-            del base_event["entity_id"]
-        # In v3, these are required too
-        base_event["sender"] = "0x" + "c" * 64
-        base_event["signature"] = "0x" + "d" * 64
-        base_event["malformed_field"] = "this_should_fail_schema_validation"
+    config = POISON_CONFIGS[poison_type]
 
-    elif poison_type == "oversized":
-        # 2MB payload to trigger 413 Payload Too Large (limit is 1MB)
-        base_event["details"]["payload"] = "X" * (2 * 1024 * 1024)
-        base_event["sender"] = "0x" + "e" * 64
-        base_event["signature"] = "0x" + "f" * 64
+    if poison_type == "malformed":
+        base_event.pop("entity_id", None)
 
-    elif poison_type == "recursive":
-        # Deeply nested dict to trigger recursion protection
-        d = {"a": "b"}
-        for _ in range(100):
-            d = {"next": d}
-        base_event["details"]["recursive"] = d
-        base_event["sender"] = "0x" + "0" * 64
-        base_event["signature"] = "0x" + "a" * 64
+    if poison_type == "recursive":
+        base_event["details"]["recursive"] = _build_recursive_dict(100)
+    elif "payload" in config:
+        base_event["details"]["payload"] = config["payload"]
+
+    base_event["sender"] = config["sender"]
+    base_event["signature"] = config["signature"]
+
+    if "malformed_field" in config:
+        base_event["malformed_field"] = config["malformed_field"]
 
     return base_event
 
@@ -138,107 +182,77 @@ class PoisonPillTest:
         if REAL_REQUESTS:
             self.client = RealStressClient(nodes=self.config["target_nodes"])
 
+    @staticmethod
+    def _compute_status(is_poison: bool, is_valid: bool, elapsed: float) -> dict:
+        """Compute status string from validation result."""
+        if is_poison:
+            status = "poison_accepted" if is_valid else "poison_rejected"
+        else:
+            status = "valid_accepted" if is_valid else "valid_rejected"
+        return {"status": status, "elapsed": elapsed}
+
+    def _generate_test_events(self, num_valid: int, num_poison: int) -> list:
+        """Generate mixed valid and poison events."""
+        events = [generate_valid_event(f"valid-{i}") for i in range(num_valid)]
+        poison_types = list(POISON_CONFIGS.keys())
+        events.extend(
+            generate_poison_event(f"poison-{i}", poison_types[i % len(poison_types)])
+            for i in range(num_poison)
+        )
+        random.shuffle(events)
+        return events
+
+    def _collect_result(self, result: dict) -> None:
+        """Update counters based on result status."""
+        status = result.get("status", "")
+        if status == "valid_accepted":
+            self.valid_accepted += 1
+        elif status == "valid_rejected":
+            self.valid_rejected += 1
+        elif status == "poison_rejected":
+            self.poison_rejected += 1
+        elif status == "poison_accepted":
+            self.poison_accepted += 1
+
     def send_event(self, node: str, event: dict) -> dict:
         """Send an event to a node and return the status."""
         start_time = time.time()
-        
-        # Determine if it's a poison event for tracking
         is_poison = event.get("_is_poison", event.get("is_poison", False))
-        
-        # Create a clean payload for API submission (remove test metadata)
+
         payload = event.copy()
         payload.pop("_is_poison", None)
         payload.pop("is_poison", None)
         payload.pop("_poison_type", None)
         payload.pop("poison_type", None)
-        
+
         from tests.stress.real_stress_client import REAL_REQUESTS
         if REAL_REQUESTS and self.client:
-            # API v3 is now mandatory for secure events in production
-            # Pass node_id=None to let the client select a healthy node from its pool
             success = self.client.submit_secure_event(
                 chain_name=self.config.get("chain_name", "stress_test"),
                 event_data=payload,
                 node_id=None
             )
-            
-            elapsed = time.time() - start_time
-            if is_poison:
-                if not success:
-                    return {"status": "poison_rejected", "elapsed": elapsed}
-                else:
-                    return {"status": "poison_accepted", "elapsed": elapsed}
-            else:
-                if success:
-                    return {"status": "valid_accepted", "elapsed": elapsed}
-                else:
-                    return {"status": "valid_rejected", "elapsed": elapsed}
+            return self._compute_status(is_poison, success, time.time() - start_time)
         else:
-            # Simulation mode
             try:
-                # Simulate validation logic
                 is_valid = self._validate_event(event)
-
-                # Simulate network request
-                time.sleep(0.005)  # 5ms latency
-
-                elapsed = time.time() - start_time
-
-                if is_poison:
-                    if is_valid:
-                        return {"status": "poison_accepted", "elapsed": elapsed}
-                    else:
-                        return {"status": "poison_rejected", "elapsed": elapsed}
-                else:
-                    if is_valid:
-                        return {"status": "valid_accepted", "elapsed": elapsed}
-                    else:
-                        return {"status": "valid_rejected", "elapsed": elapsed}
-
+                time.sleep(0.005)
+                return self._compute_status(is_poison, is_valid, time.time() - start_time)
             except Exception as e:
                 return {"status": "error", "error": str(e), "elapsed": time.time() - start_time}
 
-    def _validate_event(self, event: dict) -> bool:
+    @staticmethod
+    def _validate_event(event: dict) -> bool:
         """Simulate event validation (signature check)."""
-        # Support both old and new schema for simulation
         details = event.get("details", event)
-        
         is_poison = event.get("_is_poison", event.get("is_poison", False))
+
         if is_poison:
             poison_type = event.get("_poison_type", event.get("poison_type", "unknown"))
+            validator = POISON_VALIDATORS.get(poison_type)
+            return validator(event) if validator else False
 
-            if poison_type == "invalid_sig":
-                # Check signature format (support 64-char or 66-char hex)
-                sig = event.get("signature", "")
-                if not isinstance(sig, str) or len(sig) < 64:
-                    return False
-                # Verify signature content
-                return not sig.startswith("invalid_")
-
-            elif poison_type == "malformed":
-                # Type checks
-                if not isinstance(details.get("payload"), str):
-                    return False
-                if not isinstance(details.get("signature"), str):
-                    return False
-                return True
-
-            elif poison_type == "oversized":
-                # Size limit check
-                payload = details.get("payload", "")
-                if isinstance(payload, str) and len(payload) > 100000:  # 100KB limit
-                    return False
-                return True
-
-            elif poison_type == "recursive":
-                # Depth limit check (simplified)
-                return False  # Reject deeply nested
-
-            return False # Unknown poison type
-        
-        # Valid events
         sig = event.get("signature", details.get("signature", ""))
-        # Ed25519 signature is 64 bytes (128 hex chars)
         return isinstance(sig, str) and len(sig) >= 66
 
     def run_test(self) -> dict:
@@ -254,50 +268,26 @@ class PoisonPillTest:
 
         from tests.stress.real_stress_client import REAL_REQUESTS
         if REAL_REQUESTS and self.client:
-            # Ensure chain exists on all nodes
-            self.client.wait_for_nodes(timeout=30)
-            self.client.create_chains_on_nodes()
+            if not self.client.wait_for_nodes(timeout=30):
+                logger.warning("No healthy nodes — falling back to simulation")
+                self.client = None
+            elif not self.client.create_chains_on_nodes():
+                logger.warning("Chain creation failed on nodes — falling back to simulation")
+                self.client = None
 
-        # Generate events
         logger.info(f"Generating {num_valid} valid + {num_poison} poison events...")
-
-        events = []
-
-        # Valid events
-        for i in range(num_valid):
-            events.append(generate_valid_event(f"valid-{i}"))
-
-        # Poison events (mix of types)
-        poison_types = ["invalid_sig", "malformed", "oversized", "recursive"]
-        for i in range(num_poison):
-            poison_type = poison_types[i % len(poison_types)]
-            events.append(generate_poison_event(f"poison-{i}", poison_type))
-
-        # Shuffle to mix valid and poison
-        random.shuffle(events)
-
+        events = self._generate_test_events(num_valid, num_poison)
         logger.info(f"Total events: {len(events)}")
 
-        # Send events concurrently
         with ThreadPoolExecutor(max_workers=concurrent) as executor:
-            futures = []
-            for i, event in enumerate(events):
-                node = nodes[i % len(nodes)]
-                future = executor.submit(self.send_event, node, event)
-                futures.append(future)
-
+            futures = [
+                executor.submit(self.send_event, nodes[i % len(nodes)], event)
+                for i, event in enumerate(events)
+            ]
             for future in as_completed(futures):
                 try:
-                    result = future.result()
                     with self.lock:
-                        if result["status"] == "valid_accepted":
-                            self.valid_accepted += 1
-                        elif result["status"] == "valid_rejected":
-                            self.valid_rejected += 1
-                        elif result["status"] == "poison_rejected":
-                            self.poison_rejected += 1
-                        elif result["status"] == "poison_accepted":
-                            self.poison_accepted += 1
+                        self._collect_result(future.result())
                 except Exception as e:
                     logger.error(f"Event failed: {e}")
 
