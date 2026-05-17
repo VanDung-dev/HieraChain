@@ -16,7 +16,7 @@ fi
 
 # Configuration
 IMAGE_NAME="hierachain:latest"
-COMPOSE_FILE="docker/docker-compose.test.yml"
+COMPOSE_FILE="docker/docker-compose.yml"
 # Generate a random token for the stealth explorer
 EXPLORER_TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 8 || echo "default")
 export EXPLORER_TOKEN="hrc_${EXPLORER_TOKEN}"

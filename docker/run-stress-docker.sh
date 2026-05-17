@@ -8,7 +8,7 @@ set -e
 DURATION=${1:-60}
 REAL_REQUESTS="true"
 TARGET="gateway:80,node1:2661,node2:2661,node3:2661,node4:2661"
-COMPOSE_FILE="docker/docker-compose.test.yml"
+COMPOSE_FILE="docker/docker-compose.yml"
 
 echo "========================================"
 echo " HieraChain Docker Compose Stress Test"
