@@ -1,8 +1,8 @@
 # HieraChain Documentation Guide
 
-The HieraChain documentation is written in Markdown and built using [Zensical](https://zensical.org/). The documentation structure is designed to support multiple languages natively, with Vietnamese (`vi`) currently configured as the primary language.
+The HieraChain documentation is written in Markdown and built using [Zensical](https://zensical.org/). The documentation structure is designed to support multiple languages natively, with English (`en`) currently configured as the primary language.
 
-Inside the `docs` directory, the documentation source code is neatly separated into language-specific folders (e.g., `docs/vi/` for Vietnamese).
+Inside the `docs` directory, the documentation source code is neatly separated into language-specific folders (e.g., `docs/en/` for English, `docs/vi/` for Vietnamese).
 
 ## Prerequisites
 
@@ -12,13 +12,13 @@ Before testing or building the documentation locally, ensure all required depend
 pip install -r requirements_dev.txt
 ```
 
-## Current Configuration for Vietnamese (`vi`)
+## Current Configuration for English (`en`)
 
-The `mkdocs.yml` file located at the root directory contains the core configuration for language-based publishing. The key settings that instruct Zensical to process the Vietnamese documentation are:
+The `mkdocs.yml` file located at the root directory contains the core configuration for language-based publishing. The key settings that instruct Zensical to process the English documentation are:
 
-* **Source Directory**: `docs_dir: docs/vi/` (specifies the path containing the Markdown files)
-* **UI Language**: `theme.language: vi` (sets the theme's interface language to Vietnamese)
-* **Date Localization**: `locale: vi` under the `git-revision-date-localized` plugin.
+* **Source Directory**: `docs_dir: docs/en/` (specifies the path containing the Markdown files)
+* **UI Language**: `theme.language: en` (sets the theme's interface language to English)
+* **Date Localization**: `locale: en` under the `git-revision-date-localized` plugin.
 
 ## Publishing and Testing the Documentation
 
@@ -44,55 +44,38 @@ zensical build
 
 This will quickly generate all static assets and output them to the `site/` directory.
 
-## Expanding to Other Languages (e.g., English - `en`)
+## Multi-Language Deployment
 
-The current architecture allows you to easily plug in new languages. To configure an additional translation such as English, follow these steps:
+To support multiple languages, create a separate config file for each locale and build them to isolated directories:
 
-1. **Duplicate the Content**: Copy the `docs/vi/` directory and rename it to `docs/en/`. Then, translate the Markdown files inside.
-2. **Enable the Language Switcher**: Open `mkdocs.yml`, locate the `extra.alternate` block, and uncomment the English setup to display the language selection menu on the website:
+* `mkdocs.yml` → build to `site/` (English as default)
+* `mkdocs.vi.yml` → build to `site/vi/` (Vietnamese)
 
-   ```yaml
-   extra:
-     alternate:
-       - name: 🇻🇳 Tiếng Việt
-         link: /
-         lang: vi
-       - name: 🇬🇧 English
-         link: /en/
-         lang: en
-   ```
+Example `mkdocs.vi.yml`:
 
-3. **Build Each Language**: To achieve the URL structure `docs.hierachain.org` (Vietnamese), `docs.hierachain.org/en` (English), `docs.hierachain.org/ru` (Russian), etc., create separate config files for each language and build them to isolated directories:
+```yaml
+site_name: HieraChain Docs
+docs_dir: docs/vi/
+site_dir: site/vi/
+theme:
+  language: vi
+extra:
+  alternate:
+    - name: 🇬🇧 English
+      link: /
+      lang: en
+    - name: 🇻🇳 Tiếng Việt
+      link: /vi/
+      lang: vi
+```
 
-   * `mkdocs.yml` → build to `site/` (Vietnamese as default)
-   * `mkdocs.en.yml` → build to `site/en/` (English)
-   * `mkdocs.ru.yml` → build to `site/ru/` (Russian)
+Build each language:
 
-   Example `mkdocs.en.yml`:
-
-   ```yaml
-   site_name: HieraChain Documentation
-   docs_dir: docs/en/
-   site_dir: site/en/
-   theme:
-     language: en
-   extra:
-     alternate:
-       - name: 🇻🇳 Tiếng Việt
-         link: /
-         lang: vi
-       - name: 🇬🇧 English
-         link: /en/
-         lang: en
-   ```
-
-   Build each language:
-
-   ```bash
-   zensical build -f mkdocs.yml        # Vietnamese → docs.hierachain.org
-   zensical build -f mkdocs.en.yml     # English → docs.hierachain.org/en
-   zensical build -f mkdocs.ru.yml     # Russian → docs.hierachain.org/ru
-   ```
+```bash
+zensical build -f mkdocs.yml          # English → docs.hierachain.org
+zensical build -f mkdocs.vi.yml       # Vietnamese → docs.hierachain.org/vi
+zensical build -f mkdocs.ru.yml       # Russian → docs.hierachain.org/ru
+```
 
 ## Custom Domain Configuration (GitHub Pages)
 

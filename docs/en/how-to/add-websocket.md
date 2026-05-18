@@ -1,16 +1,16 @@
 ---
-title: "Sử dụng WebSocket"
-description: "Hướng dẫn kết nối real-time với HieraChain qua WebSocket: subscribe events, nhận thông báo block mới, và ví dụ client."
+title: "Using WebSocket"
+description: "Guide to real-time connection with HieraChain via WebSocket: subscribe to events, receive new block notifications, and client examples."
 icon: material/connection
 ---
 
-# Sử dụng WebSocket
+# Using WebSocket
 
-## Mục đích
+## Purpose
 
-Hướng dẫn kết nối real-time với HieraChain qua WebSocket protocol để nhận thông báo sự kiện (events) và khối (blocks) mới ngay khi chúng được ghi vào chuỗi.
+Guide to real-time connection with HieraChain via WebSocket protocol to receive event and block notifications as soon as they are recorded on the chain.
 
-## Kết nối WebSocket
+## WebSocket Connection
 
 ### Endpoint
 
@@ -18,14 +18,14 @@ Hướng dẫn kết nối real-time với HieraChain qua WebSocket protocol đ�
 ws://localhost:2661/ws
 ```
 
-Với authentication (nếu bật):
+With authentication (if enabled):
 ```
 ws://localhost:2661/ws?token=<your-api-key>
 ```
 
 ### Message Format
 
-Tất cả messages là JSON.
+All messages are JSON.
 
 **Client → Server:**
 
@@ -59,23 +59,23 @@ Tất cả messages là JSON.
 {"type": "error", "message": "Invalid subscription"}
 ```
 
-## Ví dụ: JavaScript Client
+## Example: JavaScript Client
 
 ```javascript
-// Kết nối WebSocket
+// Connect WebSocket
 const ws = new WebSocket('ws://localhost:2661/ws');
 
-// Xử lý khi kết nối
+// Handle connection
 ws.onopen = () => {
   console.log('✅ Connected to HieraChain WebSocket');
   
-  // Subscribe vào chain 'supply_chain'
+  // Subscribe to 'supply_chain'
   ws.send(JSON.stringify({
     action: 'subscribe',
     chain_name: 'supply_chain'
   }));
   
-  // Hoặc subscribe theo event type
+  // Or subscribe by event type
   ws.send(JSON.stringify({
     action: 'subscribe',
     chain_name: 'supply_chain',
@@ -83,7 +83,7 @@ ws.onopen = () => {
   }));
 };
 
-// Nhận message
+// Receive messages
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
   
@@ -103,17 +103,17 @@ ws.onmessage = (event) => {
   }
 };
 
-// Xử lý lỗi
+// Handle errors
 ws.onerror = (error) => {
   console.error('WebSocket error:', error);
 };
 
-// Xử lý đóng kết nối
+// Handle close
 ws.onclose = () => {
   console.log('🔌 Disconnected');
 };
 
-// Keep-alive: gửi ping mỗi 30 giây
+// Keep-alive: send ping every 30 seconds
 setInterval(() => {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ action: 'ping' }));
@@ -121,7 +121,7 @@ setInterval(() => {
 }, 30000);
 ```
 
-## Ví dụ: Python Client
+## Example: Python Client
 
 ```python
 import asyncio
@@ -152,7 +152,7 @@ async def listen():
 asyncio.run(listen())
 ```
 
-## Ví dụ: Rust Client (tokio-tungstenite)
+## Example: Rust Client (tokio-tungstenite)
 
 ```rust
 use tokio_tungstenite::{connect_async, tungstenite::Message};
@@ -185,7 +185,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Connection Health
 
-Kiểm tra số lượng kết nối:
+Check connection count:
 
 ```bash
 curl http://localhost:2661/ws/status
@@ -203,17 +203,17 @@ Response:
 }
 ```
 
-## Xử lý lỗi thường gặp
+## Common Error Handling
 
-| Lỗi | Nguyên nhân | Giải pháp |
+| Error | Cause | Solution |
 |------|-------------|------------|
-| Connection refused | Server không chạy | Chạy `python -m hierachain.api.server` |
-| 401 Unauthorized | Thiếu token | Thêm `?token=<api_key>` vào URL |
-| No messages received | Chưa subscribe | Gửi message subscribe trước |
-| Sudden disconnect | Server restart | Reconnect tự động trong client |
+| Connection refused | Server not running | Run `python -m hierachain.api.server` |
+| 401 Unauthorized | Missing token | Add `?token=<api_key>` to URL |
+| No messages received | Not subscribed | Send subscribe message first |
+| Sudden disconnect | Server restart | Auto-reconnect in client |
 
-## Liên quan
+## Related
 
 * API Module: [API](../modules/api.md)
-* Reference API v1: [API v1](../reference/api-v1.md)
+* API v1 Reference: [API v1](../reference/api-v1.md)
 * WebSocket Source: `hierachain/api/websocket_manager.py`, `hierachain/api/websocket_endpoints.py`

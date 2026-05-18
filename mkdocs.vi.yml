@@ -1,15 +1,15 @@
 site_name: HieraChain Docs
-site_url: https://docs.hierachain.org/
-site_description: HieraChain Technical Documentation
+site_url: https://docs.hierachain.org/vi/
+site_description: Tài liệu HieraChain
 site_author: Nguyễn Lê Văn Dũng
 repo_name: VanDung-dev/HieraChain
 repo_url: https://github.com/VanDung-dev/HieraChain
-edit_uri: https://github.com/VanDung-dev/HieraChain/tree/main/docs/en/
+edit_uri: https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/
 remote_name: https://github.com/VanDung-dev/HieraChain/docs
 copyright: Copyright &copy; 2026 Nguyễn Lê Văn Dũng
 
-docs_dir: docs/en/
-site_dir: site
+docs_dir: docs/vi/
+site_dir: site/vi/
 use_directory_urls: true
 
 exclude_docs: |
@@ -21,7 +21,7 @@ exclude_docs: |
 
 theme:
   name: zensical
-  language: en
+  language: vi
   icon:
     repo: fontawesome/brands/github
   features:
@@ -40,13 +40,10 @@ theme:
     - search.highlight
     - search.suggest
   palette:
-    # Palette toggle for automatic mode
     - media: "(prefers-color-scheme)"
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
-
-    # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: teal
@@ -54,8 +51,6 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-
-    # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: teal
@@ -68,17 +63,17 @@ theme:
     code: Roboto Mono
 
 nav:
-  - Home: index.md
-  - Getting Started:
-      - Installation: getting-started/install.md
-      - Quickstart: getting-started/quickstart.md
-      - Basic Concepts: getting-started/concepts.md
-  - Architecture:
-      - Overview: architecture/overview.md
+  - Trang chủ: index.md
+  - Bắt đầu:
+      - Cài đặt: getting-started/install.md
+      - Bắt đầu nhanh: getting-started/quickstart.md
+      - Khái niệm cơ bản: getting-started/concepts.md
+  - Kiến trúc:
+      - Tổng quan: architecture/overview.md
       - Consensus & Ordering: architecture/consensus.md
-      - Hierarchy: architecture/hierarchy.md
-      - Security: architecture/security.md
-      - Deployment: architecture/deployment.md
+      - Phân cấp (chi tiết): architecture/hierarchy.md
+      - Bảo mật (chuyên sâu): architecture/security.md
+      - Triển khai: architecture/deployment.md
       - ZK Proofs: architecture/zk-proofs.md
   - Modules:
       - Core: modules/core.md
@@ -99,21 +94,21 @@ nav:
       - CLI: modules/cli.md
       - SDK: modules/sdk.md
       - Units: modules/units.md
-  - Security System:
+  - Hệ thống Bảo mật:
       - Authorization & Access Control: security/authorization-access-control.md
       - Lockdown & Logging: security/lockdown-logging.md
       - Fault-tolerance & Integrity: security/fault-tolerance-integrity.md
       - Risk Analyzer: security/risk-analyzer.md
       - Encryption & Keys: security/encryption-keys.md
       - Decentralized Zero-Knowledge Proofs: security/decentralized-zkp.md
-  - Consensus:
+  - Cơ chế đồng thuận:
       - Base Consensus: consensus/base_consensus.md
       - Proof of Authority: consensus/poa.md
       - Proof of Federation: consensus/pof.md
       - BFT Consensus: consensus/bft_consensus.md
       - Ordering: consensus/ordering.md
-  - Reference:
-      - Codebase Map: reference/code-map.md
+  - Tham chiếu:
+      - Codebase map: reference/code-map.md
       - Config: reference/config.md
       - Python SDK: reference/sdk-reference.md
       - GraphQL API: reference/graphql-api.md
@@ -122,33 +117,33 @@ nav:
       - API v3: reference/api-v3.md
       - Data Models: reference/data-models.md
       - Data Schema: reference/data-schema.md
-      - Glossary: glossary.md
-  - How-to Guides:
-      - Integrate into Web2: how-to/integrate-web2.md
-      - Create a Sub-Chain: how-to/add-domain-chain.md
-      - Add an Endpoint: how-to/add-endpoint.md
-      - Use WebSocket: how-to/add-websocket.md
-      - Add/Customize Consensus: how-to/add-consensus.md
-      - Write Domain Contracts: how-to/write-domain-contracts.md
-      - Use Explorer: how-to/use-explorer.md
-      - Run Demos: how-to/use-demos.md
-      - Secure Deployment: how-to/secure-deployment.md
-      - Troubleshooting: how-to/troubleshooting.md
-      - Disaster Recovery: how-to/disaster-recovery.md
-      - Cross-Chain Transactions: how-to/cross-chain-transactions.md
-  - Guides:
-      - Performance: guides/performance.md
-      - Reliability: guides/reliability.md
-      - Security Best Practices: guides/security-best-practices.md
-      - HTTP & Proxy Protocol: guides/http-proxy.md
-  - Development:
-      - Contributing: dev/contributing.md
-      - Testing: dev/testing.md
-      - Release Process: dev/release-process.md
+      - Thuật ngữ: glossary.md
+  - Sử dụng:
+      - Tích hợp vào Web2: how-to/integrate-web2.md
+      - Tạo Sub-Chain: how-to/add-domain-chain.md
+      - Thêm Endpoint: how-to/add-endpoint.md
+      - Sử dụng WebSocket: how-to/add-websocket.md
+      - Thêm/Tùy biến Consensus: how-to/add-consensus.md
+      - Viết Domain Contracts: how-to/write-domain-contracts.md
+      - Sử dụng Explorer: how-to/use-explorer.md
+      - Hướng dẫn chạy Demo: how-to/use-demos.md
+      - Triển khai an toàn: how-to/secure-deployment.md
+      - Khắc phục sự cố: how-to/troubleshooting.md
+      - Khôi phục sau thảm họa: how-to/disaster-recovery.md
+      - Giao dịch Liên chuỗi: how-to/cross-chain-transactions.md
+  - Hướng dẫn chung:
+      - Hiệu năng: guides/performance.md
+      - Độ tin cậy: guides/reliability.md
+      - Thực hành bảo mật: guides/security-best-practices.md
+      - Giao thức HTTP & Proxy: guides/http-proxy.md
+  - Phát triển:
+      - Đóng góp: dev/contributing.md
+      - Kiểm thử: dev/testing.md
+      - Quy trình phát hành: dev/release-process.md
       - AI Context: dev/ai-context.md
-  - Other:
+  - Khác:
       - FAQ: faq.md
-      - Future Roadmap: future-roadmap.md
+      - Lộ trình Tương lai: future-roadmap.md
       - Changelog: changelog.md
 
 plugins:
@@ -158,7 +153,7 @@ plugins:
       enable_creation_date: true
       type: timeago
       timezone: Asia/Ho_Chi_Minh
-      locale: en
+      locale: vi
       fallback_to_build_date: true
 
 markdown_extensions:

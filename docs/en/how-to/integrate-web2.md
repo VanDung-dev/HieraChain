@@ -1,22 +1,22 @@
 ---
-title: "Tích hợp Web2 & Hệ thống có sẵn"
-description: "Hướng dẫn tích hợp ứng dụng Web2, Legacy system và ERP với HieraChain thông qua REST API và SDK."
+title: "Web2 & Existing System Integration"
+description: "Guide to integrating Web2 applications, Legacy systems, and ERP with HieraChain via REST API and SDK."
 icon: material/web
 ---
 
-# Tích hợp Web2 & Hệ thống có sẵn
+# Web2 & Existing System Integration
 
-## Mục đích
+## Purpose
 
-Hướng dẫn các mô hình (patterns) để kết nối ứng dụng Web2 truyền thống (Node.js, Java, PHP,...) hoặc hệ thống ERP cũ với mạng lưới HieraChain.
+Guide to patterns for connecting traditional Web2 applications (Node.js, Java, PHP, etc.) or legacy ERP systems with the HieraChain network.
 
-## Các mô hình tích hợp
+## Integration Patterns
 
-Có 3 mô hình chính để tích hợp:
+There are 3 main integration models:
 
-1. **REST API (Loose Coupling)**: Phổ biến nhất, dùng cho Web/Mobile App.
-2. **Integration SDK (High Performance)**: Dùng cho các service Python backend cần hiệu năng cao.
-3. **ERP Adapter (Enterprise)**: Dùng cho các hệ thống ERP (SAP, Oracle) cần đồng bộ dữ liệu định kỳ.
+1. **REST API (Loose Coupling)**: Most common, used for Web/Mobile Apps.
+2. **Integration SDK (High Performance)**: Used for Python backend services needing high performance.
+3. **ERP Adapter (Enterprise)**: Used for ERP systems (SAP, Oracle) requiring periodic data synchronization.
 
 ```mermaid
 graph TD
@@ -28,13 +28,13 @@ graph TD
     SDK --> Core
 ```
 
-## Cách 1: Sử dụng REST API (Khuyên dùng)
+## Method 1: Using REST API (Recommended)
 
-Đây là cách đơn giản nhất, sử dụng giao thức HTTP tiêu chuẩn.
+This is the simplest method, using standard HTTP protocol.
 
-### Kịch bản
+### Scenario
 
-Bạn có một Website E-commerce (Node.js/React) và muốn ghi lại dấu vết sản phẩm (traceability) lên Blockchain khi đơn hàng hoàn tất.
+You have an E-commerce Website (Node.js/React) and want to record product traceability on the Blockchain when an order is completed.
 
 ```mermaid
 sequenceDiagram
@@ -45,25 +45,25 @@ sequenceDiagram
     Web->>API: POST /chains/orders/events
     Note right of Web: Payload: {order_id, items...}
     API->>API: Validate API Key
-    API->>Sub: Ghi nhận sự kiện (Add Event)
-    Sub-->>API: Trả về Event ID
+    API->>Sub: Record Event (Add Event)
+    Sub-->>API: Return Event ID
     API-->>Web: 200 OK (Event ID)
 ```
 
-### Ví dụ triển khai (Python/Requests)
+### Implementation Example (Python/Requests)
 
 ```python
 import requests
 import json
 
 API_URL = "http://localhost:2661/api/v1"
-API_KEY = "your-api-key-here"  # Nếu bật AUTH
+API_KEY = "your-api-key-here"  # If AUTH is enabled
 
 def log_order_to_chain(order_id, items):
-    # 1. Tạo Sub-Chain cho đơn hàng (hoặc dùng chain 'orders' chung)
-    # Giả sử dùng chain chung 'orders'
+    # 1. Create Sub-Chain for orders (or use shared 'orders' chain)
+    # Assuming using shared 'orders' chain
     
-    # 2. Gửi sự kiện
+    # 2. Submit event
     payload = {
         "entity_id": order_id,
         "event_type": "order_completed",
@@ -93,7 +93,7 @@ def log_order_to_chain(order_id, items):
         return None
 ```
 
-### Ví dụ triển khai (JavaScript/Fetch)
+### Implementation Example (JavaScript/Fetch)
 
 ```javascript
 const API_URL = "http://localhost:2661/api/v1";
@@ -124,9 +124,9 @@ async function logOrder(orderId, items) {
 }
 ```
 
-## Cách 2: Integration SDK (Python Backend)
+## Method 2: Integration SDK (Python Backend)
 
-Nếu bạn đang xây dựng một service Python nằm trong cùng mạng nội bộ hoặc cluster, việc sử dụng trực tiếp SDK sẽ cho hiệu năng cao hơn (bỏ qua overhead HTTP).
+If you are building a Python service within the same internal network or cluster, using the SDK directly provides higher performance (bypasses HTTP overhead).
 
 ```mermaid
 sequenceDiagram
@@ -136,21 +136,21 @@ sequenceDiagram
     participant Main as Main Chain
 
     Service->>Manager: start_operation(sub_chain, data)
-    Manager->>Sub: Ghi sự kiện & Đóng Block
+    Manager->>Sub: Record Event & Close Block
     Service->>Manager: submit_proof_to_main_chain()
-    Manager->>Sub: Lấy Proof
-    Manager->>Main: Gửi Proof (Neo dữ liệu)
-    Main-->>Manager: Xác nhận (Ack)
+    Manager->>Sub: Get Proof
+    Manager->>Main: Submit Proof (Anchor Data)
+    Main-->>Manager: Acknowledge (Ack)
 ```
 
 ```python
 from hierachain.hierarchical import HierarchyManager
 
-# Khởi tạo manager (kết nối DB trực tiếp hoặc qua ZMQ nội bộ)
+# Initialize manager (connects directly to DB or via internal ZMQ)
 manager = HierarchyManager()
 
 def process_batch_data(batch_items):
-    # Ghi trực tiếp vào hàng đợi xử lý
+    # Write directly to processing queue
     for item in batch_items:
         manager.start_operation(
             sub_chain_name="supply_chain",
@@ -159,23 +159,23 @@ def process_batch_data(batch_items):
             details=item["metadata"]
         )
     
-    # Trigger gửi proof ngay lập tức (tuỳ chọn)
+    # Trigger immediate proof submission (optional)
     manager.submit_proof_to_main_chain("supply_chain")
 ```
 
-## Cách 3: ERP Adapter
+## Method 3: ERP Adapter
 
-Sử dụng Ledger `hierachain/integration` để xây dựng adapter đồng bộ dữ liệu hai chiều.
+Use the `hierachain/integration` ledger to build bidirectional data sync adapters.
 
-Xem chi tiết tại: [Integration Module](../modules/integration.md).
+See details at: [Integration Module](../modules/integration.md).
 
-## Lưu ý quan trọng
+## Important Notes
 
-1. **Bảo mật**: Luôn sử dụng HTTPS và API Key (hoặc OAuth nếu triển khai custom) khi kết nối qua mạng công cộng.
-2. **Bất đồng bộ**: Ghi blockchain có thể chậm hơn ghi DB thường. Nên dùng hàng đợi (Queue) ở phía Web2 app (ví dụ: RabbitMQ, Kafka) để gửi request sang HieraChain worker, tránh block UI người dùng.
-3. **Xử lý lỗi**: Thiết kế cơ chế Retry (thử lại) nếu HieraChain API tạm thời không phản hồi (503, timeout).
+1. **Security**: Always use HTTPS and API Key (or OAuth if custom deployment) when connecting over public networks.
+2. **Asynchronous**: Blockchain writes can be slower than regular DB writes. Use a queue (e.g., RabbitMQ, Kafka) on the Web2 app side to send requests to HieraChain workers, avoiding blocking the user UI.
+3. **Error Handling**: Design Retry mechanisms if HieraChain API temporarily becomes unresponsive (503, timeout).
 
-## Liên quan
+## Related
 
-* Tham chiếu API v1: [API v1](../reference/api-v1.md)
+* API v1 Reference: [API v1](../reference/api-v1.md)
 * Integration Module: [Integration](../modules/integration.md)

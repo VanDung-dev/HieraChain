@@ -6,10 +6,12 @@ on:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
+      - 'mkdocs.vi.yml'
   pull_request:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
+      - 'mkdocs.vi.yml'
   workflow_dispatch:
     inputs:
       publish_docs:
@@ -45,8 +47,11 @@ jobs:
           pip install --upgrade pip
           pip install zensical==0.0.33
 
-      - name: Build Vietnamese Docs
+      - name: Build English Docs
         run: zensical build -f mkdocs.yml
+
+      - name: Build Vietnamese Docs
+        run: zensical build -f mkdocs.vi.yml
 
       - name: Check for Build Warnings
         run: |

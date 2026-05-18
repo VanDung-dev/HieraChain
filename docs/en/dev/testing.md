@@ -1,48 +1,48 @@
 ---
-title: "Hướng dẫn kiểm thử"
-description: "Hướng dẫn chạy test, markers/paths theo pyproject, ví dụ, và nguyên tắc viết test."
+title: "Testing Guide"
+description: "Guide to running tests, markers/paths per pyproject, examples, and testing principles."
 icon: material/test-tube
 ---
 
-# Hướng dẫn kiểm thử
+# Testing Guide
 
-## Chạy test
+## Running Tests
 
-!!! warning "Cảnh báo"
-    Chạy toàn bộ test cùng lúc có thể gây lỗi do giới hạn tài nguyên. Khuyến nghị chạy theo từng file hoặc nhóm nhỏ.
+!!! warning "Warning"
+    Running all tests simultaneously may cause errors due to resource constraints. It is recommended to run per file or small groups.
 
-### Chạy Unit Tests
+### Running Unit Tests
 
 ```bash
 python -m pytest tests/unit -v
 ```
 
-### Chạy Integration Tests
+### Running Integration Tests
 
 ```bash
 python -m pytest tests/integration -v
 ```
 
-### Chạy Scenario Tests
+### Running Scenario Tests
 
 ```bash
 python -m pytest tests/scenarios -v
 ```
 
-### Chạy Benchmark Tests
+### Running Benchmark Tests
 
 ```bash
 python -m pytest tests --benchmark-only -v --benchmark-save=benchmark_report
 python -m pytest tests --benchmark-only -v --benchmark-histogram=benchmark_report
 ```
 
-### Chạy Toàn bộ (All)
+### Running All Tests
 
 ```bash
 python -m pytest tests -v
 ```
 
-## Kiểm thử chịu tải (Stress Testing)
+## Stress Testing
 
 ### Docker Stress Testing
 
@@ -116,43 +116,43 @@ kubectl delete -k docker/k8s/
 kind delete cluster --name hiera-cluster
 ```
 
-## Công cụ phát triển (Developer Scripts)
+## Developer Scripts
 
-Thư mục `scripts/` chứa các tiện ích bổ trợ.
+The `scripts/` directory contains utility tools.
 
-### Phân tích tĩnh (Static Analysis)
+### Static Analysis
 
 ```bash
-# Chạy mặc định
+# Run default
 python -m scripts.static_analysis
 
-# Xuất kết quả ra file
+# Export results to file
 python -m scripts.static_analysis --output analysis_report.json
 ```
 
-### Benchmarking (Hiệu năng)
+### Benchmarking
 
-* **Hashing Performance** (So sánh Merkle tree hash vs JSON):
+* **Hashing Performance** (Compare Merkle tree hash vs JSON):
 
     ```bash
     python scripts/benchmark_hashing.py
     ```
 
-* **Throughput Benchmark** (Đo thông lượng xử lý sự kiện):
+* **Throughput Benchmark** (Measure event processing throughput):
 
     ```bash
     python scripts/benchmark_throughput.py --events 1000 --workers 4 --batch-size 100
     ```
 
-### Kiểm tra lưu trữ (Storage Verification)
+### Storage Verification
 
-* **Verify Storage Persistence** (Kiểm tra tính bền vững của SQLite):
+* **Verify Storage Persistence** (Test SQLite durability):
 
     ```bash
     python scripts/verify_storage.py
     ```
 
-## Cấu hình pytest (trích `pyproject.toml`)
+## Pytest Configuration (excerpt from `pyproject.toml`)
 
 * `testpaths = ["tests/unit", "tests/integration", "tests/scenarios"]`
 * `python_files = "test_*.py"`
@@ -163,21 +163,21 @@ python -m scripts.static_analysis --output analysis_report.json
     * `critical`, `high`, `medium`, `low`
     * `integration`, `recovery`, `stress`
 
-## Ví dụ chạy theo marker
+## Running by Marker Example
 
 ```bash
 pytest -v -m critical
 pytest -v -m integration
 ```
 
-## Nguyên tắc viết test
+## Testing Principles
 
-* Tập trung vào hành vi API công khai (public API) của module.
-* Test dữ liệu biên và tình huống lỗi (EDGE CASES trong docs).
-* Giữ test độc lập, có thể chạy theo marker.
+* Focus on public API behavior of the module.
+* Test edge cases and error scenarios.
+* Keep tests independent, runnable by marker.
 
-## Gợi ý bố trí test
+## Test Layout Suggestions
 
-* Unit: kiểm tra lớp/hàm đơn lẻ (core, security, storage...).
-* Integration: kiểm tra luồng end‑to‑end qua API v1/v2.
-* Scenarios: kịch bản nghiệp vụ (ví dụ tạo sub‑chain → ghi event → submit proof → truy vết entity).
+* Unit: test individual classes/functions (core, security, storage...).
+* Integration: test end-to-end flows via API v1/v2.
+* Scenarios: business scenarios (e.g. create sub-chain → write event → submit proof → trace entity).
