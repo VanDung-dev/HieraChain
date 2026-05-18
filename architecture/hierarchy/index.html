@@ -1,12 +1,12 @@
 
 <!doctype html>
-<html lang="vi" class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Quan hệ Main Chain/Sub-Chain/HierarchyManager, kênh/đa tổ chức, dữ liệu riêng tư, giao dịch liên chuỗi, neo bằng chứng và tái cân bằng.">
+        <meta name="description" content="Main Chain/Sub-Chain/HierarchyManager relationships, channels/multi-org, private data, cross-chain transactions, proof anchoring, and rebalancing.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -22,7 +22,9 @@
       
       
         
-          <link rel="alternate" href="/" hreflang="vi">
+          <link rel="alternate" href="/" hreflang="en">
+        
+          <link rel="alternate" href="/vi/" hreflang="vi">
         
       
       
@@ -31,7 +33,7 @@
     
     
       
-        <title>Kiến trúc phân cấp (chi tiết) - HieraChain Docs</title>
+        <title>Hierarchical Architecture (Detailed) - HieraChain Docs</title>
       
     
     
@@ -83,12 +85,12 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer" aria-label="Thanh điều hướng"></label>
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
     <div data-md-component="skip">
       
         
-        <a href="#kien-truc-phan-cap-chi-tiet" class="md-skip">
-          Bỏ qua
+        <a href="#hierarchical-architecture-detailed" class="md-skip">
+          Skip to content
         </a>
       
     </div>
@@ -100,14 +102,14 @@
       
 
 <header class="md-header" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="Đầu trang">
+  <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HieraChain Docs" class="md-header__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
 
     </a>
-    <label class="md-header__button md-icon" for="__drawer" aria-label="Thanh điều hướng">
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
@@ -121,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Kiến trúc phân cấp (chi tiết)
+              Hierarchical Architecture (Detailed)
             
           </span>
         </div>
@@ -134,9 +136,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Chuyển sang chế độ sáng"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ sáng" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
       </label>
     
@@ -144,9 +146,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Chuyển sang chế độ tối"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ tối" for="__palette_2" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -154,9 +156,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Chuyển sang chế độ tự động"  type="radio" name="__palette" id="__palette_2">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ tự động" for="__palette_0" hidden>
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -171,14 +173,20 @@
       <div class="md-header__option">
   <div class="md-select">
     
-    <button class="md-header__button md-icon" aria-label="Chọn ngôn ngữ">
+    <button class="md-header__button md-icon" aria-label="Select language">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-languages" viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>
     </button>
     <div class="md-select__inner">
       <ul class="md-select__list">
         
           <li class="md-select__item">
-            <a href="/" hreflang="vi" class="md-select__link">
+            <a href="/" hreflang="en" class="md-select__link">
+              🇬🇧 English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/vi/" hreflang="vi" class="md-select__link">
               🇻🇳 Tiếng Việt
             </a>
           </li>
@@ -191,20 +199,20 @@
     
       
       
-        <label class="md-header__button md-icon" for="__search" aria-label="Tìm kiếm">
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
           
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
         </label>
-        <div class="md-search" data-md-component="search" role="dialog" aria-label="Tìm kiếm">
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
   <button type="button" class="md-search__button">
-    Tìm kiếm
+    Search
   </button>
 </div>
       
     
     <div class="md-header__source">
       
-        <a href="https://github.com/VanDung-dev/HieraChain" title="Xem mã nguồn" class="md-source" data-md-component="source">
+        <a href="https://github.com/VanDung-dev/HieraChain" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -238,7 +246,7 @@
       <a href="../.." class="md-tabs__link">
         
   
-  Trang chủ
+  Home
 
       </a>
     </li>
@@ -256,7 +264,7 @@
         <a href="../../getting-started/install/" class="md-tabs__link">
           
   
-  Bắt đầu
+  Getting Started
 
         </a>
       </li>
@@ -277,7 +285,7 @@
         <a href="../overview/" class="md-tabs__link">
           
   
-  Kiến trúc
+  Architecture
 
         </a>
       </li>
@@ -315,7 +323,7 @@
         <a href="../../security/authorization-access-control/" class="md-tabs__link">
           
   
-  Hệ thống Bảo mật
+  Security System
 
         </a>
       </li>
@@ -334,7 +342,7 @@
         <a href="../../consensus/base_consensus/" class="md-tabs__link">
           
   
-  Cơ chế đồng thuận
+  Consensus
 
         </a>
       </li>
@@ -353,7 +361,7 @@
         <a href="../../reference/code-map/" class="md-tabs__link">
           
   
-  Tham chiếu
+  Reference
 
         </a>
       </li>
@@ -372,7 +380,7 @@
         <a href="../../how-to/integrate-web2/" class="md-tabs__link">
           
   
-  Sử dụng
+  How-to Guides
 
         </a>
       </li>
@@ -391,7 +399,7 @@
         <a href="../../guides/performance/" class="md-tabs__link">
           
   
-  Hướng dẫn chung
+  Guides
 
         </a>
       </li>
@@ -410,7 +418,7 @@
         <a href="../../dev/contributing/" class="md-tabs__link">
           
   
-  Phát triển
+  Development
 
         </a>
       </li>
@@ -429,7 +437,7 @@
         <a href="../../faq/" class="md-tabs__link">
           
   
-  Khác
+  Other
 
         </a>
       </li>
@@ -457,7 +465,7 @@
   
 
 
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Thanh điều hướng" data-md-level="0">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HieraChain Docs" class="md-nav__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
@@ -469,7 +477,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/VanDung-dev/HieraChain" title="Xem mã nguồn" class="md-source" data-md-component="source">
+      <a href="https://github.com/VanDung-dev/HieraChain" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -496,7 +504,7 @@
   <span class="md-ellipsis">
     
   
-    Trang chủ
+    Home
   
 
     
@@ -545,7 +553,7 @@
   <span class="md-ellipsis">
     
   
-    Bắt đầu
+    Getting Started
   
 
     
@@ -561,7 +569,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Bắt đầu
+    Getting Started
   
 
           </label>
@@ -583,7 +591,7 @@
   <span class="md-ellipsis">
     
   
-    Cài đặt
+    Installation
   
 
     
@@ -613,7 +621,7 @@
   <span class="md-ellipsis">
     
   
-    Bắt đầu nhanh
+    Quickstart
   
 
     
@@ -643,7 +651,7 @@
   <span class="md-ellipsis">
     
   
-    Khái niệm cơ bản
+    Basic Concepts
   
 
     
@@ -711,7 +719,7 @@
   <span class="md-ellipsis">
     
   
-    Kiến trúc
+    Architecture
   
 
     
@@ -727,7 +735,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Kiến trúc
+    Architecture
   
 
           </label>
@@ -749,7 +757,7 @@
   <span class="md-ellipsis">
     
   
-    Tổng quan
+    Overview
   
 
     
@@ -818,7 +826,7 @@
   <span class="md-ellipsis">
     
   
-    Phân cấp (chi tiết)
+    Hierarchy
   
 
     
@@ -838,7 +846,7 @@
   <span class="md-ellipsis">
     
   
-    Phân cấp (chi tiết)
+    Hierarchy
   
 
     
@@ -851,7 +859,7 @@
         
 
 
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
@@ -860,15 +868,15 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Mục lục
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#purpose" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Purpose
       
     </span>
   </a>
@@ -876,22 +884,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#thanh-phan-khai-niem" class="md-nav__link">
+  <a href="#components-concepts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Thành phần &amp; khái niệm
+        Components &amp; Concepts
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Thành phần &amp; khái niệm">
+    <nav class="md-nav" aria-label="Components &amp; Concepts">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#luong-tieu-bieu" class="md-nav__link">
+  <a href="#typical-flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Luồng tiêu biểu
+        Typical Flow
       
     </span>
   </a>
@@ -904,10 +912,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh-lien-quan-settingspy" class="md-nav__link">
+  <a href="#related-configuration-settingspy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình liên quan (settings.py)
+        Related Configuration (settings.py)
       
     </span>
   </a>
@@ -915,10 +923,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#features-limitations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Features &amp; Limitations
       
     </span>
   </a>
@@ -926,10 +934,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
+  <a href="#related" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Liên quan
+        Related
       
     </span>
   </a>
@@ -961,7 +969,7 @@
   <span class="md-ellipsis">
     
   
-    Bảo mật (chuyên sâu)
+    Security
   
 
     
@@ -991,7 +999,7 @@
   <span class="md-ellipsis">
     
   
-    Triển khai
+    Deployment
   
 
     
@@ -1719,7 +1727,7 @@
   <span class="md-ellipsis">
     
   
-    Hệ thống Bảo mật
+    Security System
   
 
     
@@ -1735,7 +1743,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Hệ thống Bảo mật
+    Security System
   
 
           </label>
@@ -1968,7 +1976,7 @@
   <span class="md-ellipsis">
     
   
-    Cơ chế đồng thuận
+    Consensus
   
 
     
@@ -1984,7 +1992,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Cơ chế đồng thuận
+    Consensus
   
 
           </label>
@@ -2197,7 +2205,7 @@
   <span class="md-ellipsis">
     
   
-    Tham chiếu
+    Reference
   
 
     
@@ -2213,7 +2221,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Tham chiếu
+    Reference
   
 
           </label>
@@ -2235,7 +2243,7 @@
   <span class="md-ellipsis">
     
   
-    Codebase map
+    Codebase Map
   
 
     
@@ -2505,7 +2513,7 @@
   <span class="md-ellipsis">
     
   
-    Thuật ngữ
+    Glossary
   
 
     
@@ -2580,7 +2588,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng
+    How-to Guides
   
 
     
@@ -2596,7 +2604,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Sử dụng
+    How-to Guides
   
 
           </label>
@@ -2618,7 +2626,7 @@
   <span class="md-ellipsis">
     
   
-    Tích hợp vào Web2
+    Integrate into Web2
   
 
     
@@ -2648,7 +2656,7 @@
   <span class="md-ellipsis">
     
   
-    Tạo Sub-Chain
+    Create a Sub-Chain
   
 
     
@@ -2678,7 +2686,7 @@
   <span class="md-ellipsis">
     
   
-    Thêm Endpoint
+    Add an Endpoint
   
 
     
@@ -2708,7 +2716,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng WebSocket
+    Use WebSocket
   
 
     
@@ -2738,7 +2746,7 @@
   <span class="md-ellipsis">
     
   
-    Thêm/Tùy biến Consensus
+    Add/Customize Consensus
   
 
     
@@ -2768,7 +2776,7 @@
   <span class="md-ellipsis">
     
   
-    Viết Domain Contracts
+    Write Domain Contracts
   
 
     
@@ -2798,7 +2806,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng Explorer
+    Use Explorer
   
 
     
@@ -2828,7 +2836,7 @@
   <span class="md-ellipsis">
     
   
-    Hướng dẫn chạy Demo
+    Run Demos
   
 
     
@@ -2858,7 +2866,7 @@
   <span class="md-ellipsis">
     
   
-    Triển khai an toàn
+    Secure Deployment
   
 
     
@@ -2888,7 +2896,7 @@
   <span class="md-ellipsis">
     
   
-    Khắc phục sự cố
+    Troubleshooting
   
 
     
@@ -2918,7 +2926,7 @@
   <span class="md-ellipsis">
     
   
-    Khôi phục sau thảm họa
+    Disaster Recovery
   
 
     
@@ -2948,7 +2956,7 @@
   <span class="md-ellipsis">
     
   
-    Giao dịch Liên chuỗi
+    Cross-Chain Transactions
   
 
     
@@ -3007,7 +3015,7 @@
   <span class="md-ellipsis">
     
   
-    Hướng dẫn chung
+    Guides
   
 
     
@@ -3023,7 +3031,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Hướng dẫn chung
+    Guides
   
 
           </label>
@@ -3045,7 +3053,7 @@
   <span class="md-ellipsis">
     
   
-    Hiệu năng
+    Performance
   
 
     
@@ -3075,7 +3083,7 @@
   <span class="md-ellipsis">
     
   
-    Độ tin cậy
+    Reliability
   
 
     
@@ -3105,7 +3113,7 @@
   <span class="md-ellipsis">
     
   
-    Thực hành bảo mật
+    Security Best Practices
   
 
     
@@ -3135,7 +3143,7 @@
   <span class="md-ellipsis">
     
   
-    Giao thức HTTP & Proxy
+    HTTP & Proxy Protocol
   
 
     
@@ -3194,7 +3202,7 @@
   <span class="md-ellipsis">
     
   
-    Phát triển
+    Development
   
 
     
@@ -3210,7 +3218,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Phát triển
+    Development
   
 
           </label>
@@ -3232,7 +3240,7 @@
   <span class="md-ellipsis">
     
   
-    Đóng góp
+    Contributing
   
 
     
@@ -3262,7 +3270,7 @@
   <span class="md-ellipsis">
     
   
-    Kiểm thử
+    Testing
   
 
     
@@ -3292,7 +3300,7 @@
   <span class="md-ellipsis">
     
   
-    Quy trình phát hành
+    Release Process
   
 
     
@@ -3379,7 +3387,7 @@
   <span class="md-ellipsis">
     
   
-    Khác
+    Other
   
 
     
@@ -3395,7 +3403,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Khác
+    Other
   
 
           </label>
@@ -3447,7 +3455,7 @@
   <span class="md-ellipsis">
     
   
-    Lộ trình Tương lai
+    Future Roadmap
   
 
     
@@ -3525,7 +3533,7 @@
                     
 
 
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
@@ -3534,15 +3542,15 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Mục lục
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#muc-ich" class="md-nav__link">
+  <a href="#purpose" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mục đích
+        Purpose
       
     </span>
   </a>
@@ -3550,22 +3558,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#thanh-phan-khai-niem" class="md-nav__link">
+  <a href="#components-concepts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Thành phần &amp; khái niệm
+        Components &amp; Concepts
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Thành phần &amp; khái niệm">
+    <nav class="md-nav" aria-label="Components &amp; Concepts">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#luong-tieu-bieu" class="md-nav__link">
+  <a href="#typical-flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Luồng tiêu biểu
+        Typical Flow
       
     </span>
   </a>
@@ -3578,10 +3586,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh-lien-quan-settingspy" class="md-nav__link">
+  <a href="#related-configuration-settingspy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình liên quan (settings.py)
+        Related Configuration (settings.py)
       
     </span>
   </a>
@@ -3589,10 +3597,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tinh-nang-han-che" class="md-nav__link">
+  <a href="#features-limitations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tính năng &amp; hạn chế
+        Features &amp; Limitations
       
     </span>
   </a>
@@ -3600,10 +3608,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
+  <a href="#related" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Liên quan
+        Related
       
     </span>
   </a>
@@ -3625,7 +3633,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/architecture/hierarchy.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/en/architecture/hierarchy.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -3634,29 +3642,29 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/architecture/hierarchy.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/en/architecture/hierarchy.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
   
 
 
-<h1 id="kien-truc-phan-cap-chi-tiet">Kiến trúc phân cấp (chi tiết)</h1>
-<h2 id="muc-ich">Mục đích</h2>
-<p>Diễn giải chi tiết cơ chế phân cấp của HieraChain: cách Sub‑Chain tương tác với Main Chain qua <code>HierarchyManager</code>, Channel và mô hình đa tổ chức, dữ liệu riêng tư, giao dịch liên chuỗi (2PC), neo Proof, và tái cân bằng Sub‑Chain.</p>
-<h2 id="thanh-phan-khai-niem">Thành phần &amp; khái niệm</h2>
+<h1 id="hierarchical-architecture-detailed">Hierarchical Architecture (Detailed)</h1>
+<h2 id="purpose">Purpose</h2>
+<p>Detailed explanation of HieraChain's hierarchical mechanism: how Sub-Chains interact with the Main Chain via <code>HierarchyManager</code>, Channel and multi-org model, private data, cross-chain transactions (2PC), Proof anchoring, and Sub-Chain rebalancing.</p>
+<h2 id="components-concepts">Components &amp; Concepts</h2>
 <ul>
-<li>Main Chain: <code>hierachain/hierarchical/main_chain.py</code> — Lưu Proof từ các Sub‑Chain; tổng hợp báo cáo toàn vẹn.</li>
-<li>Sub‑Chain (Domain Chain): <code>hierachain/hierarchical/sub_chain.py</code> — Xử lý Event domain, Ordering/đóng Block, sinh Proof.</li>
-<li>Hierarchy Manager: <code>hierachain/hierarchical/hierarchy_manager.py</code> — Điều phối hệ thống Chain, quản lý vòng đời Sub‑Chain, giao dịch liên chuỗi, thống kê hệ thống.</li>
-<li>Channel (kênh): <code>hierachain/hierarchical/channel.py</code> — Không gian giao tiếp riêng cho nhóm tổ chức, thiết lập chính sách tạo kênh.</li>
-<li>Multi‑Org: <code>hierachain/hierarchical/multi_org.py</code> — Khởi tạo tổ chức, mạng nhiều tổ chức, quan hệ Channel ↔ Organization.</li>
-<li>Private Data: <code>hierachain/hierarchical/private_data.py</code> — Bộ sưu tập dữ liệu riêng tư ở cấp Sub‑Chain.</li>
-<li>Cross‑Chain Transaction Manager: <code>hierachain/hierarchical/transaction_manager.py</code> — Điều phối giao dịch 2PC giữa các Sub‑Chain.</li>
-<li>Proof Aggregation: <code>hierachain/hierarchical/proof_aggregation.py</code> — Gom nhóm, nén proof trước khi gửi/ghi nhận (tùy cấu hình).</li>
-<li>Rebalancer: <code>hierachain/hierarchical/rebalancer.py</code> — Tự động tách/cân bằng Sub‑Chain khi tải cao theo ngưỡng.</li>
+<li>Main Chain: <code>hierachain/hierarchical/main_chain.py</code> — Stores Proofs from Sub-Chains; aggregates integrity reports.</li>
+<li>Sub-Chain (Domain Chain): <code>hierachain/hierarchical/sub_chain.py</code> — Processes domain Events, Ordering/closes Blocks, generates Proofs.</li>
+<li>Hierarchy Manager: <code>hierachain/hierarchical/hierarchy_manager.py</code> — Coordinates the Chain system, manages Sub-Chain lifecycle, cross-chain transactions, system statistics.</li>
+<li>Channel: <code>hierachain/hierarchical/channel.py</code> — Private communication space for organization groups, channel creation policy settings.</li>
+<li>Multi-Org: <code>hierachain/hierarchical/multi_org.py</code> — Organization initialization, multi-org network, Channel ↔ Organization relationships.</li>
+<li>Private Data: <code>hierachain/hierarchical/private_data.py</code> — Private data collections at Sub-Chain level.</li>
+<li>Cross-Chain Transaction Manager: <code>hierachain/hierarchical/transaction_manager.py</code> — Coordinates 2PC transactions between Sub-Chains.</li>
+<li>Proof Aggregation: <code>hierachain/hierarchical/proof_aggregation.py</code> — Groups, compresses proofs before sending/recording (configurable).</li>
+<li>Rebalancer: <code>hierachain/hierarchical/rebalancer.py</code> — Automatically splits/balances Sub-Chains under high load based on thresholds.</li>
 </ul>
-<h3 id="luong-tieu-bieu">Luồng tiêu biểu</h3>
+<h3 id="typical-flow">Typical Flow</h3>
 <pre class="mermaid"><code>graph TD
     User[Client/User] --&gt;|Submit Event| SubChain
     SubChain --&gt;|1. Ordering| Orderer[Ordering Service]
@@ -3666,29 +3674,29 @@
     SubChain --&gt;|5. Submit Proof| MainChain[Main Chain]
     MainChain --&gt;|6. Store Root Hash| Storage[World State]</code></pre>
 <ol>
-<li>Tạo Sub‑Chain: <code>HierarchyManager.create_sub_chain(name, domain_type, metadata)</code> → khởi tạo DomainChain, kết nối Main Chain.</li>
-<li>Ghi Event và đóng Block: <code>SubChain.add_event()</code> → Ordering → Consensus → <code>finalize_block()</code>.</li>
-<li>Neo Proof lên Main Chain: <code>SubChain.submit_proof_to_main(main_chain, ...)</code> hoặc qua <code>HierarchyManager.submit_proof_to_main_chain(name)</code>.</li>
-<li>Giao dịch liên chuỗi (2PC): <code>HierarchyManager.transaction_manager.initiate_transaction(src, dst, payload)</code> → chuẩn bị/commit/rollback.</li>
-<li>Kênh &amp; Dữ liệu riêng tư: Tạo Channel giữa các organization; private collections lưu tại Sub‑Chain theo chính sách kênh.</li>
-<li>Tái cân bằng Sub‑Chain: Rebalancer theo dõi EPS/ngưỡng → đề xuất tách nhánh/di chuyển tải.</li>
+<li>Create Sub-Chain: <code>HierarchyManager.create_sub_chain(name, domain_type, metadata)</code> → initializes DomainChain, connects to Main Chain.</li>
+<li>Write Event and close Block: <code>SubChain.add_event()</code> → Ordering → Consensus → <code>finalize_block()</code>.</li>
+<li>Anchor Proof to Main Chain: <code>SubChain.submit_proof_to_main(main_chain, ...)</code> or via <code>HierarchyManager.submit_proof_to_main_chain(name)</code>.</li>
+<li>Cross-chain transactions (2PC): <code>HierarchyManager.transaction_manager.initiate_transaction(src, dst, payload)</code> → prepare/commit/rollback.</li>
+<li>Channels &amp; Private Data: Create Channel between organizations; private collections stored at Sub-Chain per channel policy.</li>
+<li>Sub-Chain Rebalancing: Rebalancer monitors EPS/thresholds → proposes branch splitting/load movement.</li>
 </ol>
-<h2 id="cau-hinh-lien-quan-settingspy">Cấu hình liên quan (settings.py)</h2>
+<h2 id="related-configuration-settingspy">Related Configuration (settings.py)</h2>
 <ul>
 <li>Proof: <code>PROOF_AGGREGATION_ENABLED</code>, <code>PROOF_BATCH_SIZE</code>, <code>PROOF_BATCH_TIMEOUT</code>, <code>PROOF_COMPRESSION_ENABLED</code>.</li>
 <li>Rebalance: <code>REBALANCE_ENABLED</code>, <code>REBALANCE_THRESHOLD_EPS</code>, <code>REBALANCE_CHECK_INTERVAL</code>, <code>REBALANCE_MIN_EVENTS_FOR_SPLIT</code>, <code>REBALANCE_COOLDOWN</code>.</li>
-<li>K8s (cô lập Sub‑Chain): <code>K8S_ENABLED</code>, <code>K8S_NAMESPACE_PREFIX</code>, <code>K8S_*_LIMIT/REQUEST</code>, <code>K8S_CONFIG_PATH</code>.</li>
-<li>Đồng thuận/Ordering: xem <a href="../consensus/">Consensus &amp; Ordering</a> và <code>CONSENSUS_TYPE</code>, <code>VALIDATOR_TIMEOUT</code>.</li>
+<li>K8s (Sub-Chain isolation): <code>K8S_ENABLED</code>, <code>K8S_NAMESPACE_PREFIX</code>, <code>K8S_*_LIMIT/REQUEST</code>, <code>K8S_CONFIG_PATH</code>.</li>
+<li>Consensus/Ordering: see <a href="../consensus/">Consensus &amp; Ordering</a> and <code>CONSENSUS_TYPE</code>, <code>VALIDATOR_TIMEOUT</code>.</li>
 </ul>
-<h2 id="tinh-nang-han-che">Tính năng &amp; hạn chế</h2>
+<h2 id="features-limitations">Features &amp; Limitations</h2>
 <ul>
-<li>Tính năng: phân tách dữ liệu theo domain, neo proof tập trung ở Main Chain, hỗ trợ 2PC, kênh/đa tổ chức, dữ liệu riêng tư, tái cân bằng.</li>
-<li>Hạn chế: thao tác kênh/đa tổ chức cần chính sách rõ; 2PC yêu cầu đồng bộ tốt; tái cân bằng có thể cần thao tác vận hành ngoài băng.</li>
+<li>Features: domain data separation, centralized proof anchoring on Main Chain, 2PC support, channels/multi-org, private data, rebalancing.</li>
+<li>Limitations: channel/multi-org operations require clear policies; 2PC requires good synchronization; rebalancing may need out-of-band operational intervention.</li>
 </ul>
-<h2 id="lien-quan">Liên quan</h2>
+<h2 id="related">Related</h2>
 <ul>
-<li>Tổng quan: <a href="../overview/">Tổng quan</a></li>
-<li>Đồng thuận &amp; Sắp xếp: <a href="../consensus/">Consensus &amp; Ordering</a></li>
+<li>Overview: <a href="../overview/">Overview</a></li>
+<li>Consensus &amp; Ordering: <a href="../consensus/">Consensus &amp; Ordering</a></li>
 <li>Hierarchical module: <a href="../../modules/hierarchical/">Hierarchical</a></li>
 <li>Config: <a href="../../reference/config/">Config</a></li>
 </ul>
@@ -3720,7 +3728,7 @@
           <button type="button" class="md-top md-icon" data-md-component="top" hidden>
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
-  Trở lại mục lục
+  Back to top
 </button>
         
       </main>
@@ -3729,17 +3737,17 @@
   
     
       
-      <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../consensus/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Consensus &amp; Ordering">
+          <a href="../consensus/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Consensus &amp; Ordering">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
             </div>
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                Trước
+                Previous
               </span>
               <div class="md-ellipsis">
                 Consensus & Ordering
@@ -3749,13 +3757,13 @@
         
         
           
-          <a href="../security/" class="md-footer__link md-footer__link--next" aria-label="Sau: Bảo mật (chuyên sâu)">
+          <a href="../security/" class="md-footer__link md-footer__link--next" aria-label="Next: Security">
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                Sau
+                Next
               </span>
               <div class="md-ellipsis">
-                Bảo mật (chuyên sâu)
+                Security
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -3804,7 +3812,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Đã sao chép","clipboard.copy":"Sao chép vào bộ nhớ tạm","search.result.more.one":"1 từ khác trong trang","search.result.more.other":"# từ khác trong trang","search.result.none":"Không tìm thấy tài liệu liên quan","search.result.one":"1 tài liệu liên quan","search.result.other":"# tài liệu liên quan","search.result.placeholder":"Nhập để bắt đầu tìm kiếm","search.result.term.missing":"Không","select.version":"Chọn phiên bản"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
       <script src="../../assets/javascripts/bundle.63456bd9.min.js"></script>

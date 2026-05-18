@@ -1,12 +1,12 @@
 
 <!doctype html>
-<html lang="vi" class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Các adapter lưu trữ/cơ sở dữ liệu: SQLite, File (Parquet/Arrow), Redis — Tích hợp IO linh hoạt theo mô hình Adapter Pattern.">
+        <meta name="description" content="Storage/database adapters: SQLite, File (Parquet/Arrow), Redis — Flexible IO integration following the Adapter Pattern.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -22,7 +22,9 @@
       
       
         
-          <link rel="alternate" href="/" hreflang="vi">
+          <link rel="alternate" href="/" hreflang="en">
+        
+          <link rel="alternate" href="/vi/" hreflang="vi">
         
       
       
@@ -83,12 +85,12 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer" aria-label="Thanh điều hướng"></label>
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
     <div data-md-component="skip">
       
         
         <a href="#adapters-module-hierachainadapters" class="md-skip">
-          Bỏ qua
+          Skip to content
         </a>
       
     </div>
@@ -100,14 +102,14 @@
       
 
 <header class="md-header" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="Đầu trang">
+  <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HieraChain Docs" class="md-header__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
 
     </a>
-    <label class="md-header__button md-icon" for="__drawer" aria-label="Thanh điều hướng">
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
@@ -134,9 +136,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Chuyển sang chế độ sáng"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ sáng" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
       </label>
     
@@ -144,9 +146,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Chuyển sang chế độ tối"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ tối" for="__palette_2" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -154,9 +156,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Chuyển sang chế độ tự động"  type="radio" name="__palette" id="__palette_2">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ tự động" for="__palette_0" hidden>
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -171,14 +173,20 @@
       <div class="md-header__option">
   <div class="md-select">
     
-    <button class="md-header__button md-icon" aria-label="Chọn ngôn ngữ">
+    <button class="md-header__button md-icon" aria-label="Select language">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-languages" viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>
     </button>
     <div class="md-select__inner">
       <ul class="md-select__list">
         
           <li class="md-select__item">
-            <a href="/" hreflang="vi" class="md-select__link">
+            <a href="/" hreflang="en" class="md-select__link">
+              🇬🇧 English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/vi/" hreflang="vi" class="md-select__link">
               🇻🇳 Tiếng Việt
             </a>
           </li>
@@ -191,20 +199,20 @@
     
       
       
-        <label class="md-header__button md-icon" for="__search" aria-label="Tìm kiếm">
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
           
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
         </label>
-        <div class="md-search" data-md-component="search" role="dialog" aria-label="Tìm kiếm">
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
   <button type="button" class="md-search__button">
-    Tìm kiếm
+    Search
   </button>
 </div>
       
     
     <div class="md-header__source">
       
-        <a href="https://github.com/VanDung-dev/HieraChain" title="Xem mã nguồn" class="md-source" data-md-component="source">
+        <a href="https://github.com/VanDung-dev/HieraChain" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -238,7 +246,7 @@
       <a href="../.." class="md-tabs__link">
         
   
-  Trang chủ
+  Home
 
       </a>
     </li>
@@ -256,7 +264,7 @@
         <a href="../../getting-started/install/" class="md-tabs__link">
           
   
-  Bắt đầu
+  Getting Started
 
         </a>
       </li>
@@ -275,7 +283,7 @@
         <a href="../../architecture/overview/" class="md-tabs__link">
           
   
-  Kiến trúc
+  Architecture
 
         </a>
       </li>
@@ -315,7 +323,7 @@
         <a href="../../security/authorization-access-control/" class="md-tabs__link">
           
   
-  Hệ thống Bảo mật
+  Security System
 
         </a>
       </li>
@@ -334,7 +342,7 @@
         <a href="../../consensus/base_consensus/" class="md-tabs__link">
           
   
-  Cơ chế đồng thuận
+  Consensus
 
         </a>
       </li>
@@ -353,7 +361,7 @@
         <a href="../../reference/code-map/" class="md-tabs__link">
           
   
-  Tham chiếu
+  Reference
 
         </a>
       </li>
@@ -372,7 +380,7 @@
         <a href="../../how-to/integrate-web2/" class="md-tabs__link">
           
   
-  Sử dụng
+  How-to Guides
 
         </a>
       </li>
@@ -391,7 +399,7 @@
         <a href="../../guides/performance/" class="md-tabs__link">
           
   
-  Hướng dẫn chung
+  Guides
 
         </a>
       </li>
@@ -410,7 +418,7 @@
         <a href="../../dev/contributing/" class="md-tabs__link">
           
   
-  Phát triển
+  Development
 
         </a>
       </li>
@@ -429,7 +437,7 @@
         <a href="../../faq/" class="md-tabs__link">
           
   
-  Khác
+  Other
 
         </a>
       </li>
@@ -457,7 +465,7 @@
   
 
 
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Thanh điều hướng" data-md-level="0">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HieraChain Docs" class="md-nav__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
@@ -469,7 +477,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/VanDung-dev/HieraChain" title="Xem mã nguồn" class="md-source" data-md-component="source">
+      <a href="https://github.com/VanDung-dev/HieraChain" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -496,7 +504,7 @@
   <span class="md-ellipsis">
     
   
-    Trang chủ
+    Home
   
 
     
@@ -545,7 +553,7 @@
   <span class="md-ellipsis">
     
   
-    Bắt đầu
+    Getting Started
   
 
     
@@ -561,7 +569,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Bắt đầu
+    Getting Started
   
 
           </label>
@@ -583,7 +591,7 @@
   <span class="md-ellipsis">
     
   
-    Cài đặt
+    Installation
   
 
     
@@ -613,7 +621,7 @@
   <span class="md-ellipsis">
     
   
-    Bắt đầu nhanh
+    Quickstart
   
 
     
@@ -643,7 +651,7 @@
   <span class="md-ellipsis">
     
   
-    Khái niệm cơ bản
+    Basic Concepts
   
 
     
@@ -706,7 +714,7 @@
   <span class="md-ellipsis">
     
   
-    Kiến trúc
+    Architecture
   
 
     
@@ -722,7 +730,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Kiến trúc
+    Architecture
   
 
           </label>
@@ -744,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Tổng quan
+    Overview
   
 
     
@@ -804,7 +812,7 @@
   <span class="md-ellipsis">
     
   
-    Phân cấp (chi tiết)
+    Hierarchy
   
 
     
@@ -834,7 +842,7 @@
   <span class="md-ellipsis">
     
   
-    Bảo mật (chuyên sâu)
+    Security
   
 
     
@@ -864,7 +872,7 @@
   <span class="md-ellipsis">
     
   
-    Triển khai
+    Deployment
   
 
     
@@ -1306,7 +1314,7 @@
         
 
 
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
@@ -1315,27 +1323,27 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Mục lục
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-tong-quan" class="md-nav__link">
+  <a href="#1-overview" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Tổng quan
+        1. Overview
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1. Tổng quan">
+    <nav class="md-nav" aria-label="1. Overview">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#vai-tro-chinh" class="md-nav__link">
+  <a href="#main-roles" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Vai trò chính
+        Main Roles
       
     </span>
   </a>
@@ -1348,15 +1356,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-cac-adapter-hien-co" class="md-nav__link">
+  <a href="#2-available-adapters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Các Adapter hiện có
+        2. Available Adapters
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="2. Các Adapter hiện có">
+    <nav class="md-nav" aria-label="2. Available Adapters">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1398,10 +1406,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-so-sanh-cac-adapter" class="md-nav__link">
+  <a href="#3-adapter-comparison" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. So sánh các Adapter
+        3. Adapter Comparison
       
     </span>
   </a>
@@ -1409,22 +1417,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-huong-dan-su-dung" class="md-nav__link">
+  <a href="#4-usage-guide" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Hướng dẫn sử dụng
+        4. Usage Guide
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="4. Hướng dẫn sử dụng">
+    <nav class="md-nav" aria-label="4. Usage Guide">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#cau-hinh-qua-settings" class="md-nav__link">
+  <a href="#configuration-via-settings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình qua Settings
+        Configuration via Settings
       
     </span>
   </a>
@@ -1432,22 +1440,22 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#su-dung-trong-ma-nguon" class="md-nav__link">
+  <a href="#usage-in-code" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sử dụng trong mã nguồn
+        Usage in Code
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Sử dụng trong mã nguồn">
+    <nav class="md-nav" aria-label="Usage in Code">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#su-dung-sqlite" class="md-nav__link">
+  <a href="#using-sqlite" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sử dụng SQLite
+        Using SQLite
       
     </span>
   </a>
@@ -1455,10 +1463,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#su-dung-file-parquet" class="md-nav__link">
+  <a href="#using-file-parquet" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sử dụng File (Parquet)
+        Using File (Parquet)
       
     </span>
   </a>
@@ -1476,22 +1484,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-bao-mat-an-toan-du-lieu" class="md-nav__link">
+  <a href="#5-security-data-safety" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Bảo mật &amp; An toàn dữ liệu
+        5. Security &amp; Data Safety
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="5. Bảo mật &amp; An toàn dữ liệu">
+    <nav class="md-nav" aria-label="5. Security &amp; Data Safety">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#chong-tan-cong-path-traversal-cwe-22" class="md-nav__link">
+  <a href="#path-traversal-protection-cwe-22" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Chống tấn công Path Traversal (CWE-22)
+        Path Traversal Protection (CWE-22)
       
     </span>
   </a>
@@ -1515,10 +1523,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-xu-ly-loi-bao-tri" class="md-nav__link">
+  <a href="#6-error-handling-maintenance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        6. Xử lý lỗi &amp; Bảo trì
+        6. Error Handling &amp; Maintenance
       
     </span>
   </a>
@@ -1526,10 +1534,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
+  <a href="#related" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Liên quan
+        Related
       
     </span>
   </a>
@@ -1864,7 +1872,7 @@
   <span class="md-ellipsis">
     
   
-    Hệ thống Bảo mật
+    Security System
   
 
     
@@ -1880,7 +1888,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Hệ thống Bảo mật
+    Security System
   
 
           </label>
@@ -2113,7 +2121,7 @@
   <span class="md-ellipsis">
     
   
-    Cơ chế đồng thuận
+    Consensus
   
 
     
@@ -2129,7 +2137,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Cơ chế đồng thuận
+    Consensus
   
 
           </label>
@@ -2342,7 +2350,7 @@
   <span class="md-ellipsis">
     
   
-    Tham chiếu
+    Reference
   
 
     
@@ -2358,7 +2366,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Tham chiếu
+    Reference
   
 
           </label>
@@ -2380,7 +2388,7 @@
   <span class="md-ellipsis">
     
   
-    Codebase map
+    Codebase Map
   
 
     
@@ -2650,7 +2658,7 @@
   <span class="md-ellipsis">
     
   
-    Thuật ngữ
+    Glossary
   
 
     
@@ -2725,7 +2733,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng
+    How-to Guides
   
 
     
@@ -2741,7 +2749,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Sử dụng
+    How-to Guides
   
 
           </label>
@@ -2763,7 +2771,7 @@
   <span class="md-ellipsis">
     
   
-    Tích hợp vào Web2
+    Integrate into Web2
   
 
     
@@ -2793,7 +2801,7 @@
   <span class="md-ellipsis">
     
   
-    Tạo Sub-Chain
+    Create a Sub-Chain
   
 
     
@@ -2823,7 +2831,7 @@
   <span class="md-ellipsis">
     
   
-    Thêm Endpoint
+    Add an Endpoint
   
 
     
@@ -2853,7 +2861,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng WebSocket
+    Use WebSocket
   
 
     
@@ -2883,7 +2891,7 @@
   <span class="md-ellipsis">
     
   
-    Thêm/Tùy biến Consensus
+    Add/Customize Consensus
   
 
     
@@ -2913,7 +2921,7 @@
   <span class="md-ellipsis">
     
   
-    Viết Domain Contracts
+    Write Domain Contracts
   
 
     
@@ -2943,7 +2951,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng Explorer
+    Use Explorer
   
 
     
@@ -2973,7 +2981,7 @@
   <span class="md-ellipsis">
     
   
-    Hướng dẫn chạy Demo
+    Run Demos
   
 
     
@@ -3003,7 +3011,7 @@
   <span class="md-ellipsis">
     
   
-    Triển khai an toàn
+    Secure Deployment
   
 
     
@@ -3033,7 +3041,7 @@
   <span class="md-ellipsis">
     
   
-    Khắc phục sự cố
+    Troubleshooting
   
 
     
@@ -3063,7 +3071,7 @@
   <span class="md-ellipsis">
     
   
-    Khôi phục sau thảm họa
+    Disaster Recovery
   
 
     
@@ -3093,7 +3101,7 @@
   <span class="md-ellipsis">
     
   
-    Giao dịch Liên chuỗi
+    Cross-Chain Transactions
   
 
     
@@ -3152,7 +3160,7 @@
   <span class="md-ellipsis">
     
   
-    Hướng dẫn chung
+    Guides
   
 
     
@@ -3168,7 +3176,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Hướng dẫn chung
+    Guides
   
 
           </label>
@@ -3190,7 +3198,7 @@
   <span class="md-ellipsis">
     
   
-    Hiệu năng
+    Performance
   
 
     
@@ -3220,7 +3228,7 @@
   <span class="md-ellipsis">
     
   
-    Độ tin cậy
+    Reliability
   
 
     
@@ -3250,7 +3258,7 @@
   <span class="md-ellipsis">
     
   
-    Thực hành bảo mật
+    Security Best Practices
   
 
     
@@ -3280,7 +3288,7 @@
   <span class="md-ellipsis">
     
   
-    Giao thức HTTP & Proxy
+    HTTP & Proxy Protocol
   
 
     
@@ -3339,7 +3347,7 @@
   <span class="md-ellipsis">
     
   
-    Phát triển
+    Development
   
 
     
@@ -3355,7 +3363,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Phát triển
+    Development
   
 
           </label>
@@ -3377,7 +3385,7 @@
   <span class="md-ellipsis">
     
   
-    Đóng góp
+    Contributing
   
 
     
@@ -3407,7 +3415,7 @@
   <span class="md-ellipsis">
     
   
-    Kiểm thử
+    Testing
   
 
     
@@ -3437,7 +3445,7 @@
   <span class="md-ellipsis">
     
   
-    Quy trình phát hành
+    Release Process
   
 
     
@@ -3524,7 +3532,7 @@
   <span class="md-ellipsis">
     
   
-    Khác
+    Other
   
 
     
@@ -3540,7 +3548,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Khác
+    Other
   
 
           </label>
@@ -3592,7 +3600,7 @@
   <span class="md-ellipsis">
     
   
-    Lộ trình Tương lai
+    Future Roadmap
   
 
     
@@ -3670,7 +3678,7 @@
                     
 
 
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
@@ -3679,27 +3687,27 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Mục lục
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-tong-quan" class="md-nav__link">
+  <a href="#1-overview" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Tổng quan
+        1. Overview
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1. Tổng quan">
+    <nav class="md-nav" aria-label="1. Overview">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#vai-tro-chinh" class="md-nav__link">
+  <a href="#main-roles" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Vai trò chính
+        Main Roles
       
     </span>
   </a>
@@ -3712,15 +3720,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-cac-adapter-hien-co" class="md-nav__link">
+  <a href="#2-available-adapters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Các Adapter hiện có
+        2. Available Adapters
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="2. Các Adapter hiện có">
+    <nav class="md-nav" aria-label="2. Available Adapters">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3762,10 +3770,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-so-sanh-cac-adapter" class="md-nav__link">
+  <a href="#3-adapter-comparison" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. So sánh các Adapter
+        3. Adapter Comparison
       
     </span>
   </a>
@@ -3773,22 +3781,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-huong-dan-su-dung" class="md-nav__link">
+  <a href="#4-usage-guide" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Hướng dẫn sử dụng
+        4. Usage Guide
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="4. Hướng dẫn sử dụng">
+    <nav class="md-nav" aria-label="4. Usage Guide">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#cau-hinh-qua-settings" class="md-nav__link">
+  <a href="#configuration-via-settings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình qua Settings
+        Configuration via Settings
       
     </span>
   </a>
@@ -3796,22 +3804,22 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#su-dung-trong-ma-nguon" class="md-nav__link">
+  <a href="#usage-in-code" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sử dụng trong mã nguồn
+        Usage in Code
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Sử dụng trong mã nguồn">
+    <nav class="md-nav" aria-label="Usage in Code">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#su-dung-sqlite" class="md-nav__link">
+  <a href="#using-sqlite" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sử dụng SQLite
+        Using SQLite
       
     </span>
   </a>
@@ -3819,10 +3827,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#su-dung-file-parquet" class="md-nav__link">
+  <a href="#using-file-parquet" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sử dụng File (Parquet)
+        Using File (Parquet)
       
     </span>
   </a>
@@ -3840,22 +3848,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-bao-mat-an-toan-du-lieu" class="md-nav__link">
+  <a href="#5-security-data-safety" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Bảo mật &amp; An toàn dữ liệu
+        5. Security &amp; Data Safety
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="5. Bảo mật &amp; An toàn dữ liệu">
+    <nav class="md-nav" aria-label="5. Security &amp; Data Safety">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#chong-tan-cong-path-traversal-cwe-22" class="md-nav__link">
+  <a href="#path-traversal-protection-cwe-22" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Chống tấn công Path Traversal (CWE-22)
+        Path Traversal Protection (CWE-22)
       
     </span>
   </a>
@@ -3879,10 +3887,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-xu-ly-loi-bao-tri" class="md-nav__link">
+  <a href="#6-error-handling-maintenance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        6. Xử lý lỗi &amp; Bảo trì
+        6. Error Handling &amp; Maintenance
       
     </span>
   </a>
@@ -3890,10 +3898,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
+  <a href="#related" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Liên quan
+        Related
       
     </span>
   </a>
@@ -3915,7 +3923,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/modules/adapters.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/en/modules/adapters.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -3924,7 +3932,7 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/modules/adapters.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/en/modules/adapters.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
@@ -3932,81 +3940,81 @@
 
 
 <h1 id="adapters-module-hierachainadapters">Adapters Module (<code>hierachain/adapters/*</code>)</h1>
-<h2 id="1-tong-quan">1. Tổng quan</h2>
-<p>Module <strong>Adapters</strong> đóng vai trò là lớp trừu tượng hóa (Abstraction Layer) cho việc lưu trữ dữ liệu trong HieraChain. Thay vì ràng buộc logic nghiệp vụ vào một loại cơ sở dữ liệu cụ thể, HieraChain sử dụng <strong>Adapter Pattern</strong> để cho phép thay đổi backend lưu trữ một cách linh hoạt mà không cần sửa đổi mã nguồn cốt lõi.</p>
-<h3 id="vai-tro-chinh">Vai trò chính</h3>
+<h2 id="1-overview">1. Overview</h2>
+<p>The <strong>Adapters</strong> module serves as the Abstraction Layer for data storage in HieraChain. Instead of binding business logic to a specific database type, HieraChain uses the <strong>Adapter Pattern</strong> to allow switching storage backends flexibly without modifying core source code.</p>
+<h3 id="main-roles">Main Roles</h3>
 <ul>
-<li><strong>Chuẩn hóa IO</strong>: Cung cấp giao diện thống nhất để lưu trữ block, event, metadata và proof.</li>
-<li><strong>Linh hoạt triển khai</strong>: Hỗ trợ từ môi trường phát triển (SQLite/File) đến môi trường sản xuất hiệu năng cao (Redis/Parquet).</li>
-<li><strong>Tối ưu hóa truy vấn</strong>: Mỗi adapter được thiết kế để tối ưu cho một kiểu truy vấn nhất định (ví dụ: File adapter tối ưu cho việc truy vết entity trên quy mô lớn).</li>
+<li><strong>IO Standardization</strong>: Provides a unified interface for storing blocks, events, metadata, and proofs.</li>
+<li><strong>Deployment Flexibility</strong>: Supports environments from development (SQLite/File) to high-performance production (Redis/Parquet).</li>
+<li><strong>Query Optimization</strong>: Each adapter is designed to optimize for a specific query type (e.g., File adapter optimizes for large-scale entity tracing).</li>
 </ul>
 <hr />
-<h2 id="2-cac-adapter-hien-co">2. Các Adapter hiện có</h2>
-<p>HieraChain cung cấp ba loại adapter chính, chia thành hai nhóm: <code>database</code> và <code>storage</code>.</p>
+<h2 id="2-available-adapters">2. Available Adapters</h2>
+<p>HieraChain provides three main adapters, divided into two groups: <code>database</code> and <code>storage</code>.</p>
 <h3 id="21-sqlite-database-adapter-adaptersdatabasesqlite_adapterpy">2.1 SQLite Database Adapter (<code>adapters/database/sqlite_adapter.py</code>)</h3>
-<p>Sử dụng SQLite làm backend cho các hệ thống yêu cầu tính toàn vẹn dữ liệu quan hệ và truy vấn SQL linh hoạt.</p>
+<p>Uses SQLite as the backend for systems requiring relational data integrity and flexible SQL queries.</p>
 <ul>
-<li><strong>Công nghệ</strong>: SQLite3.</li>
+<li><strong>Technology</strong>: SQLite3.</li>
 <li>
-<p><strong>Cấu trúc Schema</strong>:</p>
+<p><strong>Schema Structure</strong>:</p>
 <ul>
-<li><code>chains</code>: Lưu thông tin định danh và loại chuỗi (Main/Sub).</li>
-<li><code>blocks</code>: Lưu trữ header của block, mã băm và metadata.</li>
-<li><code>events</code>: Lưu chi tiết các sự kiện nghiệp vụ dưới dạng JSON.</li>
-<li><code>proofs</code>: Lưu vết các bằng chứng cross-chain giữa Sub-Chain và Main Chain.</li>
+<li><code>chains</code>: Stores chain identity and type (Main/Sub).</li>
+<li><code>blocks</code>: Stores block headers, hashes, and metadata.</li>
+<li><code>events</code>: Stores business event details in JSON format.</li>
+<li><code>proofs</code>: Tracks cross-chain proofs between Sub-Chain and Main Chain.</li>
 </ul>
 </li>
 <li>
-<p><strong>Ưu điểm</strong>: Hỗ trợ ACID, quản lý quan hệ giữa các thực thể tốt, dễ dàng sao lưu (single file).</p>
+<p><strong>Advantages</strong>: ACID support, good entity relationship management, easy backup (single file).</p>
 </li>
-<li><strong>Tối ưu</strong>: Có sẵn các chỉ mục (indexes) trên <code>entity_id</code>, <code>event_type</code>, và <code>timestamp</code>.</li>
+<li><strong>Optimization</strong>: Indexes on <code>entity_id</code>, <code>event_type</code>, and <code>timestamp</code>.</li>
 </ul>
 <h3 id="22-file-storage-adapter-adaptersstoragefile_storagepy">2.2 File Storage Adapter (<code>adapters/storage/file_storage.py</code>)</h3>
-<p>Adapter hiệu năng cao dành cho dữ liệu lớn, sử dụng định dạng file chuyên dụng cho phân tích.</p>
+<p>High-performance adapter for big data, using specialized file formats for analytics.</p>
 <ul>
-<li><strong>Công nghệ</strong>: <strong>Apache Parquet</strong> và <strong>PyArrow</strong>.</li>
+<li><strong>Technology</strong>: <strong>Apache Parquet</strong> and <strong>PyArrow</strong>.</li>
 <li>
-<p><strong>Cấu trúc lưu trữ</strong>:</p>
+<p><strong>Storage Structure</strong>:</p>
 <ul>
-<li><code>blocks/</code>: Lưu trữ block dưới dạng file <code>.parquet</code> nén (Zstd). Mỗi block là một bảng Arrow.</li>
-<li><code>events/</code>: Duy trì bộ chỉ mục sự kiện (Event Index) cho phép truy tìm (tracing) cực nhanh.</li>
-<li><code>chains/</code>: Lưu metadata chuỗi dưới dạng JSON.</li>
+<li><code>blocks/</code>: Stores blocks as compressed <code>.parquet</code> files (Zstd). Each block is an Arrow table.</li>
+<li><code>events/</code>: Maintains an Event Index for extremely fast tracing.</li>
+<li><code>chains/</code>: Stores chain metadata as JSON.</li>
 </ul>
 </li>
 <li>
-<p><strong>Ưu điểm</strong>: Tốc độ đọc/ghi cực nhanh, nén dữ liệu tốt, hỗ trợ <strong>Column Pruning</strong> (chỉ đọc các cột cần thiết).</p>
+<p><strong>Advantages</strong>: Very fast read/write speed, good data compression, supports <strong>Column Pruning</strong> (reading only required columns).</p>
 </li>
 <li>
-<p><strong>Tính năng đặc biệt</strong>:</p>
+<p><strong>Special Features</strong>:</p>
 <ul>
-<li><code>BatchBlockWriter</code>: Buffer dữ liệu để ghi hàng loạt, giảm thiểu I/O overhead.</li>
-<li><code>get_entity_events_optimized</code>: Sử dụng Arrow Dataset để quét dữ liệu trên nhiều file block đồng thời.</li>
+<li><code>BatchBlockWriter</code>: Buffers data for batch writing, reducing I/O overhead.</li>
+<li><code>get_entity_events_optimized</code>: Uses Arrow Dataset to scan data across multiple block files simultaneously.</li>
 </ul>
 </li>
 </ul>
 <h3 id="23-redis-storage-adapter-adaptersstorageredis_storagepy">2.3 Redis Storage Adapter (<code>adapters/storage/redis_storage.py</code>)</h3>
-<p>Phù hợp cho các node yêu cầu phản hồi thời gian thực (Real-time) và truy cập dữ liệu nóng (Hot data).</p>
+<p>Suitable for nodes requiring real-time response and hot data access.</p>
 <ul>
-<li><strong>Công nghệ</strong>: Redis (In-memory data structure).</li>
+<li><strong>Technology</strong>: Redis (In-memory data structure).</li>
 <li>
-<p><strong>Cấu trúc dữ liệu</strong>:</p>
+<p><strong>Data Structures</strong>:</p>
 <ul>
-<li><strong>Hashes</strong>: Lưu trữ block và metadata.</li>
-<li><strong>Sorted Sets (ZSET)</strong>: Lưu chỉ mục block theo index và sự kiện của entity theo timestamp.</li>
-<li><strong>Sets</strong>: Quản lý danh sách các chuỗi và thực thể duy nhất.</li>
+<li><strong>Hashes</strong>: Stores blocks and metadata.</li>
+<li><strong>Sorted Sets (ZSET)</strong>: Stores block index by index and entity events by timestamp.</li>
+<li><strong>Sets</strong>: Manages lists of unique chains and entities.</li>
 </ul>
 </li>
 <li>
-<p><strong>Ưu điểm</strong>: Độ trễ (latency) cực thấp, hỗ trợ đếm số liệu thống kê (statistics) theo thời gian thực.</p>
+<p><strong>Advantages</strong>: Extremely low latency, supports real-time statistics.</p>
 </li>
-<li><strong>Sử dụng</strong>: Thường được dùng làm cache hoặc database chính cho các node giao dịch tần suất cao.</li>
+<li><strong>Usage</strong>: Typically used as cache or primary database for high-frequency transaction nodes.</li>
 </ul>
 <hr />
-<h2 id="3-so-sanh-cac-adapter">3. So sánh các Adapter</h2>
+<h2 id="3-adapter-comparison">3. Adapter Comparison</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Đặc điểm</th>
+<th style="text-align: left;">Feature</th>
 <th style="text-align: left;">SQLiteAdapter</th>
 <th style="text-align: left;">FileStorageAdapter</th>
 <th style="text-align: left;">RedisStorageAdapter</th>
@@ -4014,88 +4022,88 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Loại lưu trữ</strong></td>
-<td style="text-align: left;">Cơ sở dữ liệu quan hệ</td>
-<td style="text-align: left;">File hệ thống (Parquet)</td>
-<td style="text-align: left;">Bộ nhớ (In-memory)</td>
+<td style="text-align: left;"><strong>Storage Type</strong></td>
+<td style="text-align: left;">Relational database</td>
+<td style="text-align: left;">File system (Parquet)</td>
+<td style="text-align: left;">In-memory</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Phù hợp nhất</strong></td>
+<td style="text-align: left;"><strong>Best suited for</strong></td>
 <td style="text-align: left;">ERP Integration, Audit</td>
-<td style="text-align: left;">Big Data, Phân tích truy vết</td>
+<td style="text-align: left;">Big Data, Trace Analytics</td>
 <td style="text-align: left;">Real-time Dashboard, High-speed Node</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Tốc độ ghi</strong></td>
-<td style="text-align: left;">Trung bình</td>
-<td style="text-align: left;">Rất nhanh (với Batch)</td>
-<td style="text-align: left;">Cực nhanh</td>
+<td style="text-align: left;"><strong>Write Speed</strong></td>
+<td style="text-align: left;">Medium</td>
+<td style="text-align: left;">Very fast (with Batch)</td>
+<td style="text-align: left;">Extremely fast</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Tốc độ truy vấn</strong></td>
-<td style="text-align: left;">Nhanh (SQL)</td>
-<td style="text-align: left;">Cực nhanh (Analytical)</td>
-<td style="text-align: left;">Nhanh nhất (Point lookup)</td>
+<td style="text-align: left;"><strong>Query Speed</strong></td>
+<td style="text-align: left;">Fast (SQL)</td>
+<td style="text-align: left;">Extremely fast (Analytical)</td>
+<td style="text-align: left;">Fastest (Point lookup)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Tính bền vững</strong></td>
-<td style="text-align: left;">Cao (ACID)</td>
-<td style="text-align: left;">Cao (File-based)</td>
-<td style="text-align: left;">Phụ thuộc cấu hình Redis RDB/AOF</td>
+<td style="text-align: left;"><strong>Persistence</strong></td>
+<td style="text-align: left;">High (ACID)</td>
+<td style="text-align: left;">High (File-based)</td>
+<td style="text-align: left;">Depends on Redis RDB/AOF config</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Dependencies</strong></td>
-<td style="text-align: left;">Không (Built-in Python)</td>
+<td style="text-align: left;">None (Built-in Python)</td>
 <td style="text-align: left;"><code>pyarrow</code></td>
 <td style="text-align: left;"><code>redis-py</code></td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h2 id="4-huong-dan-su-dung">4. Hướng dẫn sử dụng</h2>
-<h3 id="cau-hinh-qua-settings">Cấu hình qua Settings</h3>
-<p>Bạn có thể chọn adapter mặc định thông qua biến môi trường hoặc file cấu hình:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Chọn backend lưu trữ</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_STORAGE_BACKEND</span><span class="o">=</span>sqlite<span class="w">  </span><span class="c1"># Hoặc &quot;redis&quot;, &quot;file&quot;</span>
+<h2 id="4-usage-guide">4. Usage Guide</h2>
+<h3 id="configuration-via-settings">Configuration via Settings</h3>
+<p>You can select the default adapter through environment variables or config file:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Select storage backend</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HRC_STORAGE_BACKEND</span><span class="o">=</span>sqlite<span class="w">  </span><span class="c1"># Or &quot;redis&quot;, &quot;file&quot;</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span><span class="s2">&quot;sqlite:///my_ledger.db&quot;</span>
 </code></pre></div>
-<h3 id="su-dung-trong-ma-nguon">Sử dụng trong mã nguồn</h3>
-<h4 id="su-dung-sqlite">Sử dụng SQLite</h4>
+<h3 id="usage-in-code">Usage in Code</h3>
+<h4 id="using-sqlite">Using SQLite</h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.database.sqlite_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQLiteAdapter</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">adapter</span> <span class="o">=</span> <span class="n">SQLiteAdapter</span><span class="p">(</span><span class="s2">&quot;data/ledger.db&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Lấy thống kê chuỗi</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Get chain statistics</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">stats</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">get_chain_statistics</span><span class="p">(</span><span class="s2">&quot;supply_chain_v1&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tổng số block: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_blocks&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total blocks: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_blocks&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
-<h4 id="su-dung-file-parquet">Sử dụng File (Parquet)</h4>
+<h4 id="using-file-parquet">Using File (Parquet)</h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.adapters.storage.file_storage</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileStorageAdapter</span><span class="p">,</span> <span class="n">BatchBlockWriter</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">storage</span> <span class="o">=</span> <span class="n">FileStorageAdapter</span><span class="p">(</span><span class="n">storage_path</span><span class="o">=</span><span class="s2">&quot;./blockchain_data&quot;</span><span class="p">)</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Ghi hàng loạt blocks để tối ưu hiệu năng</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Batch write blocks for performance optimization</span>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">with</span> <span class="n">BatchBlockWriter</span><span class="p">(</span><span class="n">storage</span><span class="p">,</span> <span class="s2">&quot;main_chain&quot;</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">new_blocks</span><span class="p">:</span>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="n">writer</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
 </code></pre></div>
 <hr />
-<h2 id="5-bao-mat-an-toan-du-lieu">5. Bảo mật &amp; An toàn dữ liệu</h2>
-<h3 id="chong-tan-cong-path-traversal-cwe-22">Chống tấn công Path Traversal (CWE-22)</h3>
-<p>Tất cả các adapter đều thực hiện kiểm tra nghiêm ngặt tên chuỗi (chain name) và đường dẫn:</p>
+<h2 id="5-security-data-safety">5. Security &amp; Data Safety</h2>
+<h3 id="path-traversal-protection-cwe-22">Path Traversal Protection (CWE-22)</h3>
+<p>All adapters strictly validate chain names and paths:</p>
 <ul>
-<li>Chỉ cho phép ký tự alphanumeric, dấu gạch dưới <code>_</code> và gạch ngang <code>-</code>.</li>
-<li>Ngăn chặn các ký tự điều hướng như <code>..</code> để đảm bảo dữ liệu không bị ghi đè ngoài thư mục chỉ định.</li>
+<li>Only allow alphanumeric characters, underscores <code>_</code>, and hyphens <code>-</code>.</li>
+<li>Prevent navigation characters like <code>..</code> to ensure data is not written outside the specified directory.</li>
 </ul>
 <h3 id="secure-logging">Secure Logging</h3>
-<p>Việc ghi log trong các adapter được thực hiện qua <code>SecureLogger</code>, đảm bảo không lộ các thông tin nhạy cảm của doanh nghiệp trong file log hệ thống.</p>
+<p>Logging in adapters is done via <code>SecureLogger</code>, ensuring no sensitive business information is leaked in system log files.</p>
 <hr />
-<h2 id="6-xu-ly-loi-bao-tri">6. Xử lý lỗi &amp; Bảo trì</h2>
+<h2 id="6-error-handling-maintenance">6. Error Handling &amp; Maintenance</h2>
 <ul>
-<li><strong>Cleanup</strong>: Cả ba adapter đều hỗ trợ phương thức <code>cleanup_old_data(days_to_keep)</code> để tự động dọn dẹp các khối dữ liệu cũ hoặc log không cần thiết theo chính sách lưu trữ của doanh nghiệp.</li>
-<li><strong>Data Integrity</strong>: Khi sử dụng <code>FileStorageAdapter</code>, mã băm (hash) của block được lưu trực tiếp trong metadata của file Parquet, cho phép kiểm tra tính toàn vẹn ngay khi load file mà không cần đọc toàn bộ nội dung.</li>
+<li><strong>Cleanup</strong>: All three adapters support the <code>cleanup_old_data(days_to_keep)</code> method to automatically purge old blocks or unnecessary logs according to enterprise retention policy.</li>
+<li><strong>Data Integrity</strong>: When using <code>FileStorageAdapter</code>, the block hash is stored directly in the Parquet file metadata, allowing integrity verification immediately upon file load without reading the entire content.</li>
 </ul>
 <hr />
-<h2 id="lien-quan">Liên quan</h2>
+<h2 id="related">Related</h2>
 <ul>
 <li><a href="../../architecture/">Core Concepts - Blockchain</a></li>
 <li><a href=".././storage/">Storage Module</a></li>
@@ -4129,7 +4137,7 @@
           <button type="button" class="md-top md-icon" data-md-component="top" hidden>
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
-  Trở lại mục lục
+  Back to top
 </button>
         
       </main>
@@ -4138,17 +4146,17 @@
   
     
       
-      <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../monitoring/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Monitoring">
+          <a href="../monitoring/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Monitoring">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
             </div>
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                Trước
+                Previous
               </span>
               <div class="md-ellipsis">
                 Monitoring
@@ -4158,10 +4166,10 @@
         
         
           
-          <a href="../network/" class="md-footer__link md-footer__link--next" aria-label="Sau: Network">
+          <a href="../network/" class="md-footer__link md-footer__link--next" aria-label="Next: Network">
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                Sau
+                Next
               </span>
               <div class="md-ellipsis">
                 Network
@@ -4213,7 +4221,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Đã sao chép","clipboard.copy":"Sao chép vào bộ nhớ tạm","search.result.more.one":"1 từ khác trong trang","search.result.more.other":"# từ khác trong trang","search.result.none":"Không tìm thấy tài liệu liên quan","search.result.one":"1 tài liệu liên quan","search.result.other":"# tài liệu liên quan","search.result.placeholder":"Nhập để bắt đầu tìm kiếm","search.result.term.missing":"Không","select.version":"Chọn phiên bản"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
       <script src="../../assets/javascripts/bundle.63456bd9.min.js"></script>

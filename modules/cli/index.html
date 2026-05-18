@@ -1,12 +1,12 @@
 
 <!doctype html>
-<html lang="vi" class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Hướng dẫn sử dụng công cụ dòng lệnh hrc để quản lý chuỗi, sự kiện, node và bảo mật trong HieraChain.">
+        <meta name="description" content="Guide to using the hrc command-line tool for managing chains, events, nodes, and security in HieraChain.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -22,7 +22,9 @@
       
       
         
-          <link rel="alternate" href="/" hreflang="vi">
+          <link rel="alternate" href="/" hreflang="en">
+        
+          <link rel="alternate" href="/vi/" hreflang="vi">
         
       
       
@@ -83,12 +85,12 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer" aria-label="Thanh điều hướng"></label>
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
     <div data-md-component="skip">
       
         
         <a href="#cli-module-hierachaincli" class="md-skip">
-          Bỏ qua
+          Skip to content
         </a>
       
     </div>
@@ -100,14 +102,14 @@
       
 
 <header class="md-header" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="Đầu trang">
+  <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HieraChain Docs" class="md-header__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
 
     </a>
-    <label class="md-header__button md-icon" for="__drawer" aria-label="Thanh điều hướng">
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
@@ -134,9 +136,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Chuyển sang chế độ sáng"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ sáng" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
       </label>
     
@@ -144,9 +146,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Chuyển sang chế độ tối"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ tối" for="__palette_2" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -154,9 +156,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Chuyển sang chế độ tự động"  type="radio" name="__palette" id="__palette_2">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ tự động" for="__palette_0" hidden>
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -171,14 +173,20 @@
       <div class="md-header__option">
   <div class="md-select">
     
-    <button class="md-header__button md-icon" aria-label="Chọn ngôn ngữ">
+    <button class="md-header__button md-icon" aria-label="Select language">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-languages" viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>
     </button>
     <div class="md-select__inner">
       <ul class="md-select__list">
         
           <li class="md-select__item">
-            <a href="/" hreflang="vi" class="md-select__link">
+            <a href="/" hreflang="en" class="md-select__link">
+              🇬🇧 English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/vi/" hreflang="vi" class="md-select__link">
               🇻🇳 Tiếng Việt
             </a>
           </li>
@@ -191,20 +199,20 @@
     
       
       
-        <label class="md-header__button md-icon" for="__search" aria-label="Tìm kiếm">
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
           
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
         </label>
-        <div class="md-search" data-md-component="search" role="dialog" aria-label="Tìm kiếm">
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
   <button type="button" class="md-search__button">
-    Tìm kiếm
+    Search
   </button>
 </div>
       
     
     <div class="md-header__source">
       
-        <a href="https://github.com/VanDung-dev/HieraChain" title="Xem mã nguồn" class="md-source" data-md-component="source">
+        <a href="https://github.com/VanDung-dev/HieraChain" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -238,7 +246,7 @@
       <a href="../.." class="md-tabs__link">
         
   
-  Trang chủ
+  Home
 
       </a>
     </li>
@@ -256,7 +264,7 @@
         <a href="../../getting-started/install/" class="md-tabs__link">
           
   
-  Bắt đầu
+  Getting Started
 
         </a>
       </li>
@@ -275,7 +283,7 @@
         <a href="../../architecture/overview/" class="md-tabs__link">
           
   
-  Kiến trúc
+  Architecture
 
         </a>
       </li>
@@ -315,7 +323,7 @@
         <a href="../../security/authorization-access-control/" class="md-tabs__link">
           
   
-  Hệ thống Bảo mật
+  Security System
 
         </a>
       </li>
@@ -334,7 +342,7 @@
         <a href="../../consensus/base_consensus/" class="md-tabs__link">
           
   
-  Cơ chế đồng thuận
+  Consensus
 
         </a>
       </li>
@@ -353,7 +361,7 @@
         <a href="../../reference/code-map/" class="md-tabs__link">
           
   
-  Tham chiếu
+  Reference
 
         </a>
       </li>
@@ -372,7 +380,7 @@
         <a href="../../how-to/integrate-web2/" class="md-tabs__link">
           
   
-  Sử dụng
+  How-to Guides
 
         </a>
       </li>
@@ -391,7 +399,7 @@
         <a href="../../guides/performance/" class="md-tabs__link">
           
   
-  Hướng dẫn chung
+  Guides
 
         </a>
       </li>
@@ -410,7 +418,7 @@
         <a href="../../dev/contributing/" class="md-tabs__link">
           
   
-  Phát triển
+  Development
 
         </a>
       </li>
@@ -429,7 +437,7 @@
         <a href="../../faq/" class="md-tabs__link">
           
   
-  Khác
+  Other
 
         </a>
       </li>
@@ -457,7 +465,7 @@
   
 
 
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Thanh điều hướng" data-md-level="0">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HieraChain Docs" class="md-nav__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
@@ -469,7 +477,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/VanDung-dev/HieraChain" title="Xem mã nguồn" class="md-source" data-md-component="source">
+      <a href="https://github.com/VanDung-dev/HieraChain" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -496,7 +504,7 @@
   <span class="md-ellipsis">
     
   
-    Trang chủ
+    Home
   
 
     
@@ -545,7 +553,7 @@
   <span class="md-ellipsis">
     
   
-    Bắt đầu
+    Getting Started
   
 
     
@@ -561,7 +569,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Bắt đầu
+    Getting Started
   
 
           </label>
@@ -583,7 +591,7 @@
   <span class="md-ellipsis">
     
   
-    Cài đặt
+    Installation
   
 
     
@@ -613,7 +621,7 @@
   <span class="md-ellipsis">
     
   
-    Bắt đầu nhanh
+    Quickstart
   
 
     
@@ -643,7 +651,7 @@
   <span class="md-ellipsis">
     
   
-    Khái niệm cơ bản
+    Basic Concepts
   
 
     
@@ -706,7 +714,7 @@
   <span class="md-ellipsis">
     
   
-    Kiến trúc
+    Architecture
   
 
     
@@ -722,7 +730,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Kiến trúc
+    Architecture
   
 
           </label>
@@ -744,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Tổng quan
+    Overview
   
 
     
@@ -804,7 +812,7 @@
   <span class="md-ellipsis">
     
   
-    Phân cấp (chi tiết)
+    Hierarchy
   
 
     
@@ -834,7 +842,7 @@
   <span class="md-ellipsis">
     
   
-    Bảo mật (chuyên sâu)
+    Security
   
 
     
@@ -864,7 +872,7 @@
   <span class="md-ellipsis">
     
   
-    Triển khai
+    Deployment
   
 
     
@@ -1516,7 +1524,7 @@
         
 
 
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
@@ -1525,27 +1533,27 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Mục lục
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tổng quan
+        Overview
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Tổng quan">
+    <nav class="md-nav" aria-label="Overview">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#cach-cai-at-khoi-chay" class="md-nav__link">
+  <a href="#installation-launch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cách cài đặt &amp; Khởi chạy
+        Installation &amp; Launch
       
     </span>
   </a>
@@ -1558,22 +1566,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#nhom-lenh-chinh" class="md-nav__link">
+  <a href="#main-command-groups" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh chính
+        Main Command Groups
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Nhóm lệnh chính">
+    <nav class="md-nav" aria-label="Main Command Groups">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#nhom-lenh-chain-quan-ly-chuoi" class="md-nav__link">
+  <a href="#chain-commands-chain-management" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh chain (Quản lý Chuỗi)
+        chain Commands (Chain Management)
       
     </span>
   </a>
@@ -1581,10 +1589,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#nhom-lenh-event-quan-ly-su-kien" class="md-nav__link">
+  <a href="#event-commands-event-management" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh event (Quản lý Sự kiện)
+        event Commands (Event Management)
       
     </span>
   </a>
@@ -1592,10 +1600,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#nhom-lenh-key-quan-ly-khoa" class="md-nav__link">
+  <a href="#key-commands-key-management" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh key (Quản lý Khóa)
+        key Commands (Key Management)
       
     </span>
   </a>
@@ -1603,10 +1611,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#nhom-lenh-node-quan-ly-node" class="md-nav__link">
+  <a href="#node-commands-node-management" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh node (Quản lý Node)
+        node Commands (Node Management)
       
     </span>
   </a>
@@ -1614,10 +1622,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#nhom-lenh-verify-kiem-inh" class="md-nav__link">
+  <a href="#verify-commands-verification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh verify (Kiểm định)
+        verify Commands (Verification)
       
     </span>
   </a>
@@ -1630,22 +1638,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vi-du-su-dung-thuc-te" class="md-nav__link">
+  <a href="#practical-usage-examples" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Ví dụ sử dụng thực tế
+        Practical Usage Examples
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Ví dụ sử dụng thực tế">
+    <nav class="md-nav" aria-label="Practical Usage Examples">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-khoi-tao-he-thong-va-tao-chuoi-cung-ung" class="md-nav__link">
+  <a href="#1-initialize-the-system-and-create-a-supply-chain" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Khởi tạo hệ thống và tạo chuỗi cung ứng
+        1. Initialize the System and Create a Supply Chain
       
     </span>
   </a>
@@ -1653,10 +1661,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-ghi-nhan-quy-trinh-san-xuat" class="md-nav__link">
+  <a href="#2-record-a-production-process" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Ghi nhận quy trình sản xuất
+        2. Record a Production Process
       
     </span>
   </a>
@@ -1664,10 +1672,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-kiem-inh-an-toan-du-lieu" class="md-nav__link">
+  <a href="#3-verify-data-integrity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Kiểm định an toàn dữ liệu
+        3. Verify Data Integrity
       
     </span>
   </a>
@@ -1680,10 +1688,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh-bien-moi-truong" class="md-nav__link">
+  <a href="#configuration-environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình &amp; Biến môi trường
+        Configuration &amp; Environment Variables
       
     </span>
   </a>
@@ -1691,10 +1699,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#nguyen-tac-thiet-ke-developer-notes" class="md-nav__link">
+  <a href="#design-principles-developer-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nguyên tắc thiết kế (Developer Notes)
+        Design Principles (Developer Notes)
       
     </span>
   </a>
@@ -1702,10 +1710,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
+  <a href="#related" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Liên quan
+        Related
       
     </span>
   </a>
@@ -1830,7 +1838,7 @@
   <span class="md-ellipsis">
     
   
-    Hệ thống Bảo mật
+    Security System
   
 
     
@@ -1846,7 +1854,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Hệ thống Bảo mật
+    Security System
   
 
           </label>
@@ -2079,7 +2087,7 @@
   <span class="md-ellipsis">
     
   
-    Cơ chế đồng thuận
+    Consensus
   
 
     
@@ -2095,7 +2103,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Cơ chế đồng thuận
+    Consensus
   
 
           </label>
@@ -2308,7 +2316,7 @@
   <span class="md-ellipsis">
     
   
-    Tham chiếu
+    Reference
   
 
     
@@ -2324,7 +2332,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Tham chiếu
+    Reference
   
 
           </label>
@@ -2346,7 +2354,7 @@
   <span class="md-ellipsis">
     
   
-    Codebase map
+    Codebase Map
   
 
     
@@ -2616,7 +2624,7 @@
   <span class="md-ellipsis">
     
   
-    Thuật ngữ
+    Glossary
   
 
     
@@ -2691,7 +2699,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng
+    How-to Guides
   
 
     
@@ -2707,7 +2715,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Sử dụng
+    How-to Guides
   
 
           </label>
@@ -2729,7 +2737,7 @@
   <span class="md-ellipsis">
     
   
-    Tích hợp vào Web2
+    Integrate into Web2
   
 
     
@@ -2759,7 +2767,7 @@
   <span class="md-ellipsis">
     
   
-    Tạo Sub-Chain
+    Create a Sub-Chain
   
 
     
@@ -2789,7 +2797,7 @@
   <span class="md-ellipsis">
     
   
-    Thêm Endpoint
+    Add an Endpoint
   
 
     
@@ -2819,7 +2827,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng WebSocket
+    Use WebSocket
   
 
     
@@ -2849,7 +2857,7 @@
   <span class="md-ellipsis">
     
   
-    Thêm/Tùy biến Consensus
+    Add/Customize Consensus
   
 
     
@@ -2879,7 +2887,7 @@
   <span class="md-ellipsis">
     
   
-    Viết Domain Contracts
+    Write Domain Contracts
   
 
     
@@ -2909,7 +2917,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng Explorer
+    Use Explorer
   
 
     
@@ -2939,7 +2947,7 @@
   <span class="md-ellipsis">
     
   
-    Hướng dẫn chạy Demo
+    Run Demos
   
 
     
@@ -2969,7 +2977,7 @@
   <span class="md-ellipsis">
     
   
-    Triển khai an toàn
+    Secure Deployment
   
 
     
@@ -2999,7 +3007,7 @@
   <span class="md-ellipsis">
     
   
-    Khắc phục sự cố
+    Troubleshooting
   
 
     
@@ -3029,7 +3037,7 @@
   <span class="md-ellipsis">
     
   
-    Khôi phục sau thảm họa
+    Disaster Recovery
   
 
     
@@ -3059,7 +3067,7 @@
   <span class="md-ellipsis">
     
   
-    Giao dịch Liên chuỗi
+    Cross-Chain Transactions
   
 
     
@@ -3118,7 +3126,7 @@
   <span class="md-ellipsis">
     
   
-    Hướng dẫn chung
+    Guides
   
 
     
@@ -3134,7 +3142,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Hướng dẫn chung
+    Guides
   
 
           </label>
@@ -3156,7 +3164,7 @@
   <span class="md-ellipsis">
     
   
-    Hiệu năng
+    Performance
   
 
     
@@ -3186,7 +3194,7 @@
   <span class="md-ellipsis">
     
   
-    Độ tin cậy
+    Reliability
   
 
     
@@ -3216,7 +3224,7 @@
   <span class="md-ellipsis">
     
   
-    Thực hành bảo mật
+    Security Best Practices
   
 
     
@@ -3246,7 +3254,7 @@
   <span class="md-ellipsis">
     
   
-    Giao thức HTTP & Proxy
+    HTTP & Proxy Protocol
   
 
     
@@ -3305,7 +3313,7 @@
   <span class="md-ellipsis">
     
   
-    Phát triển
+    Development
   
 
     
@@ -3321,7 +3329,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Phát triển
+    Development
   
 
           </label>
@@ -3343,7 +3351,7 @@
   <span class="md-ellipsis">
     
   
-    Đóng góp
+    Contributing
   
 
     
@@ -3373,7 +3381,7 @@
   <span class="md-ellipsis">
     
   
-    Kiểm thử
+    Testing
   
 
     
@@ -3403,7 +3411,7 @@
   <span class="md-ellipsis">
     
   
-    Quy trình phát hành
+    Release Process
   
 
     
@@ -3490,7 +3498,7 @@
   <span class="md-ellipsis">
     
   
-    Khác
+    Other
   
 
     
@@ -3506,7 +3514,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Khác
+    Other
   
 
           </label>
@@ -3558,7 +3566,7 @@
   <span class="md-ellipsis">
     
   
-    Lộ trình Tương lai
+    Future Roadmap
   
 
     
@@ -3636,7 +3644,7 @@
                     
 
 
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
@@ -3645,27 +3653,27 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Mục lục
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tổng quan
+        Overview
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Tổng quan">
+    <nav class="md-nav" aria-label="Overview">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#cach-cai-at-khoi-chay" class="md-nav__link">
+  <a href="#installation-launch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cách cài đặt &amp; Khởi chạy
+        Installation &amp; Launch
       
     </span>
   </a>
@@ -3678,22 +3686,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#nhom-lenh-chinh" class="md-nav__link">
+  <a href="#main-command-groups" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh chính
+        Main Command Groups
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Nhóm lệnh chính">
+    <nav class="md-nav" aria-label="Main Command Groups">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#nhom-lenh-chain-quan-ly-chuoi" class="md-nav__link">
+  <a href="#chain-commands-chain-management" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh chain (Quản lý Chuỗi)
+        chain Commands (Chain Management)
       
     </span>
   </a>
@@ -3701,10 +3709,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#nhom-lenh-event-quan-ly-su-kien" class="md-nav__link">
+  <a href="#event-commands-event-management" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh event (Quản lý Sự kiện)
+        event Commands (Event Management)
       
     </span>
   </a>
@@ -3712,10 +3720,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#nhom-lenh-key-quan-ly-khoa" class="md-nav__link">
+  <a href="#key-commands-key-management" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh key (Quản lý Khóa)
+        key Commands (Key Management)
       
     </span>
   </a>
@@ -3723,10 +3731,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#nhom-lenh-node-quan-ly-node" class="md-nav__link">
+  <a href="#node-commands-node-management" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh node (Quản lý Node)
+        node Commands (Node Management)
       
     </span>
   </a>
@@ -3734,10 +3742,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#nhom-lenh-verify-kiem-inh" class="md-nav__link">
+  <a href="#verify-commands-verification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nhóm lệnh verify (Kiểm định)
+        verify Commands (Verification)
       
     </span>
   </a>
@@ -3750,22 +3758,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vi-du-su-dung-thuc-te" class="md-nav__link">
+  <a href="#practical-usage-examples" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Ví dụ sử dụng thực tế
+        Practical Usage Examples
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Ví dụ sử dụng thực tế">
+    <nav class="md-nav" aria-label="Practical Usage Examples">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-khoi-tao-he-thong-va-tao-chuoi-cung-ung" class="md-nav__link">
+  <a href="#1-initialize-the-system-and-create-a-supply-chain" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Khởi tạo hệ thống và tạo chuỗi cung ứng
+        1. Initialize the System and Create a Supply Chain
       
     </span>
   </a>
@@ -3773,10 +3781,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-ghi-nhan-quy-trinh-san-xuat" class="md-nav__link">
+  <a href="#2-record-a-production-process" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Ghi nhận quy trình sản xuất
+        2. Record a Production Process
       
     </span>
   </a>
@@ -3784,10 +3792,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-kiem-inh-an-toan-du-lieu" class="md-nav__link">
+  <a href="#3-verify-data-integrity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Kiểm định an toàn dữ liệu
+        3. Verify Data Integrity
       
     </span>
   </a>
@@ -3800,10 +3808,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cau-hinh-bien-moi-truong" class="md-nav__link">
+  <a href="#configuration-environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cấu hình &amp; Biến môi trường
+        Configuration &amp; Environment Variables
       
     </span>
   </a>
@@ -3811,10 +3819,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#nguyen-tac-thiet-ke-developer-notes" class="md-nav__link">
+  <a href="#design-principles-developer-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nguyên tắc thiết kế (Developer Notes)
+        Design Principles (Developer Notes)
       
     </span>
   </a>
@@ -3822,10 +3830,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
+  <a href="#related" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Liên quan
+        Related
       
     </span>
   </a>
@@ -3847,7 +3855,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/modules/cli.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/en/modules/cli.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -3856,7 +3864,7 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/modules/cli.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/en/modules/cli.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
@@ -3864,120 +3872,120 @@
 
 
 <h1 id="cli-module-hierachaincli">CLI Module (<code>hierachain/cli/*</code>)</h1>
-<h2 id="tong-quan">Tổng quan</h2>
-<p>Module <strong>CLI</strong> cung cấp công cụ dòng lệnh mạnh mẽ mang tên <code>hrc</code>, giúp các nhà vận hành và phát triển tương tác nhanh chóng với hệ thống HieraChain mà không cần qua giao diện web hoặc gọi API thủ công. </p>
-<p>Công cụ được xây dựng trên thư viện <strong>Click</strong>, hỗ trợ phân nhóm lệnh logic, gợi ý lệnh (tab-completion) và xử lý tham số chặt chẽ.</p>
-<h3 id="cach-cai-at-khoi-chay">Cách cài đặt &amp; Khởi chạy</h3>
-<p>Khi cài đặt HieraChain ở chế độ phát triển (<code>pip install -e .</code>), lệnh <code>hrc</code> sẽ được đăng ký vào hệ thống. Bạn có thể kiểm tra bằng cách:</p>
+<h2 id="overview">Overview</h2>
+<p>The <strong>CLI</strong> module provides a powerful command-line tool named <code>hrc</code>, enabling operators and developers to interact quickly with the HieraChain system without using the web interface or making manual API calls.</p>
+<p>The tool is built on the <strong>Click</strong> library, supporting logical command grouping, tab-completion, and strict parameter handling.</p>
+<h3 id="installation-launch">Installation &amp; Launch</h3>
+<p>When HieraChain is installed in development mode (<code>pip install -e .</code>), the <code>hrc</code> command is registered in the system. You can verify by:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>hrc<span class="w"> </span>--help
 </code></pre></div>
 <hr />
-<h2 id="nhom-lenh-chinh">Nhóm lệnh chính</h2>
-<p>Hệ thống CLI của HieraChain được chia thành các nhóm chức năng riêng biệt:</p>
-<h3 id="nhom-lenh-chain-quan-ly-chuoi">Nhóm lệnh <code>chain</code> (Quản lý Chuỗi)</h3>
-<p>Dùng để khởi tạo và theo dõi cấu trúc phân cấp của các chuỗi.</p>
+<h2 id="main-command-groups">Main Command Groups</h2>
+<p>HieraChain's CLI system is divided into separate functional groups:</p>
+<h3 id="chain-commands-chain-management"><code>chain</code> Commands (Chain Management)</h3>
+<p>Used to initialize and monitor the hierarchical structure of chains.</p>
 <ul>
 <li>
-<p><strong><code>hrc chain create</code></strong>: Tạo một Sub-Chain mới.</p>
+<p><strong><code>hrc chain create</code></strong>: Create a new Sub-Chain.</p>
 <ul>
-<li><em>Tham số</em>: <code>[supply_chain|healthcare|finance|manufacturing]</code></li>
-<li><em>Option</em>: <code>--name</code> (Bắt buộc), <code>--parent</code> (Mặc định: <code>main</code>).</li>
+<li><em>Arguments</em>: <code>[supply_chain|healthcare|finance|manufacturing]</code></li>
+<li><em>Options</em>: <code>--name</code> (Required), <code>--parent</code> (Default: <code>main</code>).</li>
 </ul>
 </li>
 <li>
-<p><strong><code>hrc chain list</code></strong>: Liệt kê toàn bộ các chuỗi hiện có và số lượng block của chúng.</p>
+<p><strong><code>hrc chain list</code></strong>: List all existing chains and their block counts.</p>
 </li>
-<li><strong><code>hrc chain submit-proof</code></strong>: Gửi bằng chứng mã hóa từ Sub-Chain lên Main Chain để xác thực liên chuỗi.</li>
+<li><strong><code>hrc chain submit-proof</code></strong>: Submit cryptographic proof from Sub-Chain to Main Chain for cross-chain validation.</li>
 </ul>
-<h3 id="nhom-lenh-event-quan-ly-su-kien">Nhóm lệnh <code>event</code> (Quản lý Sự kiện)</h3>
-<p>Dùng để ghi và truy vấn các hoạt động kinh doanh.</p>
+<h3 id="event-commands-event-management"><code>event</code> Commands (Event Management)</h3>
+<p>Used to record and query business activities.</p>
 <ul>
 <li>
-<p><strong><code>hrc event add</code></strong>: Thêm một sự kiện vào chuỗi.</p>
+<p><strong><code>hrc event add</code></strong>: Add an event to a chain.</p>
 <ul>
-<li><em>Tham số</em>: <code>&lt;chain_name&gt;</code>, <code>[start_operation|complete_operation|quality_check|status_change]</code></li>
-<li><em>Option</em>: <code>--entity-id</code> (Bắt buộc), <code>--details</code> (Chuỗi JSON mô tả chi tiết sự kiện).</li>
-</ul>
-</li>
-<li>
-<p><strong><code>hrc event show</code></strong>: Hiển thị lịch sử sự kiện trong một chuỗi.</p>
-<ul>
-<li><em>Option</em>: <code>--entity-id</code> (Lọc theo thực thể cụ thể).</li>
-</ul>
-</li>
-</ul>
-<h3 id="nhom-lenh-key-quan-ly-khoa">Nhóm lệnh <code>key</code> (Quản lý Khóa)</h3>
-<p>Dùng để tạo và kiểm tra các cặp khóa Ed25519 cho Validator.</p>
-<ul>
-<li>
-<p><strong><code>hrc key generate</code></strong>: Tạo cặp khóa mới.</p>
-<ul>
-<li><em>Option</em>: <code>--output</code> (Mặc định: <code>validator_key.json</code>), <code>--format</code> (json/hex).</li>
+<li><em>Arguments</em>: <code>&lt;chain_name&gt;</code>, <code>[start_operation|complete_operation|quality_check|status_change]</code></li>
+<li><em>Options</em>: <code>--entity-id</code> (Required), <code>--details</code> (JSON string describing event details).</li>
 </ul>
 </li>
 <li>
-<p><strong><code>hrc key show</code></strong>: Hiển thị thông tin khóa từ file (che dấu khóa bí mật).</p>
-</li>
-<li><strong><code>hrc key verify</code></strong>: Kiểm tra tính hợp lệ của cặp khóa (khớp giữa khóa công khai và bí mật).</li>
-</ul>
-<h3 id="nhom-lenh-node-quan-ly-node">Nhóm lệnh <code>node</code> (Quản lý Node)</h3>
-<p>Dùng để vận hành node API.</p>
+<p><strong><code>hrc event show</code></strong>: Display event history in a chain.</p>
 <ul>
-<li>
-<p><strong><code>hrc node start</code></strong>: Khởi chạy server FastAPI.</p>
-<ul>
-<li><em>Option</em>: <code>--host</code>, <code>--port</code>, <code>--reload</code> (Dành cho phát triển).</li>
+<li><em>Options</em>: <code>--entity-id</code> (Filter by specific entity).</li>
 </ul>
 </li>
+</ul>
+<h3 id="key-commands-key-management"><code>key</code> Commands (Key Management)</h3>
+<p>Used to generate and verify Ed25519 key pairs for Validators.</p>
+<ul>
 <li>
-<p><strong><code>hrc node init</code></strong>: Khởi tạo thư mục dữ liệu và cấu hình mặc định cho node mới.</p>
+<p><strong><code>hrc key generate</code></strong>: Generate a new key pair.</p>
+<ul>
+<li><em>Options</em>: <code>--output</code> (Default: <code>validator_key.json</code>), <code>--format</code> (json/hex).</li>
+</ul>
+</li>
+<li>
+<p><strong><code>hrc key show</code></strong>: Display key information from a file (masks the secret key).</p>
+</li>
+<li><strong><code>hrc key verify</code></strong>: Verify the validity of a key pair (public key matches secret key).</li>
+</ul>
+<h3 id="node-commands-node-management"><code>node</code> Commands (Node Management)</h3>
+<p>Used to operate API nodes.</p>
+<ul>
+<li>
+<p><strong><code>hrc node start</code></strong>: Start the FastAPI server.</p>
+<ul>
+<li><em>Options</em>: <code>--host</code>, <code>--port</code>, <code>--reload</code> (For development).</li>
+</ul>
+</li>
+<li>
+<p><strong><code>hrc node init</code></strong>: Initialize data directory and default configuration for a new node.</p>
 </li>
 </ul>
-<h3 id="nhom-lenh-verify-kiem-inh">Nhóm lệnh <code>verify</code> (Kiểm định)</h3>
-<p>Công cụ dành cho kiểm toán viên để kiểm tra tính toàn vẹn của sổ cái.</p>
+<h3 id="verify-commands-verification"><code>verify</code> Commands (Verification)</h3>
+<p>Tools for auditors to check ledger integrity.</p>
 <ul>
-<li><strong><code>hrc verify chain</code></strong>: Kiểm tra cấu trúc liên kết giữa các block (hash chaining).</li>
+<li><strong><code>hrc verify chain</code></strong>: Verify the link structure between blocks (hash chaining).</li>
 <li>
-<p><strong><code>hrc verify signatures</code></strong>: Kiểm tra toàn bộ chữ ký số của các block và sự kiện trong cơ sở dữ liệu.</p>
+<p><strong><code>hrc verify signatures</code></strong>: Verify all digital signatures of blocks and events in the database.</p>
 <ul>
-<li><em>Option</em>: <code>--limit</code> (Chỉ kiểm tra N block gần nhất), <code>--db</code> (Đường dẫn cơ sở dữ liệu).</li>
+<li><em>Options</em>: <code>--limit</code> (Check only the N most recent blocks), <code>--db</code> (Database path).</li>
 </ul>
 </li>
 </ul>
 <hr />
-<h2 id="vi-du-su-dung-thuc-te">Ví dụ sử dụng thực tế</h2>
-<h3 id="1-khoi-tao-he-thong-va-tao-chuoi-cung-ung">1. Khởi tạo hệ thống và tạo chuỗi cung ứng</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Khởi tạo dữ liệu node</span>
+<h2 id="practical-usage-examples">Practical Usage Examples</h2>
+<h3 id="1-initialize-the-system-and-create-a-supply-chain">1. Initialize the System and Create a Supply Chain</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Initialize node data</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>hrc<span class="w"> </span>node<span class="w"> </span>init<span class="w"> </span>--data-dir<span class="w"> </span>./my_data
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Tạo chuỗi cung ứng linh kiện</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Create a component supply chain</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>hrc<span class="w"> </span>chain<span class="w"> </span>create<span class="w"> </span>supply_chain<span class="w"> </span>--name<span class="w"> </span>logistics_01<span class="w"> </span>--parent<span class="w"> </span>main
 </code></pre></div>
-<h3 id="2-ghi-nhan-quy-trinh-san-xuat">2. Ghi nhận quy trình sản xuất</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Bắt đầu sản xuất thực thể ITEM-99</span>
+<h3 id="2-record-a-production-process">2. Record a Production Process</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Start production of entity ITEM-99</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>hrc<span class="w"> </span>event<span class="w"> </span>add<span class="w"> </span>logistics_01<span class="w"> </span>start_operation<span class="w"> </span>--entity-id<span class="w"> </span>ITEM-99<span class="w"> </span>--details<span class="w"> </span><span class="s1">&#39;{&quot;line&quot;: &quot;A1&quot;}&#39;</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Hoàn tất và gửi proof lên Main Chain</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Complete and submit proof to Main Chain</span>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>hrc<span class="w"> </span>chain<span class="w"> </span>submit-proof<span class="w"> </span>logistics_01
 </code></pre></div>
-<h3 id="3-kiem-inh-an-toan-du-lieu">3. Kiểm định an toàn dữ liệu</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Kiểm tra 100 block gần nhất xem có bị sửa đổi không</span>
+<h3 id="3-verify-data-integrity">3. Verify Data Integrity</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Check the 100 most recent blocks for tampering</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>hrc<span class="w"> </span>verify<span class="w"> </span>signatures<span class="w"> </span>--limit<span class="w"> </span><span class="m">100</span>
 </code></pre></div>
 <hr />
-<h2 id="cau-hinh-bien-moi-truong">Cấu hình &amp; Biến môi trường</h2>
-<p>CLI ưu tiên đọc cấu hình từ file <code>chains.json</code> hoặc file được chỉ định qua option toàn cục:</p>
+<h2 id="configuration-environment-variables">Configuration &amp; Environment Variables</h2>
+<p>CLI reads configuration from the <code>chains.json</code> file by default, or from a file specified via a global option:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>hrc<span class="w"> </span>--config<span class="w"> </span>custom_config.json<span class="w"> </span>chain<span class="w"> </span>list
 </code></pre></div>
 <hr />
-<h2 id="nguyen-tac-thiet-ke-developer-notes">Nguyên tắc thiết kế (Developer Notes)</h2>
+<h2 id="design-principles-developer-notes">Design Principles (Developer Notes)</h2>
 <ol>
-<li><strong>Tính nguyên tử</strong>: Mỗi lệnh CLI phải thực hiện một nhiệm vụ duy nhất và trả về Exit Code phù hợp (0: Thành công, &gt;0: Thất bại).</li>
-<li><strong>Bảo mật</strong>: Không bao giờ in khóa bí mật đầy đủ ra màn hình. Sử dụng mặt nạ (masking) khi hiển thị thông tin nhạy cảm.</li>
-<li><strong>Tương thích Scripting</strong>: Kết quả đầu ra của các lệnh <code>list</code> hoặc <code>show</code> được định dạng để dễ dàng xử lý bằng <code>grep</code>, <code>awk</code> hoặc <code>jq</code>.</li>
+<li><strong>Atomicity</strong>: Each CLI command must perform a single task and return the appropriate Exit Code (0: Success, &gt;0: Failure).</li>
+<li><strong>Security</strong>: Never print the full secret key to the screen. Use masking when displaying sensitive information.</li>
+<li><strong>Scripting Compatibility</strong>: Output from <code>list</code> or <code>show</code> commands is formatted for easy processing with <code>grep</code>, <code>awk</code>, or <code>jq</code>.</li>
 </ol>
 <hr />
-<h2 id="lien-quan">Liên quan</h2>
+<h2 id="related">Related</h2>
 <ul>
 <li><a href=".././api/">API Documentation</a></li>
 <li><a href=".././adapters/">Storage Adapters</a></li>
@@ -4011,7 +4019,7 @@
           <button type="button" class="md-top md-icon" data-md-component="top" hidden>
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
-  Trở lại mục lục
+  Back to top
 </button>
         
       </main>
@@ -4020,17 +4028,17 @@
   
     
       
-      <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../config/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Config">
+          <a href="../config/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Config">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
             </div>
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                Trước
+                Previous
               </span>
               <div class="md-ellipsis">
                 Config
@@ -4040,10 +4048,10 @@
         
         
           
-          <a href="../sdk/" class="md-footer__link md-footer__link--next" aria-label="Sau: SDK">
+          <a href="../sdk/" class="md-footer__link md-footer__link--next" aria-label="Next: SDK">
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                Sau
+                Next
               </span>
               <div class="md-ellipsis">
                 SDK
@@ -4095,7 +4103,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Đã sao chép","clipboard.copy":"Sao chép vào bộ nhớ tạm","search.result.more.one":"1 từ khác trong trang","search.result.more.other":"# từ khác trong trang","search.result.none":"Không tìm thấy tài liệu liên quan","search.result.one":"1 tài liệu liên quan","search.result.other":"# tài liệu liên quan","search.result.placeholder":"Nhập để bắt đầu tìm kiếm","search.result.term.missing":"Không","select.version":"Chọn phiên bản"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
       <script src="../../assets/javascripts/bundle.63456bd9.min.js"></script>

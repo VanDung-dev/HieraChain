@@ -1,12 +1,12 @@
 
 <!doctype html>
-<html lang="vi" class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Giải thích tại sao HieraChain chỉ hỗ trợ HTTP/1.1 và cách tích hợp vào hạ tầng Web2 hiện có.">
+        <meta name="description" content="Explains why HieraChain only supports HTTP/1.1 and how to integrate into existing Web2 infrastructure.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -22,7 +22,9 @@
       
       
         
-          <link rel="alternate" href="/" hreflang="vi">
+          <link rel="alternate" href="/" hreflang="en">
+        
+          <link rel="alternate" href="/vi/" hreflang="vi">
         
       
       
@@ -31,7 +33,7 @@
     
     
       
-        <title>Giới hạn Giao thức HTTP & Proxy - HieraChain Docs</title>
+        <title>HTTP Protocol Limitations & Proxy - HieraChain Docs</title>
       
     
     
@@ -83,12 +85,12 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer" aria-label="Thanh điều hướng"></label>
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
     <div data-md-component="skip">
       
         
-        <a href="#tong-quan" class="md-skip">
-          Bỏ qua
+        <a href="#overview" class="md-skip">
+          Skip to content
         </a>
       
     </div>
@@ -100,14 +102,14 @@
       
 
 <header class="md-header" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="Đầu trang">
+  <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HieraChain Docs" class="md-header__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
 
     </a>
-    <label class="md-header__button md-icon" for="__drawer" aria-label="Thanh điều hướng">
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
@@ -121,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Giới hạn Giao thức HTTP & Proxy
+              HTTP Protocol Limitations & Proxy
             
           </span>
         </div>
@@ -134,9 +136,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Chuyển sang chế độ sáng"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ sáng" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
       </label>
     
@@ -144,9 +146,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Chuyển sang chế độ tối"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ tối" for="__palette_2" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -154,9 +156,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Chuyển sang chế độ tự động"  type="radio" name="__palette" id="__palette_2">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ tự động" for="__palette_0" hidden>
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -171,14 +173,20 @@
       <div class="md-header__option">
   <div class="md-select">
     
-    <button class="md-header__button md-icon" aria-label="Chọn ngôn ngữ">
+    <button class="md-header__button md-icon" aria-label="Select language">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-languages" viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>
     </button>
     <div class="md-select__inner">
       <ul class="md-select__list">
         
           <li class="md-select__item">
-            <a href="/" hreflang="vi" class="md-select__link">
+            <a href="/" hreflang="en" class="md-select__link">
+              🇬🇧 English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/vi/" hreflang="vi" class="md-select__link">
               🇻🇳 Tiếng Việt
             </a>
           </li>
@@ -191,20 +199,20 @@
     
       
       
-        <label class="md-header__button md-icon" for="__search" aria-label="Tìm kiếm">
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
           
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
         </label>
-        <div class="md-search" data-md-component="search" role="dialog" aria-label="Tìm kiếm">
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
   <button type="button" class="md-search__button">
-    Tìm kiếm
+    Search
   </button>
 </div>
       
     
     <div class="md-header__source">
       
-        <a href="https://github.com/VanDung-dev/HieraChain" title="Xem mã nguồn" class="md-source" data-md-component="source">
+        <a href="https://github.com/VanDung-dev/HieraChain" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -238,7 +246,7 @@
       <a href="../.." class="md-tabs__link">
         
   
-  Trang chủ
+  Home
 
       </a>
     </li>
@@ -256,7 +264,7 @@
         <a href="../../getting-started/install/" class="md-tabs__link">
           
   
-  Bắt đầu
+  Getting Started
 
         </a>
       </li>
@@ -275,7 +283,7 @@
         <a href="../../architecture/overview/" class="md-tabs__link">
           
   
-  Kiến trúc
+  Architecture
 
         </a>
       </li>
@@ -313,7 +321,7 @@
         <a href="../../security/authorization-access-control/" class="md-tabs__link">
           
   
-  Hệ thống Bảo mật
+  Security System
 
         </a>
       </li>
@@ -332,7 +340,7 @@
         <a href="../../consensus/base_consensus/" class="md-tabs__link">
           
   
-  Cơ chế đồng thuận
+  Consensus
 
         </a>
       </li>
@@ -351,7 +359,7 @@
         <a href="../../reference/code-map/" class="md-tabs__link">
           
   
-  Tham chiếu
+  Reference
 
         </a>
       </li>
@@ -370,7 +378,7 @@
         <a href="../../how-to/integrate-web2/" class="md-tabs__link">
           
   
-  Sử dụng
+  How-to Guides
 
         </a>
       </li>
@@ -391,7 +399,7 @@
         <a href="../performance/" class="md-tabs__link">
           
   
-  Hướng dẫn chung
+  Guides
 
         </a>
       </li>
@@ -410,7 +418,7 @@
         <a href="../../dev/contributing/" class="md-tabs__link">
           
   
-  Phát triển
+  Development
 
         </a>
       </li>
@@ -429,7 +437,7 @@
         <a href="../../faq/" class="md-tabs__link">
           
   
-  Khác
+  Other
 
         </a>
       </li>
@@ -457,7 +465,7 @@
   
 
 
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Thanh điều hướng" data-md-level="0">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HieraChain Docs" class="md-nav__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
@@ -469,7 +477,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/VanDung-dev/HieraChain" title="Xem mã nguồn" class="md-source" data-md-component="source">
+      <a href="https://github.com/VanDung-dev/HieraChain" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -496,7 +504,7 @@
   <span class="md-ellipsis">
     
   
-    Trang chủ
+    Home
   
 
     
@@ -545,7 +553,7 @@
   <span class="md-ellipsis">
     
   
-    Bắt đầu
+    Getting Started
   
 
     
@@ -561,7 +569,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Bắt đầu
+    Getting Started
   
 
           </label>
@@ -583,7 +591,7 @@
   <span class="md-ellipsis">
     
   
-    Cài đặt
+    Installation
   
 
     
@@ -613,7 +621,7 @@
   <span class="md-ellipsis">
     
   
-    Bắt đầu nhanh
+    Quickstart
   
 
     
@@ -643,7 +651,7 @@
   <span class="md-ellipsis">
     
   
-    Khái niệm cơ bản
+    Basic Concepts
   
 
     
@@ -706,7 +714,7 @@
   <span class="md-ellipsis">
     
   
-    Kiến trúc
+    Architecture
   
 
     
@@ -722,7 +730,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Kiến trúc
+    Architecture
   
 
           </label>
@@ -744,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Tổng quan
+    Overview
   
 
     
@@ -804,7 +812,7 @@
   <span class="md-ellipsis">
     
   
-    Phân cấp (chi tiết)
+    Hierarchy
   
 
     
@@ -834,7 +842,7 @@
   <span class="md-ellipsis">
     
   
-    Bảo mật (chuyên sâu)
+    Security
   
 
     
@@ -864,7 +872,7 @@
   <span class="md-ellipsis">
     
   
-    Triển khai
+    Deployment
   
 
     
@@ -1592,7 +1600,7 @@
   <span class="md-ellipsis">
     
   
-    Hệ thống Bảo mật
+    Security System
   
 
     
@@ -1608,7 +1616,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Hệ thống Bảo mật
+    Security System
   
 
           </label>
@@ -1841,7 +1849,7 @@
   <span class="md-ellipsis">
     
   
-    Cơ chế đồng thuận
+    Consensus
   
 
     
@@ -1857,7 +1865,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Cơ chế đồng thuận
+    Consensus
   
 
           </label>
@@ -2070,7 +2078,7 @@
   <span class="md-ellipsis">
     
   
-    Tham chiếu
+    Reference
   
 
     
@@ -2086,7 +2094,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Tham chiếu
+    Reference
   
 
           </label>
@@ -2108,7 +2116,7 @@
   <span class="md-ellipsis">
     
   
-    Codebase map
+    Codebase Map
   
 
     
@@ -2378,7 +2386,7 @@
   <span class="md-ellipsis">
     
   
-    Thuật ngữ
+    Glossary
   
 
     
@@ -2453,7 +2461,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng
+    How-to Guides
   
 
     
@@ -2469,7 +2477,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Sử dụng
+    How-to Guides
   
 
           </label>
@@ -2491,7 +2499,7 @@
   <span class="md-ellipsis">
     
   
-    Tích hợp vào Web2
+    Integrate into Web2
   
 
     
@@ -2521,7 +2529,7 @@
   <span class="md-ellipsis">
     
   
-    Tạo Sub-Chain
+    Create a Sub-Chain
   
 
     
@@ -2551,7 +2559,7 @@
   <span class="md-ellipsis">
     
   
-    Thêm Endpoint
+    Add an Endpoint
   
 
     
@@ -2581,7 +2589,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng WebSocket
+    Use WebSocket
   
 
     
@@ -2611,7 +2619,7 @@
   <span class="md-ellipsis">
     
   
-    Thêm/Tùy biến Consensus
+    Add/Customize Consensus
   
 
     
@@ -2641,7 +2649,7 @@
   <span class="md-ellipsis">
     
   
-    Viết Domain Contracts
+    Write Domain Contracts
   
 
     
@@ -2671,7 +2679,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng Explorer
+    Use Explorer
   
 
     
@@ -2701,7 +2709,7 @@
   <span class="md-ellipsis">
     
   
-    Hướng dẫn chạy Demo
+    Run Demos
   
 
     
@@ -2731,7 +2739,7 @@
   <span class="md-ellipsis">
     
   
-    Triển khai an toàn
+    Secure Deployment
   
 
     
@@ -2761,7 +2769,7 @@
   <span class="md-ellipsis">
     
   
-    Khắc phục sự cố
+    Troubleshooting
   
 
     
@@ -2791,7 +2799,7 @@
   <span class="md-ellipsis">
     
   
-    Khôi phục sau thảm họa
+    Disaster Recovery
   
 
     
@@ -2821,7 +2829,7 @@
   <span class="md-ellipsis">
     
   
-    Giao dịch Liên chuỗi
+    Cross-Chain Transactions
   
 
     
@@ -2885,7 +2893,7 @@
   <span class="md-ellipsis">
     
   
-    Hướng dẫn chung
+    Guides
   
 
     
@@ -2901,7 +2909,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Hướng dẫn chung
+    Guides
   
 
           </label>
@@ -2923,7 +2931,7 @@
   <span class="md-ellipsis">
     
   
-    Hiệu năng
+    Performance
   
 
     
@@ -2953,7 +2961,7 @@
   <span class="md-ellipsis">
     
   
-    Độ tin cậy
+    Reliability
   
 
     
@@ -2983,7 +2991,7 @@
   <span class="md-ellipsis">
     
   
-    Thực hành bảo mật
+    Security Best Practices
   
 
     
@@ -3020,7 +3028,7 @@
   <span class="md-ellipsis">
     
   
-    Giao thức HTTP & Proxy
+    HTTP & Proxy Protocol
   
 
     
@@ -3040,7 +3048,7 @@
   <span class="md-ellipsis">
     
   
-    Giao thức HTTP & Proxy
+    HTTP & Proxy Protocol
   
 
     
@@ -3053,22 +3061,22 @@
         
 
 
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Mục lục
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tổng quan
+        Overview
       
     </span>
   </a>
@@ -3076,22 +3084,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tai-sao-khong-ho-tro-http2-va-http3" class="md-nav__link">
+  <a href="#why-no-http2-and-http3-support" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tại sao không hỗ trợ HTTP/2 và HTTP/3?
+        Why No HTTP/2 and HTTP/3 Support?
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Tại sao không hỗ trợ HTTP&#x2f;2 và HTTP&#x2f;3?">
+    <nav class="md-nav" aria-label="Why No HTTP&#x2f;2 and HTTP&#x2f;3 Support?">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-vi-tri-trong-kien-truc-he-thong" class="md-nav__link">
+  <a href="#1-position-in-system-architecture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Vị trí trong kiến trúc hệ thống
+        1. Position in System Architecture
       
     </span>
   </a>
@@ -3099,10 +3107,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-triet-ly-plugin-layer" class="md-nav__link">
+  <a href="#2-plugin-layer-philosophy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Triết lý "Plugin Layer"
+        2. "Plugin Layer" Philosophy
       
     </span>
   </a>
@@ -3110,10 +3118,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-ly-do-su-dung-http11" class="md-nav__link">
+  <a href="#3-why-http11" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Lý do sử dụng HTTP/1.1
+        3. Why HTTP/1.1
       
     </span>
   </a>
@@ -3126,10 +3134,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cach-trien-khai-chuan-enterprise" class="md-nav__link">
+  <a href="#standard-enterprise-deployment" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cách triển khai chuẩn Enterprise
+        Standard Enterprise Deployment
       
     </span>
   </a>
@@ -3137,10 +3145,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#luu-y-ve-bao-mat" class="md-nav__link">
+  <a href="#security-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Lưu ý về Bảo mật
+        Security Notes
       
     </span>
   </a>
@@ -3201,7 +3209,7 @@
   <span class="md-ellipsis">
     
   
-    Phát triển
+    Development
   
 
     
@@ -3217,7 +3225,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Phát triển
+    Development
   
 
           </label>
@@ -3239,7 +3247,7 @@
   <span class="md-ellipsis">
     
   
-    Đóng góp
+    Contributing
   
 
     
@@ -3269,7 +3277,7 @@
   <span class="md-ellipsis">
     
   
-    Kiểm thử
+    Testing
   
 
     
@@ -3299,7 +3307,7 @@
   <span class="md-ellipsis">
     
   
-    Quy trình phát hành
+    Release Process
   
 
     
@@ -3386,7 +3394,7 @@
   <span class="md-ellipsis">
     
   
-    Khác
+    Other
   
 
     
@@ -3402,7 +3410,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Khác
+    Other
   
 
           </label>
@@ -3454,7 +3462,7 @@
   <span class="md-ellipsis">
     
   
-    Lộ trình Tương lai
+    Future Roadmap
   
 
     
@@ -3530,22 +3538,22 @@
                     
 
 
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Mục lục
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#tong-quan" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tổng quan
+        Overview
       
     </span>
   </a>
@@ -3553,22 +3561,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tai-sao-khong-ho-tro-http2-va-http3" class="md-nav__link">
+  <a href="#why-no-http2-and-http3-support" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tại sao không hỗ trợ HTTP/2 và HTTP/3?
+        Why No HTTP/2 and HTTP/3 Support?
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Tại sao không hỗ trợ HTTP&#x2f;2 và HTTP&#x2f;3?">
+    <nav class="md-nav" aria-label="Why No HTTP&#x2f;2 and HTTP&#x2f;3 Support?">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-vi-tri-trong-kien-truc-he-thong" class="md-nav__link">
+  <a href="#1-position-in-system-architecture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Vị trí trong kiến trúc hệ thống
+        1. Position in System Architecture
       
     </span>
   </a>
@@ -3576,10 +3584,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-triet-ly-plugin-layer" class="md-nav__link">
+  <a href="#2-plugin-layer-philosophy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Triết lý "Plugin Layer"
+        2. "Plugin Layer" Philosophy
       
     </span>
   </a>
@@ -3587,10 +3595,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-ly-do-su-dung-http11" class="md-nav__link">
+  <a href="#3-why-http11" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Lý do sử dụng HTTP/1.1
+        3. Why HTTP/1.1
       
     </span>
   </a>
@@ -3603,10 +3611,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cach-trien-khai-chuan-enterprise" class="md-nav__link">
+  <a href="#standard-enterprise-deployment" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cách triển khai chuẩn Enterprise
+        Standard Enterprise Deployment
       
     </span>
   </a>
@@ -3614,10 +3622,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#luu-y-ve-bao-mat" class="md-nav__link">
+  <a href="#security-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Lưu ý về Bảo mật
+        Security Notes
       
     </span>
   </a>
@@ -3639,7 +3647,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/guides/http-proxy.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/en/guides/http-proxy.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -3648,73 +3656,73 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/guides/http-proxy.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/en/guides/http-proxy.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
   
 
 
-  <h1 id="__skip">Giới hạn Giao thức HTTP & Proxy</h1>
+  <h1 id="__skip">HTTP Protocol Limitations & Proxy</h1>
 
-<h2 id="tong-quan">Tổng quan</h2>
-<p>HieraChain được thiết kế như một <strong>Plugin Layer</strong> chuyên biệt cho doanh nghiệp, tập trung vào tính bất biến và xác thực dữ liệu thay vì thay thế các hạ tầng Web2 hiện có. Do đó, HieraChain có những quy định nghiêm ngặt về giao thức truyền tải.</p>
-<h2 id="tai-sao-khong-ho-tro-http2-va-http3">Tại sao không hỗ trợ HTTP/2 và HTTP/3?</h2>
-<p>HieraChain <strong>không hỗ trợ</strong> và <strong>không có kế hoạch hỗ trợ</strong> trực tiếp các giao thức HTTP/2 hoặc HTTP/3 (QUIC) từ bên trong nhân (core). Điều này xuất phát từ triết lý thiết kế "Không tái phát minh bánh xe" (Don't reinvent the wheel) và tối ưu hóa hiệu năng Python.</p>
-<h3 id="1-vi-tri-trong-kien-truc-he-thong">1. Vị trí trong kiến trúc hệ thống</h3>
-<p>HieraChain không thay thế Cơ sở dữ liệu hiện có mà hoạt động <strong>song song</strong> như một lớp xác thực bổ trợ. Dữ liệu được phân luồng dựa trên nhu cầu về tính bất biến:</p>
+<h2 id="overview">Overview</h2>
+<p>HieraChain is designed as a specialized <strong>Plugin Layer</strong> for enterprises, focusing on data immutability and verification rather than replacing existing Web2 infrastructure. Therefore, HieraChain has strict regulations regarding transport protocols.</p>
+<h2 id="why-no-http2-and-http3-support">Why No HTTP/2 and HTTP/3 Support?</h2>
+<p>HieraChain <strong>does not support</strong> and <strong>has no plans to support</strong> HTTP/2 or HTTP/3 (QUIC) protocols directly from within the core. This stems from the "Don't reinvent the wheel" design philosophy and Python performance optimization.</p>
+<h3 id="1-position-in-system-architecture">1. Position in System Architecture</h3>
+<p>HieraChain does not replace existing databases but operates <strong>alongside</strong> them as a supplementary verification layer. Data is routed based on immutability needs:</p>
 <ul>
-<li><strong>Dữ liệu thường</strong>: Đi thẳng vào DB Web2 để đạt tốc độ tối đa.</li>
-<li><strong>Dữ liệu cần xác thực</strong>: Đi qua HieraChain để tạo bằng chứng số trước khi đồng bộ.</li>
+<li><strong>Regular data</strong>: Goes directly to Web2 DB for maximum speed.</li>
+<li><strong>Data requiring verification</strong>: Passes through HieraChain to create digital proofs before syncing.</li>
 </ul>
 <pre class="mermaid"><code>graph TD
-    User((Người dùng/Ứng dụng)) --&gt; Web2[Hạ tầng Web2 Enterprise&lt;br/&gt;WAF / LB / Gateway]
+    User((User/Application)) --&gt; Web2[Enterprise Web2 Infrastructure&lt;br/&gt;WAF / LB / Gateway]
 
-    Web2 -- "Dữ liệu cần xác thực" --&gt; HC[HieraChain API Node]
-    Web2 -- "Dữ liệu thường" --&gt; DB_Web2[(Web2 Database)]
+    Web2 -- "Data requiring verification" --&gt; HC[HieraChain API Node]
+    Web2 -- "Regular data" --&gt; DB_Web2[(Web2 Database)]
 
-    subgraph HieraChain_Internal [Hệ sinh thái HieraChain]
-        HC --&gt; DB_HC[(HieraChain Private DB&lt;br/&gt;Lưu trữ bằng chứng)]
+    subgraph HieraChain_Internal [HieraChain Ecosystem]
+        HC --&gt; DB_HC[(HieraChain Private DB&lt;br/&gt;Proof Storage)]
     end
 
-    HC -. "Kiểm tra &amp; Đối soát" .-&gt; DB_Web2</code></pre>
-<h3 id="2-triet-ly-plugin-layer">2. Triết lý "Plugin Layer"</h3>
-<p>HieraChain được xây dựng để <strong>chạy song hành</strong> và bổ sung giá trị blockchain cho các hệ thống Enterprise Web2 sẵn có:</p>
+    HC -. "Cross-check &amp; Verify" .-&gt; DB_Web2</code></pre>
+<h3 id="2-plugin-layer-philosophy">2. "Plugin Layer" Philosophy</h3>
+<p>HieraChain is built to <strong>run alongside</strong> and add blockchain value to existing Enterprise Web2 systems:</p>
 <ul>
-<li><strong>Tách biệt luồng dữ liệu</strong>: Không phải mọi dữ liệu đều cần blockchain. HieraChain chỉ xử lý các "sự kiện" (events) quan trọng cần tính bất biến, giúp hệ thống chính không bị quá tải.</li>
-<li><strong>Cơ sở dữ liệu riêng biệt</strong>: HieraChain duy trì một DB riêng (World State/Ledger) để lưu trữ bằng chứng phân tán, tách biệt hoàn toàn với DB nghiệp vụ của Web2.</li>
-<li><strong>Khả năng kiểm tra chéo</strong>: HieraChain có cơ chế kết nối (read-only) vào DB Web2 để đối soát tính toàn vẹn giữa dữ liệu nghiệp vụ và bằng chứng trên chuỗi.</li>
-<li><strong>Bảo mật cổng HTTP</strong>: Việc bảo mật tại cổng giao tiếp (Port 80/443) vẫn được giao cho hạ tầng mạng Web2 đảm nhiệm.</li>
+<li><strong>Separate data flow</strong>: Not all data needs blockchain. HieraChain only processes important "events" that require immutability, preventing the main system from being overloaded.</li>
+<li><strong>Separate database</strong>: HieraChain maintains its own DB (World State/Ledger) for distributed proof storage, completely separate from Web2's business DB.</li>
+<li><strong>Cross-check capability</strong>: HieraChain has a mechanism to connect (read-only) to Web2 DB for cross-verifying integrity between business data and on-chain proofs.</li>
+<li><strong>HTTP port security</strong>: Security at the communication port (Port 80/443) is still handled by the Web2 network infrastructure.</li>
 </ul>
-<h3 id="3-ly-do-su-dung-http11">3. Lý do sử dụng HTTP/1.1</h3>
+<h3 id="3-why-http11">3. Why HTTP/1.1</h3>
 <ul>
-<li><strong>Tốc độ trong mạng nội bộ</strong>: Trong môi trường mạng tin cậy (Trusted Network) giữa Reverse Proxy và HieraChain, HTTP/1.1 là giao thức đơn giản nhất, ít overhead nhất và đạt hiệu suất cao nhất cho các tác vụ API.</li>
-<li><strong>Khả năng tương thích</strong>: 100% các giải pháp API Gateway và Load Balancer hiện nay đều hỗ trợ chuyển tiếp xuống HTTP/1.1 một cách hoàn hảo.</li>
+<li><strong>Speed in internal network</strong>: In a trusted network environment between Reverse Proxy and HieraChain, HTTP/1.1 is the simplest protocol, with the least overhead and highest performance for API tasks.</li>
+<li><strong>Compatibility</strong>: 100% of current API Gateway and Load Balancer solutions perfectly support forwarding down to HTTP/1.1.</li>
 <li>
-<p><strong>Tập trung tài nguyên</strong>: Thay vì tốn CPU cho việc đàm phán kết nối phức tạp, HieraChain dành toàn bộ tài nguyên cho:</p>
+<p><strong>Resource focus</strong>: Instead of spending CPU on complex connection negotiation, HieraChain dedicates all resources to:</p>
 <ul>
-<li>Xác thực chữ ký sự kiện (Event signatures).</li>
-<li>Đồng thuận BFT.</li>
-<li>Đảm bảo tính toàn vẹn của sổ cái.</li>
+<li>Event signature verification.</li>
+<li>BFT consensus.</li>
+<li>Ensuring ledger integrity.</li>
 </ul>
 </li>
 </ul>
-<h2 id="cach-trien-khai-chuan-enterprise">Cách triển khai chuẩn Enterprise</h2>
-<p>Nếu hệ thống của bạn yêu cầu các tính năng hiện đại như HTTP/2, HTTP/3 hoặc gRPC để tối ưu hóa kết nối từ Client, bạn <strong>bắt buộc</strong> phải sử dụng mô hình <strong>Reverse Proxy Offloading</strong>.</p>
+<h2 id="standard-enterprise-deployment">Standard Enterprise Deployment</h2>
+<p>If your system requires modern features like HTTP/2, HTTP/3, or gRPC for optimizing client connections, you <strong>must</strong> use the <strong>Reverse Proxy Offloading</strong> model.</p>
 <ol>
-<li><strong>Tầng Web2 (NGINX/Traefik/F5)</strong>: Tiếp nhận kết nối HTTPS (HTTP/2 hoặc HTTP/3 QUIC) từ người dùng, giải mã SSL.</li>
-<li><strong>Tầng HieraChain</strong>: Tiếp nhận yêu cầu đã được giải mã từ Proxy thông qua kết nối HTTP/1.1 siêu tốc.</li>
+<li><strong>Web2 Layer (NGINX/Traefik/F5)</strong>: Accepts HTTPS connections (HTTP/2 or HTTP/3 QUIC) from users, decrypts SSL.</li>
+<li><strong>HieraChain Layer</strong>: Receives decrypted requests from the Proxy via high-speed HTTP/1.1 connections.</li>
 </ol>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>HieraChain sẽ không bao giờ thay thế cho hạ tầng Web2 hiện có. HieraChain được xây dựng để chạy <strong>bên dưới</strong> các hệ thống đó, mang lại khả năng kiểm toán và tính bất biến mà các cơ sở dữ liệu truyền thống còn thiếu.</p>
+<p>HieraChain will never replace existing Web2 infrastructure. HieraChain is built to run <strong>underneath</strong> those systems, providing auditability and immutability that traditional databases lack.</p>
 </div>
-<h2 id="luu-y-ve-bao-mat">Lưu ý về Bảo mật</h2>
-<p>Dù chỉ chạy HTTP/1.1, HieraChain vẫn duy trì các lớp bảo mật nội tại:</p>
+<h2 id="security-notes">Security Notes</h2>
+<p>Even though it only runs HTTP/1.1, HieraChain maintains internal security layers:</p>
 <ul>
-<li><strong>API Key Verification</strong>: Xác thực quyền truy cập ở mức ứng dụng.</li>
-<li><strong>Trusted Proxies</strong>: Chỉ chấp nhận yêu cầu từ các IP của Load Balancer được định nghĩa trước (qua biến <code>HRC_TRUSTED_PROXIES</code>).</li>
-<li><strong>Payload Sanitization</strong>: Làm sạch dữ liệu đầu vào để chống các cuộc tấn công tầng ứng dụng.</li>
+<li><strong>API Key Verification</strong>: Application-level access authentication.</li>
+<li><strong>Trusted Proxies</strong>: Only accepts requests from predefined Load Balancer IPs (via <code>HRC_TRUSTED_PROXIES</code> variable).</li>
+<li><strong>Payload Sanitization</strong>: Cleans input data to prevent application-layer attacks.</li>
 </ul>
 
 
@@ -3744,7 +3752,7 @@
           <button type="button" class="md-top md-icon" data-md-component="top" hidden>
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
-  Trở lại mục lục
+  Back to top
 </button>
         
       </main>
@@ -3753,33 +3761,33 @@
   
     
       
-      <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../security-best-practices/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Thực hành bảo mật">
+          <a href="../security-best-practices/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Security Best Practices">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
             </div>
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                Trước
+                Previous
               </span>
               <div class="md-ellipsis">
-                Thực hành bảo mật
+                Security Best Practices
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../dev/contributing/" class="md-footer__link md-footer__link--next" aria-label="Sau: Đóng góp">
+          <a href="../../dev/contributing/" class="md-footer__link md-footer__link--next" aria-label="Next: Contributing">
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                Sau
+                Next
               </span>
               <div class="md-ellipsis">
-                Đóng góp
+                Contributing
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -3828,7 +3836,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Đã sao chép","clipboard.copy":"Sao chép vào bộ nhớ tạm","search.result.more.one":"1 từ khác trong trang","search.result.more.other":"# từ khác trong trang","search.result.none":"Không tìm thấy tài liệu liên quan","search.result.one":"1 tài liệu liên quan","search.result.other":"# tài liệu liên quan","search.result.placeholder":"Nhập để bắt đầu tìm kiếm","search.result.term.missing":"Không","select.version":"Chọn phiên bản"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
       <script src="../../assets/javascripts/bundle.63456bd9.min.js"></script>

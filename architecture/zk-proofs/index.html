@@ -1,12 +1,12 @@
 
 <!doctype html>
-<html lang="vi" class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Giải thích cơ chế Zero-Knowledge Proofs trong HieraChain, bao gồm ZKProver, ZKVerifier và các chế độ hoạt động.">
+        <meta name="description" content="Explanation of Zero-Knowledge Proofs mechanism in HieraChain, including ZKProver, ZKVerifier, and operating modes.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -22,7 +22,9 @@
       
       
         
-          <link rel="alternate" href="/" hreflang="vi">
+          <link rel="alternate" href="/" hreflang="en">
+        
+          <link rel="alternate" href="/vi/" hreflang="vi">
         
       
       
@@ -31,7 +33,7 @@
     
     
       
-        <title>Bằng chứng Không tiết lộ (Zero-Knowledge Proofs) - HieraChain Docs</title>
+        <title>Zero-Knowledge Proofs - HieraChain Docs</title>
       
     
     
@@ -83,12 +85,12 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer" aria-label="Thanh điều hướng"></label>
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
     <div data-md-component="skip">
       
         
-        <a href="#bang-chung-khong-tiet-lo-zero-knowledge-proofs" class="md-skip">
-          Bỏ qua
+        <a href="#zero-knowledge-proofs" class="md-skip">
+          Skip to content
         </a>
       
     </div>
@@ -100,14 +102,14 @@
       
 
 <header class="md-header" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="Đầu trang">
+  <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HieraChain Docs" class="md-header__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
 
     </a>
-    <label class="md-header__button md-icon" for="__drawer" aria-label="Thanh điều hướng">
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
@@ -121,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Bằng chứng Không tiết lộ (Zero-Knowledge Proofs)
+              Zero-Knowledge Proofs
             
           </span>
         </div>
@@ -134,9 +136,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Chuyển sang chế độ sáng"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ sáng" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
       </label>
     
@@ -144,9 +146,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Chuyển sang chế độ tối"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ tối" for="__palette_2" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -154,9 +156,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Chuyển sang chế độ tự động"  type="radio" name="__palette" id="__palette_2">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
     
-      <label class="md-header__button md-icon" title="Chuyển sang chế độ tự động" for="__palette_0" hidden>
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -171,14 +173,20 @@
       <div class="md-header__option">
   <div class="md-select">
     
-    <button class="md-header__button md-icon" aria-label="Chọn ngôn ngữ">
+    <button class="md-header__button md-icon" aria-label="Select language">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-languages" viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>
     </button>
     <div class="md-select__inner">
       <ul class="md-select__list">
         
           <li class="md-select__item">
-            <a href="/" hreflang="vi" class="md-select__link">
+            <a href="/" hreflang="en" class="md-select__link">
+              🇬🇧 English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/vi/" hreflang="vi" class="md-select__link">
               🇻🇳 Tiếng Việt
             </a>
           </li>
@@ -191,20 +199,20 @@
     
       
       
-        <label class="md-header__button md-icon" for="__search" aria-label="Tìm kiếm">
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
           
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
         </label>
-        <div class="md-search" data-md-component="search" role="dialog" aria-label="Tìm kiếm">
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
   <button type="button" class="md-search__button">
-    Tìm kiếm
+    Search
   </button>
 </div>
       
     
     <div class="md-header__source">
       
-        <a href="https://github.com/VanDung-dev/HieraChain" title="Xem mã nguồn" class="md-source" data-md-component="source">
+        <a href="https://github.com/VanDung-dev/HieraChain" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -238,7 +246,7 @@
       <a href="../.." class="md-tabs__link">
         
   
-  Trang chủ
+  Home
 
       </a>
     </li>
@@ -256,7 +264,7 @@
         <a href="../../getting-started/install/" class="md-tabs__link">
           
   
-  Bắt đầu
+  Getting Started
 
         </a>
       </li>
@@ -277,7 +285,7 @@
         <a href="../overview/" class="md-tabs__link">
           
   
-  Kiến trúc
+  Architecture
 
         </a>
       </li>
@@ -315,7 +323,7 @@
         <a href="../../security/authorization-access-control/" class="md-tabs__link">
           
   
-  Hệ thống Bảo mật
+  Security System
 
         </a>
       </li>
@@ -334,7 +342,7 @@
         <a href="../../consensus/base_consensus/" class="md-tabs__link">
           
   
-  Cơ chế đồng thuận
+  Consensus
 
         </a>
       </li>
@@ -353,7 +361,7 @@
         <a href="../../reference/code-map/" class="md-tabs__link">
           
   
-  Tham chiếu
+  Reference
 
         </a>
       </li>
@@ -372,7 +380,7 @@
         <a href="../../how-to/integrate-web2/" class="md-tabs__link">
           
   
-  Sử dụng
+  How-to Guides
 
         </a>
       </li>
@@ -391,7 +399,7 @@
         <a href="../../guides/performance/" class="md-tabs__link">
           
   
-  Hướng dẫn chung
+  Guides
 
         </a>
       </li>
@@ -410,7 +418,7 @@
         <a href="../../dev/contributing/" class="md-tabs__link">
           
   
-  Phát triển
+  Development
 
         </a>
       </li>
@@ -429,7 +437,7 @@
         <a href="../../faq/" class="md-tabs__link">
           
   
-  Khác
+  Other
 
         </a>
       </li>
@@ -457,7 +465,7 @@
   
 
 
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Thanh điều hướng" data-md-level="0">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HieraChain Docs" class="md-nav__button md-logo" aria-label="HieraChain Docs" data-md-component="logo">
       
@@ -469,7 +477,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/VanDung-dev/HieraChain" title="Xem mã nguồn" class="md-source" data-md-component="source">
+      <a href="https://github.com/VanDung-dev/HieraChain" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -496,7 +504,7 @@
   <span class="md-ellipsis">
     
   
-    Trang chủ
+    Home
   
 
     
@@ -545,7 +553,7 @@
   <span class="md-ellipsis">
     
   
-    Bắt đầu
+    Getting Started
   
 
     
@@ -561,7 +569,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Bắt đầu
+    Getting Started
   
 
           </label>
@@ -583,7 +591,7 @@
   <span class="md-ellipsis">
     
   
-    Cài đặt
+    Installation
   
 
     
@@ -613,7 +621,7 @@
   <span class="md-ellipsis">
     
   
-    Bắt đầu nhanh
+    Quickstart
   
 
     
@@ -643,7 +651,7 @@
   <span class="md-ellipsis">
     
   
-    Khái niệm cơ bản
+    Basic Concepts
   
 
     
@@ -711,7 +719,7 @@
   <span class="md-ellipsis">
     
   
-    Kiến trúc
+    Architecture
   
 
     
@@ -727,7 +735,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Kiến trúc
+    Architecture
   
 
           </label>
@@ -749,7 +757,7 @@
   <span class="md-ellipsis">
     
   
-    Tổng quan
+    Overview
   
 
     
@@ -809,7 +817,7 @@
   <span class="md-ellipsis">
     
   
-    Phân cấp (chi tiết)
+    Hierarchy
   
 
     
@@ -839,7 +847,7 @@
   <span class="md-ellipsis">
     
   
-    Bảo mật (chuyên sâu)
+    Security
   
 
     
@@ -869,7 +877,7 @@
   <span class="md-ellipsis">
     
   
-    Triển khai
+    Deployment
   
 
     
@@ -941,7 +949,7 @@
         
 
 
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
@@ -950,15 +958,15 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Mục lục
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-co-che-hoat-ong-cua-zkprover-zkverifier" class="md-nav__link">
+  <a href="#1-how-zkprover-zkverifier-work" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Cơ chế Hoạt động của ZKProver &amp; ZKVerifier
+        1. How ZKProver &amp; ZKVerifier Work
       
     </span>
   </a>
@@ -966,22 +974,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-cac-che-o-hoat-ong-modes" class="md-nav__link">
+  <a href="#2-operating-modes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Các Chế độ Hoạt động (Modes)
+        2. Operating Modes
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="2. Các Chế độ Hoạt động (Modes)">
+    <nav class="md-nav" aria-label="2. Operating Modes">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#a-mock-mode-mac-inh" class="md-nav__link">
+  <a href="#a-mock-mode-default" class="md-nav__link">
     <span class="md-ellipsis">
       
-        a. Mock Mode (Mặc định)
+        a. Mock Mode (Default)
       
     </span>
   </a>
@@ -1005,10 +1013,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-public-inputs-au-vao-cong-khai" class="md-nav__link">
+  <a href="#3-public-inputs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Public Inputs (Đầu vào Công khai)
+        3. Public Inputs
       
     </span>
   </a>
@@ -1708,7 +1716,7 @@
   <span class="md-ellipsis">
     
   
-    Hệ thống Bảo mật
+    Security System
   
 
     
@@ -1724,7 +1732,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Hệ thống Bảo mật
+    Security System
   
 
           </label>
@@ -1957,7 +1965,7 @@
   <span class="md-ellipsis">
     
   
-    Cơ chế đồng thuận
+    Consensus
   
 
     
@@ -1973,7 +1981,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Cơ chế đồng thuận
+    Consensus
   
 
           </label>
@@ -2186,7 +2194,7 @@
   <span class="md-ellipsis">
     
   
-    Tham chiếu
+    Reference
   
 
     
@@ -2202,7 +2210,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Tham chiếu
+    Reference
   
 
           </label>
@@ -2224,7 +2232,7 @@
   <span class="md-ellipsis">
     
   
-    Codebase map
+    Codebase Map
   
 
     
@@ -2494,7 +2502,7 @@
   <span class="md-ellipsis">
     
   
-    Thuật ngữ
+    Glossary
   
 
     
@@ -2569,7 +2577,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng
+    How-to Guides
   
 
     
@@ -2585,7 +2593,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Sử dụng
+    How-to Guides
   
 
           </label>
@@ -2607,7 +2615,7 @@
   <span class="md-ellipsis">
     
   
-    Tích hợp vào Web2
+    Integrate into Web2
   
 
     
@@ -2637,7 +2645,7 @@
   <span class="md-ellipsis">
     
   
-    Tạo Sub-Chain
+    Create a Sub-Chain
   
 
     
@@ -2667,7 +2675,7 @@
   <span class="md-ellipsis">
     
   
-    Thêm Endpoint
+    Add an Endpoint
   
 
     
@@ -2697,7 +2705,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng WebSocket
+    Use WebSocket
   
 
     
@@ -2727,7 +2735,7 @@
   <span class="md-ellipsis">
     
   
-    Thêm/Tùy biến Consensus
+    Add/Customize Consensus
   
 
     
@@ -2757,7 +2765,7 @@
   <span class="md-ellipsis">
     
   
-    Viết Domain Contracts
+    Write Domain Contracts
   
 
     
@@ -2787,7 +2795,7 @@
   <span class="md-ellipsis">
     
   
-    Sử dụng Explorer
+    Use Explorer
   
 
     
@@ -2817,7 +2825,7 @@
   <span class="md-ellipsis">
     
   
-    Hướng dẫn chạy Demo
+    Run Demos
   
 
     
@@ -2847,7 +2855,7 @@
   <span class="md-ellipsis">
     
   
-    Triển khai an toàn
+    Secure Deployment
   
 
     
@@ -2877,7 +2885,7 @@
   <span class="md-ellipsis">
     
   
-    Khắc phục sự cố
+    Troubleshooting
   
 
     
@@ -2907,7 +2915,7 @@
   <span class="md-ellipsis">
     
   
-    Khôi phục sau thảm họa
+    Disaster Recovery
   
 
     
@@ -2937,7 +2945,7 @@
   <span class="md-ellipsis">
     
   
-    Giao dịch Liên chuỗi
+    Cross-Chain Transactions
   
 
     
@@ -2996,7 +3004,7 @@
   <span class="md-ellipsis">
     
   
-    Hướng dẫn chung
+    Guides
   
 
     
@@ -3012,7 +3020,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Hướng dẫn chung
+    Guides
   
 
           </label>
@@ -3034,7 +3042,7 @@
   <span class="md-ellipsis">
     
   
-    Hiệu năng
+    Performance
   
 
     
@@ -3064,7 +3072,7 @@
   <span class="md-ellipsis">
     
   
-    Độ tin cậy
+    Reliability
   
 
     
@@ -3094,7 +3102,7 @@
   <span class="md-ellipsis">
     
   
-    Thực hành bảo mật
+    Security Best Practices
   
 
     
@@ -3124,7 +3132,7 @@
   <span class="md-ellipsis">
     
   
-    Giao thức HTTP & Proxy
+    HTTP & Proxy Protocol
   
 
     
@@ -3183,7 +3191,7 @@
   <span class="md-ellipsis">
     
   
-    Phát triển
+    Development
   
 
     
@@ -3199,7 +3207,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Phát triển
+    Development
   
 
           </label>
@@ -3221,7 +3229,7 @@
   <span class="md-ellipsis">
     
   
-    Đóng góp
+    Contributing
   
 
     
@@ -3251,7 +3259,7 @@
   <span class="md-ellipsis">
     
   
-    Kiểm thử
+    Testing
   
 
     
@@ -3281,7 +3289,7 @@
   <span class="md-ellipsis">
     
   
-    Quy trình phát hành
+    Release Process
   
 
     
@@ -3368,7 +3376,7 @@
   <span class="md-ellipsis">
     
   
-    Khác
+    Other
   
 
     
@@ -3384,7 +3392,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Khác
+    Other
   
 
           </label>
@@ -3436,7 +3444,7 @@
   <span class="md-ellipsis">
     
   
-    Lộ trình Tương lai
+    Future Roadmap
   
 
     
@@ -3514,7 +3522,7 @@
                     
 
 
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
   
   
   
@@ -3523,15 +3531,15 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Mục lục
+      On this page
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-co-che-hoat-ong-cua-zkprover-zkverifier" class="md-nav__link">
+  <a href="#1-how-zkprover-zkverifier-work" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Cơ chế Hoạt động của ZKProver &amp; ZKVerifier
+        1. How ZKProver &amp; ZKVerifier Work
       
     </span>
   </a>
@@ -3539,22 +3547,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-cac-che-o-hoat-ong-modes" class="md-nav__link">
+  <a href="#2-operating-modes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Các Chế độ Hoạt động (Modes)
+        2. Operating Modes
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="2. Các Chế độ Hoạt động (Modes)">
+    <nav class="md-nav" aria-label="2. Operating Modes">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#a-mock-mode-mac-inh" class="md-nav__link">
+  <a href="#a-mock-mode-default" class="md-nav__link">
     <span class="md-ellipsis">
       
-        a. Mock Mode (Mặc định)
+        a. Mock Mode (Default)
       
     </span>
   </a>
@@ -3578,10 +3586,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-public-inputs-au-vao-cong-khai" class="md-nav__link">
+  <a href="#3-public-inputs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Public Inputs (Đầu vào Công khai)
+        3. Public Inputs
       
     </span>
   </a>
@@ -3603,7 +3611,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/architecture/zk-proofs.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/en/architecture/zk-proofs.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -3612,59 +3620,59 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/architecture/zk-proofs.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/en/architecture/zk-proofs.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
   
 
 
-<h1 id="bang-chung-khong-tiet-lo-zero-knowledge-proofs">Bằng chứng Không tiết lộ (Zero-Knowledge Proofs)</h1>
-<p>HieraChain sử dụng <strong>Zero-Knowledge Proofs (ZK)</strong> để đảm bảo tính xác thực của các giao dịch trên hệ thống phân cấp mà không cần tiết lộ toàn bộ dữ liệu chi tiết của từng sự kiện (Event). Các Sub-chain sẽ tạo Proof chứng minh một quá trình chuyển đổi trạng thái là hợp lệ, và Main-chain sẽ tiến hành xác minh Proof đó.</p>
-<h3 id="1-co-che-hoat-ong-cua-zkprover-zkverifier">1. Cơ chế Hoạt động của ZKProver &amp; ZKVerifier</h3>
-<p>Hệ thống cung cấp hai module cốt lõi đảm nhiệm công việc này:</p>
+<h1 id="zero-knowledge-proofs">Zero-Knowledge Proofs</h1>
+<p>HieraChain uses <strong>Zero-Knowledge Proofs (ZK)</strong> to ensure transaction authenticity across the hierarchical system without revealing detailed data of each Event. Sub-chains generate Proofs demonstrating valid state transitions, and the Main-chain verifies those Proofs.</p>
+<h3 id="1-how-zkprover-zkverifier-work">1. How ZKProver &amp; ZKVerifier Work</h3>
+<p>The system provides two core modules for this task:</p>
 <ul>
 <li>
-<p><strong><code>ZKProver</code></strong> (Nằm tại Sub-chain - <code>hierachain/security/zk_prover.py</code>):</p>
+<p><strong><code>ZKProver</code></strong> (Located at Sub-chain - <code>hierachain/security/zk_prover.py</code>):</p>
 <ul>
-<li>Đóng vai trò là bên chứng minh (Prover).</li>
-<li>Khi một Sub-chain sinh ra một block mới, nó tạo ra một trạng thái mới (World State).</li>
-<li><code>ZKProver</code> sẽ sinh ra các đoạn mã Proof để chứng minh cho logic chuyển trạng thái từ <code>old_state_root</code> sang <code>new_state_root</code> trong <code>block_index</code> tương ứng vừa được kích hoạt.</li>
+<li>Acts as the Prover.</li>
+<li>When a Sub-chain generates a new block, it creates a new state (World State).</li>
+<li><code>ZKProver</code> generates Proof code segments to prove the state transition logic from <code>old_state_root</code> to <code>new_state_root</code> at the corresponding <code>block_index</code>.</li>
 </ul>
 </li>
 <li>
-<p><strong><code>ZKVerifier</code></strong> (Nằm tại Main-chain - <code>hierachain/security/verify/zk_verifier.py</code>):</p>
+<p><strong><code>ZKVerifier</code></strong> (Located at Main-chain - <code>hierachain/security/verify/zk_verifier.py</code>):</p>
 <ul>
-<li>Đóng vai trò là bên xác minh (Verifier).</li>
-<li>Khi nhận được tín hiệu Proof từ Sub-chain gửi lên Main-chain, <code>ZKVerifier</code> sẽ phân tích và xác minh tính hợp lệ của toán học cũng như tính toàn vẹn trạng thái.</li>
-<li>Giải quyết triệt để nguy cơ <strong>Fake Proofs</strong> (Chứng cứ giả). Nếu Proof không vượt qua xác minh, giao dịch đính kèm trên Main-chain sẽ bị từ chối thẳng thừng.</li>
+<li>Acts as the Verifier.</li>
+<li>Upon receiving Proof signals from Sub-chain, <code>ZKVerifier</code> analyzes and verifies mathematical validity and state integrity.</li>
+<li>Completely resolves <strong>Fake Proofs</strong> risk. If a Proof fails verification, the attached transaction on Main-chain will be outright rejected.</li>
 </ul>
 </li>
 </ul>
-<h3 id="2-cac-che-o-hoat-ong-modes">2. Các Chế độ Hoạt động (Modes)</h3>
-<p>Zero-Knowledge Proofs trong HieraChain hỗ trợ hai mode chạy tùy theo môi trường triển khai thực tế của Sub-chain (linh hoạt cấu hình qua biến môi trường <code>ZK_MODE</code>):</p>
-<h4 id="a-mock-mode-mac-inh">a. Mock Mode (Mặc định)</h4>
+<h3 id="2-operating-modes">2. Operating Modes</h3>
+<p>Zero-Knowledge Proofs in HieraChain support two running modes depending on the actual deployment environment of the Sub-chain (flexibly configured via <code>ZK_MODE</code> environment variable):</p>
+<h4 id="a-mock-mode-default">a. Mock Mode (Default)</h4>
 <ul>
-<li>Đây là chế độ phát triển (Dev) hoặc môi trường kiểm thử (Testing).</li>
-<li>Mock Mode mô phỏng lại Groth16/Plonk ZK-SNARK bằng cách tạo ra một định dạng proof giả lập kích thước 2KB - 4KB với <code>mock_zkp_v2\x00</code>.</li>
-<li>Thay vì chạy circuit thuật toán, mock mode sử dụng tính toán hàm lượng băm nội suy (<code>hashlib.sha256</code>) đối với các tham số đầu vào (Public Inputs) và giả lập một độ trễ từ 100-500ms để đảm bảo giống với hệ thống proof thực.</li>
-<li>Hỗ trợ quá trình dev tích hợp Main/Sub mà không yêu cầu cấu hình tài nguyên phần cứng lớn.</li>
+<li>This is the Development (Dev) or Testing environment mode.</li>
+<li>Mock Mode simulates Groth16/Plonk ZK-SNARK by generating a simulated proof format of 2KB - 4KB with <code>mock_zkp_v2\x00</code>.</li>
+<li>Instead of running algorithm circuits, mock mode uses interpolated hash computation (<code>hashlib.sha256</code>) on Public Inputs parameters and simulates a 100-500ms delay to mimic the real proof system.</li>
+<li>Supports Main/Sub integrated development without requiring significant hardware resources.</li>
 </ul>
 <h4 id="b-production-mode-zokrates">b. Production Mode (ZoKrates)</h4>
 <ul>
-<li>Đây là chế độ vận hành sản xuất thực tế trên môi trường Mainnet/Enterprise.</li>
-<li>Đòi hỏi thư mục khóa chứng minh ở biến <code>ZK_PROVING_KEY_PATH</code> và khóa xác minh ở <code>ZK_VERIFICATION_KEY_PATH</code>.</li>
-<li>Proof được sinh ra qua một External Service (như ZoKrates) chứa những phương trình tính toán hàm bậc cao SNARKs vô cùng an toàn và khó giả mạo.</li>
+<li>This is the actual production operation mode for Mainnet/Enterprise environments.</li>
+<li>Requires the proving key directory at <code>ZK_PROVING_KEY_PATH</code> and verification key at <code>ZK_VERIFICATION_KEY_PATH</code>.</li>
+<li>Proofs are generated via an External Service (like ZoKrates) containing high-order SNARK mathematical equations that are extremely secure and hard to forge.</li>
 </ul>
-<h3 id="3-public-inputs-au-vao-cong-khai">3. Public Inputs (Đầu vào Công khai)</h3>
-<p>Theo định nghĩa của <code>ZKPublicInputs</code>, các đối số đầu vào (được cả Prover và Verifier đồng bộ thống nhất) bao gồm:</p>
+<h3 id="3-public-inputs">3. Public Inputs</h3>
+<p>As defined by <code>ZKPublicInputs</code>, the input arguments (synchronized between Prover and Verifier) include:</p>
 <ul>
-<li><strong><code>old_state_root</code> (str)</strong>: Merkle Root của World State ở block ngay trước đó. Phải là mã hash hợp lệ.</li>
-<li><strong><code>new_state_root</code> (str)</strong>: Merkle Root mới nhất sau khi các event được đưa vào block cập nhật hiện tại.</li>
-<li><strong><code>block_index</code> (int)</strong>: Số thứ tự block (cơ chế này giúp chặn hoàn toàn rủi ro Replay attacks).</li>
-<li><strong><code>sub_chain_name</code> (str)</strong>: ID hoặc tên định danh đầy đủ của Sub-chain đẩy Proof.</li>
+<li><strong><code>old_state_root</code> (str)</strong>: Merkle Root of the World State at the immediately preceding block. Must be a valid hash.</li>
+<li><strong><code>new_state_root</code> (str)</strong>: Latest Merkle Root after events are incorporated into the current update block.</li>
+<li><strong><code>block_index</code> (int)</strong>: Block sequence number (this mechanism completely prevents Replay attacks).</li>
+<li><strong><code>sub_chain_name</code> (str)</strong>: Full identifier or name of the Sub-chain pushing the Proof.</li>
 </ul>
-<p>Các tham số này đều được serialize định dạng JSON bytes chuẩn hóa chặt chẽ (sử dụng <code>sort_keys=True</code>) trước khi đem đi hash sinh Proof.</p>
+<p>These parameters are serialized as standardized JSON bytes (using <code>sort_keys=True</code>) before being hashed for Proof generation.</p>
 
 
 
@@ -3693,7 +3701,7 @@
           <button type="button" class="md-top md-icon" data-md-component="top" hidden>
   
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
-  Trở lại mục lục
+  Back to top
 </button>
         
       </main>
@@ -3702,30 +3710,30 @@
   
     
       
-      <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../deployment/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Triển khai">
+          <a href="../deployment/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Deployment">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
             </div>
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                Trước
+                Previous
               </span>
               <div class="md-ellipsis">
-                Triển khai
+                Deployment
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../modules/core/" class="md-footer__link md-footer__link--next" aria-label="Sau: Core">
+          <a href="../../modules/core/" class="md-footer__link md-footer__link--next" aria-label="Next: Core">
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                Sau
+                Next
               </span>
               <div class="md-ellipsis">
                 Core
@@ -3777,7 +3785,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Đã sao chép","clipboard.copy":"Sao chép vào bộ nhớ tạm","search.result.more.one":"1 từ khác trong trang","search.result.more.other":"# từ khác trong trang","search.result.none":"Không tìm thấy tài liệu liên quan","search.result.one":"1 tài liệu liên quan","search.result.other":"# tài liệu liên quan","search.result.placeholder":"Nhập để bắt đầu tìm kiếm","search.result.term.missing":"Không","select.version":"Chọn phiên bản"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.tabs","announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.tooltips","navigation.footer","navigation.indexes","navigation.top","navigation.tracking","search.highlight","search.suggest"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
       <script src="../../assets/javascripts/bundle.63456bd9.min.js"></script>
