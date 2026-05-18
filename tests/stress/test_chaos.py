@@ -148,8 +148,6 @@ class TestRandomNodeKill:
 
 class TestNetworkPartition:
     """Isolate node from network."""
-        # Similar to test in test_cluster_lockdown.py, but adds
-        # chaos-style: multiple simultaneous failures
 
     @pytest.fixture(autouse=True)
     def setup(self):
