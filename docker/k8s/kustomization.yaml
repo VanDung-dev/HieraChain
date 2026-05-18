@@ -8,19 +8,10 @@ namespace: hierachain
 resources:
   - namespace.yaml
   - configmap.yaml
-  # ⭐ Production-ready StatefulSet for nodes (stable identity, ordered deployment)
   - node-statefulset.yaml
-  # ⭐ Headless + API services for StatefulSet
   - node-statefulset-service.yaml
-  # ⭐ Independent Web2 node (Simulated ERP Infrastructure)
   - web2-node.yaml
-  # Note: persistent-volumes.yaml is NOT needed with volumeClaimTemplates
-  # PVCs are auto-provisioned by StatefulSet: data-hierachain-node-0, -1, -2, -3
-  #
-  # Legacy resources (commented out - use StatefulSet instead):
-  # - node-deployment.yaml        # ❌ Deployment (unstable identity)
-  # - node-service.yaml           # ❌ Services for Deployment
-  # - persistent-volumes.yaml     # ❌ Manual PVCs (replaced by volumeClaimTemplates)
+  - redis-deployment.yaml
 
 # Optional: include stress-tester for testing
 # - stress-tester.yaml

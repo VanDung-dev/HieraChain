@@ -9,14 +9,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Set working directory
 WORKDIR /app
 
-# Install critical system dependencies
+# Install only runtime tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    libffi-dev \
     iputils-ping \
     iproute2 \
     curl \
-    bash \
     && ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') \
     && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl" \
     && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
@@ -40,8 +37,7 @@ COPY pyproject.toml uv.lock ./
 # This layer is cached as long as pyproject.toml and uv.lock remain unchanged.
 # Using --no-install-project to prepare the environment without the app itself.
 # Including 'dev' extra to provide a complete development-ready environment.
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --extra dev
+RUN uv sync --frozen --no-install-project --extra dev
 
 # Step 2: Copy the rest of the application
 COPY . .
@@ -53,8 +49,7 @@ ENV SETUPTOOLS_SCM_PRETEND_VERSION=$VERSION
 
 # Step 3: Final sync to install the project in the virtual environment
 # This installs HieraChain in editable mode as defined in pyproject.toml
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --extra dev
+RUN uv sync --frozen --extra dev
 
 # Create necessary runtime directories
 RUN mkdir -p /app/data /app/log

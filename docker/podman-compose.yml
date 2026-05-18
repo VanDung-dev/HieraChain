@@ -16,6 +16,12 @@ services:
     environment:
       - HRC_NODE_ID=node1
       - HRC_API_HOST=0.0.0.0
+      - HRC_AUTH_ENABLED=false
+      - HRC_JOURNAL_FSYNC=false
+      - HRC_BLOCK_INTERVAL=1
+      - HRC_RATE_LIMIT=false
+      - HRC_RATE_LIMIT_RPM=100000
+      - HRC_ENV=test
       - LOG_LEVEL=INFO
     cpuset: "0"
     networks:
@@ -34,6 +40,12 @@ services:
     environment:
       - HRC_NODE_ID=node2
       - HRC_API_HOST=0.0.0.0
+      - HRC_AUTH_ENABLED=false
+      - HRC_JOURNAL_FSYNC=false
+      - HRC_BLOCK_INTERVAL=1
+      - HRC_RATE_LIMIT=false
+      - HRC_RATE_LIMIT_RPM=100000
+      - HRC_ENV=test
       - LOG_LEVEL=INFO
     cpuset: "1"
     networks:
@@ -54,6 +66,12 @@ services:
     environment:
       - HRC_NODE_ID=node3
       - HRC_API_HOST=0.0.0.0
+      - HRC_AUTH_ENABLED=false
+      - HRC_JOURNAL_FSYNC=false
+      - HRC_BLOCK_INTERVAL=1
+      - HRC_RATE_LIMIT=false
+      - HRC_RATE_LIMIT_RPM=100000
+      - HRC_ENV=test
       - LOG_LEVEL=INFO
     cpuset: "2"
     networks:
@@ -74,6 +92,12 @@ services:
     environment:
       - HRC_NODE_ID=node4
       - HRC_API_HOST=0.0.0.0
+      - HRC_AUTH_ENABLED=false
+      - HRC_JOURNAL_FSYNC=false
+      - HRC_BLOCK_INTERVAL=1
+      - HRC_RATE_LIMIT=false
+      - HRC_RATE_LIMIT_RPM=100000
+      - HRC_ENV=test
       - LOG_LEVEL=INFO
     cpuset: "3"
     networks:
@@ -86,6 +110,14 @@ services:
     depends_on:
       - node1
     command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
+
+  redis:
+    image: redis:7-alpine
+    container_name: hierachain-redis-podman
+    hostname: redis
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.50
 
   gateway:
     image: nginx:alpine
@@ -114,6 +146,8 @@ services:
       - TARGET_NODES=gateway:8080,node1:2661,node2:2661,node3:2661,node4:2661
       - TEST_DURATION=60
       - REAL_REQUESTS=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     networks:
       hierachain-internal:
         ipv4_address: 172.28.0.100

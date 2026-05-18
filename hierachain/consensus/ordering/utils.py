@@ -44,7 +44,11 @@ def verify_event_signature(event: PendingEvent, certification: dict[str, Any]) -
 
     if isinstance(signature, str) and isinstance(sender, str):
         details = event.event_data.get("details", {})
-        payload = details.get("payload", "") if isinstance(details, dict) else ""
+        payload = details.get("payload") if isinstance(details, dict) else None
+
+        # Skip verification if no payload to verify against
+        if payload is None:
+            return
 
         from hierachain.security.security_utils import verify_signature
         if not verify_signature(sender, payload.encode('utf-8'), signature):

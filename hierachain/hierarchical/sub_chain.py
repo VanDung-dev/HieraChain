@@ -587,7 +587,7 @@ class SubChain(Blockchain):
         if settings.CONSENSUS_TYPE == "proof_of_federation":
             new_consensus = ProofOfFederation(f"{name}_PoF")
         else:
-            new_consensus = ProofOfAuthority(f"{name}_PoA")
+            new_consensus = ProofOfAuthority(f"{name}_PoA", block_interval=settings.BLOCK_INTERVAL)
         self.consensus: Any = new_consensus
 
         self.main_chain_connection: Any | None = None

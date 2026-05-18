@@ -1,46 +1,37 @@
 #!/bin/bash
-# HieraChain Stress Test Runner - Kubernetes
-# Runs stress tests on a Kubernetes cluster
+# HieraChain Stress Test Runner - OrbStack K8s
 
 set -e
 
-# Configuration
 DURATION=${1:-60}
-REAL_REQUESTS="true"
 TARGET="host.docker.internal:32661"
 NAMESPACE="hierachain"
 COMPOSE_FILE="docker/docker-compose.k8s-stress.yml"
-WEB2_TARGET="localhost:32660" # NodePort for web2-node
 
 echo "========================================"
-echo " HieraChain K8s Stress Test"
+echo " HieraChain OrbStack K8s Stress Test"
 echo "========================================"
 echo "Duration: ${DURATION}s"
 echo "Target:   ${TARGET}"
-echo "Web2 Target: ${WEB2_TARGET}"
 echo ""
 
-# Step 1: Check environment
 echo "[1/2] Checking Kubernetes environment..."
-if ! kubectl get pods -n "$NAMESPACE" -l app=hierachain | grep -q "Running"; then
-    echo "ERROR: HieraChain pods are not running in namespace: $NAMESPACE"
-    echo "Deploy first with: docker/setup-k8s.sh"
+if ! kubectl get pods -n "$NAMESPACE" -l app=hierachain 2>/dev/null | grep -q "Running"; then
+    echo "ERROR: HieraChain pods not running. Deploy first: docker/setup-orb-k8s.sh"
     exit 1
 fi
-echo "  ✅ Kubernetes cluster is ready"
+echo "  Kubernetes cluster is ready"
 
-# Step 2: Run stress test
 echo ""
 echo "[2/2] Starting stress test..."
-docker compose -f "$COMPOSE_FILE" run --rm --build stress-tester \
+docker --context=orbstack compose -f "$COMPOSE_FILE" run --rm --build stress-tester \
     bash -c "
         mkdir -p /app/log/report
         export TARGET_NODES='$TARGET'
         export TEST_DURATION='$DURATION'
-        export REAL_REQUESTS='$REAL_REQUESTS'
         export K8S_NAMESPACE='$NAMESPACE'
         uv run pytest tests/stress/ -v \
-            --html=/app/log/report/docker_k8s_stress_report.html \
+            --html=/app/log/report/orb_k8s_stress_report.html \
             --self-contained-html
     "
 
@@ -48,4 +39,4 @@ echo ""
 echo "========================================"
 echo " Stress test complete!"
 echo "========================================"
-echo "Report: log/report/docker_k8s_stress_report.html"
+echo "Report: log/report/orb_k8s_stress_report.html"

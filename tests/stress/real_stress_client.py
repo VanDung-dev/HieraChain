@@ -16,6 +16,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import requests
+import requests.exceptions
+from requests.adapters import HTTPAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +107,11 @@ class RealStressClient:
         self.results = StressTestResult()
         self.session = requests.Session()
         
+        # Increase connection pool for concurrent workers
+        adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+
         # Set default headers
         self.session.headers.update({
             "User-Agent": "HieraChain-Stress-Tester/1.0",
@@ -117,9 +124,13 @@ class RealStressClient:
             key_name = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
             self.session.headers.update({key_name: api_key})
 
-        # Initialize node status
+        # Initialize node status — exclude gateway (port 80, non-API)
         for node in self.nodes:
-            node_id = node.split(":")[0]
+            parts = node.split(":")
+            port = int(parts[1]) if len(parts) > 1 else 2661
+            if port == 80:
+                continue
+            node_id = parts[0]
             url = f"http://{node}"
             self.node_status[node_id] = NodeStatus(node_id=node_id, url=url)
 
@@ -155,6 +166,35 @@ class RealStressClient:
             _results[node_id] = self.check_health(node_id)
         return _results
 
+    @staticmethod
+    def _parse_chain_list(data: Any) -> list:
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            chains = data.get("chains", data.get("data", []))
+            return chains if isinstance(chains, list) else []
+        return []
+
+    def _do_submit_event(self, status: NodeStatus, chain_name: str, event: dict) -> bool:
+        start = time.time()
+        response = self.session.post(
+            f"{status.url}/api/v1/chains/{chain_name}/events",
+            json=event,
+            timeout=self.timeout,
+        )
+        elapsed = time.time() - start
+        with self.lock:
+            status.response_times.append(elapsed)
+            if response.status_code in (200, 201, 202):
+                status.success_count += 1
+                self.results.successful_requests += 1
+                self.results.events_submitted += 1
+                return True
+            status.error_count += 1
+            status.last_error = f"HTTP {response.status_code}: {response.text[:100]}"
+            self.results.failed_requests += 1
+            return False
+
     def wait_for_nodes(self, timeout: float = 30.0, min_healthy: int | None = None) -> bool:
         """
         Wait for nodes to become healthy.
@@ -167,22 +207,17 @@ class RealStressClient:
         if min_healthy is None:
             min_healthy = len(self.node_status)
             
-        logger.info("Waiting for %d/%d nodes to be healthy (timeout=%ds)...", 
+        logger.info("Waiting for %d/%d nodes to be healthy (timeout=%ds)...",
                    min_healthy, len(self.node_status), timeout)
-        
+
         start_time = time.time()
         while time.time() - start_time < timeout:
-            healthy_count = 0
-            for node_id in self.node_status:
-                if self.check_health(node_id):
-                    healthy_count += 1
-            
-            if healthy_count >= min_healthy:
-                logger.info("Cluster ready: %d nodes healthy", healthy_count)
+            healthy = sum(1 for nid in self.node_status if self.check_health(nid))
+            if healthy >= min_healthy:
+                logger.info("Cluster ready: %d nodes healthy", healthy)
                 return True
-            
             time.sleep(2.0)
-        
+
         return False
 
     def submit_event(
@@ -196,30 +231,14 @@ class RealStressClient:
         if not status:
             return False
 
-        start_time = time.time()
         try:
-            # Use correct API endpoint: POST /api/v1/chains/{chain_name}/events
-            response = self.session.post(
-                f"{status.url}/api/v1/chains/{chain_name}/events",
-                json=event,
-                timeout=self.timeout,
-            )
-            elapsed = time.time() - start_time
-
-            with self.lock:
-                status.response_times.append(elapsed)
-                if response.status_code in (200, 201, 202):
-                    status.success_count += 1
-                    self.results.successful_requests += 1
-                    self.results.events_submitted += 1
-                    return True
-                else:
-                    status.error_count += 1
-                    status.last_error = f"HTTP {response.status_code}: {response.text[:100]}"
-                    self.results.failed_requests += 1
-                    return False
-
+            return self._do_submit_event(status, chain_name, event)
         except requests.RequestException as e:
+            if isinstance(e, requests.exceptions.ConnectionError):
+                try:
+                    return self._do_submit_event(status, chain_name, event)
+                except requests.RequestException:
+                    pass
             with self.lock:
                 status.error_count += 1
                 status.last_error = str(e)
@@ -319,21 +338,45 @@ class RealStressClient:
             if response.status_code in (200, 201, 409):
                 return True
             
-            # Handle 500 error where chain already exists (server returns 500 instead of 409)
-            # This happens in persistent environments like K8s where state is not cleared between tests
-            if response.status_code == 500:
-                logger.info(f"Chain may already exist on {node_id}, treating as success")
-                return True
-
-            logger.warning(f"Create chain failed on {node_id}: {response.status_code} {response.text}")
+            logger.warning(f"Create chain failed on {node_id}: {response.status_code} {response.text[:200]}")
             return False
         except requests.RequestException as e:
-            # Handle timeout errors - in persistent environments like K8s, 
-            # the chain likely already exists from a previous test run
-            if isinstance(e, requests.Timeout):
-                logger.info(f"Timeout creating chain on {node_id}, treating as success (chain may exist)")
-                return True
+            # In K8s with ephemeral pods, a ConnectionError means the pod cycled.
+            # Don't assume chain exists — we'll verify it below.
+            if isinstance(e, (requests.Timeout, requests.exceptions.ConnectionError)):
+                logger.info(
+                    "Chain creation %s on %s — pod may have cycled",
+                    type(e).__name__, node_id
+                )
+                return False
             logger.warning(f"Create chain connection error on {node_id}: {e}")
+            return False
+
+    def verify_chain_exists(self, node_id: str, chain_name: str = DEFAULT_CHAIN_NAME) -> bool:
+        """Verify that a chain exists on a node by querying the chain list."""
+        status = self.node_status.get(node_id)
+        if not status:
+            return False
+
+        try:
+            response = self.session.get(f"{status.url}/api/v1/chains", timeout=self.timeout)
+            if response.status_code != 200:
+                return False
+
+            chains = self._parse_chain_list(response.json())
+            found = any(
+                isinstance(c, dict) and c.get("name") == chain_name
+                for c in chains
+            )
+            logger.info(
+                "Chain '%s' %s on %s (found %d chains)",
+                chain_name, "verified" if found else "NOT found",
+                node_id, len(chains),
+            )
+            return found
+
+        except (requests.RequestException, ValueError, TypeError) as e:
+            logger.debug("Chain verification request failed on %s: %s", node_id, e)
             return False
 
     def run_flood_test(
@@ -475,33 +518,27 @@ class RealStressClient:
         return chain_created
     
     def _try_create_chain_on_node(self, node_id: str) -> bool:
-        """Try to create chain on a single node with retry logic.
-        
-        Args:
-            node_id: The node identifier.
-            
-        Returns:
-            True if chain was created (or already exists).
-        """
+        """Try to create chain on a single node with retry logic."""
         attempts = 50 if len(self.node_status) == 1 else 1
-        
+
         if attempts > 1:
             logger.info("detected single endpoint, attempting creation %d times for LB coverage", attempts)
-        
-        success_count = 0
+
         for i in range(attempts):
             if self.create_chain(node_id, DEFAULT_CHAIN_NAME):
                 logger.info("Chain created/verified on %s (attempt %d)", node_id, i + 1)
-                success_count += 1
-                if attempts == 1: # Direct node access, one success is enough
-                    return True
-            else:
-                logger.warning("Failed to create chain on %s (attempt %d)", node_id, i + 1)
-            
-            if attempts > 1:
-                time.sleep(0.2)
-        
-        return success_count > 0
+                return True
+            if self.verify_chain_exists(node_id, DEFAULT_CHAIN_NAME):
+                logger.info("Chain '%s' confirmed via GET on %s", DEFAULT_CHAIN_NAME, node_id)
+                return True
+            logger.warning("Failed to create chain on %s (attempt %d/%d)", node_id, i + 1, attempts)
+            time.sleep(0.2)
+
+        logger.info("Creation attempts exhausted on %s, verifying chain existence...", node_id)
+        confirmed = self.verify_chain_exists(node_id, DEFAULT_CHAIN_NAME)
+        if confirmed:
+            logger.info("Chain '%s' confirmed via fallback verification on %s", DEFAULT_CHAIN_NAME, node_id)
+        return confirmed
 
 
 def run_real_stress_test(

@@ -16,7 +16,7 @@ fi
 
 # Configuration
 IMAGE_NAME="hierachain:latest"
-COMPOSE_FILE="docker/docker-compose.test.yml"
+COMPOSE_FILE="docker/docker-compose.yml"
 # Generate a random token for the stealth explorer
 EXPLORER_TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 8 || echo "default")
 export EXPLORER_TOKEN="hrc_${EXPLORER_TOKEN}"
@@ -24,7 +24,7 @@ export EXPLORER_TOKEN="hrc_${EXPLORER_TOKEN}"
 # Step 0: Auto-discover nodes from compose file
 echo "[0/5] Discovering cluster nodes..."
 # Extracts all hostnames from the compose file (excluding the gateway itself)
-HRC_NODES=$(grep "hostname:" $COMPOSE_FILE | awk '{print $2}' | grep -v "gateway" | tr '\n' ',' | sed 's/,$//')
+HRC_NODES=$(grep "hostname:" $COMPOSE_FILE | awk '{print $2}' | grep -v -E "gateway|redis" | tr '\n' ',' | sed 's/,$//')
 export HRC_NODES
 echo "  Found nodes: ${HRC_NODES}"
 

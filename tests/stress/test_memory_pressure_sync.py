@@ -68,44 +68,33 @@ class MemoryPressureSyncTest:
             # In a stress test, we should FAIL if the core engine component cannot be tested
             raise RuntimeError(f"Critical failure in stress test: PyArrow could not allocate memory or create table: {e}")
 
+    def _calc_chunk_mb(self, chunk: object) -> float:
+        mbytes = getattr(chunk, "nbytes", 0) if isinstance(chunk, bytearray) else 0.0
+        if not mbytes and hasattr(chunk, "__len__"):
+            mbytes = len(chunk)
+        return mbytes / (1024 * 1024)
+
+    def _record_snapshot(self, iteration: int, rss_mb: float, gc_counts: tuple) -> None:
+        with self.lock:
+            pyarrow_mb = sum(self._calc_chunk_mb(c) for c in self.data_chunks)
+            snapshot = MemoryPressureSnapshot(
+                timestamp=time.time(), rss_mb=rss_mb,
+                pyarrow_bytes_mb=pyarrow_mb,
+                gc_gen0=gc_counts[0], gc_gen1=gc_counts[1], gc_gen2=gc_counts[2],
+            )
+            self.snapshots.append(snapshot)
+            logger.info(f"[Iter {iteration}] RSS: {rss_mb:.1f}MB, PyArrow: {pyarrow_mb:.1f}MB, GC: {gc_counts}")
+
     def _pressure_worker(self, interval_seconds: float = 0.5) -> None:
         iteration = 0
         while self.running:
             try:
                 self._load_pyarrow_data(chunk_size_mb=10.0)
                 iteration += 1
-
                 if iteration % 10 == 0:
                     gc.collect()
-
-                rss_mb = self._get_memory_mb()
-                gc_counts = self._get_gc_counts()
-
-                with self.lock:
-                    total_pyarrow_mb = sum(
-                        getattr(chunk, "nbytes", 0)
-                        if isinstance(chunk, bytearray)
-                        else len(chunk) if hasattr(chunk, "__len__") else 0
-                        for chunk in self.data_chunks
-                    ) / (1024 * 1024)
-
-                    snapshot = MemoryPressureSnapshot(
-                        timestamp=time.time(),
-                        rss_mb=rss_mb,
-                        pyarrow_bytes_mb=total_pyarrow_mb,
-                        gc_gen0=gc_counts[0],
-                        gc_gen1=gc_counts[1],
-                        gc_gen2=gc_counts[2],
-                    )
-                    self.snapshots.append(snapshot)
-                    logger.info(
-                        f"[Iter {iteration}] RSS: {rss_mb:.1f}MB, "
-                        f"PyArrow: {total_pyarrow_mb:.1f}MB, "
-                        f"GC: {gc_counts}"
-                    )
-
+                self._record_snapshot(iteration, self._get_memory_mb(), self._get_gc_counts())
                 time.sleep(interval_seconds)
-
             except MemoryError:
                 logger.error("MemoryError caught - OOM condition triggered")
                 raise

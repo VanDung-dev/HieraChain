@@ -11,17 +11,15 @@ metadata:
 data:
   # Using .template extension for automatic envsubst in nginx image
   default.conf.template: |
-    # Load balance across the HieraChain cluster via headless service DNS
-    upstream hierachain_nodes {
-        server hierachain-node-headless:2661;
-        keepalive 32;
-    }
-
     server {
         listen 80;
 
-        # DNS resolver for k8s
+        # DNS resolver for K8s — uses kube-dns service name instead of
+        # hardcoded ClusterIP (which varies across K8s distributions)
         resolver kube-dns.kube-system.svc.cluster.local valid=30s;
+
+        # Cluster upstream resolved at request time (FQDN required with explicit resolver)
+        set $hierachain_upstream "hierachain-node-headless.hierachain.svc.cluster.local:2661";
 
         # Standard health check for internal monitors
         location /web2-status {
@@ -37,9 +35,9 @@ data:
             try_files $page.html =404;
         }
 
-        # API Pass-through with Load Balancing
+        # API Pass-through with Dynamic Resolution (resolved at request time)
         location /api/ {
-            proxy_pass http://hierachain_nodes;
+            proxy_pass http://$hierachain_upstream;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -47,8 +45,9 @@ data:
             proxy_set_header Connection "";
             proxy_next_upstream error timeout http_502 http_503 http_504;
             proxy_next_upstream_tries 3;
-            proxy_connect_timeout 5s;
-            proxy_read_timeout 30s;
+            proxy_connect_timeout 60s;
+            proxy_read_timeout 300s;
+            proxy_send_timeout 60s;
         }
 
         # Node Discovery Endpoint
@@ -64,7 +63,8 @@ data:
             proxy_set_header X-Real-IP $remote_addr;
             proxy_next_upstream error timeout http_502 http_503 http_504;
             proxy_next_upstream_tries 3;
-            proxy_connect_timeout 2s;
+            proxy_connect_timeout 60s;
+            proxy_read_timeout 300s;
             proxy_intercept_errors on;
             error_page 502 503 504 = @node_error;
         }

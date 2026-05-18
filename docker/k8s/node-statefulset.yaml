@@ -44,6 +44,26 @@ spec:
               value: "5001"
             - name: HRC_VALIDATOR_IDENTITY
               value: "/app/config/identity/identity.json"
+            - name: HRC_JOURNAL_FSYNC
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_JOURNAL_FSYNC
+            - name: HRC_BLOCK_INTERVAL
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_BLOCK_INTERVAL
+            - name: HRC_RATE_LIMIT_RPM
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_RATE_LIMIT_RPM
+            - name: HRC_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_ENV
             - name: LOG_LEVEL
               valueFrom:
                 configMapKeyRef:
@@ -69,18 +89,35 @@ spec:
                 configMapKeyRef:
                   name: hierachain-config
                   key: HRC_AUTH_ENABLED
+            - name: HRC_STORAGE_BACKEND
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_STORAGE_BACKEND
+            - name: HRC_REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_REDIS_HOST
+            - name: HRC_REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_REDIS_PORT
           resources:
             requests:
               memory: "1Gi"
-              cpu: "1"
+              cpu: "500m"
             limits:
-              memory: "1Gi"
-              cpu: "1"
+              memory: "2Gi"
+              cpu: "2"
           volumeMounts:
             - name: data
               mountPath: /app/data
             - name: identity-storage
               mountPath: /app/config/identity
+            - name: log
+              mountPath: /app/log
           livenessProbe:
             httpGet:
               path: /api/v1/health
@@ -97,6 +134,14 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 10
             failureThreshold: 5
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
           # Graceful shutdown - allows "Last Breath" broadcast
           lifecycle:
             preStop:
@@ -153,6 +198,8 @@ spec:
           secret:
             secretName: hierachain-node-identities
         - name: identity-storage
+          emptyDir: {}
+        - name: log
           emptyDir: {}
   # VolumeClaimTemplates for automatic PVC provisioning per pod
   volumeClaimTemplates:

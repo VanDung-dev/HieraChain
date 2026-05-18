@@ -1,92 +1,111 @@
-# 📊 HieraChain Stress Testing Infrastructure
+# HieraChain Stress Testing Infrastructure
 
-HieraChain provides a comprehensive suite of Docker, Kubernetes, and Podman configurations dedicated to high-performance benchmarking (throughput) and stability testing.
-
-> [!IMPORTANT]
-> This infrastructure is optimized for **Stress Testing** and performance analysis. It implements "Guaranteed QoS" and "CPU Pinning" to ensure accurate and jitter-free results.
+HieraChain provides container runtimes dedicated to high-performance benchmarking and stability testing.
 
 ---
 
-## 📁 Infrastructure Overview
+## Platform Requirements
 
-```text
+| Platform | Container Runtime | Notes |
+|----------|------------------|-------|
+| **macOS** | Docker Desktop / Colima / OrbStack | macOS cannot run Docker natively, requires VM layer |
+| **Linux** | Docker / Podman | Native container support, no VM required |
+
+---
+
+## Infrastructure Overview
+
+```
 docker/
-├── setup-docker-compose.sh         # Initialize Docker Compose cluster
-├── run-stress-docker-compose.sh    # Run stress tests on Docker
-├── setup-k8s.sh                    # Initialize K8s cluster (Kind)
-├── run-stress-k8s.sh               # Run stress tests on Kubernetes
-├── setup-podman.sh                 # Initialize Pure Podman cluster
-├── run-stress-podman.sh            # Run stress tests on Podman
-├── setup-podman-k8s.sh             # Initialize Podman K8s (Play Kube)
-├── run-stress-podman-k8s.sh        # Run stress tests on Podman K8s
-├── k8s/                            # Kubernetes manifests (CPU Pinned)
-├── podman-compose.yml              # Podman-optimized configuration
-└── default.podman.conf.template    # Rootless-safe Nginx template
+├── setup-docker.sh           # Docker Compose: 4-node cluster
+├── run-stress-docker.sh      # Docker Compose: stress test
+│
+├── setup-podman.sh           # Podman Compose: 4-node cluster
+├── run-stress-podman.sh      # Podman Compose: stress test
+│
+├── setup-orb-k8s.sh          # OrbStack + Kind: K8s cluster
+├── run-stress-orb-k8s.sh     # OrbStack + Kind: stress test
+├── docker-compose.k8s-stress.yml
+│
+├── k8s/                      # Kubernetes manifests
+├── kind-config.yaml
+├── docker-compose.test.yml
+├── podman-compose.yml
+└── default.podman.conf.template
 ```
 
 ---
 
-## 🚀 Deployment Modes
+## macOS: Why You Need a VM Layer
 
-### 1. Docker Compose (Classic)
-Ideal for testing business logic and basic throughput on a local machine.
-```bash
-docker/setup-docker-compose.sh
-docker/run-stress-docker-compose.sh
-```
+**Problem**: macOS does not support running Docker containers natively (Linux-only).  
+**Solution**: Use a lightweight virtualization layer to run Linux containers.
 
-### 2. Kubernetes (Enterprise Simulation)
-Uses [Kind](https://kind.sigs.k8s.io/) or a real cluster. Implements **CPU Pinning** (1 Core per Node) for high-fidelity throughput testing.
-```bash
-docker/setup-k8s.sh
-docker/run-stress-k8s.sh
-```
+| Tool | Type | Best For | Install |
+|------|------|----------|---------|
+| **Docker Desktop** | Full VM + Docker | Default choice, includes UI | `brew install --cask docker` |
+| **Podman** | Rootless (requires VM) | No daemon, rootless by default | `brew install podman` |
+| **Colima** | Lightweight VM | Minimal overhead, CLI-only | `brew install colima` |
+| **OrbStack** | Lightweight VM + K8s | Fast startup, K8s support | `brew install orbstack` |
 
-### 3. Podman (Secure & Rootless)
-Designed for enterprise environments with strict security policies. Supports both Compose and Native K8s manifests.
+### macOS Quick Start
+
 ```bash
-# Pure Podman (Compose)
+# Option 1: Docker Desktop (recommended for beginners)
+docker context use default
+docker/setup-docker.sh
+docker/run-stress-docker.sh
+
+# Option 2: Podman Machine (rootless, no daemon)
+podman machine init --cpus 8 --memory 16
+podman machine start
 docker/setup-podman.sh
 docker/run-stress-podman.sh
 
-# Podman K8s (Play Kube)
-docker/setup-podman-k8s.sh
-docker/run-stress-podman-k8s.sh
+# Option 3 Colima (lightweight, CLI-only)
+colima start --cpu 8 --memory 16 --disk 60 --vm-type=vz --vz-rosetta --mount-type virtiofs
+docker context use colima
+docker/setup-docker.sh
+docker/run-stress-docker.sh
+
+# Option 4: OrbStack + Kubernetes (for K8s testing)
+docker context use orbstack
+docker/setup-orb-k8s.sh
+docker/run-stress-orb-k8s.sh
 ```
 
 ---
 
-## ⚡ Performance Optimization: CPU Pinning
+## Linux: Native Containers
 
-To ensure HieraChain nodes are not affected by CPU context switching or resource contention, we have implemented **Guaranteed QoS**:
-*   **K8s:** Nodes are configured with `requests == limits` for CPU and RAM using integer values.
-*   **Podman:** Uses `cpuset` to bind each node container to a specific physical core ID.
-*   **Docker:** Uses `cpus: '1.0'` limit to prevent CPU over-subscription.
+Linux runs Docker/Podman natively without VM overhead.
 
----
+```bash
+# Option 1: Docker
+docker/setup-docker.sh
+docker/run-stress-docker.sh
 
-## 📈 Analysis & Reports
-
-Detailed HTML reports are generated in `log/report/` after each run:
-*   **EPS (Events Per Second)**: Real-world throughput.
-*   **Latency**: Time to reach consensus (BFT/PoA).
-*   **Success Rate**: Stability under extreme load.
+# Option 2: Podman (rootless, no daemon required)
+docker/setup-podman.sh
+docker/run-stress-podman.sh
+```
 
 ---
 
-## ⚙️ Global Configuration
+## Global Configuration
 
 | Variable | Description | Recommendation |
-| :--- | :--- | :--- |
-| `EXPLORER_TOKEN` | Secure token for monitor access | Auto-generated during setup |
-| `HRC_RATE_LIMIT` | API Rate limiting | Set to `false` for stress testing |
-| `LOG_LEVEL` | Logging verbosity | Use `WARNING` for max performance |
+|----------|-------------|----------------|
+| `EXPLORER_TOKEN` | Secure token for monitor | Auto-generated |
+| `HRC_RATE_LIMIT` | API rate limiting | `false` for stress testing |
 
 ---
 
-## 🔧 Cleanup Commands
+## Cleanup Commands
 
-*   **Docker:** `docker compose -f docker/docker-compose.test.yml down -v`
-*   **K8s:** `kind delete cluster --name hiera-cluster`
-*   **Podman:** `podman compose -f docker/podman-compose.yml down -v`
-*   **Podman K8s:** `podman pod rm -f $(podman pod ps -q)`
+| Runtime | Command |
+|---------|---------|
+| **Docker** | `docker compose -f docker/docker-compose.test.yml down -v` |
+| **Podman** | `podman compose -f docker/podman-compose.yml down -v` |
+| **OrbStack K8s** | `kubectl delete namespace hierachain` |
+| **Colima** | `colima stop` |
