@@ -171,7 +171,15 @@ class ZKVerifier:
             "successful_verifications": 0,
             "failed_verifications": 0
         }
-        
+
+        # Warn if mock mode is active in a non-dev context
+        if self.mode == "mock":
+            if getattr(settings, 'ENABLE_ZK_PROOFS', False):
+                logger.critical(
+                    "ZK mode is 'mock' but ENABLE_ZK_PROOFS=True! "
+                    "Mock proofs are forgeable — set ZK_MODE=production."
+                )
+
         # Load verification key for production mode
         if self.mode == "production":
             self._load_verification_key()
@@ -219,6 +227,14 @@ class ZKVerifier:
     def _execute_verification(self, proof: bytes, inputs: ZKPublicInputs) -> bool:
         """Execute core verification logic based on mode."""
         if self.mode == "mock":
+            # Mock mode: reject if zk proofs are supposed to be enabled
+            if getattr(settings, 'ENABLE_ZK_PROOFS', False):
+                logger.error(
+                    "Rejecting mock proof for block %d: ENABLE_ZK_PROOFS=True "
+                    "requires production mode",
+                    inputs.block_index
+                )
+                return False
             return _verify_mock(proof, inputs)
         if self.mode == "production":
             return self._verify_production(proof, inputs)
