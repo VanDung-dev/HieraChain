@@ -26,6 +26,8 @@ def _to_block_dict(block_model: BlockModel) -> dict[str, Any]:
         "hash": block_model.hash,
         "previous_hash": block_model.previous_hash,
         "timestamp": block_model.timestamp,
+        "creator_id": block_model.creator_id,
+        "signature": block_model.signature,
         "events": events_list,
         "metadata": metadata,
         "merkle_root": metadata.get("merkle_root")
@@ -44,6 +46,8 @@ def _build_block_model(block_data: dict[str, Any]) -> BlockModel:
         hash=block_data['hash'],
         previous_hash=block_data['previous_hash'],
         timestamp=block_data['timestamp'],
+        creator_id=block_data.get('creator_id'),
+        signature=block_data.get('signature'),
         metadata_json=metadata,
         chain_name=str(block_data.get('chain_name', ''))
     )
