@@ -682,7 +682,7 @@ class BFTConsensus:
             if len(self.message_log) > self.MAX_MESSAGE_LOG:
                 self.message_log = self.message_log[-self.MAX_MESSAGE_LOG:]
             return True
-        return True
+        return False
 
     def _handle_commit(self, message: BFTMessage) -> bool:
         """Handle incoming COMMIT messages"""
