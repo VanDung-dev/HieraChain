@@ -198,7 +198,11 @@ class ProofOfAuthority(BaseConsensus):
         public_key = self.authority_metadata.get(authority_id, {}).get("public_key")
 
         if not isinstance(public_key, str) or not isinstance(signature, str):
-            return True
+            logger.warning(
+                "Invalid authority signature: public_key=%s signature=%s",
+                type(public_key).__name__, type(signature).__name__
+            )
+            return False
 
         from hierachain.security.security_utils import verify_signature
         sig_str = f"{block.hash}{authority_id}{details.get('timestamp')}"

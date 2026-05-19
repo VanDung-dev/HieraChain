@@ -10,16 +10,19 @@ Enhanced with ZK Proof verification for trustless block validation.
 """
 
 import time
-import hashlib
-import logging
 from typing import Any
+
+from nacl.signing import SigningKey
+from nacl.encoding import HexEncoder
 
 from hierachain.consensus.base_consensus import (
     BaseConsensus, _verify_block_zk_proof
 )
 from hierachain.core.block import Block
+from hierachain.security.security_utils import verify_signature
+from hierachain.security.secure_logging import get_security_logger
 
-logger = logging.getLogger(__name__)
+logger = get_security_logger()
 
 
 class ProofOfFederation(BaseConsensus):
@@ -35,18 +38,29 @@ class ProofOfFederation(BaseConsensus):
     (implementation handled via timeout/view-change logic in higher layers).
     """
 
-    def __init__(self, name: str = "ProofOfFederation"):
+    def __init__(self, name: str = "ProofOfFederation",
+                 signing_key_hex: str | None = None):
         """
         Initialize Proof of Federation.
     
         Args:
             name: Name of the consensus instance.
+            signing_key_hex: Optional hex-encoded Ed25519 signing key for
+                             creating federation signatures. If omitted,
+                             signing operations will log a warning.
         """
         super().__init__(name)
     
         # Internal state
         self.validators: list[str] = []  # Ordered list of validator IDs
         self.validator_metadata: dict[str, dict[str, Any]] = {}
+        self._signing_key: SigningKey | None = None
+        if signing_key_hex:
+            try:
+                key_bytes = HexEncoder.decode(signing_key_hex.encode("utf-8"))
+                self._signing_key = SigningKey(key_bytes)
+            except Exception as e:
+                logger.error("Invalid signing_key_hex for PoF: %s", e)
     
         # Configuration defaults (can be updated via settings)
         self.config = {
@@ -196,7 +210,12 @@ class ProofOfFederation(BaseConsensus):
                 not self.validate_block_proposer(block.index, signer_id)):
             return False
 
-        # 4. ZK Proof Verification (if enabled)
+        # 4. Federation signature verification
+        if not _verify_block_quorum(block, self.validator_metadata):
+            logger.error("Block %d federation signature verification FAILED", block.index)
+            return False
+
+        # 5. ZK Proof Verification (if enabled)
         # Uses shared implementation from BaseConsensus
         zk_valid = _verify_block_zk_proof(block, previous_block)
         if not zk_valid:
@@ -211,7 +230,7 @@ class ProofOfFederation(BaseConsensus):
         if not authority_id or not self.can_create_block(authority_id):
             return block
 
-        signature = _create_federation_signature(block, authority_id)
+        signature = _create_federation_signature(block, self._signing_key)
         consensus_metadata = {
             "consensus_type": "proof_of_federation",
             "leader_id": authority_id,
@@ -293,10 +312,24 @@ def _extract_signer_id(block: Block) -> str | None:
     return None
 
 
-def _create_federation_signature(block: Block, leader_id: str) -> str:
-    """Create a federation signature for the block."""
-    signature_data = f"{block.hash}:{leader_id}:{block.index}:{time.time()}"
-    return hashlib.sha256(signature_data.encode()).hexdigest()
+def _create_federation_signature(block: Block, signing_key: SigningKey | None) -> str:
+    """Create an Ed25519 federation signature for the block.
+
+    Signs the block hash with the leader's Ed25519 signing key.
+
+    Args:
+        block: Block to sign.
+        signing_key: Ed25519 signing key of the leader.
+
+    Returns:
+        Hex-encoded Ed25519 signature, or empty string if no signing key.
+    """
+    if signing_key is None:
+        logger.warning("No signing key configured for PoF — cannot sign block %d", block.index)
+        return ""
+    message = block.hash.encode("utf-8")
+    signed = signing_key.sign(message)
+    return signed.signature.hex()
 
 
 def _get_required_quorum_count(
@@ -334,6 +367,54 @@ def _is_signature_valid(
     return verify_signature(public_key, message, signature)
 
 
-def _verify_block_quorum(_block: Block) -> bool:
-    """Verify if block has sufficient federation signatures (if applicable)."""
-    return True
+def _verify_block_quorum(block: Block,
+                         validator_metadata: dict[str, dict[str, Any]]) -> bool:
+    """Verify the block's federation signature using Ed25519.
+
+    Extracts the signer ID and signature from the block's
+    consensus_finalization event, looks up the signer's public key,
+    and verifies the Ed25519 signature against the block hash.
+
+    Args:
+        block: Block to verify.
+        validator_metadata: Dict mapping validator IDs to metadata dicts
+                            (must contain "public_key" hex string).
+
+    Returns:
+        True if the signature is valid or no signature is present,
+        False if the signature is invalid.
+    """
+    signer_id = _extract_signer_id(block)
+    if not signer_id:
+        logger.warning("Block %d has no signer ID — quorum verification skipped", block.index)
+        return True
+
+    events = block.to_event_list()
+    for event in reversed(events):
+        if event.get("event") == "consensus_finalization":
+            signature = event.get("details", {}).get("signature", "")
+            break
+    else:
+        logger.warning("Block %d has no consensus_finalization event", block.index)
+        return True
+
+    if not signature:
+        logger.warning("Block %d has empty federation signature", block.index)
+        return True
+
+    public_key = validator_metadata.get(signer_id, {}).get("public_key")
+    if not public_key:
+        logger.warning(
+            "Block %d signer %s has no public_key in metadata — skipping sig verify",
+            block.index, signer_id
+        )
+        return True
+
+    message = block.hash.encode("utf-8")
+    is_valid = verify_signature(public_key, message, signature)
+    if not is_valid:
+        logger.error(
+            "Block %d federation signature INVALID for signer %s",
+            block.index, signer_id
+        )
+    return is_valid
