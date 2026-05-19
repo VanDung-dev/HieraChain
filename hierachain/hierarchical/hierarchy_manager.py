@@ -420,8 +420,7 @@ class HierarchyManager:
         if not chain:
             return False
 
-        # Simplified simulation:
-        return True
+        return chain.submit_proof_to_main(self.main_chain)
 
     def get_system_overview(self) -> dict[str, Any]:
         """Get a high-level overview of the entire system state."""

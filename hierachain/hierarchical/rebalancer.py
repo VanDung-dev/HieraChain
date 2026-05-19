@@ -214,34 +214,65 @@ def _migrate_state_for_rebalancer(
     parent: Any,
     children: list[Any]
 ) -> tuple[int, int]:
-    """Migrate state from parent to child chains."""
+    """
+    Migrate state from parent to child chains.
+
+    Migrates both committed block events and pending events to children,
+    preventing data loss during chain splits. Committed block events are
+    distributed across children by the configured split strategy.
+    """
     events_migrated = 0
     blocks_migrated = 0
 
     if len(children) < 2:
         return 0, 0
 
-    events = _get_pending_events(parent)
-
-    for event in events:
+    # 1. Migrate events from committed blocks (prevents data loss)
+    committed_events = _get_committed_block_events(parent)
+    for event in committed_events:
         target_idx = _select_target_child_for_rebalancer(
             rebalancer,
             event,
             len(children),
         )
         target = children[target_idx]
+        if _add_event_to_chain(target, event):
+            events_migrated += 1
 
+    # 2. Migrate pending events (uncommitted)
+    pending_events = _get_pending_events(parent)
+    for event in pending_events:
+        target_idx = _select_target_child_for_rebalancer(
+            rebalancer,
+            event,
+            len(children),
+        )
+        target = children[target_idx]
         if _add_event_to_chain(target, event):
             events_migrated += 1
 
     _mark_chain_as_split(parent, [c for c in children])
 
     logger.info(
-        "Migrated %d events from parent %s to %d children",
-        events_migrated, parent, len(children)
+        "Migrated %d events (%d pending + %d committed) from parent %s to %d children",
+        events_migrated, len(pending_events), len(committed_events),
+        getattr(parent, "name", str(parent)), len(children)
     )
 
     return events_migrated, blocks_migrated
+
+
+def _get_committed_block_events(subchain: Any) -> list[Any]:
+    """Extract all events from committed blocks of a sub-chain."""
+    if hasattr(subchain, "chain"):
+        events = []
+        for block in subchain.chain:
+            if hasattr(block, "to_event_list"):
+                events.extend(block.to_event_list())
+            elif hasattr(block, "events"):
+                events.extend(block.events)
+        return events
+    return []
 
 
 def _select_target_child_for_rebalancer(

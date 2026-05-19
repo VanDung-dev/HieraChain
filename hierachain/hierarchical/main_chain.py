@@ -23,6 +23,17 @@ from hierachain.security.verify.zk_verifier import ZKVerifier, ZKVerificationErr
 logger = logging.getLogger(__name__)
 
 
+def _is_valid_hash_format(hash_str: str) -> bool:
+    """Validate that a string is a proper SHA-256 hex digest (64 hex chars)."""
+    if not isinstance(hash_str, str) or len(hash_str) != 64:
+        return False
+    try:
+        int(hash_str, 16)
+        return True
+    except (ValueError, TypeError):
+        return False
+
+
 def _find_proof_in_events(
     events: list[dict[str, Any]], proof_hash: str, sub_chain_name: str
 ) -> bool:
@@ -383,6 +394,14 @@ class MainChain(Blockchain):
         if not validate_proof_metadata(metadata):
             logger.warning(
                 "Rejected proof: Invalid metadata from '%s'",
+                sub_chain_name,
+            )
+            return False
+
+        # Validate proof_hash is a proper SHA-256 hex digest
+        if not _is_valid_hash_format(proof_hash):
+            logger.warning(
+                "Rejected proof: Invalid proof_hash format from '%s'",
                 sub_chain_name,
             )
             return False
