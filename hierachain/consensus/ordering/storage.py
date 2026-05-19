@@ -3,15 +3,18 @@ Ordering storage handler for the HieraChain ordering service.
 """
 
 import time
+import logging
 from collections import deque
 from typing import Any
 from hierachain.core.block import Block, convert_events_to_arrow
+
+logger = logging.getLogger(__name__)
 from hierachain.storage.sql_backend import SqlStorageBackend
 from hierachain.consensus.ordering.types import PendingEvent
 
 
 def _block_from_dict(data: dict[str, Any]) -> Block:
-    """Create a Block from dictionary data without recalculating hash."""
+    """Create a Block from dictionary data with hash verification."""
     block = object.__new__(Block)
     block.index = data["index"]
     block.timestamp = data["timestamp"]
@@ -19,9 +22,18 @@ def _block_from_dict(data: dict[str, Any]) -> Block:
     block.nonce = data.get("nonce", 0)
     block.creator_id = data.get("creator_id")
     block.signature = data.get("signature")
-    block.hash = data["hash"]
     block.merkle_root = data.get("merkle_root") or ""
     block._events = convert_events_to_arrow(data["events"])
+
+    # Recompute hash and compare with stored hash
+    stored_hash = data["hash"]
+    computed_hash = block.calculate_hash()
+    if stored_hash != computed_hash:
+        logger.error(
+            "Block hash MISMATCH! index=%d stored=%s computed=%s",
+            block.index, stored_hash[:16], computed_hash[:16]
+        )
+    block.hash = stored_hash
     return block
 
 
