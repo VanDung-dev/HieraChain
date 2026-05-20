@@ -200,7 +200,7 @@ def test_add_proof_with_invalid_inputs():
     
     # Test with empty proof hash
     result = main_chain.add_proof("TestSubChain", "", {"count": 1})
-    assert result is True  # Empty string is accepted as hash
+    assert result is False  # Empty string should be rejected
     
     # Test with None metadata
     result = main_chain.add_proof("TestSubChain", "hash123", None)
@@ -237,7 +237,7 @@ def test_main_chain_performance(benchmark):
         
         # Add multiple proofs
         for i in range(1000):
-            proof_hash = f"hash{i:06d}abcdef1234567890abcdef1234567890abcdef1234567890"
+            proof_hash = f"{i:08x}".zfill(64)
             main_chain.add_proof(f"SubChain{i % 100}", proof_hash, {"count": i})
         
         # Finalize blocks
@@ -271,6 +271,6 @@ def test_main_chain_with_mock_consensus():
     mock_consensus.add_authority.assert_called()
     
     # Add a proof
-    proof_hash = "test_hash"
+    proof_hash = "a" * 64
     result = main_chain.add_proof("TestSubChain", proof_hash, {"count": 1})
     assert result is True
