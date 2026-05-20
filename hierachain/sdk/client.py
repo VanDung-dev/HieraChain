@@ -32,7 +32,7 @@ class CircuitState(Enum):
 @dataclass
 class HieraChainClientConfig:
     """Configuration for HieraChain client."""
-    base_url: str = "http://localhost:8000"
+    base_url: str = "http://localhost:2661"
     timeout: float = 30.0
     max_retries: int = 5
     initial_delay: float = 1.0
