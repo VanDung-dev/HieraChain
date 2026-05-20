@@ -9,7 +9,7 @@ Inside the `docs` directory, the documentation source code is neatly separated i
 Before testing or building the documentation locally, ensure all required dependencies are installed:
 
 ```bash
-pip install -r requirements_dev.txt
+pip install -e ".[doc]"
 ```
 
 ## Current Configuration for English (`en`)

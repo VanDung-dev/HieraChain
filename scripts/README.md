@@ -39,17 +39,10 @@ scripts/
 
 ## Prerequisites
 
-Before running scripts, ensure you have installed all dependencies:
+Before running scripts, ensure you have installed the package in development mode along with development dependencies:
 
 ```bash
-# Install core dependencies
-pip install -r requirements.txt
-
-# Install development dependencies
-pip install -r requirements_dev.txt
-
-# Install the package in development mode
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 ---

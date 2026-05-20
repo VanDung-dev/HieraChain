@@ -21,16 +21,9 @@ demo/
 
 ## Prerequisites
 
-Before running demos, ensure you have installed all dependencies:
+Before running demos, ensure you have installed the package in development mode:
 
 ```bash
-# Install core dependencies
-pip install -r requirements.txt
-
-# Install development dependencies
-pip install -r requirements_dev.txt
-
-# Install the package in development mode
 pip install -e .
 ```
 
