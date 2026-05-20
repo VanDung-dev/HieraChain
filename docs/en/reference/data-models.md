@@ -133,6 +133,30 @@ class ProofSubmissionRequest(BaseModel):
 * `details` field is always map<string,string>; non-string values will be converted to strings upon input.
 * `data` field is binary; when passing through JSON it needs base64 encoding or can be omitted if not needed.
 
+### Working with Binary Data (`data` field)
+
+Since the `data` field is defined as `binary` in the Arrow Schema, you must encode your binary payloads (such as small PDF documents, certificates, or serialized objects) to a Base64 string when sending them via JSON APIs, and decode them when receiving.
+
+**Python Example:**
+```python
+import base64
+
+# 1. Preparing binary data to send via Event
+raw_data = b"Enterprise visual quality report content"
+encoded_data = base64.b64encode(raw_data).decode('utf-8')
+
+event_payload = {
+    "entity_id": "PROD-001",
+    "event": "quality_inspection",
+    "data": encoded_data
+}
+
+# 2. Reading and decoding binary data from a Block or Event Response
+received_encoded_data = event_payload["data"]
+decoded_data = base64.b64decode(received_encoded_data)
+print(decoded_data.decode('utf-8'))  # "Enterprise visual quality report content"
+```
+
 ## Example Operations (Description)
 
 ```python

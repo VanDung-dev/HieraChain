@@ -134,6 +134,30 @@ class ProofSubmissionRequest(BaseModel):
 * Trường `details` luôn là map<string,string>; giá trị phi chuỗi sẽ được chuyển thành chuỗi khi nhập liệu.
 * Trường `data` là nhị phân; khi qua JSON cần base64 hoặc bỏ qua nếu không cần thiết.
 
+### Thao tác với Dữ liệu Nhị phân (Trường `data`)
+
+Do trường `data` được định nghĩa là `binary` trong Arrow Schema, bạn cần phải mã hóa các payload nhị phân của mình (chẳng hạn như file PDF nhỏ, chứng chỉ, hoặc các đối tượng được tuần tự hóa) thành một chuỗi Base64 khi gửi qua JSON API, và giải mã chúng ở phía nhận.
+
+**Ví dụ Python:**
+```python
+import base64
+
+# 1. Chuẩn bị dữ liệu nhị phân để gửi qua Event
+raw_data = b"Enterprise visual quality report content"
+encoded_data = base64.b64encode(raw_data).decode('utf-8')
+
+event_payload = {
+    "entity_id": "PROD-001",
+    "event": "quality_inspection",
+    "data": encoded_data
+}
+
+# 2. Đọc và giải mã dữ liệu nhị phân từ Block hoặc Event Response
+received_encoded_data = event_payload["data"]
+decoded_data = base64.b64decode(received_encoded_data)
+print(decoded_data.decode('utf-8'))  # "Enterprise visual quality report content"
+```
+
 ## Ví dụ thao tác (mô tả)
 
 ```python

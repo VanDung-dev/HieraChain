@@ -36,6 +36,23 @@ Contracts on HieraChain never go straight to production; they go through a quali
 * `DISABLED`: Emergency disable via `disable()`.
 * `ARCHIVED`: Fully archived, cannot be reactivated.
 
+```mermaid
+stateDiagram-v2
+    [*] --> DEVELOPMENT
+    DEVELOPMENT --> TESTING
+    DEVELOPMENT --> DISABLED
+    TESTING --> ACTIVE
+    TESTING --> DEVELOPMENT
+    TESTING --> DISABLED
+    ACTIVE --> DEPRECATED
+    ACTIVE --> DISABLED
+    DEPRECATED --> DISABLED
+    DEPRECATED --> ARCHIVED
+    DISABLED --> DEVELOPMENT
+    DISABLED --> ARCHIVED
+    ARCHIVED --> [*]
+```
+
 ### 3. Versioning
 
 Instead of overwriting old contracts, which would distort the blockchain history, users can easily upgrade to a new contract logic version while the system still retains `previous_versions`. This mechanism ensures network maintenance never causes **Downtime**.

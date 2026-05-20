@@ -36,6 +36,23 @@ Các hợp đồng trên HieraChain không bao giờ khởi chạy trực tiếp
 * `DISABLED`: Vô hiệu hóa khẩn cấp bằng `disable()`.
 * `ARCHIVED`: Đã cất gọn hoàn toàn, không thể kích hoạt lại.
 
+```mermaid
+stateDiagram-v2
+    [*] --> DEVELOPMENT
+    DEVELOPMENT --> TESTING
+    DEVELOPMENT --> DISABLED
+    TESTING --> ACTIVE
+    TESTING --> DEVELOPMENT
+    TESTING --> DISABLED
+    ACTIVE --> DEPRECATED
+    ACTIVE --> DISABLED
+    DEPRECATED --> DISABLED
+    DEPRECATED --> ARCHIVED
+    DISABLED --> DEVELOPMENT
+    DISABLED --> ARCHIVED
+    ARCHIVED --> [*]
+```
+
 ### 3. Nâng cấp Phiên bản (Versioning)
 
 Thay vì ghi đè lên những hợp đồng cũ, gây sai lệch lịch sử chuỗi khối, người dùng dễ dàng nâng cấp một phiên bản hợp đồng logic mới mà hệ thống vẫn lưu trữ lại `previous_versions`. Cơ chế này cho phép các hoạt động bảo trì mạng không bao giờ bị **Downtime**.
