@@ -6,19 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Hướng dẫn chi tiết thiết kế phần mềm, quản lý vòng đời và xử lý sự kiện trong DomainContract.">
+        <meta name="description" content="Tóm tắt các endpoint API v2, lược đồ chính và ví dụ lệnh curl — đồng bộ với mã nguồn hierachain/api/v2/*.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
       
       
-        <link rel="canonical" href="https://docs.hierachain.org/vi/how-to/write-domain-contracts/">
+        <link rel="canonical" href="https://docs.hierachain.org/vi/reference/api-v2/">
       
       
-        <link rel="prev" href="../add-consensus/">
+        <link rel="prev" href="../api-v1/">
       
       
-        <link rel="next" href="../use-explorer/">
+        <link rel="next" href="../api-v3/">
       
       
         
@@ -33,7 +33,7 @@
     
     
       
-        <title>Viết Hợp đồng Miền (Domain Contracts) - HieraChain Docs</title>
+        <title>API v2 - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#viet-hop-ong-mien-domain-contracts" class="md-skip">
+        <a href="#api-v2" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Viết Hợp đồng Miền (Domain Contracts)
+              API v2
             
           </span>
         </div>
@@ -352,11 +352,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../reference/code-map/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../code-map/" class="md-tabs__link">
           
   
   Tham chiếu
@@ -371,13 +373,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../integrate-web2/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../how-to/integrate-web2/" class="md-tabs__link">
           
   
   Sử dụng
@@ -2032,8 +2032,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -2061,17 +2063,20 @@
     
     
       
+        
+        
+      
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
             
   
   
@@ -2089,7 +2094,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2107,7 +2112,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/code-map/" class="md-nav__link">
+      <a href="../code-map/" class="md-nav__link">
         
   
   
@@ -2137,7 +2142,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/config/" class="md-nav__link">
+      <a href="../config/" class="md-nav__link">
         
   
   
@@ -2167,7 +2172,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/sdk-reference/" class="md-nav__link">
+      <a href="../sdk-reference/" class="md-nav__link">
         
   
   
@@ -2197,7 +2202,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/graphql-api/" class="md-nav__link">
+      <a href="../graphql-api/" class="md-nav__link">
         
   
   
@@ -2227,7 +2232,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../api-v1/" class="md-nav__link">
         
   
   
@@ -2254,10 +2259,39 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 7v2h4v2h-2a2 2 0 0 0-2 2v4h6v-2h-4v-2h2a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm3-5a10 10 0 0 1 10 10 10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    API v2
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2275,6 +2309,82 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Mục lục
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cac-thanh-phan-ma-nguon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Các thành phần Mã nguồn
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cac-endpoint-chinh-tu-ma-nguon-va-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Các Endpoint chính (từ mã nguồn và test)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vi-du-lenh-curl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ lệnh Curl
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bao-mat-cau-hinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bảo mật &amp; Cấu hình
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Liên quan
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2287,7 +2397,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../api-v3/" class="md-nav__link">
         
   
   
@@ -2317,7 +2427,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/data-models/" class="md-nav__link">
+      <a href="../data-models/" class="md-nav__link">
         
   
   
@@ -2347,7 +2457,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/data-schema/" class="md-nav__link">
+      <a href="../data-schema/" class="md-nav__link">
         
   
   
@@ -2411,10 +2521,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -2446,20 +2554,17 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2477,7 +2582,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2495,7 +2600,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../integrate-web2/" class="md-nav__link">
+      <a href="../../how-to/integrate-web2/" class="md-nav__link">
         
   
   
@@ -2525,7 +2630,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../add-domain-chain/" class="md-nav__link">
+      <a href="../../how-to/add-domain-chain/" class="md-nav__link">
         
   
   
@@ -2555,7 +2660,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../add-endpoint/" class="md-nav__link">
+      <a href="../../how-to/add-endpoint/" class="md-nav__link">
         
   
   
@@ -2585,7 +2690,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../add-websocket/" class="md-nav__link">
+      <a href="../../how-to/add-websocket/" class="md-nav__link">
         
   
   
@@ -2615,7 +2720,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../add-consensus/" class="md-nav__link">
+      <a href="../../how-to/add-consensus/" class="md-nav__link">
         
   
   
@@ -2642,39 +2747,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 2c-1.11 0-2 .89-2 2v16a2 2 0 0 0 2 2h4v-1.91L12.09 18H6v-2h8.09l2-2H6v-2h12.09L20 10.09V8l-6-6zm7 1.5L18.5 9H13zm7.15 9.5a.55.55 0 0 0-.4.16l-1.02 1.02 2.09 2.08 1.02-1.01c.21-.22.21-.58 0-.79l-1.3-1.3a.54.54 0 0 0-.39-.16m-2.01 1.77L12 20.92V23h2.08l6.15-6.15z"/></svg>
-  
-  <span class="md-ellipsis">
-    
-  
-    Viết Domain Contracts
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="././" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../how-to/write-domain-contracts/" class="md-nav__link">
         
   
   
@@ -2692,88 +2768,6 @@
   
 
       </a>
-      
-        
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Mục lục
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#hop-ong-mien" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hợp đồng Miền
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Hợp đồng Miền">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-khoi-tao-domain-contract" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Khởi tạo Domain Contract
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-quan-ly-vong-oi-lifecycle" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Quản lý Vòng đời (Lifecycle)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-nang-cap-phien-ban-versioning" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Nâng cấp Phiên bản (Versioning)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-ang-ky-bo-xu-ly-su-kien-event-handlers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Đăng ký Bộ xử lý Sự kiện (Event Handlers)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2786,7 +2780,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../use-explorer/" class="md-nav__link">
+      <a href="../../how-to/use-explorer/" class="md-nav__link">
         
   
   
@@ -2816,7 +2810,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../use-demos/" class="md-nav__link">
+      <a href="../../how-to/use-demos/" class="md-nav__link">
         
   
   
@@ -2846,7 +2840,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../secure-deployment/" class="md-nav__link">
+      <a href="../../how-to/secure-deployment/" class="md-nav__link">
         
   
   
@@ -2876,7 +2870,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../troubleshooting/" class="md-nav__link">
+      <a href="../../how-to/troubleshooting/" class="md-nav__link">
         
   
   
@@ -2906,7 +2900,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../disaster-recovery/" class="md-nav__link">
+      <a href="../../how-to/disaster-recovery/" class="md-nav__link">
         
   
   
@@ -2936,7 +2930,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cross-chain-transactions/" class="md-nav__link">
+      <a href="../../how-to/cross-chain-transactions/" class="md-nav__link">
         
   
   
@@ -3536,63 +3530,57 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#hop-ong-mien" class="md-nav__link">
+  <a href="#cac-thanh-phan-ma-nguon" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hợp đồng Miền
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Hợp đồng Miền">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-khoi-tao-domain-contract" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Khởi tạo Domain Contract
+        Các thành phần Mã nguồn
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#2-quan-ly-vong-oi-lifecycle" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#cac-endpoint-chinh-tu-ma-nguon-va-test" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Quản lý Vòng đời (Lifecycle)
+        Các Endpoint chính (từ mã nguồn và test)
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#3-nang-cap-phien-ban-versioning" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#vi-du-lenh-curl" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Nâng cấp Phiên bản (Versioning)
+        Ví dụ lệnh Curl
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#4-ang-ky-bo-xu-ly-su-kien-event-handlers" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#bao-mat-cau-hinh" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Đăng ký Bộ xử lý Sự kiện (Event Handlers)
+        Bảo mật &amp; Cấu hình
       
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Liên quan
+      
+    </span>
+  </a>
   
 </li>
       
@@ -3611,7 +3599,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/write-domain-contracts.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/reference/api-v2.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -3620,72 +3608,127 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/write-domain-contracts.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/reference/api-v2.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
   
 
 
-<h1 id="viet-hop-ong-mien-domain-contracts">Viết Hợp đồng Miền (Domain Contracts)</h1>
-<h2 id="hop-ong-mien">Hợp đồng Miền</h2>
-<p>HieraChain sử dụng hệ thống Hợp đồng Miền (Domain Contracts) linh hoạt, hỗ trợ xử lý logic nghiệp vụ một cách chuyên biệt cho từng loại dữ liệu hay sự kiện cụ thể. Hệ thống quản lý mã được định nghĩa trực tiếp trong <code>hierachain/core/domain_contract.py</code>.</p>
-<h3 id="1-khoi-tao-domain-contract">1. Khởi tạo Domain Contract</h3>
-<p>Mỗi hợp đồng cung cấp một số thuộc tính cốt lõi bao gồm định danh, phiên bản, callback thực thi và siêu dữ liệu (metadata):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.domain_contract</span><span class="w"> </span><span class="kn">import</span> <span class="n">DomainContract</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">contract</span> <span class="o">=</span> <span class="n">DomainContract</span><span class="p">(</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">contract_id</span><span class="o">=</span><span class="s2">&quot;logistics_tracker_v1&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">implementation</span><span class="o">=</span><span class="n">my_custom_logic_function</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;department&quot;</span><span class="p">:</span> <span class="s2">&quot;supply_chain&quot;</span><span class="p">}</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span>
-</code></pre></div>
-<h3 id="2-quan-ly-vong-oi-lifecycle">2. Quản lý Vòng đời (Lifecycle)</h3>
-<p>Các hợp đồng trên HieraChain không bao giờ khởi chạy trực tiếp ra ngay production mà đi qua một chu trình kiểm soát chất lượng (ContractStatus):</p>
+<h1 id="api-v2">API v2</h1>
+<p>API v2 mở rộng khả năng làm việc với các channel, dữ liệu riêng tư (private data), hợp đồng miền (domain contracts) và các tổ chức (organizations).</p>
+<h2 id="cac-thanh-phan-ma-nguon">Các thành phần Mã nguồn</h2>
 <ul>
-<li><code>DEVELOPMENT</code>: Mặc định khi vừa khởi tạo. Dành cho dev/gỡ lỗi.</li>
-<li><code>TESTING</code>: Giai đoạn QA, thử nghiệm với test data.</li>
-<li><code>ACTIVE</code>: Hợp đồng chính thức live trên mạng, được phép kích hoạt xử lý giao dịch qua <code>activate()</code>.</li>
-<li><code>DEPRECATED</code>: Đánh dấu là lỗi thời nhưng vẫn giữ để hỗ trợ khối block cũ thông qua <code>deprecate()</code>.</li>
-<li><code>DISABLED</code>: Vô hiệu hóa khẩn cấp bằng <code>disable()</code>.</li>
-<li><code>ARCHIVED</code>: Đã cất gọn hoàn toàn, không thể kích hoạt lại.</li>
+<li>Định tuyến/Endpoint: <code>hierachain/api/v2/endpoints.py</code></li>
+<li>Lược đồ dữ liệu (Tùy chọn): <code>hierachain/api/v2/schemas.py</code></li>
+<li>Tích hợp Server: <code>hierachain/api/server.py</code> (đăng ký v2 router)</li>
 </ul>
-<pre class="mermaid"><code>stateDiagram-v2
-    [*] --&gt; DEVELOPMENT
-    DEVELOPMENT --&gt; TESTING
-    DEVELOPMENT --&gt; DISABLED
-    TESTING --&gt; ACTIVE
-    TESTING --&gt; DEVELOPMENT
-    TESTING --&gt; DISABLED
-    ACTIVE --&gt; DEPRECATED
-    ACTIVE --&gt; DISABLED
-    DEPRECATED --&gt; DISABLED
-    DEPRECATED --&gt; ARCHIVED
-    DISABLED --&gt; DEVELOPMENT
-    DISABLED --&gt; ARCHIVED
-    ARCHIVED --&gt; [*]</code></pre>
-<h3 id="3-nang-cap-phien-ban-versioning">3. Nâng cấp Phiên bản (Versioning)</h3>
-<p>Thay vì ghi đè lên những hợp đồng cũ, gây sai lệch lịch sử chuỗi khối, người dùng dễ dàng nâng cấp một phiên bản hợp đồng logic mới mà hệ thống vẫn lưu trữ lại <code>previous_versions</code>. Cơ chế này cho phép các hoạt động bảo trì mạng không bao giờ bị <strong>Downtime</strong>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">contract</span><span class="o">.</span><span class="n">upgrade_to_version</span><span class="p">(</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">new_version</span><span class="o">=</span><span class="s2">&quot;1.1.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">new_implementation</span><span class="o">=</span><span class="n">optimized_logic_function</span><span class="p">,</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;upgrade_reason&quot;</span><span class="p">:</span> <span class="s2">&quot;Performance improvement&quot;</span><span class="p">}</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">)</span>
+<h2 id="cac-endpoint-chinh-tu-ma-nguon-va-test">Các Endpoint chính (từ mã nguồn và test)</h2>
+<pre class="mermaid"><code>sequenceDiagram
+    participant User as Người dùng
+    participant API as API v2
+    participant Channel as Quản lý Channel
+    participant Store as Kho Lưu trữ Riêng tư
+
+    User-&gt;&gt;API: POST /channels (Tạo)
+    API-&gt;&gt;Channel: Khởi tạo Channel
+    API--&gt;&gt;User: Channel ID
+
+    User-&gt;&gt;API: POST /channels/{id}/private-collections
+    API-&gt;&gt;Channel: Tạo Bộ sưu tập
+    API--&gt;&gt;User: OK
+
+    User-&gt;&gt;API: POST /private-data (Ghi)
+    API-&gt;&gt;Store: Lưu trữ Dữ liệu Riêng (Đã mã hóa)
+    API--&gt;&gt;User: OK
+
+    User-&gt;&gt;API: POST /contracts/execute
+    API-&gt;&gt;API: Thực thi Logic (Smart Contract)
+    API--&gt;&gt;User: Kết quả</code></pre>
+<ul>
+<li><code>GET  /api/v2/health</code> — kiểm tra trạng thái hoạt động dịch vụ (health check).</li>
+<li><code>POST /api/v2/channels</code> — tạo một channel mới.</li>
+<li><code>GET  /api/v2/channels/{channel_id}</code> — lấy thông tin channel.</li>
+<li><code>POST /api/v2/channels/{channel_id}/private-collections</code> — tạo một bộ sưu tập dữ liệu riêng tư (private data collection).</li>
+<li>
+<p><code>POST /api/v2/private-data</code> — Ghi dữ liệu riêng tư (Hỗ trợ truyền trực tiếp <code>value</code> hoặc tham chiếu qua IPFS <code>value_cid</code>).</p>
+<ul>
+<li><code>value_nonce: str | None</code></li>
+<li><code>event_metadata: dict[str, Any]</code> (Entity ID, Loại sự kiện, Dấu thời gian)</li>
+</ul>
+</li>
+<li>
+<p><code>ContractCreateRequest</code></p>
+<ul>
+<li><code>contract_id: str</code> (Định danh duy nhất)</li>
+<li><code>version: str</code> (Phiên bản ngữ nghĩa, ví dụ: "1.0.0")</li>
+<li><code>implementation: str | None</code> (Mã nguồn Python thô)</li>
+<li><code>implementation_cid: str | None</code> (Tham chiếu IPFS)</li>
+<li><code>implementation_nonce: str | None</code></li>
+<li><code>metadata: dict[str, Any]</code> (Miền, Chủ sở hữu, Chính sách xác thực - Endorsement Policy)</li>
+</ul>
+</li>
+<li>
+<p><code>POST /api/v2/contracts</code> — Đăng ký một hợp đồng (Hỗ trợ truyền mã nguồn thô qua <code>implementation</code> hoặc tham chiếu IPFS qua <code>implementation_cid</code>).</p>
+</li>
+<li><code>POST /api/v2/contracts/execute</code> — thực thi một hợp đồng miền.</li>
+<li><code>POST /api/v2/organizations</code> — đăng ký một tổ chức mới.</li>
+</ul>
+<p><em>Lưu ý bổ sung: một số kịch bản test/giám sát trong <code>tests/integration/api_v2/test_api_v2.py</code> và <code>scripts/security/*</code> sử dụng các endpoint trên để kiểm thử bảo mật và xác minh hành vi hệ thống.</em></p>
+<h2 id="vi-du-lenh-curl">Ví dụ lệnh Curl</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Kiểm tra Trạng thái</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/v2/health
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Tạo channel</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v2/channels<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;name&quot;: &quot;test_channel&quot;}&#39;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Tạo bộ sưu tập riêng tư cho channel</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span>http://localhost:2661/api/v2/channels/test_channel/private-collections<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;collection&quot;: &quot;sensitive_docs&quot;}&#39;</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="c1"># Ghi dữ liệu riêng tư</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v2/private-data<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;channel&quot;: &quot;test_channel&quot;, &quot;collection&quot;: &quot;sensitive_docs&quot;, &quot;key&quot;: &quot;doc-001&quot;, &quot;value&quot;: &quot;...&quot;}&#39;</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="c1"># Đăng ký &amp; thực thi hợp đồng miền (domain contract)</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v2/contracts<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="s1">        &quot;contract_id&quot;: &quot;quality_control&quot;, </span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="s1">        &quot;version&quot;: &quot;1.0.0&quot;,</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="s1">        &quot;implementation&quot;: &quot;def logic()...&quot;,</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="s1">        &quot;metadata&quot;: {&quot;domain&quot;: &quot;mfg&quot;}</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="s1">      }&#39;</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v2/contracts/execute<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="s1">        &quot;contract_id&quot;: &quot;quality_control&quot;, </span>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="s1">        &quot;event&quot;: {&quot;entity_id&quot;: &quot;PROD-001&quot;, &quot;event&quot;: &quot;check&quot;, &quot;details&quot;: {}},</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="s1">        &quot;context&quot;: {&quot;chain&quot;: &quot;sub_chain_1&quot;}</span>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="s1">      }&#39;</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="c1"># Đăng ký Tổ chức</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v2/organizations<span class="w"> </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;org_id&quot;: &quot;orgA&quot;, &quot;name&quot;: &quot;Org A&quot;}&#39;</span>
 </code></pre></div>
-<h3 id="4-ang-ky-bo-xu-ly-su-kien-event-handlers">4. Đăng ký Bộ xử lý Sự kiện (Event Handlers)</h3>
-<p>Giao dịch hoặc Event khi cập bến DomainContract có thể được chẻ luồng ra và gọi nhiều hàm callback khác nhau tùy thuộc vào loại <code>event_type</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">quality_check_handler</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">storage</span><span class="p">):</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="c1"># Logic đối chiếu, thay đổi storage tuỳ ý...</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;passed&quot;</span><span class="p">}</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Đăng ký handler này riêng cho event &quot;quality_inspection&quot;</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">contract</span><span class="o">.</span><span class="n">register_event_handler</span><span class="p">(</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">event_type</span><span class="o">=</span><span class="s2">&quot;quality_inspection&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">handler</span><span class="o">=</span><span class="n">quality_check_handler</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">)</span>
-</code></pre></div>
-<p>Điều này giúp tách biệt rõ ràng việc kiểm tra, đối soát và phê duyệt (approval) qua từng module riêng rẽ.</p>
+<p>Nếu bật xác thực bằng API key (trong môi trường sản xuất - production), hãy thêm header tương ứng với <code>settings.API_KEY_NAME</code> (mặc định là <code>X-API-Key</code>).</p>
+<h2 id="bao-mat-cau-hinh">Bảo mật &amp; Cấu hình</h2>
+<ul>
+<li>Xác thực API key qua <code>security/verify/api_key_verifier.py</code> (khi <code>AUTH_ENABLED=true</code>).</li>
+<li>Chính sách/Định danh/Khóa/Chứng chỉ — xem trang Hướng dẫn Bảo mật và Mô-đun Bảo mật.</li>
+<li>Cấu hình host/port và bảo mật trong <code>hierachain/config/settings.py</code>.</li>
+</ul>
+<h2 id="lien-quan">Liên quan</h2>
+<ul>
+<li>API v1: <a href="../api-v1/">API v1</a></li>
+<li>Kiến trúc Bảo mật: <a href="../../architecture/security/">Bảo mật (chuyên sâu)</a></li>
+<li>Các mô-đun: <a href="../../modules/api/">API</a></li>
+</ul>
 
 
 
@@ -3726,7 +3769,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
         
           
-          <a href="../add-consensus/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Thêm&#x2f;Tùy biến Consensus">
+          <a href="../api-v1/" class="md-footer__link md-footer__link--prev" aria-label="Trước: API v1">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -3736,20 +3779,20 @@
                 Trước
               </span>
               <div class="md-ellipsis">
-                Thêm/Tùy biến Consensus
+                API v1
               </div>
             </div>
           </a>
         
         
           
-          <a href="../use-explorer/" class="md-footer__link md-footer__link--next" aria-label="Sau: Sử dụng Explorer">
+          <a href="../api-v3/" class="md-footer__link md-footer__link--next" aria-label="Sau: API v3">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Sau
               </span>
               <div class="md-ellipsis">
-                Sử dụng Explorer
+                API v3
               </div>
             </div>
             <div class="md-footer__button md-icon">

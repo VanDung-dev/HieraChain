@@ -6,19 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Hướng dẫn chi tiết thiết kế phần mềm, quản lý vòng đời và xử lý sự kiện trong DomainContract.">
+        <meta name="description" content="Hướng dẫn kết nối thời gian thực với HieraChain qua giao thức WebSocket: đăng ký sự kiện, nhận thông báo block mới và các ví dụ mã nguồn client.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
       
       
-        <link rel="canonical" href="https://docs.hierachain.org/vi/how-to/write-domain-contracts/">
+        <link rel="canonical" href="https://docs.hierachain.org/vi/how-to/add-websocket/">
       
       
-        <link rel="prev" href="../add-consensus/">
+        <link rel="prev" href="../add-endpoint/">
       
       
-        <link rel="next" href="../use-explorer/">
+        <link rel="next" href="../add-consensus/">
       
       
         
@@ -33,7 +33,7 @@
     
     
       
-        <title>Viết Hợp đồng Miền (Domain Contracts) - HieraChain Docs</title>
+        <title>Sử dụng WebSocket - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#viet-hop-ong-mien-domain-contracts" class="md-skip">
+        <a href="#su-dung-websocket" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Viết Hợp đồng Miền (Domain Contracts)
+              Sử dụng WebSocket
             
           </span>
         </div>
@@ -2582,10 +2582,39 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../add-websocket/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.4 7.5c.8.8.8 2.1 0 2.8l-2.8 2.8-7.8-7.8 2.8-2.8c.8-.8 2.1-.8 2.8 0l1.8 1.8 3-3 1.4 1.4-3 3zm-5.8 5.8-1.4-1.4-2.8 2.8-2.1-2.1 2.8-2.8-1.4-1.4-2.8 2.8-1.5-1.4-2.8 2.8c-.8.8-.8 2.1 0 2.8l1.8 1.8-4 4 1.4 1.4 4-4 1.8 1.8c.8.8 2.1.8 2.8 0l2.8-2.8-1.4-1.4z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Sử dụng WebSocket
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2603,6 +2632,143 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Mục lục
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#muc-ich" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mục đích
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ket-noi-websocket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kết nối WebSocket
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Kết nối WebSocket">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ia-chi-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Địa chỉ Endpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inh-dang-tin-nhan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Định dạng Tin nhắn
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vi-du-javascript-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ: JavaScript Client
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vi-du-python-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ: Python Client
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vi-du-rust-client-tokio-tungstenite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ: Rust Client (tokio-tungstenite)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trang-thai-ket-noi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái Kết nối
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xu-ly-loi-thuong-gap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Xử lý Lỗi Thường gặp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Liên quan
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2642,39 +2808,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 2c-1.11 0-2 .89-2 2v16a2 2 0 0 0 2 2h4v-1.91L12.09 18H6v-2h8.09l2-2H6v-2h12.09L20 10.09V8l-6-6zm7 1.5L18.5 9H13zm7.15 9.5a.55.55 0 0 0-.4.16l-1.02 1.02 2.09 2.08 1.02-1.01c.21-.22.21-.58 0-.79l-1.3-1.3a.54.54 0 0 0-.39-.16m-2.01 1.77L12 20.92V23h2.08l6.15-6.15z"/></svg>
-  
-  <span class="md-ellipsis">
-    
-  
-    Viết Domain Contracts
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="././" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../write-domain-contracts/" class="md-nav__link">
         
   
   
@@ -2692,88 +2829,6 @@
   
 
       </a>
-      
-        
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Mục lục
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#hop-ong-mien" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hợp đồng Miền
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Hợp đồng Miền">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-khoi-tao-domain-contract" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Khởi tạo Domain Contract
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-quan-ly-vong-oi-lifecycle" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Quản lý Vòng đời (Lifecycle)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-nang-cap-phien-ban-versioning" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Nâng cấp Phiên bản (Versioning)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-ang-ky-bo-xu-ly-su-kien-event-handlers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Đăng ký Bộ xử lý Sự kiện (Event Handlers)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3536,22 +3591,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#hop-ong-mien" class="md-nav__link">
+  <a href="#muc-ich" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hợp đồng Miền
+        Mục đích
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Hợp đồng Miền">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ket-noi-websocket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kết nối WebSocket
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Kết nối WebSocket">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-khoi-tao-domain-contract" class="md-nav__link">
+  <a href="#ia-chi-endpoint" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Khởi tạo Domain Contract
+        Địa chỉ Endpoint
       
     </span>
   </a>
@@ -3559,32 +3625,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-quan-ly-vong-oi-lifecycle" class="md-nav__link">
+  <a href="#inh-dang-tin-nhan" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Quản lý Vòng đời (Lifecycle)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-nang-cap-phien-ban-versioning" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Nâng cấp Phiên bản (Versioning)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-ang-ky-bo-xu-ly-su-kien-event-handlers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Đăng ký Bộ xử lý Sự kiện (Event Handlers)
+        Định dạng Tin nhắn
       
     </span>
   </a>
@@ -3593,6 +3637,72 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vi-du-javascript-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ: JavaScript Client
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vi-du-python-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ: Python Client
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vi-du-rust-client-tokio-tungstenite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ: Rust Client (tokio-tungstenite)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trang-thai-ket-noi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái Kết nối
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xu-ly-loi-thuong-gap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Xử lý Lỗi Thường gặp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Liên quan
+      
+    </span>
+  </a>
   
 </li>
       
@@ -3611,7 +3721,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/write-domain-contracts.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/add-websocket.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -3620,72 +3730,217 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/write-domain-contracts.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/add-websocket.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
   
 
 
-<h1 id="viet-hop-ong-mien-domain-contracts">Viết Hợp đồng Miền (Domain Contracts)</h1>
-<h2 id="hop-ong-mien">Hợp đồng Miền</h2>
-<p>HieraChain sử dụng hệ thống Hợp đồng Miền (Domain Contracts) linh hoạt, hỗ trợ xử lý logic nghiệp vụ một cách chuyên biệt cho từng loại dữ liệu hay sự kiện cụ thể. Hệ thống quản lý mã được định nghĩa trực tiếp trong <code>hierachain/core/domain_contract.py</code>.</p>
-<h3 id="1-khoi-tao-domain-contract">1. Khởi tạo Domain Contract</h3>
-<p>Mỗi hợp đồng cung cấp một số thuộc tính cốt lõi bao gồm định danh, phiên bản, callback thực thi và siêu dữ liệu (metadata):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.domain_contract</span><span class="w"> </span><span class="kn">import</span> <span class="n">DomainContract</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">contract</span> <span class="o">=</span> <span class="n">DomainContract</span><span class="p">(</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">contract_id</span><span class="o">=</span><span class="s2">&quot;logistics_tracker_v1&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">implementation</span><span class="o">=</span><span class="n">my_custom_logic_function</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;department&quot;</span><span class="p">:</span> <span class="s2">&quot;supply_chain&quot;</span><span class="p">}</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span>
+<h1 id="su-dung-websocket">Sử dụng WebSocket</h1>
+<h2 id="muc-ich">Mục đích</h2>
+<p>Hướng dẫn kết nối thời gian thực với HieraChain thông qua giao thức WebSocket để nhận các thông báo về sự kiện và block ngay khi chúng được ghi nhận trên chuỗi.</p>
+<h2 id="ket-noi-websocket">Kết nối WebSocket</h2>
+<h3 id="ia-chi-endpoint">Địa chỉ Endpoint</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ws://localhost:2661/ws
 </code></pre></div>
-<h3 id="2-quan-ly-vong-oi-lifecycle">2. Quản lý Vòng đời (Lifecycle)</h3>
-<p>Các hợp đồng trên HieraChain không bao giờ khởi chạy trực tiếp ra ngay production mà đi qua một chu trình kiểm soát chất lượng (ContractStatus):</p>
+<p>Nếu có bật tính năng xác thực (authentication):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ws://localhost:2661/ws?token=&lt;api-key-cua-ban&gt;
+</code></pre></div></p>
+<h3 id="inh-dang-tin-nhan">Định dạng Tin nhắn</h3>
+<p>Tất cả các tin nhắn trao đổi đều ở định dạng JSON.</p>
+<p><strong>Client → Server:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Đăng ký nhận tất cả sự kiện/block từ một chuỗi cụ thể</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="p">{</span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;subscribe&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;chain_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;supply_chain&quot;</span><span class="p">}</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Đăng ký nhận một loại sự kiện cụ thể</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">{</span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;subscribe&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;chain_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;supply_chain&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;event_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;production_complete&quot;</span><span class="p">}</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1">// Hủy đăng ký nhận tin</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">{</span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;unsubscribe&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;chain_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;supply_chain&quot;</span><span class="p">}</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1">// Gửi ping để duy trì kết nối (keep-alive)</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="p">{</span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ping&quot;</span><span class="p">}</span>
+</code></pre></div>
+<p><strong>Server → Client:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Có block mới được tạo</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;new_block&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;chain_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;supply_chain&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;block_hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;height&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">}}</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1">// Có sự kiện mới được thêm vào</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;new_event&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;chain_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;supply_chain&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;entity_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;event_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">}}</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1">// Phản hồi Pong từ server</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pong&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1234567890</span><span class="p">}</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="c1">// Lỗi</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;error&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Invalid subscription&quot;</span><span class="p">}</span>
+</code></pre></div>
+<h2 id="vi-du-javascript-client">Ví dụ: JavaScript Client</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// Khởi tạo kết nối WebSocket</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kd">const</span><span class="w"> </span><span class="nx">ws</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">WebSocket</span><span class="p">(</span><span class="s1">&#39;ws://localhost:2661/ws&#39;</span><span class="p">);</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">// Xử lý khi kết nối thành công</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nx">ws</span><span class="p">.</span><span class="nx">onopen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;✅ Đã kết nối với HieraChain WebSocket&#39;</span><span class="p">);</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="c1">// Đăng ký nhận tin từ &#39;supply_chain&#39;</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="nx">ws</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;subscribe&#39;</span><span class="p">,</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="nx">chain_name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;supply_chain&#39;</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">  </span><span class="p">}));</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">  </span><span class="c1">// Hoặc đăng ký theo loại sự kiện cụ thể</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">  </span><span class="nx">ws</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">    </span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;subscribe&#39;</span><span class="p">,</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">    </span><span class="nx">chain_name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;supply_chain&#39;</span><span class="p">,</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">    </span><span class="nx">event_type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;production_complete&#39;</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">  </span><span class="p">}));</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="p">};</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="c1">// Nhận tin nhắn từ server</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="nx">ws</span><span class="p">.</span><span class="nx">onmessage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="p">);</span>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="w">  </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;new_block&#39;</span><span class="o">:</span>
+<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a><span class="w">      </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;🆕 Block mới:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">block_hash</span><span class="p">);</span>
+<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="w">      </span><span class="k">break</span><span class="p">;</span>
+<a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;new_event&#39;</span><span class="o">:</span>
+<a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="w">      </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;📝 Sự kiện mới:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">event_type</span><span class="p">);</span>
+<a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="w">      </span><span class="k">break</span><span class="p">;</span>
+<a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a><span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;pong&#39;</span><span class="o">:</span>
+<a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a><span class="w">      </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;💚 Nhận được Pong&#39;</span><span class="p">);</span>
+<a id="__codelineno-4-35" name="__codelineno-4-35" href="#__codelineno-4-35"></a><span class="w">      </span><span class="k">break</span><span class="p">;</span>
+<a id="__codelineno-4-36" name="__codelineno-4-36" href="#__codelineno-4-36"></a><span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;error&#39;</span><span class="o">:</span>
+<a id="__codelineno-4-37" name="__codelineno-4-37" href="#__codelineno-4-37"></a><span class="w">      </span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;❌ Lỗi:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="p">.</span><span class="nx">message</span><span class="p">);</span>
+<a id="__codelineno-4-38" name="__codelineno-4-38" href="#__codelineno-4-38"></a><span class="w">      </span><span class="k">break</span><span class="p">;</span>
+<a id="__codelineno-4-39" name="__codelineno-4-39" href="#__codelineno-4-39"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-4-40" name="__codelineno-4-40" href="#__codelineno-4-40"></a><span class="p">};</span>
+<a id="__codelineno-4-41" name="__codelineno-4-41" href="#__codelineno-4-41"></a>
+<a id="__codelineno-4-42" name="__codelineno-4-42" href="#__codelineno-4-42"></a><span class="c1">// Xử lý lỗi</span>
+<a id="__codelineno-4-43" name="__codelineno-4-43" href="#__codelineno-4-43"></a><span class="nx">ws</span><span class="p">.</span><span class="nx">onerror</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-44" name="__codelineno-4-44" href="#__codelineno-4-44"></a><span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;Lỗi WebSocket:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="p">);</span>
+<a id="__codelineno-4-45" name="__codelineno-4-45" href="#__codelineno-4-45"></a><span class="p">};</span>
+<a id="__codelineno-4-46" name="__codelineno-4-46" href="#__codelineno-4-46"></a>
+<a id="__codelineno-4-47" name="__codelineno-4-47" href="#__codelineno-4-47"></a><span class="c1">// Xử lý khi đóng kết nối</span>
+<a id="__codelineno-4-48" name="__codelineno-4-48" href="#__codelineno-4-48"></a><span class="nx">ws</span><span class="p">.</span><span class="nx">onclose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-49" name="__codelineno-4-49" href="#__codelineno-4-49"></a><span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;🔌 Đã ngắt kết nối&#39;</span><span class="p">);</span>
+<a id="__codelineno-4-50" name="__codelineno-4-50" href="#__codelineno-4-50"></a><span class="p">};</span>
+<a id="__codelineno-4-51" name="__codelineno-4-51" href="#__codelineno-4-51"></a>
+<a id="__codelineno-4-52" name="__codelineno-4-52" href="#__codelineno-4-52"></a><span class="c1">// Giữ kết nối: gửi ping định kỳ mỗi 30 giây</span>
+<a id="__codelineno-4-53" name="__codelineno-4-53" href="#__codelineno-4-53"></a><span class="nx">setInterval</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-54" name="__codelineno-4-54" href="#__codelineno-4-54"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">ws</span><span class="p">.</span><span class="nx">readyState</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">WebSocket</span><span class="p">.</span><span class="nx">OPEN</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-55" name="__codelineno-4-55" href="#__codelineno-4-55"></a><span class="w">    </span><span class="nx">ws</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span><span class="w"> </span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;ping&#39;</span><span class="w"> </span><span class="p">}));</span>
+<a id="__codelineno-4-56" name="__codelineno-4-56" href="#__codelineno-4-56"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-4-57" name="__codelineno-4-57" href="#__codelineno-4-57"></a><span class="p">},</span><span class="w"> </span><span class="mf">30000</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="vi-du-python-client">Ví dụ: Python Client</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">websockets</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">listen</span><span class="p">():</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">uri</span> <span class="o">=</span> <span class="s2">&quot;ws://localhost:2661/ws&quot;</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="k">async</span> <span class="k">with</span> <span class="n">websockets</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span> <span class="k">as</span> <span class="n">ws</span><span class="p">:</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>        <span class="c1"># Đăng ký nhận tin từ chuỗi</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>        <span class="k">await</span> <span class="n">ws</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>            <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;subscribe&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>            <span class="s2">&quot;chain_name&quot;</span><span class="p">:</span> <span class="s2">&quot;supply_chain&quot;</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>        <span class="p">}))</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>        <span class="c1"># Lắng nghe các tin nhắn</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>        <span class="k">async</span> <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">ws</span><span class="p">:</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;new_block&quot;</span><span class="p">:</span>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🆕 Block mới: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;block_hash&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>            <span class="k">elif</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;new_event&quot;</span><span class="p">:</span>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📝 Sự kiện mới: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;event_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>            <span class="k">elif</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;pong&quot;</span><span class="p">:</span>
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;💚 Pong&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">listen</span><span class="p">())</span>
+</code></pre></div>
+<h2 id="vi-du-rust-client-tokio-tungstenite">Ví dụ: Rust Client (tokio-tungstenite)</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">use</span><span class="w"> </span><span class="n">tokio_tungstenite</span><span class="p">::{</span><span class="n">connect_async</span><span class="p">,</span><span class="w"> </span><span class="n">tungstenite</span><span class="p">::</span><span class="n">Message</span><span class="p">};</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">use</span><span class="w"> </span><span class="n">futures_util</span><span class="p">::{</span><span class="n">StreamExt</span><span class="p">};</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="cp">#[tokio::main]</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="k">async</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nb">Result</span><span class="o">&lt;</span><span class="p">(),</span><span class="w"> </span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">std</span><span class="p">::</span><span class="n">error</span><span class="p">::</span><span class="n">Error</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ws://localhost:2661/ws&quot;</span><span class="p">;</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="p">(</span><span class="n">ws_stream</span><span class="p">,</span><span class="w"> </span><span class="n">_</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">connect_async</span><span class="p">(</span><span class="n">url</span><span class="p">).</span><span class="k">await</span><span class="o">?</span><span class="p">;</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="p">(</span><span class="k">mut</span><span class="w"> </span><span class="n">write</span><span class="p">,</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">read</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ws_stream</span><span class="p">.</span><span class="n">split</span><span class="p">();</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="c1">// Đăng ký nhận tin từ chuỗi</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">serde_json</span><span class="p">::</span><span class="n">json</span><span class="o">!</span><span class="p">({</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">        </span><span class="s">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;subscribe&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">        </span><span class="s">&quot;chain_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;supply_chain&quot;</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">    </span><span class="p">});</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">    </span><span class="n">write</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">Message</span><span class="p">::</span><span class="n">Text</span><span class="p">(</span><span class="n">msg</span><span class="p">.</span><span class="n">to_string</span><span class="p">())).</span><span class="k">await</span><span class="o">?</span><span class="p">;</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="w">    </span><span class="c1">// Lắng nghe tin nhắn</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">read</span><span class="p">.</span><span class="n">next</span><span class="p">().</span><span class="k">await</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="n">Message</span><span class="p">::</span><span class="n">Text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">msg</span><span class="o">?</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">data</span><span class="p">:</span><span class="w"> </span><span class="nc">serde_json</span><span class="p">::</span><span class="n">Value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">serde_json</span><span class="p">::</span><span class="n">from_str</span><span class="p">(</span><span class="o">&amp;</span><span class="n">text</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="w">            </span><span class="fm">println!</span><span class="p">(</span><span class="s">&quot;Received: {:?}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">);</span>
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="w">    </span><span class="nb">Ok</span><span class="p">(())</span>
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="trang-thai-ket-noi">Trạng thái Kết nối</h2>
+<p>Kiểm tra số lượng kết nối đang hoạt động:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>http://localhost:2661/ws/status
+</code></pre></div>
+<p>Phản hồi mẫu:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;total_connections&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">&quot;chains&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="nt">&quot;supply_chain&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="nt">&quot;orders&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="xu-ly-loi-thuong-gap">Xử lý Lỗi Thường gặp</h2>
+<table>
+<thead>
+<tr>
+<th>Lỗi</th>
+<th>Nguyên nhân</th>
+<th>Giải pháp</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Connection refused</td>
+<td>Server chưa chạy</td>
+<td>Chạy lệnh <code>python -m hierachain.api.server</code></td>
+</tr>
+<tr>
+<td>401 Unauthorized</td>
+<td>Thiếu token xác thực</td>
+<td>Thêm tham số <code>?token=&lt;api_key&gt;</code> vào URL</td>
+</tr>
+<tr>
+<td>Không nhận được tin nhắn</td>
+<td>Chưa đăng ký chuỗi</td>
+<td>Cần gửi tin nhắn subscribe trước tiên</td>
+</tr>
+<tr>
+<td>Ngắt kết nối đột ngột</td>
+<td>Server khởi động lại</td>
+<td>Tự động kết nối lại ở phía client</td>
+</tr>
+</tbody>
+</table>
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><code>DEVELOPMENT</code>: Mặc định khi vừa khởi tạo. Dành cho dev/gỡ lỗi.</li>
-<li><code>TESTING</code>: Giai đoạn QA, thử nghiệm với test data.</li>
-<li><code>ACTIVE</code>: Hợp đồng chính thức live trên mạng, được phép kích hoạt xử lý giao dịch qua <code>activate()</code>.</li>
-<li><code>DEPRECATED</code>: Đánh dấu là lỗi thời nhưng vẫn giữ để hỗ trợ khối block cũ thông qua <code>deprecate()</code>.</li>
-<li><code>DISABLED</code>: Vô hiệu hóa khẩn cấp bằng <code>disable()</code>.</li>
-<li><code>ARCHIVED</code>: Đã cất gọn hoàn toàn, không thể kích hoạt lại.</li>
+<li>API Module: <a href="../../modules/api/">API</a></li>
+<li>Tài liệu API v1: <a href="../../reference/api-v1/">API v1</a></li>
+<li>Mã nguồn WebSocket: <code>hierachain/api/websocket_manager.py</code>, <code>hierachain/api/websocket_endpoints.py</code></li>
 </ul>
-<pre class="mermaid"><code>stateDiagram-v2
-    [*] --&gt; DEVELOPMENT
-    DEVELOPMENT --&gt; TESTING
-    DEVELOPMENT --&gt; DISABLED
-    TESTING --&gt; ACTIVE
-    TESTING --&gt; DEVELOPMENT
-    TESTING --&gt; DISABLED
-    ACTIVE --&gt; DEPRECATED
-    ACTIVE --&gt; DISABLED
-    DEPRECATED --&gt; DISABLED
-    DEPRECATED --&gt; ARCHIVED
-    DISABLED --&gt; DEVELOPMENT
-    DISABLED --&gt; ARCHIVED
-    ARCHIVED --&gt; [*]</code></pre>
-<h3 id="3-nang-cap-phien-ban-versioning">3. Nâng cấp Phiên bản (Versioning)</h3>
-<p>Thay vì ghi đè lên những hợp đồng cũ, gây sai lệch lịch sử chuỗi khối, người dùng dễ dàng nâng cấp một phiên bản hợp đồng logic mới mà hệ thống vẫn lưu trữ lại <code>previous_versions</code>. Cơ chế này cho phép các hoạt động bảo trì mạng không bao giờ bị <strong>Downtime</strong>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">contract</span><span class="o">.</span><span class="n">upgrade_to_version</span><span class="p">(</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">new_version</span><span class="o">=</span><span class="s2">&quot;1.1.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">new_implementation</span><span class="o">=</span><span class="n">optimized_logic_function</span><span class="p">,</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;upgrade_reason&quot;</span><span class="p">:</span> <span class="s2">&quot;Performance improvement&quot;</span><span class="p">}</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">)</span>
-</code></pre></div>
-<h3 id="4-ang-ky-bo-xu-ly-su-kien-event-handlers">4. Đăng ký Bộ xử lý Sự kiện (Event Handlers)</h3>
-<p>Giao dịch hoặc Event khi cập bến DomainContract có thể được chẻ luồng ra và gọi nhiều hàm callback khác nhau tùy thuộc vào loại <code>event_type</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">quality_check_handler</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">storage</span><span class="p">):</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="c1"># Logic đối chiếu, thay đổi storage tuỳ ý...</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;passed&quot;</span><span class="p">}</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Đăng ký handler này riêng cho event &quot;quality_inspection&quot;</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">contract</span><span class="o">.</span><span class="n">register_event_handler</span><span class="p">(</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">event_type</span><span class="o">=</span><span class="s2">&quot;quality_inspection&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">handler</span><span class="o">=</span><span class="n">quality_check_handler</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">)</span>
-</code></pre></div>
-<p>Điều này giúp tách biệt rõ ràng việc kiểm tra, đối soát và phê duyệt (approval) qua từng module riêng rẽ.</p>
 
 
 
@@ -3726,7 +3981,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
         
           
-          <a href="../add-consensus/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Thêm&#x2f;Tùy biến Consensus">
+          <a href="../add-endpoint/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Thêm Endpoint">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -3736,20 +3991,20 @@
                 Trước
               </span>
               <div class="md-ellipsis">
-                Thêm/Tùy biến Consensus
+                Thêm Endpoint
               </div>
             </div>
           </a>
         
         
           
-          <a href="../use-explorer/" class="md-footer__link md-footer__link--next" aria-label="Sau: Sử dụng Explorer">
+          <a href="../add-consensus/" class="md-footer__link md-footer__link--next" aria-label="Sau: Thêm&#x2f;Tùy biến Consensus">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Sau
               </span>
               <div class="md-ellipsis">
-                Sử dụng Explorer
+                Thêm/Tùy biến Consensus
               </div>
             </div>
             <div class="md-footer__button md-icon">

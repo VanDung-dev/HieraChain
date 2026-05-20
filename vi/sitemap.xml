@@ -133,6 +133,9 @@
         <loc>https://docs.hierachain.org/vi/reference/api-v1/</loc>
       </url>
       <url>
+        <loc>https://docs.hierachain.org/vi/reference/api-v2/</loc>
+      </url>
+      <url>
         <loc>https://docs.hierachain.org/vi/reference/api-v3/</loc>
       </url>
       <url>
@@ -145,10 +148,16 @@
         <loc>https://docs.hierachain.org/vi/glossary/</loc>
       </url>
       <url>
+        <loc>https://docs.hierachain.org/vi/how-to/integrate-web2/</loc>
+      </url>
+      <url>
         <loc>https://docs.hierachain.org/vi/how-to/add-domain-chain/</loc>
       </url>
       <url>
         <loc>https://docs.hierachain.org/vi/how-to/add-endpoint/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/how-to/add-websocket/</loc>
       </url>
       <url>
         <loc>https://docs.hierachain.org/vi/how-to/add-consensus/</loc>
@@ -188,6 +197,9 @@
       </url>
       <url>
         <loc>https://docs.hierachain.org/vi/dev/contributing/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/dev/testing/</loc>
       </url>
       <url>
         <loc>https://docs.hierachain.org/vi/dev/release-process/</loc>

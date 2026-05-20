@@ -6,19 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Hướng dẫn chi tiết thiết kế phần mềm, quản lý vòng đời và xử lý sự kiện trong DomainContract.">
+        <meta name="description" content="Hướng dẫn tích hợp ứng dụng Web2, hệ thống Legacy và ERP với HieraChain thông qua REST API và SDK.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
       
       
-        <link rel="canonical" href="https://docs.hierachain.org/vi/how-to/write-domain-contracts/">
+        <link rel="canonical" href="https://docs.hierachain.org/vi/how-to/integrate-web2/">
       
       
-        <link rel="prev" href="../add-consensus/">
+        <link rel="prev" href="../../glossary/">
       
       
-        <link rel="next" href="../use-explorer/">
+        <link rel="next" href="../add-domain-chain/">
       
       
         
@@ -33,7 +33,7 @@
     
     
       
-        <title>Viết Hợp đồng Miền (Domain Contracts) - HieraChain Docs</title>
+        <title>Tích hợp Web2 & Hệ thống Hiện hữu - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#viet-hop-ong-mien-domain-contracts" class="md-skip">
+        <a href="#tich-hop-web2-he-thong-hien-huu" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Viết Hợp đồng Miền (Domain Contracts)
+              Tích hợp Web2 & Hệ thống Hiện hữu
             
           </span>
         </div>
@@ -377,7 +377,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../integrate-web2/" class="md-tabs__link">
+        <a href="././" class="md-tabs__link">
           
   
   Sử dụng
@@ -2492,10 +2492,39 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../integrate-web2/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2m-5.15 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56M14.34 14H9.66c-.1-.66-.16-1.32-.16-2s.06-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2M12 19.96c-.83-1.2-1.5-2.53-1.91-3.96h3.82c-.41 1.43-1.08 2.76-1.91 3.96M8 8H5.08A7.92 7.92 0 0 1 9.4 4.44C8.8 5.55 8.35 6.75 8 8m-2.92 8H8c.35 1.25.8 2.45 1.4 3.56A8 8 0 0 1 5.08 16m-.82-2C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2M12 4.03c.83 1.2 1.5 2.54 1.91 3.97h-3.82c.41-1.43 1.08-2.77 1.91-3.97M18.92 8h-2.95a15.7 15.7 0 0 0-1.38-3.56c1.84.63 3.37 1.9 4.33 3.56M12 2C6.47 2 2 6.5 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Tích hợp vào Web2
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2513,6 +2542,143 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Mục lục
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#muc-ich" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mục đích
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mo-hinh-tich-hop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mô hình Tích hợp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cach-1-su-dung-rest-api-khuyen-dung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cách 1: Sử dụng REST API (Khuyên dùng)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cách 1: Sử dụng REST API (Khuyên dùng)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kich-ban" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kịch bản
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vi-du-trien-khai-pythonrequests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ Triển khai (Python/Requests)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vi-du-trien-khai-javascriptfetch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ví dụ Triển khai (JavaScript/Fetch)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cach-2-su-dung-sdk-tich-hop-python-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cách 2: Sử dụng SDK Tích hợp (Python Backend)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cach-3-erp-adapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cách 3: ERP Adapter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#luu-y-quan-trong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lưu ý Quan trọng
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Liên quan
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2642,39 +2808,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 2c-1.11 0-2 .89-2 2v16a2 2 0 0 0 2 2h4v-1.91L12.09 18H6v-2h8.09l2-2H6v-2h12.09L20 10.09V8l-6-6zm7 1.5L18.5 9H13zm7.15 9.5a.55.55 0 0 0-.4.16l-1.02 1.02 2.09 2.08 1.02-1.01c.21-.22.21-.58 0-.79l-1.3-1.3a.54.54 0 0 0-.39-.16m-2.01 1.77L12 20.92V23h2.08l6.15-6.15z"/></svg>
-  
-  <span class="md-ellipsis">
-    
-  
-    Viết Domain Contracts
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="././" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../write-domain-contracts/" class="md-nav__link">
         
   
   
@@ -2692,88 +2829,6 @@
   
 
       </a>
-      
-        
-
-
-<nav class="md-nav md-nav--secondary" aria-label="Mục lục">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Mục lục
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#hop-ong-mien" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hợp đồng Miền
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Hợp đồng Miền">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-khoi-tao-domain-contract" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Khởi tạo Domain Contract
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-quan-ly-vong-oi-lifecycle" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Quản lý Vòng đời (Lifecycle)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-nang-cap-phien-ban-versioning" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Nâng cấp Phiên bản (Versioning)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-ang-ky-bo-xu-ly-su-kien-event-handlers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Đăng ký Bộ xử lý Sự kiện (Event Handlers)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3536,22 +3591,44 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#hop-ong-mien" class="md-nav__link">
+  <a href="#muc-ich" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hợp đồng Miền
+        Mục đích
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Hợp đồng Miền">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mo-hinh-tich-hop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mô hình Tích hợp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cach-1-su-dung-rest-api-khuyen-dung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cách 1: Sử dụng REST API (Khuyên dùng)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cách 1: Sử dụng REST API (Khuyên dùng)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-khoi-tao-domain-contract" class="md-nav__link">
+  <a href="#kich-ban" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Khởi tạo Domain Contract
+        Kịch bản
       
     </span>
   </a>
@@ -3559,10 +3636,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-quan-ly-vong-oi-lifecycle" class="md-nav__link">
+  <a href="#vi-du-trien-khai-pythonrequests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Quản lý Vòng đời (Lifecycle)
+        Ví dụ Triển khai (Python/Requests)
       
     </span>
   </a>
@@ -3570,21 +3647,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-nang-cap-phien-ban-versioning" class="md-nav__link">
+  <a href="#vi-du-trien-khai-javascriptfetch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Nâng cấp Phiên bản (Versioning)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-ang-ky-bo-xu-ly-su-kien-event-handlers" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Đăng ký Bộ xử lý Sự kiện (Event Handlers)
+        Ví dụ Triển khai (JavaScript/Fetch)
       
     </span>
   </a>
@@ -3593,6 +3659,50 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cach-2-su-dung-sdk-tich-hop-python-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cách 2: Sử dụng SDK Tích hợp (Python Backend)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cach-3-erp-adapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cách 3: ERP Adapter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#luu-y-quan-trong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lưu ý Quan trọng
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Liên quan
+      
+    </span>
+  </a>
   
 </li>
       
@@ -3611,7 +3721,7 @@
                 
                   
   
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/write-domain-contracts.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/integrate-web2.md" title="Chỉnh sửa" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
@@ -3620,72 +3730,159 @@
     
       
     
-    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/write-domain-contracts.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
+    <a href="https://github.com/VanDung-dev/HieraChain/tree/main/docs/vi/how-to/integrate-web2.md" title="Xem mã nguồn của trang" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-code-2" viewBox="0 0 24 24"><path d="M4 12.15V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5M5 16l-3 3 3 3M9 22l3-3-3-3"/></svg>
     </a>
   
 
 
-<h1 id="viet-hop-ong-mien-domain-contracts">Viết Hợp đồng Miền (Domain Contracts)</h1>
-<h2 id="hop-ong-mien">Hợp đồng Miền</h2>
-<p>HieraChain sử dụng hệ thống Hợp đồng Miền (Domain Contracts) linh hoạt, hỗ trợ xử lý logic nghiệp vụ một cách chuyên biệt cho từng loại dữ liệu hay sự kiện cụ thể. Hệ thống quản lý mã được định nghĩa trực tiếp trong <code>hierachain/core/domain_contract.py</code>.</p>
-<h3 id="1-khoi-tao-domain-contract">1. Khởi tạo Domain Contract</h3>
-<p>Mỗi hợp đồng cung cấp một số thuộc tính cốt lõi bao gồm định danh, phiên bản, callback thực thi và siêu dữ liệu (metadata):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.domain_contract</span><span class="w"> </span><span class="kn">import</span> <span class="n">DomainContract</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">contract</span> <span class="o">=</span> <span class="n">DomainContract</span><span class="p">(</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">contract_id</span><span class="o">=</span><span class="s2">&quot;logistics_tracker_v1&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">implementation</span><span class="o">=</span><span class="n">my_custom_logic_function</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;department&quot;</span><span class="p">:</span> <span class="s2">&quot;supply_chain&quot;</span><span class="p">}</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span>
+<h1 id="tich-hop-web2-he-thong-hien-huu">Tích hợp Web2 &amp; Hệ thống Hiện hữu</h1>
+<h2 id="muc-ich">Mục đích</h2>
+<p>Hướng dẫn các mô hình kết nối ứng dụng Web2 truyền thống (Node.js, Java, PHP, v.v.) hoặc các hệ thống ERP hiện hữu với mạng lưới HieraChain.</p>
+<h2 id="mo-hinh-tich-hop">Mô hình Tích hợp</h2>
+<p>Có 3 mô hình tích hợp chính:</p>
+<ol>
+<li><strong>REST API (Liên kết lỏng - Loose Coupling)</strong>: Phổ biến nhất, được dùng cho Ứng dụng Web/Mobile.</li>
+<li><strong>Integration SDK (Hiệu năng cao)</strong>: Dùng cho các dịch vụ backend viết bằng Python cần hiệu năng cao.</li>
+<li><strong>ERP Adapter (Doanh nghiệp)</strong>: Dùng cho các hệ thống ERP (SAP, Oracle) yêu cầu đồng bộ hóa dữ liệu định kỳ.</li>
+</ol>
+<pre class="mermaid"><code>graph TD
+    Web2[Ứng dụng Web2 / Frontend] --&gt;|REST HTTP| API[API HieraChain]
+    Legacy[Hệ thống cũ / Legacy] --&gt;|Adapter| SDK[SDK Tích hợp]
+    ERP[Hệ thống ERP] --&gt;|Pull/Push| Adapter
+
+    API --&gt; Core[Hệ thống lõi HieraChain]
+    SDK --&gt; Core</code></pre>
+<h2 id="cach-1-su-dung-rest-api-khuyen-dung">Cách 1: Sử dụng REST API (Khuyên dùng)</h2>
+<p>Đây là phương thức đơn giản nhất, sử dụng giao thức HTTP tiêu chuẩn.</p>
+<h3 id="kich-ban">Kịch bản</h3>
+<p>Bạn có một Website Thương mại điện tử (Node.js/React) và muốn ghi nhận thông tin truy xuất nguồn gốc sản phẩm lên HieraChain khi một đơn hàng hoàn thành.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Web as Ứng dụng Web2 (Node/React)
+    participant API as API HieraChain
+    participant Sub as Sub-Chain (Đơn hàng)
+
+    Web-&gt;&gt;API: POST /chains/orders/events
+    Note right of Web: Payload: {order_id, items...}
+    API-&gt;&gt;API: Xác thực API Key
+    API-&gt;&gt;Sub: Ghi nhận sự kiện (Thêm sự kiện)
+    Sub--&gt;&gt;API: Trả về Event ID
+    API--&gt;&gt;Web: 200 OK (Event ID)</code></pre>
+<h3 id="vi-du-trien-khai-pythonrequests">Ví dụ Triển khai (Python/Requests)</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">API_URL</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:2661/api/v1&quot;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">API_KEY</span> <span class="o">=</span> <span class="s2">&quot;your-api-key-here&quot;</span>  <span class="c1"># Nếu có bật xác thực API Key</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">log_order_to_chain</span><span class="p">(</span><span class="n">order_id</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="c1"># 1. Tạo Sub-Chain cho đơn hàng (hoặc dùng chung chuỗi &#39;orders&#39; đã có)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="c1"># Giả định dùng chung chuỗi &#39;orders&#39;</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="c1"># 2. Gửi sự kiện</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="s2">&quot;entity_id&quot;</span><span class="p">:</span> <span class="n">order_id</span><span class="p">,</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;order_completed&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>            <span class="s2">&quot;items_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">),</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>            <span class="s2">&quot;total_value&quot;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;price&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">)</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>        <span class="p">}</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="p">}</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>        <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>        <span class="s2">&quot;X-API-Key&quot;</span><span class="p">:</span> <span class="n">API_KEY</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>    <span class="p">}</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">API_URL</span><span class="si">}</span><span class="s2">/chains/orders/events&quot;</span><span class="p">,</span> 
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>            <span class="n">json</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span> 
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>            <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>            <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>        <span class="p">)</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>        <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Thành công: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event_id&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>    <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Lỗi khi lưu vào blockchain: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>        <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div>
-<h3 id="2-quan-ly-vong-oi-lifecycle">2. Quản lý Vòng đời (Lifecycle)</h3>
-<p>Các hợp đồng trên HieraChain không bao giờ khởi chạy trực tiếp ra ngay production mà đi qua một chu trình kiểm soát chất lượng (ContractStatus):</p>
+<h3 id="vi-du-trien-khai-javascriptfetch">Ví dụ Triển khai (JavaScript/Fetch)</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">API_URL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/v1&quot;</span><span class="p">;</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">logOrder</span><span class="p">(</span><span class="nx">orderId</span><span class="p">,</span><span class="w"> </span><span class="nx">items</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">API_URL</span><span class="si">}</span><span class="sb">/chains/orders/events`</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nx">method</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;POST&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">      </span><span class="nx">headers</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">        </span><span class="s2">&quot;Content-Type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="c1">// &quot;X-API-Key&quot;: &quot;your-key&quot;</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">      </span><span class="p">},</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">      </span><span class="nx">body</span><span class="o">:</span><span class="w"> </span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="nx">entity_id</span><span class="o">:</span><span class="w"> </span><span class="nx">orderId</span><span class="p">,</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="nx">event_type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;order_completed&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">        </span><span class="nx">details</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">count</span><span class="o">:</span><span class="w"> </span><span class="nx">items</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">      </span><span class="p">})</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">    </span><span class="p">});</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="sb">`Lỗi HTTP! Trạng thái: </span><span class="si">${</span><span class="nx">response</span><span class="p">.</span><span class="nx">status</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Đã ghi nhận sự kiện:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">result</span><span class="p">.</span><span class="nx">event_id</span><span class="p">);</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">.</span><span class="nx">event_id</span><span class="p">;</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s2">&quot;Lỗi tích hợp Blockchain:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="p">);</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="cach-2-su-dung-sdk-tich-hop-python-backend">Cách 2: Sử dụng SDK Tích hợp (Python Backend)</h2>
+<p>Nếu bạn đang xây dựng một dịch vụ Python trong cùng mạng nội bộ hoặc cluster, việc sử dụng trực tiếp SDK sẽ mang lại hiệu năng cao hơn (bỏ qua hao phí xử lý HTTP).</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Service as Dịch vụ Python
+    participant Manager as HierarchyManager
+    participant Sub as Sub-Chain
+    participant Main as Main Chain
+
+    Service-&gt;&gt;Manager: start_operation(sub_chain, data)
+    Manager-&gt;&gt;Sub: Ghi nhận sự kiện &amp; Đóng Block
+    Service-&gt;&gt;Manager: submit_proof_to_main_chain()
+    Manager-&gt;&gt;Sub: Lấy Proof
+    Manager-&gt;&gt;Main: Gửi Proof (Dữ liệu Neo - Anchor)
+    Main--&gt;&gt;Manager: Xác nhận (Ack)</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.hierarchical</span><span class="w"> </span><span class="kn">import</span> <span class="n">HierarchyManager</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Khởi tạo manager (kết nối trực tiếp tới DB hoặc qua ZMQ nội bộ)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">HierarchyManager</span><span class="p">()</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">process_batch_data</span><span class="p">(</span><span class="n">batch_items</span><span class="p">):</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="c1"># Ghi trực tiếp vào hàng đợi xử lý</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">batch_items</span><span class="p">:</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="n">manager</span><span class="o">.</span><span class="n">start_operation</span><span class="p">(</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>            <span class="n">sub_chain_name</span><span class="o">=</span><span class="s2">&quot;supply_chain&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>            <span class="n">entity_id</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>            <span class="n">operation_type</span><span class="o">=</span><span class="s2">&quot;ingest&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>            <span class="n">details</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">]</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>        <span class="p">)</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="c1"># Kích hoạt gửi proof ngay lập tức lên Main Chain (tùy chọn)</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">manager</span><span class="o">.</span><span class="n">submit_proof_to_main_chain</span><span class="p">(</span><span class="s2">&quot;supply_chain&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="cach-3-erp-adapter">Cách 3: ERP Adapter</h2>
+<p>Sử dụng sổ cái tích hợp <code>hierachain/integration</code> để xây dựng các adapter đồng bộ dữ liệu hai chiều.</p>
+<p>Xem chi tiết tại: <a href="../../modules/integration/">Mô-đun Tích hợp</a>.</p>
+<h2 id="luu-y-quan-trong">Lưu ý Quan trọng</h2>
+<ol>
+<li><strong>Bảo mật</strong>: Luôn luôn sử dụng HTTPS và API Key (hoặc OAuth nếu triển khai tùy biến) khi kết nối qua mạng công cộng.</li>
+<li><strong>Bất đồng bộ (Asynchronous)</strong>: Tác vụ ghi lên Blockchain có thể chậm hơn ghi DB thông thường. Hãy sử dụng hàng đợi tin nhắn (ví dụ: RabbitMQ, Kafka) ở phía ứng dụng Web2 để gửi yêu cầu đến các worker HieraChain, tránh làm nghẽn giao diện người dùng.</li>
+<li><strong>Xử lý lỗi</strong>: Thiết kế cơ chế Thử lại (Retry) phòng trường hợp API HieraChain tạm thời không phản hồi (lỗi 503, timeout).</li>
+</ol>
+<h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><code>DEVELOPMENT</code>: Mặc định khi vừa khởi tạo. Dành cho dev/gỡ lỗi.</li>
-<li><code>TESTING</code>: Giai đoạn QA, thử nghiệm với test data.</li>
-<li><code>ACTIVE</code>: Hợp đồng chính thức live trên mạng, được phép kích hoạt xử lý giao dịch qua <code>activate()</code>.</li>
-<li><code>DEPRECATED</code>: Đánh dấu là lỗi thời nhưng vẫn giữ để hỗ trợ khối block cũ thông qua <code>deprecate()</code>.</li>
-<li><code>DISABLED</code>: Vô hiệu hóa khẩn cấp bằng <code>disable()</code>.</li>
-<li><code>ARCHIVED</code>: Đã cất gọn hoàn toàn, không thể kích hoạt lại.</li>
+<li>Tài liệu API v1: <a href="../../reference/api-v1/">API v1</a></li>
+<li>Mô-đun Tích hợp: <a href="../../modules/integration/">Integration</a></li>
 </ul>
-<pre class="mermaid"><code>stateDiagram-v2
-    [*] --&gt; DEVELOPMENT
-    DEVELOPMENT --&gt; TESTING
-    DEVELOPMENT --&gt; DISABLED
-    TESTING --&gt; ACTIVE
-    TESTING --&gt; DEVELOPMENT
-    TESTING --&gt; DISABLED
-    ACTIVE --&gt; DEPRECATED
-    ACTIVE --&gt; DISABLED
-    DEPRECATED --&gt; DISABLED
-    DEPRECATED --&gt; ARCHIVED
-    DISABLED --&gt; DEVELOPMENT
-    DISABLED --&gt; ARCHIVED
-    ARCHIVED --&gt; [*]</code></pre>
-<h3 id="3-nang-cap-phien-ban-versioning">3. Nâng cấp Phiên bản (Versioning)</h3>
-<p>Thay vì ghi đè lên những hợp đồng cũ, gây sai lệch lịch sử chuỗi khối, người dùng dễ dàng nâng cấp một phiên bản hợp đồng logic mới mà hệ thống vẫn lưu trữ lại <code>previous_versions</code>. Cơ chế này cho phép các hoạt động bảo trì mạng không bao giờ bị <strong>Downtime</strong>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">contract</span><span class="o">.</span><span class="n">upgrade_to_version</span><span class="p">(</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">new_version</span><span class="o">=</span><span class="s2">&quot;1.1.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">new_implementation</span><span class="o">=</span><span class="n">optimized_logic_function</span><span class="p">,</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;upgrade_reason&quot;</span><span class="p">:</span> <span class="s2">&quot;Performance improvement&quot;</span><span class="p">}</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">)</span>
-</code></pre></div>
-<h3 id="4-ang-ky-bo-xu-ly-su-kien-event-handlers">4. Đăng ký Bộ xử lý Sự kiện (Event Handlers)</h3>
-<p>Giao dịch hoặc Event khi cập bến DomainContract có thể được chẻ luồng ra và gọi nhiều hàm callback khác nhau tùy thuộc vào loại <code>event_type</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">quality_check_handler</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">storage</span><span class="p">):</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="c1"># Logic đối chiếu, thay đổi storage tuỳ ý...</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;passed&quot;</span><span class="p">}</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Đăng ký handler này riêng cho event &quot;quality_inspection&quot;</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">contract</span><span class="o">.</span><span class="n">register_event_handler</span><span class="p">(</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">event_type</span><span class="o">=</span><span class="s2">&quot;quality_inspection&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">handler</span><span class="o">=</span><span class="n">quality_check_handler</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">)</span>
-</code></pre></div>
-<p>Điều này giúp tách biệt rõ ràng việc kiểm tra, đối soát và phê duyệt (approval) qua từng module riêng rẽ.</p>
 
 
 
@@ -3726,7 +3923,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Chân trang" >
         
           
-          <a href="../add-consensus/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Thêm&#x2f;Tùy biến Consensus">
+          <a href="../../glossary/" class="md-footer__link md-footer__link--prev" aria-label="Trước: Thuật ngữ">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -3736,20 +3933,20 @@
                 Trước
               </span>
               <div class="md-ellipsis">
-                Thêm/Tùy biến Consensus
+                Thuật ngữ
               </div>
             </div>
           </a>
         
         
           
-          <a href="../use-explorer/" class="md-footer__link md-footer__link--next" aria-label="Sau: Sử dụng Explorer">
+          <a href="../add-domain-chain/" class="md-footer__link md-footer__link--next" aria-label="Sau: Tạo Sub-Chain">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Sau
               </span>
               <div class="md-ellipsis">
-                Sử dụng Explorer
+                Tạo Sub-Chain
               </div>
             </div>
             <div class="md-footer__button md-icon">

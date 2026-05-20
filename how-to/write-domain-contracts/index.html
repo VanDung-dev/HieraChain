@@ -3651,6 +3651,20 @@
 <li><code>DISABLED</code>: Emergency disable via <code>disable()</code>.</li>
 <li><code>ARCHIVED</code>: Fully archived, cannot be reactivated.</li>
 </ul>
+<pre class="mermaid"><code>stateDiagram-v2
+    [*] --&gt; DEVELOPMENT
+    DEVELOPMENT --&gt; TESTING
+    DEVELOPMENT --&gt; DISABLED
+    TESTING --&gt; ACTIVE
+    TESTING --&gt; DEVELOPMENT
+    TESTING --&gt; DISABLED
+    ACTIVE --&gt; DEPRECATED
+    ACTIVE --&gt; DISABLED
+    DEPRECATED --&gt; DISABLED
+    DEPRECATED --&gt; ARCHIVED
+    DISABLED --&gt; DEVELOPMENT
+    DISABLED --&gt; ARCHIVED
+    ARCHIVED --&gt; [*]</code></pre>
 <h3 id="3-versioning">3. Versioning</h3>
 <p>Instead of overwriting old contracts, which would distort the blockchain history, users can easily upgrade to a new contract logic version while the system still retains <code>previous_versions</code>. This mechanism ensures network maintenance never causes <strong>Downtime</strong>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">contract</span><span class="o">.</span><span class="n">upgrade_to_version</span><span class="p">(</span>
