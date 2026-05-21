@@ -31,6 +31,60 @@
         <loc>https://docs.hierachain.org/architecture/zk-proofs/</loc>
       </url>
       <url>
+        <loc>https://docs.hierachain.org/workflows/overview/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/consensus_mechanisms/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/event-submission/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/proof-anchoring/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/cross-chain-2pc/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/bft-consensus/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/cluster-lockdown/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/error-recovery/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/entity-tracing/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/chain-rehydration/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/integrity-validation/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/policy-enforcement/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/websocket-streaming/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/ipfs-storage/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/risk-alerts/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/erp-integration/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/msp-identity/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/workflows/key-backup/</loc>
+      </url>
+      <url>
         <loc>https://docs.hierachain.org/modules/core/</loc>
       </url>
       <url>

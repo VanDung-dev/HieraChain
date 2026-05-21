@@ -31,6 +31,60 @@
         <loc>https://docs.hierachain.org/vi/architecture/zk-proofs/</loc>
       </url>
       <url>
+        <loc>https://docs.hierachain.org/vi/workflows/overview/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/consensus_mechanisms/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/event-submission/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/proof-anchoring/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/cross-chain-2pc/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/bft-consensus/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/cluster-lockdown/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/error-recovery/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/entity-tracing/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/chain-rehydration/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/integrity-validation/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/policy-enforcement/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/websocket-streaming/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/ipfs-storage/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/risk-alerts/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/erp-integration/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/msp-identity/</loc>
+      </url>
+      <url>
+        <loc>https://docs.hierachain.org/vi/workflows/key-backup/</loc>
+      </url>
+      <url>
         <loc>https://docs.hierachain.org/vi/modules/core/</loc>
       </url>
       <url>
