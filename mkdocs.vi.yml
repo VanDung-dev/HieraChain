@@ -75,6 +75,25 @@ nav:
       - Bảo mật (chuyên sâu): architecture/security.md
       - Triển khai: architecture/deployment.md
       - ZK Proofs: architecture/zk-proofs.md
+  - Luồng công việc:
+      - Tổng quan: workflows/overview.md
+      - Cơ chế đồng thuận: workflows/consensus_mechanisms.md
+      - Gửi Sự kiện: workflows/event-submission.md
+      - Neo giữ Bằng chứng: workflows/proof-anchoring.md
+      - Giao dịch Liên chuỗi (2PC): workflows/cross-chain-2pc.md
+      - Đồng thuận BFT: workflows/bft-consensus.md
+      - Khóa băng Cụm: workflows/cluster-lockdown.md
+      - Giảm thiểu Lỗi & Phục hồi: workflows/error-recovery.md
+      - Truy vết Thực thể: workflows/entity-tracing.md
+      - Khôi phục trạng thái chuỗi: workflows/chain-rehydration.md
+      - Xác thực Tính toàn vẹn: workflows/integrity-validation.md
+      - Thực thi Chính sách: workflows/policy-enforcement.md
+      - Luồng dữ liệu WebSocket: workflows/websocket-streaming.md
+      - Lưu trữ Mã hóa IPFS: workflows/ipfs-storage.md
+      - Cảnh báo Rủi ro: workflows/risk-alerts.md
+      - Đồng bộ Tích hợp ERP: workflows/erp-integration.md
+      - Định danh & Ủy quyền MSP: workflows/msp-identity.md
+      - Sao lưu & Khôi phục Khóa: workflows/key-backup.md
   - Modules:
       - Core: modules/core.md
       - Hierarchical: modules/hierarchical.md

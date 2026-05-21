@@ -1,8 +1,14 @@
+---
+title: "Consensus Mechanisms"
+description: "Comparison and technical specifications of PoA, PoF, and BFT consensus mechanisms in HieraChain."
+icon: material/sync
+---
+
 # Consensus Mechanisms Reference
 
-**Related workflows**: [WF-1: Event Submission](./wf-01-event-submission.md) · [WF-4: BFT Consensus](./wf-04-bft-consensus.md)
+**Related workflows**: [Event Submission](./event-submission.md) · [BFT Consensus](./bft-consensus.md)
 
-HieraChain supports three pluggable consensus mechanisms, configured via the `HRC_CONSENSUS_TYPE` environment variable. The event submission flow (WF-1) is identical regardless of which mechanism is selected — only the `finalize_block()` step differs.
+HieraChain supports three pluggable consensus mechanisms, configured via the `HRC_CONSENSUS_TYPE` environment variable. The event submission flow (Event Submission) is identical regardless of which mechanism is selected — only the `finalize_block()` step differs.
 
 ---
 
@@ -97,7 +103,7 @@ sequenceDiagram
 ## Byzantine Fault Tolerance (BFT / PBFT)
 
 > Activated when `HRC_CONSENSUS_TYPE=byzantine_fault_tolerant`.
-> Full 3-phase PBFT. See [WF-4](./wf-04-bft-consensus.md) for the complete flow.
+> Full 3-phase PBFT. See [BFT Consensus](./bft-consensus.md) for the complete flow.
 
 **Requirements**: n ≥ 3f + 1 nodes to tolerate f faulty nodes.
 

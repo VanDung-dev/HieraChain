@@ -1,19 +1,16 @@
-# WF-10: Policy Enforcement
-
-**Group**: E — Operational & Integration Layer
-**Trigger**: Any access-sensitive API request or internal operation requiring authorization
-**Output**: `EvaluationResult { effect: "allow" | "deny", decision_path, applicable_rules }`
-**Key modules**: `security/policy_engine.py`
-
-> [← WF-9: Integrity Validation](./wf-09-integrity-validation.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-11: WebSocket Streaming →](./wf-11-websocket-streaming.md)
-
 ---
+title: "Policy Enforcement"
+description: "Attribute-Based Access Control (ABAC) execution model guarding all access-sensitive operations."
+icon: material/gavel
+---
+
+# Policy Enforcement
 
 ## Overview
 
 Every access-sensitive operation in HieraChain is gated by the `PolicyEngine`. Policies are composed of typed `PolicyRule` sets with priority ordering. Results are cached (5-minute TTL, LRU eviction) to minimize latency overhead. All evaluations are written to an in-memory audit log.
 
-The `PolicyEngine` acts as the **single authorization gateway** — it is called by MSP (WF-15) after identity is verified, and before `SubChain.add_event()` (WF-1) is invoked.
+The `PolicyEngine` acts as the **single authorization gateway** — it is called by MSP (MSP Identity & Authorization) after identity is verified, and before `SubChain.add_event()` (Event Submission) is invoked.
 
 ---
 
@@ -131,7 +128,7 @@ policy = Policy(
 
 ---
 
-## See Also
+## Related
 
-- [WF-15: MSP Identity](./wf-15-msp-identity.md) — MSP calls `evaluate_policy()` after identity verified
-- [WF-1: Event Submission](./wf-01-event-submission.md) — `add_event()` guarded by policy evaluation
+- [MSP Identity](./msp-identity.md) — MSP calls `evaluate_policy()` after identity verified
+- [Event Submission](./event-submission.md) — `add_event()` guarded by policy evaluation

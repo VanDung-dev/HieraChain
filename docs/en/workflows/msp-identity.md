@@ -1,13 +1,10 @@
-# WF-15: MSP Identity & Authorization
-
-**Group**: F — Security Identity & Key Management
-**Trigger**: Entity onboarding (registration), runtime API calls requiring authorization, or certificate lifecycle management
-**Output**: `True` (identity confirmed + action authorized) or `False` / exception (rejected)
-**Key modules**: `security/msp.py`, `security/identity.py`
-
-> [← WF-14: ERP Integration](./wf-14-erp-integration.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-16: Key Backup →](./wf-16-key-backup.md)
-
 ---
+title: "MSP Identity & Auth"
+description: "X.509 certificate lifecycle, enrollment, and MSP authentication for system participants."
+icon: material/card-account-details
+---
+
+# MSP Identity & Authorization
 
 ## Overview
 
@@ -18,7 +15,7 @@ HieraChain uses two identity layers:
 | **Simple RBAC** | `IdentityManager` | Single-org deployments; role-based permission checks |
 | **Enterprise MSP** | `HierarchicalMSP` | Multi-org consortiums; X.509 certificate hierarchy with `CertificateAuthority` |
 
-Every entity must be registered and have its identity validated before being permitted to call `PolicyEngine` (WF-10) or submit events (WF-1).
+Every entity must be registered and have its identity validated before being permitted to call `PolicyEngine` (Policy Enforcement) or submit events (Event Submission).
 
 ---
 
@@ -30,7 +27,7 @@ sequenceDiagram
     participant Admin as 🏢 Enterprise Admin
     participant MSP as 🏛️ HierarchicalMSP
     participant CA as 📜 CertificateAuthority
-    participant PE as ⚖️ PolicyEngine (WF-10)
+    participant PE as ⚖️ PolicyEngine (Policy Enforcement)
 
     rect rgb(0, 0, 0, 0)
         Note over Admin: Phase 1 — Define roles
@@ -62,7 +59,7 @@ sequenceDiagram
     participant Caller as 🖥️ API Client
     participant MSP as 🏛️ HierarchicalMSP
     participant CA as 📜 CertificateAuthority
-    participant PE as ⚖️ PolicyEngine (WF-10)
+    participant PE as ⚖️ PolicyEngine (Policy Enforcement)
 
     rect rgb(0, 0, 0, 0)
         Note over Caller,CA: Phase 1 — Validate Identity
@@ -84,7 +81,7 @@ sequenceDiagram
 
     alt Action authorized
         Caller->>PE: evaluate_policy(policy_id, context_with_role)
-        Note right of PE: WF-10 flow continues here
+        Note right of PE: Policy Enforcement flow continues here
     end
 ```
 
@@ -131,7 +128,7 @@ sequenceDiagram
 | **4. Validate identity** | CA checks: cert not revoked AND current time within `[issued_at, valid_until]` |
 | **5. Credential match** | MSP verifies `credentials.public_key == certificate.public_key` |
 | **6. Authorize action** | `check_permission(role, action)` + evaluate all role-linked policies |
-| **7. Policy gate** | If authorized, PolicyEngine (WF-10) evaluates further context-based rules |
+| **7. Policy gate** | If authorized, PolicyEngine (Policy Enforcement) evaluates further context-based rules |
 | **8. Revoke** | Sets `cert.status = REVOKED`; all future `validate_identity()` calls fail at step 4 |
 
 ---
@@ -163,8 +160,8 @@ sequenceDiagram
 
 ---
 
-## See Also
+## Related
 
-- [WF-10: Policy Enforcement](./wf-10-policy-enforcement.md) — called after MSP authorization succeeds
-- [WF-1: Event Submission](./wf-01-event-submission.md) — `authorize_action()` gates access before `add_event()`
-- [WF-16: Key Backup](./wf-16-key-backup.md) — new certificate issuance triggers key backup
+- [Policy Enforcement](./policy-enforcement.md) — called after MSP authorization succeeds
+- [Event Submission](./event-submission.md) — `authorize_action()` gates access before `add_event()`
+- [Key Backup](./key-backup.md) — new certificate issuance triggers key backup

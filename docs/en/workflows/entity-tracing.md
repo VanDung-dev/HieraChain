@@ -1,13 +1,10 @@
-# WF-7: Entity Tracing
-
-**Group**: D — Data Integrity & Traceability
-**Trigger**: `HierarchyManager.trace_entity_across_chains(entity_id)` — called by auditors, operators, or API clients
-**Output**: Complete chronological audit trail for the entity across all Sub-Chains
-**Key modules**: `hierarchical/hierarchy_manager.py`, `domains/generic/utils/entity_tracer.py`
-
-> [← WF-6: Error Recovery](./wf-06-error-recovery.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-8: Chain Rehydration →](./wf-08-chain-rehydration.md)
-
 ---
+title: "Entity Tracing"
+description: "Cross-chain entity auditing and tracking utility to reconstruct complete event lineages."
+icon: material/map-marker-path
+---
+
+# Entity Tracing
 
 ## Overview
 
@@ -119,7 +116,7 @@ Events are indexed on write (`add_block()`), so reads are O(1) per chain. Aggreg
 
 ---
 
-## See Also
+## Related
 
-- [WF-9: System Integrity Validation](./wf-09-integrity-validation.md) — validates the chains being traced
-- [WF-14: ERP Integration Sync](./wf-14-erp-integration.md) — ERP events are what gets traced
+- [System Integrity Validation](./integrity-validation.md) — validates the chains being traced
+- [ERP Integration Sync](./erp-integration.md) — ERP events are what gets traced

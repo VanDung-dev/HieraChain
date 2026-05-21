@@ -1,13 +1,10 @@
-# WF-12: IPFS Encrypted Storage
-
-**Group**: E — Operational & Integration Layer
-**Trigger**: `IPFSClient.upload_json(data, encrypt=True)` — called when large/sensitive off-chain data must be stored
-**Output**: `{ cid, size, encrypted: True, nonce: hex }` — CID stored on-chain, plaintext never leaves encrypted boundary
-**Key modules**: `api/storage/ipfs_client.py`, `api/storage/encryption.py`
-
-> [← WF-11: WebSocket Streaming](./wf-11-websocket-streaming.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-13: Risk Alerts →](./wf-13-risk-alerts.md)
-
 ---
+title: "IPFS Encrypted Storage"
+description: "Offloading large business data payloads to encrypted IPFS storage, anchoring only cryptographic CIDs."
+icon: material/harddisk
+---
+
+# IPFS Encrypted Storage
 
 ## Overview
 
@@ -80,7 +77,7 @@ flowchart LR
     CONN["Connect to IPFS daemon\n(HRC_IPFS_HOST)"]
     FAIL["❌ Connection refused\nor timeout"]
     RETRY["Retry with backoff\n(max 3 attempts)"]
-    ERR["Raise IPFSConnectionError\nLog + Alert via WF-13"]
+    ERR["Raise IPFSConnectionError\nLog + Alert via Risk Alerts"]
     OK["✅ CID returned"]
 
     CALL --> CONN
@@ -113,7 +110,7 @@ flowchart LR
 | Integrity | GCM authentication tag (authenticated encryption) |
 | Replay protection | Unique random 96-bit nonce per upload |
 | Key management | `HRC_IPFS_ENCRYPTION_KEY` env var; auto-generated if missing |
-| Access control | Policy Engine (WF-10) gates upload/download API calls |
+| Access control | Policy Engine (Policy Enforcement) gates upload/download API calls |
 
 ---
 
@@ -130,8 +127,8 @@ flowchart LR
 
 ---
 
-## See Also
+## Related
 
-- [WF-10: Policy Enforcement](./wf-10-policy-enforcement.md) — gates upload/download authorization
-- [WF-13: Risk Analysis & Alerts](./wf-13-risk-alerts.md) — IPFS connection failure triggers alerts
-- [WF-16: Key Backup](./wf-16-key-backup.md) — same AES-256-GCM pattern used for key backup encryption
+- [Policy Enforcement](./policy-enforcement.md) — gates upload/download authorization
+- [Risk Analysis & Alerts](./risk-alerts.md) — IPFS connection failure triggers alerts
+- [Key Backup](./key-backup.md) — same AES-256-GCM pattern used for key backup encryption

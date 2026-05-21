@@ -1,13 +1,10 @@
-# WF-8: Chain Rehydration
-
-**Group**: D — Data Integrity & Traceability
-**Trigger**: Sub-Chain node restart OR `sync_chain()` detects local hash ≠ DB hash
-**Output**: In-memory chain state synchronized to the authoritative DB state
-**Key modules**: `hierarchical/sub_chain.py`, `consensus/ordering/service.py`, `adapters/storage/`
-
-> [← WF-7: Entity Tracing](./wf-07-entity-tracing.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-9: Integrity Validation →](./wf-09-integrity-validation.md)
-
 ---
+title: "Chain Rehydration"
+description: "Syncing and rehydrating the active in-memory ledger state from persistent database backends upon restart."
+icon: material/water
+---
+
+# Chain Rehydration
 
 ## Overview
 
@@ -98,7 +95,7 @@ sequenceDiagram
 | Condition | Behavior |
 |:----------|:---------|
 | DB read fails during rehydration | Exception logged, retry on next sync interval |
-| Write lock held too long | Timeout after `lock_timeout` seconds; critical alert via WF-13 |
+| Write lock held too long | Timeout after `lock_timeout` seconds; critical alert via Risk Alerts |
 | `entity_event_index` inconsistent after rehydration | Full index rebuild triggered |
 | Storage backend unreachable | Node enters read-only mode; new events queued but not persisted |
 
@@ -116,7 +113,7 @@ sequenceDiagram
 
 ---
 
-## See Also
+## Related
 
-- [WF-6: Error Mitigation](./wf-06-error-recovery.md) — rollback triggers rehydration when snapshot fails
-- [WF-9: System Integrity Validation](./wf-09-integrity-validation.md) — validates chain consistency after rehydration
+- [Error Mitigation](./error-recovery.md) — rollback triggers rehydration when snapshot fails
+- [System Integrity Validation](./integrity-validation.md) — validates chain consistency after rehydration

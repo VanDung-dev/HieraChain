@@ -1,13 +1,10 @@
-# WF-16: Key Backup & Restoration
-
-**Group**: F — Security Identity & Key Management
-**Trigger**: Key generation, key rotation, or scheduled backup (`frequency: daily`)
-**Output**: Encrypted backup file distributed to vault locations; `backup_id` returned
-**Key modules**: `security/key_backup_manager.py`
-
-> [← WF-15: MSP Identity](./wf-15-msp-identity.md) · [Back to Overview](../ARCHITECTURE.md)
-
 ---
+title: "Key Backup & Restoration"
+description: "Cryptographic backup of critical validator private keys and system restoration procedures."
+icon: material/key
+---
+
+# Key Backup & Restoration
 
 ## Overview
 
@@ -149,7 +146,7 @@ flowchart LR
 | Condition | Behavior |
 |:----------|:---------|
 | Integrity check fails immediately after write | `ValueError` raised; backup aborted, retried |
-| All vault locations unreachable | `IOError` raised; critical alert via WF-13 |
+| All vault locations unreachable | `IOError` raised; critical alert via Risk Alerts |
 | SHA-512 mismatch on restore | `IntegrityError` raised; next vault location tried |
 | Decryption fails (wrong key) | `CryptographyError` raised; process aborted |
 | `_apply_restored_keys()` fails | System remains on existing keys; error logged and alerted |
@@ -173,8 +170,8 @@ flowchart LR
 
 ---
 
-## See Also
+## Related
 
-- [WF-15: MSP Identity](./wf-15-msp-identity.md) — certificate issuance triggers key backup
-- [WF-5: Cluster Lockdown](./wf-05-cluster-lockdown.md) — lockdown may require key rotation, triggering this workflow
-- [WF-12: IPFS Storage](./wf-12-ipfs-storage.md) — uses the same AES-256-GCM encryption pattern
+- [MSP Identity](./msp-identity.md) — certificate issuance triggers key backup
+- [Cluster Lockdown](./cluster-lockdown.md) — lockdown may require key rotation, triggering this workflow
+- [IPFS Storage](./ipfs-storage.md) — uses the same AES-256-GCM encryption pattern

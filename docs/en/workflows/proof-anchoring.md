@@ -1,13 +1,10 @@
-# WF-2: Proof Anchoring
-
-**Group**: A — Core Chain Operations
-**Trigger**: `SubChain.auto_submit_proof_if_needed()` after block finalized (WF-1 step 9)
-**Output**: Cryptographic proof hash stored on Main Chain; raw event data never exposed at root level
-**Key modules**: `hierarchical/sub_chain.py`, `hierarchical/main_chain.py`, `security/zk_prover.py`
-
-> [← WF-1: Event Submission](./wf-01-event-submission.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-3: Cross-Chain 2PC →](./wf-03-cross-chain-2pc.md)
-
 ---
+title: "Proof Anchoring"
+description: "Anchoring sub-chain cryptographic proofs onto the main chain for global immutability."
+icon: material/anchor
+---
+
+# Proof Anchoring
 
 ## Overview
 
@@ -103,7 +100,7 @@ sequenceDiagram
 
 ---
 
-## See Also
+## Related
 
-- [WF-1: Event Submission](./wf-01-event-submission.md) — triggers this workflow
-- [WF-9: System Integrity Validation](./wf-09-integrity-validation.md) — checks proof consistency between Sub-Chain and Main Chain
+- [Event Submission](./event-submission.md) — triggers this workflow
+- [System Integrity Validation](./integrity-validation.md) — checks proof consistency between Sub-Chain and Main Chain

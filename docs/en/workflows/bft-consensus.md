@@ -1,17 +1,14 @@
-# WF-4: BFT Consensus (3-Phase PBFT)
-
-**Group**: B — Consensus Finalization
-**Trigger**: `HRC_CONSENSUS_TYPE=byzantine_fault_tolerant` — activated automatically during WF-1 block finalization
-**Output**: Block committed by 2f+1 validators, pushed to `commit_queue`
-**Key modules**: `consensus/bft/consensus.py`, `consensus/bft/view_change.py`, `network/zmq_transport.py`
-
-> [← WF-3: Cross-Chain 2PC](./wf-03-cross-chain-2pc.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-5: Cluster Lockdown →](./wf-05-cluster-lockdown.md)
-
 ---
+title: "BFT Consensus"
+description: "Byzantine Fault Tolerant (PBFT) consensus flow for adversarial environment block finalization."
+icon: material/shield-key
+---
+
+# BFT Consensus
 
 ## Overview
 
-The **Byzantine Fault-Tolerant (BFT)** consensus mechanism runs 3-phase PBFT when blocks are finalized. It requires `n ≥ 3f + 1` nodes to tolerate `f` faulty or malicious nodes. This replaces the `finalize_block()` step in WF-1 for BFT mode.
+The **Byzantine Fault-Tolerant (BFT)** consensus mechanism runs 3-phase PBFT when blocks are finalized. It requires `n ≥ 3f + 1` nodes to tolerate `f` faulty or malicious nodes. This replaces the `finalize_block()` step in Event Submission for BFT mode.
 
 For PoA and PoF consensus flows, see [Consensus Mechanisms](./consensus_mechanisms.md).
 
@@ -131,8 +128,8 @@ sequenceDiagram
 
 ---
 
-## See Also
+## Related
 
 - [Consensus Mechanisms](./consensus_mechanisms.md) — PoA and PoF details
-- [WF-1: Event Submission](./wf-01-event-submission.md) — BFT replaces the `finalize_block()` step
-- [WF-6: Error Mitigation](./wf-06-error-recovery.md) — handles leader failure recovery at system level
+- [Event Submission](./event-submission.md) — BFT replaces the `finalize_block()` step
+- [Error Mitigation](./error-recovery.md) — handles leader failure recovery at system level

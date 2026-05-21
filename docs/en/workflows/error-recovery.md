@@ -1,13 +1,10 @@
-# WF-6: Error Mitigation & Recovery
-
-**Group**: C — Cluster Management & Recovery
-**Trigger**: Network failures, consensus leader failure, block integrity error, or manual rollback command
-**Output**: System restored to last consistent state via snapshot + journal replay
-**Key modules**: `error_mitigation/recovery_engine.py`, `error_mitigation/rollback_manager.py`, `error_mitigation/journal.py`
-
-> [← WF-5: Cluster Lockdown](./wf-05-cluster-lockdown.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-7: Entity Tracing →](./wf-07-entity-tracing.md)
-
 ---
+title: "Error Mitigation & Recovery"
+description: "Automated recovery and mitigation workflows for network failures, leader timeouts, or integrity anomalies."
+icon: material/alert-decagram
+---
+
+# Error Mitigation & Recovery
 
 ## Overview
 
@@ -78,7 +75,7 @@ flowchart LR
 1. `RollbackManager.load_snapshot()` — load the most recent consistent snapshot
 2. `TransactionJournal.replay()` — replay committed journal entries since the snapshot
 3. `DataValidator.validate()` — verify the restored state against cryptographic checksums
-4. If validation fails: escalation alert sent via WF-13; manual intervention required
+4. If validation fails: escalation alert sent via Risk Alerts; manual intervention required
 
 ---
 
@@ -87,7 +84,7 @@ flowchart LR
 | Sub-flow | Trigger | Action |
 |:---------|:--------|:-------|
 | **6A Network** | `avg_latency > threshold` | Adaptive timeout + parallel redundant send |
-| **6A Partition** | `avg_latency > 5000ms` | Trigger BFT View Change (WF-4) |
+| **6A Partition** | `avg_latency > 5000ms` | Trigger BFT View Change (BFT Consensus) |
 | **6B Leader** | `leader_timeout` | `ConsensusRecoveryEngine.handle_leader_failure()` → View Change |
 | **6B Max retries** | `recovery_attempts ≥ max` | Log critical error, alert, halt consensus |
 | **6C Rollback** | Integrity failure or critical error | Snapshot → Journal replay → Validate |
@@ -99,8 +96,8 @@ flowchart LR
 | Condition | Behavior |
 |:----------|:---------|
 | All recovery paths exhausted (6B) | Critical alert sent, node halts consensus participation |
-| Snapshot not found (6C) | Full rehydration from DB (WF-8) attempted |
-| Journal replay produces invalid state (6C) | Alert escalated via WF-13, manual intervention flagged |
+| Snapshot not found (6C) | Full rehydration from DB (Chain Rehydration) attempted |
+| Journal replay produces invalid state (6C) | Alert escalated via Risk Alerts, manual intervention flagged |
 | Network partition heals | Adaptive timeout reduces automatically, normal flow resumes |
 
 ---
@@ -119,9 +116,9 @@ flowchart LR
 
 ---
 
-## See Also
+## Related
 
-- [WF-4: BFT Consensus](./wf-04-bft-consensus.md) — View Change detail
-- [WF-5: Cluster Lockdown](./wf-05-cluster-lockdown.md) — cluster-level recovery
-- [WF-8: Chain Rehydration](./wf-08-chain-rehydration.md) — full chain reload from DB
-- [WF-13: Risk Analysis & Alerts](./wf-13-risk-alerts.md) — escalation notifications
+- [BFT Consensus](./bft-consensus.md) — View Change detail
+- [Cluster Lockdown](./cluster-lockdown.md) — cluster-level recovery
+- [Chain Rehydration](./chain-rehydration.md) — full chain reload from DB
+- [Risk Analysis & Alerts](./risk-alerts.md) — escalation notifications

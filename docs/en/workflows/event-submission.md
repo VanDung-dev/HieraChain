@@ -1,13 +1,10 @@
-# WF-1: Event Submission
-
-**Group**: A — Core Chain Operations
-**Trigger**: `POST /v1/chains/{name}/events` or `SubChain.add_event()` via SDK / ERP adapter
-**Output**: Block appended to Sub-Chain, persisted to storage backend, ZK proof triggered
-**Key modules**: `hierarchical/sub_chain.py`, `consensus/ordering/service.py`
-
-> [Back to Overview](../ARCHITECTURE.md) · [Next → WF-2: Proof Anchoring](./wf-02-proof-anchoring.md)
-
 ---
+title: "Event Submission"
+description: "Details of the core ingestion pipeline: event submission, validation, ordering, batching, and block appending."
+icon: material/tray-arrow-down
+---
+
+# Event Submission
 
 ## Overview
 
@@ -65,7 +62,7 @@ sequenceDiagram
         SC->>DB: Persist block
         SC->>SC: auto_submit_proof_if_needed()
 
-        Note over SC: → Triggers WF-2 (Proof Anchoring)
+        Note over SC: → Triggers Proof Anchoring
     end
 ```
 
@@ -83,7 +80,7 @@ sequenceDiagram
 | **6. Commit** | Block pushed to `commit_queue`, background `consumer_thread` picks it up |
 | **7. Hash chain** | `_process_and_finalize_single_block()` recalculates `previous_hash` and `hash` to ensure chain integrity |
 | **8. Persist** | Block written to storage backend (`SQLiteAdapter`, `RedisStorageAdapter`, or `MemoryStorage`) |
-| **9. Proof trigger** | `auto_submit_proof_if_needed()` triggers WF-2 if chain length threshold met |
+| **9. Proof trigger** | `auto_submit_proof_if_needed()` triggers Proof Anchoring if chain length threshold met |
 
 ---
 
@@ -133,10 +130,10 @@ event = {
 
 ---
 
-## See Also
+## Related
 
 - [Consensus Mechanisms](./consensus_mechanisms.md) — PoA and PoF sub-diagrams
-- [WF-2: Proof Anchoring](./wf-02-proof-anchoring.md) — triggered after block finalized
-- [WF-4: BFT Consensus](./wf-04-bft-consensus.md) — full 3-phase PBFT flow
-- [WF-10: Policy Enforcement](./wf-10-policy-enforcement.md) — gates access before `add_event()`
-- [WF-15: MSP Identity](./wf-15-msp-identity.md) — `authorize_action()` called before submission
+- [Proof Anchoring](./proof-anchoring.md) — triggered after block finalized
+- [BFT Consensus](./bft-consensus.md) — full 3-phase PBFT flow
+- [Policy Enforcement](./policy-enforcement.md) — gates access before `add_event()`
+- [MSP Identity](./msp-identity.md) — `authorize_action()` called before submission

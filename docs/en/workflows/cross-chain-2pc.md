@@ -1,13 +1,10 @@
-# WF-3: Cross-Chain Transaction (2PC)
-
-**Group**: A — Core Chain Operations
-**Trigger**: `HierarchyManager.initiate_cross_chain_transaction(src, dst, payload)` — called when a business operation must atomically span two Sub-Chains
-**Output**: `tx_id` with state `COMMITTED`, or `ROLLED_BACK` / `FAILED` on error
-**Key modules**: `domains/generic/chains/domain_chain.py`, `hierarchical/hierarchy_manager.py`
-
-> [← WF-2: Proof Anchoring](./wf-02-proof-anchoring.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-4: BFT Consensus →](./wf-04-bft-consensus.md)
-
 ---
+title: "Cross-Chain 2PC"
+description: "Two-Phase Commit (2PC) protocol coordination for atomic cross-chain event operations."
+icon: material/swap-horizontal
+---
+
+# Cross-Chain Transaction (2PC)
 
 ## Overview
 
@@ -112,8 +109,8 @@ flowchart LR
 | **2. Phase 1 — Prepare SRC** | Source chain locks resources, validates payload schema |
 | **3. Phase 1 — Prepare DST** | Destination chain checks capacity and constraints |
 | **4. Phase 1 result** | If both return `True`: state → `PREPARED`. If either fails: immediate rollback on both |
-| **5. Phase 2 — Commit SRC** | Source chain finalizes the operation (emits event via WF-1) |
-| **6. Phase 2 — Commit DST** | Destination chain finalizes (emits event via WF-1) |
+| **5. Phase 2 — Commit SRC** | Source chain finalizes the operation (emits event via Event Submission) |
+| **6. Phase 2 — Commit DST** | Destination chain finalizes (emits event via Event Submission) |
 | **7. Result** | State → `COMMITTED`. `tx_id` returned to caller |
 
 ---
@@ -141,7 +138,7 @@ flowchart LR
 
 ---
 
-## See Also
+## Related
 
-- [WF-1: Event Submission](./wf-01-event-submission.md) — each `commit_transaction()` internally calls `add_event()`
-- [WF-6: Error Mitigation](./wf-06-error-recovery.md) — handles state rollback at the system level
+- [Event Submission](./event-submission.md) — each `commit_transaction()` internally calls `add_event()`
+- [Error Mitigation](./error-recovery.md) — handles state rollback at the system level

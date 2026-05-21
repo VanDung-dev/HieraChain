@@ -80,6 +80,25 @@ nav:
       - Security: architecture/security.md
       - Deployment: architecture/deployment.md
       - ZK Proofs: architecture/zk-proofs.md
+  - Workflows:
+      - Overview: workflows/overview.md
+      - Consensus Mechanisms: workflows/consensus_mechanisms.md
+      - Event Submission: workflows/event-submission.md
+      - Proof Anchoring: workflows/proof-anchoring.md
+      - Cross-Chain Transaction (2PC): workflows/cross-chain-2pc.md
+      - BFT Consensus: workflows/bft-consensus.md
+      - Cluster Lockdown & Recovery: workflows/cluster-lockdown.md
+      - Error Mitigation & Recovery: workflows/error-recovery.md
+      - Entity Tracing: workflows/entity-tracing.md
+      - Chain Rehydration: workflows/chain-rehydration.md
+      - System Integrity Validation: workflows/integrity-validation.md
+      - Policy Enforcement: workflows/policy-enforcement.md
+      - WebSocket Real-Time Streaming: workflows/websocket-streaming.md
+      - IPFS Encrypted Storage: workflows/ipfs-storage.md
+      - Risk Alerts: workflows/risk-alerts.md
+      - ERP Integration Sync: workflows/erp-integration.md
+      - MSP Identity & Authorization: workflows/msp-identity.md
+      - Key Backup & Restoration: workflows/key-backup.md
   - Modules:
       - Core: modules/core.md
       - Hierarchical: modules/hierarchical.md

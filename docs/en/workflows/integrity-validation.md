@@ -1,13 +1,10 @@
-# WF-9: System Integrity Validation
-
-**Group**: D — Data Integrity & Traceability
-**Trigger**: Periodic monitoring schedule, manual operator call, or anomaly detection in WF-13
-**Output**: `IntegrityReport` with overall status (`HEALTHY` / `DEGRADED`) and per-chain details
-**Key modules**: `hierarchical/hierarchy_manager.py`, `security/verify/block_verifier.py`, `domains/generic/utils/cross_chain_validator.py`
-
-> [← WF-8: Chain Rehydration](./wf-08-chain-rehydration.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-10: Policy Enforcement →](./wf-10-policy-enforcement.md)
-
 ---
+title: "Integrity Validation"
+description: "System-wide cryptographic scans to detect anomalies, hash divergences, or block tampers."
+icon: material/check-decagram
+---
+
+# System Integrity Validation
 
 ## Overview
 
@@ -33,7 +30,7 @@ flowchart TB
     REPORT["📊 System Integrity Report"]
     HEALTHY["✅ HEALTHY\nAll chains valid\nAll proofs consistent"]
     DEGRADED["⚠️ DEGRADED\nChain invalid OR\nProof missing/mismatch"]
-    ALERT["🚨 Alert via WF-13"]
+    ALERT["🚨 Alert via Risk Alerts"]
 
     TRIGGER --> MC_VAL
     TRIGGER --> SC_VAL
@@ -118,13 +115,13 @@ sequenceDiagram
 
 | Step | Description |
 |:-----|:------------|
-| **1. Trigger** | Periodic timer, operator call, or WF-13 anomaly detection |
+| **1. Trigger** | Periodic timer, operator call, or Risk Alerts anomaly detection |
 | **2. Main Chain verify** | `BlockVerifier.verify_chain()` recomputes every block hash and checks `previous_hash` linkage |
 | **3. Sub-Chain verify** | Same verification applied to all registered Sub-Chains in parallel |
 | **4. Proof consistency** | Compares `sub_chain.latest_block.hash` with `main_chain.proofs[chain_name]` |
 | **5. Forbidden term scan** | `CrossChainValidator` scans all event payloads for cryptocurrency terminology |
 | **6. Report assembly** | All results merged into `IntegrityReport` |
-| **7. Alert on DEGRADED** | If any check fails, WF-13 alert triggered with issue details |
+| **7. Alert on DEGRADED** | If any check fails, Risk Alerts alert triggered with issue details |
 
 ---
 
@@ -152,8 +149,8 @@ sequenceDiagram
 
 ---
 
-## See Also
+## Related
 
-- [WF-2: Proof Anchoring](./wf-02-proof-anchoring.md) — creates the proofs validated here
-- [WF-8: Chain Rehydration](./wf-08-chain-rehydration.md) — called if inconsistency triggers rehydration
-- [WF-13: Risk Analysis & Alerts](./wf-13-risk-alerts.md) — receives DEGRADED alerts from this workflow
+- [Proof Anchoring](./proof-anchoring.md) — creates the proofs validated here
+- [Chain Rehydration](./chain-rehydration.md) — called if inconsistency triggers rehydration
+- [Risk Analysis & Alerts](./risk-alerts.md) — receives DEGRADED alerts from this workflow

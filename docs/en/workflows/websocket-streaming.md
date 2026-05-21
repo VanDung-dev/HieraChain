@@ -1,13 +1,10 @@
-# WF-11: WebSocket Real-Time Streaming
-
-**Group**: E — Operational & Integration Layer
-**Trigger**: Client opens WebSocket connection to `/ws/{chain_name}`
-**Output**: Real-time block and event notifications pushed to subscribed clients
-**Key modules**: `api/websocket/manager.py`, `api/websocket/registry.py`, `api/websocket/builders.py`
-
-> [← WF-10: Policy Enforcement](./wf-10-policy-enforcement.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-12: IPFS Storage →](./wf-12-ipfs-storage.md)
-
 ---
+title: "WebSocket Streaming"
+description: "Real-time subscription and push protocol for new block commits and ledger events."
+icon: material/connection
+---
+
+# WebSocket Real-Time Streaming
 
 ## Overview
 
@@ -40,7 +37,7 @@ sequenceDiagram
         WSM->>WSM: SubscriptionManager.subscribe_to_event_type(...)
     end
 
-    Note over SC: Block finalized (WF-1 step 8)
+    Note over SC: Block finalized (Event Submission step 8)
 
     SC->>WSM: broadcast_new_block(chain_name, block_data)
     WSM->>WSM: get_chain_subscribers(chain_name)
@@ -116,7 +113,7 @@ sequenceDiagram
 | **3. Register** | `ConnectionRegistry.add()` stores connection by `connection_id` |
 | **4. Subscribe** | `SubscriptionManager.subscribe_to_chain()` links connection to chain |
 | **5. Optional filter** | Client can narrow to specific `event_types` |
-| **6. Broadcast** | After WF-1 finalizes a block, `broadcast_new_block()` fans out to all subscribers |
+| **6. Broadcast** | After Event Submission finalizes a block, `broadcast_new_block()` fans out to all subscribers |
 | **7. Ping loop** | Background thread pings every 30s; removes unresponsive connections after 10s timeout |
 
 ---
@@ -148,7 +145,7 @@ sequenceDiagram
 
 ---
 
-## See Also
+## Related
 
-- [WF-1: Event Submission](./wf-01-event-submission.md) — triggers `broadcast_new_block()` after block commit
-- [WF-13: Risk Analysis & Alerts](./wf-13-risk-alerts.md) — alert notifications can also be pushed via WebSocket
+- [Event Submission](./event-submission.md) — triggers `broadcast_new_block()` after block commit
+- [Risk Analysis & Alerts](./risk-alerts.md) — alert notifications can also be pushed via WebSocket

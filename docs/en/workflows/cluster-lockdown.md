@@ -1,13 +1,10 @@
-# WF-5: Cluster Lockdown & Recovery
-
-**Group**: C — Cluster Management & Recovery
-**Trigger**: Any node detects anomaly exceeding risk threshold → `broadcast_lockdown_vote()`
-**Output**: All nodes freeze event acceptance; after 2/3 recovery quorum, system resumes
-**Key modules**: `cluster/cluster_lockdown.py`, `cluster/state_sync.py`, `network/zmq_transport.py`
-
-> [← WF-4: BFT Consensus](./wf-04-bft-consensus.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-6: Error Recovery →](./wf-06-error-recovery.md)
-
 ---
+title: "Cluster Lockdown"
+description: "Coordinated cluster lockdown protocol triggered by critical risk detection to freeze the system state."
+icon: material/lock
+---
+
+# Cluster Lockdown & Recovery
 
 ## Overview
 
@@ -108,7 +105,7 @@ stateDiagram-v2
 | HMAC verification fails | Vote discarded, warning logged |
 | Vote timestamp > 300s old | Vote rejected (replay protection) |
 | Lockdown quorum never reached | System continues operating normally, votes expire |
-| Recovery quorum never reached | Cluster stays locked; escalation alert sent via WF-13 |
+| Recovery quorum never reached | Cluster stays locked; escalation alert sent via Risk Alerts |
 | Node joins during lockdown | New node receives LOCKED state via `StateSyncManager` |
 
 ---
@@ -127,8 +124,8 @@ stateDiagram-v2
 
 ---
 
-## See Also
+## Related
 
-- [WF-13: Risk Analysis & Alerts](./wf-13-risk-alerts.md) — risk threshold breach triggers this workflow
-- [WF-6: Error Mitigation](./wf-06-error-recovery.md) — handles state rollback after recovery
-- [WF-16: Key Backup](./wf-16-key-backup.md) — lockdown may trigger key rotation → WF-16
+- [Risk Analysis & Alerts](./risk-alerts.md) — risk threshold breach triggers this workflow
+- [Error Mitigation](./error-recovery.md) — handles state rollback after recovery
+- [Key Backup](./key-backup.md) — lockdown may trigger key rotation → Key Backup & Restoration

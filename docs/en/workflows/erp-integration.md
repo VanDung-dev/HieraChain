@@ -1,13 +1,10 @@
-# WF-14: ERP Integration Sync
-
-**Group**: E — Operational & Integration Layer
-**Trigger**: `SyncScheduler` timer fires (configurable `interval_seconds`) or manual `sync_now()` call
-**Output**: ERP change events translated and submitted to HieraChain Sub-Chain via WF-1
-**Key modules**: `integration/erp_ledger.py`, `integration/erp_adapters/`
-
-> [← WF-13: Risk Alerts](./wf-13-risk-alerts.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-15: MSP Identity →](./wf-15-msp-identity.md)
-
 ---
+title: "ERP Integration Sync"
+description: "Ingesting legacy Enterprise Resource Planning (ERP) ledger updates into dedicated sub-chains."
+icon: material/briefcase
+---
+
+# ERP Integration Sync
 
 ## Overview
 
@@ -53,7 +50,7 @@ sequenceDiagram
         ET-->>EIL: blockchain_event dict
 
         EIL->>SC: add_event(blockchain_event)
-        Note right of SC: Enters WF-1 pipeline
+        Note right of SC: Enters Event Submission pipeline
     end
 
     EIL->>SS: update_last_sync(profile_name, now)
@@ -74,7 +71,7 @@ flowchart LR
     SYNC -->|Exception| RETRY["schedule_retry(profile)\nbackoff = min(300s, 30 × 2^n)"]
     RETRY --> WAIT["Wait backoff duration"]
     WAIT --> SYNC
-    RETRY -->|retry_count > max| ALERT["Alert via WF-13\nSync failure escalation"]
+    RETRY -->|retry_count > max| ALERT["Alert via Risk Alerts\nSync failure escalation"]
 ```
 
 ---
@@ -131,9 +128,9 @@ blockchain_event = {
 | **3. Change detection** | `ChangeDetector` compares new state vs previous, annotates changed fields |
 | **4. Translation** | `EventTranslator` applies `mapping_rules` to produce a valid HieraChain event dict |
 | **5. Metadata injection** | `add_blockchain_metadata()` adds `timestamp`, `source`, `event: "erp_integration"` |
-| **6. Submit** | `SubChain.add_event(blockchain_event)` — enters WF-1 pipeline |
+| **6. Submit** | `SubChain.add_event(blockchain_event)` — enters Event Submission pipeline |
 | **7. Update timestamp** | `last_sync` updated per profile; next run scheduled |
-| **8. Failure retry** | Exception → exponential backoff up to 300s; after max retries → WF-13 alert |
+| **8. Failure retry** | Exception → exponential backoff up to 300s; after max retries → Risk Alerts alert |
 
 ---
 
@@ -144,7 +141,7 @@ blockchain_event = {
 | ERP adapter connection fails | Retry with exponential backoff (30s, 60s, 120s, 240s, 300s max) |
 | Field mapping key missing | Logged as warning; event submitted with partial data |
 | `add_event()` validation fails (forbidden term) | Event discarded; logged with raw ERP data |
-| Max retries exceeded | WF-13 alert triggered: `erp_sync_failure` |
+| Max retries exceeded | Risk Alerts alert triggered: `erp_sync_failure` |
 
 ---
 
@@ -161,8 +158,8 @@ blockchain_event = {
 
 ---
 
-## See Also
+## Related
 
-- [WF-1: Event Submission](./wf-01-event-submission.md) — translated events enter here
-- [WF-7: Entity Tracing](./wf-07-entity-tracing.md) — ERP-originated events are traceable by `entity_id`
-- [WF-13: Risk Analysis & Alerts](./wf-13-risk-alerts.md) — sync failures escalated here
+- [Event Submission](./event-submission.md) — translated events enter here
+- [Entity Tracing](./entity-tracing.md) — ERP-originated events are traceable by `entity_id`
+- [Risk Analysis & Alerts](./risk-alerts.md) — sync failures escalated here

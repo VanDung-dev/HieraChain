@@ -1,13 +1,10 @@
-# WF-13: Risk Analysis & Alert Lifecycle
-
-**Group**: E — Operational & Integration Layer
-**Trigger**: `PerformanceMonitor` fires on schedule, or `AlertManager.check_metric()` called with a new metric value
-**Output**: Active alerts dispatched via Email/Webhook; unacknowledged alerts auto-escalate
-**Key modules**: `risk_management/risk_analyzer.py`, `monitoring/alert_system.py`, `monitoring/performance_monitor.py`
-
-> [← WF-12: IPFS Storage](./wf-12-ipfs-storage.md) · [Back to Overview](../ARCHITECTURE.md) · [WF-14: ERP Integration →](./wf-14-erp-integration.md)
-
 ---
+title: "Risk Analysis & Alerts"
+description: "Continuous risk assessment, anomaly threshold evaluation, and alert dispatch/escalation flows."
+icon: material/alert
+---
+
+# Risk Alerts
 
 ## Overview
 
@@ -132,7 +129,7 @@ sequenceDiagram
 
 ---
 
-## See Also
+## Related
 
-- [WF-5: Cluster Lockdown](./wf-05-cluster-lockdown.md) — unresolved critical alerts may trigger lockdown
-- [WF-9: System Integrity Validation](./wf-09-integrity-validation.md) — DEGRADED integrity status triggers alerts here
+- [Cluster Lockdown](./cluster-lockdown.md) — unresolved critical alerts may trigger lockdown
+- [System Integrity Validation](./integrity-validation.md) — DEGRADED integrity status triggers alerts here
