@@ -44,7 +44,7 @@ echo "  Target Version: ${CURRENT_VERSION}"
 echo "  Pre-pulling nginx:alpine..."
 podman pull nginx:alpine
 
-podman build --no-cache -t $IMAGE_NAME \
+podman build -t $IMAGE_NAME \
     --build-arg VERSION=${CURRENT_VERSION} \
     -f docker/Dockerfile .
 sleep 5

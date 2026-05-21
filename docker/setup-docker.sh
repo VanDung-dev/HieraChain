@@ -40,7 +40,7 @@ echo "[2/5] Building Docker image..."
 CURRENT_VERSION=$(python3 -c "import sys; sys.path.insert(0, '.'); from hierachain.units.version import __version__; print(__version__)")
 echo "  Target Version: ${CURRENT_VERSION}"
 
-docker build --no-cache -t $IMAGE_NAME \
+docker build -t $IMAGE_NAME \
     --build-arg VERSION=${CURRENT_VERSION} \
     -f docker/Dockerfile .
 sleep 5

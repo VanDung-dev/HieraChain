@@ -27,8 +27,10 @@ python3 docker/scripts/generate_node_identities.py
 echo ""
 echo "[2/6] Building Docker image in OrbStack..."
 CURRENT_VERSION=$(python3 -c "import sys; sys.path.insert(0, '.'); from hierachain.units.version import __version__; print(__version__)" 2>/dev/null || echo "0.0.1-k8s")
-docker --context=orbstack build --no-cache -t $IMAGE_NAME --build-arg VERSION=${CURRENT_VERSION} -f docker/Dockerfile .
-sleep 2
+docker build -t $IMAGE_NAME \
+    --build-arg VERSION=${CURRENT_VERSION} \
+    -f docker/Dockerfile .
+sleep 5
 
 # Step 2: Check OrbStack Kubernetes context
 echo ""
