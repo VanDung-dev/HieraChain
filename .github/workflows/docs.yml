@@ -45,7 +45,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install zensical==0.0.33
+          pip install zensical==0.0.43
 
       - name: Build English Docs
         run: zensical build -f mkdocs.yml

@@ -56,7 +56,7 @@ version = {attr = "hierachain.units.version.__version__"}
 
 [project.optional-dependencies]
 doc =[
-    "zensical==0.0.33",
+    "zensical==0.0.43",
     "polib==1.2.0",
 ]
 dev = [
