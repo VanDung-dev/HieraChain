@@ -1,76 +1,33 @@
 # AGENT.md — HieraChain Coding Agent Reference
 
-> **Purpose**: Context document for AI coding agents working on the HieraChain codebase.
-> This document describes the project architecture, development workflow, conventions, and constraints that agents must follow.
+> **Purpose**: High-density system constraints, architectural rules, and coding conventions for AI coding agents working on HieraChain.
 
 ---
 
-## What is HieraChain?
+## Critical Guardrails & Terminology Rules
 
-HieraChain is an **enterprise-grade hierarchical blockchain ledger** built in Python. It is designed for **business process management** — NOT cryptocurrency. Key philosophy:
+HieraChain is an **enterprise-grade hierarchical blockchain ledger** built in Python for business processes — **NOT cryptocurrency**.
 
-* All operations are called **"events"** (not "transactions")
-* No cryptocurrency concepts: no mining, no tokens, no wallets, no coins
-* Hierarchical two-tier structure (Main Chain + Sub-Chains) mirrors enterprise org charts
-* Built for ERP integration (SAP, Oracle, Dynamics)
-
-> **Critical rule**: Never introduce cryptocurrency terminology into the codebase. The `CrossChainValidator` literally scans for and flags forbidden terms: `transaction`, `mining`, `coin`, `token`, `wallet`, `address`, `sender`, `receiver`, `amount`, `fee`.
+* **Term Censorship**: Never introduce cryptocurrency terminology into any event data, variable names, API endpoints, or comments.
+* **Forbidden terms**: `transaction`, `mining`, `coin`, `token`, `wallet`, `address`, `sender`, `receiver`, `amount`, `fee`.
+* **Required terms**: Use `event` (instead of transaction), `node`, `msp_id`, `entity_id`, etc.
+* *Note*: The `CrossChainValidator` scans and flags forbidden terms on commit/validation.
 
 ---
 
-## 🎯 Plugin Layer Philosophy
+## Plugin Layer Philosophy (No Over-Engineering)
 
-HieraChain is designed as a **Plugin Layer** for existing Web2 enterprise systems — NOT a standalone blockchain application.
+HieraChain is designed as a **Plugin Layer** for existing enterprise Web2 infrastructure, not a standalone network application.
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    ENTERPRISE WEB2 INFRASTRUCTURE                       │
-│   [WAF] → [Load Balancer] → [HTTPS/TLS] → [API Gateway] → ...           │
-│   ✦ All basic security layers ALREADY EXIST in enterprise               │
-└────────────────────────────────┬────────────────────────────────────────┘
-                                 ↓
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        HIERACHAIN PLUGIN                                │
-│   ✦ Immutability (data cannot be modified after commit)                 │
-│   ✦ Distributed verification (4+ nodes confirm)                         │
-│   ✦ Tamper detection (automatically detect changes)                     │
-│   ✦ Cross-org proof (no need to trust single entity)                    │
-│   ✦ Audit trail (complete history traceable)                            │
-└────────────────────────────────┬────────────────────────────────────────┘
-                                 ↓
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           DATABASE                                      │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-### ⚠️ Don't Reinvent the Wheel
-
-* **DO NOT** add TLS/SSL handling — enterprise reverse proxy handles this
-* **DO NOT** add WAF, firewall, or network filtering — already exists
-* **DO NOT** add rate limiting logic beyond basic API protection — API Gateway handles it
-* **DO NOT** add certificate management for transport — enterprise PKI handles it
-
-HieraChain only adds **blockchain value** that Web2 lacks:
-
-* **Immutability** — Web2 can delete/modify logs, HieraChain cannot
-* **Distributed Trust** — Web2 needs single entity trust, HieraChain doesn't
-* **Tamper Evidence** — Web2 needs manual audit, HieraChain detects automatically
-* **Non-reppudiation** — Web2 can deny, HieraChain has cryptographic proof
-
-### 🐍 Python Performance Constraint
-
-Python is inherently slower than compiled languages. Every additional security layer adds latency:
-
-* Current design: minimal overhead, fast response (~10-20ms base)
-* Adding TLS/mTLS internally: +50-100ms latency
-* Enterprise priority: "Is data IMMUTABLE? Is it VERIFIABLE?"
-* NOT: "How does internal plugin encrypt if network is already secure"
+* **Do NOT implement**: Internal TLS/SSL handling, WAF, firewalls, network filtering, or transport-level certificate management. These layers already exist in the Web2 enterprise reverse proxy/API Gateway.
+* **Focus on blockchain value**: Focus exclusively on Immutability, Distributed Trust, Tamper Evidence, and Non-repudiation.
+* **Python Latency Constraint**: Keep code minimal and fast (~10-20ms base latency). Avoid adding internal encryption layers or mTLS that add unnecessary CPU/latency overhead.
 
 ---
 
-## 🔐 Security is Distributed (Not Just in `security/`)
+## Distributed Security Architecture
 
-Security in HieraChain is **distributed across multiple modules** following defense-in-depth:
+Security in HieraChain is **distributed across multiple modules** rather than isolated in `security/`. When modifying or analyzing security, check the appropriate layer:
 
 | Module | Security Responsibilities |
 |--------|--------------------------|
@@ -82,164 +39,12 @@ Security in HieraChain is **distributed across multiple modules** following defe
 | `hierachain/cluster/` | HMAC-SHA256 for cluster lockdown, encrypted rollback snapshots |
 | `hierachain/error_mitigation/` | Audit logging, integrity verification |
 
-When analyzing or implementing security features, consider ALL these modules, not just `security/`.
-
 ---
 
-## Repository Layout
+## Core Architecture & Reference Entries
 
-```
-HieraChain/
-├── hierachain/               # Main package
-│   ├── core/                 # Block, Blockchain, Caching, DomainContract, ParallelEngine
-│   ├── hierarchical/         # MainChain, SubChain, Channel, HierarchyManager, K8sNamespaceManager, Rebalancer
-│   ├── consensus/
-│   │   ├── ordering/         # OrderingService (Facade) + 10 sub-components
-│   │   └── bft/              # BFTConsensus, BFTViewChangeManager, cryptographic, network
-│   ├── cluster/              # ClusterManager, ClusterLockdownManager, StateSyncManager
-│   ├── monitoring/           # AlertManager, PerformanceMonitor
-│   ├── risk_management/      # RiskAnalyzer, MitigationStrategies, AuditLogger
-│   ├── security/
-│   │   ├── verify/           # BlockVerifier, SignatureVerifier, APIKeyVerifier, ZKVerifier
-│   │   └── (identity, msp, key_manager, policy_engine, zk_prover, ...)
-│   ├── network/              # ZmqTransport, SecureConnection, PeerTrustManager
-│   ├── storage/              # WorldState, SqlBackend, MemoryStorage, Models
-│   ├── adapters/
-│   │   └── storage/          # RedisStorageAdapter, FileStorageAdapter, SQLiteAdapter
-│   ├── error_mitigation/     # Journal, RecoveryEngine, RollbackManager, ErrorClassifier, Validator
-│   ├── integration/          # EnterpriseIntegration, ArrowClient, erp_adapters/
-│   ├── domains/
-│   │   └── generic/
-│   │       ├── chains/       # BaseChain, DomainChain (with 2PC + business rules)
-│   │       ├── events/       # BaseEvent, DomainEvent factory functions
-│   │       └── utils/        # EntityTracer, CrossChainValidator
-│   ├── api/
-│   │   ├── server.py         # FastAPI entrypoint
-│   │   ├── blockchain_explorer.py
-│   │   ├── graphql/          # GraphQL schema
-│   │   ├── websocket/        # WebSocketManager, registry, subscriptions, handlers, builders
-│   │   ├── storage/          # IPFSClient (AES-256-GCM), encryption, helpers
-│   │   ├── v1/, v2/, v3/     # Versioned REST endpoints + schemas
-│   │   └── (middleware, dependencies, ...)
-│   ├── sdk/                  # Python client (retry + circuit breaker)
-│   ├── cli/                  # Click CLI (chain, event, node commands)
-│   ├── config/               # Settings singleton, env_manager, logging config
-│   └── units/                # Semantic versioning
-├── tests/
-│   ├── unit/                 # Unit tests per module
-│   ├── integration/          # Integration tests
-│   ├── scenarios/            # End-to-end scenarios
-│   └── stress/               # Stress/benchmark tests
-├── demo/                     # Demo scripts
-├── scripts/                  # Dev utilities (static analysis, benchmarks)
-├── docker/                   # Dockerfile, docker-compose, k8s manifests
-├── requirements.txt
-├── requirements_dev.txt
-└── pyproject.toml
-```
-
----
-
-## Environment Setup
-
-**Python versions supported**: 3.10, 3.11, 3.12, 3.13
-
-```bash
-# Create and activate venv (macOS/Linux)
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install all dependencies
-pip install -r requirements.txt
-pip install -r requirements_dev.txt
-pip install -e .          # install package in dev/editable mode
-```
-
----
-
-## Running the Project
-
-```bash
-# Start API server
-python -m hierachain.api.server
-# → FastAPI server at http://localhost:2661
-# → Docs: http://localhost:2661/docs
-# → ReDoc: http://localhost:2661/redoc
-
-# Run CLI
-python -m hierachain chain list
-python -m hierachain chain create supply_chain --name my_chain
-```
-
----
-
-## Running Tests
-
-> ⚠️ **WARNING**: Do NOT run all tests at once — use per-file execution to avoid resource conflicts.
-
-```bash
-# Unit tests
-python -m pytest tests/unit -v
-
-# Integration tests
-python -m pytest tests/integration -v
-
-# Scenario tests
-python -m pytest tests/scenarios -v
-
-# Run a single test file (recommended)
-python -m pytest tests/unit/test_blockchain.py -v
-
-# Benchmarks only
-python -m pytest tests --benchmark-only -v --benchmark-save=benchmark_report
-
-# All tests (use with caution)
-python -m pytest tests -v
-```
-
-### Docker Stress Testing
-
-```bash
-# Run stress tests (4 nodes, 1 CPU + 1GiB RAM each)
-docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester \
-  python -m pytest tests/stress/ -v \
-  --html=/app/log/report/stress_test_report.html --self-contained-html
-
-# Cleanup
-docker compose -f docker/docker-compose.test.yml down --remove-orphans
-```
-
-Reports saved to `log/report/`.
-
----
-
-## Developer Scripts
-
-```bash
-# Static analysis
-python -m scripts.static_analysis
-python -m scripts.static_analysis --format text
-python -m scripts.static_analysis --output analysis_report.json
-
-# Benchmarks
-python scripts/benchmark_hashing.py
-python scripts/benchmark_throughput.py --events 1000 --workers 4 --batch-size 100
-
-# Verify storage persistence
-python scripts/verify_storage.py
-
-# Clean demo data
-rm -rf demo/data demo/hierachain.db 2>/dev/null
-```
-
----
-
-## Key Architecture Concepts Agents Must Know
-
-### 1. Event Model (not Transaction Model)
-
-Every operation submits an **event dict** with this shape:
-
+### 1. Event Model (Not Transaction Model)
+Every operation submits an event dict with the following shape:
 ```python
 event = {
     "entity_id": "product-123",     # metadata identifier (NOT a user address)
@@ -252,124 +57,118 @@ event = {
 }
 ```
 
-**Never use**: `transaction`, `sender`, `receiver`, `amount`, `wallet`, `fee`, `mining`.
-
 ### 2. Two-Tier Hierarchy
+* **Main Chain**: Stores only cryptographic proofs/hashes from Sub-Chains.
+* **Sub-Chains**: Store domain-specific events, submitting proof hashes up to the Main Chain via `HierarchyManager`.
 
-```
-Main Chain  →  stores only proofs from Sub-Chains (NOT raw events)
-Sub-Chains  →  store domain-specific events, submit proof hashes up
-```
-
-Interaction entry point: `HierarchyManager` in `hierarchical/hierarchy_manager.py`.
-
-### 3. Consensus (pluggable via `HRC_CONSENSUS_TYPE`)
-
-| Value | Mechanism | Use case |
-|-------|-----------|----------|
-| `proof_of_authority` | Designated authority signs blocks | Default, business |
-| `proof_of_federation` | Rotating leader: `Leader = Validators[height % n]` | Consortium |
-| `byzantine_fault_tolerant` | 3-phase PBFT, requires `n >= 3f+1` | Critical systems |
-
-### 4. Storage Backends (pluggable via `HRC_STORAGE_BACKEND`)
-
-| Value | Class | Notes |
-|-------|-------|-------|
-| `sqlite` | `SQLiteAdapter` | Default, dev-friendly |
-| `redis` | `RedisStorageAdapter` | O(log n) entity index via sorted sets |
-| `memory` | `MemoryStorage` | Testing only |
-
-### 5. Key Classes & Entry Points
+### 3. Key Classes & Entry Points
 
 | Task | Class / Function | File |
 |------|-----------------|------|
-| Submit business event | `SubChain.add_event()` | `hierarchical/sub_chain.py` |
-| Manage all chains | `HierarchyManager` | `hierarchical/hierarchy_manager.py` |
-| Order events → blocks | `OrderingService.receive_event()` | `consensus/ordering/service.py` |
-| Policy enforcement | `PolicyEngine.evaluate()` | `security/policy_engine.py` |
-| Trace entity across chains | `EntityTracer.trace_entity()` | `domains/generic/utils/entity_tracer.py` |
-| Validate system integrity | `CrossChainValidator.validate_system_integrity()` | `domains/generic/utils/cross_chain_validator.py` |
-| Real-time streaming | `WebSocketManager` (singleton: `ws_manager`) | `api/websocket/manager.py` |
-| Store to IPFS (encrypted) | `IPFSClient.upload_json()` | `api/storage/ipfs_client.py` |
-| Assess system risks | `RiskAnalyzer.perform_comprehensive_analysis()` | `risk_management/risk_analyzer.py` |
+| Submit business event | `SubChain.add_event()` | [hierarchical/sub_chain.py](./hierachain/hierarchical/sub_chain.py) |
+| Manage all chains | `HierarchyManager` | [hierarchical/hierarchy_manager.py](./hierachain/hierarchical/hierarchy_manager.py) |
+| Order events → blocks | `OrderingService.receive_event()` | [consensus/ordering/service.py](./hierachain/consensus/ordering/service.py) |
+| Policy enforcement | `PolicyEngine.evaluate()` | [security/policy_engine.py](./hierachain/security/policy_engine.py) |
+| Trace entity across chains | `EntityTracer.trace_entity()` | [domains/generic/utils/entity_tracer.py](./hierachain/domains/generic/utils/entity_tracer.py) |
+| Validate system integrity | `CrossChainValidator.validate_system_integrity()` | [domains/generic/utils/cross_chain_validator.py](./hierachain/domains/generic/utils/cross_chain_validator.py) |
+| Real-time streaming | `WebSocketManager` (singleton `ws_manager`) | [api/websocket/manager.py](./hierachain/api/websocket/manager.py) |
+| Store to IPFS (encrypted) | `IPFSClient.upload_json()` | [api/storage/ipfs_client.py](./hierachain/api/storage/ipfs_client.py) |
+| Assess system risks | `RiskAnalyzer.perform_comprehensive_analysis()` | [risk_management/risk_analyzer.py](./hierachain/risk_management/risk_analyzer.py) |
 
 ---
 
-## Configuration (Environment Variables)
+## Coding Conventions & Forbidden Patterns
 
-All configs live in `hierachain/config/settings.py` as a singleton `settings`. Override via env vars:
+### Python & Design Style
+* **Strict Type Hints**: Required on all function signatures across the codebase.
+* **Module-level Helpers**: Preferred over deeply nested helper methods.
+* **Facade Pattern**: Complex subsystems must expose a single coordinator class (e.g., `OrderingService`, `HierarchyManager`).
+* **Strategy Pattern**: Use for swappable algorithms (consensus, caching, splitting).
+* **Repository Pattern**: Never access DB directly from business logic; use storage adapters under `adapters/storage/`.
+* **State Machine**: Lifecycle transitions must follow defined allowed states (e.g., `DomainContract` lifecycle).
 
-| Variable | Purpose | Default |
-|----------|---------|---------|
-| `HRC_CONSENSUS_TYPE` | Consensus mechanism | `proof_of_authority` |
-| `HRC_STORAGE_BACKEND` | Storage backend | `sqlite` |
-| `HRC_ENABLE_ZK_PROOFS` | ZK proof verification | `false` |
-| `HRC_AUTH_ENABLED` | API authentication | `false` |
-| `HRC_CLUSTER_SECRET` | HMAC secret for cluster lockdown | _(required in cluster mode)_ |
-| `HRC_SMTP_USERNAME` / `HRC_SMTP_PASSWORD` | Email alert credentials | _(optional)_ |
-| `HRC_IPFS_HOST` | IPFS daemon address | `/ip4/127.0.0.1/tcp/5001` |
-| `HRC_IPFS_ENCRYPTION_KEY` | AES-256 key for IPFS data | _(auto-generated if missing)_ |
-| `DATABASE_URL` | DB connection string | `sqlite:///hierachain.db` |
-
----
-
-## Coding Conventions
-
-### Python Style
-
-* **Type hints required** on all function signatures (the codebase enforces this)
-* Use `dataclasses` and `Enum` for structured data (see `consensus/bft/types.py` as reference)
-* Module-level helper functions preferred over deeply nested methods (see `bft/consensus.py`)
-* Logging via `logging.getLogger(__name__)` — never `print()` in library code
-* Use `hierachain.security.secure_logging.SecureLogger` for security-sensitive modules
-
-### Architecture Patterns (follow existing conventions)
-
-* **Facade Pattern**: complex subsystems expose a single coordinator class — see `OrderingService`, `HierarchyManager`
-* **Strategy Pattern**: swappable algorithms (cache policies, consensus, split strategies)
-* **State Machine**: lifecycle transitions must follow defined allowed states — see `DomainContract` lifecycle, `ClusterLockdownManager`
-* **Repository Pattern**: never access DB directly from business logic — use storage adapters
-* **Adapter Pattern**: new storage backends go in `adapters/storage/`, new ERP integrations in `integration/erp_adapters/`
-
-### Module Organization
-
-* Each sub-package exposes a clean `__init__.py` with `__all__` and categorized imports
-* See `hierachain/risk_management/__init__.py` and `hierachain/security/__init__.py` as canonical examples
-* New verifiers belong in `security/verify/`
-* New domain-agnostic utilities belong in `domains/generic/utils/`
+### Forbidden Patterns
+* **No Cryptocurrency Terminology**: Do not use crypto terms in event data, variable names, or comments.
+* **No Direct Storage Calls**: Do not make direct `sqlite3` or `redis` calls outside of `adapters/storage/`.
+* **No `print()` Statements**: Do not use `print()` in library code (use logging or `SecureLogger`).
+* **No Bulk Test Execution**: Do not run all tests at once to avoid resource conflicts; run per-file.
+* **No Hardcoded Secrets**: Do not store secrets in code; use environment variables.
+* **No Skipping Transaction Journal**: Do not skip the `TransactionJournal` durability step when implementing ordering flows.
+* **No Bypassing Policy Engine**: Do not bypass `PolicyEngine` for access-sensitive operations.
 
 ---
 
-## Forbidden Patterns
+## Behavioral Guidelines (CLAUDE.md Principles)
 
-* ❌ No cryptocurrency terminology in any event data, variable names, or comments
-* ❌ No direct `sqlite3` or `redis` calls outside `adapters/storage/`
-* ❌ No `print()` statements in library code (use logging)
-* ❌ Do NOT run all tests at once — run per-file
-* ❌ Do NOT store secrets in code — use environment variables
-* ❌ Do NOT skip the `TransactionJournal` durability step when implementing new ordering flows
-* ❌ Do NOT bypass `PolicyEngine` for access-sensitive operations
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
----
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-## Demos
+### 1. Think Before Coding
 
-```bash
-# Core features (hierarchical chains, MSP, channels, private data)
-python demo/demo.py
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
 
-# Key backup and recovery
-python demo/demo_key_backup.py
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
 
-# BFT consensus over ZeroMQ
-python demo/demo_zmq_consensus.py
+### 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+### 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+### 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
 ```
 
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
 ---
 
-## Related Documents
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
-* [`docs/CODEBASE_REFERENCE.md`](./docs/CODEBASE_REFERENCE.md) — Detailed architecture reference (all packages, design patterns, data flows)
-* [`docs/DEV_GUIDE.md`](./docs/DEV_GUIDE.md) — Full developer guide with environment setup and testing
-* [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — Visual high-level architecture (Mermaid diagrams, Rust layer, ZKP)
-* [`docs/`](./docs/) — All developer documentation
+---
+
+## Related Documentation
+* [CODEBASE_REFERENCE.md](./docs/CODEBASE_REFERENCE.md) — Detailed architecture reference (packages, design patterns, data flows, full directory layout).
+* [DEV_GUIDE.md](./docs/DEV_GUIDE.md) — Full developer guide with environment setup, running tests, benchmarks, and scripts.
+* [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — Visual architecture diagrams, Rust integration layers, and ZKP concepts.
+* [workflows/index.md](docs/en/workflows/overview.md) — Comprehensive guide to 16 system workflows including event submission, consensus, security, and recovery.
