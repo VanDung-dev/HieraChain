@@ -168,7 +168,10 @@ def restore_keys_step(backup_manager, backup_id, public_key, private_key):
 
 def show_backup_locations():
     print("8. Checking backup locations...")
-    backup_locations_dir = os.path.join("../backups")
+    backup_locations_dir = "backups"
+    if not os.path.exists(backup_locations_dir):
+        backup_locations_dir = os.path.join("../backups")
+        
     if os.path.exists(backup_locations_dir):
         for root, dirs, files in os.walk(backup_locations_dir):
             level = root.replace(backup_locations_dir, "").count(os.sep)
@@ -184,7 +187,10 @@ def show_backup_locations():
 
 def show_metadata():
     print("9. Backup metadata...")
-    metadata_file = os.path.join("../backups", "keys", "backup_metadata.json")
+    metadata_file = os.path.join("backups", "keys", "backup_metadata.json")
+    if not os.path.exists(metadata_file):
+        metadata_file = os.path.join("../backups", "keys", "backup_metadata.json")
+        
     if os.path.exists(metadata_file):
         try:
             with open(metadata_file, "r") as f:

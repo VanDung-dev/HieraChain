@@ -20,6 +20,9 @@ import datetime
 import atexit
 import os
 
+# Override block interval to 0 for immediate block creation/finalization in demo
+os.environ["HRC_BLOCK_INTERVAL"] = "0.0"
+
 # Import Ledger components
 from hierachain.hierarchical import HierarchyManager
 from hierachain.domains.generic.utils import EntityTracer, CrossChainValidator

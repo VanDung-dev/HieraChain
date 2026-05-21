@@ -21,6 +21,9 @@ import hashlib
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# Override block interval to 0 for immediate block creation/finalization in demo
+os.environ["HRC_BLOCK_INTERVAL"] = "0.0"
+
 from typing import Any
 from hierachain.api.storage import (
     IPFSClient,
@@ -145,7 +148,7 @@ def demonstrate_blockchain_integration(cid, nonce):
 
     # In HieraChain, we store the CID reference in the event
     chain.add_event(event)
-    chain.finalize_block()
+    chain.flush_pending_and_finalize()
 
     print("✓ Event added to 'LogisticsChain' with CID reference")
     print("  The blockchain now stores the 46-character CID instead of the large JSON.")
@@ -162,7 +165,11 @@ def demonstrate_api_resolution(chain):
     latest_block = blocks[-1]
 
     # Simulating what the API returns
-    event_on_chain = latest_block.to_event_list()[0]
+    # Find the event with the CID reference, or default to the first event
+    event_on_chain = next(
+        (e for e in latest_block.to_event_list() if e.get("details_cid") is not None),
+        latest_block.to_event_list()[0]
+    )
     print("  Raw event on-chain:")
     print(f"    entity_id: {event_on_chain['entity_id']}")
     print(f"    details_cid: {event_on_chain.get('details_cid')}")
@@ -184,7 +191,11 @@ def demonstrate_explorer_visualization(chain):
     """Demonstrate explorer visualization with IPFS indicators."""
     print_section("4. Explorer Visualization")
 
-    event = chain.chain[-1].to_event_list()[0]
+    # Find the event with the CID reference, or default to the first event
+    event = next(
+        (e for e in chain.chain[-1].to_event_list() if e.get("details_cid") is not None),
+        chain.chain[-1].to_event_list()[0]
+    )
 
     print("\n--- Formatting for Explorer UI ---")
     # This uses explorer_helpers.py logic
