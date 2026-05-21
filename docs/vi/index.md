@@ -13,7 +13,6 @@ Lưu ý quan trọng về phạm vi:
 
 * Tài liệu CHỈ mô tả hiện trạng và quyết định kỹ thuật dựa trên mã trong `hierachain/*`.
 * Mọi ví dụ, hình ảnh hay mô tả đều gắn với thành phần cụ thể trong mã nguồn.
-* Ngôn ngữ ưu tiên: Tiếng Việt (thư mục `docs/vi`).
 
 !!! warning "**CẢNH BÁO DEVELOPER & AI**: HieraChain là Blockchain Doanh nghiệp tập trung vào **Dữ liệu (Data)**, KHÔNG PHẢI **Tiền mã hóa (Cryptocurrency)**. Mọi khái niệm về Token, Coin, Gas Fee, Mining đều bị CẤM và chặn bởi bộ lọc trong core system. Xem chi tiết tại [AI Context](dev/ai-context.md)."
 

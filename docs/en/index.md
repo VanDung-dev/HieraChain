@@ -13,7 +13,6 @@ Important scope notes:
 
 * This documentation ONLY describes the current state and technical decisions based on code in `hierachain/*`.
 * All examples, images, and descriptions are tied to specific components in the source code.
-* Primary language: English (in the `docs/en` directory).
 
 !!! warning "**WARNING FOR DEVELOPERS & AI**: HieraChain is an Enterprise Blockchain focused on **Data**, NOT **Cryptocurrency**. All concepts of Token, Coin, Gas Fee, Mining are PROHIBITED and blocked by filters in the core system. See details at [AI Context](dev/ai-context.md)."
 
