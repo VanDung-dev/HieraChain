@@ -80,7 +80,7 @@ nav:
       - Cơ chế đồng thuận: workflows/consensus_mechanisms.md
       - Gửi Sự kiện: workflows/event-submission.md
       - Neo giữ Bằng chứng: workflows/proof-anchoring.md
-      - Giao dịch Liên chuỗi (2PC): workflows/cross-chain-2pc.md
+      - Sự kiện Liên chuỗi (2PC): workflows/cross-chain-2pc.md
       - Đồng thuận BFT: workflows/bft-consensus.md
       - Khóa băng Cụm: workflows/cluster-lockdown.md
       - Giảm thiểu Lỗi & Phục hồi: workflows/error-recovery.md
@@ -149,7 +149,7 @@ nav:
       - Triển khai an toàn: how-to/secure-deployment.md
       - Khắc phục sự cố: how-to/troubleshooting.md
       - Khôi phục sau thảm họa: how-to/disaster-recovery.md
-      - Giao dịch Liên chuỗi: how-to/cross-chain-transactions.md
+      - Sự kiện Liên chuỗi: how-to/cross-chain-transactions.md
   - Hướng dẫn chung:
       - Hiệu năng: guides/performance.md
       - Độ tin cậy: guides/reliability.md

@@ -85,7 +85,7 @@ nav:
       - Consensus Mechanisms: workflows/consensus_mechanisms.md
       - Event Submission: workflows/event-submission.md
       - Proof Anchoring: workflows/proof-anchoring.md
-      - Cross-Chain Transaction (2PC): workflows/cross-chain-2pc.md
+      - Cross-Chain Event (2PC): workflows/cross-chain-2pc.md
       - BFT Consensus: workflows/bft-consensus.md
       - Cluster Lockdown & Recovery: workflows/cluster-lockdown.md
       - Error Mitigation & Recovery: workflows/error-recovery.md
@@ -154,7 +154,7 @@ nav:
       - Secure Deployment: how-to/secure-deployment.md
       - Troubleshooting: how-to/troubleshooting.md
       - Disaster Recovery: how-to/disaster-recovery.md
-      - Cross-Chain Transactions: how-to/cross-chain-transactions.md
+      - Cross-Chain Events: how-to/cross-chain-transactions.md
   - Guides:
       - Performance: guides/performance.md
       - Reliability: guides/reliability.md
