@@ -49,6 +49,7 @@ dependencies = [
     "starlette==0.52.1",
     "uvicorn[standard]==0.46.0",
     "urllib3==2.7.0",
+    "idna==3.15",
 ]
 dynamic = ["version"]
 
@@ -59,6 +60,7 @@ version = {attr = "hierachain.units.version.__version__"}
 doc =[
     "zensical==0.0.43",
     "polib==1.2.0",
+    "pymdown-extensions==10.21.3",
 ]
 dev = [
     "pytest>=9.0.2",
