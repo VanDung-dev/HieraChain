@@ -147,6 +147,6 @@ Việc ghi log trong các adapter được thực hiện qua `SecureLogger`, đ�
 
 ## Liên quan
 
-* [Core Concepts - Blockchain](../architecture.md)
+* [Core Concepts - Blockchain](../architecture/overview.md)
 * [Storage Module](./storage.md)
 * [Security Overview](./security.md)

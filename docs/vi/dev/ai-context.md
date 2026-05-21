@@ -7,7 +7,7 @@ icon: material/robot
 # AI Context Definition - HieraChain
 
 !!! abstract "System Prompt for AI Assistants"
-    File này chứa các chỉ dẫn cốt lõi (System Instructions) bằng tiếng Việt để định hướng tư duy cho AI khi làm việc với HieraChain. Để xem hướng dẫn kỹ thuật chi tiết và đầy đủ nhất dành cho Coding Agents (English), vui lòng tham khảo **[AGENTS.md](../../../AGENTS.md)**.
+    File này chứa các chỉ dẫn cốt lõi (System Instructions) bằng tiếng Việt để định hướng tư duy cho AI khi làm việc với HieraChain. Để xem hướng dẫn kỹ thuật chi tiết và đầy đủ nhất dành cho Coding Agents (English), vui lòng tham khảo **AGENTS.md** (ở thư mục gốc của dự án).
 
 ## Bản chất dự án
 

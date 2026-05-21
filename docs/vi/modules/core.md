@@ -122,5 +122,5 @@ Lớp `DomainContract` cho phép định nghĩa các quy tắc kinh doanh:
 ## Liên quan
 
 *   [Hierarchical Architecture](../architecture/hierarchy.md)
-*   [Performance Benchmarking](../reference/benchmarks.md)
+*   [Performance Benchmarking](../guides/performance.md)
 *   [Security Verifiers](./security.md)

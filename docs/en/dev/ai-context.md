@@ -7,7 +7,7 @@ icon: material/robot
 # AI Context Definition - HieraChain
 
 !!! abstract "System Prompt for AI Assistants"
-    This file contains core instructions (System Instructions) to guide AI thinking when working with HieraChain. For detailed and complete technical guidance for Coding Agents, please refer to **[AGENTS.md](../../../AGENTS.md)**.
+    This file contains core instructions (System Instructions) to guide AI thinking when working with HieraChain. For detailed and complete technical guidance for Coding Agents, please refer to **AGENTS.md** (located in the project root).
 
 ## Project Nature
 

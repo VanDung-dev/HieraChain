@@ -126,6 +126,6 @@ if manager.vote_lockdown("node-01", reason="Phát hiện giả mạo hash"):
 
 ## Liên quan
 
-*   [P2P Networking](../network/p2p.md)
-*   [Security Identity](../security/identity.md)
+*   [P2P Networking](./network.md)
+*   [Security Identity](./security.md)
 *   [Hierarchical Architecture](../architecture/hierarchy.md)

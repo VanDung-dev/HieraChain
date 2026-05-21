@@ -103,5 +103,5 @@ Hệ thống hỗ trợ xác thực bằng chứng Zero-Knowledge ngay trong pha
 ## Liên quan
 
 *   [Mạng lưới P2P (Network)](../modules/network.md)
-*   [Xác thực chữ ký (Security)](../security/keys-certs.md)
+*   [Xác thực chữ ký (Security)](../security/encryption-keys.md)
 *   [Dịch vụ sắp xếp (Ordering)](./ordering.md)

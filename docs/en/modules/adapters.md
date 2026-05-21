@@ -147,6 +147,6 @@ Logging in adapters is done via `SecureLogger`, ensuring no sensitive business i
 
 ## Related
 
-* [Core Concepts - Blockchain](../architecture.md)
+* [Core Concepts - Blockchain](../architecture/overview.md)
 * [Storage Module](./storage.md)
 * [Security Overview](./security.md)

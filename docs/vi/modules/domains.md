@@ -137,4 +137,4 @@ for chain_name, events in trace_results.items():
 
 *   [Hệ thống Phân cấp (Hierarchical)](./hierarchical.md)
 *   [Cấu trúc Blockchain Lõi (Core)](./core.md)
-*   [Hướng dẫn Tích hợp ERP](../integration/erp_adapters.md)
+*   [Hướng dẫn Tích hợp ERP](../workflows/erp-integration.md)

@@ -122,5 +122,5 @@ The `DomainContract` class allows defining business rules:
 ## Related
 
 *   [Hierarchical Architecture](../architecture/hierarchy.md)
-*   [Performance Benchmarking](../reference/benchmarks.md)
+*   [Performance Benchmarking](../guides/performance.md)
 *   [Security Verifiers](./security.md)

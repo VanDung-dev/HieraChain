@@ -136,4 +136,4 @@ hrc --config custom_config.json chain list
 
 *   [API Documentation](./api.md)
 *   [Storage Adapters](./adapters.md)
-*   [Security & Verify](../security/identity.md)
+*   [Security & Verify](./security.md)

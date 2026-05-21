@@ -82,4 +82,4 @@ graph TD
 
 *   [Đồng thuận dựa trên thẩm quyền (PoA)](./poa.md)
 *   [Kiến trúc mạng P2P](../modules/network.md)
-*   [Hệ thống bảo mật (Security)](../security/auth-access.md)
+*   [Hệ thống bảo mật (Security)](../security/authorization-access-control.md)

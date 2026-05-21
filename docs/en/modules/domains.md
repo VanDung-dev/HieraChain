@@ -137,4 +137,4 @@ for chain_name, events in trace_results.items():
 
 *   [Hierarchical System](./hierarchical.md)
 *   [Core Blockchain Structure](./core.md)
-*   [ERP Integration Guide](../integration/erp_adapters.md)
+*   [ERP Integration Guide](../workflows/erp-integration.md)
