@@ -92,7 +92,16 @@ class BlockchainExplorer:
             component = self.get_component(component_id)
             if component is None:
                 raise ExplorerError(f"Component {component_id} not found")
-            return cast(Any, component).render(**kwargs)
+            if hasattr(component, 'render'):
+                return cast(Any, component).render(**kwargs)
+            elif hasattr(component, 'render_summary'):
+                return cast(Any, component).render_summary(**kwargs)
+            elif hasattr(component, 'render_proof_flow'):
+                return cast(Any, component).render_proof_flow(**kwargs)
+            elif hasattr(component, 'render_input_form'):
+                return cast(Any, component).render_input_form(**kwargs)
+            else:
+                raise ExplorerError(f"Component {component_id} has no render method")
         
         # Render main dashboard
         return self._render_dashboard(**kwargs)
