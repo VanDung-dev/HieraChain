@@ -532,6 +532,13 @@ class Blockchain:
         
         blockchain.pending_events = data.get("pending_events", [])
 
+        # Validate chain integrity after loading
+        if not blockchain.is_chain_valid():
+            logger.error(
+                "Chain integrity check FAILED after loading '%s' from dictionary!",
+                data["name"]
+            )
+
         return blockchain
     
     def __str__(self) -> str:

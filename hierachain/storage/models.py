@@ -42,6 +42,8 @@ class BlockModel(Base):
     hash = Column(String(64), unique=True, nullable=False, index=True)
     previous_hash = Column(String(64), nullable=False)
     timestamp = Column(Float, nullable=False, default=time.time)
+    creator_id = Column(String(128), nullable=True)
+    signature = Column(String(256), nullable=True)
     
     # Metadata (stored as JSON)
     metadata_json = Column(JSON, nullable=True)

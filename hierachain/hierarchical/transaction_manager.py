@@ -115,6 +115,19 @@ def _run_commit_phase(
         transaction.error_message = str(e)
         transaction.state = TransactionState.FAILED
         transaction.updated_at = time.time()
+        # Rollback source chain since destination commit failed after source was committed
+        if source_chain and hasattr(source_chain, 'rollback_transaction'):
+            try:
+                source_chain.rollback_transaction(tx_id)
+                logger.warning(
+                    "Rolled back source %s after destination %s commit failure",
+                    transaction.source_chain, transaction.destination_chain
+                )
+            except Exception as rb_e:
+                logger.error(
+                    "Failed to rollback source %s after commit failure: %s",
+                    transaction.source_chain, rb_e
+                )
         return False
 
 

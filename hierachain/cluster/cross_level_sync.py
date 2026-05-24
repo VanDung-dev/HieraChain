@@ -257,8 +257,8 @@ def _verify_proof_with(
     """Verify a proof using a verifier instance."""
     if verifier:
         return verifier.verify(proof, state_root)
-    # Mock verification
-    return len(proof) > 0
+    logger.error("No proof verifier configured — rejecting proof")
+    return False
 
 
 def _submit_anchor(mainchain: Any, anchor_data: dict) -> bool:

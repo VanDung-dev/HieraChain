@@ -15,6 +15,7 @@ import time
 import hashlib
 import hmac
 import logging
+import threading
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable
@@ -88,9 +89,9 @@ class LockdownMessage:
         ).hexdigest()[:32]
 
     def verify_signature(self, secret_key: str) -> bool:
-        """Verify message signature."""
+        """Verify message signature (constant-time comparison)."""
         expected = self.compute_signature(secret_key)
-        return self.signature == expected
+        return hmac.compare_digest(self.signature, expected)
 
 
 @dataclass
@@ -165,8 +166,10 @@ class QuarantineReport:
         ).hexdigest()[:32]
 
     def verify_signature(self, secret_key: str) -> bool:
-        """Verify report signature."""
-        return self.signature == self.compute_signature(secret_key)
+        """Verify report signature (constant-time comparison)."""
+        return hmac.compare_digest(
+            self.signature, self.compute_signature(secret_key)
+        )
 
 
 def _apply_lock(
@@ -366,6 +369,9 @@ class ClusterLockdownManager:
         self._registered_nodes: set[str] = {node_id}
         self._quarantine_reports: dict[str, QuarantineReport] = {}
 
+        # Thread safety lock for all shared state (RLock for reentrant calls)
+        self._lock = threading.RLock()
+
         # Register message handler if ZMQ node provided
         if self._zmq_node:
             self._zmq_node.set_handler(self._on_message_received)
@@ -480,20 +486,21 @@ class ClusterLockdownManager:
 
     def _process_lockdown_event(self, message: LockdownMessage) -> None:
         """Handle LOCKDOWN message type."""
-        if not self._state.is_locked:
-            _apply_lock(
-                self._state,
-                message.node_id,
-                message.reason,
-                message.timestamp,
-            )
-            logger.warning(
-                "Cluster lockdown received from %s: %s",
-                message.node_id, message.reason
-            )
-            _invoke_callback(self._local_lockdown)
+        with self._lock:
+            if not self._state.is_locked:
+                _apply_lock(
+                    self._state,
+                    message.node_id,
+                    message.reason,
+                    message.timestamp,
+                )
+                logger.warning(
+                    "Cluster lockdown received from %s: %s",
+                    message.node_id, message.reason
+                )
+                _invoke_callback(self._local_lockdown)
 
-        self._state.locked_nodes.add(message.node_id)
+            self._state.locked_nodes.add(message.node_id)
 
     def _process_recovery_event(self, message: LockdownMessage) -> None:
         """Handle RECOVERY message type."""
@@ -504,53 +511,57 @@ class ClusterLockdownManager:
 
     def _handle_lockdown_vote(self, message: LockdownMessage) -> None:
         """Handle a lockdown vote message from a peer."""
-        _register_lockdown_vote(
-            self._lockdown_votes,
-            self._recovery_votes,
-            self._registered_nodes,
-            message.node_id,
-            message.reason,
-        )
-        logger.info(
-            "Lockdown vote received from %s: %s",
-            message.node_id, message.reason
-        )
-        if self._check_lockdown_quorum():
-            logger.warning("Lockdown quorum reached - triggering cluster lockdown")
-            self._trigger_quorum_lockdown()
+        with self._lock:
+            _register_lockdown_vote(
+                self._lockdown_votes,
+                self._recovery_votes,
+                self._registered_nodes,
+                message.node_id,
+                message.reason,
+            )
+            logger.info(
+                "Lockdown vote received from %s: %s",
+                message.node_id, message.reason
+            )
+            if self._check_lockdown_quorum():
+                logger.warning("Lockdown quorum reached - triggering cluster lockdown")
+                self._trigger_quorum_lockdown()
 
     def _handle_recovery_vote(self, message: LockdownMessage) -> None:
         """Handle a recovery vote message from a peer."""
-        _register_recovery_vote(
-            self._lockdown_votes,
-            self._recovery_votes,
-            self._registered_nodes,
-            message.node_id,
-        )
-        logger.info("Recovery vote received from %s", message.node_id)
-        if self._check_recovery_quorum():
-            logger.info("Recovery quorum reached - lifting cluster lockdown")
-            self._trigger_quorum_recovery()
+        with self._lock:
+            _register_recovery_vote(
+                self._lockdown_votes,
+                self._recovery_votes,
+                self._registered_nodes,
+                message.node_id,
+            )
+            logger.info("Recovery vote received from %s", message.node_id)
+            if self._check_recovery_quorum():
+                logger.info("Recovery quorum reached - lifting cluster lockdown")
+                self._trigger_quorum_recovery()
 
     def _check_lockdown_quorum(self) -> bool:
         """Check if lockdown quorum is reached."""
-        if self._state.is_locked:
-            return False
-        return _has_quorum(
-            len(self._lockdown_votes),
-            len(self._registered_nodes),
-            self._quorum_threshold,
-        )
+        with self._lock:
+            if self._state.is_locked:
+                return False
+            return _has_quorum(
+                len(self._lockdown_votes),
+                len(self._registered_nodes),
+                self._quorum_threshold,
+            )
 
     def _check_recovery_quorum(self) -> bool:
         """Check if recovery quorum is reached."""
-        if not self._state.is_locked:
-            return False
-        return _has_quorum(
-            len(self._recovery_votes),
-            len(self._registered_nodes),
-            self._quorum_threshold,
-        )
+        with self._lock:
+            if not self._state.is_locked:
+                return False
+            return _has_quorum(
+                len(self._recovery_votes),
+                len(self._registered_nodes),
+                self._quorum_threshold,
+            )
 
     def _trigger_quorum_lockdown(self) -> None:
         """Trigger lockdown after quorum is reached."""
@@ -571,7 +582,8 @@ class ClusterLockdownManager:
 
     def register_node(self, node_id: str) -> None:
         """Register a node in the cluster."""
-        self._registered_nodes.add(node_id)
+        with self._lock:
+            self._registered_nodes.add(node_id)
 
     def broadcast_lockdown_vote(self, reason: str) -> bool:
         """
@@ -593,18 +605,19 @@ class ClusterLockdownManager:
             self._secret_key,
         )
 
-        # Register own vote
-        _register_lockdown_vote(
-            self._lockdown_votes,
-            self._recovery_votes,
-            self._registered_nodes,
-            self.node_id, reason,
-        )
+        with self._lock:
+            # Register own vote
+            _register_lockdown_vote(
+                self._lockdown_votes,
+                self._recovery_votes,
+                self._registered_nodes,
+                self.node_id, reason,
+            )
 
-        # Check local quorum
-        if self._check_lockdown_quorum():
-            logger.warning("Lockdown quorum reached locally")
-            self._trigger_quorum_lockdown()
+            # Check local quorum
+            if self._check_lockdown_quorum():
+                logger.warning("Lockdown quorum reached locally")
+                self._trigger_quorum_lockdown()
 
         return self._broadcast_message(message)
 
@@ -629,41 +642,43 @@ class ClusterLockdownManager:
             self._secret_key,
         )
 
-        # Register own vote
-        _register_recovery_vote(
-            self._lockdown_votes,
-            self._recovery_votes,
-            self._registered_nodes,
-            self.node_id,
-        )
+        with self._lock:
+            # Register own vote
+            _register_recovery_vote(
+                self._lockdown_votes,
+                self._recovery_votes,
+                self._registered_nodes,
+                self.node_id,
+            )
 
-        # Check local quorum
-        if self._check_recovery_quorum():
-            logger.info("Recovery quorum reached locally")
-            self._trigger_quorum_recovery()
+            # Check local quorum
+            if self._check_recovery_quorum():
+                logger.info("Recovery quorum reached locally")
+                self._trigger_quorum_recovery()
 
         return self._broadcast_message(message)
 
     def get_vote_status(self) -> dict[str, int | float | bool]:
         """Get current vote counts and status."""
-        total = len(self._registered_nodes)
-        return {
-            "total_nodes": total,
-            "lockdown_votes": len(self._lockdown_votes),
-            "recovery_votes": len(self._recovery_votes),
-            "quorum_threshold": self._quorum_threshold,
-            "is_locked": self._state.is_locked,
-            "lockdown_quorum_reached": _has_quorum(
-                len(self._lockdown_votes),
-                total,
-                self._quorum_threshold,
-            ),
-            "recovery_quorum_reached": _has_quorum(
-                len(self._recovery_votes),
-                total,
-                self._quorum_threshold,
-            ),
-        }
+        with self._lock:
+            total = len(self._registered_nodes)
+            return {
+                "total_nodes": total,
+                "lockdown_votes": len(self._lockdown_votes),
+                "recovery_votes": len(self._recovery_votes),
+                "quorum_threshold": self._quorum_threshold,
+                "is_locked": self._state.is_locked,
+                "lockdown_quorum_reached": _has_quorum(
+                    len(self._lockdown_votes),
+                    total,
+                    self._quorum_threshold,
+                ),
+                "recovery_quorum_reached": _has_quorum(
+                    len(self._recovery_votes),
+                    total,
+                    self._quorum_threshold,
+                ),
+            }
 
     def _add_to_history(self, message: LockdownMessage) -> None:
         """Add message to history with size limit."""

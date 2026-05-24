@@ -7,6 +7,7 @@ Uses Hypothesis to generate random inputs and verify robust handling.
 import os
 import shutil
 import time
+import uuid
 import pytest
 from hypothesis import given, strategies as st, settings, HealthCheck
 
@@ -57,7 +58,11 @@ def create_ordering_service():
         status=OrderingStatus.ACTIVE,
         last_heartbeat=time.time()
     )
-    config = {"storage_dir": data_dir}
+    db_file = os.path.join(data_dir, f"test_{uuid.uuid4().hex}.db")
+    config = {
+        "storage_dir": data_dir,
+        "db_url": f"sqlite:///{db_file}",
+    }
     return OrderingService(nodes=[node], config=config)
 
 
