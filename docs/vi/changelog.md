@@ -6,6 +6,28 @@ icon: material/history
 
 # Changelog
 
+## v0.0.4 (2026-05-25)
+
+Phiên bản này tập trung vào hạ tầng mạng cấp production, toàn vẹn mật mã học và kiểm thử stress doanh nghiệp, giới thiệu Node Identity với keypairs Ed25519/Curve25519, mã hóa ZeroMQ CURVE cho P2P, endpoint API v3 cho event an toàn, bộ kiểm thử stress/chaos toàn diện, hỗ trợ Podman/OrbStack và tái cấu trúc tài liệu song ngữ.
+
+??? note "Improvements (7)"
+
+    * **Node Identity & P2P Networking**: Giới thiệu `NodeIdentity`, mã hóa ZeroMQ CURVE, `send_direct`/`broadcast`, ping-pong heartbeat, tích hợp xuyên suốt BFT consensus, ordering service và API. Thêm cấu hình P2P (`P2P_ENABLED`, `P2P_HOST`, `P2P_PORT`).
+    * **API v3 & Chữ ký số**: Endpoint `POST /api/v3/chains/{chain_name}/secure-events` với xác thực chữ ký Ed25519, giới hạn payload 1MB và độ sâu tối đa 10. Thêm trường `sender`/`signature` vào schema.
+    * **Củng cố Consensus**: Chữ ký Ed25519 cho Proof of Federation, xác thực timestamp BFT 30 giây chống replay, xác minh block hash khi reconstruction, `block_interval` cấu hình được.
+    * **Bảo mật**: Từ chối ZK proof giả trong production (cho phép test), so sánh hằng số thời gian HMAC, `threading.RLock` trong LockdownProtocol, tăng PBKDF2 lên 310,000 iterations.
+    * **Hạ tầng Docker/K8s**: Hỗ trợ Podman (Compose và K8s), di chuyển lên OrbStack, API Gateway Nginx với stealth explorer, Web2 gateway node, Redis deployment, sinh identity động, chaos controller.
+    * **Kiểm thử Stress & Chaos**: Bộ kiểm thử mới cho network partition, kill node, CPU throttling, WAN simulation, DDoS, memory leak soak, WebSocket load, storage benchmark.
+    * **Tài liệu đa ngôn ngữ**: Hỗ trợ tiếng Việt và tiếng Anh, dịch 16 quy trình công việc, hướng dẫn sử dụng, tài liệu tham khảo API. Viết lại `AGENTS.md` với nguyên tắc hành vi AI.
+
+??? warning "Fix (3)"
+
+    * **Consensus & Storage**: Sửa xác thực block signature và sinh key tự động trong PoA, sửa return value mặc định trong BFT message handler, thêm validation proof_hash 64-ký tự SHA-256, xác thực toàn vẹn chain sau deserialization.
+    * **API & SDK**: Cập nhật default base URL SDK từ 8000 sang 2661, validation tên sub-chain bằng regex, thread-safe cho RateLimiter, validation CID/nonce trong IPFS client.
+    * **Build & Dependency**: Thêm `uvicorn[standard]`, `websockets`, `click`, `build`, `twine`; pin `urllib3==2.7.0`; nâng cấp `zensical` và `pymdown-extensions`; ghim Python 3.12 trong CI.
+
+---
+
 ## v0.0.3 (2026-05-02)
 
 Phiên bản này tập trung vào sự sẵn sàng cho production thông qua các cải thiện toàn diện về type safety trong `hierachain/`, triển khai Kubernetes StatefulSet, hạ tầng stress testing mạnh mẽ, và tăng cường xác thực bảo mật.

@@ -6,6 +6,28 @@ icon: material/history
 
 # Changelog
 
+## v0.0.4 (2026-05-25)
+
+This release focuses on production-grade networking infrastructure, cryptographic integrity, and enterprise-grade stress testing, introducing Node Identity with Ed25519/Curve25519 keypairs, ZeroMQ CURVE encryption for P2P, API v3 secure event submission, comprehensive stress/chaos testing suite, Podman/OrbStack support, and dual-language documentation restructuring.
+
+??? note "Improvements (7)"
+
+    * **Node Identity & P2P Networking**: Introduced `NodeIdentity`, ZeroMQ CURVE encryption, `send_direct`/`broadcast` methods, ping-pong heartbeat, propagated through BFT consensus, ordering service, and API. Added P2P settings (`P2P_ENABLED`, `P2P_HOST`, `P2P_PORT`).
+    * **API v3 & Cryptographic Signatures**: New `POST /api/v3/chains/{chain_name}/secure-events` endpoint with Ed25519 signature verification, 1MB payload limit, and max depth 10. Added `sender`/`signature` fields to event schemas.
+    * **Consensus Hardening**: Ed25519 signing for Proof of Federation, 30-second BFT timestamp drift check against replay attacks, block hash verification on reconstruction, configurable `block_interval`.
+    * **Security**: Production ZK proof rejection (test environment bypass), HMAC constant-time comparison, `threading.RLock` in LockdownProtocol, PBKDF2 increased to 310,000 iterations.
+    * **Docker/K8s Infrastructure**: Podman support (Compose and K8s), OrbStack migration, Nginx API Gateway with stealth explorer, Web2 gateway node, Redis deployment, dynamic identity generation, chaos controller.
+    * **Stress & Chaos Testing**: New suites for network partition, node kill, CPU throttling, WAN simulation, DDoS, memory leak soak, WebSocket load, and storage benchmarks.
+    * **Multi-language Documentation**: Vietnamese and English support, translated 16 workflows, how-to guides, API references. Rewrote `AGENTS.md` with AI behavioral principles.
+
+??? warning "Fix (3)"
+
+    * **Consensus & Storage**: Fixed block signature verification and auto key generation in PoA, corrected default return value in BFT handler, added 64-char SHA-256 proof_hash validation, chain integrity checks after deserialization.
+    * **API & SDK**: Updated SDK default base URL from 8000 to 2661, sub-chain name regex validation, thread-safe RateLimiter, CID/nonce validation in IPFS client.
+    * **Build & Dependencies**: Added `uvicorn[standard]`, `websockets`, `click`, `build`, `twine`; pinned `urllib3==2.7.0`; bumped `zensical` and `pymdown-extensions`; pinned Python 3.12 in CI.
+
+---
+
 ## v0.0.3 (2026-05-02)
 
 This release focuses on production readiness through comprehensive type safety improvements in `hierachain/`, Kubernetes StatefulSet deployment, robust stress testing infrastructure, and enhanced security validation.
