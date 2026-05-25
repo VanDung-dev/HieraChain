@@ -4191,6 +4191,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v004-2026-05-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.4 (2026-05-25)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v003-2026-05-02" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4280,6 +4291,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v004-2026-05-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.4 (2026-05-25)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v003-2026-05-02" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4344,6 +4366,29 @@
 
 
 <h1 id="changelog">Changelog</h1>
+<h2 id="v004-2026-05-25">v0.0.4 (2026-05-25)</h2>
+<p>Phiên bản này tập trung vào hạ tầng mạng cấp production, toàn vẹn mật mã học và kiểm thử stress doanh nghiệp, giới thiệu Node Identity với keypairs Ed25519/Curve25519, mã hóa ZeroMQ CURVE cho P2P, endpoint API v3 cho event an toàn, bộ kiểm thử stress/chaos toàn diện, hỗ trợ Podman/OrbStack và tái cấu trúc tài liệu song ngữ.</p>
+<details class="note">
+<summary>Improvements (7)</summary>
+<ul>
+<li><strong>Node Identity &amp; P2P Networking</strong>: Giới thiệu <code>NodeIdentity</code>, mã hóa ZeroMQ CURVE, <code>send_direct</code>/<code>broadcast</code>, ping-pong heartbeat, tích hợp xuyên suốt BFT consensus, ordering service và API. Thêm cấu hình P2P (<code>P2P_ENABLED</code>, <code>P2P_HOST</code>, <code>P2P_PORT</code>).</li>
+<li><strong>API v3 &amp; Chữ ký số</strong>: Endpoint <code>POST /api/v3/chains/{chain_name}/secure-events</code> với xác thực chữ ký Ed25519, giới hạn payload 1MB và độ sâu tối đa 10. Thêm trường <code>sender</code>/<code>signature</code> vào schema.</li>
+<li><strong>Củng cố Consensus</strong>: Chữ ký Ed25519 cho Proof of Federation, xác thực timestamp BFT 30 giây chống replay, xác minh block hash khi reconstruction, <code>block_interval</code> cấu hình được.</li>
+<li><strong>Bảo mật</strong>: Từ chối ZK proof giả trong production (cho phép test), so sánh hằng số thời gian HMAC, <code>threading.RLock</code> trong LockdownProtocol, tăng PBKDF2 lên 310,000 iterations.</li>
+<li><strong>Hạ tầng Docker/K8s</strong>: Hỗ trợ Podman (Compose và K8s), di chuyển lên OrbStack, API Gateway Nginx với stealth explorer, Web2 gateway node, Redis deployment, sinh identity động, chaos controller.</li>
+<li><strong>Kiểm thử Stress &amp; Chaos</strong>: Bộ kiểm thử mới cho network partition, kill node, CPU throttling, WAN simulation, DDoS, memory leak soak, WebSocket load, storage benchmark.</li>
+<li><strong>Tài liệu đa ngôn ngữ</strong>: Hỗ trợ tiếng Việt và tiếng Anh, dịch 16 quy trình công việc, hướng dẫn sử dụng, tài liệu tham khảo API. Viết lại <code>AGENTS.md</code> với nguyên tắc hành vi AI.</li>
+</ul>
+</details>
+<details class="warning">
+<summary>Fix (3)</summary>
+<ul>
+<li><strong>Consensus &amp; Storage</strong>: Sửa xác thực block signature và sinh key tự động trong PoA, sửa return value mặc định trong BFT message handler, thêm validation proof_hash 64-ký tự SHA-256, xác thực toàn vẹn chain sau deserialization.</li>
+<li><strong>API &amp; SDK</strong>: Cập nhật default base URL SDK từ 8000 sang 2661, validation tên sub-chain bằng regex, thread-safe cho RateLimiter, validation CID/nonce trong IPFS client.</li>
+<li><strong>Build &amp; Dependency</strong>: Thêm <code>uvicorn[standard]</code>, <code>websockets</code>, <code>click</code>, <code>build</code>, <code>twine</code>; pin <code>urllib3==2.7.0</code>; nâng cấp <code>zensical</code> và <code>pymdown-extensions</code>; ghim Python 3.12 trong CI.</li>
+</ul>
+</details>
+<hr />
 <h2 id="v003-2026-05-02">v0.0.3 (2026-05-02)</h2>
 <p>Phiên bản này tập trung vào sự sẵn sàng cho production thông qua các cải thiện toàn diện về type safety trong <code>hierachain/</code>, triển khai Kubernetes StatefulSet, hạ tầng stress testing mạnh mẽ, và tăng cường xác thực bảo mật.</p>
 <details class="note">

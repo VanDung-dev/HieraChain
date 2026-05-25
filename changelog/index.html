@@ -4191,6 +4191,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v004-2026-05-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.4 (2026-05-25)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v003-2026-05-02" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4280,6 +4291,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v004-2026-05-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.4 (2026-05-25)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v003-2026-05-02" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4344,6 +4366,29 @@
 
 
 <h1 id="changelog">Changelog</h1>
+<h2 id="v004-2026-05-25">v0.0.4 (2026-05-25)</h2>
+<p>This release focuses on production-grade networking infrastructure, cryptographic integrity, and enterprise-grade stress testing, introducing Node Identity with Ed25519/Curve25519 keypairs, ZeroMQ CURVE encryption for P2P, API v3 secure event submission, comprehensive stress/chaos testing suite, Podman/OrbStack support, and dual-language documentation restructuring.</p>
+<details class="note">
+<summary>Improvements (7)</summary>
+<ul>
+<li><strong>Node Identity &amp; P2P Networking</strong>: Introduced <code>NodeIdentity</code>, ZeroMQ CURVE encryption, <code>send_direct</code>/<code>broadcast</code> methods, ping-pong heartbeat, propagated through BFT consensus, ordering service, and API. Added P2P settings (<code>P2P_ENABLED</code>, <code>P2P_HOST</code>, <code>P2P_PORT</code>).</li>
+<li><strong>API v3 &amp; Cryptographic Signatures</strong>: New <code>POST /api/v3/chains/{chain_name}/secure-events</code> endpoint with Ed25519 signature verification, 1MB payload limit, and max depth 10. Added <code>sender</code>/<code>signature</code> fields to event schemas.</li>
+<li><strong>Consensus Hardening</strong>: Ed25519 signing for Proof of Federation, 30-second BFT timestamp drift check against replay attacks, block hash verification on reconstruction, configurable <code>block_interval</code>.</li>
+<li><strong>Security</strong>: Production ZK proof rejection (test environment bypass), HMAC constant-time comparison, <code>threading.RLock</code> in LockdownProtocol, PBKDF2 increased to 310,000 iterations.</li>
+<li><strong>Docker/K8s Infrastructure</strong>: Podman support (Compose and K8s), OrbStack migration, Nginx API Gateway with stealth explorer, Web2 gateway node, Redis deployment, dynamic identity generation, chaos controller.</li>
+<li><strong>Stress &amp; Chaos Testing</strong>: New suites for network partition, node kill, CPU throttling, WAN simulation, DDoS, memory leak soak, WebSocket load, and storage benchmarks.</li>
+<li><strong>Multi-language Documentation</strong>: Vietnamese and English support, translated 16 workflows, how-to guides, API references. Rewrote <code>AGENTS.md</code> with AI behavioral principles.</li>
+</ul>
+</details>
+<details class="warning">
+<summary>Fix (3)</summary>
+<ul>
+<li><strong>Consensus &amp; Storage</strong>: Fixed block signature verification and auto key generation in PoA, corrected default return value in BFT handler, added 64-char SHA-256 proof_hash validation, chain integrity checks after deserialization.</li>
+<li><strong>API &amp; SDK</strong>: Updated SDK default base URL from 8000 to 2661, sub-chain name regex validation, thread-safe RateLimiter, CID/nonce validation in IPFS client.</li>
+<li><strong>Build &amp; Dependencies</strong>: Added <code>uvicorn[standard]</code>, <code>websockets</code>, <code>click</code>, <code>build</code>, <code>twine</code>; pinned <code>urllib3==2.7.0</code>; bumped <code>zensical</code> and <code>pymdown-extensions</code>; pinned Python 3.12 in CI.</li>
+</ul>
+</details>
+<hr />
 <h2 id="v003-2026-05-02">v0.0.3 (2026-05-02)</h2>
 <p>This release focuses on production readiness through comprehensive type safety improvements in <code>hierachain/</code>, Kubernetes StatefulSet deployment, robust stress testing infrastructure, and enhanced security validation.</p>
 <details class="note">
