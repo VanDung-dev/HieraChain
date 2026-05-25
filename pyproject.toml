@@ -35,7 +35,6 @@ dependencies = [
     "graphene==3.4.3",
     "httpx==0.28.1",
     "hvac==2.4.0",
-    "ipfshttpclient==0.7.0",
     "kubernetes==35.0.0",
     "prometheus-client==0.25.0",
     "psutil==7.2.2",
