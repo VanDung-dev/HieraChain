@@ -95,7 +95,7 @@ flowchart LR
 |:-----|:------------|
 | **1. Serialize** | `json.dumps(data)` → raw bytes |
 | **2. Encrypt** | AES-256-GCM with random 96-bit nonce. AAD (additional authenticated data) = JSON-serialized metadata |
-| **3. Upload** | Raw ciphertext bytes sent to IPFS daemon via `ipfshttpclient` |
+| **3. Upload** | Raw ciphertext bytes sent to IPFS daemon via Kubo RPC API (`httpx`) |
 | **4. Pin** | `pin.add(CID)` prevents garbage collection by IPFS GC daemon |
 | **5. Return** | Caller receives `{ cid, nonce }` — both must be stored on-chain for retrieval |
 | **6. Retrieve** | `cat(cid)` fetches ciphertext; `decrypt()` verifies GCM authentication tag before decrypting |
