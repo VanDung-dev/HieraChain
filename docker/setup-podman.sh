@@ -21,10 +21,34 @@ COMPOSE_FILE="docker/podman-compose.yml"
 EXPLORER_TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 8 || echo "default")
 export EXPLORER_TOKEN="hrc_${EXPLORER_TOKEN}"
 
+# Pre-generate IPFS private swarm key and encryption key
+echo "[Pre] Generating IPFS private swarm key..."
+mkdir -p docker/ipfs
+if [ ! -f docker/ipfs/swarm.key ]; then
+    SWARM_KEY_HEX=$(openssl rand -hex 32)
+    {
+      echo "/key/swarm/psk/1.0.0/"
+      echo "/base16/"
+      echo "$SWARM_KEY_HEX"
+    } > docker/ipfs/swarm.key
+    echo "  IPFS swarm.key generated at docker/ipfs/swarm.key"
+else
+    echo "  IPFS swarm.key already exists."
+fi
+
+echo "[Pre] Generating IPFS encryption key..."
+if [ -z "$IPFS_ENCRYPTION_KEY" ]; then
+    export IPFS_ENCRYPTION_KEY=$(openssl rand -hex 32)
+    echo "  IPFS_ENCRYPTION_KEY generated"
+else
+    echo "  IPFS_ENCRYPTION_KEY already set."
+fi
+
+
 # Step 0: Auto-discover nodes from compose file
 echo "[0/5] Discovering cluster nodes..."
-# Extracts all hostnames from the compose file (excluding the gateway itself)
-HRC_NODES=$(grep "hostname:" $COMPOSE_FILE | awk '{print $2}' | grep -v "gateway" | tr '\n' ',' | sed 's/,$//')
+# Extracts all hostnames from the compose file (excluding gateway, redis, ipfs)
+HRC_NODES=$(grep "hostname:" $COMPOSE_FILE | awk '{print $2}' | grep -v -E "gateway|redis|ipfs" | tr '\n' ',' | sed 's/,$//')
 export HRC_NODES
 echo "  Found nodes: ${HRC_NODES}"
 
@@ -122,6 +146,9 @@ echo "HieraChain Nodes (Isolated Internal Network):"
 echo "  Subnet: 172.28.0.0/24 (node1-node4)"
 echo "  (No direct external access for security)"
 echo ""
+echo "IPFS Private Swarm:"
+echo "  Encryption Key: ${IPFS_ENCRYPTION_KEY} (saved in swarm.key)"
+echo ""
 echo "Next steps:"
 echo "  - Run stress test: bash docker/run-stress-podman.sh"
 echo "  - View cluster logs: podman compose -f $COMPOSE_FILE logs -f"
@@ -129,5 +156,3 @@ echo ""
 echo "Cleanup:"
 echo "  podman compose -f $COMPOSE_FILE down -v"
 echo "========================================"
-
-

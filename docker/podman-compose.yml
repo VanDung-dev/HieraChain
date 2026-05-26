@@ -23,6 +23,11 @@ services:
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_ENV=test
       - LOG_LEVEL=INFO
+      - HRC_IPFS_ENABLED=true
+      - HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
+      - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
+      - HRC_IPFS_AUTO_PIN=true
+      - HRC_IPFS_TIMEOUT=120
     cpuset: "0"
     networks:
       hierachain-internal:
@@ -31,6 +36,14 @@ services:
       - node1-data:/app/data
       - ./nodes/node1:/app/config/identity:ro
       - ../log/node1:/app/log
+    depends_on:
+      ipfs-node1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   node2:
@@ -47,6 +60,11 @@ services:
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_ENV=test
       - LOG_LEVEL=INFO
+      - HRC_IPFS_ENABLED=true
+      - HRC_IPFS_HOST=/dns4/ipfs-node2/tcp/5001
+      - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
+      - HRC_IPFS_AUTO_PIN=true
+      - HRC_IPFS_TIMEOUT=120
     cpuset: "1"
     networks:
       hierachain-internal:
@@ -56,7 +74,15 @@ services:
       - ./nodes/node2:/app/config/identity:ro
       - ../log/node2:/app/log
     depends_on:
-      - node1
+      node1:
+        condition: service_started
+      ipfs-node2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   node3:
@@ -73,6 +99,11 @@ services:
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_ENV=test
       - LOG_LEVEL=INFO
+      - HRC_IPFS_ENABLED=true
+      - HRC_IPFS_HOST=/dns4/ipfs-node3/tcp/5001
+      - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
+      - HRC_IPFS_AUTO_PIN=true
+      - HRC_IPFS_TIMEOUT=120
     cpuset: "2"
     networks:
       hierachain-internal:
@@ -82,7 +113,15 @@ services:
       - ./nodes/node3:/app/config/identity:ro
       - ../log/node3:/app/log
     depends_on:
-      - node1
+      node1:
+        condition: service_started
+      ipfs-node3:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   node4:
@@ -99,6 +138,11 @@ services:
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_ENV=test
       - LOG_LEVEL=INFO
+      - HRC_IPFS_ENABLED=true
+      - HRC_IPFS_HOST=/dns4/ipfs-node4/tcp/5001
+      - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
+      - HRC_IPFS_AUTO_PIN=true
+      - HRC_IPFS_TIMEOUT=120
     cpuset: "3"
     networks:
       hierachain-internal:
@@ -108,7 +152,15 @@ services:
       - ./nodes/node4:/app/config/identity:ro
       - ../log/node4:/app/log
     depends_on:
-      - node1
+      node1:
+        condition: service_started
+      ipfs-node4:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   redis:
@@ -139,6 +191,93 @@ services:
       - node3
       - node4
 
+  # IPFS Private Swarm (one node per HieraChain node)
+  ipfs-node1:
+    image: ipfs/kubo:latest
+    container_name: hierachain-ipfs-node1
+    hostname: ipfs-node1
+    user: "1000:1000"
+    environment:
+      - IPFS_PROFILE=server
+    volumes:
+      - ipfs-node1-data:/data/ipfs
+      - ./ipfs/swarm.key:/data/ipfs/swarm.key
+      - ./ipfs/init.sh:/container-init.d/init.sh:ro
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.61
+    healthcheck:
+      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ipfs-node2:
+    image: ipfs/kubo:latest
+    container_name: hierachain-ipfs-node2
+    hostname: ipfs-node2
+    user: "1000:1000"
+    environment:
+      - IPFS_PROFILE=server
+    volumes:
+      - ipfs-node2-data:/data/ipfs
+      - ./ipfs/swarm.key:/data/ipfs/swarm.key
+      - ./ipfs/init.sh:/container-init.d/init.sh:ro
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.62
+    healthcheck:
+      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      - ipfs-node1
+
+  ipfs-node3:
+    image: ipfs/kubo:latest
+    container_name: hierachain-ipfs-node3
+    hostname: ipfs-node3
+    user: "1000:1000"
+    environment:
+      - IPFS_PROFILE=server
+    volumes:
+      - ipfs-node3-data:/data/ipfs
+      - ./ipfs/swarm.key:/data/ipfs/swarm.key
+      - ./ipfs/init.sh:/container-init.d/init.sh:ro
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.63
+    healthcheck:
+      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      - ipfs-node1
+
+  ipfs-node4:
+    image: ipfs/kubo:latest
+    container_name: hierachain-ipfs-node4
+    hostname: ipfs-node4
+    user: "1000:1000"
+    environment:
+      - IPFS_PROFILE=server
+    volumes:
+      - ipfs-node4-data:/data/ipfs
+      - ./ipfs/swarm.key:/data/ipfs/swarm.key
+      - ./ipfs/init.sh:/container-init.d/init.sh:ro
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.64
+    healthcheck:
+      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      - ipfs-node1
+
   stress-tester:
     image: hierachain:latest
     container_name: hierachain-stress-tester-podman
@@ -156,10 +295,32 @@ services:
       - ../log:/app/log
     profiles:
       - stress-test
+    depends_on:
+      node1:
+        condition: service_healthy
+      node2:
+        condition: service_healthy
+      node3:
+        condition: service_healthy
+      node4:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      ipfs-node1:
+        condition: service_healthy
+      ipfs-node2:
+        condition: service_healthy
+      ipfs-node3:
+        condition: service_healthy
+      ipfs-node4:
+        condition: service_healthy
 
 volumes:
   node1-data:
   node2-data:
   node3-data:
   node4-data:
-
+  ipfs-node1-data:
+  ipfs-node2-data:
+  ipfs-node3-data:
+  ipfs-node4-data:
