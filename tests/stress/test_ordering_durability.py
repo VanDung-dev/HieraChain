@@ -19,6 +19,7 @@ import logging
 import os
 import socket
 import http.client
+import shutil
 import subprocess
 import requests
 import pytest
@@ -81,19 +82,27 @@ def _first_healthy_request(
 
 
 def get_event_count(client: RealStressClient, node_id: str) -> int:
-    """Get total event count of chain."""
-    try:
-        status = client.node_status.get(node_id)
-        if not status:
-            return 0
-        resp = client.session.get(
-            f"{status.url}/api/v1/chains/{DURABLE_CHAIN}/stats",
-            timeout=10,
-        )
-        if resp.status_code == 200:
-            return resp.json().get("total_events", 0)
-    except Exception:
-        pass
+    """Get total event count of chain.
+
+    Retries on non-200 to handle load-balanced K8s gateways
+    where a request may land on a pod without the chain.
+    """
+    status = client.node_status.get(node_id)
+    if not status:
+        return 0
+    for attempt in range(5):
+        try:
+            resp = client.session.get(
+                f"{status.url}/api/v1/chains/{DURABLE_CHAIN}/stats",
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                return resp.json().get("total_events", 0)
+            if attempt < 4:
+                time.sleep(0.5)
+        except Exception:
+            if attempt < 4:
+                time.sleep(0.5)
     return 0
 
 
@@ -187,13 +196,18 @@ class TestOrderingThroughput:
     def _poll_event_count(self, node_id: str, before: int, burst: int) -> int:
         wait = 90 if burst >= 10 else 30
         deadline = time.time() + wait
-        after = before
+        anchor = before
+        peak = before
         while time.time() < deadline:
             time.sleep(3)
             after = get_event_count(self.client, node_id)
-            if after > before:
+            if after > peak:
+                peak = after
+            if peak > before:
                 break
-        return after
+            if after < anchor:
+                anchor = after
+        return peak
 
     def _run_burst(self, node_id: str, burst: int) -> dict:
         before = get_event_count(self.client, node_id)
@@ -257,11 +271,31 @@ class TestJournalDurability:
     def _kill_node(self, node_id: str) -> None:
         container_name = f"hierachain-{node_id}"
         if os.environ.get("K8S_NAMESPACE"):
-            pod = node_id.replace("node", "hierachain-node-")
-            subprocess.run(
-                ["kubectl", "delete", "pod", "-n", os.environ["K8S_NAMESPACE"], pod],
-                capture_output=True, timeout=20,
-            )
+            if not shutil.which("kubectl"):
+                logger.warning(
+                    "kubectl not found in container — cannot kill pod %s. "
+                    "Install kubectl in the Docker image or use K8s API.",
+                    node_id,
+                )
+                return
+            if not node_id.startswith("node"):
+                logger.warning(
+                    "node_id=%s does not match expected pattern (node1,node2,...). "
+                    "Cannot derive pod name — skipping kill.",
+                    node_id,
+                )
+                return
+            pod = f"hierachain-node-{node_id.removeprefix('node')}"
+            try:
+                subprocess.run(
+                    ["kubectl", "delete", "pod", "-n", os.environ["K8S_NAMESPACE"], pod],
+                    capture_output=True, timeout=20, check=True,
+                )
+                logger.info("Deleted pod %s", pod)
+            except FileNotFoundError:
+                logger.warning("kubectl not found — cannot kill pod %s", pod)
+            except subprocess.CalledProcessError as e:
+                logger.warning("kubectl delete failed for %s: %s", pod, e.stderr.decode() if e.stderr else e)
         else:
             ok = _container_stop(container_name)
             if not ok and _HAS_DOCKER_SOCKET:
