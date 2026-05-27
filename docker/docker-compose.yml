@@ -218,6 +218,63 @@ services:
       - node1
     command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
+  # Rogue node for adversarial security phase (only with profile security-test)
+  rogue-node:
+    profiles:
+      - security-test
+    image: hierachain:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hierachain-rogue-node
+    hostname: rogue-node
+    cap_add:
+      - NET_ADMIN
+    env_file:
+      - ./nodes/rogue-node/peers.env
+    environment:
+      - HRC_NODE_ID=rogue-node
+      - HRC_AUTH_ENABLED=false
+      - HRC_P2P_PORT=5005
+      - LOG_LEVEL=INFO
+      - DATABASE_PATH=/app/data/hierachain.db
+      - HRC_API_HOST=0.0.0.0
+      - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
+      - HRC_ENV=test
+      - HRC_RATE_LIMIT=false
+      - HRC_RATE_LIMIT_RPM=100000
+      - HRC_JOURNAL_FSYNC=false
+      - HRC_BLOCK_INTERVAL=1
+      - HRC_IPFS_ENABLED=true
+      - HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
+      - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
+      - HRC_IPFS_AUTO_PIN=true
+      - HRC_IPFS_TIMEOUT=120
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.20
+    volumes:
+      - rogue-node-data:/app/data
+      - ./nodes/rogue-node:/app/config/identity:ro
+      - ../log/rogue-node:/app/log
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    depends_on:
+      - node1
+      - node2
+      - node3
+      - node4
+    command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
+
   # Enterprise API Gateway (Simulated Web2 Infrastructure)
   gateway:
     image: nginx:alpine
@@ -411,6 +468,7 @@ volumes:
   node2-data:
   node3-data:
   node4-data:
+  rogue-node-data:
   ipfs-node1-data:
   ipfs-node2-data:
   ipfs-node3-data:

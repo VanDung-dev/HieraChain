@@ -83,7 +83,17 @@ server {
     # Dynamic Diagnostic Bridge
     # Proxies to any node name provided in the URL
     location ~ ^/${EXPLORER_TOKEN}/diag/(?<target_node>[^/]+) {
-        # Internal security: Only allow proxying to nodes on the internal network
+        # Internal security: Only allow proxying to ALLOWLISTED nodes
+        set $hc_allowed 0;
+        if ($target_node = node1) { set $hc_allowed 1; }
+        if ($target_node = node2) { set $hc_allowed 1; }
+        if ($target_node = node3) { set $hc_allowed 1; }
+        if ($target_node = node4) { set $hc_allowed 1; }
+
+        if ($hc_allowed = 0) {
+            return 403 'Forbidden: target not allowed';
+        }
+
         proxy_pass http://$target_node:2661/api/v1/health;
         
         proxy_set_header Host $host;
