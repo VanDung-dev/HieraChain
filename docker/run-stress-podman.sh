@@ -11,6 +11,11 @@ TARGET="gateway:8080,node1:2661,node2:2661,node3:2661,node4:2661"
 COMPOSE_FILE="docker/podman-compose.yml"
 IPFS_DIR="docker/ipfs"
 
+# Reuse the pre-setup cluster by default (no build/restart container)
+# Set REUSE_EXISTING_CLUSTER=false to automatically build & start the cluster. You can set FORCE_RECREATE=true to force down/up + delete IPFS volumes.
+REUSE_EXISTING_CLUSTER=${REUSE_EXISTING_CLUSTER:-true}
+FORCE_RECREATE=${FORCE_RECREATE:-false}
+
 echo "========================================"
 echo " HieraChain Podman Compose Stress Test"
 echo "========================================"
@@ -37,16 +42,28 @@ if [ -z "${IPFS_ENCRYPTION_KEY:-}" ]; then
     echo "[Pre] IPFS_ENCRYPTION_KEY generated"
 fi
 
-# Step 1: Rebuild images with latest code, then restart cluster
-echo "[1/4] Building Podman images..."
-podman compose -f "$COMPOSE_FILE" build
-echo "  ✅ Build complete"
+# Step 1: Build images (tuỳ chọn)
+if [ "${REUSE_EXISTING_CLUSTER}" != "true" ]; then
+  echo "[1/4] Building Podman images..."
+  podman compose -f "$COMPOSE_FILE" build
+  echo "  ✅ Build complete"
+else
+  echo "[1/4] Skip build (REUSE_EXISTING_CLUSTER=true)"
+fi
 
-echo "[2/4] Restarting cluster..."
-# Clean up old containers and IPFS volumes to avoid permission conflicts
-podman compose -f "$COMPOSE_FILE" down 2>/dev/null || true
-podman volume rm -f ipfs-node1-data ipfs-node2-data ipfs-node3-data ipfs-node4-data 2>/dev/null || true
-podman compose -f "$COMPOSE_FILE" up -d
+# Step 2: Khởi động cụm (tuỳ chọn)
+if [ "${REUSE_EXISTING_CLUSTER}" != "true" ]; then
+  echo "[2/4] Starting cluster..."
+  if [ "${FORCE_RECREATE}" = "true" ]; then
+    echo "  (FORCE_RECREATE=true) Restarting containers and cleaning IPFS volumes"
+    # Clean up old containers and IPFS volumes to avoid permission conflicts
+    podman compose -f "$COMPOSE_FILE" down 2>/dev/null || true
+    podman volume rm -f ipfs-node1-data ipfs-node2-data ipfs-node3-data ipfs-node4-data 2>/dev/null || true
+  fi
+  podman compose -f "$COMPOSE_FILE" up -d
+else
+  echo "[2/4] Reusing existing cluster (no restart)"
+fi
 
 # Wait for cluster health
 echo "[3/4] Waiting for cluster to be healthy..."
@@ -79,7 +96,10 @@ done
 
 if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
     echo "  ❌ Cluster failed to become healthy"
-    podman compose -f "$COMPOSE_FILE" logs --tail=20
+    if [ "${REUSE_EXISTING_CLUSTER}" = "true" ]; then
+        echo "  Hint: The cluster may not be running yet. Please boot first, or run again with REUSE_EXISTING_CLUSTER=false to build & start yourself."
+    fi
+    podman compose -f "$COMPOSE_FILE" logs --tail=20 || true
     exit 1
 fi
 

@@ -10,6 +10,12 @@ REAL_REQUESTS="true"
 TARGET="gateway:80,node1:2661,node2:2661,node3:2661,node4:2661"
 COMPOSE_FILE="docker/docker-compose.yml"
 IPFS_DIR="docker/ipfs"
+STRESS_PYTEST_TARGET=${STRESS_PYTEST_TARGET:-tests/stress/}
+
+# Reuse an already set up cluster by default (do not rebuild or restart containers)
+# Set REUSE_EXISTING_CLUSTER=false to force a fresh build/up. Optionally set FORCE_RECREATE=true to force-recreate.
+REUSE_EXISTING_CLUSTER=${REUSE_EXISTING_CLUSTER:-true}
+FORCE_RECREATE=${FORCE_RECREATE:-false}
 
 echo "========================================"
 echo " HieraChain Docker Compose Stress Test"
@@ -37,13 +43,35 @@ if [ -z "${IPFS_ENCRYPTION_KEY:-}" ]; then
     echo "[Pre] IPFS_ENCRYPTION_KEY generated"
 fi
 
-# Step 1: Rebuild images with latest code, then restart cluster
-echo "[1/4] Building Docker images..."
-docker compose -f "$COMPOSE_FILE" build
-echo "  ✅ Build complete"
+# Step pre: Generate identities (legitimate nodes only)
+if [ "${REUSE_EXISTING_CLUSTER}" != "true" ]; then
+  echo "[0/4] Generating node identities (node1–node4)..."
+  python3 docker/scripts/generate_node_identities.py
+  echo "  ✅ Identities ready"
+else
+  echo "[0/4] Skipping identity generation (REUSE_EXISTING_CLUSTER=true)"
+fi
 
-echo "[2/4] Restarting cluster..."
-docker compose -f "$COMPOSE_FILE" up -d --force-recreate
+# Step 1: Rebuild images with latest code (optional)
+if [ "${REUSE_EXISTING_CLUSTER}" != "true" ]; then
+  echo "[1/4] Building Docker images..."
+  docker compose -f "$COMPOSE_FILE" build
+  echo "  ✅ Build complete"
+else
+  echo "[1/4] Skipping Docker build (REUSE_EXISTING_CLUSTER=true)"
+fi
+
+if [ "${REUSE_EXISTING_CLUSTER}" != "true" ]; then
+  echo "[2/4] Starting legitimate 4-node cluster..."
+  # Do not enable security-test profile here; only legit services are started
+  UP_ARGS=""
+  if [ "${FORCE_RECREATE}" = "true" ]; then
+    UP_ARGS="--force-recreate"
+  fi
+  docker compose -f "$COMPOSE_FILE" up -d ${UP_ARGS} node1 node2 node3 node4 gateway redis ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4
+else
+  echo "[2/4] Reusing existing 4-node cluster (no restart)"
+fi
 
 # Wait for cluster health
 echo "[3/4] Waiting for cluster to be healthy..."
@@ -76,13 +104,16 @@ done
 
 if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
     echo "  ❌ Cluster failed to become healthy"
-    docker compose -f "$COMPOSE_FILE" logs --tail=20
+    if [ "${REUSE_EXISTING_CLUSTER}" = "true" ]; then
+        echo "  Hint: Cluster may not be running. Start it first, or rerun with REUSE_EXISTING_CLUSTER=false to auto-start."
+    fi
+    docker compose -f "$COMPOSE_FILE" logs --tail=20 || true
     exit 1
 fi
 
 # Step 4: Run stress test
 echo ""
-echo "[4/4] Starting stress test + IPFS integration..."
+echo "[4/4] Starting normal stress test (excluding security suite) + IPFS integration..."
 docker compose -f "$COMPOSE_FILE" run --rm stress-tester \
     bash -c "
         mkdir -p /app/log/report
@@ -91,13 +122,14 @@ docker compose -f "$COMPOSE_FILE" run --rm stress-tester \
         export REAL_REQUESTS='$REAL_REQUESTS'
         export HRC_IPFS_ENABLED=true
         export HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
-        uv run pytest tests/stress/ -v \
+        uv run pytest ${STRESS_PYTEST_TARGET} -v \
+            --ignore=tests/stress/security \
             --html=/app/log/report/docker_stress_report.html \
             --self-contained-html
     "
 
 echo ""
 echo "========================================"
-echo " Stress test + IPFS integration complete!"
+echo " Stress test complete!"
 echo "========================================"
-echo "Report: log/report/docker_stress_report.html"
+echo "Normal report:  log/report/docker_stress_report.html"

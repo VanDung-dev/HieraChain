@@ -18,6 +18,10 @@ NAMESPACE="hierachain"
 COMPOSE_FILE="docker/docker-compose.k8s-stress.yml"
 IPFS_DIR="docker/ipfs"
 
+# Reuse clusters that are already set up by default: no image builds, no ConfigMap/Secret updates, no rollouts
+# Set REUSE_EXISTING_CLUSTER=false to do full build + update + rollout.
+REUSE_EXISTING_CLUSTER=${REUSE_EXISTING_CLUSTER:-true}
+
 echo "========================================"
 echo " HieraChain OrbStack K8s Stress Test"
 echo "========================================"
@@ -50,63 +54,71 @@ fi
 
 # Step 1: Rebuild Docker image with latest code
 echo ""
-echo "[1/4] Building Docker image..."
-docker build -t hierachain:latest -f docker/Dockerfile .
-echo "  ✅ Build complete"
-
-# Step 2: Restart K8s cluster resources
-echo ""
-echo "[2/4] Restarting K8s cluster..."
-
-# Update IPFS configmap with latest swarm.key
-echo "  Updating IPFS config..."
-# Patch init.sh with K8s-specific additions (swarm.key copy + permission fix)
-# using awk instead of sed for macOS/Linux compatibility
-INIT_SH_CONTENT=$(awk '
-/^# 1. Ensure swarm.key is in place for private network/ {
-    print "# 0. Copy swarm.key from ConfigMap mount if present (K8s deployment)"
-    print "if [ -f /container-init.d/swarm.key ] && [ ! -f \042$SWARM_KEY_FILE\042 ]; then"
-    print "    echo \042[IPFS Init] Copying swarm.key from ConfigMap mount...\042"
-    print "    cp /container-init.d/swarm.key \042$SWARM_KEY_FILE\042"
-    print "fi"
-    print
-}
-/echo.*Ready/ {
-    print "# 5. Fix permissions: init runs as root but daemon runs as ipfs (UID 1000)"
-    print "chown -R 1000:1000 /data/ipfs 2>/dev/null || true"
-    print
-}
-{ print }
-' docker/ipfs/init.sh)
-TEMP_INIT_SH=$(mktemp)
-echo "$INIT_SH_CONTENT" > "$TEMP_INIT_SH"
-
-kubectl create configmap ipfs-config -n $NAMESPACE \
-    --from-file=init.sh="$TEMP_INIT_SH" \
-    --from-file=swarm.key=docker/ipfs/swarm.key \
-    --dry-run=client -o yaml | kubectl apply -f -
-rm -f "$TEMP_INIT_SH"
-echo "  ✅ IPFS config updated"
-
-# Update IPFS encryption key in secrets (preserve EXPLORER_TOKEN and HRC_NODES)
-# Read existing EXPLORER_TOKEN from the secret, or generate a new one
-EXISTING_TOKEN=$(kubectl get secret hierachain-secrets -n $NAMESPACE -o jsonpath='{.data.EXPLORER_TOKEN}' 2>/dev/null | base64 -d 2>/dev/null || echo "")
-if [ -z "$EXISTING_TOKEN" ]; then
-    EXISTING_TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 16)
+if [ "${REUSE_EXISTING_CLUSTER}" != "true" ]; then
+  echo "[1/4] Building Docker image..."
+  docker build -t hierachain:latest -f docker/Dockerfile .
+  echo "  ✅ Build complete"
+else
+  echo "[1/4] Skip build (REUSE_EXISTING_CLUSTER=true)"
 fi
-kubectl create secret generic hierachain-secrets -n $NAMESPACE \
-    --from-literal=EXPLORER_TOKEN=$EXISTING_TOKEN \
-    --from-literal=HRC_NODES="node1,node2,node3,node4" \
-    --from-literal=IPFS_ENCRYPTION_KEY=$IPFS_ENCRYPTION_KEY \
-    --dry-run=client -o yaml | kubectl apply -f -
-echo "  ✅ IPFS encryption key updated"
 
-# Restart IPFS and HieraChain nodes
-echo "  Restarting IPFS statefulset..."
-kubectl rollout restart statefulset/ipfs -n $NAMESPACE
+# Step 2: Restart/Update K8s cluster resources
+echo ""
+if [ "${REUSE_EXISTING_CLUSTER}" != "true" ]; then
+  echo "[2/4] Restarting K8s cluster..."
 
-echo "  Restarting HieraChain nodes..."
-kubectl rollout restart statefulset/hierachain-node -n $NAMESPACE
+  # Update IPFS configmap with latest swarm.key
+  echo "  Updating IPFS config..."
+  # Patch init.sh with K8s-specific additions (swarm.key copy + permission fix)
+  # using awk instead of sed for macOS/Linux compatibility
+  INIT_SH_CONTENT=$(awk '
+/^# 1. Ensure swarm.key is in place for private network/ {
+      print "# 0. Copy swarm.key from ConfigMap mount if present (K8s deployment)"
+      print "if [ -f /container-init.d/swarm.key ] && [ ! -f \042$SWARM_KEY_FILE\042 ]; then"
+      print "    echo \042[IPFS Init] Copying swarm.key from ConfigMap mount...\042"
+      print "    cp /container-init.d/swarm.key \042$SWARM_KEY_FILE\042"
+      print "fi"
+      print
+  }
+  /echo.*Ready/ {
+      print "# 5. Fix permissions: init runs as root but daemon runs as ipfs (UID 1000)"
+      print "chown -R 1000:1000 /data/ipfs 2>/dev/null || true"
+      print
+  }
+  { print }
+  ' docker/ipfs/init.sh)
+  TEMP_INIT_SH=$(mktemp)
+  echo "$INIT_SH_CONTENT" > "$TEMP_INIT_SH"
+
+  kubectl create configmap ipfs-config -n $NAMESPACE \
+      --from-file=init.sh="$TEMP_INIT_SH" \
+      --from-file=swarm.key=docker/ipfs/swarm.key \
+      --dry-run=client -o yaml | kubectl apply -f -
+  rm -f "$TEMP_INIT_SH"
+  echo "  ✅ IPFS config updated"
+
+  # Update IPFS encryption key in secrets (preserve EXPLORER_TOKEN and HRC_NODES)
+  # Read existing EXPLORER_TOKEN from the secret, or generate a new one
+  EXISTING_TOKEN=$(kubectl get secret hierachain-secrets -n $NAMESPACE -o jsonpath='{.data.EXPLORER_TOKEN}' 2>/dev/null | base64 -d 2>/dev/null || echo "")
+  if [ -z "$EXISTING_TOKEN" ]; then
+      EXISTING_TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 16)
+  fi
+  kubectl create secret generic hierachain-secrets -n $NAMESPACE \
+      --from-literal=EXPLORER_TOKEN=$EXISTING_TOKEN \
+      --from-literal=HRC_NODES="node1,node2,node3,node4" \
+      --from-literal=IPFS_ENCRYPTION_KEY=$IPFS_ENCRYPTION_KEY \
+      --dry-run=client -o yaml | kubectl apply -f -
+  echo "  ✅ IPFS encryption key updated"
+
+  # Restart IPFS and HieraChain nodes
+  echo "  Restarting IPFS statefulset..."
+  kubectl rollout restart statefulset/ipfs -n $NAMESPACE
+
+  echo "  Restarting HieraChain nodes..."
+  kubectl rollout restart statefulset/hierachain-node -n $NAMESPACE
+else
+  echo "[2/4] Skip update/rollout K8s (REUSE_EXISTING_CLUSTER=true)"
+fi
 
 # Step 3: Wait for cluster to be healthy
 echo ""
@@ -193,6 +205,9 @@ if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
     echo "  Current pods:"
     kubectl get pods -n $NAMESPACE
     kubectl logs -n $NAMESPACE -l app=hierachain --tail=20 || true
+    if [ "${REUSE_EXISTING_CLUSTER}" = "true" ]; then
+        echo "  Hint: The cluster may not be ready. Run setup first or set REUSE_EXISTING_CLUSTER=false to let the script build & roll out automatically."
+    fi
     exit 1
 fi
 
