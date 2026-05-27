@@ -13,22 +13,35 @@ if [ -f /root/.kube/config ]; then
   sed -i 's/127.0.0.1/host.docker.internal/g' "$KUBECONFIG"
 fi
 
-# Verify host.docker.internal is reachable
-if ping -c 1 -W 2 host.docker.internal > /dev/null 2>&1; then
+# Verify host.docker.internal is reachable via TCP
+# (ping/curl not available in python:3.12-slim images)
+HOST_REACHABLE=$(python3 -c "
+import socket
+try:
+    s = socket.create_connection(('host.docker.internal', 80), timeout=2)
+    s.close()
+    print('yes')
+except Exception:
+    print('no')
+" 2>/dev/null || echo "no")
+
+if [ "$HOST_REACHABLE" = "yes" ]; then
   echo "host.docker.internal is reachable."
 else
   echo "WARNING: host.docker.internal is NOT reachable. Attempting Gateway IP fallback..."
-  
-  # Find Gateway IP using /proc/net/route (standard on Linux, no extra tools needed)
-  HOST_IP=$(awk 'NR>1 && $2=="00000000" {
-    hex=$8; 
-    printf "%d.%d.%d.%d\n",
-      strtonum("0x"substr(hex,7,2)),
-      strtonum("0x"substr(hex,5,2)),
-      strtonum("0x"substr(hex,3,2)),
-      strtonum("0x"substr(hex,1,2))
-    exit
-  }' /proc/net/route 2>/dev/null)
+
+  # Extract gateway IP from /proc/net/route using Python
+  # (mawk lacks strtonum, so awk-based hex parsing is unreliable in slim images)
+  HOST_IP=$(python3 -c "
+import struct, socket
+with open('/proc/net/route') as f:
+    next(f)  # skip header
+    for line in f:
+        parts = line.strip().split()
+        if parts[1] == '00000000':
+            print(socket.inet_ntoa(struct.pack('<I', int(parts[2], 16))))
+            break
+" 2>/dev/null || echo "")
 
   if [ -n "$HOST_IP" ]; then
     echo "Gateway IP found: $HOST_IP — patching kubeconfig and TARGET_NODES..."
@@ -37,7 +50,6 @@ else
         sed -i "s/host.docker.internal/$HOST_IP/g" "$KUBECONFIG"
     fi
     # Update TARGET_NODES to use the host IP
-    # We strip the current host but keep the port (defaulting to 32661)
     PORT=$(echo "$TARGET_NODES" | cut -d: -f2)
     [ -z "$PORT" ] || [ "$PORT" = "$TARGET_NODES" ] && PORT="32661"
     export TARGET_NODES="${HOST_IP}:${PORT}"
