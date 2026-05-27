@@ -191,9 +191,6 @@ spec:
             - name: identity-storage
               mountPath: /identity-storage
       volumes:
-        - name: data
-          persistentVolumeClaim:
-            claimName: hierachain-node-data
         - name: identities-secret
           secret:
             secretName: hierachain-node-identities
