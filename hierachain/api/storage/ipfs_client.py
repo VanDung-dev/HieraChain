@@ -10,7 +10,9 @@ ensuring that all data stored remains within the enterprise boundary.
 
 import json
 import os
-from typing import Any, cast
+from typing import Any
+
+import httpx
 
 from hierachain.api.storage.encryption import AESEncryption, EncryptionError
 from hierachain.security.secure_logging import SecureLogger
@@ -24,20 +26,10 @@ class IPFSError(Exception):
     pass
 
 
-class _IPFSClientContext:
-    """Context manager wrapper for IPFS client."""
-
-    def __init__(self, client: Any):
-        self._client = client
-
-    def __enter__(self) -> Any:
-        return self._client
-
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb) -> None:
-        if exc_type is not None:
-            logger.error("IPFS operation failed", error=str(exc_val))
-            # Don't re-raise - let the original exception propagate naturally
-        return None
+def _parse_multiaddr(addr: str) -> tuple[str, int]:
+    """Parse multiaddr format /ip4/<host>/tcp/<port> to (host, port)."""
+    parts = addr.strip("/").split("/")
+    return parts[1], int(parts[3])
 
 
 class IPFSClient:
@@ -77,7 +69,7 @@ class IPFSClient:
         Raises:
             IPFSError: If IPFS client library is not available or connection fails
         """
-        self._host = ipfs_host
+        self._host, self._port = _parse_multiaddr(ipfs_host)
         self._timeout = timeout
         self._auto_pin = auto_pin
 
@@ -85,7 +77,7 @@ class IPFSClient:
         self._encryption = AESEncryption(encryption_key)
 
         # Lazy connection - only connect when needed
-        self._client = None
+        self._client: httpx.Client | None = None
 
         logger.info(
             "IPFS client initialized",
@@ -104,32 +96,23 @@ class IPFSClient:
         """Get the encryption key (return a copy to prevent modification)."""
         return bytes(self._encryption.key)  # Return copy for safety
 
+    # ---- Connection Management ----
+
     def _ensure_connected(self):
         """Ensure IPFS client is connected, connect if needed."""
         if self._client is None:
             try:
-                import ipfshttpclient
-            except ImportError:
-                raise IPFSError(
-                    "ipfshttpclient is not installed. "
-                    "Install it with: pip install HieraChain[ipfs]"
+                self._client = httpx.Client(
+                    base_url=f"http://{self._host}:{self._port}",
+                    timeout=self._timeout,
                 )
-            try:
-                client = ipfshttpclient.connect(self._host, timeout=self._timeout)
-                if client is None:
-                    raise IPFSError("Failed to connect: client is None")
                 # Test connection
-                client.version()
-                self._client = client
+                resp = self._client.post("/api/v0/version")
+                resp.raise_for_status()
                 logger.info("Connected to IPFS daemon", host=self._host)
             except Exception as e:
                 logger.error("Failed to connect to IPFS daemon", error=str(e))
                 raise IPFSError(f"Failed to connect to IPFS daemon: {str(e)}")
-
-    def _get_client(self) -> Any:
-        """Context manager for getting IPFS client."""
-        self._ensure_connected()
-        return _IPFSClientContext(self._client)
 
     def upload_bytes(
         self, data: bytes, encrypt: bool = True, metadata: dict[str, Any] | None = None
@@ -178,11 +161,16 @@ class IPFSClient:
                 upload_data = data
                 nonce_hex = None
 
-            # Upload to IPFS
-            with self._get_client() as client:
-                result = client.add_bytes(upload_data)
-
-            cid = result
+            # Upload to IPFS via Kubo RPC
+            self._ensure_connected()
+            resp = self._client.post(
+                "/api/v0/add",
+                files={"file": ("data", upload_data)},
+            )
+            resp.raise_for_status()
+            # Kubo returns NDJSON; first line has the Hash
+            result = resp.json()
+            cid = result["Hash"]
 
             # Auto-pin if enabled
             if self._auto_pin:
@@ -243,9 +231,11 @@ class IPFSClient:
             if not cid or not all(c.isalnum() for c in cid):
                 raise IPFSError("Invalid CID format")
 
-            # Download from IPFS
-            with self._get_client() as client:
-                download_data = client.cat(cid)
+            # Download from IPFS via Kubo RPC
+            self._ensure_connected()
+            resp = self._client.post(f"/api/v0/cat?arg={cid}")
+            resp.raise_for_status()
+            download_data = resp.content
 
             logger.debug("Data downloaded from IPFS", cid=cid, size=len(download_data))
 
@@ -324,13 +314,15 @@ class IPFSClient:
         Returns:
             Decrypted dictionary
         """
-        json_bytes = self.download_bytes(
-            cid, encrypted=encrypted, nonce=nonce, metadata=metadata
-        )
         try:
+            json_bytes = self.download_bytes(
+                cid, encrypted=encrypted, nonce=nonce, metadata=metadata
+            )
             return json.loads(json_bytes.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
             raise IPFSError(f"JSON deserialization failed: {str(e)}")
+
+    # ---- Pin Management ----
 
     def pin(self, cid: str) -> bool:
         """
@@ -346,8 +338,9 @@ class IPFSClient:
             IPFSError: If pinning fails
         """
         try:
-            with self._get_client() as client:
-                client.pin.add(cid)
+            self._ensure_connected()
+            resp = self._client.post(f"/api/v0/pin/add?arg={cid}")
+            resp.raise_for_status()
 
             logger.info("Content pinned successfully", cid=cid)
             return True
@@ -370,8 +363,9 @@ class IPFSClient:
             IPFSError: If unpinning fails
         """
         try:
-            with self._get_client() as client:
-                client.pin.rm(cid)
+            self._ensure_connected()
+            resp = self._client.post(f"/api/v0/pin/rm?arg={cid}")
+            resp.raise_for_status()
 
             logger.info("Content unpinned successfully", cid=cid)
             return True
@@ -391,8 +385,10 @@ class IPFSClient:
             IPFSError: If listing fails
         """
         try:
-            with self._get_client() as client:
-                pins = client.pin.ls()
+            self._ensure_connected()
+            resp = self._client.post("/api/v0/pin/ls")
+            resp.raise_for_status()
+            pins = resp.json()
 
             # Extract CIDs from pins dict
             cids = list(pins["Keys"].keys()) if "Keys" in pins else []
@@ -403,6 +399,8 @@ class IPFSClient:
         except Exception as e:
             logger.error("Failed to list pins", error=str(e))
             raise IPFSError(f"Failed to list pins: {str(e)}")
+
+    # ---- Misc ----
 
     def get_stats(self, cid: str) -> dict[str, Any]:
         """
@@ -418,11 +416,12 @@ class IPFSClient:
             IPFSError: If stat fails
         """
         try:
-            with self._get_client() as client:
-                stats = client.files.stat(f"/ipfs/{cid}")
+            self._ensure_connected()
+            resp = self._client.post(f"/api/v0/files/stat?arg=/ipfs/{cid}")
+            resp.raise_for_status()
 
             logger.debug("Retrieved IPFS stats", cid=cid)
-            return cast(dict[str, Any], dict(stats))
+            return resp.json()
 
         except Exception as e:
             logger.error("Failed to get stats", cid=cid, error=str(e))
@@ -439,12 +438,11 @@ class IPFSClient:
             True if content is available, False otherwise
         """
         try:
-            with self._get_client() as client:
-                client.object.stat(cid)
-            return True
-        except (IPFSError, Exception) as e:
-            # Catch specific IPFS errors and connection errors
-            logger.debug("Content not available", cid=cid, error=str(e))
+            self._ensure_connected()
+            resp = self._client.post(f"/api/v0/object/stat?arg={cid}")
+            return resp.is_success
+        except Exception:
+            logger.debug("Content not available", cid=cid)
             return False
 
     def get_daemon_version(self) -> dict[str, Any]:
@@ -458,8 +456,10 @@ class IPFSClient:
             IPFSError: If version check fails
         """
         try:
-            with self._get_client() as client:
-                version = client.version()
+            self._ensure_connected()
+            resp = self._client.post("/api/v0/version")
+            resp.raise_for_status()
+            version = resp.json()
 
             # Safe access to Version key with default value
             logger.debug(
@@ -492,7 +492,7 @@ class IPFSClient:
         self.close()
 
     def __repr__(self) -> str:
-        return f"<IPFSClient host={self._host} auto_pin={self._auto_pin}>"
+        return f"<IPFSClient host={self._host}:{self._port} auto_pin={self._auto_pin}>"
 
 
 def create_ipfs_client_from_env() -> IPFSClient:

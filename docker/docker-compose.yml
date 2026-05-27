@@ -40,6 +40,11 @@ services:
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
       - HRC_BLOCK_INTERVAL=1
+      - HRC_IPFS_ENABLED=true
+      - HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
+      - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
+      - HRC_IPFS_AUTO_PIN=true
+      - HRC_IPFS_TIMEOUT=120
     networks:
       hierachain-internal:
         ipv4_address: 172.28.0.10
@@ -84,6 +89,11 @@ services:
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
       - HRC_BLOCK_INTERVAL=1
+      - HRC_IPFS_ENABLED=true
+      - HRC_IPFS_HOST=/dns4/ipfs-node2/tcp/5001
+      - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
+      - HRC_IPFS_AUTO_PIN=true
+      - HRC_IPFS_TIMEOUT=120
     networks:
       hierachain-internal:
         ipv4_address: 172.28.0.11
@@ -130,6 +140,11 @@ services:
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
       - HRC_BLOCK_INTERVAL=1
+      - HRC_IPFS_ENABLED=true
+      - HRC_IPFS_HOST=/dns4/ipfs-node3/tcp/5001
+      - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
+      - HRC_IPFS_AUTO_PIN=true
+      - HRC_IPFS_TIMEOUT=120
     networks:
       hierachain-internal:
         ipv4_address: 172.28.0.12
@@ -176,6 +191,11 @@ services:
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
       - HRC_BLOCK_INTERVAL=1
+      - HRC_IPFS_ENABLED=true
+      - HRC_IPFS_HOST=/dns4/ipfs-node4/tcp/5001
+      - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
+      - HRC_IPFS_AUTO_PIN=true
+      - HRC_IPFS_TIMEOUT=120
     networks:
       hierachain-internal:
         ipv4_address: 172.28.0.13
@@ -242,6 +262,113 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # IPFS Private Swarm (one node per HieraChain node)
+  ipfs-node1:
+    image: ipfs/kubo:latest
+    container_name: hierachain-ipfs-node1
+    hostname: ipfs-node1
+    environment:
+      - IPFS_PROFILE=server
+    volumes:
+      - ipfs-node1-data:/data/ipfs
+      - ./ipfs/swarm.key:/data/ipfs/swarm.key
+      - ./ipfs/init.sh:/container-init.d/init.sh:ro
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.61
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  ipfs-node2:
+    image: ipfs/kubo:latest
+    container_name: hierachain-ipfs-node2
+    hostname: ipfs-node2
+    environment:
+      - IPFS_PROFILE=server
+    volumes:
+      - ipfs-node2-data:/data/ipfs
+      - ./ipfs/swarm.key:/data/ipfs/swarm.key
+      - ./ipfs/init.sh:/container-init.d/init.sh:ro
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.62
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    depends_on:
+      - ipfs-node1
+
+  ipfs-node3:
+    image: ipfs/kubo:latest
+    container_name: hierachain-ipfs-node3
+    hostname: ipfs-node3
+    environment:
+      - IPFS_PROFILE=server
+    volumes:
+      - ipfs-node3-data:/data/ipfs
+      - ./ipfs/swarm.key:/data/ipfs/swarm.key
+      - ./ipfs/init.sh:/container-init.d/init.sh:ro
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.63
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    depends_on:
+      - ipfs-node1
+
+  ipfs-node4:
+    image: ipfs/kubo:latest
+    container_name: hierachain-ipfs-node4
+    hostname: ipfs-node4
+    environment:
+      - IPFS_PROFILE=server
+    volumes:
+      - ipfs-node4-data:/data/ipfs
+      - ./ipfs/swarm.key:/data/ipfs/swarm.key
+      - ./ipfs/init.sh:/container-init.d/init.sh:ro
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.64
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    depends_on:
+      - ipfs-node1
+
   # Test runner container
   stress-tester:
     image: hierachain:latest
@@ -284,4 +411,8 @@ volumes:
   node2-data:
   node3-data:
   node4-data:
+  ipfs-node1-data:
+  ipfs-node2-data:
+  ipfs-node3-data:
+  ipfs-node4-data:
   test-data:

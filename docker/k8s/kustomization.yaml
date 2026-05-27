@@ -12,6 +12,9 @@ resources:
   - node-statefulset-service.yaml
   - web2-node.yaml
   - redis-deployment.yaml
+  - ipfs-configmap.yaml
+  - ipfs-service.yaml
+  - ipfs-statefulset.yaml
 
 # Optional: include stress-tester for testing
 # - stress-tester.yaml

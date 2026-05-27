@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ipfs
+  namespace: hierachain
+  labels:
+    app: ipfs
+spec:
+  serviceName: "ipfs-headless"
+  replicas: 4
+  selector:
+    matchLabels:
+      app: ipfs
+  template:
+    metadata:
+      labels:
+        app: ipfs
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+        - name: init-ipfs
+          image: ipfs/kubo:latest
+          command: ["sh", "-c", "/container-init.d/init.sh"]
+          env:
+            - name: IPFS_PROFILE
+              value: "server"
+          volumeMounts:
+            - name: ipfs-data
+              mountPath: /data/ipfs
+            - name: ipfs-config-volume
+              mountPath: /container-init.d
+      containers:
+        - name: ipfs
+          image: ipfs/kubo:latest
+          env:
+            - name: IPFS_PROFILE
+              value: "server"
+          ports:
+            - containerPort: 4001
+              name: swarm
+            - containerPort: 5001
+              name: api
+            - containerPort: 8080
+              name: gateway
+          volumeMounts:
+            - name: ipfs-data
+              mountPath: /data/ipfs
+            - name: ipfs-config-volume
+              mountPath: /container-init.d
+          resources:
+            limits:
+              cpu: "0.5"
+              memory: "256Mi"
+          livenessProbe:
+            exec:
+              command: ["ipfs", "id"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command: ["ipfs", "id"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: ipfs-config-volume
+          configMap:
+            name: ipfs-config
+            defaultMode: 0755 # Ensure scripts are executable
+  volumeClaimTemplates:
+    - metadata:
+        name: ipfs-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi

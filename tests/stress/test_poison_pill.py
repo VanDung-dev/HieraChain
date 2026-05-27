@@ -263,18 +263,34 @@ class PoisonPillTest:
             logger.warning("No healthy nodes — falling back to simulation")
             self.client = None
             return True
-        # Create chain with the test's configured chain name
         chain_name = self.config.get("chain_name", "stress_test")
-        created = self.client.create_chains_on_nodes()
-        if not created:
-            # Verify chain exists on at least one node before proceeding
+        # create_chains_on_nodes may return True even when the chain only exists
+        # on a pod that the load-balanced gateway can't always reach. Always probe.
+        self.client.create_chains_on_nodes()
+        if not self._probe_chain_writable(chain_name):
+            # Fallback: try verifying on any node, then probe again
+            found = False
             for node_id in self.client.node_status:
                 if self.client.verify_chain_exists(node_id, chain_name):
                     logger.info("Chain '%s' verified on node %s", chain_name, node_id)
-                    return True
-            logger.warning("Chain '%s' not found on any node — falling back to simulation", chain_name)
+                    found = True
+                    if self._probe_chain_writable(chain_name):
+                        return True
+            if not found:
+                logger.warning("Chain '%s' not found on any node", chain_name)
+            logger.warning("Falling back to simulation — chain not writable through gateway")
             self.client = None
         return True
+
+    def _probe_chain_writable(self, chain_name: str) -> bool:
+        """Submit a single test event to verify the chain is writable through the gateway."""
+        try:
+            probe = generate_valid_event("probe-writable")
+            return self.client.submit_secure_event(
+                chain_name=chain_name, event_data=probe, node_id=None
+            )
+        except Exception:
+            return False
 
     def _execute_events(self, events: list, concurrent: int, nodes: list) -> None:
         with ThreadPoolExecutor(max_workers=concurrent) as executor:

@@ -700,5 +700,6 @@ demo/data/
 # HieraChain Docker Node Identities
 docker/nodes/*/identity.json
 docker/nodes/*/peers.env
+docker/ipfs/swarm.key
 docker/nodes/peers.json
 !docker/nodes/README.md

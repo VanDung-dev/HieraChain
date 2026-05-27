@@ -95,7 +95,7 @@ flowchart LR
 |:-----|:------|
 | **1. Tuần tự hóa** | Thực hiện `json.dumps(data)` chuyển đổi thành mảng bytes thô. |
 | **2. Mã hóa** | Sử dụng thuật toán AES-256-GCM với nonce ngẫu nhiên 96-bit. Dữ liệu xác thực bổ sung AAD (Additional Authenticated Data) được xây dựng từ metadata dạng JSON. |
-| **3. Tải lên** | Mảng bytes dữ liệu đã mã hóa (ciphertext) được truyền tới IPFS daemon thông qua thư viện `ipfshttpclient`. |
+| **3. Tải lên** | Mảng bytes dữ liệu đã mã hóa (ciphertext) được truyền tới IPFS daemon thông qua Kubo RPC API (`httpx`). |
 | **4. Ghim dữ liệu** | Lệnh `pin.add(CID)` giữ dữ liệu an toàn trên đĩa cứng, ngăn không cho tiến trình dọn rác của IPFS tự động xóa bỏ. |
 | **5. Trả kết quả** | Bên gọi nhận về thông tin `{ cid, nonce }` — cả hai tham số này phải được lưu trữ trên chuỗi phục vụ truy xuất sau này. |
 | **6. Truy xuất** | Phương thức `cat(cid)` tải về mảng bytes mã hóa; lệnh `decrypt()` kiểm tra thẻ xác thực GCM trước khi giải mã dữ liệu thô. |

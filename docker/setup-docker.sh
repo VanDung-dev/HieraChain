@@ -1,6 +1,6 @@
 #!/bin/bash
 # HieraChain Docker Compose Setup Script
-# Creates a 4-node cluster using Docker Compose for stress testing
+# Creates a 4-node cluster with IPFS private swarm using Docker Compose
 
 set -e
 
@@ -17,25 +17,49 @@ fi
 # Configuration
 IMAGE_NAME="hierachain:latest"
 COMPOSE_FILE="docker/docker-compose.yml"
+IPFS_DIR="docker/ipfs"
+
 # Generate a random token for the stealth explorer
 EXPLORER_TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 8 || echo "default")
 export EXPLORER_TOKEN="hrc_${EXPLORER_TOKEN}"
 
+# ---- Generate IPFS private swarm key ----
+echo ""
+echo "[Pre] Generating IPFS private swarm key..."
+mkdir -p "$IPFS_DIR"
+# IPFS swarm.key format: /key/swarm/psk/1.0.0/ + /base16/ + 64 hex chars (32 bytes)
+SWARM_KEY_HEX=$(openssl rand -hex 32)
+{
+  echo "/key/swarm/psk/1.0.0/"
+  echo "/base16/"
+  echo "$SWARM_KEY_HEX"
+} > "$IPFS_DIR/swarm.key"
+echo "  IPFS swarm.key generated at $IPFS_DIR/swarm.key"
+
+# ---- Generate IPFS encryption key for HieraChain app ----
+echo ""
+echo "[Pre] Generating IPFS encryption key..."
+IPFS_ENCRYPTION_KEY=$(openssl rand -hex 32)
+# Export for docker-compose variable substitution
+export IPFS_ENCRYPTION_KEY
+echo "  IPFS_ENCRYPTION_KEY generated"
+
 # Step 0: Auto-discover nodes from compose file
-echo "[0/5] Discovering cluster nodes..."
-# Extracts all hostnames from the compose file (excluding the gateway itself)
-HRC_NODES=$(grep "hostname:" $COMPOSE_FILE | awk '{print $2}' | grep -v -E "gateway|redis" | tr '\n' ',' | sed 's/,$//')
+echo ""
+echo "[0/6] Discovering cluster nodes..."
+# Extracts all hostnames from the compose file (excluding gateway, redis, ipfs)
+HRC_NODES=$(grep "hostname:" $COMPOSE_FILE | awk '{print $2}' | grep -v -E "gateway|redis|ipfs" | tr '\n' ',' | sed 's/,$//')
 export HRC_NODES
 echo "  Found nodes: ${HRC_NODES}"
 
 # Step 1: Generate Node Identities
 echo ""
-echo "[1/5] Generating fresh node identities (cryptographic keys)..."
+echo "[1/6] Generating fresh node identities (cryptographic keys)..."
 python3 docker/scripts/generate_node_identities.py
 
 # Step 2: Build Docker image
 echo ""
-echo "[2/5] Building Docker image..."
+echo "[2/6] Building Docker image..."
 # Dynamically extract version from the source code
 CURRENT_VERSION=$(python3 -c "import sys; sys.path.insert(0, '.'); from hierachain.units.version import __version__; print(__version__)")
 echo "  Target Version: ${CURRENT_VERSION}"
@@ -47,19 +71,60 @@ sleep 5
 
 # Step 3: Stop existing cluster
 echo ""
-echo "[3/5] Stopping existing cluster..."
+echo "[3/6] Stopping existing cluster..."
 docker compose -f $COMPOSE_FILE down --remove-orphans -v
 sleep 2
 
-# Step 4: Start 4 HieraChain nodes
+# Step 4: Start 4 HieraChain nodes + IPFS private swarm
 echo ""
-echo "[4/5] Starting 4 HieraChain nodes..."
+echo "[4/6] Starting HieraChain cluster with IPFS swarm..."
 docker compose -f $COMPOSE_FILE up -d
 sleep 5
 
-# Step 5: Check cluster health via Gateway
+# Step 5: Connect IPFS peers into a private swarm
 echo ""
-echo "[5/5] Checking cluster health via Gateway..."
+echo "[5/6] Connecting IPFS private swarm..."
+MAX_RETRIES=15
+for ipfs_node in ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4; do
+    echo "  Waiting for $ipfs_node..."
+    for i in $(seq 1 $MAX_RETRIES); do
+        if docker exec "hierachain-$ipfs_node" ipfs id 2>/dev/null >/dev/null; then
+            break
+        fi
+        sleep 2
+    done
+done
+
+# Extract peer IDs and connect each node to all others
+PEER_IDS=""
+for ipfs_node in ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4; do
+    PEER_ID=$(docker exec "hierachain-$ipfs_node" ipfs config Identity.PeerID 2>/dev/null || echo "")
+    if [ -n "$PEER_ID" ]; then
+        PEER_IDS="$PEER_IDS $ipfs_node:$PEER_ID"
+    fi
+done
+
+echo "  Discovered peers:${PEER_IDS}"
+
+# Connect each IPFS node to all others
+for src_node in ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4; do
+    for dst_node in ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4; do
+        if [ "$src_node" = "$dst_node" ]; then
+            continue
+        fi
+        DST_PEER=$(echo "$PEER_IDS" | tr ' ' '\n' | grep "^$dst_node:" | cut -d: -f2)
+        if [ -n "$DST_PEER" ]; then
+            echo "  Connecting $src_node → $dst_node ($DST_PEER)..."
+            docker exec "hierachain-$src_node" \
+                ipfs swarm connect "/ip4/$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "hierachain-$dst_node" 2>/dev/null || echo '0.0.0.0')/tcp/4001/p2p/$DST_PEER" \
+                2>/dev/null || true
+        fi
+    done
+done
+
+# Step 6: Check cluster health via Gateway
+echo ""
+echo "[6/6] Checking cluster health via Gateway..."
 MAX_RETRIES=20
 RETRY_COUNT=0
 HEALTHY=false
@@ -116,6 +181,13 @@ echo ""
 echo "HieraChain Nodes (Isolated Internal Network):"
 echo "  Subnet: 172.28.0.0/24 (node1-node4)"
 echo "  (No direct external access for security)"
+echo ""
+echo "IPFS Private Swarm:"
+echo "  ipfs-node1 → 172.28.0.61"
+echo "  ipfs-node2 → 172.28.0.62"
+echo "  ipfs-node3 → 172.28.0.63"
+echo "  ipfs-node4 → 172.28.0.64"
+echo "  Encryption Key: ${IPFS_ENCRYPTION_KEY:0:16}... (saved in swarm.key)"
 echo ""
 echo "Next steps:"
 echo "  - Run stress test: bash docker/run-stress-docker-compose.sh"

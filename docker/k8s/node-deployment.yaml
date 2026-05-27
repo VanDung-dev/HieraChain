@@ -42,6 +42,16 @@ spec:
               value: "5001"
             - name: PEERS
               value: "hierachain-node2:5001,hierachain-node3:5001,hierachain-node4:5001"
+            - name: HRC_IPFS_ENABLED
+              value: "true"
+            - name: HRC_IPFS_HOST
+              value: "/dns4/ipfs-0.ipfs-headless.hierachain.svc.cluster.local/tcp/5001"
+            - name: HRC_IPFS_ENCRYPTION_KEY
+              value: "YOUR_IPFS_ENCRYPTION_KEY" # Replace with a Kubernetes Secret
+            - name: HRC_IPFS_AUTO_PIN
+              value: "true"
+            - name: HRC_IPFS_TIMEOUT
+              value: "120"
           envFrom:
             - configMapRef:
                 name: hierachain-config
@@ -121,6 +131,16 @@ spec:
               value: "5002"
             - name: PEERS
               value: "hierachain-node1:5001,hierachain-node3:5001,hierachain-node4:5001"
+            - name: HRC_IPFS_ENABLED
+              value: "true"
+            - name: HRC_IPFS_HOST
+              value: "/dns4/ipfs-1.ipfs-headless.hierachain.svc.cluster.local/tcp/5001"
+            - name: HRC_IPFS_ENCRYPTION_KEY
+              value: "YOUR_IPFS_ENCRYPTION_KEY" # Replace with a Kubernetes Secret
+            - name: HRC_IPFS_AUTO_PIN
+              value: "true"
+            - name: HRC_IPFS_TIMEOUT
+              value: "120"
           envFrom:
             - configMapRef:
                 name: hierachain-config
@@ -199,6 +219,16 @@ spec:
               value: "5003"
             - name: PEERS
               value: "hierachain-node1:5001,hierachain-node2:5001,hierachain-node4:5001"
+            - name: HRC_IPFS_ENABLED
+              value: "true"
+            - name: HRC_IPFS_HOST
+              value: "/dns4/ipfs-2.ipfs-headless.hierachain.svc.cluster.local/tcp/5001"
+            - name: HRC_IPFS_ENCRYPTION_KEY
+              value: "YOUR_IPFS_ENCRYPTION_KEY" # Replace with a Kubernetes Secret
+            - name: HRC_IPFS_AUTO_PIN
+              value: "true"
+            - name: HRC_IPFS_TIMEOUT
+              value: "120"
           envFrom:
             - configMapRef:
                 name: hierachain-config
@@ -277,6 +307,16 @@ spec:
               value: "5004"
             - name: PEERS
               value: "hierachain-node1:5001,hierachain-node2:5001,hierachain-node3:5001"
+            - name: HRC_IPFS_ENABLED
+              value: "true"
+            - name: HRC_IPFS_HOST
+              value: "/dns4/ipfs-3.ipfs-headless.hierachain.svc.cluster.local/tcp/5001"
+            - name: HRC_IPFS_ENCRYPTION_KEY
+              value: "YOUR_IPFS_ENCRYPTION_KEY" # Replace with a Kubernetes Secret
+            - name: HRC_IPFS_AUTO_PIN
+              value: "true"
+            - name: HRC_IPFS_TIMEOUT
+              value: "120"
           envFrom:
             - configMapRef:
                 name: hierachain-config
