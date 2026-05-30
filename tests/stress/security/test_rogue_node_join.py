@@ -156,7 +156,12 @@ class TestRogueNodeFinalPhase:
         assert successes > 0, "Legitimate chain became unwritable after rogue start"
 
     def test_gateway_diagnostic_does_not_expose_rogue_or_internal_services(self):
-        gateway_targets = ["gateway:80", "10.0.0.5:80"]
+        gateway_targets = ["gateway:80", "10.0.0.5:80", "gateway:8080"]
+        target_env = os.getenv("TARGET_NODES", "")
+        if target_env:
+            for part in target_env.split(","):
+                if "gateway" in part:
+                    gateway_targets.append(part.strip())
         dangerous_targets = ["rogue-node", "node5", "redis", "ipfs-node1", "127.0.0.1"]
         explorer_token = os.getenv("EXPLORER_TOKEN", "default_token")
 
