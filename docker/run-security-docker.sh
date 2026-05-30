@@ -26,6 +26,21 @@ echo "Target:   ${TARGET}"
 echo "Rogue:    ${ROGUE_NODE_TARGET}"
 echo ""
 
+# Advanced adversary options (optional)
+# - Set ROGUE_IMPERSONATE_NODE_ID to one of node1|node2|node3|node4 to make rogue-node use a stolen identity
+#   The compose file will honor ROGUE_NODE_ID_OVERRIDE and ROGUE_IDENTITY_PATH if provided.
+#   We default to node1 so all security tests run out of the box.
+export ROGUE_IMPERSONATE_NODE_ID="${ROGUE_IMPERSONATE_NODE_ID:-node1}"
+
+if [ -n "${ROGUE_IMPERSONATE_NODE_ID:-}" ]; then
+  export ROGUE_NODE_ID_OVERRIDE="$ROGUE_IMPERSONATE_NODE_ID"
+  export ROGUE_IDENTITY_PATH="/app/all-identities/${ROGUE_IMPERSONATE_NODE_ID}/identity.json"
+  echo "[Adv] Impersonation enabled: rogue will impersonate '$ROGUE_IMPERSONATE_NODE_ID'"
+  echo "[Adv] Using stolen identity path: $ROGUE_IDENTITY_PATH"
+else
+  echo "[Adv] Impersonation disabled (default rogue identity in use)"
+fi
+
 # Ensure IPFS swarm.key exists
 if [ ! -f "$IPFS_DIR/swarm.key" ]; then
     echo "[Pre] Generating IPFS swarm.key..."
@@ -144,6 +159,7 @@ docker compose -f "$COMPOSE_FILE" run --rm stress-tester \
         export REAL_REQUESTS='$REAL_REQUESTS'
         export HRC_IPFS_ENABLED=true
         export HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
+        export ROGUE_IMPERSONATE_NODE_ID='${ROGUE_IMPERSONATE_NODE_ID:-}'
         uv run pytest ${SECURITY_PYTEST_TARGET} -v \
             --html=/app/log/report/docker_rogue_security_report.html \
             --self-contained-html

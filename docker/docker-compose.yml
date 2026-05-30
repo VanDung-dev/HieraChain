@@ -233,13 +233,15 @@ services:
     env_file:
       - ./nodes/rogue-node/peers.env
     environment:
-      - HRC_NODE_ID=rogue-node
+      # Allow overriding node_id to impersonate a legitimate node (advanced red-team only)
+      - HRC_NODE_ID=${ROGUE_NODE_ID_OVERRIDE:-rogue-node}
       - HRC_AUTH_ENABLED=false
       - HRC_P2P_PORT=5005
       - LOG_LEVEL=INFO
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
-      - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
+      # Allow overriding identity path so rogue can load a stolen identity.json (advanced red-team only)
+      - HRC_VALIDATOR_IDENTITY=${ROGUE_IDENTITY_PATH:-/app/config/identity/identity.json}
       - HRC_ENV=test
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
@@ -256,6 +258,8 @@ services:
     volumes:
       - rogue-node-data:/app/data
       - ./nodes/rogue-node:/app/config/identity:ro
+      # Mount all generated identities (read-only) to enable optional impersonation in security phase
+      - ./nodes:/app/all-identities:ro
       - ../log/rogue-node:/app/log
     deploy:
       resources:
