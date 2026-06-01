@@ -207,7 +207,7 @@ services:
       hierachain-internal:
         ipv4_address: 172.28.0.61
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -227,7 +227,7 @@ services:
       hierachain-internal:
         ipv4_address: 172.28.0.62
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -249,7 +249,7 @@ services:
       hierachain-internal:
         ipv4_address: 172.28.0.63
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -271,7 +271,7 @@ services:
       hierachain-internal:
         ipv4_address: 172.28.0.64
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -339,6 +339,7 @@ services:
       hierachain-internal:
         ipv4_address: 172.28.0.100
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - ../tests:/app/tests
       - ../log:/app/log
     profiles:

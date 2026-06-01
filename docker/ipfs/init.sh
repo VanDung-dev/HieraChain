@@ -4,6 +4,12 @@
 
 set -e
 
+# 0. Clean up stale lock files from previous runs
+if [ -f "/data/ipfs/repo.lock" ]; then
+    echo "[IPFS Init] Removing stale repo.lock file..."
+    rm -f "/data/ipfs/repo.lock"
+fi
+
 SWARM_KEY_FILE="/data/ipfs/swarm.key"
 
 # 1. Ensure swarm.key is in place for private network

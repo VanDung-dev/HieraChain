@@ -343,7 +343,7 @@ services:
           cpus: '0.5'
           memory: 256M
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -368,7 +368,7 @@ services:
           cpus: '0.5'
           memory: 256M
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -395,7 +395,7 @@ services:
           cpus: '0.5'
           memory: 256M
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -422,7 +422,7 @@ services:
           cpus: '0.5'
           memory: 256M
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10

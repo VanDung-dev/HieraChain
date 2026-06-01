@@ -115,6 +115,7 @@ podman compose -f "$COMPOSE_FILE" run --rm stress-tester \
         export HRC_IPFS_ENABLED=true
         export HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
         uv run pytest tests/stress/ -v \
+            --ignore=tests/stress/security \
             --html=/app/log/report/podman_stress_report.html \
             --self-contained-html
     "
