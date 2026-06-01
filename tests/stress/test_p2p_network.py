@@ -46,10 +46,8 @@ def _exec_tc(node_id: str, cmd: list[str]) -> None:
                 capture_output=True, timeout=15,
             )
         else:
-            subprocess.run(
-                ["docker", "exec", container] + cmd,
-                capture_output=True, timeout=15,
-            )
+            from tests.stress.docker_helper import run_docker_exec
+            run_docker_exec(container, cmd)
     except Exception as e:
         logger.debug("tc exec failed on %s: %s", node_id, e)
 
