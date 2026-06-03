@@ -107,7 +107,7 @@ sequenceDiagram
 |:-----|:--------------|:-----|
 | Entry point | `SubChain.sync_chain()` | `hierarchical/sub_chain.py` |
 | Latest DB block | `OrderingService.get_latest_block()` | `consensus/ordering/service.py` |
-| Load all blocks | `storage.get_blocks_from_db()` | `adapters/storage/sqlite_adapter.py` |
+| Load all blocks | `storage.get_blocks_from_db()` | `adapters/database/sqlite_adapter.py` |
 | Rebuild index | `SubChain._update_event_statistics()` | `hierarchical/sub_chain.py` |
 | Reset OS counters | `SubChain._reset_ordering_service_state()` | `hierarchical/sub_chain.py` |
 

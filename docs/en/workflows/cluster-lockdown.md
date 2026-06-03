@@ -114,12 +114,12 @@ stateDiagram-v2
 
 | Step | Class / Method | File |
 |:-----|:--------------|:-----|
-| Initiate lockdown | `ClusterLockdownManager.broadcast_lockdown_vote()` | `cluster/cluster_lockdown.py` |
-| Verify vote | `_verify_lockdown_message()` | `cluster/cluster_lockdown.py` |
-| Quorum check | `_check_lockdown_quorum()` | `cluster/cluster_lockdown.py` |
-| System freeze | `local_lockdown_callback()` | `cluster/cluster_lockdown.py` |
-| Recovery quorum | `_check_recovery_quorum()` | `cluster/cluster_lockdown.py` |
-| State sync | `StateSyncManager.sync_state()` | `cluster/state_sync.py` |
+| Initiate lockdown | `ClusterLockdownManager.broadcast_lockdown_vote()` | `cluster/lockdown_protocol.py` |
+| Verify vote | `_verify_lockdown_message()` | `cluster/lockdown_protocol.py` |
+| Quorum check | `_check_lockdown_quorum()` | `cluster/lockdown_protocol.py` |
+| System freeze | `local_lockdown_callback()` | `cluster/lockdown_protocol.py` |
+| Recovery quorum | `_check_recovery_quorum()` | `cluster/lockdown_protocol.py` |
+| State sync | `StateSyncManager.sync_state()` | `cluster/state_sync_manager.py` |
 | Transport | `ZmqTransport.broadcast()` | `network/zmq_transport.py` |
 
 ---

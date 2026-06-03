@@ -123,7 +123,7 @@ sequenceDiagram
 | PRE-PREPARE | `BFTConsensus._send_pre_prepare()` | `consensus/bft/consensus.py` |
 | Thu thập PREPARE | `BFTConsensus._handle_prepare()` | `consensus/bft/consensus.py` |
 | Hoàn tất COMMIT | `BFTConsensus._handle_commit()` | `consensus/bft/consensus.py` |
-| Thay đổi Phiên | `BFTViewChangeManager.trigger_view_change()` | `consensus/bft/view_change.py` |
+| Thay đổi Phiên | `BFTViewChangeManager.trigger_view_change()` | `consensus/bft/consensus.py` |
 | Giao thức mạng | `ZmqTransport.send()` / `receive()` | `network/zmq_transport.py` |
 
 ---

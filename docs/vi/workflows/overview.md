@@ -37,7 +37,7 @@ Bảng này cung cấp cái nhìn tổng quan toàn diện về các luồng cô
 | [Neo giữ Bằng chứng](./proof-anchoring.md) | A | Khối được hoàn thiện trên Chuỗi phụ | Mã băm bằng chứng trên Chuỗi chính (Main Chain) | `hierarchical/main_chain.py` |
 | [Giao dịch Liên chuỗi 2PC](./cross-chain-2pc.md) | A | `initiate_cross_chain_transaction()` | `COMMITTED` hoặc `ROLLED_BACK` | `hierarchical/hierarchy_manager.py` |
 | [Đồng thuận BFT](./bft-consensus.md) | B | `HRC_CONSENSUS_TYPE=byzantine_fault_tolerant` | Khối được cam kết bởi 2f+1 trình xác thực | `consensus/bft/consensus.py` |
-| [Khóa băng Cụm](./cluster-lockdown.md) | C | Bất thường vượt quá ngưỡng rủi ro | Tất cả các nút bị khóa băng / tiếp tục | `cluster/cluster_lockdown.py` |
+| [Khóa băng Cụm](./cluster-lockdown.md) | C | Bất thường vượt quá ngưỡng rủi ro | Tất cả các nút bị khóa băng / tiếp tục | `cluster/lockdown_protocol.py` |
 | [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) | C | Lỗi mạng / hết giờ trưởng nhóm / lỗi toàn vẹn | Trạng thái được khôi phục từ ảnh chụp nhanh | `error_mitigation/recovery_engine.py` |
 | [Truy vết Thực thể](./entity-tracing.md) | D | `trace_entity_across_chains(entity_id)` | Nhật ký kiểm toán liên chuỗi hoàn chỉnh | `domains/generic/utils/entity_tracer.py` |
 | [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md) | D | Khởi động lại nút hoặc sai lệch mã băm | Chuỗi trong bộ nhớ được đồng bộ với DB | `hierarchical/sub_chain.py` |

@@ -107,7 +107,7 @@ sequenceDiagram
 |:-----|:--------------|:-----|
 | Hàm khởi tạo | `SubChain.sync_chain()` | `hierarchical/sub_chain.py` |
 | Đọc khối mới nhất từ DB | `OrderingService.get_latest_block()` | `consensus/ordering/service.py` |
-| Tải toàn bộ khối | `storage.get_blocks_from_db()` | `adapters/storage/sqlite_adapter.py` |
+| Tải toàn bộ khối | `storage.get_blocks_from_db()` | `adapters/database/sqlite_adapter.py` |
 | Cập nhật chỉ mục | `SubChain._update_event_statistics()` | `hierarchical/sub_chain.py` |
 | Đặt lại bộ đếm OS | `SubChain._reset_ordering_service_state()` | `hierarchical/sub_chain.py` |
 
