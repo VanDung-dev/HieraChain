@@ -557,6 +557,25 @@ async def create_sub_chain(
 
         safe_chain_name = os.path.basename(chain_name)
 
+        # Check if sub-chain already exists - return success (idempotent)
+        if manager.get_sub_chain(safe_chain_name):
+            api_logger.audit(
+                action="create",
+                resource="sub_chain",
+                success=True,
+                chain_name=safe_chain_name,
+                chain_type=safe_chain_type,
+                note="already_exists",
+            )
+            return JSONResponse(
+                status_code=status.HTTP_201_CREATED,
+                content={
+                    "success": True,
+                    "message": f"Sub-chain '{chain_name}' created successfully",
+                    "chain_name": chain_name
+                }
+            )
+
         # Create sub-chain
         sub_chain = SubChain(name=safe_chain_name, domain_type=safe_chain_type)
         manager.add_sub_chain(safe_chain_name, sub_chain)
@@ -577,6 +596,22 @@ async def create_sub_chain(
                 "chain_name": chain_name
             }
         )
+    except ValueError as e:
+        # Handle specific validation errors (e.g., chain already exists)
+        if "already exists" in str(e):
+            api_logger.warning(
+                "Attempted to create existing sub-chain", chain_name=chain_name
+            )
+            return JSONResponse(
+                status_code=status.HTTP_201_CREATED,
+                content={
+                    "success": True,
+                    "message": f"Sub-chain '{chain_name}' created successfully",
+                    "chain_name": chain_name
+                }
+            )
+        # Re-raise other ValueErrors
+        raise
     except Exception as e:
         api_logger.error(
             "Failed to create sub-chain", error=str(e), chain_name=chain_name
