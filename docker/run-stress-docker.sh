@@ -43,10 +43,10 @@ if [ -z "${IPFS_ENCRYPTION_KEY:-}" ]; then
     echo "[Pre] IPFS_ENCRYPTION_KEY generated"
 fi
 
-# Step pre: Generate identities (legitimate nodes only)
+# Step pre: Generate identities (including rogue for config completeness)
 if [ "${REUSE_EXISTING_CLUSTER}" != "true" ]; then
-  echo "[0/4] Generating node identities (node1–node4)..."
-  python3 docker/scripts/generate_node_identities.py
+  echo "[0/4] Generating node identities (node1–node4 + rogue)..."
+  INCLUDE_ROGUE_NODE=true python3 docker/scripts/generate_node_identities.py
   echo "  ✅ Identities ready"
 else
   echo "[0/4] Skipping identity generation (REUSE_EXISTING_CLUSTER=true)"
