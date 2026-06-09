@@ -99,11 +99,11 @@ class ChaosController:
     def apply_latency(self, node, ms=150, jitter=20, loss=1):
         logger.info(f"Applying WAN simulation to {node}: {ms}ms latency, {jitter}ms jitter, {loss}% loss")
         
-        # Clean up existing rules
-        self.client.exec_run(node, ["tc", "qdisc", "del", "dev", "eth0", "root"]) 
+        # Clean up existing rules on wg0 (WireGuard P2P overlay interface)
+        self.client.exec_run(node, ["tc", "qdisc", "del", "dev", "wg0", "root"]) 
         
-        # Add new latency rule
-        cmd = ["tc", "qdisc", "add", "dev", "eth0", "root", "netem", 
+        # Add new latency rule on WireGuard interface
+        cmd = ["tc", "qdisc", "add", "dev", "wg0", "root", "netem", 
                "delay", f"{ms}ms", f"{jitter}ms", "distribution", "normal",
                "loss", f"{loss}%"]
         
@@ -112,12 +112,12 @@ class ChaosController:
 
     def reset_network(self, node):
         logger.info(f"Resetting network on {node}")
-        self.client.exec_run(node, ["tc", "qdisc", "del", "dev", "eth0", "root"])
+        self.client.exec_run(node, ["tc", "qdisc", "del", "dev", "wg0", "root"])
         logger.info(f"✅ Network reset on {node}")
 
     def status(self, node):
         print(f"\n--- Network status for {node} ---")
-        out = self.client.exec_run(node, ["tc", "qdisc", "show", "dev", "eth0"])
+        out = self.client.exec_run(node, ["tc", "qdisc", "show", "dev", "wg0"])
         print(out if out else "No active rules")
 
 def main():
