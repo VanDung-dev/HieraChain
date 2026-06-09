@@ -1,12 +1,13 @@
 
-# Define the HieraChain Node Cluster for Load Balancing
+# HieraChain Multi-Region Node Cluster
+# Gateway is connected to all region networks; Docker DNS resolves each
+# hostname to its region-local IP automatically (node1→172.28.1.x, etc.)
 upstream hierachain_nodes {
-    server node1:2661 max_fails=3 fail_timeout=10s;
-    server node2:2661 max_fails=3 fail_timeout=10s;
-    server node3:2661 max_fails=3 fail_timeout=10s;
-    server node4:2661 max_fails=3 fail_timeout=10s;
+    server node1:2661 max_fails=3 fail_timeout=10s;  # US
+    server node2:2661 max_fails=3 fail_timeout=10s;  # EU
+    server node3:2661 max_fails=3 fail_timeout=10s;  # Asia
+    server node4:2661 max_fails=3 fail_timeout=10s;  # Asia
     
-    # Use keepalive connections for better WAN performance
     keepalive 32;
 }
 

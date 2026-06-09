@@ -19,6 +19,13 @@ ENV UV_COMPILE_BYTECODE=1 \
     LOG_LEVEL=INFO \
     PATH="/app/.venv/bin:$PATH"
 
+# Install system dependencies: WireGuard tools for multi-region P2P mesh,
+# iproute2 for tc (WAN simulation) and ip command
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wireguard-tools \
+    iproute2 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy project definition files first to leverage Docker layer caching
 COPY pyproject.toml uv.lock ./
 
@@ -41,12 +48,13 @@ ENV SETUPTOOLS_SCM_PRETEND_VERSION=$VERSION
 RUN uv sync --frozen --extra dev && uv cache clean
 
 # Create necessary runtime directories
-RUN mkdir -p /app/data /app/log
+RUN mkdir -p /app/data /app/log && \
+    chmod +x /app/docker/entrypoint.sh /app/docker/scripts/wg-tc.sh
 
 # Expose HieraChain standard ports
-# 2661: API | 5555: ZMQ | 26657: BFT/P2P
-EXPOSE 2661 5555 26657
+# 2661: API | 5555: ZMQ | 26657: BFT/P2P | 51820/udp: WireGuard
+EXPOSE 2661 5555 26657 51820/udp
 
-# Use 'uv run' to execute the CLI directly within the managed environment
-# This ensures all dependencies and the 'hrc' script are correctly resolved.
-CMD ["uv", "run", "hrc", "start", "--host", "0.0.0.0", "--port", "2661"]
+# Multi-region entrypoint: initializes WireGuard + tc, then starts HieraChain
+ENTRYPOINT ["/app/docker/entrypoint.sh"]
+CMD ["uv", "run", "hrc", "node", "start", "--host", "0.0.0.0", "--port", "2661"]
