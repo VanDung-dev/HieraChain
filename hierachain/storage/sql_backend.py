@@ -123,6 +123,7 @@ class SqlStorageBackend:
     def save_block(self, block_data: dict[str, Any]) -> bool:
         """
         Save a block and its events to the database.
+        Replaces any existing block with the same index and chain_name.
         
         Args:
             block_data: Dictionary containing block data.
@@ -132,6 +133,17 @@ class SqlStorageBackend:
         """
         session = self.Session()
         try:
+            chain_name = str(block_data.get('chain_name', ''))
+            existing = session.query(BlockModel).filter_by(
+                index=block_data['index'], chain_name=chain_name
+            ).first()
+            if existing:
+                session.query(EventModel).filter_by(
+                    block_hash=existing.hash
+                ).delete()
+                session.delete(existing)
+                session.flush()
+
             new_block = _build_block_model(block_data)
             new_block.events = _build_event_models(block_data)
             
@@ -148,11 +160,7 @@ class SqlStorageBackend:
 
         except Exception as e:
             session.rollback()
-            
-            # Idempotency: Treat unique constraint violation as success
-            if "UNIQUE constraint" in str(e):
-                return True
-                
+
             logger.error("Database operation failed", operation="save_block")
             if getattr(settings, 'LOG_SQL_DETAIL', False):
                 logger.debug("Save block error detail", error_type=type(e).__name__)
