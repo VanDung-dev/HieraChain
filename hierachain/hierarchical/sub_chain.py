@@ -352,6 +352,16 @@ def _process_and_finalize_single_block(sub_chain: "SubChain", block: Any) -> boo
 
         finalized_block = sub_chain.consensus.finalize_block(block, sub_chain.name)
 
+        # Persist the finalized block so rehydration preserves consensus events
+        try:
+            sub_chain.ordering_service.storage_handler.save_block(
+                finalized_block, sub_chain.name
+            )
+        except Exception:
+            logger.warning(
+                "Failed to persist finalized block %d", finalized_block.index
+            )
+
         if sub_chain.add_block(finalized_block):
             sub_chain.auto_submit_proof_if_needed()
             return True
