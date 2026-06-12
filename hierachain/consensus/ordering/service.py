@@ -50,6 +50,8 @@ class OrderingService:
 
         # Initialize blocks_created from DB to ensure continuity after restart
         latest_block = self.storage_handler.get_latest_block_from_db()
+        if latest_block:
+            self.storage_handler.last_block = latest_block
         self.blocks_created = (latest_block.index + 1) if latest_block else 0
         logger.info(
             "Initialized ordering service state: blocks_created=%s",
@@ -150,17 +152,19 @@ class OrderingService:
         if event_id in self.pending_events:
             return event_id
 
+        # Enrich event_data with event_id for journal and block storage
+        enriched_data = {**event_data, "event_id": event_id}
+
         pending_event = PendingEvent(
             event_id=event_id,
-            event_data=event_data,
+            event_data=enriched_data,
             channel_id=channel_id,
             submitter_org=submitter_org,
             received_at=time.time(),
             status=EventStatus.PENDING
         )
 
-        logged_data = event_data.copy()
-        logged_data["channel_id"] = channel_id
+        logged_data = {**enriched_data, "channel_id": channel_id}
         self.journal.log_event(logged_data)
         self.pending_events[event_id] = pending_event
         self.event_pool.put(pending_event)
