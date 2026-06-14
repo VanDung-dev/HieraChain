@@ -16,7 +16,17 @@ resources:
   - ipfs-service.yaml
   - ipfs-statefulset.yaml
 
-# Optional: include stress-tester for testing
+# ============================================================
+# Security Testing (Rogue Node)
+# Uncomment for adversarial/penetration testing scenarios
+# ============================================================
+# - rogue-node.yaml
+
+# ============================================================
+# Stress Testing (Benchmark Job)
+# Run with: kubectl apply -f docker/k8s/stress-tester.yaml
+# Or uncomment to include in kustomize apply
+# ============================================================
 # - stress-tester.yaml
 
 labels:
