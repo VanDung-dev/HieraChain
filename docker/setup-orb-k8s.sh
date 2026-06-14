@@ -7,6 +7,22 @@ IMAGE_NAME="hierachain:latest"
 IPFS_DIR="/data/ipfs"
 EXPLORER_TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 16)
 IPFS_ENCRYPTION_KEY=$(openssl rand -hex 32)
+IPFS_SWARM_KEY_FILE="docker/ipfs/swarm.key"
+
+# Ensure IPFS swarm.key exists (private network — never commit real key to git)
+if [ ! -f "$IPFS_SWARM_KEY_FILE" ]; then
+  echo "[Pre] Generating IPFS swarm.key..."
+  mkdir -p "$(dirname "$IPFS_SWARM_KEY_FILE")"
+  SWARM_KEY_HEX=$(openssl rand -hex 32)
+  {
+    echo "/key/swarm/psk/1.0.0/"
+    echo "/base16/"
+    echo "$SWARM_KEY_HEX"
+  } > "$IPFS_SWARM_KEY_FILE"
+  echo "  ✅ swarm.key generated (not committed to git)"
+else
+  echo "[Pre] Using existing swarm.key"
+fi
 
 # Step 1: Generate Node Identities (Cryptographic Keys)
 echo ""
@@ -60,6 +76,24 @@ kubectl create secret generic hierachain-secrets \
 
 # Apply all resources via kustomize (creates namespace, configs, statefulsets, etc.)
 kubectl apply -k docker/k8s/
+
+# Inject IPFS swarm.key into ConfigMap (not stored in git to avoid leaking secrets)
+echo "  Injecting IPFS swarm.key into ConfigMap..."
+SWARM_KEY_FILE="docker/ipfs/swarm.key"
+if [ -f "$SWARM_KEY_FILE" ]; then
+  SWARM_KEY_CONTENT=$(python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))" < "$SWARM_KEY_FILE")
+  kubectl patch configmap ipfs-config -n $NAMESPACE \
+    --patch "{\"data\":{\"swarm.key\":$SWARM_KEY_CONTENT}}" || {
+    echo "  ⚠️  ConfigMap patch failed — trying full replace..."
+    kubectl create configmap ipfs-config -n $NAMESPACE \
+      --from-file=swarm.key="$SWARM_KEY_FILE" \
+      --dry-run=client -o yaml | kubectl apply -f -
+  }
+  echo "  ✅ IPFS swarm.key injected"
+else
+  echo "  ⚠️  $SWARM_KEY_FILE not found — IPFS will run in public mode"
+  echo "  To generate: printf '%s\\n' '/key/swarm/psk/1.0.0/' '/base16/' \"\$(openssl rand -hex 32)\" > $SWARM_KEY_FILE"
+fi
 
 # Step 5: Wait for pods
 echo ""
