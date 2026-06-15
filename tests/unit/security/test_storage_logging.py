@@ -74,7 +74,7 @@ class TestSQLiteAdapterErrorLogSanitization:
         with patch.object(adapter, '_get_connection', side_effect=Exception("SENSITIVE_SQL_ERROR: table xyz")):
             captured_logs = []
 
-            with patch('hierachain.adapters.database.sqlite_adapter.logger') as mock_logger:
+            with patch('hierachain.adapters.database.base.sql_adapter.SQLBase.logger') as mock_logger:
                 mock_logger.error = lambda log_msg, **kw: captured_logs.append((log_msg, kw))
                 mock_logger.debug = lambda log_msg, **kw: None
 
@@ -97,7 +97,7 @@ class TestSQLiteAdapterErrorLogSanitization:
         with patch.object(adapter, '_get_connection', side_effect=Exception("no such table: secret_table")):
             captured_logs = []
 
-            with patch('hierachain.adapters.database.sqlite_adapter.logger') as mock_logger:
+            with patch('hierachain.adapters.database.base.sql_adapter.SQLBase.logger') as mock_logger:
                 mock_logger.error = lambda log_msg, **kw: captured_logs.append((log_msg, kw))
                 mock_logger.debug = lambda log_msg, **kw: None
 
