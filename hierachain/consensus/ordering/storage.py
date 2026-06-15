@@ -13,6 +13,17 @@ from hierachain.storage.sql_backend import SqlStorageBackend
 from hierachain.consensus.ordering.types import PendingEvent
 
 
+def _verify_chain_links(blocks: list[Block]) -> None:
+    """Verify that each block's previous_hash matches the preceding block's hash."""
+    for i in range(1, len(blocks)):
+        if blocks[i].previous_hash != blocks[i - 1].hash:
+            raise ValueError(
+                f"Chain link BROKEN at block={blocks[i].index} "
+                f"previous_hash={blocks[i].previous_hash[:16]} "
+                f"expected={blocks[i - 1].hash[:16]}"
+            )
+
+
 def _block_from_dict(data: dict[str, Any]) -> Block:
     """Create a Block from dictionary data with hash verification."""
     block = object.__new__(Block)
@@ -25,13 +36,14 @@ def _block_from_dict(data: dict[str, Any]) -> Block:
     block.merkle_root = data.get("merkle_root") or ""
     block._events = convert_events_to_arrow(data["events"])
 
-    # Recompute hash and compare with stored hash
+    # Recompute hash and compare with stored hash.
+    # Hash includes merkle_root, so verifying hash also protects event integrity.
     stored_hash = data["hash"]
     computed_hash = block.calculate_hash()
     if stored_hash != computed_hash:
-        logger.error(
-            "Block hash MISMATCH! index=%d stored=%s computed=%s",
-            block.index, stored_hash[:16], computed_hash[:16]
+        raise ValueError(
+            f"Block hash MISMATCH! block={block.index} "
+            f"stored={stored_hash[:16]} computed={computed_hash[:16]}"
         )
     block.hash = stored_hash
     return block
@@ -94,6 +106,12 @@ class OrderingStorageHandler:
             # Create block directly to avoid recalculating hash
             blocks.append(_block_from_dict(data))
             current_index += 1
+
+        # Verify chain integrity: every block's previous_hash must match
+        # the preceding block's hash
+        if len(blocks) > 1 and start_index == 0:
+            _verify_chain_links(blocks)
+
         return blocks
 
     def get_blocks_from_db(self, start_index: int) -> list[Block]:

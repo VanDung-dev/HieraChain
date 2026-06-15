@@ -158,9 +158,9 @@ flowchart TB
     
     WP["⚡ <b>Worker Pool</b><br/>Parallel Processing"]
     
-    EX["🔄 <b>Parallel Execution</b><br/>Rust Consensus + Python Business Logic"]
+    EX["🔄 <b>Parallel Execution</b><br/>Pure Python Consensus + Python Business Logic"]
     
-    BF["✅ <b>Block Finalization</b><br/>Rust Core"]
+    BF["✅ <b>Block Finalization</b><br/>Python Core"]
     
     OUT["📤 <b>Output</b><br/>Network P2P · Storage · Monitoring"]
 

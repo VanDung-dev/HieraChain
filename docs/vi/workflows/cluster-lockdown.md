@@ -114,12 +114,12 @@ stateDiagram-v2
 
 | Bước | Class / Method | File |
 |:-----|:--------------|:-----|
-| Khởi tạo khóa băng | `ClusterLockdownManager.broadcast_lockdown_vote()` | `cluster/cluster_lockdown.py` |
-| Xác thực tin nhắn | `_verify_lockdown_message()` | `cluster/cluster_lockdown.py` |
-| Kiểm tra Quorum | `_check_lockdown_quorum()` | `cluster/cluster_lockdown.py` |
-| Đóng băng hệ thống | `local_lockdown_callback()` | `cluster/cluster_lockdown.py` |
-| Quorum phục hồi | `_check_recovery_quorum()` | `cluster/cluster_lockdown.py` |
-| Đồng bộ trạng thái | `StateSyncManager.sync_state()` | `cluster/state_sync.py` |
+| Khởi tạo khóa băng | `ClusterLockdownManager.broadcast_lockdown_vote()` | `cluster/lockdown_protocol.py` |
+| Xác thực tin nhắn | `_verify_lockdown_message()` | `cluster/lockdown_protocol.py` |
+| Kiểm tra Quorum | `_check_lockdown_quorum()` | `cluster/lockdown_protocol.py` |
+| Đóng băng hệ thống | `local_lockdown_callback()` | `cluster/lockdown_protocol.py` |
+| Quorum phục hồi | `_check_recovery_quorum()` | `cluster/lockdown_protocol.py` |
+| Đồng bộ trạng thái | `StateSyncManager.sync_state()` | `cluster/state_sync_manager.py` |
 | Giao thức mạng | `ZmqTransport.broadcast()` | `network/zmq_transport.py` |
 
 ---

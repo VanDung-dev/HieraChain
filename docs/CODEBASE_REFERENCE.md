@@ -353,12 +353,12 @@ The system converts **ERP business events** → **Blockchain events** via config
 
 | Component | Purpose | Algorithm/Standard |
 |-----------|---------|-------------------|
-| `chains/base_chain.py` | Abstract BaseChain with entity registry, domain rules, event handlers | Template Method Pattern - Extended by domain-specific chains |
-| `chains/domain_chain.py` | Concrete DomainChain with 2PC, business rules, operation metrics | Factory + Strategy - Business rule validation, metric tracking |
-| `events/base_event.py` | Base event schema with Ledger-compliant structure and validation | Composite Pattern - Event container with metadata |
-| `events/domain_event.py` | Domain event classes and factory functions | Factory Pattern - Domain-specific event creation |
-| `utils/entity_tracer.py` | Cross-chain entity lifecycle tracking across Main Chain + Sub-Chains | Chain Traversal - Event aggregation, lifecycle stage detection |
-| `utils/cross_chain_validator.py` | Proof consistency verification + Ledger compliance validation | Consistency Check - Hash verification, cryptocurrency term scanning |
+| `generic/chains/base_chain.py` | Abstract BaseChain with entity registry, domain rules, event handlers | Template Method Pattern - Extended by domain-specific chains |
+| `generic/chains/domain_chain.py` | Concrete DomainChain with 2PC, business rules, operation metrics | Factory + Strategy - Business rule validation, metric tracking |
+| `generic/events/base_event.py` | Base event schema with Ledger-compliant structure and validation | Composite Pattern - Event container with metadata |
+| `generic/events/domain_event.py` | Domain event classes and factory functions | Factory Pattern - Domain-specific event creation |
+| `generic/utils/entity_tracer.py` | Cross-chain entity lifecycle tracking across Main Chain + Sub-Chains | Chain Traversal - Event aggregation, lifecycle stage detection |
+| `generic/utils/cross_chain_validator.py` | Proof consistency verification + Ledger compliance validation | Consistency Check - Hash verification, cryptocurrency term scanning |
 
 **`DomainChain` (concrete domain implementation)**:
 
@@ -423,9 +423,11 @@ Additional config components:
 | File | Commands | Purpose |
 |------|----------|---------|
 | `cli/chain.py` | `chain create --name --parent`, `chain submit-proof`, `chain list` | Chain management |
-| `cli/event.py` | `event submit`, `event status`, `event history` | Event submission and tracking |
-| `cli/node.py` | `node start`, `node stop`, `node status` | Node lifecycle management |
+| `cli/event.py` | `event add`, `event show` | Event submission and tracking |
+| `cli/key.py` | `key generate`, `key show`, `key verify` | Key pair management for validators |
+| `cli/node.py` | `node start`, `node init` | Node lifecycle management |
 | `cli/store.py` | Internal state persistence helpers | In-memory + JSON file storage for CLI sessions |
+| `cli/verify.py` | `verify chain`, `verify signatures` | Ledger integrity and signature auditing |
 
 The CLI uses **Click** with context-passing (`ctx.obj`) for config sharing between commands. Supports 4 built-in domain types for chain creation: `supply_chain`, `healthcare`, `finance`, `manufacturing`.
 

@@ -109,7 +109,7 @@ flowchart LR
 | Network adaptive timeout | `NetworkRecoveryManager.adjust_timeout()` | `error_mitigation/recovery_engine.py` |
 | Redundant send | `send_with_redundancy()` | `error_mitigation/recovery_engine.py` |
 | Leader failure | `ConsensusRecoveryEngine.handle_leader_failure()` | `error_mitigation/recovery_engine.py` |
-| View change trigger | `BFTViewChangeManager._initiate_view_change()` | `consensus/bft/view_change.py` |
+| View change trigger | `BFTViewChangeManager._initiate_view_change()` | `consensus/bft/consensus.py` |
 | Snapshot load | `RollbackManager.load_snapshot()` | `error_mitigation/rollback_manager.py` |
 | Journal replay | `TransactionJournal.replay()` | `error_mitigation/journal.py` |
 | State validate | `DataValidator.validate()` | `error_mitigation/validator.py` |

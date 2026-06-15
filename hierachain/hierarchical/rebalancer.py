@@ -281,6 +281,9 @@ def _select_target_child_for_rebalancer(
     num_children: int,
 ) -> int:
     """Select target child for event based on strategy."""
+    if num_children <= 0:
+        return 0
+
     if rebalancer.split_strategy == SplitStrategy.HASH_BASED:
         entity_id = _get_event_entity_id(event)
         hash_val = int(hashlib.sha256(entity_id.encode()).hexdigest()[:8], 16)
@@ -666,6 +669,8 @@ class SubChainRebalancer:
 
     def _select_target_child(self, event: Any, num_children: int) -> int:
         """Select target child for event based on strategy."""
+        if num_children <= 0:
+            return 0
         return _select_target_child_for_rebalancer(self, event, num_children)
 
     def get_metrics(self, sub_chain_id: str) -> RebalanceMetrics | None:

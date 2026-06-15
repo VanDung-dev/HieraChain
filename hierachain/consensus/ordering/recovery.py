@@ -91,7 +91,7 @@ class OrderingRecovery:
         event_id = "unknown"
         try:
             event_data = make_serializable(event_data)
-            event_id = _get_event_id(event_data)
+            event_id = event_data.get("event_id") or _get_event_id(event_data)
             
             # Handle block cut marker
             if _is_block_cut_marker(event_data):

@@ -79,11 +79,14 @@ uv venv
 source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\Activate.ps1  # Windows
 
-# Install ALL dependencies automatically
+# Install ALL dependencies automatically (core + dev)
 uv sync
 
-# ✅ This single command replaces all 3 pip commands above
-# It reads pyproject.toml, resolves dependencies, installs everything in dev mode
+# Or install only core + dev extras (if you need dev tools like pytest)
+uv sync --extra dev
+
+# ✅ These commands replace all 3 pip commands above
+# They read pyproject.toml, resolve dependencies, install everything in dev mode
 ```
 
 This will set up your environment to work with the Ledger.
@@ -215,7 +218,8 @@ python -m scripts.static_analysis
 
 | Task | Command | Details in |
 |------|---------|------------|
-| Install dependencies | `uv sync` | This file (Installation section) |
+| Install all deps | `uv sync` | This file (Installation section) |
+| Install core + dev | `uv sync --extra dev` | This file (Installation section) |
 | Run API server | `python -m hierachain.api.server` | This file (Running Server section) |
 | Run demos | `python demo/demo.py` | [`demo/README.md`](../demo/README.md) |
 | Run tests | `python -m pytest tests/unit -v` | [`tests/README.md`](../tests/README.md) |

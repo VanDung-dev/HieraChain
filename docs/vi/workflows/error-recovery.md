@@ -109,7 +109,7 @@ flowchart LR
 | Cấu hình khoảng chờ mạng | `NetworkRecoveryManager.adjust_timeout()` | `error_mitigation/recovery_engine.py` |
 | Gửi tin dự phòng | `send_with_redundancy()` | `error_mitigation/recovery_engine.py` |
 | Xử lý lỗi Leader | `ConsensusRecoveryEngine.handle_leader_failure()` | `error_mitigation/recovery_engine.py` |
-| Kích hoạt View Change | `BFTViewChangeManager._initiate_view_change()` | `consensus/bft/view_change.py` |
+| Kích hoạt View Change | `BFTViewChangeManager._initiate_view_change()` | `consensus/bft/consensus.py` |
 | Nạp ảnh chụp | `RollbackManager.load_snapshot()` | `error_mitigation/rollback_manager.py` |
 | Phát lại nhật ký | `TransactionJournal.replay()` | `error_mitigation/journal.py` |
 | Xác thực trạng thái | `DataValidator.validate()` | `error_mitigation/validator.py` |

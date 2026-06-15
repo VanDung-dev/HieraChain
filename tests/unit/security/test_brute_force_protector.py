@@ -206,14 +206,14 @@ def test_api_key_verifier_returns_429_when_locked_out():
     # Trigger failures to cause lockout
     for _ in range(2):
         with pytest.raises(HTTPException) as exc_info:
-            asyncio.get_event_loop().run_until_complete(
+            asyncio.run(
                 verifier(mock_request, "invalid_key_12345678")
             )
         assert exc_info.value.status_code == 401
 
     # Next attempt should be 429 (locked out)
     with pytest.raises(HTTPException) as exc_info:
-        asyncio.get_event_loop().run_until_complete(
+        asyncio.run(
             verifier(mock_request, "any_key_123456789")
         )
     assert exc_info.value.status_code == 429
@@ -242,7 +242,7 @@ def test_api_key_verifier_records_failure_on_invalid_key():
     verifier.key_manager.is_valid = Mock(return_value=False)
 
     with pytest.raises(HTTPException):
-        asyncio.get_event_loop().run_until_complete(
+        asyncio.run(
             verifier(mock_request, "invalid_key_12345678")
         )
 

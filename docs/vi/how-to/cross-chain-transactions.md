@@ -57,7 +57,7 @@ tx_id = manager.initiate_transaction(
     payload={
         "event_name": "asset_transfer",
         "asset_id": "PKG-099238",
-        "amount": 500
+        "quantity": 500
     }
 )
 ```
