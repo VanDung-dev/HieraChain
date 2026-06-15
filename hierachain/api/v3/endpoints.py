@@ -13,7 +13,7 @@ from hierachain.api.v3.schemas import (
 )
 from hierachain.units.version import get_version
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.api.v1.endpoints import get_hierarchy_manager
+from hierachain.api.v1.depds import get_hierarchy_manager
 from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.config.settings import get_settings
 from hierachain.security.key_provider import LocalKeyProvider, CryptoError
