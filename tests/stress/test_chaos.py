@@ -77,16 +77,22 @@ K8S_ACTIONS = {
         ["kubectl", "exec", "-n", ns, pod, "--", "tc", "qdisc", "del", "dev", "eth0", "root"]),
 }
 
+from tests.stress.docker_helper import (
+    run_docker_container_action,
+    run_docker_container_update,
+    run_docker_exec,
+)
+
 DOCKER_ACTIONS = {
-    "stop": lambda c, **kw: _run_cmd(["docker", "stop", c]),
-    "start": lambda c, **kw: _run_cmd(["docker", "start", c]),
-    "restart": lambda c, **kw: _run_cmd(["docker", "restart", c]),
-    "cpu_throttle": lambda c, **kw: _run_cmd(["docker", "update", "--cpus", kw.get("cpus", "0.1"), c]),
-    "cpu_unthrottle": lambda c, **kw: _run_cmd(["docker", "update", "--cpus", "1.0", c]),
-    "network_cut": lambda c, **kw: _run_cmd(
-        ["docker", "exec", c, "tc", "qdisc", "add", "dev", "eth0", "root", "netem", "loss", "100%"]),
-    "network_reset": lambda c, **kw: _run_cmd(
-        ["docker", "exec", c, "tc", "qdisc", "del", "dev", "eth0", "root"]),
+    "stop": lambda c, **kw: run_docker_container_action(c, "stop"),
+    "start": lambda c, **kw: run_docker_container_action(c, "start"),
+    "restart": lambda c, **kw: run_docker_container_action(c, "restart"),
+    "cpu_throttle": lambda c, **kw: run_docker_container_update(c, kw.get("cpus", "0.1")),
+    "cpu_unthrottle": lambda c, **kw: run_docker_container_update(c, "1.0"),
+    "network_cut": lambda c, **kw: run_docker_exec(
+        c, ["tc", "qdisc", "add", "dev", "eth0", "root", "netem", "loss", "100%"]),
+    "network_reset": lambda c, **kw: run_docker_exec(
+        c, ["tc", "qdisc", "del", "dev", "eth0", "root"]),
 }
 
 

@@ -19,9 +19,11 @@ HieraChain provides container runtimes dedicated to high-performance benchmarkin
 docker/
 ├── setup-docker.sh           # Docker Compose: 4-node cluster
 ├── run-stress-docker.sh      # Docker Compose: stress test
+├── run-security-docker.sh    # Docker Compose: security/rogue-node test
 │
 ├── setup-podman.sh           # Podman Compose: 4-node cluster
 ├── run-stress-podman.sh      # Podman Compose: stress test
+├── run-security-podman.sh    # Podman Compose: security/rogue-node test
 │
 ├── setup-orb-k8s.sh          # OrbStack + Kind: K8s cluster
 ├── run-stress-orb-k8s.sh     # OrbStack + Kind: stress test
@@ -55,18 +57,21 @@ docker/
 docker context use default
 docker/setup-docker.sh
 docker/run-stress-docker.sh
+docker/run-security-docker.sh
 
 # Option 2: Podman Machine (rootless, no daemon)
 podman machine init --cpus 8 --memory 16
 podman machine start
 docker/setup-podman.sh
 docker/run-stress-podman.sh
+docker/run-security-podman.sh
 
 # Option 3 Colima (lightweight, CLI-only)
 colima start --cpu 8 --memory 16 --disk 60 --vm-type=vz --vz-rosetta --mount-type virtiofs
 docker context use colima
 docker/setup-docker.sh
 docker/run-stress-docker.sh
+docker/run-security-docker.sh
 
 # Option 4: OrbStack + Kubernetes (for K8s testing)
 docker context use orbstack
@@ -84,10 +89,12 @@ Linux runs Docker/Podman natively without VM overhead.
 # Option 1: Docker
 docker/setup-docker.sh
 docker/run-stress-docker.sh
+docker/run-security-docker.sh
 
 # Option 2: Podman (rootless, no daemon required)
 docker/setup-podman.sh
 docker/run-stress-podman.sh
+docker/run-security-podman.sh
 ```
 
 ---

@@ -207,7 +207,7 @@ services:
       hierachain-internal:
         ipv4_address: 172.28.0.61
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -227,7 +227,7 @@ services:
       hierachain-internal:
         ipv4_address: 172.28.0.62
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -249,7 +249,7 @@ services:
       hierachain-internal:
         ipv4_address: 172.28.0.63
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -271,12 +271,60 @@ services:
       hierachain-internal:
         ipv4_address: 172.28.0.64
     healthcheck:
-      test: ["CMD-SHELL", "ipfs id | grep -q ID || exit 1"]
+      test: ["CMD-SHELL", "ipfs --api /ip4/127.0.0.1/tcp/5001 id | grep -q ID || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
     depends_on:
       - ipfs-node1
+
+  # Rogue node for adversarial security phase (only with profile security-test)
+  rogue-node:
+    profiles:
+      - security-test
+    image: hierachain:latest
+    container_name: hierachain-rogue-node-podman
+    hostname: rogue-node
+    environment:
+      # Allow overriding node_id to impersonate a legitimate node (advanced red-team only)
+      - HRC_NODE_ID=${ROGUE_NODE_ID_OVERRIDE:-rogue-node}
+      - HRC_AUTH_ENABLED=false
+      - HRC_P2P_PORT=5005
+      - LOG_LEVEL=INFO
+      - DATABASE_PATH=/app/data/hierachain.db
+      - HRC_API_HOST=0.0.0.0
+      # Allow overriding identity path so rogue can load a stolen identity.json (advanced red-team only)
+      - HRC_VALIDATOR_IDENTITY=${ROGUE_IDENTITY_PATH:-/app/config/identity/identity.json}
+      - HRC_ENV=test
+      - HRC_RATE_LIMIT=false
+      - HRC_RATE_LIMIT_RPM=100000
+      - HRC_JOURNAL_FSYNC=false
+      - HRC_BLOCK_INTERVAL=1
+      - HRC_IPFS_ENABLED=true
+      - HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
+      - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
+      - HRC_IPFS_AUTO_PIN=true
+      - HRC_IPFS_TIMEOUT=120
+    networks:
+      hierachain-internal:
+        ipv4_address: 172.28.0.20
+    volumes:
+      - rogue-node-data:/app/data
+      - ./nodes/rogue-node:/app/config/identity:ro
+      # Mount all generated identities (read-only) to enable optional impersonation in security phase
+      - ./nodes:/app/all-identities:ro
+      - ../log/rogue-node:/app/log
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - node1
+      - node2
+      - node3
+      - node4
+    command: sh -c ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"
 
   stress-tester:
     image: hierachain:latest
@@ -291,6 +339,7 @@ services:
       hierachain-internal:
         ipv4_address: 172.28.0.100
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - ../tests:/app/tests
       - ../log:/app/log
     profiles:
@@ -320,6 +369,7 @@ volumes:
   node2-data:
   node3-data:
   node4-data:
+  rogue-node-data:
   ipfs-node1-data:
   ipfs-node2-data:
   ipfs-node3-data:

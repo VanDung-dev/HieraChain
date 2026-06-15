@@ -578,7 +578,21 @@ async def create_sub_chain(
 
         # Create sub-chain
         sub_chain = SubChain(name=safe_chain_name, domain_type=safe_chain_type)
-        manager.add_sub_chain(safe_chain_name, sub_chain)
+        try:
+            manager.add_sub_chain(safe_chain_name, sub_chain)
+        except ValueError as ve:
+            # Gracefully handle duplicate creation attempts
+            api_logger.info(
+                "Sub-chain already exists", chain_name=safe_chain_name, error=str(ve)
+            )
+            return JSONResponse(
+                status_code=status.HTTP_409_CONFLICT,
+                content={
+                    "success": False,
+                    "message": f"Sub-chain '{safe_chain_name}' already exists",
+                    "chain_name": safe_chain_name,
+                },
+            )
 
         api_logger.audit(
             action="create",

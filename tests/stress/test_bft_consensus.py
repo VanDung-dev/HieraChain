@@ -75,18 +75,24 @@ def get_chain_list(client: RealStressClient) -> list[dict]:
 
 
 def create_bft_chain(client: RealStressClient) -> bool:
-    """Create a dedicated chain for BFT test."""
+    """Create a dedicated chain for BFT test on all healthy nodes."""
     participants = list(client.node_status.keys())
-    resp = _first_healthy_response(
-        client, "POST", f"/api/v1/chains/{BFT_CHAIN}/create",
-        params={"chain_type": "generic"},
-        json={"participants": participants},
-        timeout=10,
-    )
-    if resp and resp.status_code in (200, 201, 409):
-        logger.info("BFT chain ready")
-        return True
-    return False
+    success = False
+    for nid, status in client.node_status.items():
+        if status.is_healthy:
+            try:
+                resp = client.session.post(
+                    f"{status.url}/api/v1/chains/{BFT_CHAIN}/create",
+                    params={"chain_type": "generic"},
+                    json={"participants": participants},
+                    timeout=10,
+                )
+                if resp.status_code in (200, 201, 409):
+                    logger.info("BFT chain ready on %s", nid)
+                    success = True
+            except Exception as e:
+                logger.warning("Failed to create BFT chain on %s: %s", nid, e)
+    return success
 
 
 class TestBFTThroughput:
@@ -203,9 +209,13 @@ class TestBFTViewChange:
                 subprocess.run(["kubectl", "rollout", "restart", "deployment", "-n", ns],
                                capture_output=True, timeout=15)
             else:
+                from tests.stress.docker_helper import run_docker_container_action
                 docker_cmd = "stop" if action == "stop" else "start"
-                subprocess.run(["docker", docker_cmd, container_name],
-                               capture_output=True, timeout=15)
+                stdout, stderr = run_docker_container_action(container_name, docker_cmd)
+                if stderr:
+                    logger.error("Failed to %s %s via helper: %s", action, primary, stderr)
+                else:
+                    logger.info("Successfully %s %s via helper: %s", action, primary, stdout)
         except Exception as e:
             logger.error("Failed to %s %s: %s", action, primary, e)
 

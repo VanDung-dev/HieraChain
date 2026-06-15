@@ -1,0 +1,133 @@
+# Rogue Node for adversarial security testing
+# Can impersonate any legitimate node via ROGUE_NODE_ID_OVERRIDE
+# Profile: security-test (only created when explicitly testing)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rogue-node
+  namespace: hierachain
+  labels:
+    app: hierachain
+    component: rogue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hierachain
+      component: rogue
+  template:
+    metadata:
+      labels:
+        app: hierachain
+        component: rogue
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: hierachain
+          image: hierachain:latest
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", ". .venv/bin/activate && hrc node start --host 0.0.0.0 --port 2661"]
+          env:
+            - name: NODE_ID
+              value: "rogue-node"
+            - name: HRC_NODE_ID
+              value: "rogue-node"
+            - name: HRC_P2P_PORT
+              value: "5005"
+            - name: HRC_AUTH_ENABLED
+              value: "false"
+            - name: HRC_VALIDATOR_IDENTITY
+              value: "/app/config/identity/identity.json"
+            - name: HRC_ENV
+              value: "test"
+            - name: HRC_RATE_LIMIT
+              value: "false"
+            - name: HRC_RATE_LIMIT_RPM
+              value: "100000"
+            - name: HRC_JOURNAL_FSYNC
+              value: "false"
+            - name: HRC_BLOCK_INTERVAL
+              value: "1"
+            - name: HRC_IPFS_ENABLED
+              value: "true"
+            - name: HRC_IPFS_HOST
+              value: "/dns4/ipfs-0.ipfs-headless.hierachain.svc.cluster.local/tcp/5001"
+            - name: HRC_IPFS_AUTO_PIN
+              value: "true"
+            - name: HRC_IPFS_TIMEOUT
+              value: "120"
+            - name: ROGUE_NODE_ID_OVERRIDE
+              value: ""
+            - name: ROGUE_IDENTITY_PATH
+              value: ""
+          envFrom:
+            - configMapRef:
+                name: hierachain-config
+          ports:
+            - containerPort: 5005
+              name: node-port
+            - containerPort: 2661
+              name: api-port
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: api-port
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: identity
+              mountPath: /app/config/identity
+            - name: all-identities
+              mountPath: /app/all-identities
+      initContainers:
+        - name: init-identity
+          image: busybox:latest
+          command:
+            - "sh"
+            - "-c"
+            - |
+              # Generate a rogue identity (self-signed, not matching any real node)
+              # In production, this would be generated externally and stored as a secret.
+              # For test purposes, use a placeholder identity file.
+              cat > /identity-storage/identity.json << 'EOF'
+              {
+                "node_id": "rogue-node",
+                "entity_id": "rogue-entity",
+                "signing_private_key": "rogue_sk_placeholder_change_me",
+                "signing_public_key": "rogue_pk_placeholder",
+                "transport_private_key": "rogue_tp_sk_placeholder",
+                "transport_public_key": "rogue_tp_pk_placeholder",
+                "curve25519_private": "rogue_c25519_sk_placeholder",
+                "curve25519_public": "rogue_c25519_pk_placeholder"
+              }
+              EOF
+              echo "Rogue identity initialized"
+          volumeMounts:
+            - name: identity-storage
+              mountPath: /identity-storage
+      volumes:
+        - name: identity
+          emptyDir: {}
+        - name: identity-storage
+          emptyDir: {}
+        - name: all-identities
+          secret:
+            secretName: hierachain-node-identities

@@ -37,8 +37,10 @@ data:
     #    Kubo will auto-discover peers via mDNS on the same network,
     #    so explicit bootstrap is optional for well-connected containers.
     echo "[IPFS Init] Ready — Peer ID: $(ipfs config Identity.PeerID 2>/dev/null || echo 'unknown')"
+  # WARNING: swarm.key is NOT stored here to avoid committing secrets to git.
+  # Injected at deploy time by setup-orb-k8s.sh:
+  #   SWARM_KEY_CONTENT=$(python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))" < docker/ipfs/swarm.key)
+  #   kubectl patch configmap ipfs-config -n $NAMESPACE \
+  #     --patch '{"data":{"swarm.key":$SWARM_KEY_CONTENT}}'
   swarm.key: |
-    # This is a placeholder for swarm.key.
-    # You need to replace this with the actual content of docker/ipfs/swarm.key
-    # when deploying to a real Kubernetes cluster for a private IPFS swarm.
-    # For now, IPFS will run in public network mode as per init.sh.
+    placeholder-replace-at-deploy-time

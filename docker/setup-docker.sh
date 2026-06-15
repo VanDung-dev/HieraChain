@@ -52,10 +52,10 @@ HRC_NODES=$(grep "hostname:" $COMPOSE_FILE | awk '{print $2}' | grep -v -E "gate
 export HRC_NODES
 echo "  Found nodes: ${HRC_NODES}"
 
-# Step 1: Generate Node Identities
+# Step 1: Generate Node Identities (including rogue-node for WireGuard configs)
 echo ""
-echo "[1/6] Generating fresh node identities (cryptographic keys)..."
-python3 docker/scripts/generate_node_identities.py
+echo "[1/6] Generating fresh node identities (cryptographic keys + WireGuard)..."
+INCLUDE_ROGUE_NODE=true python3 docker/scripts/generate_node_identities.py
 
 # Step 2: Build Docker image
 echo ""
@@ -106,7 +106,7 @@ done
 
 echo "  Discovered peers:${PEER_IDS}"
 
-# Connect each IPFS node to all others
+# Connect each IPFS node to all others via wgmesh network
 for src_node in ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4; do
     for dst_node in ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4; do
         if [ "$src_node" = "$dst_node" ]; then
@@ -114,10 +114,13 @@ for src_node in ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4; do
         fi
         DST_PEER=$(echo "$PEER_IDS" | tr ' ' '\n' | grep "^$dst_node:" | cut -d: -f2)
         if [ -n "$DST_PEER" ]; then
-            echo "  Connecting $src_node → $dst_node ($DST_PEER)..."
-            docker exec "hierachain-$src_node" \
-                ipfs swarm connect "/ip4/$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "hierachain-$dst_node" 2>/dev/null || echo '0.0.0.0')/tcp/4001/p2p/$DST_PEER" \
-                2>/dev/null || true
+            DST_WG_IP=$(docker inspect -f '{{(index .NetworkSettings.Networks "docker_wgmesh").IPAddress}}' "hierachain-$dst_node" 2>/dev/null || echo '')
+            if [ -n "$DST_WG_IP" ]; then
+                echo "  Connecting $src_node → $dst_node via wgmesh ($DST_WG_IP)..."
+                docker exec "hierachain-$src_node" \
+                    ipfs swarm connect "/ip4/$DST_WG_IP/tcp/4001/p2p/$DST_PEER" \
+                    2>/dev/null || true
+            fi
         fi
     done
 done
@@ -178,15 +181,24 @@ echo ""
 echo "Developer Helper:"
 echo "  Get token: docker exec hierachain-gateway env | grep EXPLORER_TOKEN"
 echo ""
-echo "HieraChain Nodes (Isolated Internal Network):"
-echo "  Subnet: 172.28.0.0/24 (node1-node4)"
-echo "  (No direct external access for security)"
+echo "HieraChain Nodes (Multi-Region WireGuard Mesh):"
+echo "  US region:   node1  (10.200.1.1  | 172.28.1.10)"
+echo "  EU region:   node2  (10.200.2.1  | 172.28.2.10)"
+echo "  Asia region: node3  (10.200.3.1  | 172.28.3.10)"
+echo "  Asia region: node4  (10.200.4.1  | 172.28.3.11)"
+echo "  P2P traffic travels through WireGuard overlay (encrypted + WAN latency)"
 echo ""
-echo "IPFS Private Swarm:"
-echo "  ipfs-node1 → 172.28.0.61"
-echo "  ipfs-node2 → 172.28.0.62"
-echo "  ipfs-node3 → 172.28.0.63"
-echo "  ipfs-node4 → 172.28.0.64"
+echo "IPFS Private Swarm (Cross-Region Mesh):"
+echo "  US:   ipfs-node1  → 172.28.1.61  (wgmesh: 172.29.0.61)"
+echo "  EU:   ipfs-node2  → 172.28.2.61  (wgmesh: 172.29.0.62)"
+echo "  Asia: ipfs-node3  → 172.28.3.61  (wgmesh: 172.29.0.63)"
+echo "  Asia: ipfs-node4  → 172.28.3.62  (wgmesh: 172.29.0.64)"
+echo ""
+echo "Cross-Region Latency Simulation (tc on WireGuard interfaces):"
+echo "  US↔EU:    200-300ms"
+echo "  US↔Asia:  400-500ms"
+echo "  EU↔Asia:  300-400ms"
+echo "  Asia↔Asia: 0-100ms"
 echo "  Encryption Key: ${IPFS_ENCRYPTION_KEY:0:16}... (saved in swarm.key)"
 echo ""
 echo "Next steps:"

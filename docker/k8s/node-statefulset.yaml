@@ -34,7 +34,7 @@ spec:
               name: node-port
             - containerPort: 2661
               name: api-port
-          command: ["sh", "-c", ". .venv/bin/activate && POD_INDEX=${HOSTNAME##*-} && export NODE_ID=\"node$(($POD_INDEX + 1))\" && [ -f /app/config/identity/peers.env ] && . /app/config/identity/peers.env; hrc node start --host 0.0.0.0 --port 2661"]
+          command: ["sh", "-c", ". .venv/bin/activate && POD_INDEX=${HOSTNAME##*-} && NODE_NUM=$(($POD_INDEX + 1)) && export NODE_ID=\"node$NODE_NUM\" && export HRC_IPFS_HOST=\"/dns4/ipfs-$POD_INDEX.ipfs-headless.hierachain.svc.cluster.local/tcp/5001\" && [ -f /app/config/identity/peers.env ] && . /app/config/identity/peers.env; hrc node start --host 0.0.0.0 --port 2661"]
           env:
             - name: NODE_ID
               valueFrom:
@@ -44,6 +44,19 @@ spec:
               value: "5001"
             - name: HRC_VALIDATOR_IDENTITY
               value: "/app/config/identity/identity.json"
+            - name: HRC_IPFS_ENABLED
+              value: "true"
+            - name: HRC_IPFS_HOST
+              value: ""
+            - name: HRC_IPFS_AUTO_PIN
+              value: "true"
+            - name: HRC_IPFS_TIMEOUT
+              value: "120"
+            - name: HRC_IPFS_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hierachain-secrets
+                  key: IPFS_ENCRYPTION_KEY
             - name: HRC_JOURNAL_FSYNC
               valueFrom:
                 configMapKeyRef:
