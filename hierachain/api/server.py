@@ -10,15 +10,11 @@ error handling, CORS support, and comprehensive logging.
 """
 
 import os
-import uuid
-import uvicorn
-import redis
 import logging
 import traceback
-import time
 from typing import Any, cast
 from fastapi import (
-    FastAPI, HTTPException, Depends, APIRouter, Response
+    FastAPI, HTTPException, Depends
 )
 from fastapi.middleware.cors import CORSMiddleware
 import warnings
@@ -26,23 +22,23 @@ from contextlib import asynccontextmanager
 
 from hierachain.config.logging import LOGGING_CONFIG
 
-from hierachain.api.v1.endpoints import router as v1_router
-from hierachain.api.v2.endpoints import router as v2_router
+from hierachain.api.v1.router import v1_router
+from hierachain.api.v2.router import v2_router
 from hierachain.api.v3.endpoints import router as v3_router
 from hierachain.api.websocket.manager import ws_manager
-from hierachain.api.graphql.schema import schema as graphql_schema
-from hierachain.api.graphql import security as graphql_security
+from hierachain.api.middleware import (
+    add_security_headers, add_payload_limit, add_rate_limit,
+    add_request_logging,
+)
+from hierachain.api.graphql_handler import _register_graphql_router
 from hierachain.config.settings import get_settings
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 from hierachain.network.network_client import NetworkClient, NetworkClientConfig
 
 logger = logging.getLogger(__name__)
 
-# Global network client
 p2p_client: NetworkClient | None = None
 
-# Endpoints that should bypass authentication and rate limiting
-# These are the system endpoints used for health monitoring and documentation
 EXEMPT_PATHS = {
     "/",
     "/api/v1/health",
@@ -55,52 +51,23 @@ EXEMPT_PATHS = {
     "/ws",
     "/ws/status",
 }
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse
-
-
-class PayloadLimitMiddleware(BaseHTTPMiddleware):
-    """
-    Rejects requests larger than 1MB to prevent DoS attacks
-    """
-    MAX_PAYLOAD_SIZE = 1 * 1024 * 1024  # 1 MB
-
-    async def dispatch(self, request: Request, call_next):
-        if request.method in ("POST", "PUT", "PATCH"):
-            content_length = request.headers.get("Content-Length")
-            if content_length:
-                try:
-                    if int(content_length) > self.MAX_PAYLOAD_SIZE:
-                        return JSONResponse(
-                            status_code=413,
-                            content={"error": "Payload too large. Maximum size is 1MB."}
-                        )
-                except ValueError:
-                    pass
-        return await call_next(request)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    """Application lifespan events"""
-    # Startup
     logger.info("Starting HieraChain API server...")
-    
-    # Start WebSocket manager
+
     await ws_manager.start()
     logger.info("WebSocket manager started")
 
-    # Start P2P network if enabled
     global p2p_client
     settings = get_settings()
     p2p_config = settings.get_p2p_config()
-    
+
     if p2p_config["enabled"]:
-        # Load node identity for transport keys
         from hierachain.security.identity_loader import load_node_identity
         node_identity = load_node_identity()
-        
+
         transport_secret = None
         transport_public = None
         if node_identity:
@@ -127,32 +94,27 @@ async def lifespan(_app: FastAPI):
             logger.error("Failed to start P2P network layer")
     else:
         logger.info("P2P network layer is DISABLED")
-    
-    # Log authentication status on startup
+
     if settings.AUTH_ENABLED:
         logger.info("Global API Authentication ENFORCED")
     else:
         logger.warning("Global API Authentication DISABLED")
 
-    # CORS safety checks for production
     _check_cors_config(settings)
 
     yield
-    # Shutdown
+
     logger.info("Shutting down HieraChain API server...")
-    
-    # Stop WebSocket manager
+
     await ws_manager.stop()
     logger.info("WebSocket manager stopped")
 
-    # Stop P2P network
     if p2p_client:
         await p2p_client.stop()
         logger.info("P2P network layer stopped")
 
 
 def _check_cors_config(settings) -> None:
-    """Log warnings if CORS configuration is unsafe for production."""
     env = getattr(settings, "ENV", "dev")
     if env != "product":
         return
@@ -174,226 +136,7 @@ def _check_cors_config(settings) -> None:
         )
 
 
-def _get_csp_for_docs(is_dev: bool) -> str:
-    """Get Content-Security-Policy for documentation pages."""
-    if is_dev:
-        return (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "img-src 'self' data: https://fastapi.tiangolo.com"
-        )
-    return "default-src 'self'; script-src 'self'; style-src 'self'"
-
-
-def _get_csp_for_api() -> str:
-    """Get strict Content-Security-Policy for API endpoints."""
-    return "default-src 'none'; frame-ancestors 'none'"
-
-
-def _is_docs_path(path: str) -> bool:
-    """Check if request path is for documentation pages."""
-    return path in ("/docs", "/redoc", "/openapi.json")
-
-
-def add_security_headers(fast_app: FastAPI, is_dev: bool):
-    """Add security headers middleware to the application"""
-    # Cache environment flag at registration time
-
-    @fast_app.middleware("http")
-    async def security_headers_middleware(request: Request, call_next):
-        response = await call_next(request)
-        
-        # Set standard security headers
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Cache-Control"] = (
-            "no-store, no-cache, must-revalidate, private"
-        )
-        response.headers["Pragma"] = "no-cache"
-        
-        # Hide Server Information
-        if "server" in response.headers:
-            del response.headers["server"]
-        
-        # Set CSP based on path
-        path = request.url.path
-        if _is_docs_path(path):
-            response.headers["Content-Security-Policy"] = _get_csp_for_docs(is_dev)
-        else:
-            response.headers["Content-Security-Policy"] = _get_csp_for_api()
-        
-        return response
-
-
-def add_payload_limit(fast_app: FastAPI):
-    """Add payload size limit middleware to the application"""
-    @fast_app.middleware("http")
-    async def limit_upload_size(request: Request, call_next):
-        # 1 MB limit (prevent DoS)
-        max_size = 1 * 1024 * 1024
-        
-        # Check Content-Length header first
-        content_length_header = request.headers.get("content-length")
-        if (
-            request.method in ("POST", "PUT", "PATCH")
-            and content_length_header
-        ):
-            try:
-                content_length = int(content_length_header)
-                if content_length > max_size:
-                    return JSONResponse(
-                        status_code=413,
-                        content={
-                            "error": "Payload Too Large",
-                            "message": f"Request body too large. Limit is {max_size} bytes",
-                            "status_code": 413
-                        }
-                    )
-            except ValueError:
-                # Invalid content-length header, let it through or reject?
-                # Better to let it through and let FastAPI handle potential issues
-                pass
-            
-        return await call_next(request)
-
-
-class RateLimiter:
-    """Simple in-memory rate limiter (single-node only)"""
-    def __init__(self, requests_per_minute: int):
-        import threading
-        self.store: dict = {}
-        self.limit = requests_per_minute
-        self._lock = threading.Lock()
-
-    def is_allowed(self, ip: str) -> bool:
-        now = int(time.time())
-        with self._lock:
-            # Cleanup old entries every minute
-            if now % 60 == 0:
-                self.store = {k: v for k, v in self.store.items() if v[0] > now - 60}
-            
-            start, count = self.store.get(ip, (now, 0))
-            
-            # Reset window if expired
-            if now - start > 60:
-                self.store[ip] = (now, 1)
-                return True
-                
-            if count >= self.limit:
-                return False
-                
-            self.store[ip] = (start, count + 1)
-            return True
-
-    def remaining(self, ip: str) -> int:
-        """Return remaining requests in the current window."""
-        now = int(time.time())
-        with self._lock:
-            start, count = self.store.get(ip, (now, 0))
-            if now - start > 60:
-                return self.limit
-            return max(0, self.limit - count)
-
-
-class RedisRateLimiter:
-    """
-    Sliding-window rate limiter backed by Redis.
-
-    Uses INCR + EXPIRE for atomicity. Works across multiple server processes
-    and nodes sharing the same Redis instance.
-    """
-    def __init__(self, requests_per_minute: int, host: str, port: int, db: int):
-        self._redis = redis.Redis(
-            host=host, port=port, db=db,
-            socket_connect_timeout=2, socket_timeout=2, decode_responses=True
-        )
-        self.limit = requests_per_minute
-
-    @staticmethod
-    def _key(ip: str) -> str:
-        window = int(time.time()) // 60
-        return f"hrc:rl:{ip}:{window}"
-
-    def is_allowed(self, ip: str) -> bool:
-        key = self._key(ip)
-        try:
-            pipe = self._redis.pipeline()
-            pipe.incr(key)
-            pipe.expire(key, 60)
-            count, _ = pipe.execute()
-            return int(count) <= self.limit
-        except Exception as exc:
-            logger.warning("Redis rate-limiter error, allowing request: %s", exc)
-            return True  # fail-open: don't block traffic if Redis is unavailable
-
-    def remaining(self, ip: str) -> int:
-        key = self._key(ip)
-        try:
-            count = int(cast(Any, self._redis.get(key)) or 0)
-            return max(0, self.limit - count)
-        except (TypeError, AttributeError):  # Fail-open on Redis client errors
-            return self.limit
-
-
-
-def add_rate_limit(fast_app: FastAPI, settings) -> None:
-    """Add rate limit middleware — memory or Redis backend."""
-    if not settings.RATE_LIMIT_ENABLED:
-        return
-
-    rpm = settings.RATE_LIMIT_REQUESTS_PER_MINUTE
-    backend = getattr(settings, "RATE_LIMIT_BACKEND", "memory")
-
-    if backend == "redis":
-        limiter: RateLimiter | RedisRateLimiter = RedisRateLimiter(
-            rpm,
-            host=settings.REDIS_HOST,
-            port=settings.REDIS_PORT,
-            db=settings.REDIS_DB,
-        )
-        logger.info("Rate limiter: Redis backend (%d rpm)", rpm)
-    else:
-        limiter = RateLimiter(rpm)
-        logger.info("Rate limiter: in-memory backend (%d rpm)", rpm)
-
-    @fast_app.middleware("http")
-    async def rate_limit_middleware(request: Request, call_next):
-        # Bypass rate limiting for exempt system paths (health checks, metrics, etc.)
-        if request.url.path in EXEMPT_PATHS:
-            return await call_next(request)
-
-        client = request.client
-        client_ip = "unknown"
-        if client is not None:
-            client_ip = client.host
-        
-        if not limiter.is_allowed(client_ip):
-            remaining = limiter.remaining(client_ip)
-            return JSONResponse(
-                status_code=429,
-                headers={
-                    "Retry-After": "60",
-                    "X-RateLimit-Limit": str(rpm),
-                    "X-RateLimit-Remaining": str(remaining),
-                },
-                content={
-                    "error": "Too Many Requests",
-                    "message": "Rate limit exceeded. Please try again later.",
-                    "status_code": 429,
-                },
-            )
-
-        response = await call_next(request)
-        response.headers["X-RateLimit-Limit"] = str(rpm)
-        response.headers["X-RateLimit-Remaining"] = str(limiter.remaining(client_ip))
-        return response
-
-
-
 def register_exception_handlers(fast_app: FastAPI, settings) -> None:
-    """Register global exception handlers"""
     @fast_app.exception_handler(Exception)
     async def global_exception_handler(_request, exc):
         logger.error(f"Unhandled exception: {str(exc)}")
@@ -401,6 +144,7 @@ def register_exception_handlers(fast_app: FastAPI, settings) -> None:
             settings.LOG_LEVEL == "DEBUG" and
             getattr(settings, "ENV", "dev") != "product"
         )
+        from starlette.responses import JSONResponse
         return JSONResponse(
             status_code=500,
             content={
@@ -409,9 +153,10 @@ def register_exception_handlers(fast_app: FastAPI, settings) -> None:
                 "detail": str(exc) if is_debug else "Contact system administrator"
             }
         )
-    
+
     @fast_app.exception_handler(HTTPException)
     async def http_exception_handler(_request, exc):
+        from starlette.responses import JSONResponse
         return JSONResponse(
             status_code=exc.status_code,
             content={
@@ -420,9 +165,10 @@ def register_exception_handlers(fast_app: FastAPI, settings) -> None:
                 "status_code": exc.status_code
             }
         )
-    
+
     @fast_app.exception_handler(RecursionError)
     async def recursion_error_handler(_request, _exc):
+        from starlette.responses import JSONResponse
         logger.warning("RecursionError detected - possible JSON bomb attempt")
         return JSONResponse(
             status_code=422,
@@ -435,7 +181,6 @@ def register_exception_handlers(fast_app: FastAPI, settings) -> None:
 
 
 def _register_api_router(fast_app: FastAPI, router, version: str):
-    """Helper to register an API router with error handling."""
     try:
         fast_app.include_router(router)
         logger.debug(f"API {version} router included successfully")
@@ -444,7 +189,6 @@ def _register_api_router(fast_app: FastAPI, router, version: str):
 
 
 def _register_websocket_router(fast_app: FastAPI):
-    """Helper to register WebSocket router with error handling."""
     try:
         from hierachain.api.websocket.endpoints import router as ws_router
         fast_app.include_router(ws_router)
@@ -453,136 +197,9 @@ def _register_websocket_router(fast_app: FastAPI):
         logger.error("WebSocket router registration FAILED: %s\n%s", exc, traceback.format_exc())
 
 
-async def _validate_graphql_request(
-    request: Request,
-) -> tuple[bool, JSONResponse | None, dict | None]:
-    """Validate GraphQL request. Returns (valid, error_response, parsed_body)."""
-    import json
-    client = request.client
-    client_ip = "unknown"
-    if client is not None:
-        client_ip = client.host
-    # Check rate limit
-    if not graphql_security.check_rate_limit(client_ip):
-        return False, JSONResponse(
-            status_code=429,
-            content={"errors": [{"message": "Rate limit exceeded. Please try again later."}]}
-        ), None
-
-    # Parse request body
-    try:
-        body = json.loads(await request.body())
-    except json.JSONDecodeError:
-        return False, JSONResponse(
-            status_code=400,
-            content={"errors": [{"message": "Invalid JSON body"}]}
-        ), None
-
-    query = body.get("query", "")
-    variables = body.get("variables", {})
-    operation_name = body.get("operationName")
-
-    # Check for introspection query in production
-    settings = get_settings()
-    is_production = getattr(settings, "ENV", "dev") == "product"
-
-    if is_production and graphql_security.is_introspection_query(query):
-        return False, JSONResponse(
-            status_code=400,
-            content={"errors": [{"message": "Introspection queries disabled in production"}]}
-        ), None
-
-    # Check query depth
-    depth = graphql_security.get_query_depth(query)
-    if depth > graphql_security.MAX_QUERY_DEPTH:
-        return False, JSONResponse(
-            status_code=400,
-            content={"errors": [{"message": f"Query depth exceeds maximum of {graphql_security.MAX_QUERY_DEPTH} levels"}]}
-        ), None
-
-    # Check query complexity
-    complexity = graphql_security.estimate_complexity(query)
-    if complexity > graphql_security.MAX_COMPLEXITY:
-        return False, JSONResponse(
-            status_code=400,
-            content={"errors": [{"message": "Query complexity exceeds maximum allowed"}]}
-        ), None
-
-    return True, None, {"query": query, "variables": variables, "operation_name": operation_name}
-
-
-def _execute_graphql_query(
-    query: str,
-    variables: dict,
-    operation_name: str | None,
-) -> tuple[dict, bool]:
-    """Execute GraphQL query. Returns (response_dict, is_error)."""
-    result = graphql_schema.execute(
-        query,
-        variable_values=variables,
-        operation_name=operation_name
-    )
-
-    if result.errors:
-        _settings = get_settings()
-        is_debug = (
-            _settings.LOG_LEVEL == "DEBUG"
-            and getattr(_settings, "ENV", "dev") != "product"
-        )
-        for err in result.errors:
-            logger.error(f"GraphQL schema error: {err.message}")
-        error_messages = (
-            [{"message": str(err.message)} for err in result.errors]
-            if is_debug
-            else [{"message": "An internal error occurred"}]
-        )
-        return {
-            "data": result.data,
-            "errors": error_messages
-        }, True
-
-    return {"data": result.data}, False
-
-
-def _register_graphql_router(fast_app: FastAPI):
-    """Helper to register GraphQL router with error handling and security measures."""
-    try:
-        graphql_router = APIRouter()
-
-        @graphql_router.post("/graphql")
-        async def graphql_endpoint(request: Request):
-            """GraphQL endpoint handler with security measures"""
-            try:
-                # Validate request
-                is_valid, error_response, parsed = _validate_graphql_request(request)
-                if not is_valid:
-                    return error_response
-
-                # Execute query
-                response, is_error = _execute_graphql_query(
-                    parsed["query"], parsed["variables"], parsed["operation_name"]
-                )
-                status_code = 400 if is_error else 200
-
-                return JSONResponse(status_code=status_code, content=response)
-            except Exception as exc:
-                logger.error(f"GraphQL error: {exc}")
-                return JSONResponse(
-                    status_code=400,
-                    content={"errors": [{"message": "An internal error occurred"}]}
-                )
-
-        fast_app.include_router(graphql_router)
-        logger.debug("GraphQL endpoint included successfully")
-    except Exception as e:
-        logger.warning(f"GraphQL endpoint failed to load: {e}")
-
-
 def _register_root_endpoint(fast_app: FastAPI):
-    """Helper to register root endpoint."""
     @fast_app.get("/")
     async def root():
-        """Root endpoint with API information"""
         return {
             "name": "HieraChain Ledger API",
             "description": "REST API for enterprise blockchain applications",
@@ -590,43 +207,14 @@ def _register_root_endpoint(fast_app: FastAPI):
         }
 
 
-def add_request_logging(fast_app: FastAPI) -> None:
-    """
-    Middleware that:
-    - Generates a unique X-Request-ID for every request.
-    - Logs method, path, status code, and latency in milliseconds.
-    """
-    @fast_app.middleware("http")
-    async def request_logging_middleware(request: Request, call_next):
-        request_id = uuid.uuid4().hex
-        start = time.perf_counter()
-
-        response = await call_next(request)
-
-        latency_ms = round((time.perf_counter() - start) * 1000, 2)
-        response.headers["X-Request-ID"] = request_id
-
-        logger.info(
-            "%s %s -> %s (%.2f ms) [%s]",
-            request.method,
-            request.url.path,
-            response.status_code,
-            latency_ms,
-            request_id,
-            extra={"request_id": request_id},
-        )
-        return response
-
-
 def _register_metrics_endpoint(fast_app: FastAPI) -> None:
-    """Register Prometheus /metrics endpoint (requires prometheus-client)."""
     try:
-        import prometheus_client  # type: ignore[import]
+        import prometheus_client
         from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+        from fastapi import Response
 
         @fast_app.get("/metrics", include_in_schema=False)
         async def metrics_endpoint() -> Response:
-            """Prometheus metrics scrape endpoint."""
             return Response(
                 content=generate_latest(),
                 media_type=CONTENT_TYPE_LATEST,
@@ -641,7 +229,6 @@ def _register_metrics_endpoint(fast_app: FastAPI) -> None:
 
 
 def register_routers(fast_app: FastAPI):
-    """Register API routers and root endpoint"""
     _register_api_router(fast_app, v1_router, "v1")
     _register_api_router(fast_app, v2_router, "v2")
     _register_api_router(fast_app, v3_router, "v3")
@@ -651,28 +238,21 @@ def register_routers(fast_app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    """Create and configure FastAPI application"""
-    
-    # Get settings
     settings = get_settings()
     api_config = settings.get_api_config()
 
-    # Initialize implementation with settings
     if settings.AUTH_ENABLED:
         verifier = APIKeyVerifier(settings.get_auth_config())
 
-        async def auth_dependency(request: Request):
-            # Bypass authentication for exempt system paths (health checks, etc.)
+        async def auth_dependency(request):
             if request.url.path in EXEMPT_PATHS:
                 return {"user_id": "system", "app_details": {"name": "Exempt"}}
             return await verifier(request)
     else:
-        # No-op dependency
-        auth_dependency = lambda: None  # noqa: E731
+        auth_dependency = lambda: None
 
     dependencies = [Depends(auth_dependency)] if settings.AUTH_ENABLED else []
-    
-    # Create FastAPI app
+
     fast_app = FastAPI(
         title="HieraChain Ledger API",
         description=(
@@ -687,45 +267,38 @@ def create_app() -> FastAPI:
         dependencies=dependencies
     )
 
-    # Add CORS middleware (driven by settings)
     cors_config = settings.get_cors_config()
     fast_app.add_middleware(
         cast(Any, CORSMiddleware),
         **cors_config
     )
 
-    # Add Middlewares (order matters: last added runs first)
     add_security_headers(fast_app, settings.env in ("dev", "development"))
     add_request_logging(fast_app)
-    add_rate_limit(fast_app, settings)
+    add_rate_limit(fast_app, settings, EXEMPT_PATHS)
     add_payload_limit(fast_app)
 
-    # Register Routers and Root Endpoint
     register_routers(fast_app)
 
-    # Register optional Prometheus /metrics endpoint
     if getattr(settings, "METRICS_ENABLED", False):
         _register_metrics_endpoint(fast_app)
 
-    # Register Exception Handlers
     register_exception_handlers(fast_app, settings)
 
     return fast_app
 
 
-# Suppress RequestsDependencyWarning
 warnings.filterwarnings("ignore", category=UserWarning, module="requests")
 
-# Create app instance
 app = create_app()
 
 
 def run_server():
-    """Run the server with uvicorn"""
+    import uvicorn
     settings = get_settings()
     api_config = settings.get_api_config()
     is_debug = settings.LOG_LEVEL == "DEBUG"
-    
+
     uvicorn.run(
         "hierachain.api.server:app",
         host=api_config["host"],
@@ -736,8 +309,8 @@ def run_server():
         server_header=False,
         timeout_keep_alive=int(os.getenv("HRC_API_TIMEOUT_KEEP_ALIVE", "15")),
         limit_concurrency=int(os.getenv("HRC_API_LIMIT_CONCURRENCY", "500")),
-        headers=[("Server", "HieraChain")],  # Custom server header
-        proxy_headers=True,     # Read X-Forwarded-* headers for Rate Limiters
+        headers=[("Server", "HieraChain")],
+        proxy_headers=True,
         forwarded_allow_ips=api_config.get("trusted_proxies", "127.0.0.1")
     )
 
