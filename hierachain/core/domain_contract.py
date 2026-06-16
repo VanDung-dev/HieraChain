@@ -10,28 +10,9 @@ and security controls across enterprise processes.
 import time
 from typing import Any, Callable, cast
 from dataclasses import dataclass
-from enum import Enum
 
-
-class ContractStatus(Enum):
-    """Contract lifecycle status"""
-    DEVELOPMENT = "development"
-    TESTING = "testing"
-    ACTIVE = "active"
-    DEPRECATED = "deprecated"
-    DISABLED = "disabled"
-    ARCHIVED = "archived"
-
-
-class ContractEventType(Enum):
-    """Contract event types"""
-    DEPLOYED = "deployed"
-    ACTIVATED = "activated"
-    EXECUTED = "executed"
-    UPGRADED = "upgraded"
-    DEPRECATED = "deprecated"
-    DISABLED = "disabled"
-    ERROR = "error"
+from hierachain.core.contract_lifecycle import ContractStatus, ContractEventType, ContractLifecycle
+from hierachain.core.contract_validators import validate_domain_event
 
 
 @dataclass
@@ -141,75 +122,6 @@ class ContractStorage:
             "operation": "clear",
             "contract_id": contract_id
         })
-
-
-class ContractLifecycle:
-    """Contract lifecycle management"""
-    
-    def __init__(self) -> None:
-        self.status = ContractStatus.DEVELOPMENT
-        self.status_history: list[dict[str, Any]] = []
-        self.deployment_info: dict[str, Any] | None = None
-        self.deprecation_info: dict[str, Any] | None = None
-        
-    def transition_to(
-        self,
-        new_status: ContractStatus,
-        reason: str = "",
-        metadata: dict[str, Any] | None = None
-    ) -> bool:
-        """
-        Transition contract to new status.
-        
-        Args:
-            new_status: New contract status
-            reason: Reason for status change
-            metadata: Additional metadata for the transition
-            
-        Returns:
-            True if transition was successful
-        """
-        # Validate transition
-        if not is_valid_status_transition(self.status, new_status):
-            return False
-        
-        # Record status change
-        status_change = {
-            "timestamp": time.time(),
-            "from_status": self.status.value,
-            "to_status": new_status.value,
-            "reason": reason,
-            "metadata": metadata or {}
-        }
-        self.status_history.append(status_change)
-        self.status = new_status
-        # Handle special status changes
-        if new_status == ContractStatus.ACTIVE and not self.deployment_info:
-            md = metadata or {}
-            self.deployment_info = {
-                "deployed_at": time.time(),
-                "deployed_by": md.get("deployed_by", "system"),
-                "deployment_metadata": md
-            }
-        elif new_status == ContractStatus.DEPRECATED and not self.deprecation_info:
-            md = metadata or {}
-            self.deprecation_info = {
-                "deprecated_at": time.time(),
-                "deprecated_by": md.get("deprecated_by", "system"),
-                "deprecation_reason": reason,
-                "end_of_life_date": md.get("end_of_life_date")
-            }
-        
-        return True
-
-    def get_status_info(self) -> dict[str, Any]:
-        """Get comprehensive status information"""
-        return {
-            "current_status": self.status.value,
-            "status_history": self.status_history,
-            "deployment_info": self.deployment_info,
-            "deprecation_info": self.deprecation_info
-        }
 
 
 class DomainContract:
@@ -667,70 +579,4 @@ class DomainContract:
         )
 
 
-def is_valid_status_transition(
-    from_status: ContractStatus, to_status: ContractStatus
-) -> bool:
-    """Check if status transition is valid."""
-    valid_transitions = {
-        ContractStatus.DEVELOPMENT: [ContractStatus.TESTING, ContractStatus.DISABLED],
-        ContractStatus.TESTING: [
-            ContractStatus.ACTIVE,
-            ContractStatus.DEVELOPMENT,
-            ContractStatus.DISABLED
-        ],
-        ContractStatus.ACTIVE: [ContractStatus.DEPRECATED, ContractStatus.DISABLED],
-        ContractStatus.DEPRECATED: [ContractStatus.DISABLED, ContractStatus.ARCHIVED],
-        ContractStatus.DISABLED: [ContractStatus.DEVELOPMENT, ContractStatus.ARCHIVED],
-        ContractStatus.ARCHIVED: []  # No transitions from archived
-    }
 
-    return to_status in valid_transitions.get(from_status, [])
-
-
-def validate_domain_event(event: dict[str, Any]) -> bool:
-    """
-    Validate event structure.
-    
-    This function coordinates multiple validation steps to ensure the
-    event structure is correct.
-    """
-    required_fields = ["entity_id", "event", "timestamp"]
-    
-    if not _check_required_fields(event, required_fields):
-        return False
-
-    if not _check_field_types(event):
-        return False
-
-    if not _check_field_values(event):
-        return False
-
-    return True
-
-
-def _check_required_fields(event: dict[str, Any], fields: list[str]) -> bool:
-    """Verify that all required fields are present in the event."""
-    for field in fields:
-        if field not in event:
-            return False
-    return True
-
-
-def _check_field_types(event: dict[str, Any]) -> bool:
-    """Verify that event fields have the correct data types."""
-    if not isinstance(event["timestamp"], (int, float)):
-        return False
-    if not isinstance(event["entity_id"], str):
-        return False
-    if not isinstance(event["event"], str):
-        return False
-    return True
-
-
-def _check_field_values(event: dict[str, Any]) -> bool:
-    """Verify that event fields have valid content/values."""
-    if len(event["entity_id"].strip()) == 0:
-        return False
-    if len(event["event"].strip()) == 0:
-        return False
-    return True
