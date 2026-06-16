@@ -24,7 +24,13 @@ from hierachain.hierarchical.rebalancer import (
     RebalanceStatus,
     SplitStrategy,
 )
-from hierachain.hierarchical.transaction_manager import TransactionState
+from hierachain.hierarchical.types import (
+    TransactionState,
+    CrossChainTransaction,
+    OrganizationError,
+    NetworkError,
+    ConsensusError,
+)
 
 __all__ = [
     'MainChain',
@@ -44,4 +50,8 @@ __all__ = [
     'RebalanceStatus',
     'SplitStrategy',
     'TransactionState',
+    'CrossChainTransaction',
+    'OrganizationError',
+    'NetworkError',
+    'ConsensusError',
 ]

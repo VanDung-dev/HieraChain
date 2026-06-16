@@ -8,35 +8,15 @@ transactions across multiple chains in the HieraChain system.
 import uuid
 import time
 import logging
-from enum import Enum
 from typing import Any
-from dataclasses import dataclass, field
+
+from hierachain.hierarchical.types import CrossChainTransaction, TransactionState
+
+# Backward-compat re-exports
+CrossChainTransaction = CrossChainTransaction
+TransactionState = TransactionState
 
 logger = logging.getLogger(__name__)
-
-
-class TransactionState(str, Enum):
-    """States for a cross-chain transaction."""
-
-    PENDING = "pending"
-    PREPARED = "prepared"
-    COMMITTED = "committed"
-    ROLLED_BACK = "rolled_back"
-    FAILED = "failed"
-
-
-@dataclass
-class CrossChainTransaction:
-    """Represents a cross-chain transaction."""
-
-    transaction_id: str
-    source_chain: str
-    destination_chain: str
-    payload: dict[str, Any]
-    state: TransactionState = TransactionState.PENDING
-    created_at: float = field(default_factory=time.time)
-    updated_at: float = field(default_factory=time.time)
-    error_message: str | None = None
 
 
 def _rollback(
