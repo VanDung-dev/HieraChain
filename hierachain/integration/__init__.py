@@ -8,7 +8,6 @@ from hierachain.integration.enterprise import (
     SAPIntegration,
     OracleIntegration,
     DynamicsIntegration,
-    IntegrationError
 )
 
 from hierachain.integration.types import (
@@ -16,6 +15,10 @@ from hierachain.integration.types import (
     BatchResult,
     TxStatus,
     HealthResponse,
+    IntegrationError,
+    MappingError,
+    SyncStatus,
+    SyncResult,
 )
 
 __all__ = [
@@ -25,6 +28,9 @@ __all__ = [
     'OracleIntegration',
     'DynamicsIntegration',
     'IntegrationError',
+    'MappingError',
+    'SyncStatus',
+    'SyncResult',
     'Transaction',
     'BatchResult',
     'TxStatus',

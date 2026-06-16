@@ -11,9 +11,9 @@ import threading
 import logging
 from datetime import datetime
 from typing import Any, Callable
-from dataclasses import dataclass, field
-from enum import Enum
 from concurrent.futures import ThreadPoolExecutor
+
+from hierachain.integration.types import IntegrationError, MappingError, SyncStatus, SyncResult
 
 
 def get_nested_value(obj: Any, path: str) -> Any:
@@ -149,40 +149,6 @@ def _process_removed_fields(
     for key, old_value in old_state.items():
         if key not in new_state:
             changes[key] = {"old": old_value, "type": "removed"}
-
-
-class IntegrationError(Exception):
-    """Exception raised for integration-related errors"""
-    pass
-
-
-class MappingError(Exception):
-    """Exception raised for mapping-related errors"""
-    pass
-
-
-class SyncStatus(Enum):
-    """Synchronization status"""
-    IDLE = "idle"
-    SYNCING = "syncing"
-    FAILED = "failed"
-    COMPLETED = "completed"
-
-
-@dataclass
-class SyncResult:
-    """Result of a synchronization operation"""
-    profile_name: str
-    status: SyncStatus
-    events_processed: int
-    errors: list[str] = field(default_factory=list)
-    start_time: float = 0.0
-    end_time: float = 0.0
-    
-    @property
-    def duration(self) -> float:
-        """Get sync duration in seconds"""
-        return self.end_time - self.start_time if self.end_time > 0 else 0.0
 
 
 class ERPIntegrationLedger:
