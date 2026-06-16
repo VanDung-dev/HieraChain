@@ -5,61 +5,19 @@ This module provides common utility functions used throughout the Ledger,
 including cryptographic utilities, validation helpers, and data processing functions.
 """
 
-import hashlib
-import json
 import time
 import uuid
 import re
 from typing import Any
 from datetime import datetime
 
-
-def compute_hash_standalone(data_string: str) -> str:
-    """
-    Pure function to compute SHA-256 hash.
-    This is top-level to be picklable for multiprocessing.
-    """
-    return hashlib.sha256(data_string.encode()).hexdigest()
-
-
-def compute_merkle_leaves_standalone(data_list_strings: list[str]) -> list[str]:
-    """
-    Pure function to compute multiple SHA-256 hashes in a batch.
-    Designed for running in a worker process to amortize IPC cost.
-    """
-    return [hashlib.sha256(s.encode()).hexdigest() for s in data_list_strings]
-
-
-def compute_leaves_from_events_standalone(events: list[dict[str, Any]]) -> list[str]:
-    """
-    Pure function to compute Merkle leaves from event dicts.
-    Performs JSON serialization and hashing in the worker process.
-    """
-    leaves = []
-    for event in events:
-        # Replicate generate_hash logic for dicts
-        data_string = json.dumps(event, sort_keys=True, separators=(',', ':'))
-        leaves.append(hashlib.sha256(data_string.encode()).hexdigest())
-    return leaves
-
-
-def generate_hash(data: str | dict[str, Any]) -> str:
-    """
-    Generate SHA-256 hash for given data.
-    
-    Args:
-        data: Data to hash (string or dictionary)
-        
-    Returns:
-        SHA-256 hash as hexadecimal string
-    """
-    if isinstance(data, dict):
-        # Convert dict to JSON string with sorted keys for consistent hashing
-        data_string = json.dumps(data, sort_keys=True, separators=(',', ':'))
-    else:
-        data_string = str(data)
-    
-    return compute_hash_standalone(data_string)
+from hierachain.core.merkle_tree import (
+    compute_hash_standalone,
+    compute_merkle_leaves_standalone,
+    compute_leaves_from_events_standalone,
+    generate_hash,
+    MerkleTree,
+)
 
 
 def generate_entity_id(prefix: str = "ENTITY") -> str:
@@ -450,65 +408,3 @@ def validate_no_cryptocurrency_terms(data: Any) -> bool:
             return False
             
     return True
-
-
-class MerkleTree:
-    """
-    Merkle Tree implementation for efficient data verification and hashing.
-    """
-    
-    def __init__(
-        self,
-        data_list: list[str | dict[str, Any]] | None = None,
-        leaves: list[str] | None = None
-    ):
-        """
-        Initialize Merkle Tree.
-        
-        Args:
-            data_list: List of data items (strings or dicts) to include
-                       in the tree (will be hashed)
-            leaves: List of pre-calculated hashes (hex strings). If provided,
-                    data_list is ignored.
-        """
-        if leaves is not None:
-            self.leaves = leaves
-        elif data_list is not None:
-            self.leaves = [generate_hash(data) for data in data_list]
-        else:
-            self.leaves = []
-            
-        self.root = self._build_tree(self.leaves)
-
-    def _build_tree(self, nodes: list[str]) -> str:
-        """
-        Recursively build the Merkle Tree.
-        
-        Args:
-            nodes: List of hash nodes at the current level
-            
-        Returns:
-            Root hash of the tree
-        """
-        if not nodes:
-            # Empty tree hash
-            return hashlib.sha256(b"").hexdigest()
-            
-        if len(nodes) == 1:
-            return nodes[0]
-        
-        new_level = []
-        for i in range(0, len(nodes), 2):
-            left = nodes[i]
-            # Duplicate last node if number of nodes is odd
-            right = nodes[i+1] if i+1 < len(nodes) else left
-            
-            # Combine hashes
-            combined = left + right
-            new_level.append(hashlib.sha256(combined.encode()).hexdigest())
-            
-        return self._build_tree(new_level)
-
-    def get_root(self) -> str:
-        """Get the Merkle Root hash."""
-        return self.root
