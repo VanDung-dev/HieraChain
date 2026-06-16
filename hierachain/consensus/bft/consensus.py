@@ -7,8 +7,6 @@ import threading
 import logging
 from typing import Any, Callable, cast
 
-from hierachain.error_mitigation.validator import ConsensusValidator
-from hierachain.error_mitigation.error_classifier import ErrorClassifier
 from hierachain.security.security_utils import KeyPair
 from hierachain.security.key_provider import LocalKeyProvider
 from hierachain.network.zmq_transport import ZmqNode
@@ -17,270 +15,30 @@ from hierachain.config.settings import settings
 from hierachain.consensus.bft.types import (
     ConsensusState, MessageType, BFTMessage, ConsensusError
 )
-from hierachain.consensus.bft.cryptographic import (
-    sign_message,
+from hierachain.consensus.bft.helpers import (
     verify_message_signature,
     hash_request,
-    verify_operation_zk_proof
-)
-from hierachain.consensus.bft.network import (
+    verify_operation_zk_proof,
     send_via_zmq,
     broadcast,
-    forward_to_primary
-)
-from hierachain.consensus.bft.view_manager import (
+    forward_to_primary,
     validate_view_change_proof,
-    start_view_change_timer
+    start_view_change_timer,
+    _execute_consensus_operation,
+    _log_behavior,
+    _validate_consensus_message,
+    _cleanup_messages,
+    _create_signed_bft_message,
+    _add_to_votes,
+    _validate_prepare_msg,
+    _validate_commit_msg,
+    _validate_pre_prep_basic,
+    _process_prepare_quorum_logic,
+    _process_commit_quorum_logic,
+    _init_bft_mitigation_data,
 )
 
 logger = logging.getLogger(__name__)
-
-# --- Helper Functions (Moved to Module Level to Reduce Class Complexity) ---
-
-
-def _execute_consensus_operation(
-    chain: Any, operation: dict[str, Any], seq: int, view: int
-) -> None:
-    """Execute operation by adding it to the chain reference."""
-    try:
-        event = {
-            "entity_id": operation.get("entity_id"),
-            "event": operation.get("event_type", "consensus_operation"),
-            "timestamp": time.time(),
-            "details": operation.get("details", {}),
-            "consensus": {"sequence": seq, "view": view, "committed_at": time.time()}
-        }
-        if chain:
-            chain.add_event(event)
-    except Exception as e:
-        logger.error("Error executing operation: %s", e)
-
-
-def _log_behavior(
-    error_classifier: Any,
-    failure_counts: dict[str, int],
-    max_failures: int,
-    auto_recovery: bool,
-    node_id: str,
-    issue: str,
-    view: int,
-    seq: int,
-    recovery_callback: Callable[[int], None]
-) -> None:
-    """Log node behavior and optionally initiate recovery."""
-    if not error_classifier:
-        return
-        
-    error_classifier.classify_error({
-        "error_type": f"node_{issue}",
-        "message": f"Node {node_id} exhibited {issue}",
-        "metadata": {
-            "node_id": node_id,
-            "issue": issue,
-            "timestamp": time.time(),
-            "view": view,
-            "sequence": seq
-        }
-    })
-    
-    failure_counts[node_id] = failure_counts.get(node_id, 0) + 1
-    if failure_counts[node_id] >= max_failures and auto_recovery:
-        recovery_callback(view + 1)
-
-
-def _validate_consensus_message(
-    message: BFTMessage,
-    all_nodes: list[str],
-    public_keys: dict[str, str],
-    strictness: str,
-    timeout: float,
-    log_func: Callable[[str, str], None]
-) -> bool:
-    """Validate message basic parameters, signature, and timeliness."""
-    if (
-        message.sender_id not in all_nodes or 
-        message.view < 0 or 
-        message.sequence_number < 0
-    ):
-        return False
-        
-    if not verify_message_signature(message, public_keys):
-        if strictness == "high":
-            return False
-        log_func(message.sender_id, "signature_verification_failed")
-        
-    if (time.time() - message.timestamp) > timeout:
-        log_func(message.sender_id, "slow_message")
-        
-    return True
-
-
-def validate_consensus_message(
-    message: BFTMessage,
-    all_nodes: list[str],
-    public_keys: dict[str, str],
-    strictness: str,
-    timeout: float,
-    log_func: Callable[[str, str], None]
-) -> bool:
-    """Validate consensus message parameters and signatures."""
-    return _validate_consensus_message(
-        message,
-        all_nodes,
-        public_keys,
-        strictness,
-        timeout,
-        log_func,
-    )
-
-
-def _cleanup_messages(
-    pre_prep: dict[int, BFTMessage],
-    prep: dict[int, list[BFTMessage]],
-    commit: dict[int, list[BFTMessage]],
-    committed_seq: int
-) -> None:
-    """Cleanup message storage for old sequences."""
-    threshold = committed_seq - 100
-    for seq in list(pre_prep.keys()):
-        if seq < threshold:
-            pre_prep.pop(seq, None)
-            prep.pop(seq, None)
-            commit.pop(seq, None)
-
-
-def _create_signed_bft_message(
-    msg_type: MessageType,
-    view: int,
-    seq: int,
-    node_id: str,
-    key_provider: Any,
-    data: dict[str, Any]
-) -> BFTMessage:
-    """Create and sign a BFT message helper."""
-    msg = BFTMessage(msg_type, view, seq, node_id, time.time(), "", data)
-    if key_provider:
-        msg.signature = sign_message(key_provider, msg.get_signable_payload())
-    return msg
-
-
-def _add_to_votes(votes: list[BFTMessage], message: BFTMessage) -> bool:
-    """Add message to votes list avoiding duplicates from same sender."""
-    if any(m.sender_id == message.sender_id for m in votes):
-        return False
-    votes.append(message)
-    return True
-
-
-def _validate_prepare_msg(
-    message: BFTMessage,
-    state: ConsensusState,
-    pre_prep_messages: dict[int, BFTMessage],
-    public_keys: dict[str, str],
-    log_func: Callable[[str, str], None]
-) -> bool:
-    """Validate PREPARE message parameters and signatures."""
-    seq = message.sequence_number
-    if seq not in pre_prep_messages and state != ConsensusState.PRE_PREPARED:
-        return False
-        
-    if not verify_message_signature(message, public_keys):
-        log_func(message.sender_id, "invalid_signature")
-        return False
-    
-    pre_prep = pre_prep_messages.get(seq)
-    if pre_prep and pre_prep.data.get("digest") != message.data.get("digest"):
-        log_func(message.sender_id, "digest_mismatch")
-        return False
-        
-    return True
-
-
-def _validate_commit_msg(
-    message: BFTMessage,
-    pre_prep_messages: dict[int, BFTMessage],
-    prep_messages: dict[int, list[BFTMessage]],
-    public_keys: dict[str, str],
-    log_func: Callable[[str, str], None]
-) -> bool:
-    """Validate COMMIT message parameters and signatures."""
-    seq = message.sequence_number
-    if seq not in pre_prep_messages and seq not in prep_messages:
-        return False
-
-    if not verify_message_signature(message, public_keys):
-        log_func(message.sender_id, "invalid_signature")
-        return False
-    return True
-
-
-def _validate_pre_prep_basic(
-    node_id: str,
-    primary_id: str,
-    view: int,
-    committed_seq: int,
-    message: BFTMessage,
-    public_keys: dict[str, str]
-) -> bool:
-    """Basic validation for PRE_PREPARE message."""
-    if (
-        node_id == primary_id or
-        message.view != view or
-        message.sequence_number <= committed_seq or
-        message.sender_id != primary_id
-    ):
-        return False
-    return verify_message_signature(message, public_keys)
-
-
-def _process_prepare_quorum_logic(
-    node_id: str,
-    f: int,
-    view: int,
-    seq: int,
-    digest: str | None,
-    state: ConsensusState,
-    prepare_count: int,
-    key_provider: Any
-) -> tuple[ConsensusState, BFTMessage | None]:
-    """Determine if prepare quorum is reached and create commit message."""
-    if prepare_count >= 2 * f and state == ConsensusState.PRE_PREPARED:
-        msg = _create_signed_bft_message(
-            MessageType.COMMIT, view, seq, node_id, key_provider, {"digest": digest}
-        )
-        return ConsensusState.PREPARED, msg
-    return state, None
-
-
-def _process_commit_quorum_logic(
-    f: int,
-    commit_msgs: list[BFTMessage],
-    pre_prep_messages: dict[int, BFTMessage]
-) -> tuple[bool, BFTMessage | None]:
-    """Check if 2f+1 COMMIT messages received."""
-    if len(commit_msgs) >= 2 * f + 1:
-        for msg in commit_msgs:
-            pre_prep = pre_prep_messages.get(msg.sequence_number)
-            if pre_prep:
-                return True, pre_prep
-    return False, None
-
-
-def _init_bft_mitigation_data(error_config: dict[str, Any]) -> dict[str, Any]:
-    """Extract mitigation configuration from error config."""
-    consensus_config = error_config.get("consensus", {}).get("bft", {})
-    return {
-        "validator": ConsensusValidator(
-            consensus_config.get("node_validation", {})
-        ),
-        "classifier": ErrorClassifier(
-            error_config.get("classification", {})
-        ),
-        "strictness": consensus_config.get("verification_strictness", "high"),
-        "recovery": error_config.get(
-            "recovery", {}
-        ).get("auto_recovery", {}).get("enabled", False)
-    }
 
 
 class BFTViewChangeManager:
