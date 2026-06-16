@@ -1,10 +1,11 @@
 """
 Alert System for HieraChain Ledger
 
-This module provides comprehensive alerting and anomaly detection capabilities
-for the risk management and performance monitoring systems. Supports real-time
-alerts, anomaly detection, and integration with external notification systems.
+Provides comprehensive alerting and anomaly detection capabilities
+for the risk management and performance monitoring systems.
 """
+
+from __future__ import annotations
 
 import time
 import logging
@@ -12,285 +13,107 @@ import threading
 import smtplib
 import json
 import statistics
-from typing import Any, Tuple, cast
-from dataclasses import dataclass, asdict
-from enum import Enum
+from typing import Any, cast
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from collections import deque, defaultdict
 from datetime import datetime
 
+from hierachain.monitoring.types import (
+    AlertSeverity,
+    AlertStatus,
+    AlertCategory,
+    Alert,
+    AlertRule,
+)
 
-class AlertSeverity(Enum):
-    """Alert severity levels"""
-    INFO = "info"
-    WARNING = "warning"
-    CRITICAL = "critical"
-    EMERGENCY = "emergency"
+logger = logging.getLogger(__name__)
 
-
-class AlertStatus(Enum):
-    """Alert status states"""
-    ACTIVE = "active"
-    ACKNOWLEDGED = "acknowledged"
-    RESOLVED = "resolved"
-    SUPPRESSED = "suppressed"
-
-
-class AlertCategory(Enum):
-    """Alert categories"""
-    RISK_MANAGEMENT = "risk_management"
-    PERFORMANCE = "performance"
-    SECURITY = "security"
-    CONSENSUS = "consensus"
-    STORAGE = "storage"
-    SYSTEM = "system"
-    CUSTOM = "custom"
-
-
-@dataclass
-class Alert:
-    """Alert message structure"""
-    alert_id: str
-    timestamp: float
-    severity: AlertSeverity
-    category: AlertCategory
-    title: str
-    description: str
-    source_component: str
-    metric_name: str | None = None
-    current_value: float | None = None
-    threshold_value: float | None = None
-    status: AlertStatus = AlertStatus.ACTIVE
-    acknowledgment_time: float | None = None
-    resolved_time: float | None = None
-    escalation_level: int = 0
-    metadata: dict[str, Any] | None = None
-    
-    def to_dict(self) -> dict[str, Any]:
-        """Convert alert to dictionary"""
-        data = asdict(self)
-        data['severity'] = self.severity.value
-        data['category'] = self.category.value
-        data['status'] = self.status.value
-        return data
-    
-    def to_json(self) -> str:
-        """Convert alert to JSON string"""
-        return json.dumps(self.to_dict(), default=str)
-
-
-@dataclass
-class AlertRule:
-    """Alert rule configuration"""
-    rule_id: str
-    name: str
-    description: str
-    category: AlertCategory
-    metric_name: str
-    condition: str  # "greater_than", "less_than", "equals", "anomaly"
-    threshold: float | None
-    severity: AlertSeverity
-    enabled: bool = True
-    cooldown_period: int = 300  # seconds
-    escalation_time: int = 1800  # 30 minutes
-    auto_resolve: bool = False
-    suppress_duplicates: bool = True
+__all__ = [
+    "AlertSeverity",
+    "AlertStatus",
+    "AlertCategory",
+    "Alert",
+    "AlertRule",
+    "AnomalyDetector",
+    "EmailNotifier",
+    "WebhookNotifier",
+    "AlertManager",
+]
 
 
 class AnomalyDetector:
-    """Anomaly detection for metric values"""
-    
     def __init__(self, window_size: int = 100, sensitivity: float = 2.0) -> None:
-        """
-        Initialize anomaly detector.
-        
-        Args:
-            window_size: Number of data points to keep for analysis
-            sensitivity: Z-score threshold for anomaly detection
-        """
         self.window_size = window_size
         self.sensitivity = sensitivity
         self.metric_histories: dict[str, deque] = defaultdict(
             lambda: deque(maxlen=window_size)
         )
-        
+
     def add_data_point(self, metric_name: str, value: float) -> None:
-        """Add new data point for metric"""
         self.metric_histories[metric_name].append(
             {'timestamp': time.time(), 'value': value}
         )
-    
-    def is_anomaly(self, metric_name: str, value: float) -> Tuple[bool, float]:
-        """
-        Check if value is anomalous for given metric.
-        
-        Returns:
-            Tuple of (is_anomaly, z_score)
-        """
+
+    def is_anomaly(self, metric_name: str, value: float) -> tuple[bool, float]:
         history = self.metric_histories[metric_name]
-        
-        if len(history) < 10:  # Need minimum data points
+        if len(history) < 10:
             return False, 0.0
-        
         values = [point['value'] for point in history]
-        
         try:
             mean = statistics.mean(values)
             stdev = statistics.stdev(values)
-            
             if stdev == 0:
                 return False, 0.0
-            
             z_score = abs((value - mean) / stdev)
-            is_anomaly = z_score > self.sensitivity
-            
-            return is_anomaly, z_score
-            
+            return z_score > self.sensitivity, z_score
         except statistics.StatisticsError:
             return False, 0.0
 
 
 class EmailNotifier:
-    """Email notification handler"""
-    
     def __init__(self, smtp_config: dict[str, Any]) -> None:
-        """
-        Initialize email notifier.
-        
-        Args:
-            smtp_config: SMTP configuration dictionary
-        """
-        import os
-        self.smtp_server = smtp_config.get('server', 'localhost')
-        self.smtp_port = smtp_config.get('port', 587)
-        self.username = os.environ.get('HRC_SMTP_USERNAME', smtp_config.get('username'))
-        self.password = os.environ.get('HRC_SMTP_PASSWORD', smtp_config.get('password'))
-        
-        if self.password in ("default_password", "password", "admin"):
-            logging.warning(
-                "SMTP Password is set to a weak default value. "
-                "Please change it via HRC_SMTP_PASSWORD."
-            )
-            
+        _set_smtp_from_env(self, smtp_config)
         self.from_email = smtp_config.get('from_email', 'alerts@blockchain.local')
         self.use_tls = smtp_config.get('use_tls', True)
         self.enabled = smtp_config.get('enabled', False)
-        
+
     def send_alert(self, alert: Alert, recipients: list[str]) -> bool:
-        """Send alert via email"""
         if not self.enabled or not recipients:
             return False
-        
         try:
-            # Create message
             msg = MIMEMultipart()
             msg['From'] = self.from_email
             msg['To'] = ', '.join(recipients)
             msg['Subject'] = f"[{alert.severity.value.upper()}] {alert.title}"
-            
-            # Create email body
-            body = self._format_alert_email(alert)
+            body = _format_alert_email(alert)
             msg.attach(MIMEText(body, 'html'))
-            
-            # Send email
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 if self.use_tls:
                     server.starttls()
-                
                 if self.username and self.password:
                     server.login(self.username, self.password)
-                
                 server.send_message(msg)
-            
             return True
-            
         except Exception as email_ex:
             logging.error("Failed to send email alert: %s", str(email_ex))
             return False
-    
-    @staticmethod
-    def _format_alert_email(alert: Alert) -> str:
-        """Format alert as HTML email"""
-        severity_colors = {
-            AlertSeverity.INFO: '#17a2b8',
-            AlertSeverity.WARNING: '#ffc107',
-            AlertSeverity.CRITICAL: '#dc3545',
-            AlertSeverity.EMERGENCY: '#6f42c1'
-        }
-        
-        color = severity_colors.get(alert.severity, '#6c757d')
-        
-        html = f"""
-        <html>
-        <body>
-            <div style="font-family: Arial, sans-serif; max-width: 600px;">
-                <div style="background-color: {
-                    color
-                }; color: white; padding: 15px; border-radius: 5px;">
-                    <h2 style="margin: 0;">{alert.title}</h2>
-                    <p style="margin: 5px 0 0 0;">Severity: {
-                        alert.severity.value.upper()
-                        }</p>
-                </div>
-                
-                <div style="padding: 20px; border: 1px solid #ddd; border-top: none;">
-                    <p><strong>Description:</strong> {alert.description}</p>
-                    <p><strong>Source:</strong> {alert.source_component}</p>
-                    <p><strong>Category:</strong> {alert.category.value}</p>
-                    <p><strong>Timestamp:</strong> {
-                        datetime.fromtimestamp(alert.timestamp).strftime(
-                            '%Y-%m-%d %H:%M:%S'
-                        )
-                        }</p>
-        """
-        
-        if alert.metric_name:
-            html += f"<p><strong>Metric:</strong> {alert.metric_name}</p>"
-        
-        if alert.current_value is not None:
-            html += f"<p><strong>Current Value:</strong> {alert.current_value}</p>"
-        
-        if alert.threshold_value is not None:
-            html += f"<p><strong>Threshold:</strong> {alert.threshold_value}</p>"
-        
-        html += """
-                </div>
-                
-                <div style="padding: 10px; background-color: #f8f9fa;
-                border: 1px solid #ddd;border-top: none; border-radius: 0 0 5px 5px;">
-                    <small>
-                    This is an automated alert from the HieraChain monitoring system.
-                    </small>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        return html
 
 
 class WebhookNotifier:
-    """Webhook notification handler"""
-    
     def __init__(self, webhook_config: dict[str, Any]) -> None:
-        """Initialize webhook notifier"""
         self.webhook_url = webhook_config.get('url')
         self.headers = webhook_config.get(
             'headers', {'Content-Type': 'application/json'}
         )
         self.enabled = webhook_config.get('enabled', False)
-        
+
     def send_alert(self, alert: Alert) -> bool:
-        """Send alert via webhook"""
         webhook_url = self.webhook_url
         if not self.enabled or not webhook_url:
             return False
-        
         try:
             import httpx
-            
             payload = alert.to_dict()
             response = httpx.post(
                 cast(str, webhook_url),
@@ -298,29 +121,13 @@ class WebhookNotifier:
                 headers=self.headers,
                 timeout=10
             )
-            
             return response.status_code < 400
-            
         except Exception as webhook_ex:
             logging.error("Failed to send webhook alert: %s", str(webhook_ex))
             return False
 
 
-def _get_severity_symbol(severity: AlertSeverity) -> str:
-    """Get emoji symbol for alert severity"""
-    return {
-        AlertSeverity.INFO: 'ℹ',
-        AlertSeverity.WARNING: '⚠',
-        AlertSeverity.CRITICAL: '✗',
-        AlertSeverity.EMERGENCY: '🚨'
-    }.get(severity, '?')
-
-
 class AlertManager:
-    """
-    Central alert management system for HieraChain Ledger.
-    """
-
     def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
         self.logger = logging.getLogger(__name__)
@@ -346,14 +153,12 @@ class AlertManager:
         }
 
     def add_alert_rule(self, rule: AlertRule) -> None:
-        """Add new alert rule"""
         self.alert_rules[rule.rule_id] = rule
         self.logger.info(f"Added alert rule: {rule.name}")
 
     def check_metric(
         self, metric_name: str, value: float, source_component: str = "unknown"
     ) -> None:
-        """Check metric for anomaly"""
         self.anomaly_detector.add_data_point(metric_name, value)
         for rule in self.alert_rules.values():
             _process_rule_for_metric(self, rule, metric_name, value, source_component)
@@ -365,7 +170,6 @@ class AlertManager:
         source_component: str = "unknown",
         custom_description: str | None = None
     ) -> None:
-        """Create new alert"""
         _create_alert(self, rule, current_value, source_component, custom_description)
 
     def send_alert(
@@ -376,20 +180,6 @@ class AlertManager:
         source: str,
         details: dict[str, Any] | None = None
     ) -> None:
-        """
-        Send a simple alert with string parameters.
-        
-        This is a convenience method for sending alerts without needing
-        to create AlertRule or Alert objects manually.
-        
-        Args:
-            level: Alert severity level ("info", "warning", "critical", "emergency")
-            title: Alert title
-            message: Alert message/description
-            source: Source component that generated the alert
-            details: Additional details to include in the alert
-        """
-        # Map string level to AlertSeverity
         severity_map = {
             "info": AlertSeverity.INFO,
             "warning": AlertSeverity.WARNING,
@@ -397,8 +187,6 @@ class AlertManager:
             "emergency": AlertSeverity.EMERGENCY,
         }
         severity = severity_map.get(level.lower(), AlertSeverity.INFO)
-        
-        # Determine category based on source
         category = AlertCategory.SYSTEM
         if "zk" in source.lower() or "proof" in source.lower():
             category = AlertCategory.SECURITY
@@ -406,8 +194,7 @@ class AlertManager:
             category = AlertCategory.CONSENSUS
         elif "performance" in source.lower():
             category = AlertCategory.PERFORMANCE
-        
-        # Create alert object
+
         alert = Alert(
             alert_id=f"ALERT-{int(time.time() * 1000)}",
             timestamp=time.time(),
@@ -418,13 +205,10 @@ class AlertManager:
             source_component=source,
             metadata=details,
         )
-        
-        # Add to active alerts and history
         self.active_alerts[alert.alert_id] = alert
         self.alert_history.append(alert)
         self.stats['total_alerts'] += 1
-        
-        # Log the alert
+
         log_level_map = {
             AlertSeverity.INFO: logging.INFO,
             AlertSeverity.WARNING: logging.WARNING,
@@ -435,16 +219,12 @@ class AlertManager:
             log_level_map.get(severity, logging.INFO),
             f"[{severity.value.upper()}] {title}: {message}"
         )
-        
-        # Send notifications
         _send_notifications(self, alert)
 
     def acknowledge_alert(self, alert_id: str, user: str | None = None) -> bool:
-        """Acknowledge alert"""
         return _acknowledge_alert(self, alert_id, user)
 
     def resolve_alert(self, alert_id: str, user: str | None = None) -> bool:
-        """Resolve alert"""
         return _resolve_alert(self, alert_id, user)
 
     def get_active_alerts(
@@ -452,18 +232,14 @@ class AlertManager:
         category: AlertCategory | None = None,
         severity: AlertSeverity | None = None
     ) -> list[Alert]:
-        """Get active alerts"""
         return _get_active_alerts(self, category, severity)
 
     def get_alert_statistics(self) -> dict[str, Any]:
-        """Get alert statistics"""
         return _get_alert_statistics(self)
 
     def generate_report(
         self, format_type: str = "json", include_history: bool = False
     ) -> str:
-        """Generate alert report"""
-        format_type = format_type.lower()
         active_alerts = list(self.active_alerts.values())
         if format_type == "json":
             return _generate_json_report(self, active_alerts, include_history)
@@ -472,8 +248,70 @@ class AlertManager:
         raise ValueError(f"Unsupported report format: {format_type}")
 
 
+def _set_smtp_from_env(self: EmailNotifier, smtp_config: dict[str, Any]) -> None:
+    import os
+    self.smtp_server = smtp_config.get('server', 'localhost')
+    self.smtp_port = smtp_config.get('port', 587)
+    self.username = os.environ.get('HRC_SMTP_USERNAME', smtp_config.get('username'))
+    self.password = os.environ.get('HRC_SMTP_PASSWORD', smtp_config.get('password'))
+    if self.password in ("default_password", "password", "admin"):
+        logging.warning(
+            "SMTP Password is set to a weak default value. "
+            "Please change it via HRC_SMTP_PASSWORD."
+        )
+
+
+def _format_alert_email(alert: Alert) -> str:
+    severity_colors = {
+        AlertSeverity.INFO: '#17a2b8',
+        AlertSeverity.WARNING: '#ffc107',
+        AlertSeverity.CRITICAL: '#dc3545',
+        AlertSeverity.EMERGENCY: '#6f42c1'
+    }
+    color = severity_colors.get(alert.severity, '#6c757d')
+
+    html = f"""
+    <html>
+    <body>
+        <div style="font-family: Arial, sans-serif; max-width: 600px;">
+            <div style="background-color: {color}; color: white; padding: 15px; border-radius: 5px;">
+                <h2 style="margin: 0;">{alert.title}</h2>
+                <p style="margin: 5px 0 0 0;">Severity: {alert.severity.value.upper()}</p>
+            </div>
+            <div style="padding: 20px; border: 1px solid #ddd; border-top: none;">
+                <p><strong>Description:</strong> {alert.description}</p>
+                <p><strong>Source:</strong> {alert.source_component}</p>
+                <p><strong>Category:</strong> {alert.category.value}</p>
+                <p><strong>Timestamp:</strong> {datetime.fromtimestamp(alert.timestamp).strftime('%Y-%m-%d %H:%M:%S')}</p>
+    """
+    if alert.metric_name:
+        html += f"<p><strong>Metric:</strong> {alert.metric_name}</p>"
+    if alert.current_value is not None:
+        html += f"<p><strong>Current Value:</strong> {alert.current_value}</p>"
+    if alert.threshold_value is not None:
+        html += f"<p><strong>Threshold:</strong> {alert.threshold_value}</p>"
+    html += """
+            </div>
+            <div style="padding: 10px; background-color: #f8f9fa; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
+                <small>This is an automated alert from the HieraChain monitoring system.</small>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
+
+def _get_severity_symbol(severity: AlertSeverity) -> str:
+    return {
+        AlertSeverity.INFO: 'ℹ',
+        AlertSeverity.WARNING: '⚠',
+        AlertSeverity.CRITICAL: '✗',
+        AlertSeverity.EMERGENCY: '🚨'
+    }.get(severity, '?')
+
+
 def _initialize_default_rules(manager: AlertManager) -> None:
-    """Initialize default alert rules"""
     default_rules = [
         AlertRule(
             rule_id="CPU_HIGH",
@@ -531,7 +369,6 @@ def _initialize_default_rules(manager: AlertManager) -> None:
 
 
 def _initialize_notifiers(manager: AlertManager) -> None:
-    """Initialize notifiers"""
     if 'email' in manager.config:
         manager.notifiers.append(EmailNotifier(manager.config['email']))
     if 'webhook' in manager.config:
@@ -539,32 +376,21 @@ def _initialize_notifiers(manager: AlertManager) -> None:
 
 
 def _process_rule_for_metric(
-    manager: AlertManager,
-    rule: AlertRule,
-    metric_name: str,
-    value: float,
-    source_component: str
+    manager: AlertManager, rule: AlertRule, metric_name: str,
+    value: float, source_component: str
 ) -> None:
-    """Process rule for metric"""
     if not rule.enabled or rule.metric_name != metric_name:
         return
     if (
-        _evaluate_rule_condition(manager, rule, value) and
-        not _is_in_cooldown(manager, rule)
+        _evaluate_rule_condition(manager, rule, value)
+        and not _is_in_cooldown(manager, rule)
     ):
-        _create_alert(
-            manager=manager,
-            rule=rule,
-            current_value=value,
-            source_component=source_component,
-            custom_description=None
-        )
+        _create_alert(manager, rule, value, source_component, None)
 
 
 def _evaluate_rule_condition(
     manager: AlertManager, rule: AlertRule, value: float
 ) -> bool:
-    """Evaluate rule condition"""
     if rule.condition == "greater_than" and rule.threshold is not None:
         return value > rule.threshold
     if rule.condition == "less_than" and rule.threshold is not None:
@@ -578,19 +404,14 @@ def _evaluate_rule_condition(
 
 
 def _is_in_cooldown(manager: AlertManager, rule: AlertRule) -> bool:
-    """Check if rule is in cooldown"""
     last_alert_time = manager.last_alert_times.get(rule.rule_id, 0)
     return time.time() - last_alert_time < rule.cooldown_period
 
 
 def _create_alert(
-    manager: AlertManager,
-    rule: AlertRule,
-    current_value: float | None,
-    source_component: str,
-    custom_description: str | None
+    manager: AlertManager, rule: AlertRule, current_value: float | None,
+    source_component: str, custom_description: str | None
 ) -> None:
-    """Create new alert"""
     alert_id = f"{rule.rule_id}_{int(time.time())}"
     alert = Alert(
         alert_id=alert_id,
@@ -619,7 +440,6 @@ def _create_alert(
 
 
 def _is_duplicate_alert(manager: AlertManager, alert: Alert) -> bool:
-    """Check if alert is a duplicate"""
     for existing_alert in manager.active_alerts.values():
         if (
             existing_alert.category == alert.category
@@ -631,18 +451,14 @@ def _is_duplicate_alert(manager: AlertManager, alert: Alert) -> bool:
 
 
 def _trim_alert_history(manager: AlertManager) -> None:
-    """Trim alert history if necessary"""
     if len(manager.alert_history) > manager.max_history_size:
         manager.alert_history = manager.alert_history[-manager.max_history_size:]
 
 
 def _update_alert_stats(manager: AlertManager, alert: Alert) -> None:
-    """Update alert statistics"""
     manager.stats['total_alerts'] = cast(int, manager.stats['total_alerts']) + 1
-    
     severity_stats = cast(defaultdict, manager.stats['alerts_by_severity'])
     severity_stats[alert.severity.value] += 1
-    
     category_stats = cast(defaultdict, manager.stats['alerts_by_category'])
     category_stats[alert.category.value] += 1
 
@@ -650,7 +466,6 @@ def _update_alert_stats(manager: AlertManager, alert: Alert) -> None:
 def _schedule_alert_escalation(
     manager: AlertManager, alert_id: str, escalation_time: int
 ) -> None:
-    """Schedule alert escalation"""
     timer = threading.Timer(
         escalation_time, _escalate_alert, args=(manager, alert_id)
     )
@@ -659,7 +474,6 @@ def _schedule_alert_escalation(
 
 
 def _send_notifications(manager: AlertManager, alert: Alert) -> None:
-    """Send notifications to notifiers"""
     recipients = manager.config.get('email_recipients', [])
     for notifier in manager.notifiers:
         success = _send_to_notifier(manager, notifier, alert, recipients)
@@ -672,7 +486,6 @@ def _send_notifications(manager: AlertManager, alert: Alert) -> None:
 def _send_to_notifier(
     manager: AlertManager, notifier: Any, alert: Alert, recipients: list[str]
 ) -> bool:
-    """Send alert to notifier"""
     try:
         if isinstance(notifier, EmailNotifier):
             return notifier.send_alert(alert, recipients)
@@ -685,7 +498,6 @@ def _send_to_notifier(
 
 
 def _acknowledge_alert(manager: AlertManager, alert_id: str, user: str | None) -> bool:
-    """Acknowledge alert"""
     if alert_id not in manager.active_alerts:
         return False
     alert = manager.active_alerts[alert_id]
@@ -699,7 +511,6 @@ def _acknowledge_alert(manager: AlertManager, alert_id: str, user: str | None) -
 
 
 def _resolve_alert(manager: AlertManager, alert_id: str, user: str | None) -> bool:
-    """Resolve alert"""
     if alert_id not in manager.active_alerts:
         return False
     alert = manager.active_alerts[alert_id]
@@ -714,7 +525,6 @@ def _resolve_alert(manager: AlertManager, alert_id: str, user: str | None) -> bo
 
 
 def _escalate_alert(manager: AlertManager, alert_id: str) -> None:
-    """Escalate alert to next level"""
     if alert_id not in manager.active_alerts:
         return
     alert = manager.active_alerts[alert_id]
@@ -744,7 +554,6 @@ def _get_active_alerts(
     category: AlertCategory | None,
     severity: AlertSeverity | None
 ) -> list[Alert]:
-    """Get active alerts"""
     alerts = list(manager.active_alerts.values())
     if category:
         alerts = [a for a in alerts if a.category == category]
@@ -754,7 +563,6 @@ def _get_active_alerts(
 
 
 def _get_alert_statistics(manager: AlertManager) -> dict[str, Any]:
-    """Get alert statistics"""
     return {
         **manager.stats,
         'active_alerts': len(manager.active_alerts),
@@ -764,11 +572,8 @@ def _get_alert_statistics(manager: AlertManager) -> dict[str, Any]:
 
 
 def _generate_json_report(
-    manager: AlertManager,
-    active_alerts: list[Alert],
-    include_history: bool
+    manager: AlertManager, active_alerts: list[Alert], include_history: bool
 ) -> str:
-    """Generate JSON-based alert report"""
     report_data = {
         'timestamp': time.time(),
         'statistics': _get_alert_statistics(manager),
@@ -782,7 +587,6 @@ def _generate_json_report(
 
 
 def _generate_text_report(manager: AlertManager, active_alerts: list[Alert]) -> str:
-    """Generate text-based alert report"""
     lines = [
         "Alert System Report",
         "=" * 40,
