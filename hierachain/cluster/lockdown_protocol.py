@@ -1,175 +1,25 @@
 """
 Cluster Lockdown Protocol for HieraChain.
 
-This module implements cluster-wide lockdown coordination using
+Implements cluster-wide lockdown coordination using
 gossip-style messaging over the P2P network.
-
-Features:
-- Broadcast lockdown events to all peers
-- Receive and process lockdown messages from peers
-- Track cluster-wide lockdown state
-- Support recovery broadcasts
 """
 
 import time
-import hashlib
-import hmac
 import logging
 import threading
-from dataclasses import dataclass, field
-from enum import Enum
 from typing import Callable
+
+from hierachain.cluster.lockdown_types import (
+    LockdownMessageType,
+    LockdownMessage,
+    ClusterState,
+    QuarantineReport,
+)
 
 logger = logging.getLogger(__name__)
 
 _UNSET = ""
-
-
-class LockdownMessageType(Enum):
-    """Types of lockdown-related messages."""
-    LOCKDOWN = "lockdown"
-    RECOVERY = "recovery"
-    HEARTBEAT = "heartbeat"
-    LOCKDOWN_VOTE = "lockdown_vote"
-    RECOVERY_VOTE = "recovery_vote"
-    QUARANTINE_REPORT = "quarantine_report"
-    SYNC_REQUEST = "sync_request"
-    SYNC_RESPONSE = "sync_response"
-
-
-@dataclass
-class LockdownMessage:
-    """
-    Cluster lockdown message for P2P broadcast.
-
-    Attributes:
-        node_id: ID of the node sending the message.
-        timestamp: Unix timestamp when message was created.
-        reason: Reason for lockdown (for LOCKDOWN type).
-        message_type: Type of message (lockdown, recovery, heartbeat).
-        signature: HMAC signature for authenticity (optional).
-    """
-    node_id: str
-    timestamp: float
-    reason: str
-    message_type: LockdownMessageType
-    signature: str = ""
-
-    def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
-        return {
-            "msg_type": "cluster_lockdown",
-            "node_id": self.node_id,
-            "timestamp": self.timestamp,
-            "reason": self.reason,
-            "lockdown_type": self.message_type.value,
-            "signature": self.signature,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "LockdownMessage":
-        """Create from dictionary."""
-        return cls(
-            node_id=data.get("node_id", "unknown"),
-            timestamp=data.get("timestamp", 0.0),
-            reason=data.get("reason", ""),
-            message_type=LockdownMessageType(data.get("lockdown_type", "lockdown")),
-            signature=data.get("signature", ""),
-        )
-
-    def compute_signature(self, secret_key: str) -> str:
-        """Compute HMAC signature for message."""
-        message_data = (
-            f"{self.node_id}:{self.timestamp}:{self.reason}:{self.message_type.value}"
-        )
-        return hmac.new(
-            secret_key.encode(),
-            message_data.encode(),
-            hashlib.sha256
-        ).hexdigest()[:32]
-
-    def verify_signature(self, secret_key: str) -> bool:
-        """Verify message signature (constant-time comparison)."""
-        expected = self.compute_signature(secret_key)
-        return hmac.compare_digest(self.signature, expected)
-
-
-@dataclass
-class ClusterState:
-    """Current state of the cluster lockdown."""
-    is_locked: bool = False
-    locked_by: str = ""
-    lock_reason: str = ""
-    lock_timestamp: float = 0.0
-    locked_nodes: set = field(default_factory=set)
-
-
-@dataclass
-class QuarantineReport:
-    """
-    Report sent by a node before flushing its event pool (Last Breath).
-
-    Contains fingerprints of pending events that other nodes can use
-    to identify gaps in their own state after recovery.
-
-    Attributes:
-        node_id: ID of the reporting node.
-        timestamp: When the report was created.
-        pending_event_ids: List of event IDs pending in the pool.
-        last_block_index: Index of the last committed block.
-        last_block_hash: Hash of the last committed block.
-        total_pending: Total number of pending events.
-        signature: HMAC signature for authenticity.
-    """
-    node_id: str
-    timestamp: float
-    pending_event_ids: list = field(default_factory=list)
-    last_block_index: int = 0
-    last_block_hash: str = ""
-    total_pending: int = 0
-    signature: str = ""
-
-    def to_dict(self) -> dict:
-        """Convert to dictionary for serialization."""
-        return {
-            "msg_type": "cluster_lockdown",
-            "lockdown_type": LockdownMessageType.QUARANTINE_REPORT.value,
-            "node_id": self.node_id,
-            "timestamp": self.timestamp,
-            "pending_event_ids": self.pending_event_ids,
-            "last_block_index": self.last_block_index,
-            "last_block_hash": self.last_block_hash,
-            "total_pending": self.total_pending,
-            "signature": self.signature,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "QuarantineReport":
-        """Create from dictionary."""
-        return cls(
-            node_id=data.get("node_id", "unknown"),
-            timestamp=data.get("timestamp", 0.0),
-            pending_event_ids=data.get("pending_event_ids", []),
-            last_block_index=data.get("last_block_index", 0),
-            last_block_hash=data.get("last_block_hash", ""),
-            total_pending=data.get("total_pending", 0),
-            signature=data.get("signature", ""),
-        )
-
-    def compute_signature(self, secret_key: str) -> str:
-        """Compute HMAC signature for report."""
-        msg = f"{self.node_id}:{self.timestamp}:{self.last_block_index}"
-        return hmac.new(
-            secret_key.encode(),
-            msg.encode(),
-            hashlib.sha256
-        ).hexdigest()[:32]
-
-    def verify_signature(self, secret_key: str) -> bool:
-        """Verify report signature (constant-time comparison)."""
-        return hmac.compare_digest(
-            self.signature, self.compute_signature(secret_key)
-        )
 
 
 def _apply_lock(
