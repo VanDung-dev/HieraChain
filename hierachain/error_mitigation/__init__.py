@@ -24,14 +24,18 @@ from hierachain.error_mitigation.data_validator import (
 # Error classification
 from hierachain.error_mitigation.error_classifier import (
     ErrorClassifier,
+    get_priority_score,
+    classify_error_quick,
+    get_priority_threshold,
+)
+from hierachain.error_mitigation.classifier_types import (
     ErrorCategory,
     PriorityLevel,
     ImpactLevel,
     LikelihoodLevel,
     ErrorInfo,
-    RiskPriorityMatrix,
-    get_priority_score,
 )
+from hierachain.error_mitigation.risk_matrix import RiskPriorityMatrix
 
 # Transaction journal
 from hierachain.error_mitigation.journal import TransactionJournal
@@ -48,17 +52,22 @@ from hierachain.error_mitigation.recovery_engine import (
 # Rollback manager
 from hierachain.error_mitigation.rollback_manager import (
     RollbackManager,
+)
+from hierachain.error_mitigation.rollback_types import (
     RollbackType,
     RollbackStatus,
     StateSnapshot,
     RollbackOperation,
+    RollbackStrategy,
+    RollbackLevel,
+    RollbackResult,
 )
 
 # Validators
+from hierachain.error_mitigation.consensus_validator import ConsensusValidator
+from hierachain.error_mitigation.encryption_validator import EncryptionValidator
+from hierachain.error_mitigation.resource_validator import ResourceValidator
 from hierachain.error_mitigation.validator import (
-    ConsensusValidator,
-    EncryptionValidator,
-    ResourceValidator,
     APIValidator,
     ValidationError,
     ConfigurationError,
@@ -84,6 +93,8 @@ __all__ = [
     "ErrorInfo",
     "RiskPriorityMatrix",
     "get_priority_score",
+    "classify_error_quick",
+    "get_priority_threshold",
     # Transaction journal
     "TransactionJournal",
     # Recovery engine
@@ -98,6 +109,9 @@ __all__ = [
     "RollbackStatus",
     "StateSnapshot",
     "RollbackOperation",
+    "RollbackStrategy",
+    "RollbackLevel",
+    "RollbackResult",
     # Validators
     "ConsensusValidator",
     "EncryptionValidator",
