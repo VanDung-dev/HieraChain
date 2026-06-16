@@ -11,20 +11,12 @@ import threading
 from typing import Any
 from dataclasses import dataclass, field
 
+from hierachain.hierarchical.types import OrganizationError, NetworkError, ConsensusError
 
-class OrganizationError(Exception):
-    """Exception raised for organization-related errors"""
-    pass
-
-
-class NetworkError(Exception):
-    """Exception raised for network-related errors"""
-    pass
-
-
-class ConsensusError(Exception):
-    """Exception raised for consensus-related errors"""
-    pass
+# Backward-compat re-exports
+OrganizationError = OrganizationError
+NetworkError = NetworkError
+ConsensusError = ConsensusError
 
 
 @dataclass
