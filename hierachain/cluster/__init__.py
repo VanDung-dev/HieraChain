@@ -4,8 +4,8 @@ HieraChain Cluster Management Module.
 Provides cluster-wide coordination for lockdown events and health tracking.
 """
 
-from hierachain.cluster.lockdown_protocol import (
-    ClusterLockdownManager,
+from hierachain.cluster.lockdown_protocol import ClusterLockdownManager
+from hierachain.cluster.lockdown_types import (
     ClusterState,
     LockdownMessage,
     LockdownMessageType,
@@ -23,8 +23,8 @@ from hierachain.cluster.state_sync_manager import (
     SyncResponse,
     SyncStatus,
 )
-from hierachain.cluster.cross_level_sync import (
-    CrossLevelSyncManager,
+from hierachain.cluster.cross_level_sync import CrossLevelSyncManager
+from hierachain.cluster.cross_level_sync_types import (
     CrossLevelSyncStatus,
     SyncDirection,
     ConflictResolutionStrategy,
@@ -38,11 +38,11 @@ __all__ = [
     "ClusterState",
     "LockdownMessage",
     "LockdownMessageType",
+    "QuarantineReport",
     "ClusterManager",
     "NodeHealthStatus",
     "ClusterHealthMetrics",
     "NodeStatus",
-    "QuarantineReport",
     "StateSyncManager",
     "SyncRequest",
     "SyncResponse",
