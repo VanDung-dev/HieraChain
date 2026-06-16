@@ -317,12 +317,12 @@ def test_graphql_types_exist():
     from hierachain.api.graphql.schema import (
         EventType,
         BlockType,
-        BlockMetadataType,
         ChainStatusType,
         Query,
         Mutations,
         schema
     )
+    from hierachain.api.graphql.types import BlockMetadataType
     
     assert EventType is not None
     assert BlockType is not None
