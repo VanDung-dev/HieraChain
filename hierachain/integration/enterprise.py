@@ -13,12 +13,9 @@ import time
 import logging
 from typing import Any
 
+from hierachain.integration.types import IntegrationError
+
 logger = logging.getLogger(__name__)
-
-
-class IntegrationError(Exception):
-    """Exception raised for integration-related errors"""
-    pass
 
 
 def _get_nested_value(data: dict[str, Any], path: str) -> Any:
