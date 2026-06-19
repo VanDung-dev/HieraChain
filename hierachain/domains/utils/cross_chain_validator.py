@@ -331,22 +331,9 @@ def _build_default_validation_rules() -> dict[str, Callable]:
         return "entity_id" in event and isinstance(event["entity_id"], str)
 
     def no_cryptocurrency_terms(data: dict[str, Any],) -> bool:
-        """Data must not contain crypto terminology in values."""
-        forbidden = _get_forbidden_terms()
-        simple_values = [
-            value for v in data.values()
-            if (value := _get_simple_value(v)) is not None
-        ]
-        
-        # Use space to separate values to maintain word boundaries
-        data_values_str = " ".join(simple_values)
-        
-        for term in forbidden:
-            # Use regex to check for whole word match only
-            pattern = rf"\b{re.escape(term)}\b"
-            if re.search(pattern, data_values_str):
-                return False
-        return True
+        """Data must not contain crypto terminology."""
+        from hierachain.core.utils import validate_no_cryptocurrency_terms
+        return validate_no_cryptocurrency_terms(data)
 
     return {
         "proof_hash_consistency": proof_hash_consistency,
