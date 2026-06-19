@@ -41,13 +41,11 @@ from hierachain.error_mitigation.risk_matrix import RiskPriorityMatrix
 from hierachain.error_mitigation.journal import TransactionJournal
 
 # Recovery engine
-from hierachain.error_mitigation.recovery_engine import (
-    RecoveryError,
-    NetworkRecoveryEngine,
-    AutoScaler,
-    ConsensusRecoveryEngine,
-    BackupRecoveryEngine,
-)
+from hierachain.error_mitigation.recovery_types import RecoveryError
+from hierachain.error_mitigation.network_recovery import NetworkRecoveryEngine
+from hierachain.error_mitigation.auto_scaler import AutoScaler
+from hierachain.error_mitigation.consensus_recovery import ConsensusRecoveryEngine
+from hierachain.error_mitigation.backup_recovery import BackupRecoveryEngine
 
 # Rollback manager
 from hierachain.error_mitigation.rollback_manager import (
@@ -58,9 +56,6 @@ from hierachain.error_mitigation.rollback_types import (
     RollbackStatus,
     StateSnapshot,
     RollbackOperation,
-    RollbackStrategy,
-    RollbackLevel,
-    RollbackResult,
 )
 
 # Validators
@@ -70,7 +65,6 @@ from hierachain.error_mitigation.resource_validator import ResourceValidator
 from hierachain.error_mitigation.validator import (
     APIValidator,
     ValidationError,
-    ConfigurationError,
     SecurityError,
     validate_certificate,
 )
@@ -109,16 +103,12 @@ __all__ = [
     "RollbackStatus",
     "StateSnapshot",
     "RollbackOperation",
-    "RollbackStrategy",
-    "RollbackLevel",
-    "RollbackResult",
     # Validators
     "ConsensusValidator",
     "EncryptionValidator",
     "ResourceValidator",
     "APIValidator",
     "ValidationError",
-    "ConfigurationError",
     "SecurityError",
     "validate_certificate",
 ]

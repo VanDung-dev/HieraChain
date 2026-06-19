@@ -3,7 +3,6 @@ Shared helper functions for HieraChain validators.
 """
 
 import json
-import hashlib
 import os
 import logging
 from typing import Any
@@ -11,6 +10,8 @@ from datetime import datetime
 
 import pyarrow as pa
 import pyarrow.compute as pc
+
+from hierachain.error_mitigation.validator_exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +67,6 @@ def _serialize_data_content(data: Any) -> str:
 def _check_forbidden_terms_in_array(
     array: pa.Array, field_name: str, forbidden_terms: list[str],
 ) -> None:
-    from hierachain.error_mitigation.validator_exceptions import ValidationError
-
     utf8_lower = getattr(pc, "utf8_lower")
     match_substring = getattr(pc, "match_substring")
     any_op = getattr(pc, "any")
