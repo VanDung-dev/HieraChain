@@ -245,6 +245,11 @@ class MainChain(Blockchain):
     - Provides proof verification and chain coordination
     - Uses Proof of Authority consensus suitable for business applications
     """
+    __slots__ = (
+        'consensus', 'registered_sub_chains', 'sub_chain_metadata',
+        'proof_count', 'latest_proofs', 'recent_proofs',
+        'proof_index', 'zk_verifier',
+    )
 
     def __init__(self, name: str = "MainChain"):
         """
