@@ -35,6 +35,8 @@ def generate_hash(data: str | dict[str, Any]) -> str:
 
 
 class MerkleTree:
+    __slots__ = ('leaves', 'root')
+
     def __init__(
         self,
         data_list: list[str | dict[str, Any]] | None = None,

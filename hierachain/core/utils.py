@@ -362,26 +362,24 @@ def create_domain_event_template(domain_type: str) -> dict[str, Any]:
     }
 
 
+# Single compiled pattern: 1 regex search vs 12 per string
+_FORBIDDEN_CRYPTO_PATTERN = re.compile(
+    r"\b(" + "|".join(re.escape(t) for t in [
+        "transaction", "mining", "coin", "token", "wallet", "address",
+        "sender", "receiver", "amount", "fee", "reward", "coinbase",
+    ]) + r")\b"
+)
+
+
 def validate_no_cryptocurrency_terms(data: Any) -> bool:
     """
     Validate that data doesn't contain standalone cryptocurrency terminology.
     This function recursively checks strings, dictionaries, and lists.
-    
-    Args:
-        data: Data to validate (string, dictionary, list, or other)
-        
+
     Returns:
         True if no cryptocurrency terms found, False otherwise
     """
-    # Forbidden cryptocurrency terms
-    crypto_terms = [
-        "transaction", "mining", "coin", "token", "wallet", "address",
-        "sender", "receiver", "amount", "fee", "reward", "coinbase"
-    ]
-    
-    # Process data to check for whole words
     if isinstance(data, dict):
-        # Check both keys and values in dictionary
         for key, value in data.items():
             if not validate_no_cryptocurrency_terms(str(key)):
                 return False
@@ -399,12 +397,5 @@ def validate_no_cryptocurrency_terms(data: Any) -> bool:
                 return False
         return True
 
-    # For strings, use word boundaries
     data_string = str(data).lower()
-    for term in crypto_terms:
-        # Use regex to check for whole word match only
-        pattern = rf"\b{re.escape(term)}\b"
-        if re.search(pattern, data_string):
-            return False
-            
-    return True
+    return _FORBIDDEN_CRYPTO_PATTERN.search(data_string) is None
