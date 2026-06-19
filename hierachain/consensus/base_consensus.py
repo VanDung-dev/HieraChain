@@ -28,10 +28,12 @@ def _is_event_structure_valid(event: Any) -> bool:
 class BaseConsensus(ABC):
     """
     Abstract base class for consensus mechanisms.
+
     This class defines the interface that all consensus mechanisms must implement
     in the HieraChain Ledger. It ensures that consensus algorithms
     work with the event-based model and support the hierarchical structure.
     """
+    __slots__ = ('name', 'config')
 
     # Terms that should not appear in non-technical event fields
     FORBIDDEN_TERMS = ["transaction", "mining", "coin", "token", "wallet", "fee"]

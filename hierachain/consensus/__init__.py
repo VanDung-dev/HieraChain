@@ -14,7 +14,7 @@ from hierachain.consensus.ordering import (
 )
 
 # BFT Consensus
-from hierachain.consensus.bft_consensus import (
+from hierachain.consensus.bft import (
     BFTConsensus,
     create_bft_network,
     ConsensusError,

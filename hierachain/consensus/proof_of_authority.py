@@ -13,7 +13,10 @@ from typing import Any
 from hierachain.consensus.base_consensus import (
     BaseConsensus, _verify_block_zk_proof
 )
-from hierachain.core.block import Block
+from hierachain.core.block import (
+    Block, convert_events_to_arrow, calculate_merkle_from_list, table_to_list_of_dicts
+)
+from hierachain.core.utils import generate_hash
 from hierachain.security.security_utils import KeyPair
 
 logger = logging.getLogger(__name__)
@@ -29,6 +32,7 @@ class ProofOfAuthority(BaseConsensus):
     - Block creation is controlled by authorized entities
     - No energy-intensive mining (suitable for business applications)
     """
+    __slots__ = ('authorities', 'authority_metadata', 'block_interval')
 
     def __init__(self, name: str = "ProofOfAuthority", block_interval: float | None = None):
         """
@@ -176,24 +180,26 @@ class ProofOfAuthority(BaseConsensus):
                     "finalized_at": time.time()
                 }
             }
-            current_events = block.to_event_list()
-            current_events.append(consensus_event)
+            # Append consensus event to Arrow table directly, avoiding dict → Arrow round-trip
+            import pyarrow as pa
+            consensus_arrow = convert_events_to_arrow([consensus_event])
+            merged_events = pa.concat_tables([block.events, consensus_arrow])
+            events_list = table_to_list_of_dicts(merged_events)
             block = Block(
                 index=block.index,
-                events=current_events,
+                events=merged_events,
                 previous_hash=block.previous_hash,
                 timestamp=block.timestamp,
-                nonce=block.nonce
+                nonce=block.nonce,
+                merkle_root=calculate_merkle_from_list(events_list),
             )
         return block
 
     def _has_valid_authority_signature(self, block: Block) -> bool:
         """Check if block has a valid authority signature."""
+        events = block.to_event_list()
         consensus_event = next(
-            (
-                e for e in block.to_event_list()
-                if e.get("event") == "consensus_finalization"
-            ),
+            (e for e in events if e.get("event") == "consensus_finalization"),
             None
         )
 
@@ -224,16 +230,15 @@ class ProofOfAuthority(BaseConsensus):
             return True
 
         # Reconstruct the unfinalized block's hash by removing the consensus_finalization event
-        unfinalized_events = [e for e in block.to_event_list() if e.get("event") != "consensus_finalization"]
-        unfinalized_block = Block(
-            index=block.index,
-            events=unfinalized_events,
-            timestamp=block.timestamp,
-            previous_hash=block.previous_hash,
-            nonce=block.nonce,
-            creator_id=block.creator_id
-        )
-        unfinalized_hash = unfinalized_block.hash
+        unfinalized_events = [e for e in events if e.get("event") != "consensus_finalization"]
+        unfinalized_hash = generate_hash({
+            "index": block.index,
+            "timestamp": block.timestamp,
+            "previous_hash": block.previous_hash,
+            "nonce": block.nonce,
+            "merkle_root": calculate_merkle_from_list(unfinalized_events),
+            "creator_id": block.creator_id
+        })
 
         from hierachain.security.security_utils import verify_signature
         sig_str = f"{unfinalized_hash}{authority_id}{details.get('timestamp')}"
