@@ -8,16 +8,11 @@ including cryptographic utilities, validation helpers, and data processing funct
 import time
 import uuid
 import re
+import orjson
 from typing import Any
 from datetime import datetime
 
-from hierachain.core.merkle_tree import (
-    compute_hash_standalone,
-    compute_merkle_leaves_standalone,
-    compute_leaves_from_events_standalone,
-    generate_hash,
-    MerkleTree,
-)
+from hierachain.core.merkle_tree import generate_hash
 
 
 def generate_entity_id(prefix: str = "ENTITY") -> str:
@@ -374,28 +369,18 @@ _FORBIDDEN_CRYPTO_PATTERN = re.compile(
 def validate_no_cryptocurrency_terms(data: Any) -> bool:
     """
     Validate that data doesn't contain standalone cryptocurrency terminology.
-    This function recursively checks strings, dictionaries, and lists.
+    This function uses fast serialization and regular expressions to avoid recursion.
 
     Returns:
         True if no cryptocurrency terms found, False otherwise
     """
-    if isinstance(data, dict):
-        for key, value in data.items():
-            if not validate_no_cryptocurrency_terms(str(key)):
-                return False
-            if isinstance(value, (dict, list)):
-                if not validate_no_cryptocurrency_terms(value):
-                    return False
-            else:
-                if not validate_no_cryptocurrency_terms(str(value)):
-                    return False
-        return True
-    
-    if isinstance(data, list):
-        for item in data:
-            if not validate_no_cryptocurrency_terms(item):
-                return False
-        return True
+    if isinstance(data, (dict, list)):
+        try:
+            serialized = orjson.dumps(data)
+            data_string = serialized.decode('utf-8').lower()
+        except Exception:
+            data_string = str(data).lower()
+    else:
+        data_string = str(data).lower()
 
-    data_string = str(data).lower()
     return _FORBIDDEN_CRYPTO_PATTERN.search(data_string) is None

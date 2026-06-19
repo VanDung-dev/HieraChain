@@ -5,7 +5,7 @@ Provides Redis persistence for blockchain data with the same public interface
 as SQLBase adapters. Supports store/load chains, blocks, events, and proofs.
 """
 
-import json
+import orjson
 import time
 import logging
 from typing import Any
@@ -102,7 +102,7 @@ class RedisStorageAdapter:
         for bh in block_hashes:
             raw = self.client.get(_k("block", bh))
             if raw:
-                block_dict = json.loads(raw)
+                block_dict = orjson.loads(raw)
                 events = self._load_block_events(bh)
                 block_dict["events"] = events
                 blocks.append(block_dict)
@@ -111,7 +111,7 @@ class RedisStorageAdapter:
     def _load_block_events(self, block_hash: str) -> list[dict[str, Any]]:
         raw = self.client.get(_k("block", block_hash, "events"))
         if raw:
-            return json.loads(raw)
+            return orjson.loads(raw)
         return []
 
     # --- Event queries ---
@@ -126,7 +126,7 @@ class RedisStorageAdapter:
             for key in keys:
                 raw = self.client.get(key)
                 if raw:
-                    ev = json.loads(raw)
+                    ev = orjson.loads(raw)
                     if chain_name and ev.get("chain_name") != chain_name:
                         continue
                     results.append(ev)
@@ -146,7 +146,7 @@ class RedisStorageAdapter:
             for key in keys:
                 raw = self.client.get(key)
                 if raw:
-                    ev = json.loads(raw)
+                    ev = orjson.loads(raw)
                     if chain_name and ev.get("chain_name") != chain_name:
                         continue
                     results.append(ev)
@@ -173,7 +173,7 @@ class RedisStorageAdapter:
                 "sub_chain_name": sub_chain_name,
                 "proof_hash": proof_hash,
                 "block_index": block_index,
-                "metadata": json.dumps(metadata),
+                "metadata": orjson.dumps(metadata).decode('utf-8'),
                 "submitted_at": _now(),
                 "created_at": _now(),
             }
@@ -196,7 +196,7 @@ class RedisStorageAdapter:
                         "sub_chain_name": data.get("sub_chain_name"),
                         "proof_hash": data.get("proof_hash"),
                         "block_index": int(data.get("block_index", 0)),
-                        "metadata": json.loads(data.get("metadata", "{}")),
+                        "metadata": orjson.loads(data.get("metadata", "{}")),
                         "submitted_at": float(data.get("submitted_at", 0)),
                     })
             return proofs
@@ -219,7 +219,7 @@ class RedisStorageAdapter:
             for bh in self.client.lrange(_k("chain", chain_name, "blocks"), 0, -1):
                 raw = self.client.get(_k("block", bh, "events"))
                 if raw:
-                    events = json.loads(raw)
+                    events = orjson.loads(raw)
                     total_events += len(events)
                     for ev in events:
                         eid = ev.get("entity_id")
@@ -250,11 +250,11 @@ class RedisStorageAdapter:
                 raw = self.client.get(key)
                 if raw:
                     try:
-                        ev = json.loads(raw)
+                        ev = orjson.loads(raw)
                         if ev.get("timestamp", 0) < cutoff:
                             self.client.delete(key)
                             deleted += 1
-                    except (json.JSONDecodeError, TypeError):
+                    except (orjson.JSONDecodeError, TypeError):
                         pass
 
             for key in self.client.scan_iter(match=_k("proof", "*")):
@@ -267,11 +267,11 @@ class RedisStorageAdapter:
                 raw = self.client.get(key)
                 if raw:
                     try:
-                        bd = json.loads(raw)
+                        bd = orjson.loads(raw)
                         if bd.get("timestamp", 0) < cutoff:
                             self.client.delete(key)
                             deleted += 1
-                    except (json.JSONDecodeError, TypeError):
+                    except (orjson.JSONDecodeError, TypeError):
                         pass
 
             logger.info("Redis cleanup completed", extra={"deleted": deleted})

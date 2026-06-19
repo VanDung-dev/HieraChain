@@ -11,7 +11,7 @@ import os
 import re
 import logging
 import struct
-import json
+import orjson
 from typing import Any, Generator, BinaryIO
 from pathlib import Path
 import pyarrow as pa
@@ -140,7 +140,7 @@ def _pack_extra_fields(ev: dict[str, Any], raw_data: dict[str, Any]) -> None:
             clean_event[k] = v
 
     if clean_event:
-        ev["data"] = json.dumps(clean_event).encode("utf-8")
+        ev["data"] = orjson.dumps(clean_event)
 
 
 def _serialize_data_field(ev: dict[str, Any]) -> None:
@@ -155,7 +155,7 @@ def _serialize_data_field(ev: dict[str, Any]) -> None:
             if isinstance(data, str):
                 ev["data"] = data.encode("utf-8")
             else:
-                ev["data"] = json.dumps(data).encode("utf-8")
+                ev["data"] = orjson.dumps(data)
         except (TypeError, ValueError) as e:
             logger.warning("Could not JSON serialize 'data' field: %s. Using str().", e)
             ev["data"] = str(data).encode("utf-8")
@@ -193,10 +193,10 @@ def _unpack_extra_field_content(row: dict[str, Any], data_content: Any) -> None:
     if not data_content:
         return
     try:
-        extra_data = json.loads(data_content)
+        extra_data = orjson.loads(data_content)
         if isinstance(extra_data, dict):
             _apply_extra_fields(row, extra_data)
-    except (json.JSONDecodeError, TypeError):
+    except (orjson.JSONDecodeError, TypeError):
         pass
 
 
