@@ -39,16 +39,21 @@ class SQLiteAdapter(SQLBase):
 
     @contextmanager
     def _get_connection(self):
-        """Get a SQLite connection with dict-like row access."""
+        """Get a SQLite connection with dict-like row access and optimized settings."""
         conn = sqlite3.connect(self.database_path)
         conn.row_factory = sqlite3.Row
         try:
+            # Enable high-performance PRAGMAs
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA synchronous=NORMAL;")
+            conn.execute("PRAGMA cache_size=-64000;")  # 64MB cache size
             yield conn
         except Exception as e:
             conn.rollback()
             raise e
         finally:
             conn.close()
+
 
     def _init_schema(self) -> None:
         """Create database tables and indexes."""

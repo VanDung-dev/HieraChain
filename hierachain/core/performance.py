@@ -8,7 +8,7 @@ for heavy CPU operations (hashing, signature verification).
 import os
 import logging
 import asyncio
-import json
+import orjson
 from concurrent.futures import ProcessPoolExecutor
 from typing import Callable, Any, Optional
 
@@ -95,7 +95,7 @@ def serialize_for_pool(data: Any) -> bytes:
         Serialized bytes ready for inter-process transfer.
     """
 
-    return json.dumps(data).encode("utf-8")
+    return orjson.dumps(data)
 
 
 def deserialize_from_pool(data: bytes) -> Any:
@@ -111,4 +111,4 @@ def deserialize_from_pool(data: bytes) -> Any:
         Deserialized Python object.
     """
 
-    return json.loads(data.decode("utf-8"))
+    return orjson.loads(data)

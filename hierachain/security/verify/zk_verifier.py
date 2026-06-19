@@ -10,7 +10,7 @@ Supports two modes:
 """
 
 import hashlib
-import json
+import orjson
 from typing import Any
 from dataclasses import dataclass
 
@@ -53,7 +53,7 @@ class ZKPublicInputs:
     
     def to_bytes(self) -> bytes:
         """Serialize to bytes for hashing."""
-        return json.dumps(self.to_dict(), sort_keys=True).encode('utf-8')
+        return orjson.dumps(self.to_dict(), option=orjson.OPT_SORT_KEYS)
 
 
 class ZKVerificationError(Exception):

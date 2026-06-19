@@ -14,7 +14,7 @@ Template method pattern:
 """
 
 from abc import ABC, abstractmethod
-import json
+import orjson
 import time
 from typing import Any, Callable
 from contextlib import contextmanager
@@ -84,7 +84,7 @@ class SQLBase(ABC):
             "entity_id": row["entity_id"],
             "event_type": row["event_type"],
             "timestamp": row["timestamp"],
-            "data": json.loads(row["data"] or "{}"),
+            "data": orjson.loads(row["data"] or "{}"),
         }
 
     # --- Template: store_chain ---
@@ -282,7 +282,7 @@ class SQLBase(ABC):
                 sub_chain_name,
                 proof_hash,
                 block_index,
-                json.dumps(metadata),
+                orjson.dumps(metadata).decode('utf-8'),
                 time.time(),
                 time.time(),
             ),
@@ -421,7 +421,7 @@ class SQLBase(ABC):
                 "sub_chain_name": row['sub_chain_name'],
                 "proof_hash": row['proof_hash'],
                 "block_index": row['block_index'],
-                "metadata": json.loads(row['metadata'] or '{}'),
+                "metadata": orjson.loads(row['metadata'] or '{}'),
                 "submitted_at": row['submitted_at'],
             })
         return proofs

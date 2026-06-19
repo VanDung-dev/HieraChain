@@ -9,6 +9,8 @@ import logging
 import os
 from typing import Any
 from queue import Queue
+import orjson
+
 from hierachain.consensus.ordering.types import PendingEvent
 
 logger = logging.getLogger(__name__)
@@ -29,11 +31,16 @@ def make_serializable(obj: Any) -> Any:
     return str(obj)
 
 
+def _orjson_default(obj: Any) -> Any:
+    if isinstance(obj, bytes):
+        return obj.hex()
+    return str(obj)
+
+
 def generate_event_id(event_data: dict[str, Any], channel_id: str) -> str:
     """Generate unique event ID"""
-    clean_data = make_serializable(event_data)
-    json_str = json.dumps(clean_data, sort_keys=True, separators=(',', ':'))
-    data = f"{channel_id}:{json_str}:{time.time()}"
+    json_bytes = orjson.dumps(event_data, default=_orjson_default, option=orjson.OPT_SORT_KEYS)
+    data = f"{channel_id}:{json_bytes.decode('utf-8')}:{time.time()}"
     return hashlib.sha256(data.encode()).hexdigest()[:16]
 
 
