@@ -14,7 +14,6 @@ from fastapi.security import APIKeyHeader, APIKeyQuery
 from typing import Any, cast, Union
 from pathlib import Path
 
-from hierachain.security.key_manager import KeyManager
 from hierachain.security.secure_logging import get_security_logger
 from hierachain.security.brute_force_protector import BruteForceProtector
 from hierachain.config.settings import get_settings
@@ -83,6 +82,7 @@ class APIKeyVerifier:
                 - revocation_check: How often to check revocation
         """
         self.config = config
+        from hierachain.security.key_manager import KeyManager
         self.key_manager = KeyManager()  # Handles key storage, revocation checks
         self.enabled = config.get('enabled', True)
         self.key_location = config.get('key_location', 'header')

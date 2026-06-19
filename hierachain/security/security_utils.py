@@ -7,6 +7,7 @@ focusing on Ed25519 for digital signatures as required for enterprise-grade secu
 
 import logging
 import binascii
+from functools import lru_cache
 from typing import Tuple, Any
 from nacl.signing import SigningKey, VerifyKey
 from nacl.encoding import HexEncoder
@@ -73,6 +74,11 @@ class KeyPair:
             raise CryptoError(f"Signing failed: {str(e)}")
 
 
+@lru_cache(maxsize=1024)
+def _decode_public_key_hex(public_key_hex: str) -> bytes:
+    return HexEncoder.decode(public_key_hex.encode('utf-8'))
+
+
 def verify_signature_standalone(
     public_key_hex: str, message: bytes, signature_hex: str
 ) -> bool:
@@ -89,22 +95,17 @@ def verify_signature_standalone(
         True if valid, False otherwise.
     """
     try:
-        # Decode public key and signature
-        verify_key_bytes = HexEncoder.decode(public_key_hex.encode('utf-8'))
-        verify_key = VerifyKey(verify_key_bytes)
-        
+        verify_key = VerifyKey(_decode_public_key_hex(public_key_hex))
+
         signature_bytes = binascii.unhexlify(signature_hex)
-        # Reject signatures longer than 64 bytes - PyNaCl accepts concatenated signature+message
         if len(signature_bytes) != 64:
             return False
-        
-        # Verify
+
         verify_key.verify(message, signature_bytes)
         return True
     except (BadSignatureError, ValueError, binascii.Error):
         return False
     except Exception as e:
-        # Logger might not work well in subprocess without config, but we try
         logger.error("Unexpected error during verification: %s", str(e))
         return False
 

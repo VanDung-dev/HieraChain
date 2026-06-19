@@ -10,12 +10,37 @@ from __future__ import annotations
 import time
 import hashlib
 from typing import Any
+from dataclasses import dataclass
+from enum import Enum
 
 from hierachain.security.security_utils import KeyPair
-from hierachain.security.msp_types import (
-    CertificateStatus,
-    Certificate,
-)
+
+
+class CertificateStatus(Enum):
+    ACTIVE = "active"
+    REVOKED = "revoked"
+    EXPIRED = "expired"
+    SUSPENDED = "suspended"
+
+
+@dataclass
+class Certificate:
+    cert_id: str
+    subject: str
+    issuer: str
+    public_key: str
+    valid_from: float
+    valid_until: float
+    status: CertificateStatus
+    attributes: dict[str, Any]
+    signature: str
+
+    def is_valid(self) -> bool:
+        current_time = time.time()
+        return self.status == CertificateStatus.ACTIVE and self.valid_from <= current_time <= self.valid_until
+
+    def is_expired(self) -> bool:
+        return time.time() > self.valid_until
 
 __all__ = [
     "CertificateStatus",
@@ -69,14 +94,21 @@ class CertificateAuthority:
         if cert_id in self.issued_certificates:
             self.issued_certificates[cert_id].status = CertificateStatus.REVOKED
             self.revoked_certificates.add(cert_id)
+            self._verification_cache[cert_id] = False
             return True
         return False
 
     def verify_certificate(self, cert_id: str) -> bool:
         if cert_id in self.revoked_certificates:
+            self._verification_cache[cert_id] = False
             return False
+        if cert_id in self._verification_cache:
+            return self._verification_cache[cert_id]
         certificate = self.issued_certificates.get(cert_id)
-        return certificate.is_valid() if certificate else False
+        result = certificate.is_valid() if certificate else False
+        if len(self._verification_cache) < self._cache_max_size:
+            self._verification_cache[cert_id] = result
+        return result
 
 
 class OrganizationPolicies:

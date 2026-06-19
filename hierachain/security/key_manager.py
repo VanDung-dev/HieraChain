@@ -10,8 +10,8 @@ import time
 import json
 import hashlib
 import secrets
-from typing import cast
 
+from hierachain.core.cache import AdvancedCache
 from hierachain.security.secure_logging import SecureLogger
 
 logger = SecureLogger("hierachain.security.key_manager")
@@ -49,7 +49,6 @@ class KeyManager:
         
         self.storage = storage_backend or {}  # In-memory fallback
         self.revoked_keys: set[str] = set()
-        from hierachain.core.caching import AdvancedCache
         self.key_cache = AdvancedCache(max_size=5000, eviction_policy="ttl")
         self.permission_cache = AdvancedCache(max_size=10000, eviction_policy="lru")
         self.cache_ttl = 300  # 5 minutes default TTL
