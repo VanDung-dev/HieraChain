@@ -25,7 +25,7 @@ os.environ["HRC_BLOCK_INTERVAL"] = "0.0"
 
 # Import Ledger components
 from hierachain.hierarchical import HierarchyManager
-from hierachain.domains.generic.utils import EntityTracer, CrossChainValidator
+from hierachain.domains.utils import EntityTracer, CrossChainValidator
 
 
 # Custom logger to capture all output
