@@ -227,19 +227,9 @@ class SecureLogger:
 
 
 # Pre-configured loggers for different modules
-def get_api_logger() -> SecureLogger:
-    """Get secure logger for API layer."""
-    return SecureLogger("hierachain.api")
-
-
 def get_security_logger() -> SecureLogger:
     """Get secure logger for security events."""
     return SecureLogger("hierachain.security")
-
-
-def get_audit_logger() -> SecureLogger:
-    """Get secure logger for audit events."""
-    return SecureLogger("hierachain.audit")
 
 
 def get_storage_logger() -> SecureLogger:

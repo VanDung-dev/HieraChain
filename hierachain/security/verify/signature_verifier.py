@@ -1,8 +1,8 @@
 """
 Signature Verification Module
 
-This module provides robust signature verification for Events and Transactions,
-supporting both Ed25519 (via PyNaCl) and ECDSA (via cryptography).
+Provides robust signature verification for Events,
+supporting Ed25519 (via PyNaCl) and ECDSA (via cryptography).
 """
 
 import json
@@ -17,7 +17,7 @@ logger = get_security_logger()
 
 class SignatureVerifier:
     """
-    Verifies signatures for Events and Transactions.
+    Verifies signatures for Events.
     Supports Ed25519 (default) and ECDSA algorithms.
     """
 
@@ -53,40 +53,39 @@ class SignatureVerifier:
         
         return self._verify_any(public_key, message_bytes, signature)
 
-    def verify_transaction_signature(self, tx: dict[str, Any]) -> bool:
+    def verify_embedded_signature(self, event: dict[str, Any]) -> bool:
         """
-        Verify the signature of a transaction.
+        Verify the signature of an event where the public key is embedded.
         
         Args:
-            tx: Transaction dictionary.
+            event: Event dictionary with signature and sender_public_key in details.
             
         Returns:
             True if valid, False otherwise.
         """
-        if 'signature' not in tx or not tx['signature']:
-            logger.debug("Transaction has no signature")
+        if 'signature' not in event or not event['signature']:
+            logger.debug("Event has no signature")
             return False
 
-        signature = tx['signature']
+        signature = event['signature']
         
-        public_key = tx.get('details', {}).get('sender_public_key')
+        public_key = event.get('details', {}).get('sender_public_key')
         if not public_key:
-            # Fallback: maybe the entity_id IS the public key? (unlikely for short IDs)
-            logger.warning("Cannot verify transaction: Public key not found in details")
+            logger.warning("Cannot verify event: Public key not found in details")
             return False
 
-        message_bytes = self._get_signable_transaction_content(tx)
+        message_bytes = self._get_signable_event_content(event)
         return self._verify_any(public_key, message_bytes, signature)
 
-    def verify_transaction_with_key(self, tx: dict[str, Any], public_key: str) -> bool:
+    def verify_event_with_key(self, event: dict[str, Any], public_key: str) -> bool:
         """
-        Verify transaction with an explicitly provided public key.
+        Verify event with an explicitly provided public key.
         """
-        if 'signature' not in tx or not tx['signature']:
+        if 'signature' not in event or not event['signature']:
             return False
         
-        signature = tx['signature']
-        message_bytes = self._get_signable_transaction_content(tx)
+        signature = event['signature']
+        message_bytes = self._get_signable_event_content(event)
         return self._verify_any(public_key, message_bytes, signature)
 
     def batch_verify(self, items: list[dict[str, Any]]) -> list[bool]:
@@ -122,10 +121,7 @@ class SignatureVerifier:
         if not isinstance(item_data, dict) or not isinstance(pk, str) or 'signature' not in item_data:
             return {}
 
-        if item_type == 'tx':
-            msg = self._get_signable_transaction_content(item_data)
-        else:
-            msg = self._get_signable_event_content(item_data)
+        msg = self._get_signable_event_content(item_data)
 
         return {
             'public_key': pk,
@@ -251,14 +247,4 @@ class SignatureVerifier:
 
         return SignatureVerifier.get_canonical_bytes(event_copy)
 
-    @staticmethod
-    def _get_signable_transaction_content(tx: dict[str, Any]) -> bytes:
-        """
-        Get canonical bytes for transaction signing.
-        Excludes 'signature'.
-        """
-        tx_copy = tx.copy()
-        if 'signature' in tx_copy:
-            del tx_copy['signature']
 
-        return SignatureVerifier.get_canonical_bytes(tx_copy)
