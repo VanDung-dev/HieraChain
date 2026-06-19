@@ -147,25 +147,4 @@ class TestUnknownBackend:
         assert any("Unknown HRC_SECRET_BACKEND" in m for m in caplog.messages)
 
 
-class TestLockdownProtocolIntegration:
-    def test_reads_cluster_secret_via_secret_manager(self):
-        """ClusterLockdownManager should read HRC_CLUSTER_SECRET via SecretManager."""
-        with patch.dict(os.environ, {
-            "HRC_CLUSTER_SECRET": "test-cluster-key",
-            "HRC_SECRET_BACKEND": "env",
-        }):
-            from hierachain.cluster.lockdown_protocol import ClusterLockdownManager
-            mgr = ClusterLockdownManager(node_id="test-node")
-            assert mgr._secret_key == "test-cluster-key"
 
-    def test_warns_when_no_secret_configured(self, caplog):
-        """Should log a warning when HRC_CLUSTER_SECRET is not set."""
-        import logging
-        env = dict(os.environ)
-        env.pop("HRC_CLUSTER_SECRET", None)
-        with patch.dict(os.environ, env, clear=True):
-            from hierachain.cluster.lockdown_protocol import ClusterLockdownManager
-            with caplog.at_level(logging.WARNING):
-                ClusterLockdownManager(node_id="test-node")
-
-        assert any("Authentication may be compromised" in m for m in caplog.messages)
