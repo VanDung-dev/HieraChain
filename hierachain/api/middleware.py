@@ -12,29 +12,10 @@ import threading
 from typing import Any, cast
 
 from fastapi import FastAPI, Request
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 
 logger = logging.getLogger(__name__)
-
-
-class PayloadLimitMiddleware(BaseHTTPMiddleware):
-    MAX_PAYLOAD_SIZE = 1 * 1024 * 1024
-
-    async def dispatch(self, request: Request, call_next):
-        if request.method in ("POST", "PUT", "PATCH"):
-            content_length = request.headers.get("Content-Length")
-            if content_length:
-                try:
-                    if int(content_length) > self.MAX_PAYLOAD_SIZE:
-                        return JSONResponse(
-                            status_code=413,
-                            content={"error": "Payload too large. Maximum size is 1MB."}
-                        )
-                except ValueError:
-                    pass
-        return await call_next(request)
 
 
 def _get_csp_for_docs(is_dev: bool) -> str:
