@@ -11,10 +11,6 @@ from hierachain.integration.enterprise import (
 )
 
 from hierachain.integration.types import (
-    Transaction,
-    BatchResult,
-    TxStatus,
-    HealthResponse,
     IntegrationError,
     MappingError,
     SyncStatus,
@@ -31,8 +27,4 @@ __all__ = [
     'MappingError',
     'SyncStatus',
     'SyncResult',
-    'Transaction',
-    'BatchResult',
-    'TxStatus',
-    'HealthResponse',
 ]
