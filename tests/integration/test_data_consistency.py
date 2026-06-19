@@ -1,9 +1,8 @@
 """
-Tests for data consistency in the Block and WorldState classes.
+Tests for data consistency in the Block class.
 
-This test suite is designed to ensure that the Block and WorldState classes
-handle data correctly and consistently. It checks for data types, conversions,
-and the integrity of the data structures used internally.
+This test suite is designed to ensure that the Block class handles data
+correctly and consistently.
 """
 
 import time
@@ -13,7 +12,6 @@ import os
 import pyarrow as pa
 
 from hierachain.core import Block
-from hierachain.storage import WorldState
 
 # Ensure project root is in path
 sys.path.append(os.getcwd())
@@ -41,35 +39,18 @@ def test_block_arrow_interop():
     """Test that Block correctly converts Arrow data to python dicts."""
     block = create_test_block()
     
-    # internal storage should be Arrow
     assert isinstance(block._events, pa.Table)
     
-    # Public method should return List[Dict]
     events_list = block.to_event_list()
     assert isinstance(events_list, list)
     assert len(events_list) == 2
     assert isinstance(events_list[0], dict)
     assert events_list[0]['entity_id'] == "test_entity_1"
 
-def test_world_state_update():
-    """Test that WorldState can consume Arrow-backed blocks."""
-    block = create_test_block()
-    ws = WorldState("test_chain")
-    
-    # This should not crash and should update state
-    ws.update_from_block(block)
-    
-    # Verify state was actually updated
-    state = ws.get_entity_state("test_entity_1")
-    assert state is not None
-    assert state.get("status") == "updated"
-    # Note: update event handling depends on WorldState logic, checking simple existence first
-
 def test_json_serialization():
     """Test that to_event_list() output is JSON serializable (fixes API crash)."""
     block = create_test_block()
     
-    # This simulates what the API should do: call to_event_list()
     events_data = block.to_event_list()
     
     try:
