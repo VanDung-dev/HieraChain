@@ -1,14 +1,10 @@
 """
 Integration tests for security modules.
 
-This module contains integration tests that verify interactions between different
-security components including KeyManager, KeyBackupManager, and MSP.
+Verifies interactions between KeyManager and MSP.
 """
 
-import json
-from unittest.mock import Mock, patch
-
-from hierachain.security import KeyManager, KeyBackupManager, HierarchicalMSP
+from hierachain.security import KeyManager, HierarchicalMSP
 
 
 
@@ -29,27 +25,7 @@ def test_end_to_end_key_lifecycle(benchmark):
         assert km.has_permission(api_key, "all") is True
         assert km.get_user(api_key) == "integration_test_user"
 
-        # Step 2: Backup the key using KeyBackupManager
-        config = {"enabled": True}
-        kb = KeyBackupManager(config)
-
-        # Mock encryption for predictable testing
-        with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
-            mock_aesgcm_instance = Mock()
-            mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
-            mock_aesgcm.return_value = mock_aesgcm_instance
-
-            # Convert key to bytes for backup (simulating internal representation)
-            key_bytes = api_key.encode('utf-8')
-            backup_id = kb.backup_keys(key_bytes, key_bytes, "api_key")
-
-            # Verify backup was created
-            assert backup_id.startswith("api_key_")
-
-            # Verify backup integrity
-            assert kb.verify_backup_integrity(backup_id) is True
-
-        # Step 3: Register entity in MSP using the key
+        # Step 2: Register entity in MSP using the key
         ca_config = {
             "root_cert": "integration-test-root",
             "intermediate_certs": ["integration-test-intermediate"],
@@ -101,19 +77,6 @@ def test_key_revocation_propagation(benchmark):
         # Verify key is initially valid
         assert km.is_valid(api_key) is True
 
-        # Create backup of the key
-        config = {"enabled": True}
-        kb = KeyBackupManager(config)
-
-        with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
-            mock_aesgcm_instance = Mock()
-            mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
-            mock_aesgcm.return_value = mock_aesgcm_instance
-
-            key_bytes = api_key.encode('utf-8')
-            backup_id = kb.backup_keys(key_bytes, key_bytes, "revocation_test")
-            assert backup_id.startswith("revocation_test_")
-
         # Register in MSP
         ca_config = {
             "root_cert": "revocation-test-root",
@@ -159,21 +122,6 @@ def test_multiple_module_interaction_under_load(benchmark):
                 f"user_{i}", ["read", "write"], {"app": f"LoadTestApp_{i}"}
             )
             keys.append(key)
-
-        # Backup all keys
-        config = {"enabled": True}
-        kb = KeyBackupManager(config)
-
-        with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
-            mock_aesgcm_instance = Mock()
-            mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
-            mock_aesgcm.return_value = mock_aesgcm_instance
-
-            backup_ids = []
-            for i, key in enumerate(keys):
-                key_bytes = key.encode('utf-8')
-                backup_id = kb.backup_keys(key_bytes, key_bytes, f"load_test_{i}")
-                backup_ids.append(backup_id)
 
         # Register entities in MSP
         ca_config = {
@@ -231,33 +179,6 @@ def test_security_modules_interoperability(benchmark):
 
         # Verify key
         assert km.is_valid(api_key) is True
-
-        # Create backup with KeyBackupManager
-        config = {"enabled": True}
-        kb = KeyBackupManager(config)
-
-        with patch('hierachain.security.key_backup_manager.AESGCM') as mock_aesgcm:
-            mock_aesgcm_instance = Mock()
-            mock_aesgcm_instance.encrypt.return_value = b"encrypted_data"
-            # Fix: Mock decrypt to return proper JSON string that matches real behavior
-            # The keys should be hex-encoded strings as they are stored in the backup
-            mock_aesgcm_instance.decrypt.return_value = json.dumps({
-                "public_key": api_key.encode().hex(),  # Store as hex string
-                "private_key": "a" * 64,  # Valid 32-byte hex string for private key
-                "key_type": "interop_test"
-            }).encode()
-            mock_aesgcm.return_value = mock_aesgcm_instance
-
-            key_bytes = api_key.encode('utf-8')
-            backup_id = kb.backup_keys(key_bytes, key_bytes, "interop_test")
-
-            # Restore the key
-            restored_data = kb.restore_keys(backup_id)
-            # After restoration, keys are bytes, not UTF-8 strings
-            restored_key = restored_data["public_key"].decode('utf-8')
-
-            # Verify restored key matches original
-            assert restored_key == api_key
 
         # Use in MSP
         ca_config = {

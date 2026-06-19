@@ -55,24 +55,24 @@ class TestSignatureVerifier:
         
         assert verifier.verify_event_signature(signed_event, keypair.public_key) is False
 
-    def test_verify_transaction_signature(self, verifier, keypair):
-        tx = {
-            "tx_id": "tx_123",
+    def test_verify_embedded_signature(self, verifier, keypair):
+        event = {
+            "event_id": "evt_123",
             "entity_id": "test_user",
-            "amount": 100,
+            "event": "status_update",
             "details": {
                 "sender_public_key": keypair.public_key
             }
         }
 
-        message = SignatureVerifier.get_canonical_bytes(tx)
+        message = SignatureVerifier.get_canonical_bytes(event)
         signature = keypair.sign(message)
         
-        signed_tx = tx.copy()
-        signed_tx['signature'] = signature
+        signed_event = event.copy()
+        signed_event['signature'] = signature
         
         # Verify using extracted key
-        assert verifier.verify_transaction_signature(signed_tx) is True
+        assert verifier.verify_embedded_signature(signed_event) is True
 
     def test_batch_verify(self, verifier, keypair):
         # Create multiple events
