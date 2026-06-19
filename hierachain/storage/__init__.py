@@ -1,8 +1,10 @@
 """
 Storage module for HieraChain Ledger.
+
+Provides SQLAlchemy-based persistent storage via SqlStorageBackend
+and in-memory storage via MemoryStorage.
 """
 
-from hierachain.storage.world_state import WorldState
-from hierachain.storage.memory_storage import MemoryStorage
+from hierachain.storage.sql_backend import SqlStorageBackend
 
-__all__ = ['WorldState', 'MemoryStorage']
+__all__ = ["SqlStorageBackend"]
