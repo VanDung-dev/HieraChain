@@ -206,9 +206,12 @@ class OrderingProcessor:
     ) -> None:
         """Execute parallel batch signature verification using the process pool."""
         try:
-            results = await process_pool.run_task(
-                verify_batch_signatures, verification_items
-            )
+            if len(verification_items) < 15:
+                results = verify_batch_signatures(verification_items)
+            else:
+                results = await process_pool.run_task(
+                    verify_batch_signatures, verification_items
+                )
             for event, is_valid in zip(events_to_verify, results):
                 if not is_valid:
                     event.status = EventStatus.REJECTED
@@ -218,6 +221,7 @@ class OrderingProcessor:
                     )
         except Exception as e:
             logger.error("Batch verification failed: %s", e)
+
 
     async def _handle_processed_batch(self, batch: list[PendingEvent]) -> None:
         """
