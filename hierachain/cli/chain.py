@@ -9,7 +9,7 @@ from hierachain.cli.store import (
     get_main_chain, get_sub_chain, save_chain_to_memory,
     save_chains_to_file, get_all_chains
 )
-from hierachain.domains.generic.chains.domain_chain import DomainChain
+from hierachain.domains.chains.domain_chain import DomainChain
 
 
 @click.group()
