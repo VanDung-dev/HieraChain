@@ -1,8 +1,8 @@
 """
-Generic utilities for domain operations.
+Backward-compat re-export shim — prefer `hierachain.domains.utils` imports.
 """
 
-from hierachain.domains.generic.utils.entity_tracer import EntityTracer
-from hierachain.domains.generic.utils.cross_chain_validator import CrossChainValidator
+from hierachain.domains.utils import EntityTracer, CrossChainValidator
 
-__all__ = ['EntityTracer', 'CrossChainValidator']
+
+__all__ = ["EntityTracer", "CrossChainValidator"]

@@ -1,8 +1,8 @@
 """
-Generic chain implementations.
+Backward-compat re-export shim — prefer `hierachain.domains.chains` imports.
 """
 
-from hierachain.domains.generic.chains.base_chain import BaseChain
-from hierachain.domains.generic.chains.domain_chain import DomainChain
+from hierachain.domains.chains import BaseChain, DomainChain
 
-__all__ = ['BaseChain', 'DomainChain']
+
+__all__ = ["BaseChain", "DomainChain"]

@@ -8,8 +8,8 @@ custom domain-specific chains.
 
 from typing import Any
 
-from hierachain.domains.generic.chains.base_chain import BaseChain
-from hierachain.domains.generic.events.domain_event import (
+from hierachain.domains.chains.base_chain import BaseChain
+from hierachain.domains.events.domain_event import (
     create_resource_allocation,
     create_quality_check,
     create_status_update,

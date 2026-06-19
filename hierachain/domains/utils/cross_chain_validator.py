@@ -11,7 +11,7 @@ import re
 from typing import Any, Callable, cast
 
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.domains.generic.utils.entity_tracer import EntityTracer
+from hierachain.domains.utils.entity_tracer import EntityTracer
 from hierachain.security.secure_logging import get_security_logger
 
 logger = get_security_logger()
