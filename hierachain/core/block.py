@@ -8,11 +8,12 @@ This module implements the Block class following the Ledger guidelines:
 """
 
 import time
-import json
+import hashlib
 import logging
 from typing import Any
 import pyarrow as pa
 import pyarrow.compute as pc
+import orjson
 
 from hierachain.core import schemas
 from hierachain.core.utils import MerkleTree, generate_hash
@@ -29,6 +30,10 @@ class Block:
     - `self.events` property exposes this Table.
     - Hashing uses strict JSON canonicalization.
     """
+    __slots__ = (
+        'index', 'timestamp', 'previous_hash', 'nonce',
+        'merkle_root', 'creator_id', 'signature', '_events', 'hash',
+    )
 
     def __init__(
         self,
@@ -41,17 +46,6 @@ class Block:
         creator_id: str | None = None,
         signature: str | None = None
     ):
-        """
-        Initialize a new block.
-
-        Args:
-            index: Block index in the chain
-            events: List of event dicts OR an existing Arrow Table
-            timestamp: Block creation timestamp (defaults to current time)
-            previous_hash: Hash of the previous block
-            nonce: Nonce value
-            merkle_root: Merkle root of the events (optional)
-        """
         self.index = index
         self.timestamp = timestamp or time.time()
         self.previous_hash = previous_hash
@@ -62,20 +56,16 @@ class Block:
         # Handle events based on input type
         if isinstance(events, pa.Table):
             self._events = events
-            if merkle_root is None:
-                events_list = table_to_list_of_dicts(self._events)
-                self.merkle_root = calculate_merkle_from_list(events_list)
-            else:
-                self.merkle_root = merkle_root
+            self.merkle_root = merkle_root if merkle_root is not None else calculate_merkle_from_arrow(self._events)
         else:
-            # Calculate Merkle Root from list only if merkle_root is not provided
             if merkle_root is not None:
                 self.merkle_root = merkle_root
+                self._events = convert_events_to_arrow(events)
             else:
-                self.merkle_root = calculate_merkle_from_list(events)
-            # Convert to Arrow Table for efficient storage
-            self._events = convert_events_to_arrow(events)
-            
+                processed, data_list = _prepare_events(events)
+                self.merkle_root = calculate_merkle_from_data(data_list)
+                self._events = _build_arrow_from_processed(processed)
+
         self.hash = self.calculate_hash()
 
     @property
@@ -85,8 +75,7 @@ class Block:
 
     def calculate_merkle_root(self) -> str:
         """Calculate the Merkle Root of the block's events."""
-        events_list = table_to_list_of_dicts(self._events)
-        return calculate_merkle_from_list(events_list)
+        return calculate_merkle_from_arrow(self._events)
 
     def calculate_hash(self) -> str:
         """Calculate the hash of the block."""
@@ -233,32 +222,39 @@ def _serialize_event_payload(event: dict[str, Any]) -> bytes:
         for k, v in event.items()
         if not _should_exclude_from_payload(k, v)
     }
-    # Use sort_keys and strict separators for deterministic hashing
-    return json.dumps(
-        payload, sort_keys=True, separators=(',', ':')
-    ).encode('utf-8')
+    return orjson.dumps(payload, option=orjson.OPT_SORT_KEYS)
 
 
 def _convert_events_to_arrow(events_list: list[dict[str, Any]]) -> pa.Table:
-    """
-    Convert list of dicts to Arrow Table.
+    """Convert list of dicts to Arrow Table."""
+    processed, _ = _prepare_events(events_list)
+    return _build_arrow_from_processed(processed)
 
-    Handles:
-    - details: dict -> list of tuples for Map<String, String>
-    - data: full payload as binary JSON
-    """
-    schema = schemas.get_event_schema()
-    if not events_list:
-        return pa.table({name: [] for name in schema.names}, schema=schema)
 
-    processed_events = []
+def convert_events_to_arrow(events_list: list[dict[str, Any]]) -> pa.Table:
+    """Convert list of dicts to Arrow Table."""
+    return _convert_events_to_arrow(events_list)
+
+
+def _prepare_events(events_list: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[bytes]]:
+    """Pre-process events: compute data bytes + Arrow-friendly details. Returns (processed_events, data_bytes)."""
+    processed = []
+    data_list = []
     for e in events_list:
         ev = e.copy()
-        # Process fields for Arrow storage
         ev['details'] = _process_event_details(ev.get('details'))
-        ev['data'] = _serialize_event_payload(e)
-        processed_events.append(ev)
+        data = _serialize_event_payload(e)
+        ev['data'] = data
+        processed.append(ev)
+        data_list.append(data)
+    return processed, data_list
 
+
+def _build_arrow_from_processed(processed_events: list[dict[str, Any]]) -> pa.Table:
+    """Build Arrow table from pre-processed event dicts (avoids re-serialization)."""
+    schema = schemas.get_event_schema()
+    if not processed_events:
+        return pa.table({name: [] for name in schema.names}, schema=schema)
     pydict = {
         name: [row.get(name) for row in processed_events]
         for name in schema.names
@@ -266,9 +262,20 @@ def _convert_events_to_arrow(events_list: list[dict[str, Any]]) -> pa.Table:
     return pa.table(pydict, schema=schema)
 
 
-def convert_events_to_arrow(events_list: list[dict[str, Any]]) -> pa.Table:
-    """Convert list of dicts to Arrow Table."""
-    return _convert_events_to_arrow(events_list)
+def calculate_merkle_from_data(data_list: list[bytes]) -> str:
+    """Compute Merkle root from pre-serialized data bytes (no double JSON encoding)."""
+    if not data_list:
+        return MerkleTree([]).get_root()
+    leaves = [hashlib.sha256(d).hexdigest() for d in data_list]
+    return MerkleTree(leaves=leaves).get_root()
+
+
+def calculate_merkle_from_arrow(table: pa.Table) -> str:
+    """Compute Merkle root directly from Arrow table's pre-serialized data column."""
+    if 'data' in table.column_names:
+        data_list = table.column('data').to_pylist()
+        return calculate_merkle_from_data(data_list)
+    return calculate_merkle_from_list(table_to_list_of_dicts(table))
 
 
 def calculate_merkle_from_list(events_list: list[dict[str, Any]]) -> str:
@@ -285,8 +292,8 @@ def _recover_from_data_column(row: dict[str, Any]) -> dict[str, Any] | None:
     if not isinstance(data, (str, bytes, bytearray)):
         return None
     try:
-        return json.loads(data)
-    except (json.JSONDecodeError, TypeError) as e:
+        return orjson.loads(data)
+    except (ValueError, TypeError) as e:
         logger.debug("JSON decode fallback: %s", e)
         return None
 

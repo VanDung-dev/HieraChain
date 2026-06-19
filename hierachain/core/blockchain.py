@@ -42,6 +42,11 @@ class Blockchain:
     guidelines by using events (not transactions) and supporting multiple
     events per block.
     """
+    __slots__ = (
+        'name', 'lock', '_lock_id', '_deadlock_detector',
+        'chain', 'pending_events', 'total_events',
+        'event_type_counts', 'entity_event_index',
+    )
 
     def __init__(self, name: str = "Blockchain") -> None:
         """
