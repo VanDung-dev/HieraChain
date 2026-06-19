@@ -13,7 +13,8 @@ import pytest
 import pyarrow as pa
 from unittest.mock import patch
 
-from hierachain.security import PolicyCondition, ComparisonOperator, _hash_context
+from hierachain.security import PolicyCondition, ComparisonOperator
+from hierachain.security.policy_engine import _hash_context
 from hierachain.risk_management import AuditEvent, AuditEventType, AuditSeverity
 from hierachain.error_mitigation import APIValidator, ErrorClassifier
 
