@@ -37,6 +37,7 @@ class ProofOfFederation(BaseConsensus):
     - Fault Tolerance: If a leader misses their turn, the protocol can skip to the next
     (implementation handled via timeout/view-change logic in higher layers).
     """
+    __slots__ = ('validators', 'validator_metadata', '_signing_key')
 
     def __init__(self, name: str = "ProofOfFederation",
                  signing_key_hex: str | None = None):
