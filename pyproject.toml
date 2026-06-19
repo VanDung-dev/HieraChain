@@ -51,6 +51,7 @@ dependencies = [
     "idna==3.18",
     "httptools==0.8.0",
     "watchfiles==1.2.0",
+    "orjson==3.11.9",
 ]
 dynamic = ["version"]
 
