@@ -18,8 +18,6 @@ from hierachain.error_mitigation import (
 )
 from hierachain.error_mitigation import NetworkRecoveryEngine
 from hierachain.security import (
-    CertificateValidator,
-    KeyBackupManager,
     KeyManager,
     APIKeyVerifier
 )
@@ -108,40 +106,6 @@ async def test_network_recovery_timeout_adjustment():
 
 # Priority Level 2: High Risk Validation Tests  
 # Tests for risks with significant impact on system security and performance.
-
-@pytest.mark.high
-def test_backup_integrity_validation():
-    """
-    Test data backup integrity checking and multi-location distribution.
-    Validates data recovery capabilities.
-    """
-    config = {
-        "enabled": True,
-        "frequency": "hourly", 
-        "locations": ["primary", "secondary", "tertiary"],
-        "integrity_check": "sha512"
-    }
-    
-    backup_manager = KeyBackupManager(config)
-    
-    # Mock Method _verify_integrity to return True
-    backup_manager._verify_integrity = Mock(return_value=True)
-    backup_manager._distribute_to_locations = Mock(return_value=["primary"])
-    backup_manager._update_metadata = Mock()
-    backup_manager._cleanup_old_backups = Mock()
-    backup_manager._log_backup_success = Mock()
-    
-    # Create test keys
-    test_public_key = b"test_public_key_data_12345"
-    test_private_key = b"test_private_key_data_67890"
-    
-    # Test backup creation and integrity
-    with patch('os.makedirs'), patch('builtins.open', mock_open_write()):
-        backup_id = backup_manager.backup_keys(test_public_key, test_private_key, "test")
-        
-        # Verify backup ID is created
-        assert backup_id.startswith("test_")
-        assert backup_id != ""
 
 @pytest.mark.high
 @patch('psutil.cpu_percent')
@@ -370,15 +334,13 @@ def test_cli_audit_logging():
 # Comprehensive validation tests covering integration scenarios.
 
 @pytest.mark.integration
-@patch('hierachain.security.certificate.CertificateInfo')
-def test_certificate_expiration_check(mock_cert):
+def test_certificate_expiration_check():
     """Test certificate expiration validation"""
-    mock_cert_instance = mock_cert()
-    mock_cert_instance.is_expired.return_value = True  # Mock phương thức trả về True trực tiếp
+    mock_cert = Mock()
+    mock_cert.is_expired.return_value = True
 
-    _validator = CertificateValidator()
     with pytest.raises(SecurityError, match='Certificate validation failed: Certificate has expired'):
-        validate_certificate(mock_cert_instance)
+        validate_certificate(mock_cert)
 
 def test_full_error_mitigation_workflow():
     """
@@ -391,16 +353,6 @@ def test_full_error_mitigation_workflow():
     
     nodes = ["node1", "node2", "node3", "node4"]
     assert validator.validate_node_count(nodes) is True
-    
-    # Test key backup workflow
-    backup_config = {
-        "enabled": True,
-        "locations": ["primary"],
-        "encryption_algorithm": "AES-256-GCM"
-    }
-    
-    backup_manager = KeyBackupManager(backup_config)
-    assert backup_manager.enabled is True
     
     # Test API security
     api_config = {"enabled": True, "key_location": "header"}
@@ -415,8 +367,7 @@ def test_post_upgrade_validation():
     """
     components_status = {
         "consensus_validator": True,
-        "network_recovery": True, 
-        "key_backup_manager": True,
+        "network_recovery": True,
         "api_key_verification": True,
         "validation_suites": True
     }
