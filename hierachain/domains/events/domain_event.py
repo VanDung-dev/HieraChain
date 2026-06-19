@@ -9,7 +9,7 @@ Ledger guidelines and can be used as templates for custom domain implementations
 import time
 from typing import Any
 
-from hierachain.domains.generic.events.base_event import BaseEvent
+from hierachain.domains.events.base_event import BaseEvent
 
 
 class DomainEvent(BaseEvent):

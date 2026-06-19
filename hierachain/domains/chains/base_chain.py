@@ -12,7 +12,7 @@ from typing import Any, Callable
 from abc import ABC, abstractmethod
 
 from hierachain.hierarchical.sub_chain import SubChain
-from hierachain.domains.generic.events.base_event import BaseEvent
+from hierachain.domains.events.base_event import BaseEvent
 
 logger = logging.getLogger(__name__)
 
