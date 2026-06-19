@@ -274,39 +274,7 @@ class NetworkClient:
         return len(self._peers)
 
 
-class NetworkClientSync:
-    """
-    Synchronous wrapper for NetworkClient.
 
-    Example:
-        with NetworkClientSync(config) as client:
-            status = client.get_network_status()
-            print(status)
-    """
-
-    def __init__(self, config: NetworkClientConfig | None = None) -> None:
-        """Initialize sync network client wrapper."""
-        self._async_client = NetworkClient(config)
-        self._loop: asyncio.AbstractEventLoop | None = None
-
-    def __enter__(self) -> NetworkClientSync:
-        """Context manager entry."""
-        loop = asyncio.new_event_loop()
-        self._loop = loop
-        loop.run_until_complete(self._async_client.start())
-        return self
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: Any,
-    ) -> None:
-        """Context manager exit."""
-        if self._loop:
-            self._loop.run_until_complete(self._async_client.stop())
-            self._loop.close()
-            self._loop = None
 
     def get_network_status(self) -> NetworkStatus:
         """Get current network status."""
