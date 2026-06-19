@@ -16,7 +16,6 @@ from typing import Any
 
 from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
 from hierachain.security.security_utils import KeyPair
-from hierachain.config.settings import Settings
 
 # Ensure project root is in path
 sys.path.append(os.getcwd())
@@ -129,7 +128,7 @@ async def run_benchmark(event_count: int, workers: int, batch_size: int):
 def main():
     parser = argparse.ArgumentParser(description="HieraChain Throughput Benchmark")
     parser.add_argument("--events", type=int, default=1000, help="Number of events")
-    parser.add_argument("--workers", type=int, default=Settings.MAX_WORKERS, help="Number of workers")
+    parser.add_argument("--workers", type=int, default=4, help="Number of workers")
     parser.add_argument("--batch-size", type=int, default=100, help="Events per block")
     
     args = parser.parse_args()
