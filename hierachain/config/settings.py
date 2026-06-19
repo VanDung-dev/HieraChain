@@ -58,7 +58,6 @@ class Settings:
     
     # Storage settings - memory, redis, sqlite
     DEFAULT_STORAGE_BACKEND = os.getenv("HRC_STORAGE_BACKEND", "sqlite")
-    WORLD_STATE_CACHE_SIZE = 1000
     
     # Advanced Caching settings
     ADVANCED_CACHING_ENABLED = True
@@ -70,11 +69,6 @@ class Settings:
     ENTITY_CACHE_POLICY = "lfu"
     ENTITY_TTL = 3600  # 1 hour in seconds
     
-    # Parallel Processing settings
-    PARALLEL_PROCESSING_ENABLED = True
-    MAX_WORKERS = None  # Auto-detect based on CPU count (defaults to 50%)
-    PROCESSING_CHUNK_SIZE = 100
-
     # Hard limit for DoS protection
     EVENT_POOL_MAX_SIZE = int(os.getenv("HRC_EVENT_POOL_MAX_SIZE", "10000"))
 
@@ -254,20 +248,6 @@ class Settings:
     )
     CROSS_LEVEL_SYNC_BATCH_SIZE = int(os.getenv("HRC_CROSS_LEVEL_BATCH", "100"))
     CROSS_LEVEL_SYNC_TIMEOUT = float(os.getenv("HRC_CROSS_LEVEL_TIMEOUT", "30.0"))
-
-    @classmethod
-    def get_storage_config(cls) -> dict[str, Any]:
-        """Get storage configuration"""
-        return {
-            "backend": cls.DEFAULT_STORAGE_BACKEND,
-            "cache_size": cls.WORLD_STATE_CACHE_SIZE,
-            "database_url": cls.DATABASE_URL,
-            "redis": {
-                "host": cls.REDIS_HOST,
-                "port": cls.REDIS_PORT,
-                "db": cls.REDIS_DB
-            }
-        }
 
     @classmethod
     def get_consensus_config(cls) -> dict[str, Any]:
