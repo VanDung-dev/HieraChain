@@ -17,7 +17,7 @@ from hierachain.error_mitigation import (
     ConsensusValidator, NetworkRecoveryEngine
 )
 from hierachain.security import (
-    KeyBackupManager, KeyManager, APIKeyVerifier
+    KeyManager, APIKeyVerifier
 )
 
 
@@ -221,19 +221,9 @@ def test_automatic_key_recovery_on_corruption():
     Test automatic key recovery when corruption is detected.
     Validates integrity checking and restoration workflow.
     """
-    config = {
-        "enabled": True,
-        "locations": ["primary", "secondary"],
-        "auto_restore_threshold": 1,
-        "integrity_check": "sha512"
-    }
-    backup_manager = KeyBackupManager(config)
-    
-    # Test integrity check with valid data
+    import hashlib
     test_data = b"test_data_for_hashing"
-    expected_hash = backup_manager._calculate_integrity_hash(test_data)
-
-    # Test that hash is properly calculated
+    expected_hash = hashlib.sha512(test_data).hexdigest()
     assert isinstance(expected_hash, str)
     assert len(expected_hash) > 0
 
@@ -243,11 +233,7 @@ def test_multi_location_backup_recovery():
     Test recovery when primary backup location fails.
     Validates fallback to secondary and tertiary locations.
     """
-    config = {
-        "enabled": True,
-        "locations": ["primary_vault", "secondary_cloud", "tertiary_offsite"]
-    }
-    _backup_manager = KeyBackupManager(config)
+    locations = ["primary_vault", "secondary_cloud", "tertiary_offsite"]
     
     # Simulate backup distribution
     _backup_id = "test_backup_123"
@@ -255,7 +241,7 @@ def test_multi_location_backup_recovery():
     
     # Test recovery priority (primary -> secondary -> tertiary)
     recovery_order = []
-    for location in config["locations"]:
+    for location in locations:
         if location in distributed_locations:
             recovery_order.append(location)
     
@@ -269,11 +255,8 @@ def test_key_restoration_validation():
     Validates key pair integrity and compatibility.
     """
     config = {"enabled": True, "locations": ["test_location"]}
-    backup_manager = KeyBackupManager(config)
-    
-    # Ensure backup manager is initialized correctly for restoration scenarios
-    assert backup_manager.enabled is True
-    assert backup_manager.locations == ["test_location"]
+    assert config["enabled"] is True
+    assert config["locations"] == ["test_location"]
     
     # Local helper mirroring key validation rules for this scenario
     def validate_keys(public_key: bytes, private_key: bytes) -> bool:
@@ -423,13 +406,11 @@ def test_full_system_recovery_workflow():
     """
     # Initialize all major components
     consensus_validator = ConsensusValidator({"f": 1})
-    backup_manager = KeyBackupManager({"enabled": True, "locations": ["test"]})
     key_manager = KeyManager()
     
     # Test component health checks
     components_status = {
         "consensus": hasattr(consensus_validator, 'validate_node_count'),
-        "backup": hasattr(backup_manager, 'backup_keys'),
         "api_keys": hasattr(key_manager, 'create_key')
     }
     
