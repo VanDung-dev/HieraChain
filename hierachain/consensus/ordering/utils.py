@@ -39,13 +39,20 @@ def _orjson_default(obj: Any) -> Any:
 
 def generate_event_id(event_data: dict[str, Any], channel_id: str) -> str:
     """Generate unique event ID"""
-    json_bytes = orjson.dumps(event_data, default=_orjson_default, option=orjson.OPT_SORT_KEYS)
-    data = f"{channel_id}:{json_bytes.decode('utf-8')}:{time.time()}"
-    return hashlib.sha256(data.encode()).hexdigest()[:16]
+    json_bytes = orjson.dumps(event_data, default=_orjson_default)
+    h = hashlib.sha256()
+    h.update(channel_id.encode('utf-8'))
+    h.update(json_bytes)
+    import struct
+    h.update(struct.pack("<d", time.time()))
+    return h.hexdigest()[:16]
 
 
 def verify_event_signature(event: PendingEvent, certification: dict[str, Any]) -> None:
     """Verify event signature if sender and signature are provided."""
+    if getattr(event, 'signature_verified', False):
+        return
+
     signature = event.event_data.get("signature")
     sender = event.event_data.get("sender")
 
