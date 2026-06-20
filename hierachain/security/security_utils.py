@@ -12,6 +12,9 @@ from typing import Tuple, Any
 from nacl.signing import SigningKey, VerifyKey
 from nacl.encoding import HexEncoder
 from nacl.exceptions import BadSignatureError
+from concurrent.futures import ThreadPoolExecutor
+
+_verify_thread_pool = ThreadPoolExecutor(max_workers=4)
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +159,7 @@ def _verify_single_item(item: dict[str, Any]) -> bool:
 
 def verify_batch_signatures(items: list[dict[str, Any]]) -> list[bool]:
     """
-    Verify a batch of signatures, designed for multiprocessing.
+    Verify a batch of signatures, designed for multiprocessing/multithreading.
     
     Args:
         items: List of dicts, each containing:
@@ -167,4 +170,6 @@ def verify_batch_signatures(items: list[dict[str, Any]]) -> list[bool]:
     Returns:
         List of booleans corresponding to validity of each item.
     """
-    return [_verify_single_item(item) for item in items]
+    if len(items) < 15:
+        return [_verify_single_item(item) for item in items]
+    return list(_verify_thread_pool.map(_verify_single_item, items))
