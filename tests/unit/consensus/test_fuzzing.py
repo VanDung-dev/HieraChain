@@ -70,9 +70,24 @@ def cleanup_service(service):
     """Cleanup OrderingService after test."""
     
     service.shutdown()
-    data_dir = os.path.join(os.getcwd(), "data", "test_fuzzing")
-    if os.path.exists(data_dir):
-        shutil.rmtree(data_dir, ignore_errors=True)
+    config = getattr(service, 'config', None)
+    if config:
+        storage_dir = config.get("storage_dir", "")
+        db_url = config.get("db_url", "")
+        # Remove only the specific DB file to avoid races with concurrent tests
+        if db_url.startswith("sqlite:///"):
+            db_path = db_url[len("sqlite:///"):]
+            if os.path.exists(db_path):
+                try:
+                    os.remove(db_path)
+                except OSError:
+                    pass
+        # Remove storage_dir only if it's empty and under data/
+        if os.path.exists(storage_dir) and "/data/test_fuzzing" in storage_dir:
+            try:
+                os.rmdir(storage_dir)
+            except OSError:
+                pass
 
 
 # === Fuzzing Tests ===
