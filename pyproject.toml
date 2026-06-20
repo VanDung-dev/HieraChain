@@ -64,7 +64,7 @@ doc =[
     "pymdown-extensions>=10.21.3",
 ]
 dev = [
-    "pytest>=9.0.2",
+    "pytest>=9.0.3",
     "pytest-asyncio>=1.4.0",
     "pytest-benchmark>=5.2.3",
     "pytest-html>=4.2.0",
