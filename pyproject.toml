@@ -65,8 +65,7 @@ doc =[
     "pymdown-extensions>=10.21.3",
 ]
 dev = [
-    "pip>=26.1.2",
-    "pytest>=9.0.3",
+    "pytest>=9.0.2",
     "pytest-asyncio>=1.4.0",
     "pytest-benchmark>=5.2.3",
     "pytest-html>=4.2.0",
@@ -74,9 +73,7 @@ dev = [
     "hypothesis>=6.155.2",
     "build>=1.5.0",
     "twine>=6.2.0",
-    "websockets>=16.0",
-    "wheel>=0.47.0",
-    "vulture>=2.16"
+    "websockets>=16.0"
 ]
 
 [project.scripts]
