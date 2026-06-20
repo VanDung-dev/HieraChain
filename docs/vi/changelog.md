@@ -6,6 +6,25 @@ icon: material/history
 
 # Changelog
 
+## v0.0.5 (2026-06-20)
+
+Phiên bản này tập trung vào cải thiện core package `hierachain/`, bao gồm thay thế `ipfshttpclient` bằng `httpx` cho Kubo RPC, tạo sub-chain idempotent, củng cố toàn vẹn chain, persist block và xử lý an toàn các trường hợp biên.
+
+??? note "Improvements (6)"
+
+    * **Kubo RPC Migration**: Thay thế `ipfshttpclient` bằng `httpx` trong `hierachain/api/storage/ipfs_client.py`, thực thi IPFS operations trực tiếp qua Kubo HTTP RPC API. Thêm `_parse_multiaddr` để trích xuất host/port từ multiaddress strings. Refactor core operations (upload, download, pin, unpin, list_pins, stats) sang `httpx.Client` POST requests. Loại bỏ `_IPFSClientContext` wrapper class.
+    * **Idempotent Sub-Chain Creation**: API v1 (`hierachain/api/v1/endpoints.py`) kiểm tra sub-chain tồn tại trước khi tạo, trả về `201 Created` với audit trail `"already_exists"` cho duplicate. Xử lý `409 Conflict` khi `manager.add_sub_chain` báo duplicate qua `ValueError`.
+    * **Chain Integrity Hardening**: Thêm `_verify_chain_links()` trong `hierachain/consensus/ordering/storage.py` để xác thực chuỗi `previous_hash` giữa các block. `_block_from_dict` raise `ValueError` khi computed hash mismatch stored hash, thay vì chỉ log error.
+    * **Event Enrichment & Block Persistence**: Ordering service (`hierachain/consensus/ordering/service.py`) tiêm `event_id` vào `event_data` payload trước khi tạo pending event. Recovery (`recovery.py`) ưu tiên `event_id` từ enriched `event_data`. Sub-chain finalize (`hierachain/hierarchical/sub_chain.py`) persist block qua storage handler, đảm bảo rehydration giữ nguyên consensus events.
+    * **Block Overwrite**: `hierachain/storage/sql_backend.py` — `save_block` query existing block theo `index`/`chain_name`, xóa và ghi đè thay vì silent `UNIQUE constraint` handling.
+    * **Zero Children Safeguard**: Rebalancer (`hierachain/hierarchical/rebalancer.py`) trả về `0` an toàn khi `num_children <= 0`, ngăn lỗi modulo-by-zero.
+
+??? warning "Fix (1)"
+
+    * **Integrity Check Locking**: Di chuyển post-rehydration chain integrity validation ra ngoài lock trong `hierachain/hierarchical/sub_chain.py`. Downgrade mismatch log từ error xuống warning để tính đến pending consumer thread blocks.
+
+---
+
 ## v0.0.4 (2026-05-25)
 
 Phiên bản này tập trung vào hạ tầng mạng cấp production, toàn vẹn mật mã học và kiểm thử stress doanh nghiệp, giới thiệu Node Identity với keypairs Ed25519/Curve25519, mã hóa ZeroMQ CURVE cho P2P, endpoint API v3 cho event an toàn, bộ kiểm thử stress/chaos toàn diện, hỗ trợ Podman/OrbStack và tái cấu trúc tài liệu song ngữ.

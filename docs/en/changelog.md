@@ -6,6 +6,25 @@ icon: material/history
 
 # Changelog
 
+## v0.0.5 (2026-06-20)
+
+This release focuses on core `hierachain/` package improvements, including replacing `ipfshttpclient` with `httpx` for Kubo RPC, idempotent sub-chain creation, chain integrity hardening, block persistence, and safe edge-case handling.
+
+??? note "Improvements (6)"
+
+    * **Kubo RPC Migration**: Replaced `ipfshttpclient` with `httpx` in `hierachain/api/storage/ipfs_client.py`, executing IPFS operations directly via Kubo HTTP RPC API. Added `_parse_multiaddr` helper for host/port extraction from multiaddress strings. Refactored core operations (upload, download, pin, unpin, list_pins, stats) to use `httpx.Client` POST requests. Removed `_IPFSClientContext` wrapper class.
+    * **Idempotent Sub-Chain Creation**: API v1 (`hierachain/api/v1/endpoints.py`) checks for existing sub-chain before creation, returns `201 Created` with `"already_exists"` audit trail for duplicates. Returns `409 Conflict` when `manager.add_sub_chain` raises `ValueError` on duplicate.
+    * **Chain Integrity Hardening**: Added `_verify_chain_links()` in `hierachain/consensus/ordering/storage.py` to validate `previous_hash` chain of blocks. `_block_from_dict` raises `ValueError` on computed hash mismatch instead of merely logging an error.
+    * **Event Enrichment & Block Persistence**: Ordering service (`hierachain/consensus/ordering/service.py`) injects `event_id` into `event_data` payload before creating pending events. Recovery (`recovery.py`) prioritizes enriched `event_data` over calculated fallback. Sub-chain finalize (`hierachain/hierarchical/sub_chain.py`) persists blocks via storage handler, ensuring rehydration retains consensus events.
+    * **Block Overwrite**: `hierachain/storage/sql_backend.py` — `save_block` queries for existing blocks by `index`/`chain_name`, deletes and replaces them instead of silently handling `UNIQUE constraint` violations.
+    * **Zero Children Safeguard**: Rebalancer (`hierachain/hierarchical/rebalancer.py`) safely returns `0` when `num_children <= 0`, preventing modulo-by-zero errors.
+
+??? warning "Fix (1)"
+
+    * **Integrity Check Locking**: Moved post-rehydration chain integrity validation outside the lock in `hierachain/hierarchical/sub_chain.py`. Downgraded mismatch log from error to warning to account for pending consumer thread blocks.
+
+---
+
 ## v0.0.4 (2026-05-25)
 
 This release focuses on production-grade networking infrastructure, cryptographic integrity, and enterprise-grade stress testing, introducing Node Identity with Ed25519/Curve25519 keypairs, ZeroMQ CURVE encryption for P2P, API v3 secure event submission, comprehensive stress/chaos testing suite, Podman/OrbStack support, and dual-language documentation restructuring.
