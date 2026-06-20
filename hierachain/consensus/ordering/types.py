@@ -35,6 +35,7 @@ class PendingEvent:
     received_at: float
     status: EventStatus
     certification_result: dict[str, Any] | None = None
+    signature_verified: bool = False
     
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""

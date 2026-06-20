@@ -145,13 +145,48 @@ class OrderingProcessor:
         logger.info("Ordering Service is now ACTIVE")
 
     async def _collect_next_event(self, batch: list[PendingEvent]):
-        """Try to collect the next event from the pool"""
-        try:
-            pending_event = self.event_pool.get_nowait()
-            batch.append(pending_event)
-        except Empty:
-            # Short sleep if empty to avoid busy waiting
-            await asyncio.sleep(0.01)
+        """Try to collect events from the pool. Drains queue elements synchronously. Sleeps if batch has items, blocks if empty."""
+        if self.should_stop.is_set():
+            return
+        
+        # Drain ready events synchronously
+        batch_size = self.config.get("batch_size") or self.config.get("block_size") or 100
+        while len(batch) < batch_size:
+            try:
+                pending_event = self.event_pool.get_nowait()
+                batch.append(pending_event)
+            except Empty:
+                break
+
+        # If batch is still not full
+        if len(batch) < batch_size:
+            if not batch:
+                # If batch is empty, wait for the next event on background thread
+                try:
+                    timeout = self.config.get("batch_timeout", 0.1)
+                    pending_event = await asyncio.to_thread(self.event_pool.get, timeout=timeout)
+                    batch.append(pending_event)
+                    
+                    # Drain any other events that arrived in the meantime
+                    while len(batch) < batch_size:
+                        try:
+                            pending_event = self.event_pool.get_nowait()
+                            batch.append(pending_event)
+                        except Empty:
+                            break
+                except Empty:
+                    pass
+                except RuntimeError as e:
+                    if "shutdown" in str(e).lower() or "event loop is closed" in str(e).lower():
+                        pass
+                    else:
+                        raise e
+            else:
+                # If batch has elements but is not full, do a very short sleep to let more events arrive
+                # and avoid busy-waiting or blocking on the queue
+                await asyncio.sleep(0.001)
+
+
 
     async def _handle_batch_logic(
         self,
@@ -209,7 +244,7 @@ class OrderingProcessor:
             if len(verification_items) < 15:
                 results = verify_batch_signatures(verification_items)
             else:
-                results = await process_pool.run_task(
+                results = await asyncio.to_thread(
                     verify_batch_signatures, verification_items
                 )
             for event, is_valid in zip(events_to_verify, results):
@@ -219,6 +254,8 @@ class OrderingProcessor:
                     logger.warning(
                         "Event %s rejected (invalid signature)", event.event_id
                     )
+                else:
+                    event.signature_verified = True
         except Exception as e:
             logger.error("Batch verification failed: %s", e)
 

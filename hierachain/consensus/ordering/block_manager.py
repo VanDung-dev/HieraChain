@@ -5,9 +5,10 @@ Block builder for the HieraChain ordering service.
 import time
 import logging
 import threading
+import asyncio
 from typing import Any
+
 from hierachain.core.block import Block
-from hierachain.core.performance import process_pool
 from hierachain.core.utils import compute_leaves_from_events_standalone, MerkleTree
 from hierachain.consensus.ordering.types import OrderingStatus
 
@@ -34,7 +35,7 @@ class OrderingBlockManager:
             return
 
         try:
-            merkle_leaves = await process_pool.run_task(
+            merkle_leaves = await asyncio.to_thread(
                 compute_leaves_from_events_standalone, events
             )
             merkle_tree = MerkleTree(leaves=merkle_leaves)
