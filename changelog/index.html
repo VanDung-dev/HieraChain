@@ -4191,6 +4191,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v005-2026-06-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.5 (2026-06-20)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v004-2026-05-25" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4291,6 +4302,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v005-2026-06-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.5 (2026-06-20)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v004-2026-05-25" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4366,6 +4388,26 @@
 
 
 <h1 id="changelog">Changelog</h1>
+<h2 id="v005-2026-06-20">v0.0.5 (2026-06-20)</h2>
+<p>This release focuses on core <code>hierachain/</code> package improvements, including replacing <code>ipfshttpclient</code> with <code>httpx</code> for Kubo RPC, idempotent sub-chain creation, chain integrity hardening, block persistence, and safe edge-case handling.</p>
+<details class="note">
+<summary>Improvements (6)</summary>
+<ul>
+<li><strong>Kubo RPC Migration</strong>: Replaced <code>ipfshttpclient</code> with <code>httpx</code> in <code>hierachain/api/storage/ipfs_client.py</code>, executing IPFS operations directly via Kubo HTTP RPC API. Added <code>_parse_multiaddr</code> helper for host/port extraction from multiaddress strings. Refactored core operations (upload, download, pin, unpin, list_pins, stats) to use <code>httpx.Client</code> POST requests. Removed <code>_IPFSClientContext</code> wrapper class.</li>
+<li><strong>Idempotent Sub-Chain Creation</strong>: API v1 (<code>hierachain/api/v1/endpoints.py</code>) checks for existing sub-chain before creation, returns <code>201 Created</code> with <code>"already_exists"</code> audit trail for duplicates. Returns <code>409 Conflict</code> when <code>manager.add_sub_chain</code> raises <code>ValueError</code> on duplicate.</li>
+<li><strong>Chain Integrity Hardening</strong>: Added <code>_verify_chain_links()</code> in <code>hierachain/consensus/ordering/storage.py</code> to validate <code>previous_hash</code> chain of blocks. <code>_block_from_dict</code> raises <code>ValueError</code> on computed hash mismatch instead of merely logging an error.</li>
+<li><strong>Event Enrichment &amp; Block Persistence</strong>: Ordering service (<code>hierachain/consensus/ordering/service.py</code>) injects <code>event_id</code> into <code>event_data</code> payload before creating pending events. Recovery (<code>recovery.py</code>) prioritizes enriched <code>event_data</code> over calculated fallback. Sub-chain finalize (<code>hierachain/hierarchical/sub_chain.py</code>) persists blocks via storage handler, ensuring rehydration retains consensus events.</li>
+<li><strong>Block Overwrite</strong>: <code>hierachain/storage/sql_backend.py</code> — <code>save_block</code> queries for existing blocks by <code>index</code>/<code>chain_name</code>, deletes and replaces them instead of silently handling <code>UNIQUE constraint</code> violations.</li>
+<li><strong>Zero Children Safeguard</strong>: Rebalancer (<code>hierachain/hierarchical/rebalancer.py</code>) safely returns <code>0</code> when <code>num_children &lt;= 0</code>, preventing modulo-by-zero errors.</li>
+</ul>
+</details>
+<details class="warning">
+<summary>Fix (1)</summary>
+<ul>
+<li><strong>Integrity Check Locking</strong>: Moved post-rehydration chain integrity validation outside the lock in <code>hierachain/hierarchical/sub_chain.py</code>. Downgraded mismatch log from error to warning to account for pending consumer thread blocks.</li>
+</ul>
+</details>
+<hr />
 <h2 id="v004-2026-05-25">v0.0.4 (2026-05-25)</h2>
 <p>This release focuses on production-grade networking infrastructure, cryptographic integrity, and enterprise-grade stress testing, introducing Node Identity with Ed25519/Curve25519 keypairs, ZeroMQ CURVE encryption for P2P, API v3 secure event submission, comprehensive stress/chaos testing suite, Podman/OrbStack support, and dual-language documentation restructuring.</p>
 <details class="note">

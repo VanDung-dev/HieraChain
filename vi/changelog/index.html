@@ -4191,6 +4191,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v005-2026-06-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.5 (2026-06-20)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v004-2026-05-25" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4291,6 +4302,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v005-2026-06-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.5 (2026-06-20)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v004-2026-05-25" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4366,6 +4388,26 @@
 
 
 <h1 id="changelog">Changelog</h1>
+<h2 id="v005-2026-06-20">v0.0.5 (2026-06-20)</h2>
+<p>Phiên bản này tập trung vào cải thiện core package <code>hierachain/</code>, bao gồm thay thế <code>ipfshttpclient</code> bằng <code>httpx</code> cho Kubo RPC, tạo sub-chain idempotent, củng cố toàn vẹn chain, persist block và xử lý an toàn các trường hợp biên.</p>
+<details class="note">
+<summary>Improvements (6)</summary>
+<ul>
+<li><strong>Kubo RPC Migration</strong>: Thay thế <code>ipfshttpclient</code> bằng <code>httpx</code> trong <code>hierachain/api/storage/ipfs_client.py</code>, thực thi IPFS operations trực tiếp qua Kubo HTTP RPC API. Thêm <code>_parse_multiaddr</code> để trích xuất host/port từ multiaddress strings. Refactor core operations (upload, download, pin, unpin, list_pins, stats) sang <code>httpx.Client</code> POST requests. Loại bỏ <code>_IPFSClientContext</code> wrapper class.</li>
+<li><strong>Idempotent Sub-Chain Creation</strong>: API v1 (<code>hierachain/api/v1/endpoints.py</code>) kiểm tra sub-chain tồn tại trước khi tạo, trả về <code>201 Created</code> với audit trail <code>"already_exists"</code> cho duplicate. Xử lý <code>409 Conflict</code> khi <code>manager.add_sub_chain</code> báo duplicate qua <code>ValueError</code>.</li>
+<li><strong>Chain Integrity Hardening</strong>: Thêm <code>_verify_chain_links()</code> trong <code>hierachain/consensus/ordering/storage.py</code> để xác thực chuỗi <code>previous_hash</code> giữa các block. <code>_block_from_dict</code> raise <code>ValueError</code> khi computed hash mismatch stored hash, thay vì chỉ log error.</li>
+<li><strong>Event Enrichment &amp; Block Persistence</strong>: Ordering service (<code>hierachain/consensus/ordering/service.py</code>) tiêm <code>event_id</code> vào <code>event_data</code> payload trước khi tạo pending event. Recovery (<code>recovery.py</code>) ưu tiên <code>event_id</code> từ enriched <code>event_data</code>. Sub-chain finalize (<code>hierachain/hierarchical/sub_chain.py</code>) persist block qua storage handler, đảm bảo rehydration giữ nguyên consensus events.</li>
+<li><strong>Block Overwrite</strong>: <code>hierachain/storage/sql_backend.py</code> — <code>save_block</code> query existing block theo <code>index</code>/<code>chain_name</code>, xóa và ghi đè thay vì silent <code>UNIQUE constraint</code> handling.</li>
+<li><strong>Zero Children Safeguard</strong>: Rebalancer (<code>hierachain/hierarchical/rebalancer.py</code>) trả về <code>0</code> an toàn khi <code>num_children &lt;= 0</code>, ngăn lỗi modulo-by-zero.</li>
+</ul>
+</details>
+<details class="warning">
+<summary>Fix (1)</summary>
+<ul>
+<li><strong>Integrity Check Locking</strong>: Di chuyển post-rehydration chain integrity validation ra ngoài lock trong <code>hierachain/hierarchical/sub_chain.py</code>. Downgrade mismatch log từ error xuống warning để tính đến pending consumer thread blocks.</li>
+</ul>
+</details>
+<hr />
 <h2 id="v004-2026-05-25">v0.0.4 (2026-05-25)</h2>
 <p>Phiên bản này tập trung vào hạ tầng mạng cấp production, toàn vẹn mật mã học và kiểm thử stress doanh nghiệp, giới thiệu Node Identity với keypairs Ed25519/Curve25519, mã hóa ZeroMQ CURVE cho P2P, endpoint API v3 cho event an toàn, bộ kiểm thử stress/chaos toàn diện, hỗ trợ Podman/OrbStack và tái cấu trúc tài liệu song ngữ.</p>
 <details class="note">
