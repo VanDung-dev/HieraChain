@@ -902,43 +902,43 @@ doc = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = "==3.14.1" },
-    { name = "boto3", specifier = "==1.43.28" },
-    { name = "boto3-stubs", specifier = "==1.43.28" },
-    { name = "build", marker = "extra == 'dev'", specifier = "==1.5.0" },
-    { name = "click", specifier = "==8.4.1" },
-    { name = "cryptography", specifier = "==48.0.1" },
-    { name = "fastapi", specifier = "==0.136.3" },
-    { name = "graphene", specifier = "==3.4.3" },
-    { name = "httptools", specifier = "==0.8.0" },
-    { name = "httpx", specifier = "==0.28.1" },
-    { name = "hvac", specifier = "==2.4.0" },
-    { name = "hypothesis", marker = "extra == 'dev'", specifier = "==6.155.2" },
-    { name = "idna", specifier = "==3.18" },
-    { name = "kubernetes", specifier = "==36.0.2" },
-    { name = "polib", marker = "extra == 'doc'", specifier = "==1.2.0" },
-    { name = "prometheus-client", specifier = "==0.25.0" },
-    { name = "psutil", specifier = "==7.2.2" },
-    { name = "pyarrow", specifier = "==24.0.0" },
-    { name = "pydantic", specifier = "==2.13.4" },
-    { name = "pymdown-extensions", marker = "extra == 'doc'", specifier = "==10.21.3" },
-    { name = "pynacl", specifier = "==1.6.2" },
+    { name = "aiohttp", specifier = ">=3.14.1" },
+    { name = "boto3", specifier = ">=1.43.28" },
+    { name = "boto3-stubs", specifier = ">=1.43.28" },
+    { name = "build", marker = "extra == 'dev'", specifier = ">=1.5.0" },
+    { name = "click", specifier = ">=8.4.1" },
+    { name = "cryptography", specifier = ">=48.0.1" },
+    { name = "fastapi", specifier = ">=0.136.3" },
+    { name = "graphene", specifier = ">=3.4.3" },
+    { name = "httptools", specifier = ">=0.8.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "hvac", specifier = ">=2.4.0" },
+    { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.155.2" },
+    { name = "idna", specifier = ">=3.18" },
+    { name = "kubernetes", specifier = ">=36.0.2" },
+    { name = "polib", marker = "extra == 'doc'", specifier = ">=1.2.0" },
+    { name = "prometheus-client", specifier = ">=0.25.0" },
+    { name = "psutil", specifier = ">=7.2.2" },
+    { name = "pyarrow", specifier = ">=24.0.0" },
+    { name = "pydantic", specifier = ">=2.13.4" },
+    { name = "pymdown-extensions", marker = "extra == 'doc'", specifier = ">=10.21.3" },
+    { name = "pynacl", specifier = ">=1.6.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.2" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = "==1.4.0" },
-    { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = "==5.2.3" },
-    { name = "pytest-html", marker = "extra == 'dev'", specifier = "==4.2.0" },
-    { name = "pytest-rerunfailures", marker = "extra == 'dev'", specifier = "==16.3" },
-    { name = "python-dotenv", specifier = "==1.2.2" },
-    { name = "pyzmq", specifier = "==27.1.0" },
-    { name = "redis", specifier = "==8.0.0" },
-    { name = "sqlalchemy", specifier = "==2.0.50" },
-    { name = "starlette", specifier = "==1.0.1" },
-    { name = "twine", marker = "extra == 'dev'", specifier = "==6.2.0" },
-    { name = "urllib3", specifier = "==2.7.0" },
-    { name = "uvicorn", extras = ["standard"], specifier = "==0.49.0" },
-    { name = "watchfiles", specifier = "==1.2.0" },
-    { name = "websockets", marker = "extra == 'dev'", specifier = "==16.0" },
-    { name = "zensical", marker = "extra == 'doc'", specifier = "==0.0.43" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.4.0" },
+    { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = ">=5.2.3" },
+    { name = "pytest-html", marker = "extra == 'dev'", specifier = ">=4.2.0" },
+    { name = "pytest-rerunfailures", marker = "extra == 'dev'", specifier = ">=16.3" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
+    { name = "pyzmq", specifier = ">=27.1.0" },
+    { name = "redis", specifier = ">=8.0.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.50" },
+    { name = "starlette", specifier = ">=1.3.1" },
+    { name = "twine", marker = "extra == 'dev'", specifier = ">=6.2.0" },
+    { name = "urllib3", specifier = ">=2.7.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.49.0" },
+    { name = "watchfiles", specifier = ">=1.2.0" },
+    { name = "websockets", marker = "extra == 'dev'", specifier = ">=16.0" },
+    { name = "zensical", marker = "extra == 'doc'", specifier = ">=0.0.43" },
 ]
 provides-extras = ["doc", "dev"]
 
@@ -1949,7 +1949,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "9.0.3"
+version = "9.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -1960,9 +1960,9 @@ dependencies = [
     { name = "pygments" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7d/0d/549bd94f1a0a402dc8cf64563a117c0f3765662e2e668477624baeec44d5/pytest-9.0.3.tar.gz", hash = "sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c", size = 1572165, upload-time = "2026-04-07T17:16:18.027Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/db/7ef3487e0fb0049ddb5ce41d3a49c235bf9ad299b6a25d5780a89f19230f/pytest-9.0.2.tar.gz", hash = "sha256:75186651a92bd89611d1d9fc20f0b4345fd827c41ccd5c299a868a05d70edf11", size = 1568901, upload-time = "2025-12-06T21:30:51.014Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d4/24/a372aaf5c9b7208e7112038812994107bc65a84cd00e0354a88c2c77a617/pytest-9.0.3-py3-none-any.whl", hash = "sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9", size = 375249, upload-time = "2026-04-07T17:16:16.13Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl", hash = "sha256:711ffd45bf766d5264d487b917733b453d917afd2b0ad65223959f59089f875b", size = 374801, upload-time = "2025-12-06T21:30:49.154Z" },
 ]
 
 [[package]]
@@ -2386,15 +2386,15 @@ wheels = [
 
 [[package]]
 name = "starlette"
-version = "1.0.1"
+version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
     { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/08/a3/84e821cc54b4ab50ae6dbc6ac3800a651b65ec35f045cc73785380654057/starlette-1.0.1.tar.gz", hash = "sha256:512399c5f1de7fac99c88572212ded9ddeddef2fb32afa82d724000e88b38f4f", size = 2659596, upload-time = "2026-05-21T21:58:58.433Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/eb/e3/7c1dc7381d9f8ab7d854328ebfa884e62cb3f3d8549ddfd37c7814f42afa/starlette-1.3.1.tar.gz", hash = "sha256:05d0213193f2fbaae60e2ecb593b4add4262ad4e46536b54abe36f11a71724e0", size = 2703240, upload-time = "2026-06-12T09:23:11.602Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ec/e1/b2df4bc09a1e51ff664c1e17018a4274b42e5e9352e4a478ea540512dc88/starlette-1.0.1-py3-none-any.whl", hash = "sha256:7c0e69b2ee1c848bd54669d908500117a3ee13de603a21427e5c6fc1adf98dcd", size = 72802, upload-time = "2026-05-21T21:58:56.551Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/bb/2799cc2ede3ed41131f8975621e7213dfc7ef4acbbaadfa440f32500c370/starlette-1.3.1-py3-none-any.whl", hash = "sha256:c7372aae11c3c3f26a42df7bd626cec2f47d03483d261d369516a615a53714c6", size = 73632, upload-time = "2026-06-12T09:23:10.017Z" },
 ]
 
 [[package]]
