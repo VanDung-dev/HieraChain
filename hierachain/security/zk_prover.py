@@ -8,7 +8,7 @@ Supports mock (SHA-256 hash) and production (ZoKrates) modes.
 from __future__ import annotations
 
 import hashlib
-import json
+import orjson
 import time
 import os
 import asyncio
@@ -57,7 +57,7 @@ __all__ = [
 
 def _generate_mock_proof(old_state_root: str, new_state_root: str, block_index: int) -> bytes:
     public_inputs = {"old_state_root": old_state_root, "new_state_root": new_state_root, "block_index": block_index, "sub_chain_name": ""}
-    payload_bytes = json.dumps(public_inputs, sort_keys=True).encode('utf-8')
+    payload_bytes = orjson.dumps(public_inputs, option=orjson.OPT_SORT_KEYS)
     commitment = hashlib.sha256(payload_bytes).digest()
     proof_size = secrets.randbelow(2049) + 2048
     magic_bytes = b"mock_zkp_v2\x00"
@@ -66,6 +66,7 @@ def _generate_mock_proof(old_state_root: str, new_state_root: str, block_index: 
     header = magic_bytes + version_bytes + size_bytes + commitment
     random_body = os.urandom(proof_size - len(header))
     return header + random_body
+
 
 
 def _verify_mock_proof(proof: bytes) -> bool:
