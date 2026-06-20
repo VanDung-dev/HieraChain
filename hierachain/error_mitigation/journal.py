@@ -12,6 +12,8 @@ import re
 import logging
 import struct
 import orjson
+import queue
+import threading
 from typing import Any, Generator, BinaryIO
 from pathlib import Path
 import pyarrow as pa
@@ -310,11 +312,29 @@ class TransactionJournal:
         self._file_handle: BinaryIO | None = None
         self._schema = schemas.get_event_schema()
 
+        # Check if fsync is disabled to decide on using background queue for writes
+        self._async_write = not get_settings().JOURNAL_FSYNC
+        self._write_queue = None
+        self._writer_thread = None
+        self._stop_writer = None
+
+        if self._async_write:
+            self._write_queue = queue.Queue()
+            self._stop_writer = threading.Event()
+            self._writer_thread = threading.Thread(
+                target=self._background_writer,
+                daemon=True,
+                name="HRC_JournalWriter"
+            )
+
         # Ensure directory exists
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
         # Open the active log file
         self._open_journal()
+        
+        if self._async_write and self._writer_thread:
+            self._writer_thread.start()
 
     def _open_journal(self) -> None:
         """Open the journal file for appending (binary mode)."""
@@ -345,18 +365,21 @@ class TransactionJournal:
             logger.error("Schema conversion error for event %s: %s", event_id, e)
             raise
 
-    def log_event(self, event_data: dict[str, Any]) -> bool:
-        """
-        Durably log an event to the journal using Arrow format.
+    def _background_writer(self) -> None:
+        """Background thread target to write events sequentially from the queue."""
+        while not self._stop_writer.is_set() or not self._write_queue.empty():
+            try:
+                # Use a short timeout so we can periodically check self._stop_writer
+                event_data = self._write_queue.get(timeout=0.05)
+                self._write_event_to_file(event_data)
+                self._write_queue.task_done()
+            except queue.Empty:
+                continue
+            except Exception as e:
+                logger.error("Error in background journal writer: %s", e)
 
-        Writes length-prefixed serialized batch: [Length (4 bytes)][Batch Bytes...]
-
-        Args:
-            event_data: The event dictionary to log.
-
-        Returns:
-            bool: True if logged and synced successfully.
-        """
+    def _write_event_to_file(self, event_data: dict[str, Any]) -> bool:
+        """Perform actual file write operations."""
         if self._file_handle is None:
             self._open_journal()
 
@@ -388,11 +411,26 @@ class TransactionJournal:
             logger.critical("CRITICAL: Failed to write to transaction journal: %s", e)
             return False
 
+    def flush(self) -> None:
+        """Wait for all pending log entries in the queue to be written."""
+        if self._async_write and self._write_queue:
+            self._write_queue.join()
+
+    def log_event(self, event_data: dict[str, Any]) -> bool:
+        """
+        Durably log an event to the journal using Arrow format.
+        """
+        if self._async_write:
+            self._write_queue.put(event_data)
+            return True
+        return self._write_event_to_file(event_data)
+
     def replay(self) -> Generator[dict[str, Any], None, None]:
         """
         Replay all events from the journal.
         Reads binary Arrow batches and yields them as Dictionaries.
         """
+        self.flush()
         if not self.active_log_file.exists():
             return
 
@@ -404,6 +442,10 @@ class TransactionJournal:
 
     def close(self):
         """Close the journal file handle."""
+        if self._async_write and self._writer_thread:
+            self._stop_writer.set()
+            self._writer_thread.join(timeout=5.0)
+            self._writer_thread = None
         if self._file_handle:
             try:
                 self._file_handle.flush()
@@ -422,6 +464,15 @@ class TransactionJournal:
                 pass
             # Reopen
             self._open_journal()
+            if self._async_write:
+                self._write_queue = queue.Queue()
+                self._stop_writer = threading.Event()
+                self._writer_thread = threading.Thread(
+                    target=self._background_writer,
+                    daemon=True,
+                    name="HRC_JournalWriter"
+                )
+                self._writer_thread.start()
             logger.info("Transaction journal cleared (Arrow format).")
         except (OSError, IOError) as e:
             logger.error("Failed to clear journal: %s", e)
