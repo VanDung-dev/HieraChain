@@ -27,42 +27,36 @@ Phiên bản này tập trung vào cải thiện core package `hierachain/`, bao
 
 ## v0.0.4 (2026-05-25)
 
-Phiên bản này tập trung vào hạ tầng mạng cấp production, toàn vẹn mật mã học và kiểm thử stress doanh nghiệp, giới thiệu Node Identity với keypairs Ed25519/Curve25519, mã hóa ZeroMQ CURVE cho P2P, endpoint API v3 cho event an toàn, bộ kiểm thử stress/chaos toàn diện, hỗ trợ Podman/OrbStack và tái cấu trúc tài liệu song ngữ.
+Phiên bản này tập trung vào Node Identity với keypairs Ed25519/Curve25519, mã hóa ZeroMQ CURVE cho P2P, endpoint API v3 cho event an toàn, chữ ký Ed25519 cho Proof of Federation, xác thực timestamp BFT chống replay, và củng cố bảo mật toàn diện trong `hierachain/`.
 
-??? note "Improvements (7)"
+??? note "Improvements (4)"
 
-    * **Node Identity & P2P Networking**: Giới thiệu `NodeIdentity`, mã hóa ZeroMQ CURVE, `send_direct`/`broadcast`, ping-pong heartbeat, tích hợp xuyên suốt BFT consensus, ordering service và API. Thêm cấu hình P2P (`P2P_ENABLED`, `P2P_HOST`, `P2P_PORT`).
-    * **API v3 & Chữ ký số**: Endpoint `POST /api/v3/chains/{chain_name}/secure-events` với xác thực chữ ký Ed25519, giới hạn payload 1MB và độ sâu tối đa 10. Thêm trường `sender`/`signature` vào schema.
-    * **Củng cố Consensus**: Chữ ký Ed25519 cho Proof of Federation, xác thực timestamp BFT 30 giây chống replay, xác minh block hash khi reconstruction, `block_interval` cấu hình được.
-    * **Bảo mật**: Từ chối ZK proof giả trong production (cho phép test), so sánh hằng số thời gian HMAC, `threading.RLock` trong LockdownProtocol, tăng PBKDF2 lên 310,000 iterations.
-    * **Hạ tầng Docker/K8s**: Hỗ trợ Podman (Compose và K8s), di chuyển lên OrbStack, API Gateway Nginx với stealth explorer, Web2 gateway node, Redis deployment, sinh identity động, chaos controller.
-    * **Kiểm thử Stress & Chaos**: Bộ kiểm thử mới cho network partition, kill node, CPU throttling, WAN simulation, DDoS, memory leak soak, WebSocket load, storage benchmark.
-    * **Tài liệu đa ngôn ngữ**: Hỗ trợ tiếng Việt và tiếng Anh, dịch 16 quy trình công việc, hướng dẫn sử dụng, tài liệu tham khảo API. Viết lại `AGENTS.md` với nguyên tắc hành vi AI.
+    * **Node Identity & P2P Networking**: Giới thiệu `NodeIdentity` trong `hierachain/security/identity_loader.py`, mã hóa ZeroMQ CURVE trong `NetworkClient`, `send_direct`/`broadcast`, ping-pong heartbeat. Tích hợp node identity qua `HierarchyManager`, `DomainChain`, `OrderingService` và BFT consensus.
+    * **API v3 & Chữ ký số**: Endpoint `POST /api/v3/chains/{chain_name}/secure-events` với xác thực chữ ký Ed25519, giới hạn payload 1MB và độ sâu tối đa 10. Thêm trường `sender`/`signature` vào schema v1 với validation hex nghiêm ngặt.
+    * **Củng cố Consensus**: Chữ ký Ed25519 cho Proof of Federation (`_create_federation_signature`, `_verify_block_quorum`), xác thực timestamp BFT 30 giây chống replay, xác minh block hash khi reconstruction, `block_interval` cấu hình qua `HRC_BLOCK_INTERVAL`.
+    * **Bảo mật**: Từ chối ZK proof giả trong production (cho phép test), so sánh hằng số thời gian HMAC (`hmac.compare_digest`), `threading.RLock` trong LockdownProtocol, tăng PBKDF2 lên 310,000 iterations, `AdvancedCache` với TTL/LRU cho `KeyManager`.
 
-??? warning "Fix (3)"
+??? warning "Fix (2)"
 
-    * **Consensus & Storage**: Sửa xác thực block signature và sinh key tự động trong PoA, sửa return value mặc định trong BFT message handler, thêm validation proof_hash 64-ký tự SHA-256, xác thực toàn vẹn chain sau deserialization.
-    * **API & SDK**: Cập nhật default base URL SDK từ 8000 sang 2661, validation tên sub-chain bằng regex, thread-safe cho RateLimiter, validation CID/nonce trong IPFS client.
-    * **Build & Dependency**: Thêm `uvicorn[standard]`, `websockets`, `click`, `build`, `twine`; pin `urllib3==2.7.0`; nâng cấp `zensical` và `pymdown-extensions`; ghim Python 3.12 trong CI.
+    * **Consensus & Storage**: Sửa xác thực block signature và sinh key tự động trong PoA, sửa return value mặc định trong BFT handler từ `True` sang `False`, thêm validation proof_hash 64-ký tự SHA-256, xác thực toàn vẹn chain sau deserialization, thêm cột `creator_id`/`signature` vào block DB model.
+    * **API & SDK**: Cập nhật default base URL SDK từ 8000 sang 2661, validation tên sub-chain bằng regex, thread-safe `RateLimiter`, validation CID/nonce trong IPFS client.
 
 ---
 
 ## v0.0.3 (2026-05-02)
 
-Phiên bản này tập trung vào sự sẵn sàng cho production thông qua các cải thiện toàn diện về type safety trong `hierachain/`, triển khai Kubernetes StatefulSet, hạ tầng stress testing mạnh mẽ, và tăng cường xác thực bảo mật.
+Phiên bản này tập trung vào cải thiện type safety toàn diện trong `hierachain/`, đạt full Mypy compliance, xác thực Ed25519 64-byte nghiêm ngặt, canonicalization JSON cho xác minh deterministic, HMAC lockdown protocol, middleware giới hạn payload, và validation timestamp 24 giờ.
 
-??? note "Improvements (6)"
+??? note "Improvements (4)"
 
-    * **Tuân thủ Mypy đầy đủ**: Giải quyết các cảnh báo static typing trên các module consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core và cluster.
-    * **Xác thực Signature Ed25519**: Thực thi chiều dài 64-byte nghiêm ngặt cho signature Ed25519 để ngăn chặn việc bypass validation.
-    * **Canonicalization JSON**: Triển khai canonicalization JSON mạnh mẽ cho xác minh signature để đảm bảo các hoạt động cryptographic nhất quán.
-    * **Chuyển đổi StatefulSet**: Di chuyển từ Deployment sang StatefulSet cho deployment node ổn định với identity persistent.
-    * **Bảo mật**: Thêm middleware giới hạn payload, validation timestamp 24h, ngăn chặn API key mặc định trong production, refactor HMAC lockdown protocol.
-    * **Build & Packaging**: Di chuyển quản lý dependency sang uv, pin dependency versions, thêm uv.lock.
+    * **Tuân thủ Mypy đầy đủ**: Giải quyết các cảnh báo static typing trên tất cả module — consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core và cluster.
+    * **Xác thực Signature Ed25519**: Thực thi chiều dài 64-byte nghiêm ngặt cho signature Ed25519 trong `verify_signature_standalone` để ngăn chặn bypass validation.
+    * **Canonicalization JSON**: Triển khai `get_canonical_bytes` với sắp xếp dict đệ quy, chuẩn hóa Unicode NFC, định dạng float nhất quán cho xác minh chữ ký deterministic.
+    * **Bảo mật**: Thêm `PayloadLimitMiddleware` từ chối POST/PUT/PATCH trên 1MB, validation proof timestamp 24h, ngăn chặn API key mặc định trong production (`RuntimeError`), refactor HMAC lockdown protocol (`hmac.new` SHA256).
 
 ??? warning "Fix (1)"
 
-    * **Testing & Ổn định**: Giới hạn message log trong BFT consensus, cải thiện stress test client, sửa bare except clauses trong integration tests, cải thiện IPFS connection handling.
+    * **BFT & Validation**: Giới hạn BFT message log ở 10,000 entries ngăn memory growth vô hạn, cải thiện IPFS connection handling (`_ensure_connected` với None checks), sửa bare except clauses, thêm `\b` word-boundary matching cho validation thuật ngữ cryptocurrency.
 
 ---
 
@@ -105,7 +99,7 @@ Phiên bản này tập trung vào tăng cường bảo mật, khả năng quan 
         * Cập nhật SDK client để hỗ trợ đầy đủ multi-chain API v3.
         * Đồng bộ block schema với event schema để có cấu trúc dữ liệu nhất quán.
 
-??? warning "Fix (3)"
+??? warning "Fix (2)"
 
     * **Ổn định Consensus & Ordering**:
 
@@ -117,10 +111,6 @@ Phiên bản này tập trung vào tăng cường bảo mật, khả năng quan 
     * **Core & Hierarchical Chain**:
 
         * Sửa race condition trong quản lý hierarchical chain và thêm thủ tục shutdown graceful.
-
-    * **Build & Packaging**:
-
-        * Nhúng template cấu hình vào module Python để sửa lỗi thiếu file `.env.HRC.example` khi cài đặt qua pip.
 
 ---
 
@@ -149,4 +139,3 @@ Phiên bản này đánh dấu việc hoàn thiện định hướng kiến trú
     * **Ổn định & QA**: 
 
         * Sửa lỗi Chain Rehydration giúp khôi phục trạng thái chính xác sau khi restart.
-        * Cải thiện độ tin cậy của CI/CD với matrix testing và xử lý flaky tests.

@@ -27,42 +27,36 @@ This release focuses on core `hierachain/` package improvements, including repla
 
 ## v0.0.4 (2026-05-25)
 
-This release focuses on production-grade networking infrastructure, cryptographic integrity, and enterprise-grade stress testing, introducing Node Identity with Ed25519/Curve25519 keypairs, ZeroMQ CURVE encryption for P2P, API v3 secure event submission, comprehensive stress/chaos testing suite, Podman/OrbStack support, and dual-language documentation restructuring.
+This release focuses on Node Identity with Ed25519/Curve25519 keypairs, ZeroMQ CURVE encryption for P2P, API v3 secure event submission, Ed25519 signing for Proof of Federation, BFT timestamp validation against replay attacks, and comprehensive security hardening within `hierachain/`.
 
-??? note "Improvements (7)"
+??? note "Improvements (4)"
 
-    * **Node Identity & P2P Networking**: Introduced `NodeIdentity`, ZeroMQ CURVE encryption, `send_direct`/`broadcast` methods, ping-pong heartbeat, propagated through BFT consensus, ordering service, and API. Added P2P settings (`P2P_ENABLED`, `P2P_HOST`, `P2P_PORT`).
-    * **API v3 & Cryptographic Signatures**: New `POST /api/v3/chains/{chain_name}/secure-events` endpoint with Ed25519 signature verification, 1MB payload limit, and max depth 10. Added `sender`/`signature` fields to event schemas.
-    * **Consensus Hardening**: Ed25519 signing for Proof of Federation, 30-second BFT timestamp drift check against replay attacks, block hash verification on reconstruction, configurable `block_interval`.
-    * **Security**: Production ZK proof rejection (test environment bypass), HMAC constant-time comparison, `threading.RLock` in LockdownProtocol, PBKDF2 increased to 310,000 iterations.
-    * **Docker/K8s Infrastructure**: Podman support (Compose and K8s), OrbStack migration, Nginx API Gateway with stealth explorer, Web2 gateway node, Redis deployment, dynamic identity generation, chaos controller.
-    * **Stress & Chaos Testing**: New suites for network partition, node kill, CPU throttling, WAN simulation, DDoS, memory leak soak, WebSocket load, and storage benchmarks.
-    * **Multi-language Documentation**: Vietnamese and English support, translated 16 workflows, how-to guides, API references. Rewrote `AGENTS.md` with AI behavioral principles.
+    * **Node Identity & P2P Networking**: Introduced `NodeIdentity` in `hierachain/security/identity_loader.py`, ZeroMQ CURVE encryption in `NetworkClient`, `send_direct`/`broadcast` methods, ping-pong heartbeat. Propagated node identity through `HierarchyManager`, `DomainChain`, `OrderingService`, and BFT consensus.
+    * **API v3 & Cryptographic Signatures**: New `POST /api/v3/chains/{chain_name}/secure-events` endpoint with Ed25519 signature verification, 1MB payload limit, and max depth 10. Added `sender`/`signature` fields to v1 event schemas with strict hex validation.
+    * **Consensus Hardening**: Ed25519 signing for Proof of Federation (`_create_federation_signature`, `_verify_block_quorum`), 30-second BFT timestamp drift check against replay attacks, block hash verification on reconstruction, configurable `block_interval` via `HRC_BLOCK_INTERVAL`.
+    * **Security**: Production ZK proof rejection (test environment bypass), HMAC constant-time comparison (`hmac.compare_digest`), `threading.RLock` in LockdownProtocol, PBKDF2 increased to 310,000 iterations, `AdvancedCache` with TTL/LRU for `KeyManager`.
 
-??? warning "Fix (3)"
+??? warning "Fix (2)"
 
-    * **Consensus & Storage**: Fixed block signature verification and auto key generation in PoA, corrected default return value in BFT handler, added 64-char SHA-256 proof_hash validation, chain integrity checks after deserialization.
-    * **API & SDK**: Updated SDK default base URL from 8000 to 2661, sub-chain name regex validation, thread-safe RateLimiter, CID/nonce validation in IPFS client.
-    * **Build & Dependencies**: Added `uvicorn[standard]`, `websockets`, `click`, `build`, `twine`; pinned `urllib3==2.7.0`; bumped `zensical` and `pymdown-extensions`; pinned Python 3.12 in CI.
+    * **Consensus & Storage**: Fixed block signature verification and auto key generation in PoA, corrected default return value in BFT handler from `True` to `False`, added 64-char SHA-256 proof_hash validation, chain integrity checks after deserialization, added `creator_id`/`signature` columns to block DB model.
+    * **API & SDK**: Updated SDK default base URL from 8000 to 2661, sub-chain name regex validation, thread-safe `RateLimiter`, CID/nonce validation in IPFS client.
 
 ---
 
 ## v0.0.3 (2026-05-02)
 
-This release focuses on production readiness through comprehensive type safety improvements in `hierachain/`, Kubernetes StatefulSet deployment, robust stress testing infrastructure, and enhanced security validation.
+This release focuses on comprehensive type safety improvements across `hierachain/`, achieving full Mypy compliance, strict Ed25519 64-byte signature validation, JSON canonicalization for deterministic verification, HMAC-based lockdown protocol, payload limit middleware, and 24-hour timestamp validation.
 
-??? note "Improvements (6)"
+??? note "Improvements (4)"
 
-    * **Full Mypy Compliance**: Resolved static typing warnings across consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core and cluster modules.
-    * **Ed25519 Signature Validation**: Enforced strict 64-byte length for Ed25519 signatures to prevent validation bypass.
-    * **JSON Canonicalization**: Implemented robust JSON canonicalization for signature verification to ensure consistent cryptographic operations.
-    * **StatefulSet Migration**: Migrated from Deployment to StatefulSet for stable node deployment with persistent identity.
-    * **Security**: Added payload limit middleware, 24h timestamp validation, default API key prevention in production, refactored HMAC lockdown protocol.
-    * **Build & Packaging**: Migrated dependency management to uv, pinned dependency versions, added uv.lock.
+    * **Full Mypy Compliance**: Resolved static typing warnings across all modules — consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core and cluster.
+    * **Ed25519 Signature Validation**: Enforced strict 64-byte length for Ed25519 signatures in `verify_signature_standalone` to prevent validation bypass.
+    * **JSON Canonicalization**: Implemented robust `get_canonical_bytes` with recursive dict sorting, Unicode NFC normalization, and consistent float formatting for deterministic signature verification.
+    * **Security**: Added `PayloadLimitMiddleware` rejecting POST/PUT/PATCH over 1MB, 24h proof timestamp consistency validation, default API key prevention in production (`RuntimeError`), refactored HMAC lockdown protocol (`hmac.new` SHA256).
 
 ??? warning "Fix (1)"
 
-    * **Testing & Stability**: Limited message log in BFT consensus, improved stress test client, fixed bare except clauses in integration tests, improved IPFS connection handling.
+    * **BFT & Validation**: Limited BFT message log to 10,000 entries preventing unbounded memory growth, improved IPFS connection handling (`_ensure_connected` with proper None checks), fixed bare except clauses, enforced `\b` word-boundary matching for cryptocurrency term validation.
 
 ---
 
@@ -105,7 +99,7 @@ This release focuses on enhanced security, system observability, and important s
         * Updated SDK client for full multi-chain API v3 support.
         * Synchronized block schema with event schema for consistent data structure.
 
-??? warning "Fix (3)"
+??? warning "Fix (2)"
 
     * **Consensus & Ordering Stability**:
 
@@ -117,10 +111,6 @@ This release focuses on enhanced security, system observability, and important s
     * **Core & Hierarchical Chain**:
 
         * Fixed race condition in hierarchical chain management and added graceful shutdown procedures.
-
-    * **Build & Packaging**:
-
-        * Embedded config template into Python module to fix missing `.env.HRC.example` file when installing via pip.
 
 ---
 
@@ -149,4 +139,3 @@ This release marks the completion of HieraChain's initial architectural directio
     * **Stability & QA**: 
 
         * Fixed Chain Rehydration bug for correct state restoration after restart.
-        * Improved CI/CD reliability with matrix testing and flaky test handling.
