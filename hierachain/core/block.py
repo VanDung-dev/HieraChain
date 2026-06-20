@@ -16,7 +16,9 @@ import pyarrow.compute as pc
 import orjson
 
 from hierachain.core import schemas
-from hierachain.core.utils import MerkleTree, generate_hash
+from hierachain.core.utils import generate_hash
+from hierachain.core.merkle_tree import MerkleTree
+
 
 logger = logging.getLogger(__name__)
 

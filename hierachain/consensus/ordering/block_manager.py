@@ -9,7 +9,7 @@ import asyncio
 from typing import Any
 
 from hierachain.core.block import Block
-from hierachain.core.utils import compute_leaves_from_events_standalone, MerkleTree
+from hierachain.core.merkle_tree import compute_leaves_from_events_standalone, MerkleTree
 from hierachain.consensus.ordering.types import OrderingStatus
 
 logger = logging.getLogger(__name__)
