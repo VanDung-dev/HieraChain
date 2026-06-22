@@ -4,7 +4,10 @@ Block processing functions for Sub-Chain.
 
 import time
 import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hierachain.hierarchical.sub_chain.base import SubChain
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +26,9 @@ def _process_and_finalize_single_block(sub_chain: "SubChain", block: Any) -> boo
             sub_chain.ordering_service.storage_handler.save_block(
                 finalized_block, sub_chain.name
             )
-        except Exception:
+        except Exception as e:  # noqa: BLE001
             logger.warning(
-                "Failed to persist finalized block %d", finalized_block.index
+                "Failed to persist finalized block %d: %s", finalized_block.index, e
             )
 
         if sub_chain.add_block(finalized_block):
