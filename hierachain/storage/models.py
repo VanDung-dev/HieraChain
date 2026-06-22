@@ -42,12 +42,12 @@ class BlockModel(Base):
     hash = Column(String(64), unique=True, nullable=False, index=True)
     previous_hash = Column(String(64), nullable=False)
     timestamp = Column(Float, nullable=False, default=time.time)
-    creator_id = Column(String(128), nullable=True)
-    signature = Column(String(256), nullable=True)
+    creator_id: str | None = Column(String(128), nullable=True)
+    signature: str | None = Column(String(256), nullable=True)
     
     # Metadata (stored as JSON)
     metadata_json = Column(JSON, nullable=True)
-    chain_name = Column(String(64), nullable=True, index=True)
+    chain_name: str | None = Column(String(64), nullable=True, index=True)
     
     # Relationship to Events
     events = relationship(
@@ -77,11 +77,11 @@ class EventModel(Base):
     data = Column(JSON, nullable=False) # The full payload
     
     # Identity (Sender)
-    sender_id = Column(String(64), nullable=True)
+    sender_id: str | None = Column(String(64), nullable=True)
     
     # Context
-    chain_name = Column(String(64), nullable=True, index=True)
-    entity_id = Column(String(64), nullable=True, index=True)
+    chain_name: str | None = Column(String(64), nullable=True, index=True)
+    entity_id: str | None = Column(String(64), nullable=True, index=True)
 
     def __repr__(self):
         return f"<Event(type='{self.event_type}', block='{self.block_hash[:8]}...')>"
