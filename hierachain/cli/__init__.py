@@ -39,7 +39,7 @@ from hierachain.cli.key import (
 @click.group()
 @click.option('--config', default='chains.json', help='Configuration file path')
 @click.pass_context
-def hrc(ctx, config):
+def hrc(ctx: click.Context, config):
     """HieraChain CLI - Simple management tool"""
     ctx.ensure_object(dict)
     ctx.obj['config_file'] = config
