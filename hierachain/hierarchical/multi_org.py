@@ -386,7 +386,7 @@ class MultiOrgNetwork:
 
 # Factory functions for easy setup
 def create_organization(
-    org_id: str, _name: str, admin_users: list[str] = None
+    org_id: str, _name: str, admin_users: list[str] | None = None
 ) -> Organization:
     """Factory function to create an organization with default MSP config"""
     msp_config = {
