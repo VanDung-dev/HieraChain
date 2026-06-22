@@ -32,7 +32,7 @@ class ProcessPoolManager:
             cls._instance = super(ProcessPoolManager, cls).__new__(cls)
         return cls._instance
 
-    def initialize(self, max_workers: int = None):
+    def initialize(self, max_workers: int | None = None):
         """
         Initialize the process pool.
         

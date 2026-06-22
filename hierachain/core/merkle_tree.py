@@ -50,7 +50,8 @@ class MerkleTree:
             self.leaves = []
         self.root = self._build_tree(self.leaves)
 
-    def _build_tree(self, nodes: list[str]) -> str:
+    @staticmethod
+    def _build_tree(nodes: list[str]) -> str:
         if not nodes:
             return hashlib.sha256(b"").hexdigest()
         
