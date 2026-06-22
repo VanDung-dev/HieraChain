@@ -215,29 +215,42 @@ class ProofOfAuthority(BaseConsensus):
             )
         return block
 
-    def _has_valid_authority_signature(self, block: Block) -> bool:
-        """Check if block has a valid authority signature."""
+    def _get_signature_metadata(self, block: Block) -> tuple[str, str, str, dict] | None:
+        """Extract authority_id, signature, public_key, and details from block."""
         events = block.to_event_list()
         consensus_event = next(
             (e for e in events if e.get("event") == "consensus_finalization"),
             None
         )
-
         if not consensus_event:
-            return False
+            return None
 
         details = consensus_event.get("details", {})
         authority_id = details.get("authority_id")
-
         if not authority_id or not self.is_authority(authority_id):
-            return False
+            return None
 
         signature = details.get("authority_signature")
-        if not isinstance(signature, str):
-            logger.warning("Invalid authority signature: signature=%s", type(signature).__name__)
+        public_key = self.authority_metadata.get(authority_id, {}).get("public_key")
+
+        if not isinstance(public_key, str) or not isinstance(signature, str):
+            logger.warning(
+                "Invalid authority signature: public_key=%s signature=%s",
+                type(public_key).__name__, type(signature).__name__
+            )
+            return None
+
+        return authority_id, signature, public_key, details
+
+    def _has_valid_authority_signature(self, block: Block) -> bool:
+        """Check if block has a valid authority signature."""
+        metadata = self._get_signature_metadata(block)
+        if not metadata:
             return False
 
-        # Allow placeholder mock signatures in tests (handles crypto unavailability)
+        authority_id, signature, public_key, details = metadata
+
+        # Allow placeholder mock signatures in tests
         import os
         import sys
         is_testing = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
@@ -253,6 +266,7 @@ class ProofOfAuthority(BaseConsensus):
             return False
 
         # Reconstruct the unfinalized block's hash by removing the consensus_finalization event
+        events = block.to_event_list()
         unfinalized_events = [e for e in events if e.get("event") != "consensus_finalization"]
         unfinalized_hash = generate_hash({
             "index": block.index,
