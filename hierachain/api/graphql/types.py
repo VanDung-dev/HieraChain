@@ -1,3 +1,8 @@
+"""
+GraphQL types for Hierachain API
+"""
+
+
 import json
 from graphene import (
     ObjectType, String, Int, Float, List, Boolean, Field,
