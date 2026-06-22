@@ -111,8 +111,10 @@ def _register_graphql_router(fast_app):
         async def graphql_endpoint(request: Request):
             try:
                 is_valid, error_response, parsed = await _validate_graphql_request(request)
-                if not is_valid:
-                    return error_response
+                if not is_valid or parsed is None:
+                    return error_response if error_response else JSONResponse(
+                        status_code=400, content={"errors": [{"message": "Invalid request"}]}
+                    )
 
                 response, is_error = _execute_graphql_query(
                     parsed["query"], parsed["variables"], parsed["operation_name"]

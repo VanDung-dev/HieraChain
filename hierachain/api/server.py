@@ -53,6 +53,45 @@ EXEMPT_PATHS = {
 }
 
 
+async def _start_p2p_network_layer(settings) -> None:
+    """Helper to initialize and start the P2P network layer if enabled."""
+    global p2p_client
+    p2p_config = settings.get_p2p_config()
+
+    if not p2p_config["enabled"]:
+        logger.info("P2P network layer is DISABLED")
+        return
+
+    from hierachain.security.identity_loader import load_node_identity
+    node_identity = load_node_identity()
+
+    transport_secret = None
+    transport_public = None
+    if node_identity:
+        transport_secret = node_identity.transport_secret_key
+        transport_public = node_identity.transport_public_key
+        logger.info("Loaded transport keys for node identity: %s", node_identity.node_id)
+    else:
+        logger.warning("No fixed node identity found, will use ephemeral transport keys")
+
+    config = NetworkClientConfig(
+        enabled=True,
+        node_id=settings.NODE_ID,
+        host=p2p_config["host"],
+        port=p2p_config["port"],
+        seed_nodes=p2p_config["seed_nodes"],
+        transport_secret_key=transport_secret,
+        transport_public_key=transport_public
+    )
+    client_instance = NetworkClient(config)
+    success = await client_instance.start()
+    p2p_client = client_instance
+    if success:
+        logger.info("P2P network layer STARTED for node %s", settings.NODE_ID)
+    else:
+        logger.error("Failed to start P2P network layer")
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     logger.info("Starting HieraChain API server...")
@@ -60,40 +99,8 @@ async def lifespan(_app: FastAPI):
     await ws_manager.start()
     logger.info("WebSocket manager started")
 
-    global p2p_client
     settings = get_settings()
-    p2p_config = settings.get_p2p_config()
-
-    if p2p_config["enabled"]:
-        from hierachain.security.identity_loader import load_node_identity
-        node_identity = load_node_identity()
-
-        transport_secret = None
-        transport_public = None
-        if node_identity:
-            transport_secret = node_identity.transport_secret_key
-            transport_public = node_identity.transport_public_key
-            logger.info("Loaded transport keys for node identity: %s", node_identity.node_id)
-        else:
-            logger.warning("No fixed node identity found, will use ephemeral transport keys")
-
-        config = NetworkClientConfig(
-            enabled=True,
-            node_id=settings.NODE_ID,
-            host=p2p_config["host"],
-            port=p2p_config["port"],
-            seed_nodes=p2p_config["seed_nodes"],
-            transport_secret_key=transport_secret,
-            transport_public_key=transport_public
-        )
-        p2p_client = NetworkClient(config)
-        success = await p2p_client.start()
-        if success:
-            logger.info("P2P network layer STARTED for node %s", settings.NODE_ID)
-        else:
-            logger.error("Failed to start P2P network layer")
-    else:
-        logger.info("P2P network layer is DISABLED")
+    await _start_p2p_network_layer(settings)
 
     if settings.AUTH_ENABLED:
         logger.info("Global API Authentication ENFORCED")
