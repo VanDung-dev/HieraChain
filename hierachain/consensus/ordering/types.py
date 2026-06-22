@@ -25,7 +25,7 @@ class EventStatus(Enum):
     REJECTED = "rejected"
 
 
-@dataclass
+@dataclass(slots=True)
 class PendingEvent:
     """Event waiting to be ordered"""
     event_id: str
@@ -50,7 +50,7 @@ class PendingEvent:
         }
 
 
-@dataclass
+@dataclass(slots=True)
 class OrderingNode:
     """Ordering service node configuration"""
     node_id: str
@@ -64,3 +64,4 @@ class OrderingNode:
         """Check if node is healthy based on heartbeat"""
         import time
         return (time.time() - self.last_heartbeat) < timeout
+

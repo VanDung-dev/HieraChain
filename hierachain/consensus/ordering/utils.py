@@ -7,6 +7,7 @@ import hashlib
 import json
 import logging
 import os
+import struct
 from typing import Any
 from queue import Queue
 import orjson
@@ -43,7 +44,6 @@ def generate_event_id(event_data: dict[str, Any], channel_id: str) -> str:
     h = hashlib.sha256()
     h.update(channel_id.encode('utf-8'))
     h.update(json_bytes)
-    import struct
     h.update(struct.pack("<d", time.time()))
     return h.hexdigest()[:16]
 
@@ -60,8 +60,8 @@ def verify_event_signature(event: PendingEvent, certification: dict[str, Any]) -
         details = event.event_data.get("details", {})
         payload = details.get("payload") if isinstance(details, dict) else None
 
-        # Skip verification if no payload to verify against
-        if payload is None:
+        # Skip verification if no string payload to verify against
+        if not isinstance(payload, str):
             return
 
         from hierachain.security.security_utils import verify_signature
