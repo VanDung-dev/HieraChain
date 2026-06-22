@@ -1,24 +1,12 @@
 """
-Performance Monitoring Module for HieraChain Ledger
-
-Exposes modular performance monitor elements for backward compatibility.
+Performance Monitoring Package for HieraChain Ledger.
 """
 
-from hierachain.monitoring.types import (
-    MetricType,
-    MetricUnit,
-    MetricValue,
-    PerformanceMetric,
-)
 from hierachain.monitoring.performance.system_collector import SystemMetricsCollector
 from hierachain.monitoring.performance.blockchain_collector import BlockchainMetricsCollector
 from hierachain.monitoring.performance.monitor import PerformanceMonitor, create_default_alert_handler
 
 __all__ = [
-    "MetricType",
-    "MetricUnit",
-    "MetricValue",
-    "PerformanceMetric",
     "SystemMetricsCollector",
     "BlockchainMetricsCollector",
     "PerformanceMonitor",
