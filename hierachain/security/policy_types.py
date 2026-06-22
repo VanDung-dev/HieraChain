@@ -23,6 +23,12 @@ class PolicyEffect(Enum):
     ALLOW = "allow"
     DENY = "deny"
 
+    def __str__(self) -> str:
+        return self.value
+
+    def __repr__(self) -> str:
+        return f"PolicyEffect.{self.name}"
+
 
 class ComparisonOperator(Enum):
     EQUALS = "equals"
@@ -100,32 +106,29 @@ class PolicyCondition:
         attribute_value = _get_attribute_value(context, self.attribute)
         if attribute_value is None:
             return False
+
+        evaluator_map = {
+            ComparisonOperator.EQUALS: self._evaluate_equals,
+            ComparisonOperator.NOT_EQUALS: self._evaluate_not_equals,
+            ComparisonOperator.GREATER_THAN: self._evaluate_greater_than,
+            ComparisonOperator.LESS_THAN: self._evaluate_less_than,
+            ComparisonOperator.GREATER_OR_EQUAL: self._evaluate_greater_or_equal,
+            ComparisonOperator.LESS_OR_EQUAL: self._evaluate_less_or_equal,
+            ComparisonOperator.CONTAINS: self._evaluate_contains,
+            ComparisonOperator.NOT_CONTAINS: self._evaluate_not_contains,
+            ComparisonOperator.IN: self._evaluate_in,
+            ComparisonOperator.NOT_IN: self._evaluate_not_in,
+            ComparisonOperator.MATCHES: self._evaluate_matches,
+            ComparisonOperator.NOT_MATCHES: self._evaluate_not_matches,
+        }
+
+        from typing import Callable
+        evaluator: Callable[[Any], bool] | None = evaluator_map.get(self.operator)
+        if not evaluator:
+            return False
+
         try:
-            match self.operator:
-                case ComparisonOperator.EQUALS:
-                    return self._evaluate_equals(attribute_value)
-                case ComparisonOperator.NOT_EQUALS:
-                    return self._evaluate_not_equals(attribute_value)
-                case ComparisonOperator.GREATER_THAN:
-                    return self._evaluate_greater_than(attribute_value)
-                case ComparisonOperator.LESS_THAN:
-                    return self._evaluate_less_than(attribute_value)
-                case ComparisonOperator.GREATER_OR_EQUAL:
-                    return self._evaluate_greater_or_equal(attribute_value)
-                case ComparisonOperator.LESS_OR_EQUAL:
-                    return self._evaluate_less_or_equal(attribute_value)
-                case ComparisonOperator.CONTAINS:
-                    return self._evaluate_contains(attribute_value)
-                case ComparisonOperator.NOT_CONTAINS:
-                    return self._evaluate_not_contains(attribute_value)
-                case ComparisonOperator.IN:
-                    return self._evaluate_in(attribute_value)
-                case ComparisonOperator.NOT_IN:
-                    return self._evaluate_not_in(attribute_value)
-                case ComparisonOperator.MATCHES:
-                    return self._evaluate_matches(attribute_value)
-                case ComparisonOperator.NOT_MATCHES:
-                    return self._evaluate_not_matches(attribute_value)
+            return evaluator(attribute_value)
         except (TypeError, ValueError, AttributeError):
             return False
 

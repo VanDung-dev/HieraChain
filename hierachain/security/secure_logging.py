@@ -194,8 +194,8 @@ class SecureLogger:
         self,
         action: str,
         resource: str,
-        user_id: str = None,
-        org_id: str = None,
+        user_id: str | None = None,
+        org_id: str | None = None,
         success: bool = True,
         **kwargs: Any
     ) -> None:

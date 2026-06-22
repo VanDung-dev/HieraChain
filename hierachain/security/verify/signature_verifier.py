@@ -114,7 +114,6 @@ class SignatureVerifier:
         Returns:
             Dict suitable for verify_batch_signatures, or empty dict if invalid.
         """
-        item_type = entry.get('type', 'event')
         item_data = entry.get('item')
         pk = entry.get('public_key')
 
