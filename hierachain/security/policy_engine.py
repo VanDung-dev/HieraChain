@@ -273,6 +273,7 @@ class PolicyEngine:
         return combined
 
     def get_applicable_policies(self, context: dict[str, Any], policy_type: PolicyType | None = None) -> list[str]:
+        _ = context
         applicable: list[str] = []
         for policy_id, policy in self.policies.items():
             if policy_type and policy.policy_type != policy_type:

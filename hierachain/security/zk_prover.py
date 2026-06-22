@@ -126,6 +126,7 @@ class ZKProver:
         return self.generate_proof(old_state_root, new_state_root, block_index, events, sub_chain_name)
 
     async def verify_proof_async(self, proof: bytes, public_inputs: dict[str, Any]) -> bool:
+        _ = public_inputs
         if self.mode == "mock":
             await asyncio.sleep(secrets.randbelow(150) / 1000 + 0.05)
             return _verify_mock_proof(proof)

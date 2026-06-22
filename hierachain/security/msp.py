@@ -92,7 +92,11 @@ class CertificateAuthority:
 
     def revoke_certificate(self, cert_id: str, reason: str = "unspecified") -> bool:
         if cert_id in self.issued_certificates:
-            self.issued_certificates[cert_id].status = CertificateStatus.REVOKED
+            cert = self.issued_certificates[cert_id]
+            cert.status = CertificateStatus.REVOKED
+            if not isinstance(cert.attributes, dict):
+                cert.attributes = {}
+            cert.attributes["revocation_reason"] = reason
             self.revoked_certificates.add(cert_id)
             self._verification_cache[cert_id] = False
             return True
