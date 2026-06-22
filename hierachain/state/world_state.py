@@ -32,7 +32,7 @@ class WorldState:
         with self._lock:
             for event in events:
                 entity_id = event.get("entity_id")
-                if entity_id is None:
+                if not isinstance(entity_id, str):
                     continue
                 current = self._states.get(entity_id)
                 self._states[entity_id] = self._compute_new_state(current, event)
@@ -41,7 +41,7 @@ class WorldState:
         with self._lock:
             for event in events:
                 entity_id = event.get("entity_id")
-                if entity_id is None:
+                if not isinstance(entity_id, str):
                     continue
                 current = self._states.get(entity_id)
                 self._states[entity_id] = self._compute_new_state(current, event)
