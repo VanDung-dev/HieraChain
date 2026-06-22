@@ -95,7 +95,7 @@ class WebSocketMessageBuilder:
     def build_event(
         chain_name: str,
         event_data: dict,
-        event_type: str = None,
+        event_type: str | None = None,
         optimize: bool = True
     ) -> dict:
         """
@@ -132,7 +132,7 @@ class WebSocketMessageBuilder:
         }
     
     @staticmethod
-    def build_error(error_message: str, code: str = None) -> dict:
+    def build_error(error_message: str, code: str | None = None) -> dict:
         """Build error message."""
         message = {
             "type": WebSocketMessageType.ERROR,
@@ -150,6 +150,6 @@ def build_block_added(chain_name: str, block_data: dict) -> dict:
     return WebSocketMessageBuilder.build_block_added(chain_name, block_data)
 
 
-def build_event_message(chain_name: str, event_data: dict, event_type: str = None) -> dict:
+def build_event_message(chain_name: str, event_data: dict, event_type: str | None = None) -> dict:
     """Build event message."""
     return WebSocketMessageBuilder.build_event(chain_name, event_data, event_type)
