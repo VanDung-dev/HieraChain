@@ -482,6 +482,18 @@ def _check_hsts_enabled(s) -> str | None:
     return None
 
 
+def _run_production_checks(s: Any) -> list[str]:
+    """Helper to run security config checks specifically for production."""
+    checks = [
+        _check_auth_enabled,
+        _check_cors_all,
+        _check_p2p_trust,
+        _check_hsts_enabled,
+    ]
+    results = (check(s) for check in checks)
+    return [res for res in results if isinstance(res, str)]
+
+
 def check_security_config() -> list[str]:
     """
     Returns the warnings list for the current config.
@@ -495,21 +507,10 @@ def check_security_config() -> list[str]:
     s = settings
     warnings = []
     
-    env = s.env
-    
     if s.__class__.__name__ == "DevelopmentSettings" and os.getenv("HRC_ENV") is None:
         warnings.append("Configuration Risk: HRC_ENV is unset, defaulting to DevelopmentSettings with disabled authentication!")
     
-    if env == "production":
-        checks = [
-            _check_auth_enabled,
-            _check_cors_all,
-            _check_p2p_trust,
-            _check_hsts_enabled,
-        ]
-        for check in checks:
-            result = check(s)
-            if result:
-                warnings.append(result)
+    if s.env == "production":
+        warnings.extend(_run_production_checks(s))
     
     return warnings
