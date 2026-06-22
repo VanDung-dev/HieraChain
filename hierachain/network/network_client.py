@@ -71,6 +71,31 @@ class NetworkClient:
         self._is_running: bool = False
         self._peers: dict[str, PeerInfo] = {}
 
+    @staticmethod
+    def _parse_seed_node(seed: str) -> tuple[str | None, str | None, bytes | None]:
+        """Analyze the structure of the seed node configuration chain."""
+        if "@" in seed:
+            # Format: node_id@ip:port[:public_key]
+            peer_id, rest = seed.split("@", 1)
+            parts = rest.split(":")
+            if len(parts) >= 2:
+                address = f"tcp://{parts[0]}:{parts[1]}"
+                pub_key = ":".join(parts[2:]).encode('utf-8') if len(parts) >= 3 else None
+                return peer_id, address, pub_key
+            return None, f"tcp://{rest}", None
+
+        if ":" in seed:
+            # Format: ip:port[:public_key]
+            parts = seed.split(":")
+            if len(parts) >= 2:
+                peer_id = parts[0]
+                address = f"tcp://{parts[0]}:{parts[1]}"
+                pub_key = ":".join(parts[2:]).encode('utf-8') if len(parts) >= 3 else None
+                return peer_id, address, pub_key
+            return parts[0], f"tcp://{seed}", None
+
+        return None, None, None
+
     async def start(self) -> bool:
         """
         Start the P2P network if enabled.
@@ -103,34 +128,8 @@ class NetworkClient:
             for seed in self.config.seed_nodes:
                 if not seed.strip():
                     continue
-                
-                peer_id = None
-                address = None
-                pub_key = None
-                
-                if "@" in seed:
-                    # Format: node_id@ip:port[:public_key]
-                    peer_id, rest = seed.split("@", 1)
-                    parts = rest.split(":")
-                    if len(parts) >= 2:
-                        # parts[0] is host, parts[1] is port
-                        address = f"tcp://{parts[0]}:{parts[1]}"
-                        if len(parts) >= 3:
-                            # Join the remaining parts back in case the key has colons
-                            pub_key = ":".join(parts[2:]).encode('utf-8')
-                    else:
-                        address = f"tcp://{rest}"
-                elif ":" in seed:
-                    # Format: ip:port[:public_key]
-                    parts = seed.split(":")
-                    if len(parts) >= 2:
-                        peer_id = parts[0]
-                        address = f"tcp://{parts[0]}:{parts[1]}"
-                        if len(parts) >= 3:
-                            pub_key = ":".join(parts[2:]).encode('utf-8')
-                    else:
-                        peer_id = seed
-                        address = f"tcp://{seed}"
+
+                peer_id, address, pub_key = self._parse_seed_node(seed)
 
                 if peer_id and address:
                     self._zmq_node.register_peer(peer_id, address, public_key=pub_key)
@@ -272,26 +271,3 @@ class NetworkClient:
     def peer_count(self) -> int:
         """Get the number of known peers."""
         return len(self._peers)
-
-
-
-
-    def get_network_status(self) -> NetworkStatus:
-        """Get current network status."""
-        return self._async_client.get_network_status()
-
-    def get_peers(self) -> list[PeerInfo]:
-        """Get list of known peers."""
-        return self._async_client.get_peers()
-
-    def get_healthy_peers(self) -> list[PeerInfo]:
-        """Get list of healthy peers."""
-        return self._async_client.get_healthy_peers()
-
-    def register_peer(self, peer_id: str, address: str) -> None:
-        """Register a new peer."""
-        self._async_client.register_peer(peer_id, address)
-
-    def unregister_peer(self, peer_id: str) -> None:
-        """Unregister a peer."""
-        self._async_client.unregister_peer(peer_id)
