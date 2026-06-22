@@ -9,6 +9,7 @@ import orjson
 import time
 import logging
 from typing import Any
+import redis as redis_mod
 
 from hierachain.core.blockchain import Blockchain
 from hierachain.config.settings import settings
@@ -27,44 +28,19 @@ def _now() -> float:
     return time.time()
 
 
-class RedisStorageAdapter:
-    """
-    Redis-based storage for blockchain data.
+class RedisChainManager:
+    """Manages blockchain structure and blocks operations."""
 
-    Same public interface as SQLiteAdapter but uses Redis key-value store.
-    Designed as a drop-in replacement via DEFAULT_STORAGE_BACKEND setting.
-    """
-
-    def __init__(
-        self,
-        host: str | None = None,
-        port: int | None = None,
-        db: int | None = None,
-    ) -> None:
-        import redis as redis_mod
-
-        self._host = host or settings.REDIS_HOST
-        self._port = port or settings.REDIS_PORT
-        self._db = db or settings.REDIS_DB
-        self._client: redis_mod.Redis | None = None
+    def __init__(self, client_provider: Any) -> None:
+        self._provider = client_provider
 
     @property
     def client(self) -> Any:
-        if self._client is None:
-            import redis as redis_mod
-            self._client = redis_mod.Redis(
-                host=self._host,
-                port=self._port,
-                db=self._db,
-                decode_responses=True,
-            )
-        return self._client
-
-    # --- Chain operations ---
+        return self._provider.client
 
     def store_chain(self, chain: Blockchain) -> bool:
         try:
-            chain_type = "main" if "MainChain" in str(type(chain)) else "sub"
+            chain_type = "main" if hasattr(chain, "resolve_sub_proof") or "MainChain" in chain.__class__.__name__ else "sub"
             domain_type = getattr(chain, "domain_type", None)
             data = {
                 "name": chain.name,
@@ -75,7 +51,7 @@ class RedisStorageAdapter:
             }
             self.client.hset(_k("chain", chain.name), mapping=data)
             return True
-        except Exception as e:
+        except redis_mod.RedisError as e:
             logger.error("Redis store_chain failed: %s", e)
             return False
 
@@ -84,7 +60,7 @@ class RedisStorageAdapter:
             data = self.client.hgetall(_k("chain", chain_name))
             if not data:
                 return None
-            blocks = self._load_blocks(chain_name)
+            blocks = self.load_blocks(chain_name)
             return {
                 "name": data.get("name", chain_name),
                 "chain_type": data.get("chain_type"),
@@ -96,7 +72,7 @@ class RedisStorageAdapter:
             logger.error("Redis load_chain failed: %s", e)
             return None
 
-    def _load_blocks(self, chain_name: str) -> list[dict[str, Any]]:
+    def load_blocks(self, chain_name: str) -> list[dict[str, Any]]:
         block_hashes = self.client.lrange(_k("chain", chain_name, "blocks"), 0, -1)
         blocks = []
         for bh in block_hashes:
@@ -114,24 +90,48 @@ class RedisStorageAdapter:
             return orjson.loads(raw)
         return []
 
-    # --- Event queries ---
+
+class RedisEventManager:
+    """Manages events querying and filtering."""
+
+    def __init__(self, client_provider: Any) -> None:
+        self._provider = client_provider
+
+    @property
+    def client(self) -> Any:
+        return self._provider.client
+
+    @staticmethod
+    def _parse_and_filter_event(raw: Any, chain_name: str | None) -> dict[str, Any] | None:
+        try:
+            ev = orjson.loads(raw)
+            if chain_name and ev.get("chain_name") != chain_name:
+                return None
+            return ev
+        except (orjson.JSONDecodeError, TypeError, AttributeError):
+            return None
+
+    def get_events_by_pattern(self, pattern: str, chain_name: str | None = None) -> list[dict[str, Any]]:
+        keys = self.client.keys(pattern)
+        if not keys:
+            return []
+        
+        raw_events = self.client.mget(keys)
+        results = []
+        for raw in raw_events:
+            if raw:
+                ev = self._parse_and_filter_event(raw, chain_name)
+                if ev is not None:
+                    results.append(ev)
+        results.sort(key=lambda e: e.get("timestamp", 0))
+        return results
 
     def get_entity_events(
         self, entity_id: str, chain_name: str | None = None,
     ) -> list[dict[str, Any]]:
         try:
             pattern = _k("event", "entity", entity_id) + ":*"
-            keys = self.client.keys(pattern)
-            results = []
-            for key in keys:
-                raw = self.client.get(key)
-                if raw:
-                    ev = orjson.loads(raw)
-                    if chain_name and ev.get("chain_name") != chain_name:
-                        continue
-                    results.append(ev)
-            results.sort(key=lambda e: e.get("timestamp", 0))
-            return results
+            return self.get_events_by_pattern(pattern, chain_name)
         except Exception as e:
             logger.error("Redis get_entity_events failed: %s", e)
             return []
@@ -141,22 +141,21 @@ class RedisStorageAdapter:
     ) -> list[dict[str, Any]]:
         try:
             pattern = _k("event", "type", event_type) + ":*"
-            keys = self.client.keys(pattern)
-            results = []
-            for key in keys:
-                raw = self.client.get(key)
-                if raw:
-                    ev = orjson.loads(raw)
-                    if chain_name and ev.get("chain_name") != chain_name:
-                        continue
-                    results.append(ev)
-            results.sort(key=lambda e: e.get("timestamp", 0))
-            return results
+            return self.get_events_by_pattern(pattern, chain_name)
         except Exception as e:
             logger.error("Redis get_events_by_type failed: %s", e)
             return []
 
-    # --- Proof operations ---
+
+class RedisProofManager:
+    """Manages saving and reading proof history."""
+
+    def __init__(self, client_provider: Any) -> None:
+        self._provider = client_provider
+
+    @property
+    def client(self) -> Any:
+        return self._provider.client
 
     def store_proof(
         self,
@@ -204,36 +203,65 @@ class RedisStorageAdapter:
             logger.error("Redis get_proof_history failed: %s", e)
             return []
 
-    # --- Statistics ---
+
+class RedisStatsManager:
+    """Manages statistics aggregation and old data cleanup."""
+
+    def __init__(self, client_provider: Any) -> None:
+        self._provider = client_provider
+
+    @property
+    def client(self) -> Any:
+        return self._provider.client
+
+    @staticmethod
+    def _parse_and_accumulate_events(
+        raw: Any, unique_entities: set[str], event_types: dict[str, int]
+    ) -> int:
+        """Parses block event data and updates stats. Returns event count."""
+        try:
+            events = orjson.loads(raw)
+            for ev in events:
+                eid = ev.get("entity_id")
+                if eid:
+                    unique_entities.add(eid)
+                etype = ev.get("event", "unknown")
+                event_types[etype] = event_types.get(etype, 0) + 1
+            return len(events)
+        except (orjson.JSONDecodeError, TypeError, AttributeError):
+            return 0
+
+    @classmethod
+    def _aggregate_events_stats(cls, raw_blocks_events: list[Any]) -> tuple[int, int, dict[str, int]]:
+        total_events = 0
+        unique_entities: set[str] = set()
+        event_types: dict[str, int] = {}
+
+        for raw in raw_blocks_events:
+            if raw:
+                total_events += cls._parse_and_accumulate_events(raw, unique_entities, event_types)
+
+        return total_events, len(unique_entities), event_types
 
     def get_chain_statistics(self, chain_name: str) -> dict[str, Any]:
         try:
             chain_data = self.client.hgetall(_k("chain", chain_name))
             if not chain_data:
                 return {}
-            block_hashes = self.client.llen(_k("chain", chain_name, "blocks"))
-            # Count events across all blocks
-            total_events = 0
-            unique_entities: set[str] = set()
-            event_types: dict[str, int] = {}
-            for bh in self.client.lrange(_k("chain", chain_name, "blocks"), 0, -1):
-                raw = self.client.get(_k("block", bh, "events"))
-                if raw:
-                    events = orjson.loads(raw)
-                    total_events += len(events)
-                    for ev in events:
-                        eid = ev.get("entity_id")
-                        if eid:
-                            unique_entities.add(eid)
-                        etype = ev.get("event", "unknown")
-                        event_types[etype] = event_types.get(etype, 0) + 1
+            
+            block_hashes_list = self.client.lrange(_k("chain", chain_name, "blocks"), 0, -1)
+            block_keys = [_k("block", bh, "events") for bh in block_hashes_list]
+            raw_blocks_events = self.client.mget(block_keys) if block_keys else []
+            
+            total_events, unique_entity_count, event_types = self._aggregate_events_stats(raw_blocks_events)
+            
             return {
                 "chain_name": chain_name,
                 "chain_type": chain_data.get("chain_type"),
                 "domain_type": chain_data.get("domain_type"),
-                "total_blocks": block_hashes,
+                "total_blocks": len(block_hashes_list),
                 "total_events": total_events,
-                "unique_entities": len(unique_entities),
+                "unique_entities": unique_entity_count,
                 "event_types": event_types,
                 "created_at": chain_data.get("created_at"),
                 "updated_at": chain_data.get("updated_at"),
@@ -242,37 +270,36 @@ class RedisStorageAdapter:
             logger.error("Redis get_chain_statistics failed: %s", e)
             return {}
 
+    def _get_key_timestamp(self, key: str, is_hash: bool, ts_field: str) -> float | None:
+        try:
+            if is_hash:
+                ts = self.client.hget(key, ts_field)
+                return float(ts) if ts else None
+            raw = self.client.get(key)
+            return orjson.loads(raw).get(ts_field) if raw else None
+        except (orjson.JSONDecodeError, ValueError, TypeError, redis_mod.RedisError):
+            return None
+
+    def _cleanup_keys(
+        self, pattern: str, cutoff: float, is_hash: bool = False, ts_field: str = "timestamp"
+    ) -> int:
+        keys_to_delete = []
+        for key in self.client.scan_iter(match=pattern):
+            val = self._get_key_timestamp(key, is_hash, ts_field)
+            if val is not None and val < cutoff:
+                keys_to_delete.append(key)
+
+        if keys_to_delete:
+            self.client.delete(*keys_to_delete)
+        return len(keys_to_delete)
+
     def cleanup_old_data(self, days_to_keep: int = 30) -> bool:
         try:
             cutoff = _now() - (days_to_keep * 86400)
             deleted = 0
-            for key in self.client.scan_iter(match=_k("event", "*")):
-                raw = self.client.get(key)
-                if raw:
-                    try:
-                        ev = orjson.loads(raw)
-                        if ev.get("timestamp", 0) < cutoff:
-                            self.client.delete(key)
-                            deleted += 1
-                    except (orjson.JSONDecodeError, TypeError):
-                        pass
-
-            for key in self.client.scan_iter(match=_k("proof", "*")):
-                ts = self.client.hget(key, "submitted_at")
-                if ts and float(ts) < cutoff:
-                    self.client.delete(key)
-                    deleted += 1
-
-            for key in self.client.scan_iter(match=_k("block", "*")):
-                raw = self.client.get(key)
-                if raw:
-                    try:
-                        bd = orjson.loads(raw)
-                        if bd.get("timestamp", 0) < cutoff:
-                            self.client.delete(key)
-                            deleted += 1
-                    except (orjson.JSONDecodeError, TypeError):
-                        pass
+            deleted += self._cleanup_keys(_k("event", "*"), cutoff)
+            deleted += self._cleanup_keys(_k("proof", "*"), cutoff, is_hash=True, ts_field="submitted_at")
+            deleted += self._cleanup_keys(_k("block", "*"), cutoff)
 
             logger.info("Redis cleanup completed", extra={"deleted": deleted})
             return True
@@ -280,11 +307,99 @@ class RedisStorageAdapter:
             logger.error("Redis cleanup failed: %s", e)
             return False
 
+
+class RedisStorageAdapter:
+    """
+    Redis-based storage for blockchain data.
+
+    Same public interface as SQLiteAdapter but uses Redis key-value store.
+    Designed as a drop-in replacement via DEFAULT_STORAGE_BACKEND setting.
+    """
+
+    def __init__(
+        self,
+        host: str | None = None,
+        port: int | None = None,
+        db: int | None = None,
+    ) -> None:
+        self._host = host or settings.REDIS_HOST
+        self._port = port or settings.REDIS_PORT
+        self._db = db or settings.REDIS_DB
+        self._client: redis_mod.Redis | None = None
+
+        # Initialize the helper managers
+        self._chain_mgr = RedisChainManager(self)
+        self._event_mgr = RedisEventManager(self)
+        self._proof_mgr = RedisProofManager(self)
+        self._stats_mgr = RedisStatsManager(self)
+
+    @property
+    def client(self) -> Any:
+        if self._client is None:
+            self._client = redis_mod.Redis(
+                host=self._host,
+                port=self._port,
+                db=self._db,
+                decode_responses=True,
+            )
+        return self._client
+
+    # --- Chain operations delegated ---
+
+    def store_chain(self, chain: Blockchain) -> bool:
+        return self._chain_mgr.store_chain(chain)
+
+    def load_chain(self, chain_name: str) -> dict[str, Any] | None:
+        return self._chain_mgr.load_chain(chain_name)
+
+    def _load_blocks(self, chain_name: str) -> list[dict[str, Any]]:
+        return self._chain_mgr.load_blocks(chain_name)
+
+    # --- Event operations delegated ---
+
+    def _get_events_by_pattern(self, pattern: str, chain_name: str | None = None) -> list[dict[str, Any]]:
+        return self._event_mgr.get_events_by_pattern(pattern, chain_name)
+
+    def get_entity_events(
+        self, entity_id: str, chain_name: str | None = None,
+    ) -> list[dict[str, Any]]:
+        return self._event_mgr.get_entity_events(entity_id, chain_name)
+
+    def get_events_by_type(
+        self, event_type: str, chain_name: str | None = None,
+    ) -> list[dict[str, Any]]:
+        return self._event_mgr.get_events_by_type(event_type, chain_name)
+
+    # --- Proof operations delegated ---
+
+    def store_proof(
+        self,
+        main_chain_name: str,
+        sub_chain_name: str,
+        proof_hash: str,
+        block_index: int,
+        metadata: dict[str, Any],
+    ) -> bool:
+        return self._proof_mgr.store_proof(
+            main_chain_name, sub_chain_name, proof_hash, block_index, metadata
+        )
+
+    def get_proof_history(self, sub_chain_name: str) -> list[dict[str, Any]]:
+        return self._proof_mgr.get_proof_history(sub_chain_name)
+
+    # --- Statistics & Cleanup delegated ---
+
+    def get_chain_statistics(self, chain_name: str) -> dict[str, Any]:
+        return self._stats_mgr.get_chain_statistics(chain_name)
+
+    def cleanup_old_data(self, days_to_keep: int = 30) -> bool:
+        return self._stats_mgr.cleanup_old_data(days_to_keep)
+
     def close(self) -> None:
         if self._client is not None:
             try:
                 self._client.close()
-            except Exception:
+            except redis_mod.RedisError:
                 pass
             self._client = None
 
