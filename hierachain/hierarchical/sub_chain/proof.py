@@ -4,7 +4,10 @@ Proof submission and ZK proof functions for Sub-Chain.
 
 import time
 import logging
-from typing import Any, Callable
+from typing import Any, Callable, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hierachain.hierarchical.sub_chain.base import SubChain
 
 from hierachain.config.settings import settings
 from hierachain.core.utils import sanitize_metadata_for_main_chain
