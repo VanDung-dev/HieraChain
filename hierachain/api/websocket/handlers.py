@@ -22,7 +22,7 @@ class ConnectionHealthHandler:
         self,
         ping_interval: int = 30,
         ping_timeout: int = 10,
-        on_connection_dead: Callable[[str], None] = None
+        on_connection_dead: Callable[[str], None] | None = None
     ):
         self.ping_interval = ping_interval
         self.ping_timeout = ping_timeout

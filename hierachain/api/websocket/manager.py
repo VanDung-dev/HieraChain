@@ -174,7 +174,7 @@ class WebSocketManager:
         self, 
         connection_id: str, 
         chain_name: str,
-        event_types: list[str] = None
+        event_types: list[str] | None = None
     ) -> bool:
         """Subscribe a connection to a chain and optionally specific event types."""
         async with self._lock:
