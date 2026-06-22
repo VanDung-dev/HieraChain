@@ -128,6 +128,25 @@ class ClusterManager:
         self.register_node(node_id, "localhost")
         self.update_heartbeat(node_id)
 
+    def _validate_node_address(self, node_id: str, address: str) -> bool:
+        """Helper to validate network address format for non-local nodes."""
+        if (
+            not re.match(r"^([a-zA-Z0-9.-]+)(:\d+)?$", address) and
+            node_id != self.node_id and
+            address != "localhost"
+        ):
+            logger.warning(f"Invalid address format for node {node_id}")
+            return False
+        return True
+
+    def _authenticate_node(self, node_id: str, auth_token: str | None) -> bool:
+        """Helper to verify credentials if cluster secret is set."""
+        if getattr(self, "cluster_secret", "") and node_id != self.node_id:
+            if not auth_token or auth_token != self.cluster_secret:
+                logger.warning(f"Authentication failed for node {node_id}")
+                return False
+        return True
+
     def register_node(
         self, node_id: str, address: str, auth_token: str | None = None
     ) -> None:
@@ -139,21 +158,11 @@ class ClusterManager:
             address: Network address of the node.
             auth_token: Optional authentication token for the node.
         """
-        
-        # Basic address validation
-        if (
-            not re.match(r"^([a-zA-Z0-9.-]+)(:\d+)?$", address) and
-            node_id != self.node_id and
-            address != "localhost"
-        ):
-            logger.warning(f"Invalid address format for node {node_id}")
+        if not self._validate_node_address(node_id, address):
             return
 
-        # Basic auth verification
-        if getattr(self, "cluster_secret", "") and node_id != self.node_id:
-            if not auth_token or auth_token != self.cluster_secret:
-                logger.warning(f"Authentication failed for node {node_id}")
-                return
+        if not self._authenticate_node(node_id, auth_token):
+            return
 
         with self._lock:
             if node_id not in self._nodes:
