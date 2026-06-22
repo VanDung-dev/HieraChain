@@ -8,7 +8,7 @@ from typing import Any
 
 import pyarrow as pa
 
-from hierachain.core.block import Block, table_to_list_of_dicts
+from hierachain.core.block import Block
 from hierachain.core import schemas
 from hierachain.hierarchical.channel.query import _filter_block_events
 
@@ -50,10 +50,9 @@ class ChannelLedger:
         arrays: dict[str, list[Any]] = {name: [] for name in schema_names}
 
         for event in self.current_block_events:
+            details_val = _format_details(event.get("details"))
             for name in schema_names:
-                val = event.get(name)
-                if name == "details":
-                    val = _format_details(val)
+                val = details_val if name == "details" else event.get(name)
                 arrays[name].append(val)
         return arrays
 
