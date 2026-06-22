@@ -123,6 +123,20 @@ class SecureEventRequest(BaseModel):
             raise ValueError("Field must be a valid hex string after '0x' prefix")
         return v
 
+    @staticmethod
+    def _validate_payload_depth(v: dict[str, Any]) -> None:
+        """Helper to verify data depth using a stack-based traversal."""
+        stack: list[tuple[Any, int]] = [(v, 0)]
+        while stack:
+            current_obj, current_depth = stack.pop()
+            if current_depth > 10:
+                raise ValueError("Payload depth exceeds maximum limit (10)")
+
+            if isinstance(current_obj, dict):
+                stack.extend((val, current_depth + 1) for val in current_obj.values())
+            elif isinstance(current_obj, list):
+                stack.extend((item, current_depth + 1) for item in current_obj)
+
     @field_validator('details')
     @classmethod
     def validate_details_integrity(cls, v: dict[str, Any]) -> dict[str, Any]:
@@ -131,17 +145,7 @@ class SecureEventRequest(BaseModel):
         if len(json.dumps(v)) > 1024 * 1024:
             raise ValueError("Event details exceed 1MB size limit")
 
-        def check_depth(d, current_depth=0):
-            if current_depth > 10:
-                raise ValueError("Payload depth exceeds maximum limit (10)")
-            if isinstance(d, dict):
-                for value in d.values():
-                    check_depth(value, current_depth + 1)
-            elif isinstance(d, list):
-                for item in d:
-                    check_depth(item, current_depth + 1)
-
-        check_depth(v)
+        cls._validate_payload_depth(v)
         return v
 
 
