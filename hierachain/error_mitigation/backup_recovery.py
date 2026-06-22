@@ -10,7 +10,6 @@ import os
 from typing import Any
 from datetime import datetime
 
-from hierachain.error_mitigation.recovery_types import RecoveryError
 
 logger = logging.getLogger(__name__)
 

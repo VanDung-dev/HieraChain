@@ -367,6 +367,8 @@ class TransactionJournal:
 
     def _background_writer(self) -> None:
         """Background thread target to write events sequentially from the queue."""
+        if self._stop_writer is None or self._write_queue is None:
+            return
         while not self._stop_writer.is_set() or not self._write_queue.empty():
             try:
                 # Use a short timeout so we can periodically check self._stop_writer
@@ -420,7 +422,7 @@ class TransactionJournal:
         """
         Durably log an event to the journal using Arrow format.
         """
-        if self._async_write:
+        if self._async_write and self._write_queue is not None:
             self._write_queue.put(event_data)
             return True
         return self._write_event_to_file(event_data)
@@ -442,7 +444,7 @@ class TransactionJournal:
 
     def close(self):
         """Close the journal file handle."""
-        if self._async_write and self._writer_thread:
+        if self._async_write and self._writer_thread and self._stop_writer is not None:
             self._stop_writer.set()
             self._writer_thread.join(timeout=5.0)
             self._writer_thread = None
