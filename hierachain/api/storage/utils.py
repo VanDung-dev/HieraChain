@@ -73,6 +73,29 @@ def is_cid_string(value: Any) -> bool:
     return value.startswith('Qm') or value.startswith('b')
 
 
+def _has_any_cid_field(data: dict[str, Any], cid_field: str) -> bool:
+    """Check if the data contains any valid CID fields."""
+    if cid_field in data and is_cid_string(data[cid_field]):
+        return True
+    cid_fields = [k for k in data.keys() if k.endswith('_cid')]
+    return bool(cid_fields and any(is_cid_string(data[f]) for f in cid_fields))
+
+
+def _has_onchain_fields(data: dict[str, Any], cid_field: str) -> bool:
+    """Check if the data contains on-chain-specific non-CID fields."""
+    standard_fields = {
+        'entity_id', 'event', 'timestamp', 'data',
+        'creator_id', 'signature', 'index', 'hash', 'merkle_root'
+    }
+    data_fields = [
+        k for k in data.keys()
+        if k != cid_field
+        and not k.endswith(('_cid', '_nonce', '_metadata'))
+        and k not in standard_fields
+    ]
+    return any(data.get(f) for f in data_fields)
+
+
 def detect_data_location(data: dict[str, Any], cid_field: str = "cid") -> str:
     """
     Detect whether data is stored on-chain or off-chain (IPFS).
@@ -85,36 +108,11 @@ def detect_data_location(data: dict[str, Any], cid_field: str = "cid") -> str:
         "offchain" if CID is present and valid
         "onchain" if data is inline
         "unknown" if unclear
-
-    Examples:
-        >>> detect_data_location({"details": {"key": "value"}})
-        'onchain'
-        >>> detect_data_location({"details_cid": "QmXx...", "details_nonce": "abc123"})
-        'offchain'
     """
-    # 1. Check for CID field
-    if cid_field in data and is_cid_string(data[cid_field]):
+    if _has_any_cid_field(data, cid_field):
         return "offchain"
 
-    # 2. Check for common CID field patterns
-    cid_fields = [k for k in data.keys() if k.endswith('_cid')]
-    if cid_fields and any(is_cid_string(data[f]) for f in cid_fields):
-        return "offchain"
-
-    # Exclude CID-related fields and standard event metadata
-    standard_fields = {
-        'entity_id', 'event', 'timestamp', 'data',
-        'creator_id', 'signature', 'index', 'hash', 'merkle_root'
-    }
-    data_fields = [
-        k for k in data.keys()
-        if k != cid_field
-        and not k.endswith(('_cid', '_nonce', '_metadata'))
-        and k not in standard_fields
-    ]
-
-    # If we have fields like 'details', 'value', or 'implementation' with actual data
-    if any(data.get(f) for f in data_fields):
+    if _has_onchain_fields(data, cid_field):
         return "onchain"
 
     return "unknown"
