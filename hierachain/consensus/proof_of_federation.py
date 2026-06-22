@@ -368,8 +368,19 @@ def _is_signature_valid(
     return verify_signature(public_key, message, signature)
 
 
-def _verify_block_quorum(block: Block,
-                         validator_metadata: dict[str, dict[str, Any]]) -> bool:
+def _extract_signature_from_block(block: Block) -> str | None:
+    """Extract signature from the consensus_finalization event."""
+    events = block.to_event_list()
+    for event in reversed(events):
+        if event.get("event") == "consensus_finalization":
+            return event.get("details", {}).get("signature", "")
+    logger.warning("Block %d has no consensus_finalization event", block.index)
+    return None
+
+
+def _verify_block_quorum(
+    block: Block, validator_metadata: dict[str, dict[str, Any]]
+) -> bool:
     """Verify the block's federation signature using Ed25519.
 
     Extracts the signer ID and signature from the block's
@@ -390,13 +401,8 @@ def _verify_block_quorum(block: Block,
         logger.warning("Block %d has no signer ID — quorum verification skipped", block.index)
         return True
 
-    events = block.to_event_list()
-    for event in reversed(events):
-        if event.get("event") == "consensus_finalization":
-            signature = event.get("details", {}).get("signature", "")
-            break
-    else:
-        logger.warning("Block %d has no consensus_finalization event", block.index)
+    signature = _extract_signature_from_block(block)
+    if signature is None:
         return True
 
     if not signature:
@@ -404,7 +410,7 @@ def _verify_block_quorum(block: Block,
         return True
 
     public_key = validator_metadata.get(signer_id, {}).get("public_key")
-    if not public_key:
+    if not isinstance(public_key, str):
         logger.warning(
             "Block %d signer %s has no public_key in metadata — skipping sig verify",
             block.index, signer_id
