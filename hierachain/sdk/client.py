@@ -77,12 +77,14 @@ class HieraChainClient:
     def _get_session(self) -> requests.Session:
         if self._session is None:
             try:
-                self._session = requests.Session()
-                self._session.headers.update(self.config.headers)
+                session = requests.Session()
+                session.headers.update(self.config.headers)
                 if self.config.api_key:
-                    self._session.headers["X-API-Key"] = self.config.api_key
+                    session.headers["X-API-Key"] = self.config.api_key
+                self._session = session
             except ImportError:
                 raise ImportError("requests library required: pip install requests")
+        assert self._session is not None
         return self._session
 
     def _calculate_delay(self, attempt: int) -> float:

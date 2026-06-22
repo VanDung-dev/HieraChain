@@ -7,7 +7,6 @@ backoff, circuit breaker pattern, and aiohttp transport.
 
 from __future__ import annotations
 
-import time
 import logging
 import asyncio
 from typing import Any
@@ -59,6 +58,7 @@ class HieraChainAsyncClient:
             if self.config.api_key:
                 headers["X-API-Key"] = self.config.api_key
             self._session = aiohttp.ClientSession(headers=headers)
+        assert self._session is not None
         return self._session
 
     def _calculate_delay(self, attempt: int) -> float:
