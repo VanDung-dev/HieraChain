@@ -37,7 +37,7 @@ class OrderingService:
         self.config = config
         self.nodes = nodes or []
         self.node_identity = node_identity
-        self.status = OrderingStatus.MAINTENANCE
+        self._status = OrderingStatus.MAINTENANCE
         self.should_stop = threading.Event()
         self.event_pool: Queue[PendingEvent] = Queue()
         self.pending_events: dict[str, PendingEvent] = {}
@@ -104,6 +104,16 @@ class OrderingService:
         self.processing_thread = thread
         thread.start()
 
+    @property
+    def status(self) -> OrderingStatus:
+        """Get the current service status"""
+        return self._status
+
+    @status.setter
+    def status(self, value: OrderingStatus) -> None:
+        """Set the current service status"""
+        self._status = value
+
     def _init_processing_thread(self):
         """Entry point for the background processing thread"""
         self.loop = asyncio.new_event_loop()
@@ -118,15 +128,12 @@ class OrderingService:
     ) -> str:
         """Submit a new event for ordering"""
         if self.status in [OrderingStatus.LOCKDOWN, OrderingStatus.SHUTDOWN]:
-            status_str = str(self.status.value)
+            status_str = self.status.value
             raise Exception(f"Ordering service is in {status_str} mode")
 
         # Validate event_data is a dictionary
         if not isinstance(event_data, dict):
-            raise ValueError(
-                "event_data must be a dictionary, got %s",
-                type(event_data).__name__
-            )
+            raise ValueError(f"event_data must be a dictionary, got {type(event_data).__name__}")
 
         self.metrics.record_received()
         event_id = generate_event_id(event_data, channel_id)

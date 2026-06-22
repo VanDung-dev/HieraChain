@@ -146,21 +146,18 @@ class EventCertifier:
         
     def _setup_default_rules(self) -> None:
         """Setup default validation rules"""
-        def validate_non_empty_entity_id(event_data: dict[str, Any]) -> bool:
+        def validate_default_rules(event_data: dict[str, Any]) -> bool:
             entity_id = event_data.get("entity_id", "")
-            return isinstance(entity_id, str) and len(entity_id.strip()) > 0
-        
-        def validate_event_type(event_data: dict[str, Any]) -> bool:
+            if not (isinstance(entity_id, str) and len(entity_id.strip()) > 0):
+                return False
             event_type = event_data.get("event", "")
-            return isinstance(event_type, str) and len(event_type.strip()) > 0
-        
-        def validate_timestamp_format(event_data: dict[str, Any]) -> bool:
+            if not (isinstance(event_type, str) and len(event_type.strip()) > 0):
+                return False
             timestamp = event_data.get("timestamp")
             return isinstance(timestamp, (int, float)) and timestamp > 0
         
-        self.add_validation_rule(validate_non_empty_entity_id)
-        self.add_validation_rule(validate_event_type)
-        self.add_validation_rule(validate_timestamp_format)
+        self.add_validation_rule(validate_default_rules)
+
 
     def add_validation_rule(self, rule: Callable[[dict[str, Any]], bool]) -> None:
         """Add a validation rule for events"""

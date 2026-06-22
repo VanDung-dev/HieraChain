@@ -8,7 +8,6 @@ import asyncio
 from typing import Any
 from queue import Empty
 
-from hierachain.core.performance import process_pool
 from hierachain.security.security_utils import verify_batch_signatures
 from hierachain.consensus.ordering.types import (
     PendingEvent, EventStatus, OrderingStatus
@@ -111,20 +110,21 @@ class OrderingProcessor:
         # Internal components
         self.block_manager = OrderingBlockManager(service)
         self.recovery = OrderingRecovery(service, self)
+        self.executor = OrderingExecutor(self)
         
         # Batch management
         self.current_batch: list[PendingEvent] = []
         self.last_batch_time = time.time()
         self.force_process = asyncio.Event()
 
+        self.batch_size = (
+            self.config.get("batch_size") or self.config.get("block_size") or 100
+        )
+        self.batch_timeout = self.config.get("batch_timeout", 0.1)
+
     async def run_async(self):
         """Main async processing loop"""
         await self._initialize_service()
-
-        # Use block_size as fallback for batch_size to maintain consistency
-        batch_size = (
-            self.config.get("batch_size") or self.config.get("block_size") or 100
-        )
         
         while not self.should_stop.is_set():
             try:
@@ -132,7 +132,7 @@ class OrderingProcessor:
                 self.last_batch_time = await self._handle_batch_logic(
                     self.current_batch,
                     self.last_batch_time,
-                    batch_size,
+                    self.batch_size,
                 )
             except Exception as e:
                 logger.error(f"Error in processor loop: {e}")
@@ -144,13 +144,9 @@ class OrderingProcessor:
         self.service.status = OrderingStatus.ACTIVE
         logger.info("Ordering Service is now ACTIVE")
 
-    async def _collect_next_event(self, batch: list[PendingEvent]):
-        """Try to collect events from the pool. Drains queue elements synchronously. Sleeps if batch has items, blocks if empty."""
-        if self.should_stop.is_set():
-            return
-        
-        # Drain ready events synchronously
-        batch_size = self.config.get("batch_size") or self.config.get("block_size") or 100
+    def _drain_event_pool(self, batch: list[PendingEvent]) -> None:
+        """Drain ready events from the queue synchronously up to batch_size."""
+        batch_size = self.batch_size
         while len(batch) < batch_size:
             try:
                 pending_event = self.event_pool.get_nowait()
@@ -158,35 +154,32 @@ class OrderingProcessor:
             except Empty:
                 break
 
-        # If batch is still not full
-        if len(batch) < batch_size:
-            if not batch:
-                # If batch is empty, wait for the next event on background thread
-                try:
-                    timeout = self.config.get("batch_timeout", 0.1)
-                    pending_event = await asyncio.to_thread(self.event_pool.get, timeout=timeout)
-                    batch.append(pending_event)
-                    
-                    # Drain any other events that arrived in the meantime
-                    while len(batch) < batch_size:
-                        try:
-                            pending_event = self.event_pool.get_nowait()
-                            batch.append(pending_event)
-                        except Empty:
-                            break
-                except Empty:
-                    pass
-                except RuntimeError as e:
-                    if "shutdown" in str(e).lower() or "event loop is closed" in str(e).lower():
-                        pass
-                    else:
-                        raise e
+    async def _wait_and_drain_event(self, batch: list[PendingEvent]) -> None:
+        """Wait for the next event in thread and drain any others that arrive."""
+        try:
+            pending_event = await asyncio.to_thread(self.event_pool.get, timeout=self.batch_timeout)
+            batch.append(pending_event)
+            self._drain_event_pool(batch)
+        except Empty:
+            pass
+        except RuntimeError as e:
+            if "shutdown" in str(e).lower() or "event loop is closed" in str(e).lower():
+                pass
             else:
-                # If batch has elements but is not full, do a very short sleep to let more events arrive
-                # and avoid busy-waiting or blocking on the queue
+                raise e
+
+    async def _collect_next_event(self, batch: list[PendingEvent]) -> None:
+        """Try to collect events from the pool. Sleeps if batch has items, blocks if empty."""
+        if self.should_stop.is_set():
+            return
+
+        self._drain_event_pool(batch)
+
+        if len(batch) < self.batch_size:
+            if not batch:
+                await self._wait_and_drain_event(batch)
+            else:
                 await asyncio.sleep(0.001)
-
-
 
     async def _handle_batch_logic(
         self,
@@ -198,8 +191,7 @@ class OrderingProcessor:
         Decide if a batch should be processed or if timeout blocks should be checked.
         """
         is_full = len(batch) >= batch_size
-        batch_timeout = self.config.get("batch_timeout", 0.1)
-        is_timeout = (time.time() - last_batch_time) > batch_timeout
+        is_timeout = (time.time() - last_batch_time) > self.batch_timeout
         is_forced = self.force_process.is_set()
 
         should_act = _should_process_batch(
@@ -213,7 +205,7 @@ class OrderingProcessor:
             return last_batch_time
 
         if batch:
-            await self._process_batch(list(batch))
+            await self.executor.process_batch(list(batch))
             batch.clear()
 
         await self.block_manager.check_timeout_block_creation(force=is_forced)
@@ -223,9 +215,28 @@ class OrderingProcessor:
 
         return time.time()
 
-    async def _process_batch(self, batch: list[PendingEvent]):
+    async def force_process_batch_async(self) -> None:
+        """Force immediate processing of current batch and block creation"""
+        self.force_process.set()
+        # Give the loop a chance to pick it up
+        await asyncio.sleep(0.05)
+
+
+class OrderingExecutor:
+    """Handles execution/verification of event batches for the ordering processor"""
+
+    def __init__(self, processor: OrderingProcessor) -> None:
+        self.processor = processor
+        self.certifier = processor.certifier
+        self.block_builder = processor.block_builder
+        self.storage_handler = processor.storage_handler
+        self.pending_events = processor.pending_events
+        self.metrics = processor.metrics
+        self.block_manager = processor.block_manager
+
+    async def process_batch(self, batch: list[PendingEvent]) -> None:
         """Process a batch of events with parallel signature verification"""
-        verification_items, events_to_verify = (_extract_verification_items(batch))
+        verification_items, events_to_verify = _extract_verification_items(batch)
 
         if verification_items:
             await self._verify_batch_signatures_async(
@@ -259,13 +270,11 @@ class OrderingProcessor:
         except Exception as e:
             logger.error("Batch verification failed: %s", e)
 
-
     async def _handle_processed_batch(self, batch: list[PendingEvent]) -> None:
         """
         Process each event in the batch after verification is complete.
         Uses asyncio.gather for parallel processing of independent events.
         """
-        # Process independent events in parallel using asyncio.gather
         tasks = []
         for event in batch:
             if event.status == EventStatus.REJECTED:
@@ -276,7 +285,7 @@ class OrderingProcessor:
         if tasks:
             await asyncio.gather(*tasks)
 
-    async def process_single_event(self, pending_event: PendingEvent,) -> None:
+    async def process_single_event(self, pending_event: PendingEvent) -> None:
         """Process a single event through certification and ordering"""
         try:
             pending_event.status = EventStatus.PROCESSING
@@ -298,9 +307,3 @@ class OrderingProcessor:
 
         except Exception as e:
             logger.error("Error processing event %s: %s", pending_event.event_id, e)
-
-    async def force_process_batch_async(self) -> None:
-        """Force immediate processing of current batch and block creation"""
-        self.force_process.set()
-        # Give the loop a chance to pick it up
-        await asyncio.sleep(0.05)

@@ -7,10 +7,11 @@ import logging
 from collections import deque
 from typing import Any
 from hierachain.core.block import Block, convert_events_to_arrow
-
-logger = logging.getLogger(__name__)
 from hierachain.storage.sql_backend import SqlStorageBackend
 from hierachain.consensus.ordering.types import PendingEvent
+
+
+logger = logging.getLogger(__name__)
 
 
 def _verify_chain_links(blocks: list[Block]) -> None:
