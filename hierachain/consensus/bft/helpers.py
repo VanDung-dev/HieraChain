@@ -20,14 +20,11 @@ from hierachain.consensus.bft.types import BFTMessage, MessageType, ConsensusSta
 logger = logging.getLogger(__name__)
 
 
-# ── Cryptographic helpers ─────────────────────────────────────────────────
-
-
+# --- Cryptographic helpers ---
 def sign_message(key_provider: Any, data: bytes) -> str:
     if not key_provider:
         return ""
     return key_provider.sign(data)
-
 
 def verify_message_signature(
     message: BFTMessage, node_public_keys: dict[str, str]
@@ -51,7 +48,6 @@ def verify_message_signature(
         logger.error("Signature verification error: %s", e)
         return False
 
-
 def hash_request(request: dict[str, Any]) -> str:
     req_str = (
         f"{request.get('client_id')}:"
@@ -59,7 +55,6 @@ def hash_request(request: dict[str, Any]) -> str:
         f"{request.get('operation')}"
     )
     return hashlib.sha256(req_str.encode()).hexdigest()
-
 
 def verify_operation_zk_proof(data: dict[str, Any]) -> bool:
     operation = data.get("operation", {})
@@ -82,8 +77,7 @@ def verify_operation_zk_proof(data: dict[str, Any]) -> bool:
         return False
 
 
-# ── Network helpers ────────────────────────────────────────────────────────
-
+# --- Network helpers ---
 
 def send_via_zmq(zmq_node: Any, target_id: str, message: dict[str, Any]) -> None:
     if not zmq_node:
@@ -98,7 +92,6 @@ def send_via_zmq(zmq_node: Any, target_id: str, message: dict[str, Any]) -> None
     except RuntimeError:
         asyncio.run(zmq_node.send_direct(target_id, message))
 
-
 def _broadcast_via_zmq(zmq_node: Any, msg_dict: dict[str, Any]) -> None:
     try:
         loop = asyncio.get_event_loop()
@@ -110,7 +103,6 @@ def _broadcast_via_zmq(zmq_node: Any, msg_dict: dict[str, Any]) -> None:
         asyncio.run(zmq_node.broadcast(msg_dict))
     except Exception as e:
         logger.error("ZMQ Broadcast error: %s", e)
-
 
 def _send_node_message(
     send_func: Callable, node_id: str, msg_dict: dict[str, Any],
@@ -124,7 +116,6 @@ def _send_node_message(
         log_behavior_func(node_id, "network_send_failure")
         return 1
 
-
 def _broadcast_manually(
     send_func: Callable, all_nodes: list[str], current_node_id: str,
     msg_dict: dict[str, Any], log_behavior_func: Callable,
@@ -134,7 +125,6 @@ def _broadcast_manually(
         if node_id != current_node_id:
             failed += _send_node_message(send_func, node_id, msg_dict, log_behavior_func)
     return failed
-
 
 def broadcast(
     zmq_node: Any, network_send_function: Callable | None,
@@ -151,7 +141,6 @@ def broadcast(
         )
     return 0
 
-
 def forward_to_primary(
     network_send_function: Callable | None,
     primary_id: str, current_node_id: str, operation: dict[str, Any],
@@ -166,8 +155,7 @@ def forward_to_primary(
             logger.error("Error forwarding to primary %s: %s", primary_id, e)
 
 
-# ── View-change helpers ────────────────────────────────────────────────────
-
+# --- View-change helpers ---
 
 def _reconstruct_bft_message(msg_dict: dict[str, Any]) -> BFTMessage:
     return BFTMessage(
@@ -181,7 +169,6 @@ def _reconstruct_bft_message(msg_dict: dict[str, Any]) -> BFTMessage:
         nonce=msg_dict.get("nonce", ""),
     )
 
-
 def _is_msg_metadata_valid(
     msg_dict: dict[str, Any], view: int, node_public_keys: dict[str, str]
 ) -> bool:
@@ -191,7 +178,6 @@ def _is_msg_metadata_valid(
     if msg_dict.get("view") != view or msg_dict.get("message_type") != MessageType.VIEW_CHANGE.value:
         return False
     return True
-
 
 def _validate_single_msg(
     msg_dict: dict[str, Any], view: int, node_public_keys: dict[str, str],
@@ -207,7 +193,6 @@ def _validate_single_msg(
         logger.error("Error validating proof message: %s", e)
     return None
 
-
 def _collect_valid_senders(
     proof: list[dict[str, Any]], view: int, quorum: int,
     node_public_keys: dict[str, str], verify_sig_func: Callable,
@@ -221,7 +206,6 @@ def _collect_valid_senders(
             valid_senders.add(sender_id)
     return valid_senders
 
-
 def validate_view_change_proof(
     view: int, proof: list[dict[str, Any]], f: int,
     node_public_keys: dict[str, str], verify_sig_func: Callable,
@@ -232,7 +216,6 @@ def validate_view_change_proof(
     valid_senders = _collect_valid_senders(proof, view, quorum, node_public_keys, verify_sig_func)
     return len(valid_senders) >= quorum
 
-
 def start_view_change_timer(timeout: float, handler: Callable) -> threading.Timer:
     timer = threading.Timer(timeout, handler)
     timer.daemon = True
@@ -240,8 +223,7 @@ def start_view_change_timer(timeout: float, handler: Callable) -> threading.Time
     return timer
 
 
-# ── Consensus-phase helpers ────────────────────────────────────────────────
-
+# --- Consensus-phase helpers ---
 
 def _execute_consensus_operation(
     chain: Any, operation: dict[str, Any], seq: int, view: int
@@ -258,7 +240,6 @@ def _execute_consensus_operation(
             chain.add_event(event)
     except Exception as e:
         logger.error("Error executing operation: %s", e)
-
 
 def _log_behavior(
     error_classifier: Any, failure_counts: dict[str, int],
@@ -280,7 +261,6 @@ def _log_behavior(
     if failure_counts[node_id] >= max_failures and auto_recovery:
         recovery_callback(view + 1)
 
-
 def _validate_consensus_message(
     message: BFTMessage, all_nodes: list[str],
     public_keys: dict[str, str], strictness: str, timeout: float,
@@ -296,14 +276,12 @@ def _validate_consensus_message(
         log_func(message.sender_id, "slow_message")
     return True
 
-
 def validate_consensus_message(
     message: BFTMessage, all_nodes: list[str],
     public_keys: dict[str, str], strictness: str, timeout: float,
     log_func: Callable[[str, str], None],
 ) -> bool:
     return _validate_consensus_message(message, all_nodes, public_keys, strictness, timeout, log_func)
-
 
 def _cleanup_messages(
     pre_prep: dict[int, BFTMessage], prep: dict[int, list[BFTMessage]],
@@ -316,7 +294,6 @@ def _cleanup_messages(
             prep.pop(seq, None)
             commit.pop(seq, None)
 
-
 def _create_signed_bft_message(
     msg_type: MessageType, view: int, seq: int,
     node_id: str, key_provider: Any, data: dict[str, Any],
@@ -326,13 +303,11 @@ def _create_signed_bft_message(
         msg.signature = sign_message(key_provider, msg.get_signable_payload())
     return msg
 
-
 def _add_to_votes(votes: list[BFTMessage], message: BFTMessage) -> bool:
     if any(m.sender_id == message.sender_id for m in votes):
         return False
     votes.append(message)
     return True
-
 
 def _validate_prepare_msg(
     message: BFTMessage, state: ConsensusState,
@@ -351,7 +326,6 @@ def _validate_prepare_msg(
         return False
     return True
 
-
 def _validate_commit_msg(
     message: BFTMessage, pre_prep_messages: dict[int, BFTMessage],
     prep_messages: dict[int, list[BFTMessage]],
@@ -364,7 +338,6 @@ def _validate_commit_msg(
         log_func(message.sender_id, "invalid_signature")
         return False
     return True
-
 
 def _validate_pre_prep_basic(
     node_id: str, primary_id: str, view: int,
@@ -379,7 +352,6 @@ def _validate_pre_prep_basic(
         return False
     return verify_message_signature(message, public_keys)
 
-
 def _process_prepare_quorum_logic(
     node_id: str, f: int, view: int, seq: int, digest: str | None,
     state: ConsensusState, prepare_count: int, key_provider: Any,
@@ -391,7 +363,6 @@ def _process_prepare_quorum_logic(
         return ConsensusState.PREPARED, msg
     return state, None
 
-
 def _process_commit_quorum_logic(
     f: int, commit_msgs: list[BFTMessage],
     pre_prep_messages: dict[int, BFTMessage],
@@ -402,7 +373,6 @@ def _process_commit_quorum_logic(
             if pre_prep:
                 return True, pre_prep
     return False, None
-
 
 def _init_bft_mitigation_data(error_config: dict[str, Any]) -> dict[str, Any]:
     consensus_config = error_config.get("consensus", {}).get("bft", {})
