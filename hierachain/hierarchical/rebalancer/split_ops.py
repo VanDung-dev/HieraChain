@@ -181,16 +181,21 @@ def _migrate_state_for_rebalancer(
     return events_migrated, blocks_migrated
 
 
-def _get_committed_block_events(subchain: Any) -> list[Any]:
-    if hasattr(subchain, "chain"):
-        events = []
-        for block in subchain.chain:
-            if hasattr(block, "to_event_list"):
-                events.extend(block.to_event_list())
-            elif hasattr(block, "events"):
-                events.extend(block.events)
-        return events
+def _extract_events_from_block(block: Any) -> list[Any]:
+    if hasattr(block, "to_event_list"):
+        return list(block.to_event_list())
+    if hasattr(block, "events"):
+        return list(block.events)
     return []
+
+
+def _get_committed_block_events(subchain: Any) -> list[Any]:
+    if not hasattr(subchain, "chain"):
+        return []
+    events = []
+    for block in subchain.chain:
+        events.extend(_extract_events_from_block(block))
+    return events
 
 
 def _select_target_child_for_rebalancer(
