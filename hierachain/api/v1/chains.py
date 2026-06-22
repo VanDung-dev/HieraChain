@@ -140,6 +140,36 @@ async def get_chain_stats(
         ) from e
 
 
+def _ensure_main_chain(manager: HierarchyManager) -> None:
+    """Ensures the main chain is initialized in the manager."""
+    main_chain = manager.get_main_chain()
+    if not main_chain:
+        main_chain = MainChain()
+        manager.set_main_chain(main_chain)
+
+
+def _register_new_sub_chain(
+    manager: HierarchyManager, safe_chain_name: str, safe_chain_type: str
+) -> JSONResponse | None:
+    """Attempts to add a new sub-chain to the manager. Returns conflict response if it exists."""
+    sub_chain = SubChain(name=safe_chain_name, domain_type=safe_chain_type)
+    try:
+        manager.add_sub_chain(safe_chain_name, sub_chain)
+        return None
+    except ValueError as ve:
+        api_logger.info(
+            "Sub-chain already exists", chain_name=safe_chain_name, error=str(ve)
+        )
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={
+                "success": False,
+                "message": f"Sub-chain '{safe_chain_name}' already exists",
+                "chain_name": safe_chain_name,
+            },
+        )
+
+
 @router.post(
     "/chains/{chain_name}/create", dependencies=[Depends(require_chain_access)]
 )
@@ -157,14 +187,10 @@ async def create_sub_chain(
             )
         )
     safe_chain_type = sanitize_string(chain_type)
+    safe_chain_name = os.path.basename(chain_name)
 
     try:
-        main_chain = manager.get_main_chain()
-        if not main_chain:
-            main_chain = MainChain()
-            manager.set_main_chain(main_chain)
-
-        safe_chain_name = os.path.basename(chain_name)
+        _ensure_main_chain(manager)
 
         if manager.get_sub_chain(safe_chain_name):
             api_logger.audit(
@@ -184,21 +210,9 @@ async def create_sub_chain(
                 }
             )
 
-        sub_chain = SubChain(name=safe_chain_name, domain_type=safe_chain_type)
-        try:
-            manager.add_sub_chain(safe_chain_name, sub_chain)
-        except ValueError as ve:
-            api_logger.info(
-                "Sub-chain already exists", chain_name=safe_chain_name, error=str(ve)
-            )
-            return JSONResponse(
-                status_code=status.HTTP_409_CONFLICT,
-                content={
-                    "success": False,
-                    "message": f"Sub-chain '{safe_chain_name}' already exists",
-                    "chain_name": safe_chain_name,
-                },
-            )
+        conflict_response = _register_new_sub_chain(manager, safe_chain_name, safe_chain_type)
+        if conflict_response:
+            return conflict_response
 
         api_logger.audit(
             action="create",
