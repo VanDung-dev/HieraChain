@@ -11,7 +11,7 @@ import time
 import logging
 import os
 import threading
-from typing import Any, Callable
+from typing import Any
 
 from hierachain.risk_management.types import (
     RiskAssessment,

@@ -14,7 +14,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 
 
-# ── Risk Analyzer Types ──────────────────────────────────────────
+# --- Risk Analyzer Types ---
 
 class RiskSeverity(Enum):
     LOW = "low"
@@ -44,7 +44,7 @@ class RiskAssessment:
     affected_components: list[str]
 
 
-# ── Mitigation Strategy Types ────────────────────────────────────
+# --- Mitigation Strategy Types ---
 
 class MitigationStatus(Enum):
     PENDING = "pending"
@@ -75,7 +75,7 @@ class MitigationResult:
     output: dict[str, Any]
 
 
-# ── Audit Logger Types ───────────────────────────────────────────
+# --- Audit Logger Types ---
 
 class AuditEventType(Enum):
     RISK_DETECTED = "risk_detected"
@@ -178,15 +178,10 @@ class AuditFilter:
         self.user_ids = user_ids
 
     def matches(self, event: AuditEvent) -> bool:
-        if self.event_types is not None and event.event_type not in self.event_types:
-            return False
-        if self.severity_levels is not None and event.severity not in self.severity_levels:
-            return False
-        if self.source_components is not None and event.source_component not in self.source_components:
-            return False
-        if self.user_ids is not None and event.user_id not in self.user_ids:
-            return False
-        if self.time_range is not None:
-            if not (self.time_range[0] <= event.timestamp <= self.time_range[1]):
-                return False
-        return True
+        return (
+            (self.event_types is None or event.event_type in self.event_types)
+            and (self.severity_levels is None or event.severity in self.severity_levels)
+            and (self.source_components is None or event.source_component in self.source_components)
+            and (self.user_ids is None or event.user_id in self.user_ids)
+            and (self.time_range is None or (self.time_range[0] <= event.timestamp <= self.time_range[1]))
+        )
