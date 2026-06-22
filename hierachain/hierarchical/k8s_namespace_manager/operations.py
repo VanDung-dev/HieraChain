@@ -7,7 +7,11 @@ from typing import Any
 
 from kubernetes import client, config
 
-from hierachain.hierarchical.k8s_namespace_manager.types import NamespaceInfo, NamespaceStatus
+from hierachain.hierarchical.k8s_namespace_manager.types import (
+    NamespaceInfo,
+    NamespaceStatus,
+    DeploymentConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,55 +41,79 @@ def _get_namespace_resources_mock(
     }
 
 
-def _init_k8s_client_impl(manager: Any) -> bool:
-    if manager.use_mock:
-        logger.debug("Using mock K8s client")
-        return True
-
-    if client is None:
-        logger.warning("kubernetes package not installed, using mock mode")
-        manager.use_mock = True
-        return True
-
-    try:
-        if manager.kubeconfig_path:
-            import os
-            if not os.path.exists(manager.kubeconfig_path):
-                logger.info(
-                    "Kubeconfig not found at %s, falling back to mock mode",
-                    manager.kubeconfig_path
-                )
-                manager.use_mock = True
-                return True
-            config.load_kube_config(config_file=manager.kubeconfig_path)
-        else:
-            try:
-                config.load_incluster_config()
-            except config.ConfigException:
-                import os
-                default_kubeconfig = os.path.expanduser("~/.kube/config")
-                if not os.path.exists(default_kubeconfig):
-                    logger.info(
-                        "No kubeconfig found (not in cluster, no ~/.kube/config), using mock mode"
-                    )
-                    manager.use_mock = True
-                    return True
-                config.load_kube_config()
-
-        manager.k8s_client = client.CoreV1Api()
-        manager.apps_client = client.AppsV1Api()
-        logger.info("K8s client initialized successfully")
-        return True
-    except ImportError:
-        logger.warning("kubernetes package not installed, using mock mode")
-        manager.use_mock = True
-        return True
-    except Exception as e:
+def _load_kubeconfig_file(manager: Any) -> bool:
+    import os
+    if not os.path.exists(manager.kubeconfig_path):
         logger.info(
-            "Failed to initialize K8s client (%s), using mock mode", e
+            "Kubeconfig not found at %s, falling back to mock mode",
+            manager.kubeconfig_path
         )
         manager.use_mock = True
         return True
+    config.load_kube_config(config_file=manager.kubeconfig_path)
+    return False
+
+
+def _load_default_kubeconfig(manager: Any) -> bool:
+    try:
+        config.load_incluster_config()
+        return False
+    except config.ConfigException:
+        import os
+        default_kubeconfig = os.path.expanduser("~/.kube/config")
+        if not os.path.exists(default_kubeconfig):
+            logger.info(
+                "No kubeconfig found (not in cluster, no ~/.kube/config), using mock mode"
+            )
+            manager.use_mock = True
+            return True
+        config.load_kube_config()
+        return False
+
+
+def _setup_k8s_api_clients(manager: Any) -> None:
+    core_v1_api = getattr(client, "CoreV1Api")
+    apps_v1_api = getattr(client, "AppsV1Api")
+    manager.k8s_client = core_v1_api()
+    manager.apps_client = apps_v1_api()
+
+
+def _fallback_to_mock(manager: Any, warning: str | None = None, info: str | None = None) -> bool:
+    if warning:
+        logger.warning(warning)
+    elif info:
+        logger.info(info)
+    else:
+        logger.debug("Using mock K8s client")
+    manager.use_mock = True
+    return True
+
+
+def _init_k8s_client_impl(manager: Any) -> bool:
+    if manager.use_mock:
+        return _fallback_to_mock(manager)
+
+    if client is None:
+        return _fallback_to_mock(manager, warning="kubernetes package not installed, using mock mode")
+
+    try:
+        has_failed = (
+            _load_kubeconfig_file(manager)
+            if manager.kubeconfig_path
+            else _load_default_kubeconfig(manager)
+        )
+        if has_failed:
+            return True
+
+        _setup_k8s_api_clients(manager)
+        logger.info("K8s client initialized successfully")
+        return True
+    except ImportError:
+        return _fallback_to_mock(manager, warning="kubernetes package not installed, using mock mode")
+    except Exception as e:
+        return _fallback_to_mock(
+            manager, info=f"Failed to initialize K8s client ({e}), using mock mode"
+        )
 
 
 def _create_namespace_real_impl(
@@ -191,104 +219,86 @@ def _get_k8s_resources_real_impl(
         return {"error": str(e)}
 
 
-def _provision_sub_chain_deployment_impl(
-    manager: Any, deploy_config: "DeploymentConfig"
-) -> bool:
-    from hierachain.hierarchical.k8s_namespace_manager.types import DeploymentConfig
-
-    namespace_name = manager.get_namespace_name(deploy_config.sub_chain_id)
-
-    if namespace_name not in manager.namespaces:
-        logger.error("Namespace %s does not exist, create it first", namespace_name)
-        return False
-
-    if manager.use_mock:
-        manager.namespaces[namespace_name].pod_count = deploy_config.replicas
-        manager.stats["deployments_created"] += 1
-        logger.info("[MOCK] Created deployment in %s", namespace_name)
-        return True
-
-    if not manager.apps_client and not manager.init_k8s_client():
-        return False
-
-    if manager.use_mock:
-        manager.namespaces[namespace_name].pod_count = deploy_config.replicas
-        manager.stats["deployments_created"] += 1
-        logger.info("[MOCK] Created deployment (fallback) in %s", namespace_name)
-        return True
-
-    apps = manager.apps_client
-    if apps is None:
-        raise RuntimeError("K8s apps client not initialized")
-    try:
-        container = client.V1Container(
-            name="hierachain-node",
-            image=deploy_config.image,
-            ports=[
-                client.V1ContainerPort(
-                    container_port=deploy_config.node_port, name="node-port",
-                ),
-                client.V1ContainerPort(
-                    container_port=deploy_config.api_port, name="api-port",
-                ),
-            ],
-            command=[
-                "hrc", "start", "--host", "0.0.0.0", "--port",
-                str(deploy_config.api_port),
-            ],
-            env=[
-                client.V1EnvVar(name="NODE_ID", value=deploy_config.sub_chain_id),
-                client.V1EnvVar(
-                    name="NODE_PORT", value=str(deploy_config.node_port),
-                ),
-                client.V1EnvVar(
-                    name="PEERS", value=",".join(deploy_config.peers),
-                ),
-            ]
-            + [
-                client.V1EnvVar(name=k, value=v)
-                for k, v in deploy_config.environment.items()
-            ],
-            resources=client.V1ResourceRequirements(
-                limits={
-                    "cpu": deploy_config.cpu_limit,
-                    "memory": deploy_config.memory_limit,
-                },
-                requests={
-                    "cpu": deploy_config.cpu_request,
-                    "memory": deploy_config.memory_request,
-                },
+def _build_container(deploy_config: Any) -> Any:
+    return client.V1Container(
+        name="hierachain-node",
+        image=deploy_config.image,
+        ports=[
+            client.V1ContainerPort(
+                container_port=deploy_config.node_port, name="node-port",
             ),
-        )
+            client.V1ContainerPort(
+                container_port=deploy_config.api_port, name="api-port",
+            ),
+        ],
+        command=[
+            "hrc", "start", "--host", "0.0.0.0", "--port",
+            str(deploy_config.api_port),
+        ],
+        env=[
+            client.V1EnvVar(name="NODE_ID", value=deploy_config.sub_chain_id),
+            client.V1EnvVar(
+                name="NODE_PORT", value=str(deploy_config.node_port),
+            ),
+            client.V1EnvVar(
+                name="PEERS", value=",".join(deploy_config.peers),
+            ),
+        ]
+        + [
+            client.V1EnvVar(name=k, value=v)
+            for k, v in deploy_config.environment.items()
+        ],
+        resources=client.V1ResourceRequirements(
+            limits={
+                "cpu": deploy_config.cpu_limit,
+                "memory": deploy_config.memory_limit,
+            },
+            requests={
+                "cpu": deploy_config.cpu_request,
+                "memory": deploy_config.memory_request,
+            },
+        ),
+    )
 
-        deployment = client.V1Deployment(
-            metadata=client.V1ObjectMeta(
-                name=f"hierachain-{deploy_config.sub_chain_id}",
-                namespace=namespace_name,
-                labels={
+
+def _build_deployment(deploy_config: Any, namespace_name: str, container: Any) -> Any:
+    return client.V1Deployment(
+        metadata=client.V1ObjectMeta(
+            name=f"hierachain-{deploy_config.sub_chain_id}",
+            namespace=namespace_name,
+            labels={
+                "app": "hierachain",
+                "subchain-id": deploy_config.sub_chain_id,
+            },
+        ),
+        spec=client.V1DeploymentSpec(
+            replicas=deploy_config.replicas,
+            selector=client.V1LabelSelector(
+                match_labels={
                     "app": "hierachain",
                     "subchain-id": deploy_config.sub_chain_id,
-                },
+                }
             ),
-            spec=client.V1DeploymentSpec(
-                replicas=deploy_config.replicas,
-                selector=client.V1LabelSelector(
-                    match_labels={
+            template=client.V1PodTemplateSpec(
+                metadata=client.V1ObjectMeta(
+                    labels={
                         "app": "hierachain",
                         "subchain-id": deploy_config.sub_chain_id,
                     }
                 ),
-                template=client.V1PodTemplateSpec(
-                    metadata=client.V1ObjectMeta(
-                        labels={
-                            "app": "hierachain",
-                            "subchain-id": deploy_config.sub_chain_id,
-                        }
-                    ),
-                    spec=client.V1PodSpec(containers=[container]),
-                ),
+                spec=client.V1PodSpec(containers=[container]),
             ),
-        )
+        ),
+    )
+
+
+def _create_k8s_deployment(manager: Any, deploy_config: Any, namespace_name: str) -> bool:
+    apps = manager.apps_client
+    if apps is None:
+        raise RuntimeError("K8s apps client not initialized")
+    try:
+        container = _build_container(deploy_config)
+        deployment = _build_deployment(deploy_config, namespace_name, container)
 
         apps.create_namespaced_deployment(
             namespace=namespace_name,
@@ -316,3 +326,30 @@ def _provision_sub_chain_deployment_impl(
         )
         manager.stats["errors"] += 1
         return False
+
+
+def _provision_sub_chain_deployment_impl(
+    manager: Any, deploy_config: DeploymentConfig
+) -> bool:
+    namespace_name = manager.get_namespace_name(deploy_config.sub_chain_id)
+
+    if namespace_name not in manager.namespaces:
+        logger.error("Namespace %s does not exist, create it first", namespace_name)
+        return False
+
+    if manager.use_mock:
+        manager.namespaces[namespace_name].pod_count = deploy_config.replicas
+        manager.stats["deployments_created"] += 1
+        logger.info("[MOCK] Created deployment in %s", namespace_name)
+        return True
+
+    if not manager.apps_client and not manager.init_k8s_client():
+        return False
+
+    if manager.use_mock:
+        manager.namespaces[namespace_name].pod_count = deploy_config.replicas
+        manager.stats["deployments_created"] += 1
+        logger.info("[MOCK] Created deployment (fallback) in %s", namespace_name)
+        return True
+
+    return _create_k8s_deployment(manager, deploy_config, namespace_name)
