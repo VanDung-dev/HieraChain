@@ -90,18 +90,23 @@ def _process_single_sub_chain(
     sub_chain: Any,
     entity_id: str
 ) -> list[dict[str, Any]]:
-    events: list[dict[str, Any]] = []
-    for block in sub_chain.chain:
-        for event in block.events:
-            if _event_contains_entity(event, entity_id):
-                events.append({
-                    "chain": sub_chain_name,
-                    "event": event,
-                    "chain_type": "sub_chain",
-                    "block_index": block.index,
-                    "timestamp": event.get("timestamp", 0)
-                })
-    return events
+    matching_events = (
+        (block, event)
+        for block in sub_chain.chain
+        for event in block.events
+        if _event_contains_entity(event, entity_id)
+    )
+
+    return [
+        {
+            "chain": sub_chain_name,
+            "event": event,
+            "chain_type": "sub_chain",
+            "block_index": block.index,
+            "timestamp": event.get("timestamp", 0)
+        }
+        for block, event in matching_events
+    ]
 
 
 class CachePerformanceTracker:

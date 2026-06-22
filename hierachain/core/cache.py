@@ -54,16 +54,16 @@ class AdvancedCache(dict):
         self.evictions = 0
         self._start_ttl_cleanup_thread()
 
-    def get(self, key: str) -> Any | None:
+    def get(self, key: str, default: Any = None) -> Any:
         with self.lock:
             if key not in self.cache:
                 self.misses += 1
-                return None
+                return default
             entry = self.cache[key]
             if entry.is_expired:
                 self._remove_key(key)
                 self.misses += 1
-                return None
+                return default
             self._update_access(key)
             self.hits += 1
             return entry.value

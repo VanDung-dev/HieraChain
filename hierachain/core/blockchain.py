@@ -14,7 +14,7 @@ import threading
 from typing import Any, Callable, cast
 
 from hierachain.core.block import Block
-from hierachain.core.deadlock_detector import DeadlockDetector, get_deadlock_detector
+from hierachain.core.deadlock_detector import get_deadlock_detector
 from hierachain.security.verify.block_verifier import get_block_verifier
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ class Blockchain:
     __slots__ = (
         'name', 'lock', '_lock_id', '_deadlock_detector',
         'chain', 'pending_events', 'total_events',
-        'event_type_counts', 'entity_event_index',
+        'event_type_counts', 'entity_event_index', 'query_engine',
     )
 
     def __init__(self, name: str = "Blockchain") -> None:
@@ -64,6 +64,7 @@ class Blockchain:
         self.total_events: int = 0
         self.event_type_counts: dict[str, int] = {}
         self.entity_event_index: dict[str, list[dict[str, Any]]] = {}
+        self.query_engine = BlockchainQueryEngine(self)
         with self.lock:
             self.create_genesis_block()
     
@@ -283,80 +284,22 @@ class Blockchain:
             )
     
     def get_events_by_entity(self, entity_id: str) -> list[dict[str, Any]]:
-        """
-        Get all events for a specific entity across the entire chain.
-        
-        Args:
-            entity_id: The entity identifier to search for
-            
-        Returns:
-            List of events for the specified entity
-        """
-        # Use pre-calculated entity index for O(1) access
-        with self.lock:
-            if (
-                hasattr(self, 'entity_event_index')
-                and entity_id in self.entity_event_index
-            ):
-                indexed_events = self.entity_event_index[entity_id]
-                # Format to match original output (list of events only)
-                return [e['event'] for e in indexed_events]
-                
-            events = []
-            for block in self.chain:
-                events.extend(block.get_events_by_entity(entity_id))
-            return events
+        """Get all events for a specific entity across the entire chain."""
+        return self.query_engine.get_events_by_entity(entity_id)
 
     def get_indexed_entity_events(self, entity_id: str) -> list[dict[str, Any]]:
-        """
-        Get indexed events with block metadata for a specific entity.
-        
-        Args:
-            entity_id: The entity identifier to search for
-            
-        Returns:
-            List of dictionaries containing block_index, event, and timestamp
-        """
-        with self.lock:
-            if hasattr(self, 'entity_event_index'):
-                return self.entity_event_index.get(entity_id, [])
-            return []
+        """Get indexed events with block metadata for a specific entity."""
+        return self.query_engine.get_indexed_entity_events(entity_id)
     
     def get_events_by_type(self, event_type: str) -> list[dict[str, Any]]:
-        """
-        Get all events of a specific type across the entire chain.
-        
-        Args:
-            event_type: The event type to search for
-            
-        Returns:
-            List of events of the specified type
-        """
-        with self.lock:
-            events = []
-            for block in self.chain:
-                events.extend(block.get_events_by_type(event_type))
-            return events
+        """Get all events of a specific type across the entire chain."""
+        return self.query_engine.get_events_by_type(event_type)
 
     def get_events_by_filter(
         self, filter_func: Callable[[dict[str, Any]], bool]
     ) -> list[dict[str, Any]]:
-        """
-        Get all events that match a custom filter function.
-        
-        Args:
-            filter_func: Function that takes an event and returns True if it matches
-            
-        Returns:
-            List of events that match the filter
-        """
-        events = []
-        for block in self.chain:
-            block_events = block.to_dict()['events']
-            for event in block_events:
-                if filter_func(event):
-                    events.append(event)
-        return events
+        """Get all events that match a custom filter function."""
+        return self.query_engine.get_events_by_filter(filter_func)
     
     def get_chain_stats(self) -> dict[str, Any]:
         """
@@ -433,3 +376,52 @@ class Blockchain:
             f"Blockchain(name={self.name}, blocks={len(self.chain)}, "
             f"pending_events={len(self.pending_events)}, valid={self.is_chain_valid()})"
         )
+
+
+class BlockchainQueryEngine:
+    """Helper class to query events from Blockchain."""
+
+    def __init__(self, blockchain: Blockchain) -> None:
+        self.blockchain = blockchain
+
+    def get_events_by_entity(self, entity_id: str) -> list[dict[str, Any]]:
+        """Get all events for a specific entity across the entire chain."""
+        with self.blockchain.lock:
+            if (
+                hasattr(self.blockchain, 'entity_event_index')
+                and entity_id in self.blockchain.entity_event_index
+            ):
+                indexed_events = self.blockchain.entity_event_index[entity_id]
+                return [e['event'] for e in indexed_events]
+                
+            events = []
+            for block in self.blockchain.chain:
+                events.extend(block.get_events_by_entity(entity_id))
+            return events
+
+    def get_indexed_entity_events(self, entity_id: str) -> list[dict[str, Any]]:
+        """Get indexed events with block metadata for a specific entity."""
+        with self.blockchain.lock:
+            if hasattr(self.blockchain, 'entity_event_index'):
+                return self.blockchain.entity_event_index.get(entity_id, [])
+            return []
+
+    def get_events_by_type(self, event_type: str) -> list[dict[str, Any]]:
+        """Get all events of a specific type across the entire chain."""
+        with self.blockchain.lock:
+            events = []
+            for block in self.blockchain.chain:
+                events.extend(block.get_events_by_type(event_type))
+            return events
+
+    def get_events_by_filter(
+        self, filter_func: Callable[[dict[str, Any]], bool]
+    ) -> list[dict[str, Any]]:
+        """Get all events that match a custom filter function."""
+        events = []
+        for block in self.blockchain.chain:
+            block_events = block.to_dict()['events']
+            for event in block_events:
+                if filter_func(event):
+                    events.append(event)
+        return events

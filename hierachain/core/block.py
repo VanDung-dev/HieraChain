@@ -36,6 +36,7 @@ class Block:
         'index', 'timestamp', 'previous_hash', 'nonce',
         'merkle_root', 'creator_id', 'signature', '_events', 'hash',
     )
+    _events: pa.Table
 
     def __init__(
         self,
@@ -94,17 +95,17 @@ class Block:
 
     def get_events_by_entity(self, entity_id: str) -> list[dict[str, Any]]:
         """Get all events for a specific entity using Arrow filtering."""
-        filtered = self._events.filter(pc.field("entity_id") == entity_id)
+        filtered = self.events.filter(pc.field("entity_id") == entity_id)
         return table_to_list_of_dicts(filtered)
 
     def get_events_by_type(self, event_type: str) -> list[dict[str, Any]]:
         """Get all events of a specific type."""
-        filtered = self._events.filter(pc.field("event") == event_type)
+        filtered = self.events.filter(pc.field("event") == event_type)
         return table_to_list_of_dicts(filtered)
 
     def to_event_list(self) -> list[dict[str, Any]]:
         """Convert internal Arrow events to a list of dictionaries."""
-        return table_to_list_of_dicts(self._events)
+        return table_to_list_of_dicts(self.events)
 
     def validate_structure(self) -> bool:
         """
@@ -119,7 +120,7 @@ class Block:
         # Verify schema matches expected Event Schema
         required = ['entity_id', 'event', 'timestamp']
         
-        names = self._events.column_names
+        names = self.events.column_names
         for r in required:
             if r not in names:
                 return False
@@ -135,7 +136,7 @@ class Block:
         """
         return {
             "index": self.index,
-            "events": table_to_list_of_dicts(self._events),
+            "events": table_to_list_of_dicts(self.events),
             "timestamp": self.timestamp,
             "previous_hash": self.previous_hash,
             "nonce": self.nonce,
@@ -168,7 +169,7 @@ class Block:
         )
         # Verify integrity: recalculate hash and compare with stored hash
         stored_hash = data.get("hash")
-        if stored_hash is not None and block.hash != stored_hash:
+        if isinstance(stored_hash, str) and block.hash != stored_hash:
             logger.error(
                 "Block hash mismatch! index=%d stored=%s computed=%s",
                 block.index, stored_hash[:16], block.hash[:16]

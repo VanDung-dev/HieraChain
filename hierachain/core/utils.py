@@ -378,7 +378,7 @@ def validate_no_cryptocurrency_terms(data: Any) -> bool:
         try:
             serialized = orjson.dumps(data)
             data_string = serialized.decode('utf-8').lower()
-        except Exception:
+        except orjson.JSONEncodeError:
             data_string = str(data).lower()
     else:
         data_string = str(data).lower()
