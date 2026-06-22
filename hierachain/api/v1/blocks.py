@@ -106,6 +106,19 @@ async def get_chain_blocks(
     }
 
 
+def _find_block(chain_blocks: list[Any], index_or_hash: str) -> Any | None:
+    """Finds a block in chain_blocks by integer index or hash string."""
+    if index_or_hash.isdigit():
+        idx = int(index_or_hash)
+        if 0 <= idx < len(chain_blocks):
+            return chain_blocks[idx]
+
+    for block in chain_blocks:
+        if getattr(block, 'hash', '') == index_or_hash:
+            return block
+    return None
+
+
 @router.get(
     "/chains/{chain_name}/blocks/{index_or_hash}",
     dependencies=[Depends(require_chain_access)]
@@ -119,18 +132,7 @@ async def get_block_detail(
     chain = _validate_chain_exists_for_blocks(manager, chain_name)
     chain_blocks = getattr(chain, 'chain', [])
 
-    target_block = None
-
-    if index_or_hash.isdigit():
-        idx = int(index_or_hash)
-        if 0 <= idx < len(chain_blocks):
-            target_block = chain_blocks[idx]
-
-    if not target_block:
-        for block in chain_blocks:
-            if getattr(block, 'hash', '') == index_or_hash:
-                target_block = block
-                break
+    target_block = _find_block(chain_blocks, index_or_hash)
 
     if not target_block:
         raise HTTPException(
