@@ -175,7 +175,7 @@ def _assess_network_impact(error_type: str) -> ImpactLevel:
     return ImpactLevel.MINOR
 
 
-def _assess_likelihood(error_data: dict[str, Any], category: ErrorCategory) -> LikelihoodLevel:
+def _assess_likelihood(_: dict[str, Any], category: ErrorCategory) -> LikelihoodLevel:
     category_likelihoods = {
         ErrorCategory.CONSENSUS: LikelihoodLevel.MEDIUM,
         ErrorCategory.SECURITY: LikelihoodLevel.LOW,
