@@ -41,13 +41,16 @@ def _build_block_model(block_data: dict[str, Any]) -> BlockModel:
     if 'merkle_root' not in metadata and block_data.get('merkle_root'):
         metadata['merkle_root'] = block_data['merkle_root']
     
+    creator_id_val = block_data.get('creator_id')
+    signature_val = block_data.get('signature')
+    
     return BlockModel(
         index=block_data['index'],
         hash=block_data['hash'],
         previous_hash=block_data['previous_hash'],
         timestamp=block_data['timestamp'],
-        creator_id=block_data.get('creator_id'),
-        signature=block_data.get('signature'),
+        creator_id=str(creator_id_val) if creator_id_val is not None else None,
+        signature=str(signature_val) if signature_val is not None else None,
         metadata_json=metadata,
         chain_name=str(block_data.get('chain_name', ''))
     )
@@ -80,7 +83,7 @@ class SqlStorageBackend:
     Replaces the previous in-memory storage.
     """
     
-    def __init__(self, connection_string: str = None):
+    def __init__(self, connection_string: str | None = None):
         """
         Initialize the SQL Storage Backend.
         
