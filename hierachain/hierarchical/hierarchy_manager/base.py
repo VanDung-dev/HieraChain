@@ -10,8 +10,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Any
 
 from hierachain.hierarchical.main_chain import MainChain
-from hierachain.hierarchical.multi_org import create_organization, MultiOrgNetwork
-from hierachain.hierarchical.channel import Channel, Organization as ChannelOrganization
+from hierachain.hierarchical.multi_org import MultiOrgNetwork
+from hierachain.hierarchical.channel import Channel
 from hierachain.hierarchical.private_data import PrivateCollection
 
 if TYPE_CHECKING:
@@ -78,7 +78,7 @@ class HierarchyManager:
 
         self.cross_level_sync: CrossLevelSyncManager | None = None
         if settings.CROSS_LEVEL_SYNC_ENABLED:
-            self.cross_level_sync = CrossLevelSyncManager(
+            sync = CrossLevelSyncManager(
                 node_id=getattr(node_identity, "node_id", "main-node"),
                 hierarchy_level="mainchain",
                 batch_size=settings.CROSS_LEVEL_SYNC_BATCH_SIZE,
@@ -87,7 +87,8 @@ class HierarchyManager:
                 block_verifier=None,
                 proof_verifier=None,
             )
-            self.cross_level_sync.connect_mainchain(self.main_chain)
+            sync.connect_mainchain(self.main_chain)
+            self.cross_level_sync = sync
 
         self.storage = None
         try:
@@ -378,7 +379,8 @@ class HierarchyManager:
 
         return True
 
-    def _create_storage(self) -> SQLiteAdapter | RedisStorageAdapter | None:
+    @staticmethod
+    def _create_storage() -> SQLiteAdapter | RedisStorageAdapter | None:
         backend = settings.DEFAULT_STORAGE_BACKEND
 
         if backend == "sqlite":
