@@ -26,7 +26,7 @@ def event_group():
 @click.option('--entity-id', required=True, help='Entity ID')
 @click.option('--details', help='Additional details as JSON string')
 @click.pass_context
-def add_event(ctx, chain_name, event_type, entity_id, details):
+def add_event(ctx: click.Context, chain_name, event_type, entity_id, details):
     """Add event to chain"""
     try:
         chain = get_sub_chain(chain_name)

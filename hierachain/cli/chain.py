@@ -26,7 +26,7 @@ def chain_group():
 @click.option('--name', required=True, help='Chain name')
 @click.option('--parent', default='main', help='Parent chain')
 @click.pass_context
-def create(ctx, chain_type, name, parent):
+def create(ctx: click.Context, chain_type, name, parent):
     """Create new chain"""
     try:
         # Get parent chain
