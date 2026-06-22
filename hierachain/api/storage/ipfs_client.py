@@ -98,21 +98,32 @@ class IPFSClient:
 
     # ---- Connection Management ----
 
-    def _ensure_connected(self):
-        """Ensure IPFS client is connected, connect if needed."""
+    @property
+    def client(self) -> httpx.Client:
+        """Get the connected HTTP client, ensuring connection."""
         if self._client is None:
             try:
-                self._client = httpx.Client(
+                client_instance = httpx.Client(
                     base_url=f"http://{self._host}:{self._port}",
                     timeout=self._timeout,
                 )
                 # Test connection
-                resp = self._client.post("/api/v0/version")
+                resp = client_instance.post("/api/v0/version")
                 resp.raise_for_status()
+                self._client = client_instance
                 logger.info("Connected to IPFS daemon", host=self._host)
-            except Exception as e:
+            except httpx.HTTPError as e:
                 logger.error("Failed to connect to IPFS daemon", error=str(e))
                 raise IPFSError(f"Failed to connect to IPFS daemon: {str(e)}")
+        
+        # Explicit type check for linters
+        if self._client is None:
+            raise IPFSError("IPFS client is not initialized")
+        return self._client
+
+    def _ensure_connected(self) -> None:
+        """Ensure IPFS client is connected, connect if needed."""
+        _ = self.client
 
     def upload_bytes(
         self, data: bytes, encrypt: bool = True, metadata: dict[str, Any] | None = None
@@ -163,7 +174,7 @@ class IPFSClient:
 
             # Upload to IPFS via Kubo RPC
             self._ensure_connected()
-            resp = self._client.post(
+            resp = self.client.post(
                 "/api/v0/add",
                 files={"file": ("data", upload_data)},
             )
@@ -199,7 +210,7 @@ class IPFSClient:
 
         except EncryptionError:
             raise
-        except Exception as e:
+        except (httpx.HTTPError, KeyError) as e:
             logger.error("Failed to upload data to IPFS", error=str(e))
             raise IPFSError(f"Failed to upload data: {str(e)}")
 
@@ -233,7 +244,7 @@ class IPFSClient:
 
             # Download from IPFS via Kubo RPC
             self._ensure_connected()
-            resp = self._client.post(f"/api/v0/cat?arg={cid}")
+            resp = self.client.post(f"/api/v0/cat?arg={cid}")
             resp.raise_for_status()
             download_data = resp.content
 
@@ -271,7 +282,7 @@ class IPFSClient:
 
         except EncryptionError:
             raise
-        except Exception as e:
+        except (httpx.HTTPError, ValueError) as e:
             logger.error("Failed to download data from IPFS", cid=cid, error=str(e))
             raise IPFSError(f"Failed to download data from CID {cid}: {str(e)}")
 
@@ -339,13 +350,13 @@ class IPFSClient:
         """
         try:
             self._ensure_connected()
-            resp = self._client.post(f"/api/v0/pin/add?arg={cid}")
+            resp = self.client.post(f"/api/v0/pin/add?arg={cid}")
             resp.raise_for_status()
 
             logger.info("Content pinned successfully", cid=cid)
             return True
 
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Failed to pin content", cid=cid, error=str(e))
             raise IPFSError(f"Failed to pin CID {cid}: {str(e)}")
 
@@ -364,13 +375,13 @@ class IPFSClient:
         """
         try:
             self._ensure_connected()
-            resp = self._client.post(f"/api/v0/pin/rm?arg={cid}")
+            resp = self.client.post(f"/api/v0/pin/rm?arg={cid}")
             resp.raise_for_status()
 
             logger.info("Content unpinned successfully", cid=cid)
             return True
 
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Failed to unpin content", cid=cid, error=str(e))
             raise IPFSError(f"Failed to unpin CID {cid}: {str(e)}")
 
@@ -386,7 +397,7 @@ class IPFSClient:
         """
         try:
             self._ensure_connected()
-            resp = self._client.post("/api/v0/pin/ls")
+            resp = self.client.post("/api/v0/pin/ls")
             resp.raise_for_status()
             pins = resp.json()
 
@@ -396,7 +407,7 @@ class IPFSClient:
             logger.debug("Listed pinned content", count=len(cids))
             return cids
 
-        except Exception as e:
+        except (httpx.HTTPError, KeyError) as e:
             logger.error("Failed to list pins", error=str(e))
             raise IPFSError(f"Failed to list pins: {str(e)}")
 
@@ -417,13 +428,13 @@ class IPFSClient:
         """
         try:
             self._ensure_connected()
-            resp = self._client.post(f"/api/v0/files/stat?arg=/ipfs/{cid}")
+            resp = self.client.post(f"/api/v0/files/stat?arg=/ipfs/{cid}")
             resp.raise_for_status()
 
             logger.debug("Retrieved IPFS stats", cid=cid)
             return resp.json()
 
-        except Exception as e:
+        except httpx.HTTPError as e:
             logger.error("Failed to get stats", cid=cid, error=str(e))
             raise IPFSError(f"Failed to get stats for CID {cid}: {str(e)}")
 
@@ -439,9 +450,9 @@ class IPFSClient:
         """
         try:
             self._ensure_connected()
-            resp = self._client.post(f"/api/v0/object/stat?arg={cid}")
+            resp = self.client.post(f"/api/v0/object/stat?arg={cid}")
             return resp.is_success
-        except Exception:
+        except (IPFSError, httpx.HTTPError):
             logger.debug("Content not available", cid=cid)
             return False
 
@@ -457,7 +468,7 @@ class IPFSClient:
         """
         try:
             self._ensure_connected()
-            resp = self._client.post("/api/v0/version")
+            resp = self.client.post("/api/v0/version")
             resp.raise_for_status()
             version = resp.json()
 
@@ -468,7 +479,7 @@ class IPFSClient:
             )
             return {"version": version.get("Version", "unknown")}
 
-        except Exception as e:
+        except (httpx.HTTPError, KeyError) as e:
             logger.error("Failed to get daemon version", error=str(e))
             raise IPFSError(f"Failed to get daemon version: {str(e)}")
 
