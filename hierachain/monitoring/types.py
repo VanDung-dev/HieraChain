@@ -15,7 +15,7 @@ from enum import Enum
 from collections import deque
 
 
-# ── Alert System Types ───────────────────────────────────────────
+# --- Alert System Types ---
 
 class AlertSeverity(Enum):
     INFO = "info"
@@ -87,7 +87,7 @@ class AlertRule:
     suppress_duplicates: bool = True
 
 
-# ── Performance Monitor Types ────────────────────────────────────
+# --- Performance Monitor Types ---
 
 class MetricType(Enum):
     SYSTEM = "system"
@@ -173,7 +173,7 @@ class PerformanceMetric:
         return False, "normal"
 
 
-# ── Performance Metrics Types ────────────────────────────────────
+# --- Performance Metrics Types ---
 
 @dataclass
 class MetricSample:
