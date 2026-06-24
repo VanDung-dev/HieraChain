@@ -73,7 +73,8 @@ dev = [
     "hypothesis>=6.155.2",
     "build>=1.5.0",
     "twine>=6.2.0",
-    "websockets>=16.0"
+    "websockets>=16.0",
+    "vulture>=2.16"
 ]
 
 [project.scripts]
