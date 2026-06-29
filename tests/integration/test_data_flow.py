@@ -11,7 +11,6 @@ import pyarrow as pa
 import struct
 
 from hierachain.hierarchical import SubChain
-from hierachain.core import schemas
 
 
 def _read_first_journal_row(journal_path, schema):
@@ -68,7 +67,15 @@ def _wait_for_latest_block(chain, max_retries=20, delay=0.1):
 def test_end_to_end_flow():
     chain_name = "test_flow_chain"
     data_dir = f"data/{chain_name}"
-    schema = schemas.get_event_schema()
+    schema = pa.schema([
+        ('entity_id', pa.string()),
+        ('event', pa.string()),
+        ('timestamp', pa.float64()),
+        ('details', pa.map_(pa.string(), pa.string())),
+        ('details_cid', pa.string()),
+        ('details_nonce', pa.string()),
+        ('data', pa.binary()),
+    ])
     
     # Setup: Clean up previous runs
     if os.path.exists(data_dir):
