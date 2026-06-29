@@ -9,8 +9,17 @@ from typing import Any
 import pyarrow as pa
 
 from hierachain.core.block import Block
-from hierachain.core import schemas
 from hierachain.hierarchical.channel.query import _filter_block_events
+
+_EVENT_SCHEMA = pa.schema([
+    ('entity_id', pa.string()),
+    ('event', pa.string()),
+    ('timestamp', pa.float64()),
+    ('details', pa.map_(pa.string(), pa.string())),
+    ('details_cid', pa.string()),
+    ('details_nonce', pa.string()),
+    ('data', pa.binary()),
+])
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +55,7 @@ class ChannelLedger:
         self.current_block_events.append(event)
 
     def _prepare_event_data(self) -> dict[str, list[Any]]:
-        schema_names = schemas.get_event_schema().names
+        schema_names = _EVENT_SCHEMA.names
         arrays: dict[str, list[Any]] = {name: [] for name in schema_names}
 
         for event in self.current_block_events:
@@ -61,7 +70,7 @@ class ChannelLedger:
             return None
 
         arrays = self._prepare_event_data()
-        table = pa.table(arrays, schema=schemas.get_event_schema())
+        table = pa.table(arrays, schema=_EVENT_SCHEMA)
 
         block = Block(
             index=self.height,
