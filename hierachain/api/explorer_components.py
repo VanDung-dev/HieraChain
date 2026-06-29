@@ -23,8 +23,6 @@ class ExplorerError(Exception):
 class ComponentConfig:
     title: str
     enabled: bool = True
-    refresh_interval: int = 5000
-    max_items: int = 100
     filters: dict[str, Any] = field(default_factory=dict)
 
 

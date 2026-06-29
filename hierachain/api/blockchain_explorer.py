@@ -34,7 +34,6 @@ class BlockchainExplorer:
         self.chain = chain
         self.config = config or {}
         self.ui_components: dict[str, Any] = {}
-        self.data_processors: dict[str, Any] = {}
         self.logger = logging.getLogger(__name__)
         self.register_default_components()
 

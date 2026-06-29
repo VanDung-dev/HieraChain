@@ -22,11 +22,9 @@ class ConnectionHealthHandler:
         self,
         ping_interval: int = 30,
         ping_timeout: int = 10,
-        on_connection_dead: Callable[[str], None] | None = None
     ):
         self.ping_interval = ping_interval
         self.ping_timeout = ping_timeout
-        self._on_connection_dead = on_connection_dead
     
     async def ping_connection(self, websocket, connection_id: str) -> bool:
         """

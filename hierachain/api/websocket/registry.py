@@ -111,13 +111,6 @@ class ConnectionRegistry:
                     pass
             self.active_connections.clear()
     
-    async def iterate_and_close(self, callback):
-        """Iterate and call callback for each connection."""
-        async with self._lock:
-            for conn in list(self.active_connections.values()):
-                await callback(conn)
-
-
 def create_connection(
     connection_id: str,
     websocket,

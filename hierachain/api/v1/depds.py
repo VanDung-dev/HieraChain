@@ -33,9 +33,3 @@ def get_entity_tracer(
     if _entity_tracer is None:
         raise RuntimeError("EntityTracer initialization failed")
     return _entity_tracer
-
-
-def reset_instances() -> None:
-    global _hierarchy_manager, _entity_tracer
-    _hierarchy_manager = None
-    _entity_tracer = None
