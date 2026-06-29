@@ -352,14 +352,6 @@ class RedisStorageAdapter:
     def load_chain(self, chain_name: str) -> dict[str, Any] | None:
         return self._chain_mgr.load_chain(chain_name)
 
-    def _load_blocks(self, chain_name: str) -> list[dict[str, Any]]:
-        return self._chain_mgr.load_blocks(chain_name)
-
-    # --- Event operations delegated ---
-
-    def _get_events_by_pattern(self, pattern: str, chain_name: str | None = None) -> list[dict[str, Any]]:
-        return self._event_mgr.get_events_by_pattern(pattern, chain_name)
-
     def get_entity_events(
         self, entity_id: str, chain_name: str | None = None,
     ) -> list[dict[str, Any]]:

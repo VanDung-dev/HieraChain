@@ -34,7 +34,6 @@ class SQLiteAdapter(SQLBase):
                 f"Security: Invalid database path '{self.database_path}'."
                 f"Path traversal detected."
             )
-        self.connection_pool_size = 5
         self._init_schema()
 
     @contextmanager
@@ -53,7 +52,6 @@ class SQLiteAdapter(SQLBase):
             raise e
         finally:
             conn.close()
-
 
     def _init_schema(self) -> None:
         """Create database tables and indexes."""
