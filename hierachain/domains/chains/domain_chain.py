@@ -14,14 +14,9 @@ from hierachain.domains.events.domain_event import (
     create_quality_check,
     create_status_update,
     create_approval,
-    create_compliance_check
 )
 
-from hierachain.domains.chains.metrics import (
-    OperationMetricsTracker,
-    _calculate_performance_stats,
-    _safe_ratio,
-)
+from hierachain.domains.chains.metrics import OperationMetricsTracker
 from hierachain.domains.chains.tx_manager import TransactionManager
 
 
@@ -114,11 +109,6 @@ class DomainChain(BaseChain):
     @property
     def pending_transactions(self) -> dict[str, dict[str, Any]]:
         """Read-only access to pending transactions."""
-        return self._tx_manager.pending_transactions
-
-    @property
-    def _pending_transactions(self) -> dict[str, dict[str, Any]]:
-        """Backward-compatible access to pending transactions."""
         return self._tx_manager.pending_transactions
 
     # -- business rules ------------------------------------------------
@@ -351,40 +341,6 @@ class DomainChain(BaseChain):
 
     # -- compliance ----------------------------------------------------
 
-    def check_compliance(
-        self,
-        entity_id: str,
-        compliance_type: str,
-        compliance_status: str,
-        regulation_reference: str | None = None,
-        details: dict[str, Any] | None = None
-    ) -> bool:
-        """
-        Check compliance for an entity.
-    
-        Args:
-            entity_id: Entity identifier (used as metadata)
-            compliance_type: Type of compliance being tracked
-            compliance_status: Status (compliant, non_compliant)
-            regulation_reference: Reference to regulation
-            details: Additional compliance details
-        
-        Returns:
-            True if compliance check was recorded successfully
-        """
-        event = create_compliance_check(
-            entity_id=entity_id,
-            compliance_type=compliance_type,
-            compliance_status=compliance_status,
-            regulation_reference=regulation_reference,
-            domain_type=self.domain_type,
-            details=details
-        )
-        success = self.add_domain_event(event)
-        if success:
-            self._metrics.record_compliance_result(compliance_status)
-        return success
-
     # -- validation ----------------------------------------------------
 
     def validate_domain_operation(
@@ -442,68 +398,6 @@ class DomainChain(BaseChain):
                 ):
                     compliance_events.append(event)
         return compliance_events
-
-    def get_entity_compliance_report(self, entity_id: str) -> dict[str, Any]:
-        """
-        Get a compliance report for a specific entity.
-    
-        Args:
-            entity_id: Entity identifier
-        
-        Returns:
-            Compliance report for the entity
-        """
-        entity_info = self.get_entity_info(entity_id)
-        if not entity_info:
-            return {}
-    
-        compliance_events = self._get_compliance_events(entity_id)
-        compliance_types = _analyze_compliance_status(compliance_events)
-    
-        return {
-            "entity_id": entity_id,
-            "domain_type": self.domain_type,
-            "compliance_checks": len(compliance_events),
-            "compliance_types": compliance_types,
-            "overall_compliant": all(
-                info["status"] == "compliant" 
-                for info in compliance_types.values()
-            ),
-            "violations": sum(
-                1 for info in compliance_types.values() 
-                if info["status"] == "non_compliant"
-            ),
-        }
-
-    def get_entity_performance_metrics(self, entity_id: str) -> dict[str, Any]:
-        """
-        Get performance metrics for a specific entity.
-    
-        Args:
-            entity_id: Entity identifier
-        
-        Returns:
-            Performance metrics for the entity
-        """
-        entity_events = self.get_entity_history(entity_id)
-        stats = _calculate_performance_stats(entity_events)
-    
-        return {
-            "entity_id": entity_id,
-            "domain_type": self.domain_type,
-            "operations_started": stats["started"],
-            "operations_completed": stats["completed"],
-            "completion_rate": _safe_ratio(stats["completed"], stats["started"]),
-            "quality_checks": stats["quality_total"],
-            "quality_pass_rate": (
-                _safe_ratio(stats["quality_passed"], stats["quality_total"])
-            ),
-            "approvals_requested": stats["approvals_total"],
-            "approval_rate": (
-                _safe_ratio(stats["approvals_granted"], stats["approvals_total"])
-            ),
-            "total_events": len(entity_events),
-        }
 
     # -- 2PC transaction methods (delegates to TransactionManager) -----
 
