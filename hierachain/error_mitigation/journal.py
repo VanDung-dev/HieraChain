@@ -18,8 +18,17 @@ from typing import Any, Generator, BinaryIO
 from pathlib import Path
 import pyarrow as pa
 
-from hierachain.core import schemas
 from hierachain.config.settings import get_settings
+
+_EVENT_SCHEMA = pa.schema([
+    ('entity_id', pa.string()),
+    ('event', pa.string()),
+    ('timestamp', pa.float64()),
+    ('details', pa.map_(pa.string(), pa.string())),
+    ('details_cid', pa.string()),
+    ('details_nonce', pa.string()),
+    ('data', pa.binary()),
+])
 
 logger = logging.getLogger(__name__)
 
@@ -310,7 +319,7 @@ class TransactionJournal:
             logger.warning("Filesystem check failed, attempting creation anyway: %s", e)
 
         self._file_handle: BinaryIO | None = None
-        self._schema = schemas.get_event_schema()
+        self._schema = _EVENT_SCHEMA
 
         # Check if fsync is disabled to decide on using background queue for writes
         self._async_write = not get_settings().JOURNAL_FSYNC
