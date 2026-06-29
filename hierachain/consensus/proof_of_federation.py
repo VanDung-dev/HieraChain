@@ -119,10 +119,6 @@ class ProofOfFederation(BaseConsensus):
         """Alias for add_validator for compatibility."""
         return self.add_validator(authority_id, metadata)
 
-    def remove_authority(self, authority_id: str) -> bool:
-        """Alias for remove_validator for compatibility."""
-        return self.remove_validator(authority_id)
-
     def is_authority(self, authority_id: str) -> bool:
         """Check if an ID is an active authority/validator."""
         return authority_id in self.validators
@@ -255,19 +251,6 @@ class ProofOfFederation(BaseConsensus):
             events=events,
             nonce=block.nonce
         )
-
-    def get_consensus_info(self) -> dict[str, Any]:
-        """Get information about the current consensus state."""
-        return {
-            "name": self.name,
-            "type": "ProofOfFederation",
-            "validator_count": len(self.validators),
-            "validators": self.validators,
-            "config": self.config
-        }
-
-    def estimate_block_time(self) -> float:
-        return self.config["block_interval"]
 
     def verify_quorum_signatures(
         self,

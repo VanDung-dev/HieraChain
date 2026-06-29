@@ -7,11 +7,20 @@ import logging
 from typing import Any, Callable
 import pyarrow as pa
 
-from hierachain.core import schemas
 from hierachain.config.settings import settings
 from hierachain.security.verify.zk_verifier import ZKVerifier
 from hierachain.consensus.ordering.types import PendingEvent
 from hierachain.consensus.ordering.utils import verify_event_signature
+
+_EVENT_SCHEMA = pa.schema([
+    ('entity_id', pa.string()),
+    ('event', pa.string()),
+    ('timestamp', pa.float64()),
+    ('details', pa.map_(pa.string(), pa.string())),
+    ('details_cid', pa.string()),
+    ('details_nonce', pa.string()),
+    ('data', pa.binary()),
+])
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +68,7 @@ def _verify_zk_proof(event: PendingEvent) -> dict[str, Any]:
 def _validate_structure(event_data: Any) -> bool:
     """Validate basic event structure"""
     if isinstance(event_data, (pa.Table, pa.RecordBatch)):
-        return event_data.schema.equals(schemas.get_event_schema())
+        return event_data.schema.equals(_EVENT_SCHEMA)
 
     if not isinstance(event_data, dict):
         return False

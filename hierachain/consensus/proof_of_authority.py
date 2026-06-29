@@ -286,23 +286,6 @@ class ProofOfAuthority(BaseConsensus):
             event.get("event", "") not in self.FORBIDDEN_EVENT_TYPES
         )
 
-    def reset_consensus_state(self) -> None:
-        """Reset PoA consensus state."""
-        # Keep authorities but reset any temporary state
-
-    def get_block_creation_difficulty(self) -> float:
-        """
-        Get block creation difficulty for PoA (always 1.0 since no mining).
-
-        Returns:
-            Difficulty value (1.0 for PoA)
-        """
-        return 1.0
-
-    def estimate_block_time(self) -> float:
-        """Estimate block creation time for PoA."""
-        return self.config["block_interval"]
-
     def __str__(self) -> str:
         """String representation of PoA consensus."""
         return f"ProofOfAuthority(authorities={len(self.authorities)})"
