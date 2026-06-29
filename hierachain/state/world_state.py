@@ -37,15 +37,6 @@ class WorldState:
                 current = self._states.get(entity_id)
                 self._states[entity_id] = self._compute_new_state(current, event)
 
-    def apply_event_list(self, events: list[dict[str, Any]]) -> None:
-        with self._lock:
-            for event in events:
-                entity_id = event.get("entity_id")
-                if not isinstance(entity_id, str):
-                    continue
-                current = self._states.get(entity_id)
-                self._states[entity_id] = self._compute_new_state(current, event)
-
     def get_entity_state(self, entity_id: str) -> dict[str, Any] | None:
         with self._lock:
             return self._states.get(entity_id)
