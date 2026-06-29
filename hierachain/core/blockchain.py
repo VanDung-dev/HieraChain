@@ -14,7 +14,6 @@ import threading
 from typing import Any, Callable, cast
 
 from hierachain.core.block import Block
-from hierachain.core.deadlock_detector import get_deadlock_detector
 from hierachain.security.verify.block_verifier import get_block_verifier
 
 logger = logging.getLogger(__name__)
@@ -43,7 +42,7 @@ class Blockchain:
     events per block.
     """
     __slots__ = (
-        'name', 'lock', '_lock_id', '_deadlock_detector',
+        'name', 'lock',
         'chain', 'pending_events', 'total_events',
         'event_type_counts', 'entity_event_index', 'query_engine',
     )
@@ -57,8 +56,6 @@ class Blockchain:
         """
         self.name = name
         self.lock = threading.RLock()
-        self._lock_id = id(self.lock)
-        self._deadlock_detector = get_deadlock_detector()
         self.chain: list[Block] = []
         self.pending_events: list[dict[str, Any]] = []
         self.total_events: int = 0
@@ -67,34 +64,6 @@ class Blockchain:
         self.query_engine = BlockchainQueryEngine(self)
         with self.lock:
             self.create_genesis_block()
-    
-    def safe_lock(self, timeout: float = 5.0) -> bool:
-        """
-        Acquire lock with deadlock detection (Issue 14).
-        
-        Args:
-            timeout: Maximum time to wait for lock
-            
-        Returns:
-            True if lock acquired, False if timeout
-        """
-        wait_start = self._deadlock_detector.record_wait_start(self._lock_id)
-        try:
-            result = self.lock.acquire(blocking=True, timeout=timeout)
-            wait_time = time.time() - wait_start
-            self._deadlock_detector.record_wait_end(self._lock_id, wait_time)
-            return result
-        except RuntimeError:
-            # Lock acquire failed due to runtime error
-            logger.error("Lock acquisition failed with RuntimeError for %s", self.name)
-            return False
-    
-    def safe_unlock(self):
-        """Release lock safely."""
-        try:
-            self.lock.release()
-        except RuntimeError:
-            pass  # Lock not held
     
     def create_genesis_block(self) -> None:
         """Create the genesis (first) block of the blockchain."""

@@ -14,10 +14,6 @@ def compute_hash_standalone(data_string: str) -> str:
     return hashlib.sha256(data_string.encode()).hexdigest()
 
 
-def compute_merkle_leaves_standalone(data_list_strings: list[str]) -> list[str]:
-    return [hashlib.sha256(s.encode()).hexdigest() for s in data_list_strings]
-
-
 def compute_leaves_from_events_standalone(events: list[dict[str, Any]]) -> list[str]:
     leaves = []
     for event in events:

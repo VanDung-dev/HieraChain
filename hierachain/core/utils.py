@@ -10,7 +10,6 @@ import uuid
 import re
 import orjson
 from typing import Any
-from datetime import datetime
 
 from hierachain.core.merkle_tree import generate_hash
 
@@ -173,26 +172,6 @@ def create_event(
     return event
 
 
-def filter_events_by_timerange(
-    events: list[dict[str, Any]], start_time: float, end_time: float
-) -> list[dict[str, Any]]:
-    """
-    Filter events by timestamp range.
-    
-    Args:
-        events: List of events to filter
-        start_time: Start timestamp (inclusive)
-        end_time: End timestamp (inclusive)
-        
-    Returns:
-        Filtered list of events
-    """
-    return [
-        event for event in events
-        if start_time <= event.get("timestamp", 0) <= end_time
-    ]
-
-
 def group_events_by_entity(
     events: list[dict[str, Any]]
 ) -> dict[str, list[dict[str, Any]]]:
@@ -211,28 +190,6 @@ def group_events_by_entity(
         if entity_id not in grouped:
             grouped[entity_id] = []
         grouped[entity_id].append(event)
-    
-    return grouped
-
-
-def group_events_by_type(
-    events: list[dict[str, Any]]
-) -> dict[str, list[dict[str, Any]]]:
-    """
-    Group events by event type.
-    
-    Args:
-        events: List of events to group
-        
-    Returns:
-        Dictionary mapping event type to list of events
-    """
-    grouped: dict[str, list[dict[str, Any]]] = {}
-    for event in events:
-        event_type = event.get("event", "unknown")
-        if event_type not in grouped:
-            grouped[event_type] = []
-        grouped[event_type].append(event)
     
     return grouped
 
@@ -258,36 +215,6 @@ def _is_block_valid(block: dict[str, Any]) -> bool:
     })
     
     return recalculated_hash == block["hash"]
-
-
-def calculate_chain_integrity_score(chain_data: list[dict[str, Any]]) -> float:
-    """
-    Calculate integrity score for a blockchain.
-    
-    Args:
-        chain_data: List of block dictionaries
-        
-    Returns:
-        Integrity score between 0.0 and 1.0
-    """
-    if not chain_data:
-        return 0.0
-    
-    valid_blocks = sum(1 for block in chain_data if _is_block_valid(block))
-    return valid_blocks / len(chain_data)
-
-
-def format_timestamp(timestamp: float) -> str:
-    """
-    Format timestamp for human-readable display.
-    
-    Args:
-        timestamp: Unix timestamp
-        
-    Returns:
-        Formatted timestamp string
-    """
-    return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _is_summary_value(value: Any) -> bool:
@@ -332,29 +259,6 @@ def sanitize_metadata_for_main_chain(metadata: dict[str, Any]) -> dict[str, Any]
             sanitized[key] = value
     
     return sanitized
-
-
-def create_domain_event_template(domain_type: str) -> dict[str, Any]:
-    """
-    Create a template for domain-specific events.
-    
-    Args:
-        domain_type: Type of domain (e.g., "supply_chain", "healthcare")
-        
-    Returns:
-        Event template dictionary
-    """
-    return {
-        "entity_id": (
-            f"{domain_type.upper()}-{int(time.time())}-{uuid.uuid4().hex[:8]}"
-        ),
-        "event": "template_event",
-        "timestamp": time.time(),
-        "details": {
-            "domain_type": domain_type,
-            "created_by": "Ledger_template"
-        }
-    }
 
 
 # Single compiled pattern: 1 regex search vs 12 per string

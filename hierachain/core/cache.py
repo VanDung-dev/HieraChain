@@ -13,10 +13,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 
-class CacheError(Exception):
-    pass
-
-
 class EvictionPolicy(Enum):
     LRU = "lru"
     LFU = "lfu"

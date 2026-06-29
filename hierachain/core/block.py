@@ -15,7 +15,6 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import orjson
 
-from hierachain.core import schemas
 from hierachain.core.utils import generate_hash
 from hierachain.core.merkle_tree import MerkleTree
 
@@ -254,7 +253,15 @@ def _prepare_events(events_list: list[dict[str, Any]]) -> tuple[list[dict[str, A
 
 def _build_arrow_from_processed(processed_events: list[dict[str, Any]]) -> pa.Table:
     """Build Arrow table from pre-processed event dicts (avoids re-serialization)."""
-    schema = schemas.get_event_schema()
+    schema = pa.schema([
+        ('entity_id', pa.string()),
+        ('event', pa.string()),
+        ('timestamp', pa.float64()),
+        ('details', pa.map_(pa.string(), pa.string())),
+        ('details_cid', pa.string()),
+        ('details_nonce', pa.string()),
+        ('data', pa.binary()),
+    ])
     if not processed_events:
         return pa.table({name: [] for name in schema.names}, schema=schema)
     pydict = {
