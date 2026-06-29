@@ -249,14 +249,6 @@ class BlockchainCacheManager:
         self.lock = threading.RLock()
         self.logger = logging.getLogger(__name__)
 
-    @property
-    def performance_stats(self) -> dict[str, Any]:
-        return {
-            "block_retrievals": self.perf_tracker.block_retrievals,
-            "cache_hits": self.perf_tracker.cache_hits,
-            "total_time_saved": self.perf_tracker.total_time_saved,
-        }
-
     def get_block(self, chain_name: str, index: int) -> Any | None:
         start_time = time.time()
         cache_key = f"{chain_name}:{index}"
@@ -288,19 +280,6 @@ class BlockchainCacheManager:
             self.logger.debug(
                 "Block retrieval for %s: %.3f", cache_key, query_time
             )
-
-    def get_events_for_block(self, chain_name: str, index: int) -> list[Any] | None:
-        cache_key = f"events:{chain_name}:{index}"
-        with self.lock:
-            events = self.event_cache.get(cache_key)
-            if events is None:
-                block = self.get_block(chain_name, index)
-                if block:
-                    events = cast(Any, block).events
-                    self.event_cache.set(
-                        cache_key, events, ttl=self.config.get("event_ttl", 300)
-                    )
-            return events
 
     def get_entity_events(
         self, entity_id: str, chain_type: str = "all"
@@ -336,42 +315,6 @@ class BlockchainCacheManager:
             return self.chain.sub_chains.get(chain_name)
         return None
 
-    def invalidate_entity_cache(self, entity_id: str):
-        with self.lock:
-            self.invalidator.invalidate_entity(entity_id)
-
-    def invalidate_block_cache(self, chain_name: str, index: int | None = None) -> None:
-        with self.lock:
-            self.invalidator.invalidate_block(chain_name, index)
-
-    def get_cache_stats(self) -> dict[str, Any]:
-        with self.lock:
-            return {
-                "block_cache": self.block_cache.get_stats(),
-                "event_cache": self.event_cache.get_stats(),
-                "entity_cache": self.entity_cache.get_stats(),
-                "performance": self.perf_tracker.to_dict(),
-            }
-
-    def optimize_cache(self):
-        with self.lock:
-            for cache in (
-                self.block_cache,
-                self.event_cache,
-                self.entity_cache,
-            ):
-                cache.cleanup_ttl()
-            self.logger.info("Cache optimization completed")
-
-    def warm_cache(self, entity_ids: list[str]):
-        self.logger.info("Warming cache for %d entities", len(entity_ids))
-        for entity_id in entity_ids:
-            try:
-                self.get_entity_events(entity_id, "all")
-            except Exception as e:
-                self.logger.warning("Failed to warm cache for %s: %s", entity_id, e)
-        self.logger.info("Cache warming completed")
-
     def shutdown(self):
         with self.lock:
             for cache in (
@@ -381,22 +324,3 @@ class BlockchainCacheManager:
             ):
                 cache.clear()
             self.logger.info("Blockchain cache manager shutdown")
-
-
-def create_blockchain_cache(
-    chain: Any, config: dict[str, Any] | None = None
-) -> BlockchainCacheManager:
-    return BlockchainCacheManager(chain, config)
-
-
-def create_performance_cache_config() -> dict[str, Any]:
-    return {
-        "block_cache_size": 10000,
-        "event_cache_size": 50000,
-        "entity_cache_size": 20000,
-        "block_cache_policy": "lru",
-        "event_cache_policy": "ttl",
-        "entity_cache_policy": "lfu",
-        "event_ttl": 600,
-        "entity_ttl": 7200,
-    }
