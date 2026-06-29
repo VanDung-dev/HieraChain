@@ -45,7 +45,7 @@ class BaseERPIntegration:
         """Disconnect from ERP system"""
         self.connected = False
     
-    def get_events(self, last_hours: int = 24) -> list[dict[str, Any]]:
+    def get_events(self) -> list[dict[str, Any]]:
         """Get events from ERP system"""
         raise NotImplementedError("Subclasses must implement get_events method")
     
@@ -72,7 +72,7 @@ class SAPIntegration(BaseERPIntegration):
         self.connected = True
         return True
     
-    def get_events(self, last_hours: int = 24) -> list[dict[str, Any]]:
+    def get_events(self) -> list[dict[str, Any]]:
         """Get events from SAP system"""
         if not self.connected:
             raise IntegrationError("Not connected to SAP system")
@@ -108,7 +108,7 @@ class OracleIntegration(BaseERPIntegration):
         self.connected = True
         return True
     
-    def get_events(self, last_hours: int = 24) -> list[dict[str, Any]]:
+    def get_events(self) -> list[dict[str, Any]]:
         """Get events from Oracle system"""
         if not self.connected:
             raise IntegrationError("Not connected to Oracle system")
@@ -143,7 +143,7 @@ class DynamicsIntegration(BaseERPIntegration):
         self.connected = True
         return True
     
-    def get_events(self, last_hours: int = 24) -> list[dict[str, Any]]:
+    def get_events(self) -> list[dict[str, Any]]:
         """Get events from Dynamics system"""
         if not self.connected:
             raise IntegrationError("Not connected to Dynamics system")
