@@ -22,11 +22,6 @@ from hierachain.security.security_utils import KeyPair, verify_signature
 logger = logging.getLogger(__name__)
 
 
-class MessageCryptoError(Exception):
-    """Exception raised for message crypto errors."""
-    pass
-
-
 def create_signable_payload(
     payload: dict[str, Any],
     timestamp: float,
