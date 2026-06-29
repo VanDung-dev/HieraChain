@@ -143,10 +143,6 @@ class BFTConsensus:
     def set_network_send_function(self, send_func: Callable) -> None:
         """Set custom network send function."""
         self.network_send_function = send_func
-
-    def set_chain_reference(self, chain: Any) -> None:
-        """Set blockchain reference for operation execution."""
-        self.chain = chain
     
     def request(self, operation: dict[str, Any]) -> bool:
         """Client request to the consensus protocol"""

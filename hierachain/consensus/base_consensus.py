@@ -158,51 +158,6 @@ class BaseConsensus(ABC):
             self._check_content_fields(event)
         )
 
-    def get_consensus_info(self) -> dict[str, Any]:
-        """
-        Get information about the consensus mechanism.
-        Returns:
-            Dictionary containing consensus information
-        """
-        return {
-            "name": self.name,
-            "type": self.__class__.__name__,
-            "config": self.config
-        }
-
-    def update_config(self, config: dict[str, Any]) -> None:
-        """
-        Update consensus configuration.
-        Args:
-            config: New configuration parameters
-        """
-        self.config.update(config)
-
-    def reset_consensus_state(self) -> None:
-        """
-        Reset any internal consensus state.
-
-        This method can be overridden by specific consensus implementations
-        to reset their internal state when needed.
-        """
-
-    def get_block_creation_difficulty(self) -> float:
-        """
-        Get the current difficulty for block creation.
-        Returns:
-            Difficulty value (interpretation depends on consensus mechanism)
-        """
-        return 1.0  # Default difficulty
-
-    def estimate_block_time(self) -> float:
-        """
-        Estimate the time required to create a new block.
-
-        Returns:
-            Estimated time in seconds
-        """
-        return 10.0  # Default 10 seconds
-
     def __str__(self) -> str:
         """String representation of the consensus mechanism."""
         return f"{self.__class__.__name__}(name={self.name})"

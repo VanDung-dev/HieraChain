@@ -20,7 +20,6 @@ class EventStatus(Enum):
     """Event processing status"""
     PENDING = "pending"
     PROCESSING = "processing"
-    ORDERED = "ordered"
     CERTIFIED = "certified"
     REJECTED = "rejected"
 
