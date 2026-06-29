@@ -200,34 +200,6 @@ class ChainInfoResponse(BaseModel):
     latest_block_hash: str | None = Field(None, description="Hash of the latest block")
 
 
-class ProofSubmissionRequest(BaseModel):
-    """Request schema for submitting proofs to Main Chain"""
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "sub_chain_name": "ProductionChain",
-                "proof_hash": (
-                    "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
-                ),
-                "metadata": {
-                    "domain_type": "manufacturing",
-                    "operations_count": 10
-                }
-            }
-        }
-    )
-    
-    sub_chain_name: str | None = Field(
-        None, description="Name of the Sub-Chain submitting the proof"
-    )
-    proof_hash: str | None = Field(
-        None, description="Cryptographic hash of the Sub-Chain's latest block"
-    )
-    metadata: dict[str, Any] | None = Field(
-        None, description="Summary metadata about the Sub-Chain's operations"
-    )
-
-
 class ProofSubmissionResponse(BaseModel):
     """Response schema for proof submission operations"""
     model_config = ConfigDict(
@@ -299,38 +271,4 @@ class ChainStatsResponse(BaseModel):
     )
     registered_sub_chains: int | None = Field(
         None, description="Number of registered Sub-Chains (for Main Chain)"
-    )
-
-
-class CreateChainRequest(BaseModel):
-    """Request schema for creating a new chain"""
-    chain_type: str = Field(..., description="Type of chain to create")
-    participants: list[str] | None = Field(None, description="list of participants")
-    
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "chain_type": "supply_chain",
-                "participants": ["manufacturer", "supplier", "distributor"]
-            }
-        }
-    )
-
-
-class CreateChainResponse(BaseModel):
-    """Response schema for chain creation"""
-    success: bool = Field(..., description="Whether the chain creation was successful")
-    message: str = Field(..., description="Response message")
-    chain_name: str = Field(..., description="Name of the created chain")
-    chain_type: str = Field(..., description="Type of the created chain")
-    
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "success": True,
-                "message": "Sub-chain 'production_chain' created successfully",
-                "chain_name": "production_chain",
-                "chain_type": "generic"
-            }
-        }
     )

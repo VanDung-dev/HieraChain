@@ -87,11 +87,6 @@ class IPFSClient:
         )
 
     @property
-    def encryption(self) -> AESEncryption:
-        """Get the encryption handler."""
-        return self._encryption
-
-    @property
     def encryption_key(self) -> bytes:
         """Get the encryption key (return a copy to prevent modification)."""
         return bytes(self._encryption.key)  # Return copy for safety
@@ -498,7 +493,7 @@ class IPFSClient:
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *exc):
         """Context manager exit."""
         self.close()
 

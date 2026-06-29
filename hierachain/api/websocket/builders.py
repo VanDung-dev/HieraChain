@@ -123,27 +123,6 @@ class WebSocketMessageBuilder:
             message["event_type"] = event_type
         return message
     
-    @staticmethod
-    def build_ping() -> dict:
-        """Build ping message."""
-        return {
-            "type": WebSocketMessageType.PING,
-            "timestamp": datetime.now().isoformat()
-        }
-    
-    @staticmethod
-    def build_error(error_message: str, code: str | None = None) -> dict:
-        """Build error message."""
-        message = {
-            "type": WebSocketMessageType.ERROR,
-            "error": error_message,
-            "timestamp": datetime.now().isoformat()
-        }
-        if code:
-            message["code"] = code
-        return message
-
-
 # Module-level builder functions for backward compatibility
 def build_block_added(chain_name: str, block_data: dict) -> dict:
     """Build block added message."""

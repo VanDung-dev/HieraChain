@@ -7,7 +7,6 @@ in the Blockchain Explorer UI.
 
 import json
 from typing import Any
-from functools import lru_cache
 
 from hierachain.api.storage.endpoint_helpers import (
     is_ipfs_enabled, resolve_event_details
@@ -15,13 +14,6 @@ from hierachain.api.storage.endpoint_helpers import (
 from hierachain.api.storage.utils import (
     format_cid_display, detect_data_location
 )
-
-
-# LRU cache for resolved CIDs (avoids repeated IPFS calls)
-@lru_cache(maxsize=1000)
-def _cache_key(cid: str, nonce: str) -> str:
-    """Generate cache key for CID resolution."""
-    return f"{cid}:{nonce}"
 
 
 def format_event_for_display(event: dict[str, Any], resolve_cid: bool = False) -> dict[str, Any]:

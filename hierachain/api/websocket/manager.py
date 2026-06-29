@@ -27,7 +27,6 @@ class WebSocketMessage:
     type: str
     data: Any = None
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
-    subscription_id: str | None = None
 
 
 class WebSocketManager:

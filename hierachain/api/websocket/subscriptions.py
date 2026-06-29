@@ -51,12 +51,6 @@ class SubscriptionManager:
             self.event_type_subscribers[key] = set()
         self.event_type_subscribers[key].add(connection_id)
     
-    def unsubscribe_from_event_type(self, connection_id: str, chain_name: str, event_type: str):
-        """Unsubscribe connection from an event type."""
-        key = (chain_name, event_type)
-        if key in self.event_type_subscribers:
-            self.event_type_subscribers[key].discard(connection_id)
-    
     def unsubscribe_from_all_event_types(self, connection_id: str, chain_name: str, event_types: set):
         """Unsubscribe connection from all event types."""
         for event_type in event_types:
@@ -80,15 +74,6 @@ class SubscriptionManager:
     def get_all_subscribers(self) -> list:
         """Get all subscribers."""
         return list(self.all_subscribers)
-    
-    def has_chain_subscribers(self, chain_name: str) -> bool:
-        """Check if chain has subscribers."""
-        return chain_name in self.chain_subscribers and bool(self.chain_subscribers[chain_name])
-    
-    def has_event_type_subscribers(self, chain_name: str, event_type: str) -> bool:
-        """Check if event type has subscribers."""
-        key = (chain_name, event_type)
-        return key in self.event_type_subscribers and bool(self.event_type_subscribers[key])
     
     def has_all_subscribers(self) -> bool:
         """Check if there are any all subscribers."""
