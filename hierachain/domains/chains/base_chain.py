@@ -114,39 +114,6 @@ class BaseChain(SubChain, ABC):
         """
         return self.entity_registry.get(entity_id)
     
-    def update_entity_info(self, entity_id: str, updates: dict[str, Any]) -> bool:
-        """
-        Update information for a registered entity.
-        
-        Args:
-            entity_id: Entity identifier
-            updates: Updates to apply to entity data
-            
-        Returns:
-            True if entity was updated successfully, False otherwise
-        """
-        if entity_id not in self.entity_registry:
-            return False
-        
-        # Update entity data
-        self.entity_registry[entity_id].update(updates)
-        self.entity_registry[entity_id]["last_updated"] = time.time()
-        
-        # Create update event
-        update_event = {
-            "entity_id": entity_id,  # Metadata field
-            "event": "entity_updated",
-            "timestamp": time.time(),
-            "details": {
-                "updated_fields": list(updates.keys()),
-                "updated_by": self.name,
-                "domain_type": self.domain_type
-            }
-        }
-        
-        self.add_event(update_event)
-        return True
-    
     def get_entity_history(self, entity_id: str) -> list[dict[str, Any]]:
         """
         Get complete history of events for a specific entity.
@@ -166,32 +133,6 @@ class BaseChain(SubChain, ABC):
             
         return history
 
-    def create_domain_event(
-        self, event_class: type, entity_id: str, **kwargs
-    ) -> BaseEvent:
-        """
-        Create a domain-specific event using the provided event class.
-        
-        Args:
-            event_class: Event class to instantiate
-            entity_id: Entity identifier (used as metadata)
-            **kwargs: Additional arguments for event creation
-            
-        Returns:
-            Created domain event
-        """
-        # Add domain type to kwargs
-        kwargs.setdefault("domain_type", self.domain_type)
-        
-        # Create the event
-        event = event_class(entity_id=entity_id, **kwargs)
-        
-        # Validate the event
-        if not event.is_valid():
-            raise ValueError(f"Invalid event created: {event}")
-        
-        return event
-    
     def add_domain_event(self, event: BaseEvent) -> bool:
         """
         Add a domain event to the chain with validation and processing.
@@ -351,42 +292,6 @@ class BaseChain(SubChain, ABC):
                 return False
         
         return True
-    
-    def get_entity_lifecycle_summary(self, entity_id: str) -> dict[str, Any]:
-        """
-        Get a summary of an entity's lifecycle in this domain.
-        
-        Args:
-            entity_id: Entity identifier
-            
-        Returns:
-            Lifecycle summary for the entity
-        """
-        entity_info = self.get_entity_info(entity_id)
-        if not entity_info:
-            return {}
-        
-        # Get all events for this entity
-        entity_events = self.get_entity_history(entity_id)
-        
-        # Analyze lifecycle
-        lifecycle_summary = {
-            "entity_id": entity_id,
-            "domain_type": self.domain_type,
-            "registered_at": entity_info.get("registered_at"),
-            "current_status": entity_info.get("status"),
-            "total_events": len(entity_events),
-            "event_types": list(set(event.get("event") for event in entity_events)),
-            "last_activity": max(
-                (event.get("timestamp", 0) for event in entity_events), default=0
-            ),
-            "allocated_resources": entity_info.get("allocated_resources", []),
-            "current_operation": entity_info.get("current_operation"),
-            "approvals": entity_info.get("approvals", {}),
-            "compliance": entity_info.get("compliance", {})
-        }
-        
-        return lifecycle_summary
     
     @abstractmethod
     def validate_domain_operation(

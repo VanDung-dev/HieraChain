@@ -17,16 +17,6 @@ from hierachain.security.secure_logging import get_security_logger
 logger = get_security_logger()
 
 
-def _validate_event_structure(event: dict[str, Any]) -> bool:
-    """
-    Internal utility to validate event structure.
-
-    Redirects to the core utility function.
-    """
-    from hierachain.core.utils import validate_event_structure
-    return validate_event_structure(event)
-
-
 def _check_operation_consistency(
     event_type: str,
     details: dict[str, Any],
@@ -200,30 +190,6 @@ def _generate_system_recommendations(validation_results: dict[str, Any]) -> list
     return recommendations
 
 
-def _get_simple_value(v: Any) -> str | None:
-    """
-    Extract simple string value from a data value, skipping long strings like hashes.
-    """
-    if v is None:
-        return None
-
-    # Handle primitive types directly
-    if isinstance(v, bool):
-        return str(v).lower()
-    if isinstance(v, (int, float)):
-        return str(v).lower()
-
-    # Handle string with length check
-    if isinstance(v, str):
-        return _process_string_value(v)
-
-    # Handle bytes with length check
-    if isinstance(v, bytes):
-        return _process_bytes_value(v)
-
-    return None
-
-
 def _process_string_value(v: str) -> str | None:
     """Process string value with length check."""
     if len(v) >= 1000:
@@ -246,22 +212,6 @@ def _process_bytes_value(v: bytes) -> str | None:
         )
         return None
     return v.decode('utf-8', errors='ignore').lower()
-
-
-def _get_forbidden_terms() -> frozenset[str]:
-    """Return the set of forbidden cryptocurrency terminology."""
-    return frozenset([
-        "transaction",
-        "mining",
-        "coin",
-        "token",
-        "wallet",
-        "address",
-        "sender",
-        "receiver",
-        "amount",
-        "fee",
-    ])
 
 
 def _build_default_validation_rules() -> dict[str, Callable]:
@@ -463,8 +413,6 @@ class CrossChainValidator:
             hierarchy_manager: HierarchyManager instance
         """
         self.hierarchy_manager = hierarchy_manager
-        self.validation_cache: dict[str, dict[str, Any]] = {}
-        self.last_validation = 0.0
         self.validation_rules: dict[str, Callable] = {}
 
         # Set up default validation rules
@@ -475,12 +423,6 @@ class CrossChainValidator:
         self._compliance_checker = ComplianceChecker(
             hierarchy_manager, self.validation_rules
         )
-
-    def invalidate_cache(self) -> None:
-        """Invalidate the validation cache. Call this on proof submission or block finalization."""
-        self.validation_cache.clear()
-        self.last_validation = 0.0
-        logger.debug("CrossChainValidator cache invalidated")
 
     # -- proof validation (delegated) ------------------------------
 
@@ -632,62 +574,6 @@ class CrossChainValidator:
         )
 
         return results
-
-    # -- reports ---------------------------------------------------
-
-    def generate_validation_report(self) -> dict[str, Any]:
-        """
-        Generate a comprehensive validation report.
-
-        Returns:
-            Comprehensive validation report
-        """
-        integrity = self.validate_system_integrity()
-        system_stats = (self.hierarchy_manager.get_system_integrity_report())
-
-        proof = integrity["proof_consistency"]
-        proof_summary = (
-            f"{proof['consistent_proofs']}/"
-            f"{proof['total_proofs_checked']} "
-            f"proofs consistent"
-        )
-
-        compliance = integrity["Ledger_compliance"]
-        compliance_status = (
-            "compliant"
-            if compliance["overall_compliant"]
-            else "violations detected"
-        )
-
-        return {
-            "report_generated_at": time.time(),
-            "system_overview": (system_stats["system_overview"]),
-            "validation_results": integrity,
-            "summary": {
-                "overall_healthy": (integrity["overall_integrity"]),
-                "main_chain_status": (
-                    "healthy"
-                    if integrity["main_chain_valid"]
-                    else "compromised"
-                ),
-                "sub_chains_status": proof_summary,
-                "Ledger_compliance": compliance_status,
-                "total_recommendations": len(integrity["recommendations"]),
-            },
-            "recommendations": integrity["recommendations"],
-        }
-
-    # -- extensibility ---------------------------------------------
-
-    def add_validation_rule(self, rule_name: str, rule_function: Callable) -> None:
-        """
-        Add a custom validation rule.
-
-        Args:
-            rule_name: Name of the validation rule
-            rule_function: Function for the validation
-        """
-        self.validation_rules[rule_name] = rule_function
 
     # -- string representations ------------------------------------
 

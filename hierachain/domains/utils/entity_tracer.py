@@ -219,9 +219,6 @@ class EntityTracer:
         """
         self.hierarchy_manager = hierarchy_manager
         self.entity_cache: dict[str, dict[str, Any]] = {}
-        self.relationship_cache: dict[str, set[str]] = defaultdict(set)
-        self.last_cache_update = 0.0
-        self.cache_ttl = 60.0
 
     def trace_entity(
         self,
@@ -418,41 +415,6 @@ class EntityTracer:
                 "lifecycle_duration": duration,
                 "last_activity": trace["last_seen"]
             }
-        }
-
-    def generate_entity_report(self, entity_id: str) -> dict[str, Any]:
-        """
-        Generate a comprehensive report for an entity.
-
-        Args:
-            entity_id: Entity identifier
-
-        Returns:
-            Comprehensive entity report
-        """
-        # Get all entity information
-        lifecycle = self.get_entity_lifecycle(entity_id)
-        performance = self.get_entity_performance_summary(entity_id)
-        relationships = self.find_related_entities(entity_id)
-
-        if not lifecycle["found"]:
-            return {
-                "entity_id": entity_id,
-                "found": False,
-                "report_generated_at": time.time()
-            }
-
-        return {
-            "entity_id": entity_id,
-            "found": True,
-            "report_generated_at": time.time(),
-            "lifecycle_information": lifecycle,
-            "performance_metrics": performance["performance_metrics"],
-            "activity_summary": performance["activity_summary"],
-            "relationships": relationships,
-            "recommendations": _generate_recommendations(
-                lifecycle, performance, relationships
-            )
         }
 
     def trace_entity_in_chain(
