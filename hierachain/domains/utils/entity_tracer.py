@@ -218,7 +218,6 @@ class EntityTracer:
             hierarchy_manager: HierarchyManager instance to trace entities across
         """
         self.hierarchy_manager = hierarchy_manager
-        self.entity_cache: dict[str, dict[str, Any]] = {}
 
     def trace_entity(
         self,
@@ -487,6 +486,5 @@ class EntityTracer:
         """Detailed string representation of the Entity Tracer."""
         return (
             f"EntityTracer(main_chain={self.hierarchy_manager.main_chain.name}, "
-            f"sub_chains={len(self.hierarchy_manager.sub_chains)}, "
-            f"cache_entries={len(self.entity_cache)})"
+            f"sub_chains={len(self.hierarchy_manager.sub_chains)})"
         )

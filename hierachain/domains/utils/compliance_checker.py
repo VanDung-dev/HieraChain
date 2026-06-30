@@ -5,48 +5,7 @@ Compliance checker for HieraChain domains.
 import time
 from typing import Any, Callable
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-
-
-def _try_extract_pyarrow_events(events_obj: Any) -> list[dict[str, Any]] | None:
-    """Attempt to extract events using PyArrow method."""
-    if hasattr(events_obj, "to_pylist"):
-        try:
-            raw_events = events_obj.to_pylist()
-            return [
-                ev.as_py() if hasattr(ev, "as_py") and not isinstance(ev, dict) else ev
-                for ev in raw_events
-            ]
-        except (AttributeError, TypeError, ValueError):
-            pass
-    return None
-
-
-def _extract_events_manually(events_obj: Any) -> list[dict[str, Any]]:
-    """Extract events from a block manually (fallback)."""
-    events_list: list[dict[str, Any]] = []
-    try:
-        for event in events_obj:
-            if hasattr(event, "as_py"):
-                event = event.as_py()
-            events_list.append(event)
-    except (AttributeError, TypeError, ValueError):
-        try:
-            events_list = list(events_obj)
-        except (TypeError, ValueError):
-            events_list = []
-    return events_list
-
-
-def _get_block_events(block: Any) -> list[dict[str, Any]]:
-    """Extract events from a block."""
-    if isinstance(block.events, list):
-        return block.events
-
-    pyarrow_events = _try_extract_pyarrow_events(block.events)
-    if pyarrow_events is not None:
-        return pyarrow_events
-
-    return _extract_events_manually(block.events)
+from hierachain.core.utils import get_block_events as _get_block_events
 
 
 class ComplianceChecker:
