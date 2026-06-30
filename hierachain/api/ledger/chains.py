@@ -8,8 +8,8 @@ import os
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 
-from hierachain.api.v1.schemas import ChainInfoResponse, ChainStatsResponse
-from hierachain.api.v1.depds import get_hierarchy_manager
+from hierachain.api.ledger.schemas import ChainInfoResponse, ChainStatsResponse
+from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.core.blockchain import Blockchain
 from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.sub_chain import SubChain
@@ -19,7 +19,7 @@ from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.security.secure_logging import SecureLogger
 
 router = APIRouter(tags=["HieraChain"])
-api_logger = SecureLogger("hierachain.api.v1")
+api_logger = SecureLogger("hierachain.api.ledger")
 
 
 def get_chain_by_name(manager: HierarchyManager, chain_name: str) -> Blockchain | None:
@@ -202,17 +202,15 @@ async def create_sub_chain(
                 note="already_exists",
             )
             return JSONResponse(
-                status_code=status.HTTP_201_CREATED,
+                status_code=status.HTTP_200_OK,
                 content={
                     "success": True,
-                    "message": f"Sub-chain '{chain_name}' created successfully",
+                    "message": f"Sub-chain '{chain_name}' already exists",
                     "chain_name": chain_name
                 }
             )
 
-        conflict_response = _register_new_sub_chain(manager, safe_chain_name, safe_chain_type)
-        if conflict_response:
-            return conflict_response
+        _register_new_sub_chain(manager, safe_chain_name, safe_chain_type)
 
         api_logger.audit(
             action="create",
@@ -230,20 +228,6 @@ async def create_sub_chain(
                 "chain_name": chain_name
             }
         )
-    except ValueError as e:
-        if "already exists" in str(e):
-            api_logger.warning(
-                "Attempted to create existing sub-chain", chain_name=chain_name
-            )
-            return JSONResponse(
-                status_code=status.HTTP_201_CREATED,
-                content={
-                    "success": True,
-                    "message": f"Sub-chain '{chain_name}' created successfully",
-                    "chain_name": chain_name
-                }
-            )
-        raise
     except Exception as e:
         api_logger.error(
             "Failed to create sub-chain", error=str(e), chain_name=chain_name

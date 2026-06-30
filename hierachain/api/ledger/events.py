@@ -8,8 +8,8 @@ import time
 import re
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 
-from hierachain.api.v1.schemas import EventRequest, EventResponse
-from hierachain.api.v1.depds import get_hierarchy_manager
+from hierachain.api.ledger.schemas import EventRequest, EventResponse
+from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.sanitization import sanitize_string, sanitize_dict
 from hierachain.security.verify.api_key_verifier import require_event_access
@@ -17,7 +17,7 @@ from hierachain.security.secure_logging import SecureLogger
 from hierachain.api.storage.endpoint_helpers import process_event_details
 
 router = APIRouter(tags=["HieraChain"])
-api_logger = SecureLogger("hierachain.api.v1")
+api_logger = SecureLogger("hierachain.api.ledger")
 
 
 def _build_event_data(
@@ -33,7 +33,7 @@ def _build_event_data(
         "entity_id": safe_entity_id,
         "event": safe_event_type,
         "timestamp": time.time(),
-        "sender": event_request.sender,
+        "submitted_by": event_request.sender,
         "signature": event_request.signature,
     }
 

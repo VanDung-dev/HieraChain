@@ -7,27 +7,17 @@ with optional IPFS CID resolution.
 from typing import Any
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from hierachain.api.v1.depds import get_hierarchy_manager
-from hierachain.api.v1.chains import get_chain_by_name
+from hierachain.api.ledger.depds import get_hierarchy_manager
+from hierachain.api.ledger.chains import get_chain_by_name
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.api.storage.endpoint_helpers import (
     is_ipfs_enabled,
     resolve_multiple_events,
 )
+from hierachain.core.utils import get_block_events as _get_block_events_data
 
 router = APIRouter(tags=["HieraChain"])
-
-
-def _get_block_events_data(block: Any) -> list[dict[str, Any]]:
-    if hasattr(block, 'to_event_list'):
-        return block.to_event_list()
-
-    events_data = getattr(block, 'events', [])
-    if hasattr(events_data, 'to_pylist'):
-        return events_data.to_pylist()
-
-    return events_data if isinstance(events_data, list) else []
 
 
 def _serialize_block(block: Any) -> dict[str, Any]:
