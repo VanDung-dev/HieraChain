@@ -103,8 +103,6 @@ class WebSocketManager:
         """Start the WebSocket manager"""
         self._running = True
         self._ping_runner = PingLoopRunner(self._health_handler)
-        if self._ping_runner is None:
-            raise RuntimeError("PingLoopRunner initialization failed")
         await self._ping_runner.start(
             self._registry.get_all,
             self.disconnect
