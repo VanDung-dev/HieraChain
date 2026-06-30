@@ -88,7 +88,7 @@ class TestRogueNodeFinalPhase:
             pytest.skip("No healthy legitimate node available to create chain")
 
         node_id = legit_nodes[0]
-        url = f"{self.client.node_status[node_id].url}/api/v1/chains/{ROGUE_CHAIN}/create"
+        url = f"{self.client.node_status[node_id].url}/api/ledger/chains/{ROGUE_CHAIN}/create"
         payload = {
             "chain_type": "generic",
             "participants": LEGITIMATE_NODES,
@@ -100,7 +100,7 @@ class TestRogueNodeFinalPhase:
         return node_id
 
     def test_rogue_node_is_reachable_but_not_part_of_target_nodes(self):
-        resp = self.session.get(f"{self.rogue_url}/api/v1/health", timeout=10)
+        resp = self.session.get(f"{self.rogue_url}/api/ledger/health", timeout=10)
         assert resp.status_code == 200
         target_env = os.getenv("TARGET_NODES", "")
         assert "rogue-node" not in target_env
@@ -116,7 +116,7 @@ class TestRogueNodeFinalPhase:
         time.sleep(3)
 
         try:
-            resp = self.session.get(f"{self.rogue_url}/api/v1/chains", timeout=10)
+            resp = self.session.get(f"{self.rogue_url}/api/ledger/chains", timeout=10)
         except requests.RequestException as e:
             pytest.skip(f"Rogue node API unreachable: {e}")
 
@@ -139,7 +139,7 @@ class TestRogueNodeFinalPhase:
             ev["details"]["source"] = "rogue-node"
 
         resp = self.session.post(
-            f"{self.rogue_url}/api/v1/chains/{ROGUE_CHAIN}/events",
+            f"{self.rogue_url}/api/ledger/chains/{ROGUE_CHAIN}/events",
             json=ev,
             timeout=15,
         )

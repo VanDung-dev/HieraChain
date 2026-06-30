@@ -93,7 +93,7 @@ def get_event_count(client: RealStressClient, node_id: str) -> int:
     for attempt in range(5):
         try:
             resp = client.session.get(
-                f"{status.url}/api/v1/chains/{DURABLE_CHAIN}/stats",
+                f"{status.url}/api/ledger/chains/{DURABLE_CHAIN}/stats",
                 timeout=10,
             )
             if resp.status_code == 200:
@@ -110,7 +110,7 @@ def create_durable_chain(client: RealStressClient) -> bool:
     """Create chain for durability test."""
     participants = list(client.node_status.keys())
     resp = _first_healthy_request(
-        client, "POST", f"/api/v1/chains/{DURABLE_CHAIN}/create",
+        client, "POST", f"/api/ledger/chains/{DURABLE_CHAIN}/create",
         params={"chain_type": "generic"},
         json={"participants": participants},
         timeout=10,
@@ -315,7 +315,7 @@ class TestJournalDurability:
         if not status or not status.is_healthy:
             return
         try:
-            resp = self.client.session.get(f"{status.url}/api/v1/chains", timeout=10)
+            resp = self.client.session.get(f"{status.url}/api/ledger/chains", timeout=10)
             chains = resp.json() if resp.status_code == 200 else []
             logger.info("Chains after recovery: %s", chains)
         except Exception as e:

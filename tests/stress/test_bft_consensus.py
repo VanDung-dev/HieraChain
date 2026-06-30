@@ -57,7 +57,7 @@ def get_block_count(client: RealStressClient, node_id: str) -> int:
         if not status:
             return 0
         resp = client.session.get(
-            f"{status.url}/api/v1/chains/{BFT_CHAIN}/stats",
+            f"{status.url}/api/ledger/chains/{BFT_CHAIN}/stats",
             timeout=10,
         )
         if resp.status_code == 200:
@@ -70,7 +70,7 @@ def get_block_count(client: RealStressClient, node_id: str) -> int:
 
 def get_chain_list(client: RealStressClient) -> list[dict]:
     """Get chain list from the first healthy node."""
-    resp = _first_healthy_response(client, "GET", "/api/v1/chains", timeout=10)
+    resp = _first_healthy_response(client, "GET", "/api/ledger/chains", timeout=10)
     return resp.json() if resp and resp.status_code == 200 else []
 
 
@@ -82,7 +82,7 @@ def create_bft_chain(client: RealStressClient) -> bool:
         if status.is_healthy:
             try:
                 resp = client.session.post(
-                    f"{status.url}/api/v1/chains/{BFT_CHAIN}/create",
+                    f"{status.url}/api/ledger/chains/{BFT_CHAIN}/create",
                     params={"chain_type": "generic"},
                     json={"participants": participants},
                     timeout=10,
@@ -168,7 +168,7 @@ class TestBFTThroughput:
             logger.warning("No new blocks yet — batch may still be filling")
             # Check chain stats to see if events were received
             stats_resp = self.client.session.get(
-                f"{self.client.node_status[node_id].url}/api/v1/chains/{BFT_CHAIN}/stats",
+                f"{self.client.node_status[node_id].url}/api/ledger/chains/{BFT_CHAIN}/stats",
                 timeout=10,
             )
             if stats_resp.status_code == 200:
@@ -225,7 +225,7 @@ class TestBFTViewChange:
             return False
         try:
             resp = self.client.session.get(
-                f"{status.url}/api/v1/chains/{BFT_CHAIN}/stats",
+                f"{status.url}/api/ledger/chains/{BFT_CHAIN}/stats",
                 timeout=5,
             )
             return resp.status_code == 200

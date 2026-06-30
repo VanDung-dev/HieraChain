@@ -76,7 +76,7 @@ class TestAdvancedRogueAdversary:
             pytest.skip("No healthy legitimate node available to create chain")
 
         node_id = legit_nodes[0]
-        url = f"{self.client.node_status[node_id].url}/api/v1/chains/{ROGUE_CHAIN}/create"
+        url = f"{self.client.node_status[node_id].url}/api/ledger/chains/{ROGUE_CHAIN}/create"
         payload = {
             "chain_type": "generic",
             "participants": LEGITIMATE_NODES,
@@ -88,7 +88,7 @@ class TestAdvancedRogueAdversary:
         return node_id
 
     def _get_total_events(self, node_id: str) -> int:
-        stats_url = f"{self.client.node_status[node_id].url}/api/v1/chains/{ROGUE_CHAIN}/stats"
+        stats_url = f"{self.client.node_status[node_id].url}/api/ledger/chains/{ROGUE_CHAIN}/stats"
         resp = self.session.get(stats_url, timeout=10)
         assert resp.status_code == 200, (
             f"Failed to fetch chain stats: HTTP {resp.status_code} {resp.text}"
@@ -112,7 +112,7 @@ class TestAdvancedRogueAdversary:
             ev["details"]["source"] = "rogue-node-impersonating"
 
         resp = self.session.post(
-            f"{self.rogue_url}/api/v1/chains/{ROGUE_CHAIN}/events",
+            f"{self.rogue_url}/api/ledger/chains/{ROGUE_CHAIN}/events",
             json=ev,
             timeout=15,
         )
@@ -152,7 +152,7 @@ class TestAdvancedRogueAdversary:
         # Attempt to replay the EXACT SAME payload from the rogue-node
         # Expectation: request is denied (non-2xx) and chain event count does not increase because of rogue replay
         replay_resp = self.session.post(
-            f"{self.rogue_url}/api/v1/chains/{ROGUE_CHAIN}/events",
+            f"{self.rogue_url}/api/ledger/chains/{ROGUE_CHAIN}/events",
             json=base_event,
             timeout=15,
         )
