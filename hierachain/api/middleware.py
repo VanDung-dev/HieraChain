@@ -98,8 +98,8 @@ class RateLimiter:
     def is_allowed(self, ip: str) -> bool:
         now = int(time.time())
         with self._lock:
-            if now % 60 == 0:
-                self.store = {k: v for k, v in self.store.items() if v[0] > now - 60}
+            # ponytail: evict expired entries on every call (O(n) but store is bounded by unique IPs)
+            self.store = {k: v for k, v in self.store.items() if now - v[0] <= 60}
 
             start, count = self.store.get(ip, (now, 0))
 
