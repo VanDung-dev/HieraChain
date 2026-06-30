@@ -11,7 +11,7 @@ from typing import cast
 import pytest
 
 from hierachain.hierarchical import HierarchyManager
-from hierachain.domains.generic.utils import CrossChainValidator
+from hierachain.domains.utils import CrossChainValidator
 
 
 def _iter_block_events(chain):
