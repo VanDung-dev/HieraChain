@@ -9,6 +9,7 @@ custom domain-specific chains.
 from typing import Any
 
 from hierachain.domains.chains.base_chain import BaseChain
+from hierachain.core.utils import get_block_events as _get_block_events
 from hierachain.domains.events.domain_event import (
     create_resource_allocation,
     create_quality_check,
@@ -386,12 +387,7 @@ class DomainChain(BaseChain):
         """Filter compliance check events for a specific entity."""
         compliance_events: list[dict[str, Any]] = []
         for block in self.chain:
-            events = (
-                block.to_event_list()
-                if hasattr(block, 'to_event_list')
-                else block.events
-            )
-            for event in events:
+            for event in _get_block_events(block):
                 if (
                     event.get("entity_id") == entity_id and
                     event.get("event") == "compliance_check"
@@ -511,9 +507,9 @@ class DomainChain(BaseChain):
             f"DomainChain(name={self.name}, "
             f"domain={self.domain_type}, "
             f"entities={len(self.entity_registry)}, "
-            f"operations={self.operation_metrics['total_operations']})"
+            f"operations={self._metrics['total_operations']})"
         )
-    
+
     def __repr__(self) -> str:
         """Detailed string representation."""
         return (
@@ -521,8 +517,6 @@ class DomainChain(BaseChain):
             f"domain_type={self.domain_type}, "
             f"entities={len(self.entity_registry)}, "
             f"blocks={len(self.chain)}, "
-            f"total_operations="
-            f"{self._metrics['total_operations']}, "
-            f"success_rate="
-            f"{self._metrics.success_rate:.2f})"
+            f"total_operations={self._metrics['total_operations']}, "
+            f"success_rate={self._metrics.success_rate:.2f})"
         )

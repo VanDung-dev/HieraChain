@@ -2,6 +2,7 @@
 Two-phase-commit (2PC) transaction manager for HieraChain Ledger.
 """
 
+import time
 from typing import Any
 
 
@@ -29,7 +30,7 @@ class TransactionManager:
         self._pending[transaction_id] = {
             "payload": payload,
             "is_source": is_source,
-            "timestamp": float(0),
+            "timestamp": time.time(),
         }
 
     def pop_pending(self, transaction_id: str) -> dict[str, Any] | None:
