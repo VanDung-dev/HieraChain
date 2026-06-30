@@ -288,3 +288,38 @@ def validate_no_cryptocurrency_terms(data: Any) -> bool:
         data_string = str(data).lower()
 
     return _FORBIDDEN_CRYPTO_PATTERN.search(data_string) is None
+
+
+def get_block_events(block: Any) -> list[dict[str, Any]]:
+    """
+    Extract events from a block, handling plain lists, PyArrow objects,
+    and blocks that expose a ``to_event_list()`` helper.
+    """
+    if hasattr(block, 'to_event_list'):
+        return block.to_event_list()
+
+    events_obj = getattr(block, 'events', [])
+
+    if isinstance(events_obj, list):
+        return events_obj
+
+    # PyArrow path
+    if hasattr(events_obj, 'to_pylist'):
+        try:
+            raw = events_obj.to_pylist()
+            return [
+                ev.as_py() if hasattr(ev, 'as_py') and not isinstance(ev, dict) else ev
+                for ev in raw
+            ]
+        except (AttributeError, TypeError, ValueError):
+            pass
+
+    # Fallback: iterate
+    try:
+        return [
+            ev.as_py() if hasattr(ev, 'as_py') else ev
+            for ev in events_obj
+        ]
+    except (AttributeError, TypeError):
+        return []
+
