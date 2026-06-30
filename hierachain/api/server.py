@@ -22,9 +22,9 @@ from contextlib import asynccontextmanager
 
 from hierachain.config.logging import LOGGING_CONFIG
 
-from hierachain.api.v1.router import v1_router
-from hierachain.api.v2.router import v2_router
-from hierachain.api.v3.endpoints import router as v3_router
+from hierachain.api.ledger.router import ledger_router
+from hierachain.api.business.router import business_router
+from hierachain.api.admin.endpoints import router as admin_router
 from hierachain.api.websocket.manager import ws_manager
 from hierachain.api.middleware import (
     add_security_headers, add_payload_limit, add_rate_limit,
@@ -41,9 +41,9 @@ p2p_client: NetworkClient | None = None
 
 EXEMPT_PATHS = {
     "/",
-    "/api/v1/health",
-    "/api/v2/health",
-    "/api/v3/status",
+    "/api/ledger/health",
+    "/api/business/health",
+    "/api/admin/status",
     "/metrics",
     "/docs",
     "/redoc",
@@ -236,9 +236,9 @@ def _register_metrics_endpoint(fast_app: FastAPI) -> None:
 
 
 def register_routers(fast_app: FastAPI):
-    _register_api_router(fast_app, v1_router, "v1")
-    _register_api_router(fast_app, v2_router, "v2")
-    _register_api_router(fast_app, v3_router, "v3")
+    _register_api_router(fast_app, ledger_router, "ledger")
+    _register_api_router(fast_app, business_router, "business")
+    _register_api_router(fast_app, admin_router, "admin")
     _register_websocket_router(fast_app)
     _register_graphql_router(fast_app)
     _register_root_endpoint(fast_app)

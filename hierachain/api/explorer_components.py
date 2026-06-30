@@ -109,7 +109,7 @@ class EntityTracerComponent:
                     "default": "all"
                 }
             ],
-            "submit_endpoint": "/api/v1/trace_entity"
+            "submit_endpoint": "/api/ledger/trace_entity"
         }
 
     def trace_entity(

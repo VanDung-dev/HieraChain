@@ -2,7 +2,7 @@
 Monitoring module for HieraChain Ledger.
 """
 
-from hierachain.monitoring.alert_system import AlertManager
+from hierachain.monitoring.alert import AlertManager
 from hierachain.monitoring.performance_monitor import PerformanceMonitor
 
 __all__ = [
