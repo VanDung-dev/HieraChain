@@ -95,7 +95,7 @@ class TestIPFSStress:
             return False
         node_id = healthy[0]
         resp = client.session.post(
-            f"{client.node_status[node_id].url}/api/v1/admin/chains/{CHAIN_NAME}/sub-chain",
+            f"{client.node_status[node_id].url}/api/ledger/admin/chains/{CHAIN_NAME}/sub-chain",
             json={"domain": "stress_test"},
             timeout=10,
         )
@@ -107,7 +107,7 @@ class TestIPFSStress:
             return False
         node_id = healthy[0]
         resp = client.session.post(
-            f"{client.node_status[node_id].url}/api/v1/chains/{CHAIN_NAME}/entities/{entity_id}",
+            f"{client.node_status[node_id].url}/api/ledger/chains/{CHAIN_NAME}/entities/{entity_id}",
             json={"type": "stress_test"},
             timeout=10,
         )
@@ -119,7 +119,7 @@ class TestIPFSStress:
         event = _generate_ipfs_event(ipfs_ref)
         event["entity_id"] = entity_id
         resp = client.session.post(
-            f"{node_url}/api/v1/chains/{CHAIN_NAME}/events",
+            f"{node_url}/api/ledger/chains/{CHAIN_NAME}/events",
             json=event,
             timeout=30,
         )
@@ -256,7 +256,7 @@ class TestIPFSStress:
         # Query with resolution
         resolve_start = time.time()
         resp = stress_client.session.get(
-            f"{node_url}/api/v1/chains/{CHAIN_NAME}/blocks?limit=10&resolve_cid=true",
+            f"{node_url}/api/ledger/chains/{CHAIN_NAME}/blocks?limit=10&resolve_cid=true",
             timeout=30,
         )
         resolve_time = time.time() - resolve_start

@@ -3,7 +3,7 @@ P2P Network Stress Test — indirect measurement via REST API + network chaos.
 
 NOTE: Stress tester cannot send raw ZMQ messages (different internal network).
 These tests:
-  1. Use API /api/v1/network/ping/{target} to measure RTT between nodes
+  1. Use API /api/ledger/network/ping/{target} to measure RTT between nodes
   2. Use chaos_controller.py (tc) to inject network delay/loss
   3. Measure network degradation impact on event throughput
 
@@ -99,7 +99,7 @@ class TestP2PPing:
         for target in targets:
             try:
                 resp = self.client.session.get(
-                    f"{status.url}/api/v1/network/ping/{target}",
+                    f"{status.url}/api/ledger/network/ping/{target}",
                     timeout=10,
                 )
                 if resp.status_code == 200:
@@ -121,7 +121,7 @@ class TestP2PPing:
         status = self.client.node_status[nid]
         try:
             resp = self.client.session.get(
-                f"{status.url}/api/v1/network/ping/{nid}",
+                f"{status.url}/api/ledger/network/ping/{nid}",
                 timeout=10,
             )
             logger.info("Ping self %s: HTTP %d %s", nid, resp.status_code, resp.text[:200])

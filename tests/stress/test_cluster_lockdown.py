@@ -178,7 +178,7 @@ def _is_api_responding(client: RealStressClient, node_id: str) -> bool:
         status = client.node_status.get(node_id)
         if not status:
             return False
-        resp = client.session.get(f"{status.url}/api/v1/health", timeout=5)
+        resp = client.session.get(f"{status.url}/api/ledger/health", timeout=5)
         return resp.status_code == 200
     except Exception:
         return False
@@ -231,7 +231,7 @@ class TestQuorumLoss:
             return False
         try:
             resp = self.client.session.post(
-                f"{status.url}/api/v1/chains/{LOCKDOWN_CHAIN}/events",
+                f"{status.url}/api/ledger/chains/{LOCKDOWN_CHAIN}/events",
                 json=generate_event(),
                 timeout=10,
             )

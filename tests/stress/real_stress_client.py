@@ -141,7 +141,7 @@ class RealStressClient:
             return False
 
         # Endpoints to try in order of preference
-        endpoints = ["/api/v3/status", "/api/v1/health", "/"]
+        endpoints = ["/api/admin/status", "/api/ledger/health", "/"]
         
         for endpoint in endpoints:
             try:
@@ -178,7 +178,7 @@ class RealStressClient:
     def _do_submit_event(self, status: NodeStatus, chain_name: str, event: dict) -> bool:
         start = time.time()
         response = self.session.post(
-            f"{status.url}/api/v1/chains/{chain_name}/events",
+            f"{status.url}/api/ledger/chains/{chain_name}/events",
             json=event,
             timeout=self.timeout,
         )
@@ -261,7 +261,7 @@ class RealStressClient:
         if not status:
             return False
             
-        url = f"{status.url}/api/v3/chains/{chain_name}/secure-events"
+        url = f"{status.url}/api/admin/chains/{chain_name}/secure-events"
         
         with self.lock:
             self.results.total_requests += 1
@@ -303,9 +303,9 @@ class RealStressClient:
             return None
 
         try:
-            # Use correct API endpoint: GET /api/v1/chains
+            # Use correct API endpoint: GET /api/ledger/chains
             response = self.session.get(
-                f"{status.url}/api/v1/chains",
+                f"{status.url}/api/ledger/chains",
                 timeout=self.timeout,
             )
             if response.status_code == 200:
@@ -329,7 +329,7 @@ class RealStressClient:
                 "participants": participants
             }
             response = self.session.post(
-                f"{status.url}/api/v1/chains/{chain_name}/create",
+                f"{status.url}/api/ledger/chains/{chain_name}/create",
                 json=payload,
                 timeout=self.timeout,
                 headers={"Connection": "close"}
@@ -359,7 +359,7 @@ class RealStressClient:
             return False
 
         try:
-            response = self.session.get(f"{status.url}/api/v1/chains", timeout=self.timeout)
+            response = self.session.get(f"{status.url}/api/ledger/chains", timeout=self.timeout)
             if response.status_code != 200:
                 return False
 

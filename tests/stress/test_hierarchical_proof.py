@@ -39,7 +39,7 @@ def _create_chain(client: RealStressClient, node_id: str, chain_name: str, parti
         return False
     try:
         resp = client.session.post(
-            f"{status.url}/api/v1/chains/{chain_name}/create",
+            f"{status.url}/api/ledger/chains/{chain_name}/create",
             params={"chain_type": "generic"},
             json={"participants": participants or list(client.node_status.keys())},
             timeout=10,
@@ -54,7 +54,7 @@ def _get_chain_stats(client: RealStressClient, node_id: str, chain_name: str) ->
     if not status:
         return None
     try:
-        resp = client.session.get(f"{status.url}/api/v1/chains/{chain_name}/stats", timeout=10)
+        resp = client.session.get(f"{status.url}/api/ledger/chains/{chain_name}/stats", timeout=10)
         return resp.json() if resp.status_code == 200 else None
     except Exception:
         return None
@@ -65,7 +65,7 @@ def _get_all_chains(client: RealStressClient, node_id: str) -> list[dict]:
     if not status:
         return []
     try:
-        resp = client.session.get(f"{status.url}/api/v1/chains", timeout=10)
+        resp = client.session.get(f"{status.url}/api/ledger/chains", timeout=10)
         if resp.status_code != 200:
             return []
         data = resp.json()
@@ -99,7 +99,7 @@ class TestSubChainLifecycle:
 
         # Create chain
         resp = self.client.session.post(
-            f"{status.url}/api/v1/chains/{chain_name}/create",
+            f"{status.url}/api/ledger/chains/{chain_name}/create",
             params={"chain_type": "generic"},
             json={"participants": list(self.client.node_status.keys())},
             timeout=10,
@@ -122,7 +122,7 @@ class TestSubChainLifecycle:
 
         # Verify stats
         resp = self.client.session.get(
-            f"{status.url}/api/v1/chains/{chain_name}/stats",
+            f"{status.url}/api/ledger/chains/{chain_name}/stats",
             timeout=10,
         )
         if resp.status_code == 200:
@@ -131,7 +131,7 @@ class TestSubChainLifecycle:
 
         # Verify blocks
         resp = self.client.session.get(
-            f"{status.url}/api/v1/chains/{chain_name}/blocks",
+            f"{status.url}/api/ledger/chains/{chain_name}/blocks",
             params={"limit": 5},
             timeout=10,
         )
@@ -200,7 +200,7 @@ class TestProofSubmission:
 
         # Create
         resp = self.client.session.post(
-            f"{status.url}/api/v1/chains/{chain_name}/create",
+            f"{status.url}/api/ledger/chains/{chain_name}/create",
             params={"chain_type": "generic"},
             json={"participants": [node_id]},
             timeout=10,
@@ -215,7 +215,7 @@ class TestProofSubmission:
 
         # Submit proof
         resp = self.client.session.post(
-            f"{status.url}/api/v1/chains/{chain_name}/submit-proof",
+            f"{status.url}/api/ledger/chains/{chain_name}/submit-proof",
             json={"sub_chain_name": chain_name},
             timeout=15,
         )
@@ -253,7 +253,7 @@ class TestEntityTracing:
 
         for name in [chain_a, chain_b]:
             self.client.session.post(
-                f"{status.url}/api/v1/chains/{name}/create",
+                f"{status.url}/api/ledger/chains/{name}/create",
                 params={"chain_type": "generic"},
                 json={"participants": [node_id]},
                 timeout=10,
@@ -269,7 +269,7 @@ class TestEntityTracing:
 
         # Trace entity
         resp = self.client.session.get(
-            f"{status.url}/api/v1/entities/{entity_id}/trace",
+            f"{status.url}/api/ledger/entities/{entity_id}/trace",
             timeout=10,
         )
         if resp.status_code == 200:
