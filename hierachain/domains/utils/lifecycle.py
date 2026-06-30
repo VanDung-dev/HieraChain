@@ -190,5 +190,4 @@ def _analyze_cross_chain_interactions(
         "total_chains": len(chain_details),
         "chain_transitions": _identify_chain_transitions(sorted_chains),
         "concurrent_chains": _identify_concurrent_chains(sorted_chains),
-        "interaction_timeline": []
     }
