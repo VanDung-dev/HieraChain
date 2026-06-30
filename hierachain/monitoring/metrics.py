@@ -14,7 +14,7 @@ Metrics exposed at ``GET /metrics`` (Prometheus text format):
 Usage (in request processing code)::
 
     from hierachain.monitoring.metrics import metrics
-    metrics.record_request("GET", "/api/v1/chains", 200, 0.042)
+    metrics.record_request("GET", "/api/ledger/chains", 200, 0.042)
     metrics.inc_events_submitted(chain_id="supply_chain")
 """
 

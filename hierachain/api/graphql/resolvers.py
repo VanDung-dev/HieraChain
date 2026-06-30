@@ -3,7 +3,7 @@ import json
 import graphene
 from graphene import ObjectType
 
-from hierachain.api.v1.depds import get_hierarchy_manager
+from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.api.graphql.types import (
     EventType, BlockType, BlockMetadataType, ChainStatusType, AddEventInput
 )

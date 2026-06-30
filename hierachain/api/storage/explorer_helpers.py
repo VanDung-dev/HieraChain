@@ -248,7 +248,7 @@ def get_explorer_javascript() -> str:
         try {
             // Call API to resolve CID
             const response = await fetch(
-                `/api/v1/chains/${chainName}/blocks?resolve_cid=true`,
+                `/api/ledger/chains/${chainName}/blocks?resolve_cid=true`,
                 {method: 'GET'}
             );
 

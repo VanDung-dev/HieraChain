@@ -161,7 +161,7 @@ class HieraChainClient:
         )
 
     def submit_event(self, chain_name: str, event_data: dict[str, Any]) -> EventResult:
-        url = f"/api/v1/chains/{chain_name}/events"
+        url = f"/api/ledger/chains/{chain_name}/events"
         response = self._request("POST", url, data=event_data)
         return EventResult(
             event_id=response.get("event_id", ""),
@@ -176,11 +176,11 @@ class HieraChainClient:
         resolve_cid: bool = False
     ) -> dict[str, Any]:
         params = {"resolve_cid": str(resolve_cid).lower()}
-        url = f"/api/v1/chains/{chain_name}/blocks/{index_or_hash}"
+        url = f"/api/ledger/chains/{chain_name}/blocks/{index_or_hash}"
         return self._request("GET", url, params=params)
 
     def get_node_status(self) -> NodeStatus:
-        response = self._request("GET", "/api/v3/status")
+        response = self._request("GET", "/api/admin/status")
         return NodeStatus(
             status=response.get("status", "unknown"),
             version=response.get("version", "unknown"),
@@ -190,7 +190,7 @@ class HieraChainClient:
         )
 
     def get_chain_stats(self, chain_name: str) -> ChainStats:
-        response = self._request("GET", f"/api/v1/chains/{chain_name}/stats")
+        response = self._request("GET", f"/api/ledger/chains/{chain_name}/stats")
         return ChainStats(
             chain_name=response.get("chain_name", chain_name),
             total_blocks=response.get("total_blocks", 0),
@@ -201,7 +201,7 @@ class HieraChainClient:
         )
 
     def submit_proof(self, chain_name: str) -> dict[str, Any]:
-        return self._request("POST", f"/api/v1/chains/{chain_name}/submit-proof")
+        return self._request("POST", f"/api/ledger/chains/{chain_name}/submit-proof")
 
     def trace_entity(
         self,
@@ -212,7 +212,7 @@ class HieraChainClient:
         params = {"resolve_cid": str(resolve_cid).lower()}
         if chain_name:
             params["chain_name"] = chain_name
-        url = f"/api/v1/entities/{entity_id}/trace"
+        url = f"/api/ledger/entities/{entity_id}/trace"
         response = self._request("GET", url, params=params)
         return EntityTrace(
             entity_id=response.get("entity_id", entity_id),
