@@ -5,9 +5,9 @@ Trace an entity's events across the main chain and all sub-chains.
 
 from fastapi import APIRouter, Depends
 
-from hierachain.api.v1.schemas import EntityTraceResponse
-from hierachain.api.v1.depds import get_hierarchy_manager, get_entity_tracer
-from hierachain.api.v1.chains import validate_chain_exists
+from hierachain.api.ledger.schemas import EntityTraceResponse
+from hierachain.api.ledger.depds import get_hierarchy_manager, get_entity_tracer
+from hierachain.api.ledger.chains import validate_chain_exists
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.utils.entity_tracer import EntityTracer
 from hierachain.security.sanitization import sanitize_string
