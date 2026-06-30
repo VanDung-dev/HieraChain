@@ -7,8 +7,8 @@ with optional off-chain (IPFS) storage.
 import time
 from fastapi import APIRouter, HTTPException, status, Depends, BackgroundTasks
 
-from hierachain.api.v2.schemas import PrivateDataRequest, PrivateDataResponse
-from hierachain.api.v2.state import _private_collections
+from hierachain.api.business.schemas import PrivateDataRequest, PrivateDataResponse
+from hierachain.api.business.state import _private_collections
 from hierachain.security.sanitization import sanitize_string
 from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.security.secure_logging import SecureLogger
@@ -16,7 +16,7 @@ from hierachain.api.storage.endpoint_helpers import process_private_data_value
 from hierachain.api.storage import IPFSError
 
 router = APIRouter(tags=["HieraChain-v2"])
-api_logger = SecureLogger("hierachain.api.v2")
+api_logger = SecureLogger("hierachain.api.business")
 
 
 @router.post(

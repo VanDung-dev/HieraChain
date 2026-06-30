@@ -7,7 +7,7 @@ Create and execute smart contracts with optional off-chain
 import time
 from fastapi import APIRouter, HTTPException, status, Depends, BackgroundTasks
 
-from hierachain.api.v2.schemas import (
+from hierachain.api.business.schemas import (
     ContractCreateRequest, ContractExecuteRequest, ContractResponse,
 )
 from hierachain.security.sanitization import sanitize_string, sanitize_for_output
@@ -15,10 +15,10 @@ from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.security.secure_logging import SecureLogger
 from hierachain.api.storage.endpoint_helpers import process_contract_implementation
 from hierachain.api.storage import IPFSError
-from hierachain.api.v2.state import _contracts
+from hierachain.api.business.state import _contracts
 
 router = APIRouter(tags=["HieraChain-v2"])
-api_logger = SecureLogger("hierachain.api.v2")
+api_logger = SecureLogger("hierachain.api.business")
 
 
 @router.post(

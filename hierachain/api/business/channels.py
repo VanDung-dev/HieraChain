@@ -6,7 +6,7 @@ Create channels and manage private data collections within channels.
 import time
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from hierachain.api.v2.schemas import (
+from hierachain.api.business.schemas import (
     ChannelCreateRequest, ChannelResponse,
     PrivateCollectionCreateRequest,
 )
@@ -14,10 +14,10 @@ from hierachain.security.sanitization import sanitize_string, sanitize_dict
 from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.security.secure_logging import SecureLogger
 
-from hierachain.api.v2.state import _channels, _private_collections
+from hierachain.api.business.state import _channels, _private_collections
 
 router = APIRouter(tags=["HieraChain-v2"])
-api_logger = SecureLogger("hierachain.api.v2")
+api_logger = SecureLogger("hierachain.api.business")
 
 
 @router.post(

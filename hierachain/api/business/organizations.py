@@ -6,15 +6,15 @@ Register and query organisations with their CA configuration.
 import time
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from hierachain.api.v2.schemas import OrganizationRequest, OrganizationResponse
+from hierachain.api.business.schemas import OrganizationRequest, OrganizationResponse
 from hierachain.security.sanitization import sanitize_string, sanitize_dict
 from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.security.secure_logging import SecureLogger
 
-from hierachain.api.v2.state import _organizations
+from hierachain.api.business.state import _organizations
 
 router = APIRouter(tags=["HieraChain-v2"])
-api_logger = SecureLogger("hierachain.api.v2")
+api_logger = SecureLogger("hierachain.api.business")
 
 
 @router.post(
