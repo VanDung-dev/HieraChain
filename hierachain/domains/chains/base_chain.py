@@ -13,15 +13,9 @@ from abc import ABC, abstractmethod
 
 from hierachain.hierarchical.sub_chain import SubChain
 from hierachain.domains.events.base_event import BaseEvent
+from hierachain.core.utils import get_block_events as _get_block_events
 
 logger = logging.getLogger(__name__)
-
-
-def _get_block_events(block: Any) -> list[dict[str, Any]]:
-    """Extract event list from a block."""
-    if hasattr(block, 'to_event_list'):
-        return block.to_event_list()
-    return getattr(block, 'events', [])
 
 
 class BaseChain(SubChain, ABC):
