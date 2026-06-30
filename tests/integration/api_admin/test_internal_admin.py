@@ -14,8 +14,8 @@ from hierachain.security.key_provider import LocalKeyProvider
 client = TestClient(app)
 
 def test_verify_identity():
-    """Test POST /api/v3/verify-identity endpoint"""
-    print("\nTEST: POST /api/v3/verify-identity")
+    """Test POST /api/admin/verify-identity endpoint"""
+    print("\nTEST: POST /api/admin/verify-identity")
     
     # Create a temporary identity file for testing
     key_provider = LocalKeyProvider.generate()
@@ -50,7 +50,7 @@ def test_verify_identity():
                 challenge = "abcd1234"
                 payload = {"challenge": challenge}
                 
-                response = client.post("/api/v3/verify-identity", json=payload)
+                response = client.post("/api/admin/verify-identity", json=payload)
                 
                 print(f"Status Code: {response.status_code}")
                 print(f"Response: {response.json()}")
@@ -68,8 +68,8 @@ def test_verify_identity():
 
 
 def test_verify_identity_no_identity():
-    """Test POST /api/v3/verify-identity without identity returns 401"""
-    print("\nTEST: POST /api/v3/verify-identity (no identity)")
+    """Test POST /api/admin/verify-identity without identity returns 401"""
+    print("\nTEST: POST /api/admin/verify-identity (no identity)")
     
     # Set invalid identity path
     from hierachain.config.settings import get_settings
@@ -80,7 +80,7 @@ def test_verify_identity_no_identity():
     challenge = "abcd1234"
     payload = {"challenge": challenge}
     
-    response = client.post("/api/v3/verify-identity", json=payload)
+    response = client.post("/api/admin/verify-identity", json=payload)
     
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.json()}")
@@ -91,10 +91,10 @@ def test_verify_identity_no_identity():
     settings.VALIDATOR_IDENTITY_PATH = original_path
 
 def test_node_status():
-    """Test GET /api/v3/status endpoint"""
-    print("\nTEST: GET /api/v3/status")
+    """Test GET /api/admin/status endpoint"""
+    print("\nTEST: GET /api/admin/status")
     
-    response = client.get("/api/v3/status")
+    response = client.get("/api/admin/status")
     
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.json()}")

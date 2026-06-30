@@ -2,8 +2,8 @@
 Test script for HieraChain API V3 (System & Admin)
 
 This script tests the new V3 endpoints:
-- POST /api/v3/verify-identity
-- GET /api/v3/status
+- POST /api/admin/verify-identity
+- GET /api/admin/status
 
 Prerequisites:
 1. Install hrc-core: maturin develop --release --manifest-path hrc-core/Cargo.toml
@@ -41,7 +41,7 @@ def test_node_status():
     print("="*50)
     
     try:
-        response = requests.get(f"{BASE_URL}/api/v3/status", timeout=5)
+        response = requests.get(f"{BASE_URL}/api/admin/status", timeout=5)
         print(f"Status Code: {response.status_code}")
         print(f"Response: {json.dumps(response.json(), indent=2)}")
 
@@ -64,7 +64,7 @@ def test_verify_identity(challenge: str = "abcd1234"):
     
     payload = {"challenge": challenge_hex}
     
-    _post_and_print("/api/v3/verify-identity", payload)
+    _post_and_print("/api/admin/verify-identity", payload)
 
 
 def test_inject_license(license_key: str = None):
@@ -86,7 +86,7 @@ def test_inject_license(license_key: str = None):
     payload = {"license_key": license_key}
     print(f"License Key (first 20 chars): {license_key[:20]}...")
     
-    _post_and_print("/api/v3/inject-license", payload)
+    _post_and_print("/api/admin/inject-license", payload)
 
 
 def test_license_module():

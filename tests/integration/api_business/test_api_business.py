@@ -28,7 +28,7 @@ def auth_headers():
 
 def test_api_v2_health_check(client, auth_headers):
     """Test API v2 health check endpoint"""
-    response = client.get("/api/v2/health", headers=auth_headers)
+    response = client.get("/api/business/health", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
@@ -47,7 +47,7 @@ def test_create_channel(client, auth_headers):
         }
     }
     
-    response = client.post("/api/v2/channels", json=channel_data, headers=auth_headers)
+    response = client.post("/api/business/channels", json=channel_data, headers=auth_headers)
     # Since the modules are not actually implemented, we expect a 501 error
     assert response.status_code == 501 or response.status_code == 200
 
@@ -63,7 +63,7 @@ def test_create_private_collection(client, auth_headers):
         }
     }
     
-    response = client.post("/api/v2/channels/test_channel/private-collections", json=collection_data, headers=auth_headers)
+    response = client.post("/api/business/channels/test_channel/private-collections", json=collection_data, headers=auth_headers)
     # Since the modules are not actually implemented, we expect a 501 or 404 error
     assert response.status_code in [501, 404, 200]
 
@@ -85,7 +85,7 @@ def test_add_private_data(client, auth_headers):
         }
     }
     
-    response = client.post("/api/v2/private-data", json=data, headers=auth_headers)
+    response = client.post("/api/business/private-data", json=data, headers=auth_headers)
     # Since the modules are not actually implemented, we expect a 501 or 404 error
     assert response.status_code in [501, 404, 200]
 
@@ -103,7 +103,7 @@ def test_create_contract(client, auth_headers):
         }
     }
     
-    response = client.post("/api/v2/contracts", json=contract_data, headers=auth_headers)
+    response = client.post("/api/business/contracts", json=contract_data, headers=auth_headers)
     # Since the modules are not actually implemented, we expect a 501 error
     assert response.status_code == 501 or response.status_code == 200
 
@@ -126,7 +126,7 @@ def test_execute_contract(client, auth_headers):
         }
     }
     
-    response = client.post("/api/v2/contracts/execute", json=execution_data, headers=auth_headers)
+    response = client.post("/api/business/contracts/execute", json=execution_data, headers=auth_headers)
     # Since the modules are not actually implemented, we expect a 501 or 404 error
     assert response.status_code in [501, 404, 200]
 
@@ -148,15 +148,15 @@ def test_register_organization(client, auth_headers):
         }
     }
     
-    response = client.post("/api/v2/organizations", json=org_data, headers=auth_headers)
+    response = client.post("/api/business/organizations", json=org_data, headers=auth_headers)
     # Since the modules are not actually implemented, we expect a 501 error
     assert response.status_code == 501 or response.status_code == 200
 
 def test_rbac_forbidden_without_auth(client):
     """Test that requests fail with 401 when missing auth"""
     with patch.object(Settings, 'AUTH_ENABLED', True):
-        response = client.post("/api/v2/channels", json={"channel_id": "test", "organizations": [], "policy": {}})
+        response = client.post("/api/business/channels", json={"channel_id": "test", "organizations": [], "policy": {}})
         assert response.status_code == 401
         
-        response = client.post("/api/v2/contracts", json={"contract_id": "test", "version": "1", "implementation": ""})
+        response = client.post("/api/business/contracts", json={"contract_id": "test", "version": "1", "implementation": ""})
         assert response.status_code == 401
