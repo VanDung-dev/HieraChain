@@ -7,21 +7,21 @@ import os
 from fastapi import (
     APIRouter, HTTPException, status, Depends
 )
-from hierachain.api.v3.schemas import (
+from hierachain.api.admin.schemas import (
     VerifyIdentityRequest, VerifyIdentityResponse, NodeStatusResponse,
     SecureEventRequest, SecureEventResponse
 )
 from hierachain.units.version import get_version
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.api.v1.depds import get_hierarchy_manager
+from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.config.settings import get_settings
 from hierachain.security.key_provider import LocalKeyProvider, CryptoError
 from hierachain.security.secure_logging import SecureLogger
 from hierachain.security.verify.signature_verifier import SignatureVerifier
 
-logger = SecureLogger("hierachain.api.v3")
-router = APIRouter(prefix="/api/v3", tags=["HieraChain-v3 (System & Admin)"])
+logger = SecureLogger("hierachain.api.admin")
+router = APIRouter(prefix="/api/admin", tags=["HieraChain-v3 (System & Admin)"])
 
 verifier = SignatureVerifier()
 
@@ -72,9 +72,10 @@ async def verify_identity(
     """
     try:
         signature = key_provider.sign(request.challenge.encode())
+        settings = get_settings()
         return VerifyIdentityResponse(
             status="success",
-            node_id="node_1",
+            node_id=settings.NODE_ID,
             signature=signature,
             challenge=request.challenge
         )
