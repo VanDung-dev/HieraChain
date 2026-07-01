@@ -15,6 +15,7 @@ from hierachain.adapters.database.sqlite_schema import (
     create_blocks_table,
     create_events_table,
     create_proofs_table,
+    create_chain_state_table,
     create_indexes,
 )
 
@@ -61,8 +62,12 @@ class SQLiteAdapter(SQLBase):
             create_blocks_table(cursor)
             create_events_table(cursor)
             create_proofs_table(cursor)
+            create_chain_state_table(cursor)
             create_indexes(cursor)
             conn.commit()
+
+    def close(self) -> None:
+        """No-op: SQLite uses per-request connections, nothing to close."""
 
     def __str__(self) -> str:
         return f"SQLiteAdapter(database_path={self.database_path})"
