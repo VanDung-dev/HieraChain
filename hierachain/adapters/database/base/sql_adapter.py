@@ -45,8 +45,6 @@ class SQLBase(ABC):
         """Create database tables and indexes."""
         ...
 
-    # --- Shared pure-Python utilities ---
-
     def _execute_with_error_handling(self, operation: str, func: Callable, **context) -> Any:
         """Execute a database operation with standardized error handling."""
         try:
@@ -87,8 +85,6 @@ class SQLBase(ABC):
             "data": orjson.loads(row["data"] or "{}"),
         }
 
-    # --- Template: store_chain ---
-
     def store_chain(self, chain: Blockchain) -> bool:
         """Store a blockchain in the database."""
         def _op():
@@ -114,8 +110,6 @@ class SQLBase(ABC):
         )
         conn.commit()
         return True
-
-    # --- Template: load_chain ---
 
     def load_chain(self, chain_name: str) -> dict[str, Any] | None:
         """Load a blockchain from the database."""
@@ -174,7 +168,7 @@ class SQLBase(ABC):
         """Default SQLite implementation."""
         cursor.execute(
             """
-            SELECT entity_id, event_type, timestamp, data
+            SELECT chain_name, entity_id, event_type, timestamp, data
             FROM events WHERE block_hash = ? ORDER BY id
             """,
             (block_hash,),
@@ -242,8 +236,6 @@ class SQLBase(ABC):
             cursor.execute(query, {"fv": filter_value})
         return [self._create_event_from_row(row) for row in cursor.fetchall()]
 
-    # --- Template: store_proof ---
-
     def store_proof(
         self,
         main_chain_name: str,
@@ -290,8 +282,6 @@ class SQLBase(ABC):
         conn.commit()
         return True
 
-    # --- Public API: get_entity_events, get_events_by_type ---
-
     def get_entity_events(
         self, entity_id: str, chain_name: str | None = None,
     ) -> list[dict[str, Any]]:
@@ -307,8 +297,6 @@ class SQLBase(ABC):
         return self._get_events_by_filter(
             "event_type", event_type, chain_name, "get_events_by_type",
         )
-
-    # --- Template: get_chain_statistics ---
 
     def get_chain_statistics(self, chain_name: str) -> dict[str, Any]:
         """Get statistics for a specific chain."""
@@ -381,8 +369,6 @@ class SQLBase(ABC):
             "updated_at": chain_row['updated_at'],
         }
 
-    # --- Template: get_proof_history ---
-
     def get_proof_history(self, sub_chain_name: str) -> list[dict[str, Any]]:
         """Get proof submission history for a Sub-Chain."""
         try:
@@ -425,8 +411,6 @@ class SQLBase(ABC):
                 "submitted_at": row['submitted_at'],
             })
         return proofs
-
-    # --- Template: cleanup_old_data ---
 
     def cleanup_old_data(self, days_to_keep: int = 30) -> bool:
         """Clean up old data from the database."""
@@ -473,3 +457,240 @@ class SQLBase(ABC):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
+
+    def save_block(self, block_data: dict[str, Any]) -> bool:
+        """Upsert a block and its events into the database."""
+        def _op():
+            with self._get_connection() as conn:
+                return self._execute_save_block(conn, block_data)
+        result = self._execute_with_error_handling(
+            "save_block", _op,
+            block_index=block_data.get("index"),
+            chain_name=block_data.get("chain_name"),
+        )
+        return result if result is not None else False
+
+    def _execute_save_block(self, conn: Any, block_data: dict[str, Any]) -> bool:
+        """Default SQLite implementation — upsert block then insert events."""
+        import orjson as _orjson
+        cursor = conn.cursor()
+        chain_name = str(block_data.get("chain_name", ""))
+        idx = block_data["index"]
+
+        # Remove existing block at same position (cascade deletes events via FK)
+        cursor.execute(
+            "DELETE FROM events WHERE block_hash IN "
+            "(SELECT hash FROM blocks WHERE chain_name = ? AND \"index\" = ?)",
+            (chain_name, idx),
+        )
+        cursor.execute(
+            "DELETE FROM blocks WHERE chain_name = ? AND \"index\" = ?",
+            (chain_name, idx),
+        )
+
+        events = block_data.get("events", [])
+        metadata = block_data.get("metadata", {})
+        if block_data.get("merkle_root") and "merkle_root" not in metadata:
+            metadata["merkle_root"] = block_data["merkle_root"]
+
+        cursor.execute(
+            """
+            INSERT INTO blocks
+            (chain_name, "index", hash, previous_hash, timestamp, nonce, events_count, metadata_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                chain_name,
+                idx,
+                block_data["hash"],
+                block_data["previous_hash"],
+                block_data["timestamp"],
+                block_data.get("nonce", 0),
+                len(events),
+                _orjson.dumps(metadata).decode("utf-8") if metadata else None,
+            ),
+        )
+
+        block_hash = block_data["hash"]
+        for event in events:
+            cursor.execute(
+                """
+                INSERT INTO events
+                (chain_name, block_hash, event_id, entity_id, event_type, timestamp, data, sender_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    chain_name,
+                    block_hash,
+                    event.get("event_id"),
+                    event.get("entity_id"),
+                    event.get("event", "unknown"),
+                    event.get("timestamp", 0.0),
+                    _orjson.dumps(event).decode("utf-8"),
+                    event.get("submitted_by") or event.get("sender_id"),
+                ),
+            )
+
+        conn.commit()
+        return True
+
+    def get_block_by_index(
+        self, index: int, chain_name: str | None = None,
+    ) -> dict[str, Any] | None:
+        """Retrieve a block by its integer index."""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                return self._execute_get_block_by_index(cursor, index, chain_name)
+        except Exception:
+            self.logger.error(
+                "Database operation failed",
+                operation="get_block_by_index",
+                index=index,
+                chain_name=chain_name,
+            )
+            return None
+
+    def _execute_get_block_by_index(
+        self, cursor: Any, index: int, chain_name: str | None,
+    ) -> dict[str, Any] | None:
+        """Default SQLite implementation."""
+        if chain_name:
+            cursor.execute(
+                "SELECT * FROM blocks WHERE \"index\" = ? AND chain_name = ?",
+                (index, chain_name),
+            )
+        else:
+            cursor.execute("SELECT * FROM blocks WHERE \"index\" = ?", (index,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        events = self._execute_fetch_block_events(cursor, row["hash"])
+        return self._create_block_data(row, events)
+
+    def get_latest_block(
+        self, chain_name: str | None = None,
+    ) -> dict[str, Any] | None:
+        """Retrieve the block with the highest index."""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                return self._execute_get_latest_block(cursor, chain_name)
+        except Exception:
+            self.logger.error(
+                "Database operation failed",
+                operation="get_latest_block",
+                chain_name=chain_name,
+            )
+            return None
+
+    def _execute_get_latest_block(
+        self, cursor: Any, chain_name: str | None,
+    ) -> dict[str, Any] | None:
+        """Default SQLite implementation."""
+        if chain_name:
+            cursor.execute(
+                "SELECT * FROM blocks WHERE chain_name = ? ORDER BY \"index\" DESC LIMIT 1",
+                (chain_name,),
+            )
+        else:
+            cursor.execute(
+                "SELECT * FROM blocks ORDER BY \"index\" DESC LIMIT 1"
+            )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        events = self._execute_fetch_block_events(cursor, row["hash"])
+        return self._create_block_data(row, events)
+
+    def get_event_by_id(self, event_id: str) -> dict[str, Any] | None:
+        """Retrieve an event by its unique ID."""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                return self._execute_get_event_by_id(cursor, event_id)
+        except Exception:
+            self.logger.error(
+                "Database operation failed",
+                operation="get_event_by_id",
+                event_id=event_id,
+            )
+            return None
+
+    @staticmethod
+    def _execute_get_event_by_id(cursor: Any, event_id: str) -> dict[str, Any] | None:
+        """Default SQLite implementation."""
+        import orjson as _orjson
+        cursor.execute(
+            "SELECT * FROM events WHERE event_id = ? LIMIT 1", (event_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return {
+            "event_id": row["event_id"],
+            "status": "ordered",
+            "block_hash": row["block_hash"],
+            "timestamp": row["timestamp"],
+            "data": _orjson.loads(row["data"]) if row["data"] else {},
+        }
+
+    def update_state(self, key: str, value: Any, last_block_hash: str) -> None:
+        """Upsert a key-value pair in the chain_state table."""
+        def _op():
+            with self._get_connection() as conn:
+                self._execute_update_state(conn, key, value, last_block_hash)
+        self._execute_with_error_handling(
+            "update_state", _op, key=key
+        )
+
+    @staticmethod
+    def _execute_update_state(
+        conn: Any, key: str, value: Any, last_block_hash: str,
+    ) -> None:
+        """Default SQLite implementation."""
+        import orjson as _orjson
+        import time as _time
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO chain_state (key, value, last_block_hash, updated_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET
+                value=excluded.value,
+                last_block_hash=excluded.last_block_hash,
+                updated_at=excluded.updated_at
+            """,
+            (
+                key,
+                _orjson.dumps(value).decode("utf-8"),
+                last_block_hash,
+                _time.time(),
+            ),
+        )
+        conn.commit()
+
+    def delete_chain(self, chain_name: str) -> bool:
+        """Delete all data for a given chain (used for testing/cleanup)."""
+        def _op():
+            with self._get_connection() as conn:
+                return self._execute_delete_chain(conn, chain_name)
+        result = self._execute_with_error_handling(
+            "delete_chain", _op, chain_name=chain_name
+        )
+        return result if result is not None else False
+
+    @staticmethod
+    def _execute_delete_chain(conn: Any, chain_name: str) -> bool:
+        """Default SQLite implementation."""
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM events WHERE chain_name = ?", (chain_name,))
+        cursor.execute("DELETE FROM blocks WHERE chain_name = ?", (chain_name,))
+        cursor.execute("DELETE FROM chains WHERE name = ?", (chain_name,))
+        conn.commit()
+        return True
+
+    # --- close ---
+
+    def close(self) -> None:
+        """Release any held resources. Default no-op for per-request connections."""
