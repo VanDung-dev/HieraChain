@@ -6,7 +6,7 @@ This module provides functions for managing and retrieving version information.
 
 from typing import Tuple
 
-VERSION: Tuple[int, int, int, str, int] = (0, 0, 4, "final", 0)
+VERSION: Tuple[int, int, int, str, int] = (0, 1, 0, "dev", 1)
 
 
 def _format_base_version(major: int, minor: int, micro: int | None) -> str:
