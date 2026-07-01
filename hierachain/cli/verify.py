@@ -4,7 +4,7 @@ Verification tools for blockchain integrity.
 
 import click
 import logging
-from hierachain.storage.sql_backend import SqlStorageBackend
+from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 from hierachain.core.block import Block
 from hierachain.security.verify.block_verifier import BlockVerifier
 from hierachain.security.verify.signature_verifier import SignatureVerifier
@@ -12,6 +12,16 @@ from hierachain.config.settings import settings
 
 # Setup logging for CLI
 logger = logging.getLogger("hrc.verify")
+
+
+def _db_url_to_path(url: str | None) -> str:
+    """Strip sqlite:/// prefix to get a plain file path."""
+    if not url:
+        return "hierachain.db"
+    for prefix in ("sqlite:///", "sqlite://"):
+        if url.startswith(prefix):
+            return url[len(prefix):]
+    return url
 
 
 @click.group(name="verify")
@@ -32,7 +42,7 @@ def verify_chain(db):
     click.echo(f"Verifying chain integrity from: {db_url}")
     
     try:
-        backend = SqlStorageBackend(db_url)
+        backend = SQLiteAdapter(_db_url_to_path(db_url))
     except Exception as e:
         click.echo(f"Failed to connect to storage: {e}")
         return
@@ -95,7 +105,7 @@ def verify_signatures(db, limit):
     click.echo(f"Auditing signatures from: {db_url}")
     
     try:
-        backend = SqlStorageBackend(db_url)
+        backend = SQLiteAdapter(_db_url_to_path(db_url))
     except Exception as e:
         click.echo(f"Failed to connect to storage: {e}")
         return
