@@ -96,6 +96,7 @@ def create_indexes(cursor: sqlite3.Cursor) -> None:
         ("idx_events_type", "events (event_type)"),
         ("idx_events_timestamp", "events (timestamp)"),
         ("idx_events_chain", "events (chain_name)"),
+        ("idx_events_event_id", "events (event_id)"),
         ("idx_blocks_hash_val", "blocks (hash)"),
         ("idx_blocks_chain", "blocks (chain_name)"),
         ("idx_proofs_sub_chain", "proofs (sub_chain_name)")
@@ -105,3 +106,17 @@ def create_indexes(cursor: sqlite3.Cursor) -> None:
         cursor.execute(
             f"CREATE INDEX IF NOT EXISTS {index_name} ON {index_definition}"
         )
+
+
+def create_chain_state_table(cursor: sqlite3.Cursor) -> None:
+    """Create chain_state key-value table for quick state lookups."""
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS chain_state (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,  -- JSON string
+            last_block_hash TEXT,
+            updated_at REAL DEFAULT (unixepoch())
+        )
+        """
+    )
