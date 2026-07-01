@@ -7,11 +7,24 @@ import logging
 from collections import deque
 from typing import Any
 from hierachain.core.block import Block, convert_events_to_arrow
-from hierachain.storage.sql_backend import SqlStorageBackend
+from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 from hierachain.consensus.ordering.types import PendingEvent
 
 
 logger = logging.getLogger(__name__)
+
+
+def _db_url_to_path(url: str | None) -> str:
+    """Convert a sqlite:/// connection string to a plain file path.
+
+    Falls back to 'hierachain.db' if no URL is provided.
+    """
+    if not url:
+        return "hierachain.db"
+    for prefix in ("sqlite:///", "sqlite://"):
+        if url.startswith(prefix):
+            return url[len(prefix):]
+    return url
 
 
 def _verify_chain_links(blocks: list[Block]) -> None:
@@ -54,7 +67,9 @@ class OrderingStorageHandler:
     """Manages persistent storage and caching for blocks and events"""
     def __init__(self, config: dict[str, Any]):
         self.config = config
-        self.storage = SqlStorageBackend(connection_string=config.get("db_url"))
+        self.storage = SQLiteAdapter(
+            database_path=_db_url_to_path(config.get("db_url"))
+        )
         cache_size = config.get("block_cache_size", 100)
         self.block_history: deque[Block] = deque(maxlen=cache_size)
         self.last_block: Block | None = None
