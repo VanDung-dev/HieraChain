@@ -31,11 +31,14 @@ class Block:
     - `self.events` property exposes this Table.
     - Hashing uses strict JSON canonicalization.
     """
+    # ponytail: cached event list to avoid redundant Arrow-to-dict deserialization
     __slots__ = (
         'index', 'timestamp', 'previous_hash', 'nonce',
         'merkle_root', 'creator_id', 'signature', '_events', 'hash',
+        '_cached_events',
     )
     _events: pa.Table
+    _cached_events: list[dict[str, Any]] | None
 
     def __init__(
         self,
@@ -58,8 +61,10 @@ class Block:
         # Handle events based on input type
         if isinstance(events, pa.Table):
             self._events = events
+            self._cached_events = None
             self.merkle_root = merkle_root if merkle_root is not None else calculate_merkle_from_arrow(self._events)
         else:
+            self._cached_events = events
             if merkle_root is not None:
                 self.merkle_root = merkle_root
                 self._events = convert_events_to_arrow(events)
@@ -104,7 +109,9 @@ class Block:
 
     def to_event_list(self) -> list[dict[str, Any]]:
         """Convert internal Arrow events to a list of dictionaries."""
-        return table_to_list_of_dicts(self.events)
+        if self._cached_events is None:
+            self._cached_events = table_to_list_of_dicts(self.events)
+        return self._cached_events
 
     def validate_structure(self) -> bool:
         """
@@ -135,7 +142,7 @@ class Block:
         """
         return {
             "index": self.index,
-            "events": table_to_list_of_dicts(self.events),
+            "events": self.to_event_list(),
             "timestamp": self.timestamp,
             "previous_hash": self.previous_hash,
             "nonce": self.nonce,
