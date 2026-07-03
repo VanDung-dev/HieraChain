@@ -12,7 +12,7 @@ provides validation mechanisms to ensure system integrity.
 import os
 from typing import Any
 
-from hierachain.units.version import get_version, VERSION
+from hierachain.config.version import get_version, VERSION
 
 
 class Settings:
