@@ -12,7 +12,7 @@ import time
 import pytest
 
 from hierachain.hierarchical import SubChain
-from hierachain.storage.sql_backend import SqlStorageBackend
+from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 
 
 def _cleanup_chain(chain_name: str) -> None:
@@ -22,7 +22,7 @@ def _cleanup_chain(chain_name: str) -> None:
         shutil.rmtree(data_dir, ignore_errors=True)
     # Also remove DB records so each run starts from a clean state
     try:
-        db = SqlStorageBackend()
+        db = SQLiteAdapter()
         db.delete_chain(chain_name)
         db.close()
     except Exception:
