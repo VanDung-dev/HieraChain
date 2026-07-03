@@ -42,7 +42,7 @@ def test_verify_identity():
         
         with patch('os.path.exists', side_effect=mock_exists):
             # Also patch get_settings to return our temp path
-            from hierachain.api.v3 import endpoints as v3_endpoints
+            from hierachain.api.admin import endpoints as v3_endpoints
             mock_settings = MagicMock()
             mock_settings.VALIDATOR_IDENTITY_PATH = temp_identity_path
             
