@@ -69,7 +69,7 @@ async def upload_to_ipfs_background(
     Raises:
         IPFSError: If upload fails
     """
-    _ = background_tasks  # reserved for future background task support
+    # ponytail: log secure events in the background to save HTTP response time
     if not is_ipfs_enabled():
         raise IPFSError("IPFS is not enabled")
 
@@ -78,12 +78,23 @@ async def upload_to_ipfs_background(
     # Upload synchronously (encryption is fast)
     result = client.upload_json(data, encrypt=True, metadata=metadata)
 
-    logger.info(
-        "Data uploaded to IPFS",
-        cid=result["cid"],
-        size=result["size"],
-        encrypted=result["encrypted"]
-    )
+    if background_tasks:
+        from hierachain.monitoring import alert_manager
+        # Asynchronously log security event using background task
+        background_tasks.add_task(
+            logger.info,
+            "Data uploaded to IPFS (bg logged)",
+            cid=result["cid"],
+            size=result["size"],
+            encrypted=result["encrypted"]
+        )
+    else:
+        logger.info(
+            "Data uploaded to IPFS",
+            cid=result["cid"],
+            size=result["size"],
+            encrypted=result["encrypted"]
+        )
 
     return {
         "cid": result["cid"],
