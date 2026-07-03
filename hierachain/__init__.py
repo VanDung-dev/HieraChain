@@ -6,12 +6,10 @@ A HieraChain Ledger designed for enterprise applications
 with a focus on business operations rather than cryptocurrency.
 """
 
-from hierachain.units.version import get_version, VERSION
+from hierachain.config.version import get_version, VERSION
 from hierachain.config.env_manager import init_env_config, status
 
-
 __version__ = get_version(VERSION)
-
 __author__ = "Nguyễn Lê Văn Dũng"
 
 # Initialize environment configuration on import

@@ -11,7 +11,7 @@ from hierachain.api.admin.schemas import (
     VerifyIdentityRequest, VerifyIdentityResponse, NodeStatusResponse,
     SecureEventRequest, SecureEventResponse
 )
-from hierachain.units.version import get_version
+from hierachain.config.version import get_version
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.security.verify.api_key_verifier import require_chain_access
