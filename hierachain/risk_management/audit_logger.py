@@ -33,6 +33,7 @@ __all__ = [
     "AuditStorage",
     "FileAuditStorage",
     "RotatingAuditStorage",
+    "DatabaseAuditStorage",
     "verify_integrity",
 ]
 
@@ -48,6 +49,159 @@ class AuditStorage:
 
     def get_event_count(self, filter_criteria: AuditFilter) -> int:
         raise NotImplementedError
+
+
+class DatabaseAuditStorage(AuditStorage):
+    """
+    Persistent audit storage using SQLite database.
+    
+    # ponytail: lightweight database storage helper utilizing raw sqlite3.
+    """
+    def __init__(self, db_path: str = "hierachain.db"):
+        self.db_path = db_path
+        self._init_db()
+
+    def _init_db(self):
+        import sqlite3
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS audit_events (
+                    event_id TEXT PRIMARY KEY,
+                    event_type TEXT NOT NULL,
+                    severity TEXT NOT NULL,
+                    timestamp REAL NOT NULL,
+                    source_component TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    details TEXT,  -- JSON string
+                    user_id TEXT,
+                    session_id TEXT,
+                    ip_address TEXT,
+                    correlation_id TEXT
+                )
+                """
+            )
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_events (timestamp)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_type ON audit_events (event_type)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_severity ON audit_events (severity)")
+            conn.commit()
+        finally:
+            conn.close()
+
+    def store_event(self, event: AuditEvent) -> bool:
+        import sqlite3
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO audit_events 
+                (event_id, event_type, severity, timestamp, source_component, description, details, user_id, session_id, ip_address, correlation_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event.event_id,
+                    event.event_type.value,
+                    event.severity.value,
+                    event.timestamp,
+                    event.source_component,
+                    event.description,
+                    json.dumps(event.details) if event.details else None,
+                    event.user_id,
+                    event.session_id,
+                    event.ip_address,
+                    event.correlation_id,
+                )
+            )
+            conn.commit()
+            return True
+        except Exception as e:
+            logging.error("Failed to store audit event in DB: %s", str(e))
+            return False
+        finally:
+            conn.close()
+
+    def retrieve_events(
+        self, filter_criteria: AuditFilter, limit: int | None = None
+    ) -> list[AuditEvent]:
+        import sqlite3
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            cursor = conn.cursor()
+            query = "SELECT * FROM audit_events WHERE 1=1"
+            params = []
+            
+            if filter_criteria.event_types:
+                placeholders = ",".join("?" for _ in filter_criteria.event_types)
+                query += f" AND event_type IN ({placeholders})"
+                params.extend(t.value for t in filter_criteria.event_types)
+            if filter_criteria.severity_levels:
+                placeholders = ",".join("?" for _ in filter_criteria.severity_levels)
+                query += f" AND severity IN ({placeholders})"
+                params.extend(s.value for s in filter_criteria.severity_levels)
+            if filter_criteria.time_range:
+                start, end = filter_criteria.time_range
+                query += " AND timestamp >= ? AND timestamp <= ?"
+                params.extend([start, end])
+                
+            query += " ORDER BY timestamp DESC"
+            if limit:
+                query += " LIMIT ?"
+                params.append(limit)
+                
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            events = []
+            for r in rows:
+                ev_dict = dict(r)
+                if ev_dict.get('details'):
+                    ev_dict['details'] = json.loads(ev_dict['details'])
+                else:
+                    ev_dict['details'] = {}
+                # Match enum types
+                ev_dict['event_type'] = AuditEventType(ev_dict['event_type'])
+                ev_dict['severity'] = AuditSeverity(ev_dict['severity'])
+                events.append(AuditEvent.from_dict(ev_dict))
+            return events
+        except Exception as e:
+            logging.error("Failed to retrieve audit events from DB: %s", str(e))
+            return []
+        finally:
+            conn.close()
+
+    def get_event_count(self, filter_criteria: AuditFilter) -> int:
+        import sqlite3
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cursor = conn.cursor()
+            query = "SELECT COUNT(*) FROM audit_events WHERE 1=1"
+            params = []
+            
+            if filter_criteria.event_types:
+                placeholders = ",".join("?" for _ in filter_criteria.event_types)
+                query += f" AND event_type IN ({placeholders})"
+                params.extend(t.value for t in filter_criteria.event_types)
+            if filter_criteria.severity_levels:
+                placeholders = ",".join("?" for _ in filter_criteria.severity_levels)
+                query += f" AND severity IN ({placeholders})"
+                params.extend(s.value for s in filter_criteria.severity_levels)
+            if filter_criteria.time_range:
+                start, end = filter_criteria.time_range
+                query += " AND timestamp >= ? AND timestamp <= ?"
+                params.extend([start, end])
+                
+            cursor.execute(query, params)
+            count = cursor.fetchone()[0]
+            return count
+        except Exception as e:
+            logging.error("Failed to count audit events in DB: %s", str(e))
+            return 0
+        finally:
+            conn.close()
+
 
 
 def _parse_event_line(line: str) -> AuditEvent | None:
