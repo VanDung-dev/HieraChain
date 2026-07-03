@@ -22,10 +22,10 @@ from hierachain.security import SecureLogger
 SECURITY_MODULES = [
     os.path.join("hierachain", "security", "key_manager.py"),
     os.path.join("hierachain", "security", "identity.py"),
-    os.path.join("hierachain", "api", "v1", "chains.py"),
-    os.path.join("hierachain", "api", "v1", "events.py"),
-    os.path.join("hierachain", "api", "v1", "proofs.py"),
-    os.path.join("hierachain", "api", "v3", "endpoints.py"),
+    os.path.join("hierachain", "api", "ledger", "chains.py"),
+    os.path.join("hierachain", "api", "ledger", "events.py"),
+    os.path.join("hierachain", "api", "ledger", "proofs.py"),
+    os.path.join("hierachain", "api", "admin", "endpoints.py"),
 ]
 
 # Project root: two levels above 'tests/unit'

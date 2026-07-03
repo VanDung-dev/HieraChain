@@ -28,7 +28,7 @@ def test_graphql_query_all_chains():
     mock_manager.get_main_chain.return_value = mock_main_chain
     mock_manager.get_all_sub_chains.return_value = {"TestChain": mock_sub_chain}
     
-    with patch('hierachain.api.v1.depds.get_hierarchy_manager', return_value=mock_manager):
+    with patch('hierachain.api.ledger.depds.get_hierarchy_manager', return_value=mock_manager):
         # Execute query
         query = """
         {
@@ -49,7 +49,7 @@ def test_graphql_query_all_chains():
 def test_graphql_query_chain_status():
     """Test GraphQL query for specific chain status"""
     from hierachain.api.graphql.schema import schema
-    from hierachain.api.v1 import depds
+    from hierachain.api.ledger import depds
     
     # Mock the chain - use a proper mock that behaves like a real chain
     mock_chain = MagicMock()
@@ -93,7 +93,7 @@ def test_graphql_query_chain_status():
 def test_graphql_query_block():
     """Test GraphQL query for a specific block"""
     from hierachain.api.graphql.schema import schema
-    from hierachain.api.v1 import depds
+    from hierachain.api.ledger import depds
     
     # Mock the block
     mock_block = MagicMock()
@@ -139,7 +139,7 @@ def test_graphql_query_block():
 def test_graphql_query_blocks():
     """Test GraphQL query for multiple blocks"""
     from hierachain.api.graphql.schema import schema
-    from hierachain.api.v1 import depds
+    from hierachain.api.ledger import depds
     
     # Mock blocks
     mock_block1 = MagicMock()
@@ -190,7 +190,7 @@ def test_graphql_query_blocks():
 def test_graphql_query_events():
     """Test GraphQL query for events"""
     from hierachain.api.graphql.schema import schema
-    from hierachain.api.v1 import depds
+    from hierachain.api.ledger import depds
     
     # Mock events - use plain dict instead of MagicMock to avoid ChunkedArray issue
     mock_event1 = MagicMock()
@@ -253,7 +253,7 @@ def test_graphql_mutation_add_event():
     mock_manager.get_main_chain.return_value = mock_chain
     mock_manager.get_all_sub_chains.return_value = {}
     
-    with patch('hierachain.api.v1.depds.get_hierarchy_manager', return_value=mock_manager):
+    with patch('hierachain.api.ledger.depds.get_hierarchy_manager', return_value=mock_manager):
         mutation = """
         mutation {
             addEvent(event: {
@@ -283,7 +283,7 @@ def test_graphql_mutation_add_event():
 def test_graphql_mutation_add_event_invalid_chain():
     """Test GraphQL mutation with invalid chain name"""
     from hierachain.api.graphql.schema import schema
-    from hierachain.api.v1 import depds
+    from hierachain.api.ledger import depds
     
     # Mock the manager with no chains
     mock_manager = MagicMock()

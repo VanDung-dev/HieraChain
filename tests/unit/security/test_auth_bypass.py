@@ -49,7 +49,7 @@ def valid_identity_file(tmp_path):
 
 def test_ephemeral_key_not_allowed_when_identity_missing(mock_missing_identity):
     """Verify that system rejects access when identity file is missing."""
-    from hierachain.api.v3 import endpoints
+    from hierachain.api.admin import endpoints
     
     with pytest.raises(HTTPException) as exc_info:
         endpoints.get_current_key_provider()
@@ -60,7 +60,7 @@ def test_ephemeral_key_not_allowed_when_identity_missing(mock_missing_identity):
 
 def test_auth_bypass_v3_endpoints_reject_unauthenticated(mock_missing_identity):
     """Test that v3 endpoints properly reject unauthenticated requests."""
-    from hierachain.api.v3 import endpoints
+    from hierachain.api.admin import endpoints
     
     with pytest.raises(HTTPException) as exc_info:
         endpoints.get_current_key_provider()
@@ -70,7 +70,7 @@ def test_auth_bypass_v3_endpoints_reject_unauthenticated(mock_missing_identity):
 
 def test_corrupt_identity_file_rejected(mock_corrupt_identity):
     """Test that corrupt identity files are rejected with 401."""
-    from hierachain.api.v3 import endpoints
+    from hierachain.api.admin import endpoints
     
     with pytest.raises(HTTPException) as exc_info:
         endpoints.get_current_key_provider()
@@ -80,12 +80,12 @@ def test_corrupt_identity_file_rejected(mock_corrupt_identity):
 
 def test_valid_identity_loads_successfully(valid_identity_file):
     """Test that valid identity files are loaded correctly."""
-    with patch("hierachain.api.v3.endpoints.get_settings") as mock_settings:
+    with patch("hierachain.api.admin.endpoints.get_settings") as mock_settings:
         mock_s = MagicMock()
         mock_s.VALIDATOR_IDENTITY_PATH = valid_identity_file
         mock_settings.return_value = mock_s
         
-        from hierachain.api.v3 import endpoints
+        from hierachain.api.admin import endpoints
         provider = endpoints.get_current_key_provider()
         
         assert provider is not None
@@ -107,7 +107,7 @@ def test_identity_path_not_exists_raises_error(tmp_path):
     """Test that non-existent identity path properly raises error."""
     fake_path = tmp_path / "nonexistent" / "identity.json"
     
-    from hierachain.api.v3 import endpoints
+    from hierachain.api.admin import endpoints
     
     with patch.object(endpoints, 'get_settings') as mock_settings:
         mock_s = MagicMock()
@@ -122,7 +122,7 @@ def test_identity_path_not_exists_raises_error(tmp_path):
 
 def test_identity_load_failure_propagates_error():
     """Test that failures in loading identity propagate as 401."""
-    from hierachain.api.v3 import endpoints
+    from hierachain.api.admin import endpoints
     
     with patch("os.path.exists") as mock_exists:
         mock_exists.return_value = True
