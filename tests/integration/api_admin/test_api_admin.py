@@ -1,7 +1,7 @@
 """
-Test script for HieraChain API V3 (System & Admin)
+Test script for HieraChain API admin (System & Admin)
 
-This script tests the new V3 endpoints:
+This script tests the new admin endpoints:
 - POST /api/admin/verify-identity
 - GET /api/admin/status
 
@@ -109,7 +109,7 @@ def test_license_module():
 def main():
     """Run all tests"""
     print("="*60)
-    print("HieraChain API V3 Test Suite")
+    print("HieraChain API admin Test Suite")
     print("="*60)
     
     # Test 1: Try to import hrc_core

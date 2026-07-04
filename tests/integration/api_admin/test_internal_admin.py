@@ -1,5 +1,5 @@
 """
-Test suite for the Hierachain API v3 internal endpoints.
+Test suite for the Hierachain API admin internal endpoints.
 """
 
 import os
@@ -42,11 +42,12 @@ def test_verify_identity():
         
         with patch('os.path.exists', side_effect=mock_exists):
             # Also patch get_settings to return our temp path
-            from hierachain.api.admin import endpoints as v3_endpoints
+            from hierachain.api.admin import endpoints as admin_endpoints
             mock_settings = MagicMock()
             mock_settings.VALIDATOR_IDENTITY_PATH = temp_identity_path
+            mock_settings.NODE_ID = identity_data["node_id"]
             
-            with patch.object(v3_endpoints, 'get_settings', return_value=mock_settings):
+            with patch.object(admin_endpoints, 'get_settings', return_value=mock_settings):
                 challenge = "abcd1234"
                 payload = {"challenge": challenge}
                 

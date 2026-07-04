@@ -73,8 +73,8 @@ def test_audit_filter_severity_and_type(temp_db_path):
     """Test filtering by severity and event type."""
     storage = DatabaseAuditStorage(temp_db_path)
     
-    ev1 = AuditEvent(
-        event_id="ev1",
+    e_ledger = AuditEvent(
+        event_id="e_ledger",
         event_type=AuditEventType.SECURITY_EVENT,
         severity=AuditSeverity.CRITICAL,
         timestamp=time.time() - 10,
@@ -82,8 +82,8 @@ def test_audit_filter_severity_and_type(temp_db_path):
         description="critical sec",
         details={}
     )
-    ev2 = AuditEvent(
-        event_id="ev2",
+    e_business = AuditEvent(
+        event_id="e_business",
         event_type=AuditEventType.USER_ACTION,
         severity=AuditSeverity.INFO,
         timestamp=time.time(),
@@ -92,20 +92,20 @@ def test_audit_filter_severity_and_type(temp_db_path):
         details={}
     )
     
-    storage.store_event(ev1)
-    storage.store_event(ev2)
+    storage.store_event(e_ledger)
+    storage.store_event(e_business)
     
     # Filter by CRITICAL severity
     f_crit = AuditFilter(severity_levels=[AuditSeverity.CRITICAL])
     results = storage.retrieve_events(f_crit)
     assert len(results) == 1
-    assert results[0].event_id == "ev1"
+    assert results[0].event_id == "e_ledger"
     
     # Filter by USER_ACTION type
     f_type = AuditFilter(event_types=[AuditEventType.USER_ACTION])
     results = storage.retrieve_events(f_type)
     assert len(results) == 1
-    assert results[0].event_id == "ev2"
+    assert results[0].event_id == "e_business"
     
     # Get count
     assert storage.get_event_count(f_crit) == 1

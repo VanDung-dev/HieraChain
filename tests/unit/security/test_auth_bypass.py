@@ -58,8 +58,8 @@ def test_ephemeral_key_not_allowed_when_identity_missing(mock_missing_identity):
     assert "identity" in exc_info.value.detail.lower() or "configured" in exc_info.value.detail.lower()
 
 
-def test_auth_bypass_v3_endpoints_reject_unauthenticated(mock_missing_identity):
-    """Test that v3 endpoints properly reject unauthenticated requests."""
+def test_auth_bypass_admin_endpoints_reject_unauthenticated(mock_missing_identity):
+    """Test that admin endpoints properly reject unauthenticated requests."""
     from hierachain.api.admin import endpoints
     
     with pytest.raises(HTTPException) as exc_info:
