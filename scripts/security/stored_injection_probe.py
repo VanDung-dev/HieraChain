@@ -66,7 +66,7 @@ STORED_PAYLOADS = {
 
 # Endpoints to test stored injection
 STORE_ENDPOINTS = [
-    # v1 endpoints
+    # Ledger endpoints
     {
         "store": {
             "method": "POST",
@@ -82,7 +82,7 @@ STORE_ENDPOINTS = [
             "endpoint": "/api/ledger/chains/test",
         }
     },
-    # v2 channel endpoints
+    # business channel endpoints
     {
         "store": {
             "method": "POST",
@@ -99,7 +99,7 @@ STORE_ENDPOINTS = [
             "endpoint": "/api/business/channels/test-{idx}",
         }
     },
-    # v2 organization endpoints  
+    # business organization endpoints  
     {
         "store": {
             "method": "POST",
@@ -115,7 +115,7 @@ STORE_ENDPOINTS = [
             "endpoint": "/api/business/organizations/test-org-{idx}",
         }
     },
-    # v2 contract endpoints
+    # business contract endpoints
     {
         "store": {
             "method": "POST",

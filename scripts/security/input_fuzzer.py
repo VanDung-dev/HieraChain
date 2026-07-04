@@ -69,9 +69,9 @@ FUZZ_PAYLOADS = {
     ],
 }
 
-# Endpoints to fuzz (both v1 and v2)
+# Endpoints to fuzz (both ledger and business)
 FUZZ_TARGETS = [
-    # API v1
+    # API Ledger
     {
         "method": "GET",
         "endpoint": "/api/ledger/chains/{param}",
@@ -92,7 +92,7 @@ FUZZ_TARGETS = [
             "data": {}
         }
     },
-    # API v2
+    # API business
     {
         "method": "GET",
         "endpoint": "/api/business/channels/{param}",

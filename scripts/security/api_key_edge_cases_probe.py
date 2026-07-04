@@ -311,7 +311,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
         # Try accessing potentially restricted endpoints with various techniques
         bypass_attempts = [
             # Path traversal in endpoint
-            ("/api/ledger/../v2/admin/status", "path traversal"),
+            ("/api/ledger/../business/admin/status", "path traversal"),
             # URL encoding
             ("/api/ledger/%2e%2e/admin", "URL encoded traversal"),
             # HTTP parameter pollution
