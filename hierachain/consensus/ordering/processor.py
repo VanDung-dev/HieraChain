@@ -215,6 +215,10 @@ class OrderingProcessor:
 
         return time.time()
 
+    async def process_single_event(self, pending_event: PendingEvent) -> None:
+        """Delegate to the executor's process_single_event."""
+        await self.executor.process_single_event(pending_event)
+
     async def force_process_batch_async(self) -> None:
         """Force immediate processing of current batch and block creation"""
         self.force_process.set()

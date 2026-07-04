@@ -65,6 +65,15 @@ class SQLBase(ABC):
     @staticmethod
     def _create_block_data(block_row: Any, events: list[dict[str, Any]]) -> dict[str, Any]:
         """Create block data dictionary from database row and events."""
+        import orjson as _orjson
+        metadata = {}
+        try:
+            raw = block_row['metadata_json']
+            if raw:
+                metadata = _orjson.loads(raw) if isinstance(raw, (str, bytes)) else raw
+        except (KeyError, IndexError, TypeError):
+            pass
+        merkle_root = metadata.get("merkle_root", "") if isinstance(metadata, dict) else ""
         return {
             "index": block_row['index'],
             "events": events,
@@ -72,6 +81,7 @@ class SQLBase(ABC):
             "previous_hash": block_row['previous_hash'],
             "nonce": block_row['nonce'],
             "hash": block_row['hash'],
+            "merkle_root": merkle_root,
         }
 
     @staticmethod
@@ -80,7 +90,7 @@ class SQLBase(ABC):
         return {
             "chain_name": row["chain_name"],
             "entity_id": row["entity_id"],
-            "event_type": row["event_type"],
+            "event": row["event_type"],
             "timestamp": row["timestamp"],
             "data": orjson.loads(row["data"] or "{}"),
         }
