@@ -136,7 +136,7 @@ class TestEventSubmission:
         client = RealStressClient()
         event = generate_event()
 
-        # Match EventRequest schema from hierachain.api.v1.schemas
+        # Match EventRequest schema from hierachain.api.ledger.schemas
         assert "entity_id" in event
         assert "event_type" in event
         assert "details" in event

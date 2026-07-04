@@ -1,5 +1,5 @@
 """
-Integration tests for API v1 endpoints
+Integration tests for API Ledger endpoints
 """
 
 import pytest
@@ -19,7 +19,10 @@ def auth_headers():
     return {"x-api-key": "test_integration_key"}
 
 def test_rbac_forbidden_without_auth(client):
-    """Test that API v1 endpoints fail with 401 when missing auth (since it's not configured yet, testing 403 won't work perfectly if not mocked)"""
+    """
+    Test that API Ledger endpoints fail with 401 when missing auth
+    (since it's not configured yet, testing 403 won't work perfectly if not mocked)
+    """
     with patch.object(Settings, 'AUTH_ENABLED', True):
         response = client.get("/api/ledger/chains")
         assert response.status_code == 401
@@ -32,7 +35,7 @@ def test_rbac_forbidden_without_auth(client):
 
 
 def test_rbac_forbidden_without_permission(client, auth_headers):
-    """Test that API v1 endpoints return 403 when API key lacks permissions"""
+    """Test that API ledger endpoints return 403 when API key lacks permissions"""
     dummy_context = {
         "user_id": "test_user",
         "app_details": {"permissions": []},

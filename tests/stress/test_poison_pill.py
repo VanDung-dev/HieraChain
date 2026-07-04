@@ -431,8 +431,8 @@ if __name__ == "__main__":
     for key, value in result.items():
         print(f"{key}: {value}")
 
-class TestPoisonPillV3:
-    """Stress tests for Poison Pill attacks using High Integrity API v3."""
+class TestPoisonPillAdmin:
+    """Stress tests for Poison Pill attacks using High Integrity API admin."""
 
     @pytest.fixture(autouse=True)
     def check_nodes(self):
@@ -441,26 +441,26 @@ class TestPoisonPillV3:
         if REAL_REQUESTS:
             client = RealStressClient()
             if not client.wait_for_nodes(timeout=15):
-                pytest.skip("Nodes not reachable for Poison Pill V3 test")
+                pytest.skip("Nodes not reachable for Poison Pill admin test")
 
     @pytest.fixture
-    def v3_config(self):
+    def admin_config(self):
         return {
             "num_valid_events": 20,
             "num_poison_events": 20,
             "poison_ratio": 0.5,
             "concurrent_senders": 4,
             "target_nodes": DEFAULT_NODES,
-            "api_version": "v3",
+            "api_version": "admin",
             "chain_name": "stress_test",
         }
 
-    def test_v3_secure_rejection(self, v3_config):
-        """Test that API v3 rejects 100% of poison events synchronously."""
-        test = PoisonPillTest(v3_config)
+    def test_admin_secure_rejection(self, admin_config):
+        """Test that API admin rejects 100% of poison events synchronously."""
+        test = PoisonPillTest(admin_config)
         result = test.run_test()
 
-        # v3 should have 1.0 rejection rate because of strict synchronous validation
+        # admin should have 1.0 rejection rate because of strict synchronous validation
         assert result["status"] == "completed"
         assert result["poison_rejection_rate"] == 1.0
         assert result["valid_acceptance_rate"] >= 0.8

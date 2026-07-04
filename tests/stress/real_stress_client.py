@@ -65,7 +65,7 @@ def generate_event() -> dict[str, Any]:
         f"{time.time()}-{random.random()}".encode()
     ).hexdigest()[:16]
 
-    # Match EventRequest schema from hierachain.api.v1.schemas
+    # Match EventRequest schema from hierachain.api.ledger.schemas
     return {
         "entity_id": f"stress_entity_{event_id}",
         "event_type": "stress_test",
@@ -252,7 +252,7 @@ class RealStressClient:
         node_id: str | None = None
     ) -> bool:
         """
-        Submit a high-integrity secure event (API v3).
+        Submit a high-integrity secure event (API admin).
         """
         if not node_id:
             node_id = self._select_random_healthy_node()
@@ -321,7 +321,7 @@ class RealStressClient:
             return False
 
         try:
-            # Match CreateChainRequest schema from hierachain.api.v1.schemas
+            # Match CreateChainRequest schema from hierachain.api.ledger.schemas
             participants = ["node1", "node2", "node3", "node4"]
                 
             payload = {

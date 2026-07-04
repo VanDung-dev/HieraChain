@@ -1,7 +1,7 @@
 """
-Integration tests for API v2
+Integration tests for API business
 
-This module contains integration tests for the API v2 endpoints,
+This module contains integration tests for the API business endpoints,
 including testing the complete flow of channel creation, private collection management,
 private data handling, contract operations, and organization registration.
 """
@@ -26,17 +26,17 @@ def auth_headers():
     return {"x-api-key": "test_integration_key"}
 
 
-def test_api_v2_health_check(client, auth_headers):
-    """Test API v2 health check endpoint"""
+def test_api_business_health_check(client, auth_headers):
+    """Test API business health check endpoint"""
     response = client.get("/api/business/health", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["version"] == "v2"
+    assert data["version"] == "business"
 
 
 def test_create_channel(client, auth_headers):
-    """Test creating a channel via API v2"""
+    """Test creating a channel via API business"""
     channel_data = {
         "channel_id": "integration_test_channel",
         "organizations": ["org1", "org2", "org3"],
@@ -53,7 +53,7 @@ def test_create_channel(client, auth_headers):
 
 
 def test_create_private_collection(client, auth_headers):
-    """Test creating a private collection via API v2"""
+    """Test creating a private collection via API business"""
     collection_data = {
         "name": "integration_test_collection",
         "members": ["org1", "org2"],
@@ -69,7 +69,7 @@ def test_create_private_collection(client, auth_headers):
 
 
 def test_add_private_data(client, auth_headers):
-    """Test adding private data via API v2"""
+    """Test adding private data via API business"""
     data = {
         "collection": "test_collection",
         "key": "contract_terms_001",
@@ -91,7 +91,7 @@ def test_add_private_data(client, auth_headers):
 
 
 def test_create_contract(client, auth_headers):
-    """Test creating a contract via API v2"""
+    """Test creating a contract via API business"""
     contract_data = {
         "contract_id": "quality_control_contract",
         "version": "1.0.0",
@@ -109,7 +109,7 @@ def test_create_contract(client, auth_headers):
 
 
 def test_execute_contract(client, auth_headers):
-    """Test executing a contract via API v2"""
+    """Test executing a contract via API business"""
     execution_data = {
         "contract_id": "quality_control_contract",
         "event": {
@@ -132,7 +132,7 @@ def test_execute_contract(client, auth_headers):
 
 
 def test_register_organization(client, auth_headers):
-    """Test registering an organization via API v2"""
+    """Test registering an organization via API business"""
     org_data = {
         "org_id": "manufacturer_org",
         "ca_config": {
