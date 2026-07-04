@@ -154,7 +154,7 @@ HEALTHY=false
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     if curl -s http://localhost:32660/web2-status | grep -q "web2_active"; then
-        if curl -s http://localhost:32660/api/v1/health | grep -q "healthy"; then
+        if curl -s http://localhost:32660/api/ledger/health | grep -q "healthy"; then
             echo "  ✅ HieraChain Cluster is READY via Web2 Gateway"
             HEALTHY=true
             break
@@ -186,7 +186,7 @@ echo "  Explorer: http://localhost:32660/${EXPLORER_TOKEN}/explorer"
 echo ""
 echo "HieraChain API (Direct Cluster Access):"
 echo "  Primary Port: 32661"
-echo "  Health:       http://localhost:32661/api/v1/health"
+echo "  Health:       http://localhost:32661/api/ledger/health"
 echo ""
 echo "IPFS Private Swarm:"
 echo "  ipfs-0 → $(kubectl get pod ipfs-0 -n $NAMESPACE -o jsonpath='{.status.podIP}' 2>/dev/null || echo 'N/A')"

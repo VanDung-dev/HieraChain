@@ -78,7 +78,7 @@ spec:
               cpu: "1"
           livenessProbe:
             httpGet:
-              path: /api/v1/health
+              path: /api/ledger/health
               port: api-port
             initialDelaySeconds: 15
             periodSeconds: 10
@@ -86,7 +86,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /api/v1/health
+              path: /api/ledger/health
               port: api-port
             initialDelaySeconds: 5
             periodSeconds: 5

@@ -142,7 +142,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         fi
         
         # Check if we can reach HieraChain through the gateway
-        if curl -s http://localhost:2660/api/v1/health | grep -q "healthy"; then
+        if curl -s http://localhost:2660/api/ledger/health | grep -q "healthy"; then
             echo "  ✅ HieraChain Cluster is READY"
             HEALTHY=true
             break

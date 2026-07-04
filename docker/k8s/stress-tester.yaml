@@ -25,7 +25,7 @@ data:
       port=$(echo $node | cut -d: -f2)
       echo "  Waiting for $host:$port..."
       for i in $(seq 1 30); do
-        if wget -q -O- "http://$host:$port/api/v1/health" 2>/dev/null | grep -q healthy; then
+        if wget -q -O- "http://$host:$port/api/ledger/health" 2>/dev/null | grep -q healthy; then
           echo "  ✅ $host:$port is ready"
           break
         fi

@@ -85,7 +85,7 @@ services:
           cpus: '1.0'
           memory: 1G
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -140,7 +140,7 @@ services:
           cpus: '1.0'
           memory: 1G
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -195,7 +195,7 @@ services:
           cpus: '1.0'
           memory: 1G
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -250,7 +250,7 @@ services:
           cpus: '1.0'
           memory: 1G
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -308,7 +308,7 @@ services:
           cpus: '0.5'
           memory: 512M
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
       timeout: 5s
       retries: 3
