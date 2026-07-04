@@ -942,7 +942,7 @@ def demonstrate_hierachain():
 def main():
     """Main entry point for the demonstration."""
     try:
-        from hierachain.units.version import get_version, VERSION
+        from hierachain.config.version import get_version, VERSION
 
 
         # Add Ledger version information
