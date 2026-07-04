@@ -56,7 +56,7 @@ sequenceDiagram
 import requests
 import json
 
-API_URL = "http://localhost:2661/api/v1"
+API_URL = "http://localhost:2661/api/ledger"
 API_KEY = "your-api-key-here"  # If AUTH is enabled
 
 def log_order_to_chain(order_id, items):
@@ -96,7 +96,7 @@ def log_order_to_chain(order_id, items):
 ### Implementation Example (JavaScript/Fetch)
 
 ```javascript
-const API_URL = "http://localhost:2661/api/v1";
+const API_URL = "http://localhost:2661/api/ledger";
 
 async function logOrder(orderId, items) {
   try {
@@ -177,5 +177,5 @@ See details at: [Integration Module](../modules/integration.md).
 
 ## Related
 
-* API v1 Reference: [API v1](../reference/api-v1.md)
+* API Ledger Reference: [API Ledger](../reference/api-ledger.md)
 * Integration Module: [Integration](../modules/integration.md)

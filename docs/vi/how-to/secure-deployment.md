@@ -96,13 +96,13 @@ Mặc định phục vụ tại `http://localhost:2661`. Đặt `HRC_API_HOST`/`
 1. Thiếu API key (khi `HRC_AUTH_ENABLED=true`) → kỳ vọng 401/403:
 
     ```bash
-    curl -i http://localhost:2661/api/v1/health
+    curl -i http://localhost:2661/api/ledger/health
     ```
 
 2. Có API key:
 
     ```bash
-    curl -i -H "X-API-Key: <your-secret-key>" http://localhost:2661/api/v1/health
+    curl -i -H "X-API-Key: <your-secret-key>" http://localhost:2661/api/ledger/health
     ```
 
 3. Tải nặng → ResourceGuard có thể trả 503 (nếu ngưỡng vượt quá).

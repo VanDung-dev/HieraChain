@@ -23,8 +23,8 @@ sequenceDiagram
     autonumber
     participant OS as ⚙️ OrderingService
     participant L as 👑 Leader Node
-    participant V1 as 🖥️ Validator 1
-    participant V2 as 🖥️ Validator 2
+    participant admin as 🖥️ Validator 1
+    participant business as 🖥️ Validator 2
     participant Vf as 🖥️ Validator f
 
     OS->>L: Events batch ready → trigger consensus
@@ -32,27 +32,27 @@ sequenceDiagram
     rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHASE 1 — PRE-PREPARE
         L->>L: Assign sequence number, create PRE-PREPARE message
-        L->>V1: PRE-PREPARE(view, seq, block_digest)
-        L->>V2: PRE-PREPARE(view, seq, block_digest)
+        L->>admin: PRE-PREPARE(view, seq, block_digest)
+        L->>business: PRE-PREPARE(view, seq, block_digest)
         L->>Vf: PRE-PREPARE(view, seq, block_digest)
     end
 
     rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHASE 2 — PREPARE
-        V1->>V1: Validate PRE-PREPARE, broadcast PREPARE
-        V1->>L: PREPARE(view, seq, digest)
-        V1->>V2: PREPARE(view, seq, digest)
-        V2->>L: PREPARE(view, seq, digest)
-        V2->>V1: PREPARE(view, seq, digest)
+        ledger->>ledger: Validate PRE-PREPARE, broadcast PREPARE
+        ledger->>L: PREPARE(view, seq, digest)
+        ledger->>business: PREPARE(view, seq, digest)
+        business->>L: PREPARE(view, seq, digest)
+        business->>ledger: PREPARE(view, seq, digest)
         Note over L: Collect 2f PREPARE votes
     end
 
     rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHASE 3 — COMMIT
-        L->>V1: COMMIT(view, seq, digest)
-        L->>V2: COMMIT(view, seq, digest)
-        V1->>L: COMMIT(view, seq, digest)
-        V2->>L: COMMIT(view, seq, digest)
+        L->>ledger: COMMIT(view, seq, digest)
+        L->>business: COMMIT(view, seq, digest)
+        ledger->>L: COMMIT(view, seq, digest)
+        business->>L: COMMIT(view, seq, digest)
         Note over L: Collect 2f+1 COMMIT votes → finalize
         L->>L: Finalize & sign block
         L->>OS: Block committed → push to commit_queue
@@ -66,13 +66,13 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant V1 as 🖥️ Validator 1
+    participant ledger as 🖥️ Validator 1
     participant VM as 🔄 BFTViewChangeManager
     participant NEW as 👑 New Leader
 
-    Note over V1: Leader timeout detected (no PRE-PREPARE received)
+    Note over ledger: Leader timeout detected (no PRE-PREPARE received)
 
-    V1->>VM: trigger_view_change(current_view, failed_leader)
+    ledger->>VM: trigger_view_change(current_view, failed_leader)
     VM->>VM: view += 1
     VM->>VM: Broadcast VIEW-CHANGE to all validators
     VM->>VM: Collect f+1 VIEW-CHANGE votes

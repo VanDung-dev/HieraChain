@@ -22,7 +22,7 @@ icon: material/frequently-asked-questions
     Map<string,string>; giá trị phi chuỗi sẽ được chuyển sang chuỗi.
 
 !!! question "Tạo Sub‑Chain báo lỗi tên không hợp lệ?"
-    Tên chỉ chứa `[a-zA-Z0-9_\-]` (xem kiểm tra trong `api/v1/endpoints.py`).
+    Tên chỉ chứa `[a-zA-Z0-9_\-]` (xem kiểm tra trong `api/ledger/endpoints.py`).
 
 !!! question "Vì sao submit proof mà block của Sub‑Chain vẫn chưa thấy?"
     Kiểm tra điều kiện finalize block, thời gian/lô sự kiện; thử gọi lại submit hoặc xem log.
@@ -30,8 +30,8 @@ icon: material/frequently-asked-questions
 !!! question "Hiệu năng thấp, hay 503?"
     Xem `ResourceGuardMiddleware`, bật cache nâng cao, tối ưu batch size, kiểm tra CPU/RAM.
 
-!!! question "Có API v2 không và dùng để làm gì?"
-    Có; quản lý channel, private data, contracts, organizations. Xem `docs/vi/reference/api-v2.md`.
+!!! question "Có API business không và dùng để làm gì?"
+    Có; quản lý channel, private data, contracts, organizations. Xem `docs/vi/reference/api-business.md`.
 
 !!! question "CLI ở đâu và dùng thế nào?"
     Lệnh `hrc` (đăng ký trong `pyproject.toml`). Xem `docs/vi/modules/cli.md`.

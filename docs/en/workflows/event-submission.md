@@ -28,7 +28,7 @@ sequenceDiagram
 
     rect rgb(0, 0, 0, 0)
         Note over Client,API: Phase 1 — Event Submission
-        Client->>API: POST /v1/chains/{name}/events
+        Client->>API: POST /ledger/chains/{name}/events
         API->>SC: add_event(event_dict)
         SC->>SC: Validate & stamp timestamp
         SC->>SC: validate_event_for_consensus()

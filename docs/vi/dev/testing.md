@@ -106,7 +106,7 @@ kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout
 kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
 
 # Kiểm tra API hoạt động  
-curl http://localhost:2661/api/v1/health
+curl http://localhost:2661/api/ledger/health
 
 # Chạy stress test
 docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
@@ -179,5 +179,5 @@ pytest -v -m integration
 ## Định hướng Phân bổ Kiểm thử
 
 * Unit: kiểm thử các lớp/hàm độc lập (core, security, storage...).
-* Integration: kiểm thử các luồng hoàn chỉnh đầu-cuối qua API v1/v2.
+* Integration: kiểm thử các luồng hoàn chỉnh đầu-cuối qua API Ledger/business.
 * Scenarios: các kịch bản nghiệp vụ thực tế (ví dụ: tạo sub-chain → ghi sự kiện → gửi proof → truy vết thực thể).

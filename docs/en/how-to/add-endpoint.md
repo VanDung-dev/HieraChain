@@ -1,18 +1,18 @@
 ---
-title: "Add API v1 Endpoint"
-description: "Steps to add a new endpoint to API v1, wire schema/handler, and quick test with curl."
+title: "Add API Ledger Endpoint"
+description: "Steps to add a new endpoint to API Ledger, wire schema/handler, and quick test with curl."
 icon: material/plus-network
 ---
 
-# Add API v1 Endpoint
+# Add API Ledger Endpoint
 
 ## Goal
 
-Step-by-step guide to adding a new endpoint to HieraChain's FastAPI router (v1), including Pydantic schema definition, writing a handler, updating the router, and quick testing with `curl`.
+Step-by-step guide to adding a new endpoint to HieraChain's FastAPI router (Ledger), including Pydantic schema definition, writing a handler, updating the router, and quick testing with `curl`.
 
 ## Step 1: Prepare Schema (optional)
 
-* Open `hierachain/api/v1/schemas.py`.
+* Open `hierachain/api/ledger/schemas.py`.
 * Add a Pydantic class if the endpoint needs a new payload, e.g.:
 
 ```python
@@ -26,8 +26,8 @@ class PingResponse(BaseModel):
 
 ## Step 2: Add Handler in Router
 
-* Open `hierachain/api/v1/endpoints.py`.
-* Import the schema (if any) and add a route to `APIRouter(prefix="/api/v1", ...)`.
+* Open `hierachain/api/ledger/endpoints.py`.
+* Import the schema (if any) and add a route to `APIRouter(prefix="/api/ledger", ...)`.
 
 Example (descriptive):
 
@@ -48,7 +48,7 @@ python -m hierachain.api.server
 Open `http://localhost:2661/docs` to try on Swagger UI or use `curl`:
 
 ```bash
-curl -s -X POST http://localhost:2661/api/v1/ping \
+curl -s -X POST http://localhost:2661/api/ledger/ping \
   -H 'Content-Type: application/json' \
   -d '{"message":"hello"}'
 ```
@@ -73,5 +73,5 @@ If API key authentication is enabled (production), add the header per `settings.
 ## Related
 
 * API Module: [API](../modules/api.md)
-* API v1 Reference: [API v1](../reference/api-v1.md)
+* API Ledger Reference: [API Ledger](../reference/api-ledger.md)
 * Config: [Config](../reference/config.md)

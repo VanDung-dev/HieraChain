@@ -35,7 +35,7 @@ print(settings.AUTH_ENABLED)
 
 * `HRC_API_HOST` (mặc định: `localhost` ở dev, `127.0.0.1` ở production)
 * `HRC_API_PORT` (mặc định: `2661`)
-* `API_VERSION` (constant: `v1`)
+* `API_VERSION` (constant: `ledger`)
 
 ### Đồng thuận/Blockchain
 

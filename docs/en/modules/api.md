@@ -1,6 +1,6 @@
 ---
 title: "API Module"
-description: "Multi-protocol API system: REST v1/v2/v3, GraphQL and WebSocket. Multi-layer security integration and IPFS data management."
+description: "Multi-protocol API system: REST ledger/business/admin, GraphQL and WebSocket. Multi-layer security integration and IPFS data management."
 icon: material/api
 ---
 
@@ -13,7 +13,7 @@ The **API** module is the main communication gateway between the outside world a
 ### Core Components
 
 * **FastAPI Server (`server.py`)**: Launch point, Middleware configuration, Authentication, and Router integration.
-* **Versioned REST API**: Divided into 3 versions (v1, v2, v3) serving different purposes from core to system administration.
+* **Versioned REST API**: Divided into 3 versions (ledger, business, admin) serving different purposes from core to system administration.
 * **GraphQL Endpoint**: Provides flexible query capabilities with security mechanisms (Depth/Complexity limit).
 * **WebSocket Gateway**: Streams real-time events/blocks using the Publish/Subscribe model.
 * **IPFS Integration**: Transparent handling of on-chain and off-chain data (IPFS + AES-256-GCM).
@@ -47,31 +47,31 @@ Uses `APIKeyVerifier` to check access rights based on API Key. This mechanism ca
 
 ## REST API Reference
 
-### v1: Core Ledger
+### ledger: Core Ledger
 
 Focuses on basic blockchain operations:
 
-* `GET /api/v1/health`: Check node health.
-* `GET /api/v1/chains`: List all Main Chains and Sub-Chains.
-* `POST /api/v1/chains/{name}/events`: Add an event (automatically handles IPFS if data is large).
-* `GET /api/v1/entities/{id}/trace`: Trace an entity across all chains in the hierarchy.
-* `GET /api/v1/chains/{name}/blocks`: Get block list (supports pagination and IPFS CID decoding).
+* `GET /api/ledger/health`: Check node health.
+* `GET /api/ledger/chains`: List all Main Chains and Sub-Chains.
+* `POST /api/ledger/chains/{name}/events`: Add an event (automatically handles IPFS if data is large).
+* `GET /api/ledger/entities/{id}/trace`: Trace an entity across all chains in the hierarchy.
+* `GET /api/ledger/chains/{name}/blocks`: Get block list (supports pagination and IPFS CID decoding).
 
-### v2: Enterprise Features
+### business: Enterprise Features
 
 Provides advanced tools for complex business processes:
 
-* **Channels**: Create private communication channels between organizations (`POST /api/v2/channels`).
+* **Channels**: Create private communication channels between organizations (`POST /api/business/channels`).
 * **Private Data**: Manage Private Data Collections that are not publicly shared on the common ledger.
 * **Domain Contracts**: Deploy and execute business-specific smart contracts.
 * **Organizations**: Register and manage organizational identities via MSP.
 
-### v3: System & Admin
+### admin: System & Admin
 
 Dedicated to node management and system operations:
 
-* `POST /api/v3/verify-identity`: Node signs a challenge to prove identity to the management system.
-* `GET /api/v3/status`: Detailed report of uptime, active chain count, version, and license status.
+* `POST /api/admin/verify-identity`: Node signs a challenge to prove identity to the management system.
+* `GET /api/admin/status`: Detailed report of uptime, active chain count, version, and license status.
 
 ---
 
@@ -148,7 +148,7 @@ Built-in at `blockchain_explorer.py`, the explorer provides a dashboard interfac
 ### Write an Event to a Chain
 
 ```bash
-curl -X POST http://localhost:2661/api/v1/chains/my_chain/events \
+curl -X POST http://localhost:2661/api/ledger/chains/my_chain/events \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your_secret_key" \
   -d '{
@@ -161,7 +161,7 @@ curl -X POST http://localhost:2661/api/v1/chains/my_chain/events \
 ### Trace an Entity
 
 ```bash
-curl "http://localhost:2661/api/v1/entities/ITEM-123/trace?resolve_cid=true"
+curl "http://localhost:2661/api/ledger/entities/ITEM-123/trace?resolve_cid=true"
 ```
 
 ---

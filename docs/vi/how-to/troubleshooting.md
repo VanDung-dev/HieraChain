@@ -24,7 +24,7 @@ Trang này cung cấp checklist và các bước chẩn đoán nhanh cho các l�
 * Production có thể bật AUTH: `settings.AUTH_ENABLED`. Khi đó cần gửi API key:
 
     ```bash
-    curl -H "X-API-Key: <your-key>" http://localhost:2661/api/v1/health
+    curl -H "X-API-Key: <your-key>" http://localhost:2661/api/ledger/health
     ```
 
 * Tên header tuỳ `settings.API_KEY_NAME` (mặc định `X-API-Key`).
@@ -49,23 +49,23 @@ Trang này cung cấp checklist và các bước chẩn đoán nhanh cho các l�
 * Endpoint tạo chuỗi:
 
     ```bash
-    curl -X POST http://localhost:2661/api/v1/chains/supply_chain/create
+    curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/create
     ```
 
-* Tên chuỗi phải khớp regex `[a-zA-Z0-9_\-]+` (xem kiểm tra trong `api/v1/endpoints.py`).
+* Tên chuỗi phải khớp regex `[a-zA-Z0-9_\-]+` (xem kiểm tra trong `api/ledger/endpoints.py`).
 
 ## Sự kiện không xuất hiện trong block trả về
 
 * Dùng API lấy block:
 
     ```bash
-    curl "http://localhost:2661/api/v1/chains/supply_chain/blocks?limit=5&offset=0"
+    curl "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&offset=0"
     ```
 
 * Một số chuỗi cần gọi finalize/submit proof để thấy block mới. Thử submit proof:
 
     ```bash
-    curl -X POST http://localhost:2661/api/v1/chains/supply_chain/submit-proof
+    curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
     ```
 
 ## Hiệu năng kém/503 Service Unavailable
@@ -83,13 +83,13 @@ Trang này cung cấp checklist và các bước chẩn đoán nhanh cho các l�
 
 * Đổi `DEFAULT_STORAGE_BACKEND` về `memory` để cô lập sự cố lưu trữ.
 
-## V2 endpoints trả lỗi
+## business endpoints trả lỗi
 
-* Xác minh API v2 đã được nạp (xem `hierachain/api/server.py` và `hierachain/api/v2/endpoints.py`).
-* Thử health v2:
+* Xác minh API business đã được nạp (xem `hierachain/api/server.py` và `hierachain/api/business/endpoints.py`).
+* Thử health business:
 
     ```bash
-    curl -s http://localhost:2661/api/v2/health
+    curl -s http://localhost:2661/api/business/health
     ```
 
 ## Chữ ký/khóa

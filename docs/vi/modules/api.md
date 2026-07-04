@@ -1,6 +1,6 @@
 ---
 title: "API Module"
-description: "Hệ thống API đa giao thức: REST v1/v2/v3, GraphQL và WebSocket. Tích hợp bảo mật đa lớp và quản lý dữ liệu IPFS."
+description: "Hệ thống API đa giao thức: REST ledger/business/admin, GraphQL và WebSocket. Tích hợp bảo mật đa lớp và quản lý dữ liệu IPFS."
 icon: material/api
 ---
 
@@ -13,7 +13,7 @@ Module **API** là cổng giao tiếp chính giữa thế giới bên ngoài và
 ### Các thành phần cốt lõi
 
 * **FastAPI Server (`server.py`)**: Điểm khởi chạy, cấu hình Middleware, Authentication và tích hợp Router.
-* **Versioned REST API**: Chia làm 3 phiên bản (v1, v2, v3) phục vụ các mục đích khác nhau từ cốt lõi đến quản trị hệ thống.
+* **Versioned REST API**: Chia làm 3 phiên bản (ledger, business, admin) phục vụ các mục đích khác nhau từ cốt lõi đến quản trị hệ thống.
 * **GraphQL Endpoint**: Cung cấp khả năng truy vấn linh hoạt với cơ chế bảo mật (Depth/Complexity limit).
 * **WebSocket Gateway**: Truyền tải sự kiện (events/blocks) thời gian thực theo mô hình Publish/Subscribe.
 * **IPFS Integration**: Xử lý minh bạch dữ liệu on-chain và off-chain (IPFS + AES-256-GCM).
@@ -47,31 +47,31 @@ Sử dụng `APIKeyVerifier` để kiểm tra quyền truy cập dựa trên API
 
 ## REST API Reference
 
-### v1: Core Ledger (Cốt lõi)
+### ledger: Core Ledger (Cốt lõi)
 
 Tập trung vào các hoạt động blockchain cơ bản:
 
-* `GET /api/v1/health`: Kiểm tra tình trạng node.
-* `GET /api/v1/chains`: Liệt kê tất cả Main Chain và Sub-Chains.
-* `POST /api/v1/chains/{name}/events`: Thêm sự kiện (tự động xử lý IPFS nếu dữ liệu lớn).
-* `GET /api/v1/entities/{id}/trace`: Truy vết thực thể xuyên suốt các chain trong hệ thống phân cấp.
-* `GET /api/v1/chains/{name}/blocks`: Lấy danh sách block (hỗ trợ phân trang và giải mã CID IPFS).
+* `GET /api/ledger/health`: Kiểm tra tình trạng node.
+* `GET /api/ledger/chains`: Liệt kê tất cả Main Chain và Sub-Chains.
+* `POST /api/ledger/chains/{name}/events`: Thêm sự kiện (tự động xử lý IPFS nếu dữ liệu lớn).
+* `GET /api/ledger/entities/{id}/trace`: Truy vết thực thể xuyên suốt các chain trong hệ thống phân cấp.
+* `GET /api/ledger/chains/{name}/blocks`: Lấy danh sách block (hỗ trợ phân trang và giải mã CID IPFS).
 
-### v2: Enterprise Features (Tính năng doanh nghiệp)
+### business: Enterprise Features (Tính năng doanh nghiệp)
 
 Cung cấp các công cụ nâng cao cho quy trình kinh doanh phức tạp:
 
-* **Channels**: Tạo kênh giao tiếp riêng tư giữa các tổ chức (`POST /api/v2/channels`).
+* **Channels**: Tạo kênh giao tiếp riêng tư giữa các tổ chức (`POST /api/business/channels`).
 * **Private Data**: Quản lý bộ sưu tập dữ liệu riêng tư (`Private Data Collections`) không công khai trên sổ cái chung.
 * **Domain Contracts**: Triển khai và thực thi hợp đồng thông minh theo nghiệp vụ đặc thù.
 * **Organizations**: Đăng ký và quản lý danh tính tổ chức qua MSP.
 
-### v3: System & Admin (Quản trị)
+### admin: System & Admin (Quản trị)
 
 Dành riêng cho việc quản lý node và vận hành hệ thống:
 
-* `POST /api/v3/verify-identity`: Node ký một challenge để chứng minh danh tính với hệ thống quản lý.
-* `GET /api/v3/status`: Báo cáo chi tiết uptime, số lượng chain active, phiên bản và tình trạng bản quyền.
+* `POST /api/admin/verify-identity`: Node ký một challenge để chứng minh danh tính với hệ thống quản lý.
+* `GET /api/admin/status`: Báo cáo chi tiết uptime, số lượng chain active, phiên bản và tình trạng bản quyền.
 
 ---
 
@@ -148,7 +148,7 @@ Tích hợp sẵn tại `blockchain_explorer.py`, explorer cung cấp giao diệ
 ### Ghi sự kiện vào chuỗi
 
 ```bash
-curl -X POST http://localhost:2661/api/v1/chains/my_chain/events \
+curl -X POST http://localhost:2661/api/ledger/chains/my_chain/events \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your_secret_key" \
   -d '{
@@ -161,7 +161,7 @@ curl -X POST http://localhost:2661/api/v1/chains/my_chain/events \
 ### Truy vết thực thể (Trace)
 
 ```bash
-curl "http://localhost:2661/api/v1/entities/ITEM-123/trace?resolve_cid=true"
+curl "http://localhost:2661/api/ledger/entities/ITEM-123/trace?resolve_cid=true"
 ```
 
 ---

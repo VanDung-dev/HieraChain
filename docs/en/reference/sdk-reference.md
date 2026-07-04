@@ -40,7 +40,7 @@ Get detailed information about a block.
 
 #### `get_node_status() -> NodeStatus`
 
-Get system status from API v3. Returns an object containing `version`, `uptime`, `chains_active`, etc.
+Get system status from API Admin. Returns an object containing `version`, `uptime`, `chains_active`, etc.
 
 #### `trace_entity(entity_id: str, chain_name: str = None, resolve_cid: bool = False) -> EntityTrace`
 

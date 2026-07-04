@@ -1,21 +1,21 @@
 ---
-title: API v3
-description: "Tài liệu REST API v3 của HieraChain: Quản trị hệ thống, xác thực node và kiểm tra trạng thái."
+title: API Admin
+description: "Tài liệu REST API Admin của HieraChain: Quản trị hệ thống, xác thực node và kiểm tra trạng thái."
 icon: material/numeric-3-circle
 ---
 
-# API v3
+# API Admin
 
 ## Mục đích
 
-Mô tả các endpoint REST trong phiên bản API v3 (System & Admin) dùng cho các tác vụ quản trị hệ thống: xác minh danh tính node, kiểm tra trạng thái hoạt động (uptime, version, active chains).
+Mô tả các endpoint REST trong phiên bản API Admin (System & Admin) dùng cho các tác vụ quản trị hệ thống: xác minh danh tính node, kiểm tra trạng thái hoạt động (uptime, version, active chains).
 
 ## Tổng quan endpoint
 
-* POST `/api/v3/verify-identity` — Xác minh danh tính node bằng cách ký vào một chuỗi challenge. (Yêu cầu xác thực)
-* GET `/api/v3/status` — Lấy báo cáo chi tiết về trạng thái node. (Yêu cầu API Key nếu `AUTH_ENABLED=true`)
+* POST `/api/admin/verify-identity` — Xác minh danh tính node bằng cách ký vào một chuỗi challenge. (Yêu cầu xác thực)
+* GET `/api/admin/status` — Lấy báo cáo chi tiết về trạng thái node. (Yêu cầu API Key nếu `AUTH_ENABLED=true`)
 
-## Schema chính (trích từ `hierachain/api/v3/schemas.py`)
+## Schema chính (trích từ `hierachain/api/admin/schemas.py`)
 
 * `VerifyIdentityRequest`
 
@@ -58,7 +58,7 @@ sequenceDiagram
 **Request:**
 
 ```bash
-curl -X POST http://localhost:2661/api/v3/verify-identity \
+curl -X POST http://localhost:2661/api/admin/verify-identity \
   -H "Content-Type: application/json" \
   -d '{
         "challenge": "abcd1234"
@@ -85,7 +85,7 @@ Lấy thông tin tổng quan về sức khỏe và trạng thái của node.
 **Request:**
 
 ```bash
-curl -s http://localhost:2661/api/v3/status
+curl -s http://localhost:2661/api/admin/status
 ```
 
 **Phản hồi (200 OK):**

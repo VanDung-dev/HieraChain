@@ -96,19 +96,19 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     RESTORE["restore_keys(backup_id)"]
-    V1["📁 Kho chính\n_find_backup_file()"]
-    V2["📁 Kho phụ\n(dự phòng)"]
-    V3["📁 Kho thứ ba\n(dự phòng)"]
+    ledger["📁 Kho chính\n_find_backup_file()"]
+    business["📁 Kho phụ\n(dự phòng)"]
+    admin["📁 Kho thứ ba\n(dự phòng)"]
     OK["✅ Khóa được giải mã"]
     ERR["❌ IntegrityError\nTất cả các kho đều thất bại"]
 
-    RESTORE --> V1
-    V1 -->|Tìm thấy + nguyên vẹn| OK
-    V1 -->|Không tìm thấy / bị lỗi| V2
-    V2 -->|Tìm thấy + nguyên vẹn| OK
-    V2 -->|Không tìm thấy / bị lỗi| V3
-    V3 -->|Tìm thấy + nguyên vẹn| OK
-    V3 -->|Không tìm thấy / bị lỗi| ERR
+    RESTORE --> ledger
+    ledger -->|Tìm thấy + nguyên vẹn| OK
+    ledger -->|Không tìm thấy / bị lỗi| business
+    business -->|Tìm thấy + nguyên vẹn| OK
+    business -->|Không tìm thấy / bị lỗi| admin
+    admin -->|Tìm thấy + nguyên vẹn| OK
+    admin -->|Không tìm thấy / bị lỗi| ERR
 ```
 
 ---

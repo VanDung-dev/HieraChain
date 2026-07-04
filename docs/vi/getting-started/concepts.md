@@ -78,7 +78,7 @@ classDiagram
 
 * Core: `hierachain/core/{block.py, blockchain.py, schemas.py}`
 * Phân cấp: `hierachain/hierarchical/{main_chain.py, sub_chain.py, hierarchy_manager.py}`
-* API: `hierachain/api/v1/{endpoints.py, schemas.py}`
+* API: `hierachain/api/ledger/{endpoints.py, schemas.py}`
 * Bảo mật: `hierachain/security/*`
 * Cấu hình: `hierachain/config/settings.py`
 

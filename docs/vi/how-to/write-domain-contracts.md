@@ -18,7 +18,7 @@ Mỗi hợp đồng cung cấp một số thuộc tính cốt lõi bao gồm đ�
 from hierachain.core.domain_contract import DomainContract
 
 contract = DomainContract(
-    contract_id="logistics_tracker_v1",
+    contract_id="logistics_tracker_ledger",
     version="1.0.0",
     implementation=my_custom_logic_function,
     metadata={"department": "supply_chain"}

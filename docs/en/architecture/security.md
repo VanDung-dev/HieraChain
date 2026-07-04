@@ -102,4 +102,4 @@ sequenceDiagram
 
 * Security Module: [Security](../modules/security.md)
 * Config Reference: [Config](../reference/config.md)
-* API v1: [API v1](../reference/api-v1.md)
+* API Ledger: [API Ledger](../reference/api-ledger.md)

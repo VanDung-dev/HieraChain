@@ -24,7 +24,7 @@ This page provides a checklist and quick diagnostic steps for common errors when
 * Production may enable AUTH: `settings.AUTH_ENABLED`. In that case, you need to send an API key:
 
     ```bash
-    curl -H "X-API-Key: <your-key>" http://localhost:2661/api/v1/health
+    curl -H "X-API-Key: <your-key>" http://localhost:2661/api/ledger/health
     ```
 
 * Header name depends on `settings.API_KEY_NAME` (default `X-API-Key`).
@@ -49,23 +49,23 @@ This page provides a checklist and quick diagnostic steps for common errors when
 * Chain creation endpoint:
 
     ```bash
-    curl -X POST http://localhost:2661/api/v1/chains/supply_chain/create
+    curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/create
     ```
 
-* Chain name must match regex `[a-zA-Z0-9_\-]+` (see validation in `api/v1/endpoints.py`).
+* Chain name must match regex `[a-zA-Z0-9_\-]+` (see validation in `api/ledger/endpoints.py`).
 
 ## Events not appearing in returned blocks
 
 * Use the block retrieval API:
 
     ```bash
-    curl "http://localhost:2661/api/v1/chains/supply_chain/blocks?limit=5&offset=0"
+    curl "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&offset=0"
     ```
 
 * Some chains need to be finalized or have a proof submitted to see new blocks. Try submitting a proof:
 
     ```bash
-    curl -X POST http://localhost:2661/api/v1/chains/supply_chain/submit-proof
+    curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
     ```
 
 ## Poor performance / 503 Service Unavailable
@@ -83,13 +83,13 @@ This page provides a checklist and quick diagnostic steps for common errors when
 
 * Switch `DEFAULT_STORAGE_BACKEND` to `memory` to isolate storage issues.
 
-## V2 endpoints return errors
+## business endpoints return errors
 
-* Verify that API v2 is loaded (see `hierachain/api/server.py` and `hierachain/api/v2/endpoints.py`).
-* Try the v2 health endpoint:
+* Verify that API business is loaded (see `hierachain/api/server.py` and `hierachain/api/business/endpoints.py`).
+* Try the business health endpoint:
 
     ```bash
-    curl -s http://localhost:2661/api/v2/health
+    curl -s http://localhost:2661/api/business/health
     ```
 
 ## Signatures/keys

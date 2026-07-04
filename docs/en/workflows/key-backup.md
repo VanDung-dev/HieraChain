@@ -96,19 +96,19 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     RESTORE["restore_keys(backup_id)"]
-    V1["📁 Primary Vault\n_find_backup_file()"]
-    V2["📁 Secondary Vault\n(fallback)"]
-    V3["📁 Tertiary Vault\n(fallback)"]
+    ledger["📁 Primary Vault\n_find_backup_file()"]
+    business["📁 Secondary Vault\n(fallback)"]
+    admin["📁 Tertiary Vault\n(fallback)"]
     OK["✅ Decrypted Keys"]
     ERR["❌ IntegrityError\nAll vaults failed"]
 
-    RESTORE --> V1
-    V1 -->|Found + intact| OK
-    V1 -->|Not found / tampered| V2
-    V2 -->|Found + intact| OK
-    V2 -->|Not found / tampered| V3
-    V3 -->|Found + intact| OK
-    V3 -->|Not found / tampered| ERR
+    RESTORE --> ledger
+    ledger -->|Found + intact| OK
+    ledger -->|Not found / tampered| business
+    business -->|Found + intact| OK
+    business -->|Not found / tampered| admin
+    admin -->|Found + intact| OK
+    admin -->|Not found / tampered| ERR
 ```
 
 ---

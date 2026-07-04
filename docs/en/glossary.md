@@ -14,7 +14,7 @@ icon: material/alphabetical
 | Consensus | Block approval mechanism (PoA, PoF, BFT); `hierachain/consensus/*`, `hierachain/hierarchical/consensus/*`. |
 | Membership Service Provider | MSP; identity/organization management; `hierachain/security/msp.py`, `hierachain/security/identity.py`. |
 | Policy | Access/resource control; `hierachain/security/policy_engine.py`, `hierachain/security/resource_guard.py`. |
-| World State | Current data state; `hierachain/storage/world_state.py`. |
+| World State | Current data state; `hierachain/state/world_state.py`. |
 | Journal | Transaction log; `hierachain/error_mitigation/journal.py`. |
 | Rollback | State restoration; `hierachain/error_mitigation/rollback_manager.py`. |
 | Recovery | Error recovery mechanism; `hierachain/error_mitigation/recovery_engine.py`. |
@@ -37,9 +37,9 @@ icon: material/alphabetical
 | HTTP Strict Transport Security | HSTS; `hierachain/config/settings.py`. |
 | Cross-Origin Resource Sharing | CORS; `hierachain/config/settings.py`. |
 | Command Line Interface | CLI `hrc` tool; `hierachain/cli/*`. |
-| API v1 | REST API v1; `hierachain/api/v1/*`. |
-| API v2 | REST API v2; `hierachain/api/v2/*`. |
-| API v3 | REST API v3; `hierachain/api/v3/*`. |
+| API Ledger | REST API Ledger; `hierachain/api/ledger/*`. |
+| API business | REST API business; `hierachain/api/business/*`. |
+| API Admin | REST API Admin; `hierachain/api/admin/*`. |
 | Cross-level State Sync | Cross-tier state synchronization; `hierachain/cluster/state_sync_manager.py`. |
 | Kubernetes Namespace | Sub-Chain namespace isolation; `hierachain/hierarchical/k8s_namespace_manager.py`. |
 | Identity Manager | Organization/user/role management; `hierachain/security/identity.py`. |

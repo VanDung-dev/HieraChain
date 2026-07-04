@@ -34,9 +34,9 @@ This document maps concepts in technical documentation to specific source code f
 | Concept | File Path | Role |
 |---------|-----------|------|
 | **API Server** | `hierachain/api/server.py` | FastAPI server entry point. |
-| **Endpoints V1** | `hierachain/api/v1/endpoints.py` | Basic API (Blocks, Chain info). |
-| **Endpoints V2** | `hierachain/api/v2/endpoints.py` | Advanced API (Events, Domain). |
-| **Endpoints V3** | `hierachain/api/v3/endpoints.py` | System API (Admin, Health). |
+| **API Ledger** | `hierachain/api/ledger/endpoints.py` | Basic API (Blocks, Chain info). |
+| **API Business** | `hierachain/api/business/endpoints.py` | Advanced API (Events, Domain). |
+| **API Admin** | `hierachain/api/admin/endpoints.py` | System API (Admin, Health). |
 | **WebSocket Manager** | `hierachain/api/websocket/manager.py` | Manages real-time WebSocket connections. |
 | **GraphQL Schema** | `hierachain/api/graphql/schema.py` | GraphQL schema for flexible queries. |
 | **IPFS Client** | `hierachain/api/storage/ipfs_client.py` | Off-chain storage integration (AES-256-GCM). |
@@ -60,11 +60,8 @@ This document maps concepts in technical documentation to specific source code f
 
 | Concept | File Path | Role |
 |---------|-----------|------|
-| **SQLite Adapter** | `hierachain/adapters/database/sqlite_adapter.py` | Stores data in SQLite (SQLAlchemy). |
-| **File Storage** | `hierachain/adapters/storage/file_storage.py` | File storage (Parquet) for large data. |
-| **Redis Storage** | `hierachain/adapters/storage/redis_storage.py` | Temporary storage/High-performance Cache. |
-| **SQL Backend** | `hierachain/storage/sql_backend.py` | Abstraction layer for SQL interactions. |
-| **Memory Storage** | `hierachain/storage/memory_storage.py` | In-Memory storage (for testing/dev). |
+| **SQLite Adapter** | `hierachain/adapters/database/sqlite_adapter.py` | Light weight, high performance SQLite database storage. |
+| **Redis Adapter** | `hierachain/adapters/database/redis_adapter.py` | Key-value store for caching and consensus state. |
 
 ## Network & Cluster
 

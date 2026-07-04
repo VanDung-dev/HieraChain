@@ -1,21 +1,21 @@
 ---
-title: API v3
-description: "HieraChain REST API v3 documentation: System administration, node authentication, and status checks."
+title: API Admin
+description: "HieraChain REST API Admin documentation: System administration, node authentication, and status checks."
 icon: material/numeric-3-circle
 ---
 
-# API v3
+# API Admin
 
 ## Purpose
 
-Describes the REST endpoints in API v3 (System & Admin) used for system administration tasks: node identity verification, health status checks (uptime, version, active chains).
+Describes the REST endpoints in API Admin (System & Admin) used for system administration tasks: node identity verification, health status checks (uptime, version, active chains).
 
 ## Endpoint Overview
 
-* POST `/api/v3/verify-identity` — Verify node identity by signing a challenge string. (Requires authentication)
-* GET `/api/v3/status` — Get a detailed report on node status. (Requires API Key if `AUTH_ENABLED=true`)
+* POST `/api/admin/verify-identity` — Verify node identity by signing a challenge string. (Requires authentication)
+* GET `/api/admin/status` — Get a detailed report on node status. (Requires API Key if `AUTH_ENABLED=true`)
 
-## Main Schemas (from `hierachain/api/v3/schemas.py`)
+## Main Schemas (from `hierachain/api/admin/schemas.py`)
 
 * `VerifyIdentityRequest`
 
@@ -58,7 +58,7 @@ sequenceDiagram
 **Request:**
 
 ```bash
-curl -X POST http://localhost:2661/api/v3/verify-identity \
+curl -X POST http://localhost:2661/api/admin/verify-identity \
   -H "Content-Type: application/json" \
   -d '{
         "challenge": "abcd1234"
@@ -85,7 +85,7 @@ Get an overview of node health and status.
 **Request:**
 
 ```bash
-curl -s http://localhost:2661/api/v3/status
+curl -s http://localhost:2661/api/admin/status
 ```
 
 **Response (200 OK):**

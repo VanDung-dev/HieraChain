@@ -94,5 +94,5 @@ When comparing versions, HieraChain follows this priority order (lowest to highe
 ## Related
 
 *   [System Configuration](./config.md)
-*   [API Status v3 (uses versioning)](./api.md)
+*   [API Status admin (uses versioning)](./api.md)
 *   [CLI (displays version)](./cli.md)

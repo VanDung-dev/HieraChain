@@ -23,8 +23,8 @@ sequenceDiagram
     autonumber
     participant OS as ⚙️ OrderingService
     participant L as 👑 Nút Trưởng nhóm (Leader Node)
-    participant V1 as 🖥️ Trình xác thực 1 (Validator 1)
-    participant V2 as 🖥️ Trình xác thực 2 (Validator 2)
+    participant ledger as 🖥️ Trình xác thực 1 (Validator 1)
+    participant business as 🖥️ Trình xác thực 2 (Validator 2)
     participant Vf as 🖥️ Trình xác thực f (Validator f)
 
     OS->>L: Gom cụm sự kiện sẵn sàng → kích hoạt đồng thuận
@@ -32,27 +32,27 @@ sequenceDiagram
     rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHA 1 — CHUẨN BỊ TRƯỚC (PRE-PREPARE)
         L->>L: Gán số thứ tự, tạo thông điệp PRE-PREPARE
-        L->>V1: PRE-PREPARE(view, seq, block_digest)
-        L->>V2: PRE-PREPARE(view, seq, block_digest)
+        L->>ledger: PRE-PREPARE(view, seq, block_digest)
+        L->>business: PRE-PREPARE(view, seq, block_digest)
         L->>Vf: PRE-PREPARE(view, seq, block_digest)
     end
 
     rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHA 2 — CHUẨN BỊ (PREPARE)
-        V1->>V1: Xác thực PRE-PREPARE, phát tin PREPARE
-        V1->>L: PREPARE(view, seq, digest)
-        V1->>V2: PREPARE(view, seq, digest)
-        V2->>L: PREPARE(view, seq, digest)
-        V2->>V1: PREPARE(view, seq, digest)
+        ledger->>ledger: Xác thực PRE-PREPARE, phát tin PREPARE
+        ledger->>L: PREPARE(view, seq, digest)
+        ledger->>business: PREPARE(view, seq, digest)
+        business->>L: PREPARE(view, seq, digest)
+        business->>ledger: PREPARE(view, seq, digest)
         Note over L: Thu thập đủ 2f phiếu bầu PREPARE
     end
 
     rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHA 3 — CAM KẾT (COMMIT)
-        L->>V1: COMMIT(view, seq, digest)
-        L->>V2: COMMIT(view, seq, digest)
-        V1->>L: COMMIT(view, seq, digest)
-        V2->>L: COMMIT(view, seq, digest)
+        L->>ledger: COMMIT(view, seq, digest)
+        L->>business: COMMIT(view, seq, digest)
+        ledger->>L: COMMIT(view, seq, digest)
+        business->>L: COMMIT(view, seq, digest)
         Note over L: Thu thập đủ 2f+1 phiếu bầu COMMIT → hoàn tất
         L->>L: Hoàn tất & ký khối dữ liệu
         L->>OS: Khối dữ liệu đã cam kết → đẩy vào commit_queue
@@ -66,13 +66,13 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant V1 as 🖥️ Trình xác thực 1
+    participant ledger as 🖥️ Trình xác thực 1
     participant VM as 🔄 BFTViewChangeManager
     participant NEW as 👑 Trưởng nhóm Mới (New Leader)
 
-    Note over V1: Phát hiện hết hạn kết nối với Leader (không nhận được PRE-PREPARE)
+    Note over ledger: Phát hiện hết hạn kết nối với Leader (không nhận được PRE-PREPARE)
 
-    V1->>VM: trigger_view_change(current_view, failed_leader)
+    ledger->>VM: trigger_view_change(current_view, failed_leader)
     VM->>VM: view += 1
     VM->>VM: Phát tin VIEW-CHANGE đến tất cả các trình xác thực
     VM->>VM: Thu thập đủ f+1 phiếu bầu VIEW-CHANGE

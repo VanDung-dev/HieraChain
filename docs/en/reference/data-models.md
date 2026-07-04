@@ -103,9 +103,9 @@ Full block consists of header + event list + (optional) block-level ZK proof.
   ])
 ```
 
-## Pydantic Mapping (API v1)
+## Pydantic Mapping (API Ledger)
 
-Pydantic models (`hierachain/api/v1/schemas.py`) are used for API data validation, mapped to core structures:
+Pydantic models (`hierachain/api/ledger/schemas.py`) are used for API data validation, mapped to core structures:
 
 ```python
 class EventRequest(BaseModel):
@@ -173,4 +173,4 @@ blockchain.is_chain_valid()
 ## Related
 
 * Core module: [Core](../modules/core.md)
-* API v1: [API v1](api-v1.md)
+* API Ledger: [API Ledger](api-ledger.md)

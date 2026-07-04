@@ -4,7 +4,7 @@ description: "Hệ thống lưu trữ đa tầng: World State, SQL Persistence, 
 icon: material/database
 ---
 
-# Storage Module (`hierachain/storage/*`)
+# Storage Module (`hierachain/adapters/database/*`)
 
 ## Tổng quan
 
@@ -32,7 +32,7 @@ HieraChain chia lưu trữ thành hai lớp chính để tối ưu hóa giữa t
 
     ---
 
-    __File__: `storage/sql_backend.py`, `adapters/database/*`, `adapters/storage/*`
+    __File__: `adapters/database/sqlite_adapter.py`, `adapters/database/*`
 
     * **SQL Backend**: Lưu trữ khối và sự kiện bền vững (SQLite qua `sqlite_adapter.py`).
     * **Redis Adapter**: Tối ưu cho việc đánh chỉ mục (indexing) thực thể.

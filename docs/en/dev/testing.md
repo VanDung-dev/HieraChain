@@ -106,7 +106,7 @@ kubectl wait --for=condition=ready pod -l app=hierachain -n hierachain --timeout
 kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.0.0.0
 
 # Test API  
-curl http://localhost:2661/api/v1/health
+curl http://localhost:2661/api/ledger/health
 
 # Run stress test
 docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
@@ -179,5 +179,5 @@ pytest -v -m integration
 ## Test Layout Suggestions
 
 * Unit: test individual classes/functions (core, security, storage...).
-* Integration: test end-to-end flows via API v1/v2.
+* Integration: test end-to-end flows via API Ledger/business.
 * Scenarios: business scenarios (e.g. create sub-chain → write event → submit proof → trace entity).

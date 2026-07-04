@@ -1,14 +1,14 @@
 ---
-title: API v1
-description: "Tài liệu REST API v1 của HieraChain: endpoint, schema, ví dụ request/response, và các trường hợp lỗi."
+title: API Ledger
+description: "Tài liệu REST API Ledger của HieraChain: endpoint, schema, ví dụ request/response, và các trường hợp lỗi."
 icon: material/numeric-1-circle
 ---
 
-# API v1
+# API Ledger
 
 ## Mục đích
 
-Mô tả các endpoint REST trong phiên bản API v1 dùng để tương tác với HieraChain: quản lý chuỗi, ghi sự kiện, gửi bằng chứng (proof), truy vết thực thể, thống kê và truy xuất block.
+Mô tả các endpoint REST trong phiên bản API Ledger dùng để tương tác với HieraChain: quản lý chuỗi, ghi sự kiện, gửi bằng chứng (proof), truy vết thực thể, thống kê và truy xuất block.
 
 #### Phụ lục: Ví dụ Gửi Sự kiện kèm IPFS
 
@@ -18,7 +18,7 @@ Khi doanh nghiệp cần lưu trữ các tệp tin lớn (hợp đồng PDF, ả
 2. **Bước 2**: Gửi sự kiện vào HieraChain với `details_cid`.
 
 ```bash
-curl -X POST "http://localhost:2661/api/v1/chains/supply_chain/events" \
+curl -X POST "http://localhost:2661/api/ledger/chains/supply_chain/events" \
      -H "Content-Type: application/json" \
      -H "X-API-Key: your_api_key" \
      -d '{
@@ -36,7 +36,7 @@ Dữ liệu này sẽ được HieraChain bảo chứng tính toàn vẹn thông
 ```mermaid
 sequenceDiagram
     participant Client
-    participant API as API v1
+    participant API as API Ledger
     participant Sub as Sub-Chain
     participant Main as Main Chain
 
@@ -56,17 +56,17 @@ sequenceDiagram
     API-->>Client: 200 OK (Proof ID)
 ```
 
-* GET `/api/v1/health` — Kiểm tra tình trạng.
-* GET `/api/v1/chains` — Liệt kê Main Chain và tất cả Sub-Chain.
-* POST `/api/v1/chains/{chain_name}/create` — Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo).
-* POST `/api/v1/chains/{chain_name}/events` — Thêm sự kiện vào Sub-Chain.
-* POST `/api/v1/chains/{chain_name}/submit-proof` — Gửi proof từ Sub-Chain lên Main Chain.
-* GET `/api/v1/chains/{chain_name}/stats` — Lấy thống kê chuỗi.
-* GET `/api/v1/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false` — Lấy danh sách block (có phân trang). Nếu `resolve_cid=true`, tự động tải dữ liệu chi tiết từ IPFS.
-* GET `/api/v1/chains/{chain_name}/blocks/{index_or_hash}` — Lấy chi tiết một block cụ thể.
-* GET `/api/v1/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]` — Truy vết sự kiện. Nếu `resolve_cid=true`, giải mã chi tiết sự kiện từ IPFS.
+* GET `/api/ledger/health` — Kiểm tra tình trạng.
+* GET `/api/ledger/chains` — Liệt kê Main Chain và tất cả Sub-Chain.
+* POST `/api/ledger/chains/{chain_name}/create` — Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo).
+* POST `/api/ledger/chains/{chain_name}/events` — Thêm sự kiện vào Sub-Chain.
+* POST `/api/ledger/chains/{chain_name}/submit-proof` — Gửi proof từ Sub-Chain lên Main Chain.
+* GET `/api/ledger/chains/{chain_name}/stats` — Lấy thống kê chuỗi.
+* GET `/api/ledger/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false` — Lấy danh sách block (có phân trang). Nếu `resolve_cid=true`, tự động tải dữ liệu chi tiết từ IPFS.
+* GET `/api/ledger/chains/{chain_name}/blocks/{index_or_hash}` — Lấy chi tiết một block cụ thể.
+* GET `/api/ledger/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]` — Truy vết sự kiện. Nếu `resolve_cid=true`, giải mã chi tiết sự kiện từ IPFS.
 
-## Schema chính (trích từ `hierachain/api/v1/schemas.py`)
+## Schema chính (trích từ `hierachain/api/ledger/schemas.py`)
 
 * `EventRequest`
 
@@ -117,13 +117,13 @@ Giả định server đang chạy tại `http://localhost:2661`:
 ### 1. Health check
 
 ```bash
-curl -s http://localhost:2661/api/v1/health
+curl -s http://localhost:2661/api/ledger/health
 ```
 
 ### 2. Tạo Sub-Chain
 
 ```bash
-curl -X POST http://localhost:2661/api/v1/chains/supply_chain/create
+curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/create
 ```
 
 Phản hồi (201):
@@ -139,7 +139,7 @@ Phản hồi (201):
 ### 3. Thêm sự kiện vào Sub-Chain
 
 ```bash
-curl -X POST http://localhost:2661/api/v1/chains/supply_chain/events \
+curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/events \
   -H "Content-Type: application/json" \
   -d '{
         "entity_id": "PROD-001",
@@ -161,7 +161,7 @@ Phản hồi:
 ### 4. Gửi proof lên Main Chain
 
 ```bash
-curl -X POST http://localhost:2661/api/v1/chains/supply_chain/submit-proof
+curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
 ```
 
 Phản hồi:
@@ -176,7 +176,7 @@ Phản hồi:
 
 ### 5. Lấy thông tin khối (Chi tiết)
 
-**Endpoint**: `GET /api/v1/chains/{chain_name}/blocks/{index_or_hash}`
+**Endpoint**: `GET /api/ledger/chains/{chain_name}/blocks/{index_or_hash}`
 
 Lấy dữ liệu chi tiết của một khối cụ thể bằng Index (số) hoặc Hash (chuỗi).
 
@@ -186,32 +186,32 @@ Lấy dữ liệu chi tiết của một khối cụ thể bằng Index (số) h
 
 **Ví dụ**:
 ```bash
-curl -X GET "http://localhost:2661/api/v1/chains/supply_chain/blocks/10?resolve_cid=true" \
+curl -X GET "http://localhost:2661/api/ledger/chains/supply_chain/blocks/10?resolve_cid=true" \
      -H "X-API-Key: your_api_key"
 ```
 
 ### 6. Truy vết entity trên tất cả chuỗi
 
 ```bash
-curl -s "http://localhost:2661/api/v1/entities/PROD-001/trace"
+curl -s "http://localhost:2661/api/ledger/entities/PROD-001/trace"
 ```
 
 Hoặc giới hạn trong một chuỗi:
 
 ```bash
-curl -s "http://localhost:2661/api/v1/entities/PROD-001/trace?chain_name=supply_chain"
+curl -s "http://localhost:2661/api/ledger/entities/PROD-001/trace?chain_name=supply_chain"
 ```
 
 ### 6. Lấy thống kê chuỗi
 
 ```bash
-curl -s http://localhost:2661/api/v1/chains/supply_chain/stats
+curl -s http://localhost:2661/api/ledger/chains/supply_chain/stats
 ```
 
 ### 7. Lấy block theo trang
 
 ```bash
-curl -s "http://localhost:2661/api/v1/chains/supply_chain/blocks?limit=5&offset=0"
+curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&offset=0"
 ```
 
 ## Mã trạng thái & lỗi phổ biến

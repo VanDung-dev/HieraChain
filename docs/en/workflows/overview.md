@@ -33,7 +33,7 @@ This table provides a comprehensive overview of HieraChain's workflows for quick
 
 | Workflow | Group | Trigger | Output | Key Module |
 |:---------|:------|:--------|:-------|:-----------|
-| [Event Submission](./event-submission.md) | A | `POST /v1/chains/{name}/events` | Block appended to Sub-Chain | `hierarchical/sub_chain.py` |
+| [Event Submission](./event-submission.md) | A | `POST /ledger/chains/{name}/events` | Block appended to Sub-Chain | `hierarchical/sub_chain.py` |
 | [Proof Anchoring](./proof-anchoring.md) | A | Block finalized on Sub-Chain | Proof hash on Main Chain | `hierarchical/main_chain.py` |
 | [Cross-Chain 2PC](./cross-chain-2pc.md) | A | `initiate_cross_chain_transaction()` | `COMMITTED` or `ROLLED_BACK` | `hierarchical/hierarchy_manager.py` |
 | [BFT Consensus](./bft-consensus.md) | B | `HRC_CONSENSUS_TYPE=byzantine_fault_tolerant` | Block committed by 2f+1 validators | `consensus/bft/consensus.py` |
