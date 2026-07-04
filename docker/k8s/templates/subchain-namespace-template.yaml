@@ -6,7 +6,7 @@
 #   {{SUBCHAIN_ID}} - Unique identifier for the sub-chain
 #   {{NAMESPACE_PREFIX}} - Configurable prefix (default: hrc-subchain-)
 ---
-apiVersion: v1
+apiVersion: ledger
 kind: Namespace
 metadata:
   name: "{{NAMESPACE_PREFIX}}{{SUBCHAIN_ID}}"
@@ -18,7 +18,7 @@ metadata:
     environment: "{{ENVIRONMENT}}"
 ---
 # Resource Quota to limit sub-chain resource consumption
-apiVersion: v1
+apiVersion: ledger
 kind: ResourceQuota
 metadata:
   name: "{{SUBCHAIN_ID}}-quota"
@@ -36,7 +36,7 @@ spec:
     persistentvolumeclaims: "{{MAX_PVCS}}"
 ---
 # Network Policy for sub-chain isolation
-apiVersion: networking.k8s.io/v1
+apiVersion: networking.k8s.io/ledger
 kind: NetworkPolicy
 metadata:
   name: "{{SUBCHAIN_ID}}-network-policy"

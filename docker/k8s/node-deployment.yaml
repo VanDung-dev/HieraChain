@@ -1,7 +1,7 @@
 # HieraChain Node Deployments
 # Creates 4 node replicas with persistent storage and graceful shutdown
 ---
-apiVersion: apps/v1
+apiVersion: apps/ledger
 kind: Deployment
 metadata:
   name: hierachain-node1
@@ -91,7 +91,7 @@ spec:
           persistentVolumeClaim:
             claimName: hierachain-node1-data
 ---
-apiVersion: apps/v1
+apiVersion: apps/ledger
 kind: Deployment
 metadata:
   name: hierachain-node2
@@ -179,7 +179,7 @@ spec:
           persistentVolumeClaim:
             claimName: hierachain-node2-data
 ---
-apiVersion: apps/v1
+apiVersion: apps/ledger
 kind: Deployment
 metadata:
   name: hierachain-node3
@@ -267,7 +267,7 @@ spec:
           persistentVolumeClaim:
             claimName: hierachain-node3-data
 ---
-apiVersion: apps/v1
+apiVersion: apps/ledger
 kind: Deployment
 metadata:
   name: hierachain-node4

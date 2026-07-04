@@ -1,7 +1,7 @@
 # PersistentVolumeClaims for HieraChain data persistence
 # Ensures blockchain data survives pod restarts
 ---
-apiVersion: v1
+apiVersion: ledger
 kind: PersistentVolumeClaim
 metadata:
   name: hierachain-node1-data
@@ -18,7 +18,7 @@ spec:
   # For Docker Desktop, use default storage class
   # For production, specify appropriate storageClassName
 ---
-apiVersion: v1
+apiVersion: ledger
 kind: PersistentVolumeClaim
 metadata:
   name: hierachain-node2-data
@@ -33,7 +33,7 @@ spec:
     requests:
       storage: 1Gi
 ---
-apiVersion: v1
+apiVersion: ledger
 kind: PersistentVolumeClaim
 metadata:
   name: hierachain-node3-data
@@ -48,7 +48,7 @@ spec:
     requests:
       storage: 1Gi
 ---
-apiVersion: v1
+apiVersion: ledger
 kind: PersistentVolumeClaim
 metadata:
   name: hierachain-node4-data
