@@ -1,7 +1,7 @@
 # Kubernetes Manifests for HieraChain Dev/Test
 #
 # Namespace definition for isolating HieraChain resources
-apiVersion: v1
+apiVersion: ledger
 kind: Namespace
 metadata:
   name: hierachain

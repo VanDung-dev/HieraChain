@@ -2,7 +2,7 @@
 # Can impersonate any legitimate node via ROGUE_NODE_ID_OVERRIDE
 # Profile: security-test (only created when explicitly testing)
 ---
-apiVersion: apps/v1
+apiVersion: apps/ledger
 kind: Deployment
 metadata:
   name: rogue-node

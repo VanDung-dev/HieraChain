@@ -1,5 +1,5 @@
 # ConfigMap for HieraChain shared configuration
-apiVersion: v1
+apiVersion: ledger
 kind: ConfigMap
 metadata:
   name: hierachain-config
