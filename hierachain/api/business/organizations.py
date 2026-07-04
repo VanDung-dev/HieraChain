@@ -1,4 +1,4 @@
-"""API v2 — organisation management endpoints.
+"""API business — organisation management endpoints.
 
 Register and query organisations with their CA configuration.
 """
@@ -13,7 +13,7 @@ from hierachain.security.secure_logging import SecureLogger
 
 from hierachain.api.business.state import _organizations
 
-router = APIRouter(tags=["HieraChain-v2"])
+router = APIRouter(tags=["HieraChain-business"])
 api_logger = SecureLogger("hierachain.api.business")
 
 

@@ -1,4 +1,4 @@
-"""API v2 — in-memory state shared across v2 endpoint modules."""
+"""API business — in-memory state shared across business endpoint modules."""
 
 _channels: dict = {}
 _private_collections: dict = {}

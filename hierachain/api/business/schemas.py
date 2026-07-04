@@ -1,8 +1,8 @@
 """
-Pydantic schemas for API v2 requests and responses
+Pydantic schemas for API business requests and responses
 
 This module defines the data models used for validating and serializing
-API v2 requests and responses in the HieraChain system.
+API business requests and responses in the HieraChain system.
 These schemas support the new enterprise security and data isolation features.
 
 IPFS Integration:
@@ -164,7 +164,7 @@ class PrivateDataRequest(BaseModel):
         if v is not None:
             if not (v.startswith('Qm') or v.startswith('b')):
                 raise ValueError(
-                    'Invalid IPFS CID format. CID should start with "Qm" (v0) or "b" (v1)'
+                    'Invalid IPFS CID format. CID should start with "Qm" (v0) or "b" (ledger)'
                 )
             if len(v) < 46:
                 raise ValueError('Invalid IPFS CID: too short')
@@ -284,7 +284,7 @@ class ContractCreateRequest(BaseModel):
         if v is not None:
             if not (v.startswith('Qm') or v.startswith('b')):
                 raise ValueError(
-                    'Invalid IPFS CID format. CID should start with "Qm" (v0) or "b" (v1)'
+                    'Invalid IPFS CID format. CID should start with "Qm" (v0) or "b" (ledger)'
                 )
             if len(v) < 46:
                 raise ValueError('Invalid IPFS CID: too short')

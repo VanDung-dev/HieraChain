@@ -1,4 +1,4 @@
-"""API v1 — health-check and network-ping endpoints."""
+"""API Ledger — health-check and network-ping endpoints."""
 
 import time
 import uuid as uuid_lib

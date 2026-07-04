@@ -1,4 +1,4 @@
-"""API v1 — chain management endpoints.
+"""API Ledger — chain management endpoints.
 
 List chains, get chain stats, and create sub-chains.
 """

@@ -72,10 +72,10 @@ def _load_default_kubeconfig(manager: Any) -> bool:
 
 
 def _setup_k8s_api_clients(manager: Any) -> None:
-    core_v1_api = getattr(client, "CoreV1Api")
-    apps_v1_api = getattr(client, "AppsV1Api")
-    manager.k8s_client = core_v1_api()
-    manager.apps_client = apps_v1_api()
+    core_ledger_api = getattr(client, "CoreLedgerApi")
+    apps_ledger_api = getattr(client, "AppsLedgerApi")
+    manager.k8s_client = core_ledger_api()
+    manager.apps_client = apps_ledger_api()
 
 
 def _fallback_to_mock(manager: Any, warning: str | None = None, info: str | None = None) -> bool:

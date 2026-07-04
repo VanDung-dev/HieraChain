@@ -1,8 +1,8 @@
 """
-Pydantic schemas for API v1 requests and responses
+Pydantic schemas for API Ledger requests and responses
 
 This module defines the data models used for validating and serializing
-API v1 requests and responses in the HieraChain system.
+API Ledger requests and responses in the HieraChain system.
 Each schema corresponds to specific API endpoints and ensures data integrity
 and proper documentation.
 
@@ -137,10 +137,10 @@ class EventRequest(BaseModel):
     def validate_cid(cls, v: str | None) -> str | None:
         """Validate IPFS CID format."""
         if v is not None:
-            # Basic CID validation (starts with Qm for CIDv0 or b for CIDv1)
+            # Basic CID validation (starts with Qm for CIDv0 or b for CIDledger)
             if not (v.startswith('Qm') or v.startswith('b')):
                 raise ValueError(
-                    'Invalid IPFS CID format. CID should start with "Qm" (v0) or "b" (v1)'
+                    'Invalid IPFS CID format. CID should start with "Qm" (v0) or "b" (ledger)'
                 )
             if len(v) < 46:  # Minimum CID length
                 raise ValueError('Invalid IPFS CID: too short')

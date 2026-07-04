@@ -1,4 +1,4 @@
-"""API v2 — private data endpoints.
+"""API business — private data endpoints.
 
 Store and retrieve private data within collections,
 with optional off-chain (IPFS) storage.
@@ -15,7 +15,7 @@ from hierachain.security.secure_logging import SecureLogger
 from hierachain.api.storage.endpoint_helpers import process_private_data_value
 from hierachain.api.storage import IPFSError
 
-router = APIRouter(tags=["HieraChain-v2"])
+router = APIRouter(tags=["HieraChain-business"])
 api_logger = SecureLogger("hierachain.api.business")
 
 

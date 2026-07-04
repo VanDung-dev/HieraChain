@@ -1,4 +1,4 @@
-"""API v1 — block retrieval endpoints.
+"""API Ledger — block retrieval endpoints.
 
 Pagination and detail lookup for blocks across chains,
 with optional IPFS CID resolution.

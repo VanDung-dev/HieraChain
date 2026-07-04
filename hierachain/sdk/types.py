@@ -98,7 +98,7 @@ class EventResult:
 
 @dataclass
 class NodeStatus:
-    """Status of the HieraChain node (API v3)."""
+    """Status of the HieraChain node (API admin)."""
     status: str
     version: str
     chains_active: int

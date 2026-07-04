@@ -1,4 +1,4 @@
-"""API v1 — proof submission endpoint.
+"""API Ledger — proof submission endpoint.
 
 Submit cryptographic proofs from a sub-chain to the main chain.
 """
