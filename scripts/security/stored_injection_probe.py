@@ -70,7 +70,7 @@ STORE_ENDPOINTS = [
     {
         "store": {
             "method": "POST",
-            "endpoint": "/api/v1/chains/test/events",
+            "endpoint": "/api/ledger/chains/test/events",
             "body_template": {
                 "entity_id": "{payload}",
                 "event_type": "stored_test",
@@ -79,14 +79,14 @@ STORE_ENDPOINTS = [
         },
         "retrieve": {
             "method": "GET",
-            "endpoint": "/api/v1/chains/test",
+            "endpoint": "/api/ledger/chains/test",
         }
     },
     # v2 channel endpoints
     {
         "store": {
             "method": "POST",
-            "endpoint": "/api/v2/channels",
+            "endpoint": "/api/business/channels",
             "body_template": {
                 "channel_id": "test-{idx}",
                 "channel_name": "{payload}",
@@ -96,14 +96,14 @@ STORE_ENDPOINTS = [
         },
         "retrieve": {
             "method": "GET",
-            "endpoint": "/api/v2/channels/test-{idx}",
+            "endpoint": "/api/business/channels/test-{idx}",
         }
     },
     # v2 organization endpoints  
     {
         "store": {
             "method": "POST",
-            "endpoint": "/api/v2/organizations",
+            "endpoint": "/api/business/organizations",
             "body_template": {
                 "org_id": "test-org-{idx}",
                 "org_name": "{payload}",
@@ -112,14 +112,14 @@ STORE_ENDPOINTS = [
         },
         "retrieve": {
             "method": "GET",
-            "endpoint": "/api/v2/organizations/test-org-{idx}",
+            "endpoint": "/api/business/organizations/test-org-{idx}",
         }
     },
     # v2 contract endpoints
     {
         "store": {
             "method": "POST",
-            "endpoint": "/api/v2/contracts",
+            "endpoint": "/api/business/contracts",
             "body_template": {
                 "contract_id": "contract-{idx}",
                 "version": "1.0",
@@ -129,7 +129,7 @@ STORE_ENDPOINTS = [
         },
         "retrieve": {
             "method": "POST",
-            "endpoint": "/api/v2/contracts/execute",
+            "endpoint": "/api/business/contracts/execute",
             "body_template": {
                 "contract_id": "contract-{idx}",
                 "event": {"event": "test", "entity_id": "e1"},

@@ -28,7 +28,7 @@ class BusinessLogicProbe(BaseProbe):
         ts = int(time.time())
         channel_id = f"test-channel-{ts}"
         flow_name = "Channel -> Collection Flow"
-        result = ProbeResult(flow_name, "/api/v2/channels")
+        result = ProbeResult(flow_name, "/api/business/channels")
         
         try:
             # Step 1: Create Channel
@@ -42,7 +42,7 @@ class BusinessLogicProbe(BaseProbe):
                     "endorsement": "MAJORITY"
                 }
             }
-            resp1 = await client.post(f"{self.base_url}/api/v2/channels", json=channel_data, headers=headers)
+            resp1 = await client.post(f"{self.base_url}/api/business/channels", json=channel_data, headers=headers)
             
             if resp1.status_code not in [200, 201]:
                 result.add_finding("high", f"Step 1 Failed: Create Channel returned {resp1.status_code}")
@@ -57,7 +57,7 @@ class BusinessLogicProbe(BaseProbe):
                 "config": {"encryption": "AES"}
             }
             resp2 = await client.post(
-                f"{self.base_url}/api/v2/channels/{channel_id}/private-collections",
+                f"{self.base_url}/api/business/channels/{channel_id}/private-collections",
                 json=collection_data,
                 headers=headers
             )
@@ -67,7 +67,7 @@ class BusinessLogicProbe(BaseProbe):
             
             # Step 3: Verify Integrity (Simulated)
             resp3 = await client.post(
-                f"{self.base_url}/api/v2/channels/NON_EXISTENT_CHANNEL/private-collections",
+                f"{self.base_url}/api/business/channels/NON_EXISTENT_CHANNEL/private-collections",
                 json=collection_data,
                 headers=headers
             )

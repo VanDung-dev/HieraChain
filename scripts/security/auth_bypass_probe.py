@@ -19,14 +19,14 @@ from .base_probe import BaseProbe, ProbeResult, parse_args
 # Protected endpoints to test (both v1 and v2)
 PROTECTED_ENDPOINTS = [
     # API v1
-    ("GET", "/api/v1/chains"),
-    ("GET", "/api/v1/health"),
-    ("POST", "/api/v1/chains/test/events"),
+    ("GET", "/api/ledger/chains"),
+    ("GET", "/api/ledger/health"),
+    ("POST", "/api/ledger/chains/test/events"),
     # API v2
-    ("GET", "/api/v2/health"),
-    ("GET", "/api/v2/channels/test-channel"),
-    ("POST", "/api/v2/channels"),
-    ("POST", "/api/v2/organizations"),
+    ("GET", "/api/business/health"),
+    ("GET", "/api/business/channels/test-channel"),
+    ("POST", "/api/business/channels"),
+    ("POST", "/api/business/organizations"),
 ]
 
 # Bypass techniques to try
@@ -106,13 +106,13 @@ class AuthBypassProbe(BaseProbe):
         """Check if authentication is currently enabled."""
         result = ProbeResult(
             name="auth_status_check",
-            endpoint="/api/v1/health"
+            endpoint="/api/ledger/health"
         )
         
         try:
             # Try without any auth
             start = time.time()
-            response = await client.get("/api/v1/health")
+            response = await client.get("/api/ledger/health")
             result.elapsed_ms = (time.time() - start) * 1000
             result.status_code = response.status_code
             
@@ -208,14 +208,14 @@ class QueryStringAuthProbe(BaseProbe):
         ) as client:
             result = ProbeResult(
                 name="query_string_auth",
-                endpoint="/api/v1/health"
+                endpoint="/api/ledger/health"
             )
             
             try:
                 # Try API key in query string
                 start = time.time()
                 response = await client.get(
-                    "/api/v1/health",
+                    "/api/ledger/health",
                     params={"apikey": "test-key-123"}
                 )
                 result.elapsed_ms = (time.time() - start) * 1000

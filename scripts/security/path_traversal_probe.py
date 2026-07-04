@@ -64,7 +64,7 @@ class PathTraversalProbe(BaseProbe):
         payloads = _get_traversal_payloads()
 
         for payload in payloads:
-            endpoint = f"/api/v2/channels/{payload}"
+            endpoint = f"/api/business/channels/{payload}"
             result = ProbeResult("Path Traversal in URL", endpoint)
 
             try:

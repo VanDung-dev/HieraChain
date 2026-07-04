@@ -31,11 +31,11 @@ DANGEROUS_HEADERS = [
 TEST_ENDPOINTS = [
     "/",
     "/docs",
-    "/api/v1/health",
-    "/api/v1/chains",
-    "/api/v2/health",
-    "/api/v2/channels/test-channel",
-    "/api/v2/organizations/test-org",
+    "/api/ledger/health",
+    "/api/ledger/chains",
+    "/api/business/health",
+    "/api/business/channels/test-channel",
+    "/api/business/organizations/test-org",
 ]
 
 

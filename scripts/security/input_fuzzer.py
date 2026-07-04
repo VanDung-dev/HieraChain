@@ -74,17 +74,17 @@ FUZZ_TARGETS = [
     # API v1
     {
         "method": "GET",
-        "endpoint": "/api/v1/chains/{param}",
+        "endpoint": "/api/ledger/chains/{param}",
         "param_location": "path",
     },
     {
         "method": "GET",
-        "endpoint": "/api/v1/trace/{param}",
+        "endpoint": "/api/ledger/trace/{param}",
         "param_location": "path",
     },
     {
         "method": "POST",
-        "endpoint": "/api/v1/chains/test/events",
+        "endpoint": "/api/ledger/chains/test/events",
         "param_location": "body",
         "body_template": {
             "entity_id": "{param}",
@@ -95,17 +95,17 @@ FUZZ_TARGETS = [
     # API v2
     {
         "method": "GET",
-        "endpoint": "/api/v2/channels/{param}",
+        "endpoint": "/api/business/channels/{param}",
         "param_location": "path",
     },
     {
         "method": "GET",
-        "endpoint": "/api/v2/organizations/{param}",
+        "endpoint": "/api/business/organizations/{param}",
         "param_location": "path",
     },
     {
         "method": "POST",
-        "endpoint": "/api/v2/channels",
+        "endpoint": "/api/business/channels",
         "param_location": "body",
         "body_template": {
             "channel_id": "{param}",
@@ -264,13 +264,13 @@ class InputFuzzerProbe(BaseProbe):
         
         result = ProbeResult(
             name="json_bomb_nested",
-            endpoint="/api/v1/chains/test/events"
+            endpoint="/api/ledger/chains/test/events"
         )
         
         try:
             start = time.time()
             response = await client.post(
-                "/api/v1/chains/test/events",
+                "/api/ledger/chains/test/events",
                 headers=self.get_headers(),
                 json={
                     "entity_id": "test",
@@ -307,14 +307,14 @@ class InputFuzzerProbe(BaseProbe):
         # Oversized payload
         result2 = ProbeResult(
             name="json_bomb_oversized",
-            endpoint="/api/v1/chains/test/events"
+            endpoint="/api/ledger/chains/test/events"
         )
         
         try:
             large_data = "X" * (1024 * 1024)  # 1MB
             start = time.time()
             response = await client.post(
-                "/api/v1/chains/test/events",
+                "/api/ledger/chains/test/events",
                 headers=self.get_headers(),
                 json={
                     "entity_id": "test",

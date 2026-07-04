@@ -92,7 +92,7 @@ class ErrorDisclosureProbe(BaseProbe):
 
     async def check_404_handling(self, client):
         """Check how the server handles non-existent resources."""
-        endpoint = "/api/v1/non_existent_resource_xyz_123"
+        endpoint = "/api/ledger/non_existent_resource_xyz_123"
         result = ProbeResult("404 Error Handling", endpoint)
         
         try:
@@ -115,7 +115,7 @@ class ErrorDisclosureProbe(BaseProbe):
     async def check_422_validation(self, client):
         """Check 422 validation errors for sensitive info."""
         # Endpoint that expects specific data (e.g., POST /channels)
-        endpoint = "/api/v2/channels"
+        endpoint = "/api/business/channels"
         result = ProbeResult("422 Validation Error", endpoint)
         
         try:
@@ -139,7 +139,7 @@ class ErrorDisclosureProbe(BaseProbe):
 
     async def check_500_method_not_allowed(self, client):
         """Trigger potential ledger errors (like 405) to check handling."""
-        endpoint = "/api/v2/channels" # Supports POST, GET
+        endpoint = "/api/business/channels" # Supports POST, GET
         result = ProbeResult("Method Not Allowed Handling", endpoint)
         
         try:
