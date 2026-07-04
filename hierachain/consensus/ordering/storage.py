@@ -49,6 +49,7 @@ def _block_from_dict(data: dict[str, Any]) -> Block:
     block.signature = data.get("signature")
     block.merkle_root = data.get("merkle_root") or ""
     block._events = convert_events_to_arrow(data["events"])
+    block._cached_events = None
 
     # Recompute hash and compare with stored hash.
     # Hash includes merkle_root, so verifying hash also protects event integrity.
