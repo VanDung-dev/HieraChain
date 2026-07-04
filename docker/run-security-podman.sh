@@ -99,7 +99,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         NODES_READY=true
         for node in node1 node2 node3 node4; do
             if podman compose -f "$COMPOSE_FILE" exec -T "$node" \
-                python -c "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)" 2>/dev/null; then
+                python -c "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)" 2>/dev/null; then
                 HEALTHY=$((HEALTHY + 1))
             fi
         done
@@ -136,7 +136,7 @@ echo "[5/6] Waiting for rogue-node health..."
 MAX_RETRIES=30
 RETRY_COUNT=0
 until podman compose -f "$COMPOSE_FILE" exec -T rogue-node \
-    python -c "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)" 2>/dev/null; do
+    python -c "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)" 2>/dev/null; do
     sleep 3
     RETRY_COUNT=$((RETRY_COUNT + 1))
     if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then

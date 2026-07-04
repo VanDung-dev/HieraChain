@@ -182,7 +182,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             python -c "
 import urllib.request
 try:
-    resp = urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)
+    resp = urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)
     print(resp.read().decode())
 except Exception as e:
     print('error: ' + str(e))

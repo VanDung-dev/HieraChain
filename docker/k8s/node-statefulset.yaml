@@ -133,7 +133,7 @@ spec:
               mountPath: /app/log
           livenessProbe:
             httpGet:
-              path: /api/v1/health
+              path: /api/ledger/health
               port: api-port
             initialDelaySeconds: 15
             periodSeconds: 15
@@ -141,7 +141,7 @@ spec:
             failureThreshold: 5
           readinessProbe:
             httpGet:
-              path: /api/v1/health
+              path: /api/ledger/health
               port: api-port
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -149,7 +149,7 @@ spec:
             failureThreshold: 5
           startupProbe:
             httpGet:
-              path: /api/v1/health
+              path: /api/ledger/health
               port: api-port
             initialDelaySeconds: 10
             periodSeconds: 10

@@ -40,7 +40,7 @@ services:
       ipfs-node1:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -79,7 +79,7 @@ services:
       ipfs-node2:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -118,7 +118,7 @@ services:
       ipfs-node3:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -157,7 +157,7 @@ services:
       ipfs-node4:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -315,7 +315,7 @@ services:
       - ./nodes:/app/all-identities:ro
       - ../log/rogue-node:/app/log
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
       timeout: 5s
       retries: 3

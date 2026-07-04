@@ -67,7 +67,7 @@ data:
 
         # Dynamic Diagnostic Bridge
         location ~ ^/${EXPLORER_TOKEN}/diag/(?<target_node>[^/]+) {
-            proxy_pass http://$backend_node.hierachain-node-headless.hierachain.svc.cluster.local:2661/api/v1/health;
+            proxy_pass http://$backend_node.hierachain-node-headless.hierachain.svc.cluster.local:2661/api/ledger/health;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_next_upstream error timeout http_502 http_503 http_504;

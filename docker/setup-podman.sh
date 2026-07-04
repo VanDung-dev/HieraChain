@@ -136,7 +136,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             GATEWAY_NOTIFIED=true
         fi
 
-        if curl -s http://localhost:2660/api/v1/health | grep -q "healthy"; then
+        if curl -s http://localhost:2660/api/ledger/health | grep -q "healthy"; then
             echo "  ✅ HieraChain Cluster is READY"
             HEALTHY=true
             break

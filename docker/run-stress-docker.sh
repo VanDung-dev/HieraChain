@@ -83,7 +83,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         NODES_READY=true
         for node in node1 node2 node3 node4; do
             if docker compose -f "$COMPOSE_FILE" exec -T "$node" \
-                python -c "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/v1/health', timeout=5)" 2>/dev/null; then
+                python -c "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)" 2>/dev/null; then
                 HEALTHY=$((HEALTHY + 1))
             fi
         done
