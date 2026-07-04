@@ -16,13 +16,13 @@ import httpx
 from .base_probe import BaseProbe, ProbeResult, parse_args
 
 
-# Protected endpoints to test (both v1 and v2)
+# Protected endpoints to test (both Ledger and business)
 PROTECTED_ENDPOINTS = [
-    # API v1
+    # API Ledger
     ("GET", "/api/ledger/chains"),
     ("GET", "/api/ledger/health"),
     ("POST", "/api/ledger/chains/test/events"),
-    # API v2
+    # API business
     ("GET", "/api/business/health"),
     ("GET", "/api/business/channels/test-channel"),
     ("POST", "/api/business/channels"),

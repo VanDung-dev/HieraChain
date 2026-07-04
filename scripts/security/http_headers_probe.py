@@ -27,7 +27,7 @@ DANGEROUS_HEADERS = [
     "x-aspnet-version", # ASP.NET version
 ]
 
-# Test endpoints (both v1 and v2)
+# Test endpoints (both Ledger and business)
 TEST_ENDPOINTS = [
     "/",
     "/docs",
