@@ -140,7 +140,7 @@ def demonstrate_blockchain_integration(cid, nonce):
         "event": "cargo_manifest_attached",
         "details_cid": cid,
         "details_nonce": nonce,
-        "details_metadata": {"original_filename": "manifest_v1.json"}
+        "details_metadata": {"original_filename": "manifest_ledger.json"}
     }
 
     # Register entity first
