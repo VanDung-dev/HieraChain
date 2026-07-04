@@ -130,11 +130,11 @@ class LogLevelTestProbe(BaseProbe):
             
     async def test_404_error_disclosure(self, client):
         """Test 404 error message for information leakage."""
-        result = ProbeResult("404 Error Disclosure", "/api/v1/nonexistent_endpoint_xyz")
+        result = ProbeResult("404 Error Disclosure", "/api/ledger/nonexistent_endpoint_xyz")
         
         try:
             response = await client.get(
-                f"{self.base_url}/api/v1/nonexistent_endpoint_xyz",
+                f"{self.base_url}/api/ledger/nonexistent_endpoint_xyz",
                 headers=self.get_headers()
             )
             result.status_code = response.status_code
@@ -148,7 +148,7 @@ class LogLevelTestProbe(BaseProbe):
     
     async def test_validation_error_disclosure(self, client):
         """Test validation error messages for excessive detail."""
-        result = ProbeResult("Validation Error Disclosure", "/api/v2/channels")
+        result = ProbeResult("Validation Error Disclosure", "/api/business/channels")
         
         try:
             # Send invalid data types
@@ -159,7 +159,7 @@ class LogLevelTestProbe(BaseProbe):
             }
             
             response = await client.post(
-                f"{self.base_url}/api/v2/channels",
+                f"{self.base_url}/api/business/channels",
                 headers=self.get_headers(),
                 json=invalid_payload
             )
@@ -181,12 +181,12 @@ class LogLevelTestProbe(BaseProbe):
     
     async def test_malformed_json_disclosure(self, client):
         """Test malformed JSON error handling."""
-        result = ProbeResult("Malformed JSON Disclosure", "/api/v2/channels")
+        result = ProbeResult("Malformed JSON Disclosure", "/api/business/channels")
         
         try:
             # Send invalid JSON
             response = await client.post(
-                f"{self.base_url}/api/v2/channels",
+                f"{self.base_url}/api/business/channels",
                 headers={**self.get_headers(), "Content-Type": "application/json"},
                 content="{invalid json: 'syntax error"
             )
@@ -212,13 +212,13 @@ class LogLevelTestProbe(BaseProbe):
         # Various payloads that might trigger internal errors
         error_triggers = [
             # Deeply nested JSON
-            ("/api/v2/channels", "POST", {"a": {"b": {"c": {"d": {"e": {"f": "deep"}}}}}}, "deeply nested"),
+            ("/api/business/channels", "POST", {"a": {"b": {"c": {"d": {"e": {"f": "deep"}}}}}}, "deeply nested"),
             # Large array
-            ("/api/v2/channels", "POST", {"items": list(range(10000))}, "large array"),
+            ("/api/business/channels", "POST", {"items": list(range(10000))}, "large array"),
             # Very long string
-            ("/api/v2/channels", "POST", {"name": "x" * 100000}, "very long string"),
+            ("/api/business/channels", "POST", {"name": "x" * 100000}, "very long string"),
             # Null in object
-            ("/api/v2/channels", "POST", {"name": None, "description": None}, "null values"),
+            ("/api/business/channels", "POST", {"name": None, "description": None}, "null values"),
         ]
         
         for endpoint, method, payload, description in error_triggers:
@@ -251,7 +251,7 @@ class LogLevelTestProbe(BaseProbe):
     
     async def test_type_confusion_error(self, client):
         """Test type confusion scenarios for error messages."""
-        result = ProbeResult("Type Confusion Disclosure", "/api/v2/channels")
+        result = ProbeResult("Type Confusion Disclosure", "/api/business/channels")
         
         type_confusion_payloads = [
             # String where int expected
@@ -267,7 +267,7 @@ class LogLevelTestProbe(BaseProbe):
         for payload in type_confusion_payloads:
             try:
                 response = await client.post(
-                    f"{self.base_url}/api/v2/channels",
+                    f"{self.base_url}/api/business/channels",
                     headers=self.get_headers(),
                     json=payload
                 )

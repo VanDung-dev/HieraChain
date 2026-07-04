@@ -17,7 +17,7 @@ class JsonBombProbe(BaseProbe):
 
     async def check_deeply_nested_json(self, client):
         """Send deeply nested JSON to check for RecursionError or stack overflow."""
-        endpoint = "/api/v2/channels" # A generic POST endpoint
+        endpoint = "/api/business/channels" # A generic POST endpoint
         result = ProbeResult("Deeply Nested JSON", endpoint)
         
         depth = 2000 # Python default recursion limit is usually 1000
@@ -50,7 +50,7 @@ class JsonBombProbe(BaseProbe):
 
     async def check_large_array_json(self, client):
         """Send JSON with a massive array."""
-        endpoint = "/api/v2/channels"
+        endpoint = "/api/business/channels"
         result = ProbeResult("Large JSON Array", endpoint)
         
         # Create a large list

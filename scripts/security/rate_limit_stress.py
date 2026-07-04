@@ -23,7 +23,7 @@ class RateLimitStressProbe(BaseProbe):
         print(f"[*] Configuration: {self.total_requests} requests, concurrency={self.concurrency}", file=sys.stderr)
         
         # Test endpoint
-        endpoint = "/api/v2/health" # Lightweight endpoint
+        endpoint = "/api/business/health" # Lightweight endpoint
         result = ProbeResult("Rate Limit Check", endpoint)
         
         status_counter = Counter()

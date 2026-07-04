@@ -16,7 +16,7 @@ class OversizedPayloadProbe(BaseProbe):
 
     async def check_large_body(self, client, size_mb: int):
         """Send a large dummy body."""
-        endpoint = "/api/v2/channels"
+        endpoint = "/api/business/channels"
         result = ProbeResult(f"Oversized Payload ({size_mb}MB)", endpoint)
         
         # Generator for streaming upload if needed, but httpx handles bytes easily

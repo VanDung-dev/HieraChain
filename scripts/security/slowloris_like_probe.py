@@ -23,7 +23,7 @@ def _initialize_sockets(parsed, host, port, count):
                 ctx.check_hostname = False
                 ctx.verify_mode = ssl.CERT_NONE
                 s = ctx.wrap_socket(s, server_hostname=host)
-            s.send(b"POST /api/v2/health HTTP/1.1\r\n")
+            s.send(b"POST /api/business/health HTTP/1.1\r\n")
             s.send(f"Host: {host}\r\n".encode("utf-8"))
             s.send(
                 b"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"

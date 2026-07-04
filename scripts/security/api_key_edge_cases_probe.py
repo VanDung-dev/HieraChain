@@ -82,7 +82,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
             
     async def test_non_existent_key(self, client):
         """Test with a completely non-existent API key."""
-        endpoint = "/api/v1/channels"
+        endpoint = "/api/ledger/channels"
         result = ProbeResult("Non-Existent API Key", endpoint)
         
         # Generate a fake key that looks valid but doesn't exist
@@ -107,7 +107,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
     
     async def test_malformed_keys(self, client):
         """Test with various malformed API key formats."""
-        endpoint = "/api/v1/channels"
+        endpoint = "/api/ledger/channels"
         
         malformed_keys = [
             ("short_key", "abc"),  # Too short
@@ -138,7 +138,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
     
     async def test_empty_key(self, client):
         """Test with empty API key."""
-        endpoint = "/api/v1/channels"
+        endpoint = "/api/ledger/channels"
         result = ProbeResult("Empty API Key", endpoint)
         
         try:
@@ -159,7 +159,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
     
     async def test_very_long_key(self, client):
         """Test with abnormally long API key."""
-        endpoint = "/api/v1/channels"
+        endpoint = "/api/ledger/channels"
         result = ProbeResult("Very Long API Key", endpoint)
         
         # 10KB key
@@ -189,7 +189,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
     
     async def test_special_chars_key(self, client):
         """Test with special characters in API key."""
-        endpoint = "/api/v1/channels"
+        endpoint = "/api/ledger/channels"
         result = ProbeResult("Special Characters Key", endpoint)
         
         # Key with SQL injection and XSS payloads
@@ -217,7 +217,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
     
     async def test_unicode_key(self, client):
         """Test with Unicode characters in API key."""
-        endpoint = "/api/v1/channels"
+        endpoint = "/api/ledger/channels"
         result = ProbeResult("Unicode API Key", endpoint)
         
         unicode_key = "hrc_тест_यूनिकोड_测试_🔐 vãi chưa =)))"
@@ -283,7 +283,7 @@ class APIKeyEdgeCasesProbe(BaseProbe):
 
     async def test_case_sensitivity(self, client):
         """Test whether API key validation is case-sensitive."""
-        endpoint = "/api/v1/channels"
+        endpoint = "/api/ledger/channels"
         result = ProbeResult("Case Sensitivity Check", endpoint)
 
         if not self.api_key:
@@ -306,18 +306,18 @@ class APIKeyEdgeCasesProbe(BaseProbe):
 
     async def test_scope_bypass_attempts(self, client):
         """Test attempts to bypass scope/permission restrictions."""
-        result = ProbeResult("Scope Bypass Attempts", "/api/v2/admin/*")
+        result = ProbeResult("Scope Bypass Attempts", "/api/business/admin/*")
         
         # Try accessing potentially restricted endpoints with various techniques
         bypass_attempts = [
             # Path traversal in endpoint
-            ("/api/v1/../v2/admin/status", "path traversal"),
+            ("/api/ledger/../v2/admin/status", "path traversal"),
             # URL encoding
-            ("/api/v1/%2e%2e/admin", "URL encoded traversal"),
+            ("/api/ledger/%2e%2e/admin", "URL encoded traversal"),
             # HTTP parameter pollution
-            ("/api/v1/channels?admin=true", "parameter injection"),
+            ("/api/ledger/channels?admin=true", "parameter injection"),
             # Header injection attempt
-            ("/api/v1/channels", "header injection X-Original-URL"),
+            ("/api/ledger/channels", "header injection X-Original-URL"),
         ]
         
         for endpoint, technique in bypass_attempts:

@@ -16,7 +16,7 @@ class SSRFProbe(BaseProbe):
 
     async def check_ssrf_contract(self, client):
         """Check SSRF in Contract creation fields."""
-        endpoint = "/api/v2/contracts"
+        endpoint = "/api/business/contracts"
         
         ssrf_payloads = [
             "http://127.0.0.1:80",
