@@ -1,25 +1,25 @@
 ---
-title: "API v2"
-description: "API v2 endpoint summary, main schemas, and curl examples — aligned with hierachain/api/v2/*."
+title: "API Business"
+description: "API business endpoint summary, main schemas, and curl examples — aligned with hierachain/api/business/*."
 icon: material/numeric-2-circle
 ---
 
-# API v2
+# API Business
 
-API v2 extends capabilities for working with channels, private data, domain contracts, and organizations.
+API Business extends capabilities for working with channels, private data, domain contracts, and organizations.
 
 ## Source Code Components
 
-* Router/Endpoints: `hierachain/api/v2/endpoints.py`
-* (Optional) Schemas: `hierachain/api/v2/schemas.py`
-* Server integration: `hierachain/api/server.py` (registers v2 router)
+* Router/Endpoints: `hierachain/api/business/endpoints.py`
+* (Optional) Schemas: `hierachain/api/business/schemas.py`
+* Server integration: `hierachain/api/server.py` (registers Business router)
 
 ## Main Endpoints (from code and tests)
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant API as API v2
+    participant API as API business
     participant Channel as Channel Manager
     participant Store as Private Store
 
@@ -40,11 +40,11 @@ sequenceDiagram
     API-->>User: Result
 ```
 
-* `GET  /api/v2/health` — service health check.
-* `POST /api/v2/channels` — create a channel.
-* `GET  /api/v2/channels/{channel_id}` — get channel info.
-* `POST /api/v2/channels/{channel_id}/private-collections` — create a private data collection.
-* `POST /api/v2/private-data` — Write private data (Supports raw `value` or `value_cid` IPFS reference).
+* `GET  /api/business/health` — service health check.
+* `POST /api/business/channels` — create a channel.
+* `GET  /api/business/channels/{channel_id}` — get channel info.
+* `POST /api/business/channels/{channel_id}/private-collections` — create a private data collection.
+* `POST /api/business/private-data` — Write private data (Supports raw `value` or `value_cid` IPFS reference).
 
     * `value_nonce: str | None`
     * `event_metadata: dict[str, Any]` (Entity ID, Event Type, Timestamp)
@@ -58,36 +58,36 @@ sequenceDiagram
     * `implementation_nonce: str | None`
     * `metadata: dict[str, Any]` (Domain, Owner, Endorsement Policy)
     
-* `POST /api/v2/contracts` — Register a contract (Supports raw `implementation` or `implementation_cid` IPFS reference).
-* `POST /api/v2/contracts/execute` — execute a contract.
-* `POST /api/v2/organizations` — register an organization.
+* `POST /api/business/contracts` — Register a contract (Supports raw `implementation` or `implementation_cid` IPFS reference).
+* `POST /api/business/contracts/execute` — execute a contract.
+* `POST /api/business/organizations` — register an organization.
 
-Additional note: some test/instrumentation scenarios in `tests/integration/api_v2/test_api_v2.py` and `scripts/security/*` use the above endpoints for security testing and behavior verification.
+Additional note: some test/instrumentation scenarios in `tests/integration/api_business/test_api_business.py` and `scripts/security/*` use the above endpoints for security testing and behavior verification.
 
 ## Curl Examples
 
 ```bash
 # Health
-curl -s http://localhost:2661/api/v2/health
+curl -s http://localhost:2661/api/business/health
 
 # Create channel
-curl -s -X POST http://localhost:2661/api/v2/channels \
+curl -s -X POST http://localhost:2661/api/business/channels \
   -H 'Content-Type: application/json' \
   -d '{"name": "test_channel"}'
 
 # Create private collection for channel
 curl -s -X POST \
-  http://localhost:2661/api/v2/channels/test_channel/private-collections \
+  http://localhost:2661/api/business/channels/test_channel/private-collections \
   -H 'Content-Type: application/json' \
   -d '{"collection": "sensitive_docs"}'
 
 # Write private data
-curl -s -X POST http://localhost:2661/api/v2/private-data \
+curl -s -X POST http://localhost:2661/api/business/private-data \
   -H 'Content-Type: application/json' \
   -d '{"channel": "test_channel", "collection": "sensitive_docs", "key": "doc-001", "value": "..."}'
 
 # Register & execute domain contract
-curl -s -X POST http://localhost:2661/api/v2/contracts \
+curl -s -X POST http://localhost:2661/api/business/contracts \
   -H 'Content-Type: application/json' \
   -d '{
         "contract_id": "quality_control", 
@@ -96,7 +96,7 @@ curl -s -X POST http://localhost:2661/api/v2/contracts \
         "metadata": {"domain": "mfg"}
       }'
 
-curl -s -X POST http://localhost:2661/api/v2/contracts/execute \
+curl -s -X POST http://localhost:2661/api/business/contracts/execute \
   -H 'Content-Type: application/json' \
   -d '{
         "contract_id": "quality_control", 
@@ -105,7 +105,7 @@ curl -s -X POST http://localhost:2661/api/v2/contracts/execute \
       }'
 
 # Organization
-curl -s -X POST http://localhost:2661/api/v2/organizations -H 'Content-Type: application/json' -d '{"org_id": "orgA", "name": "Org A"}'
+curl -s -X POST http://localhost:2661/api/business/organizations -H 'Content-Type: application/json' -d '{"org_id": "orgA", "name": "Org A"}'
 ```
 
 If API key authentication is enabled (production), add the header per `settings.API_KEY_NAME` (default `X-API-Key`).
@@ -118,6 +118,6 @@ If API key authentication is enabled (production), add the header per `settings.
 
 ## Related
 
-* API v1: [API v1](api-v1.md)
+* API Ledger: [API Ledger](api-ledger.md)
 * Security Architecture: [Security (in-depth)](../architecture/security.md)
 * Modules: [API](../modules/api.md)

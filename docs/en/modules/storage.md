@@ -4,7 +4,7 @@ description: "Multi-tier storage system: World State, SQL Persistence, Redis Ind
 icon: material/database
 ---
 
-# Storage Module (`hierachain/storage/*`)
+# Storage Module (`hierachain/adapters/database/*`)
 
 ## Overview
 
@@ -32,7 +32,7 @@ HieraChain divides storage into two main layers to optimize between persistence 
 
     ---
 
-    __File__: `storage/sql_backend.py`, `adapters/database/*`, `adapters/storage/*`
+    __File__: `adapters/database/sqlite_adapter.py`, `adapters/database/*`
 
     * **SQL Backend**: Durable storage for blocks and events (SQLite via `sqlite_adapter.py`).
     * **Redis Adapter**: Optimized for entity indexing.

@@ -1,14 +1,14 @@
 ---
-title: API v1
-description: "HieraChain REST API v1 documentation: endpoints, schema, request/response examples, and error cases."
+title: API Ledger
+description: "HieraChain REST API Ledger documentation: endpoints, schema, request/response examples, and error cases."
 icon: material/numeric-1-circle
 ---
 
-# API v1
+# API Ledger
 
 ## Purpose
 
-Describes the REST endpoints in API v1 used to interact with HieraChain: chain management, event recording, proof submission, entity tracing, statistics, and block retrieval.
+Describes the REST endpoints in API Ledger used to interact with HieraChain: chain management, event recording, proof submission, entity tracing, statistics, and block retrieval.
 
 #### Appendix: Event Submission with IPFS Example
 
@@ -18,7 +18,7 @@ When enterprises need to store large files (PDF contracts, product images) witho
 2. **Step 2**: Submit the event to HieraChain with `details_cid`.
 
 ```bash
-curl -X POST "http://localhost:2661/api/v1/chains/supply_chain/events" \
+curl -X POST "http://localhost:2661/api/ledger/chains/supply_chain/events" \
      -H "Content-Type: application/json" \
      -H "X-API-Key: your_api_key" \
      -d '{
@@ -36,7 +36,7 @@ This data will be integrity-guaranteed by HieraChain through hash chaining, whil
 ```mermaid
 sequenceDiagram
     participant Client
-    participant API as API v1
+    participant API as API Ledger
     participant Sub as Sub-Chain
     participant Main as Main Chain
 
@@ -56,17 +56,17 @@ sequenceDiagram
     API-->>Client: 200 OK (Proof ID)
 ```
 
-* GET `/api/v1/health` — Health check.
-* GET `/api/v1/chains` — List Main Chain and all Sub-Chains.
-* POST `/api/v1/chains/{chain_name}/create` — Create a new Sub-Chain (auto-creates Main Chain if not exists).
-* POST `/api/v1/chains/{chain_name}/events` — Add an event to a Sub-Chain.
-* POST `/api/v1/chains/{chain_name}/submit-proof` — Submit proof from Sub-Chain to Main Chain.
-* GET `/api/v1/chains/{chain_name}/stats` — Get chain statistics.
-* GET `/api/v1/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false` — Get block list (paginated). If `resolve_cid=true`, automatically load detailed data from IPFS.
-* GET `/api/v1/chains/{chain_name}/blocks/{index_or_hash}` — Get details of a specific block.
-* GET `/api/v1/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]` — Trace events. If `resolve_cid=true`, decrypt event details from IPFS.
+* GET `/api/ledger/health` — Health check.
+* GET `/api/ledger/chains` — List Main Chain and all Sub-Chains.
+* POST `/api/ledger/chains/{chain_name}/create` — Create a new Sub-Chain (auto-creates Main Chain if not exists).
+* POST `/api/ledger/chains/{chain_name}/events` — Add an event to a Sub-Chain.
+* POST `/api/ledger/chains/{chain_name}/submit-proof` — Submit proof from Sub-Chain to Main Chain.
+* GET `/api/ledger/chains/{chain_name}/stats` — Get chain statistics.
+* GET `/api/ledger/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false` — Get block list (paginated). If `resolve_cid=true`, automatically load detailed data from IPFS.
+* GET `/api/ledger/chains/{chain_name}/blocks/{index_or_hash}` — Get details of a specific block.
+* GET `/api/ledger/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]` — Trace events. If `resolve_cid=true`, decrypt event details from IPFS.
 
-## Main Schemas (from `hierachain/api/v1/schemas.py`)
+## Main Schemas (from `hierachain/api/ledger/schemas.py`)
 
 * `EventRequest`
 
@@ -117,13 +117,13 @@ Assuming the server is running at `http://localhost:2661`:
 ### 1. Health check
 
 ```bash
-curl -s http://localhost:2661/api/v1/health
+curl -s http://localhost:2661/api/ledger/health
 ```
 
 ### 2. Create Sub-Chain
 
 ```bash
-curl -X POST http://localhost:2661/api/v1/chains/supply_chain/create
+curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/create
 ```
 
 Response (201):
@@ -139,7 +139,7 @@ Response (201):
 ### 3. Add event to Sub-Chain
 
 ```bash
-curl -X POST http://localhost:2661/api/v1/chains/supply_chain/events \
+curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/events \
   -H "Content-Type: application/json" \
   -d '{
         "entity_id": "PROD-001",
@@ -161,7 +161,7 @@ Response:
 ### 4. Submit proof to Main Chain
 
 ```bash
-curl -X POST http://localhost:2661/api/v1/chains/supply_chain/submit-proof
+curl -X POST http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
 ```
 
 Response:
@@ -176,7 +176,7 @@ Response:
 
 ### 5. Get block details
 
-**Endpoint**: `GET /api/v1/chains/{chain_name}/blocks/{index_or_hash}`
+**Endpoint**: `GET /api/ledger/chains/{chain_name}/blocks/{index_or_hash}`
 
 Get detailed data of a specific block by Index (number) or Hash (string).
 
@@ -186,32 +186,32 @@ Get detailed data of a specific block by Index (number) or Hash (string).
 
 **Example**:
 ```bash
-curl -X GET "http://localhost:2661/api/v1/chains/supply_chain/blocks/10?resolve_cid=true" \
+curl -X GET "http://localhost:2661/api/ledger/chains/supply_chain/blocks/10?resolve_cid=true" \
      -H "X-API-Key: your_api_key"
 ```
 
 ### 6. Trace entity across all chains
 
 ```bash
-curl -s "http://localhost:2661/api/v1/entities/PROD-001/trace"
+curl -s "http://localhost:2661/api/ledger/entities/PROD-001/trace"
 ```
 
 Or limited to a single chain:
 
 ```bash
-curl -s "http://localhost:2661/api/v1/entities/PROD-001/trace?chain_name=supply_chain"
+curl -s "http://localhost:2661/api/ledger/entities/PROD-001/trace?chain_name=supply_chain"
 ```
 
 ### 6. Get chain statistics
 
 ```bash
-curl -s http://localhost:2661/api/v1/chains/supply_chain/stats
+curl -s http://localhost:2661/api/ledger/chains/supply_chain/stats
 ```
 
 ### 7. Get paginated blocks
 
 ```bash
-curl -s "http://localhost:2661/api/v1/chains/supply_chain/blocks?limit=5&offset=0"
+curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&offset=0"
 ```
 
 ## Status Codes & Common Errors

@@ -1,6 +1,6 @@
 ---
 title: "Tạo Sub-Chain"
-description: "Hướng dẫn từng bước tạo Sub-Chain mới bằng HierarchyManager và/hoặc API v1, ghi sự kiện và gửi proof."
+description: "Hướng dẫn từng bước tạo Sub-Chain mới bằng HierarchyManager và/hoặc API Ledger, ghi sự kiện và gửi proof."
 icon: material/source-branch-plus
 ---
 
@@ -67,16 +67,16 @@ Ghi chú: Các phương thức ở trên bám sát `hierachain/hierarchical/hier
 * `start_operation(...)`, `complete_operation(...)`
 * `submit_proof_to_main_chain(sub_chain_name)`
 
-## Cách 2: Dùng REST API v1
+## Cách 2: Dùng REST API Ledger
 
 Giả sử API server đã chạy tại `http://localhost:2661`:
 
 ```bash
 # 1. Tạo sub-chain (POST)
-curl -X POST "http://localhost:2661/api/v1/chains/production/create"
+curl -X POST "http://localhost:2661/api/ledger/chains/production/create"
 
 # 2. Ghi sự kiện vào sub-chain
-curl -X POST "http://localhost:2661/api/v1/chains/production/events" \
+curl -X POST "http://localhost:2661/api/ledger/chains/production/events" \
   -H "Content-Type: application/json" \
   -d '{
     "entity_id": "PROD-001",
@@ -85,25 +85,25 @@ curl -X POST "http://localhost:2661/api/v1/chains/production/events" \
   }'
 
 # 3. Gửi proof
-curl -X POST "http://localhost:2661/api/v1/chains/production/submit-proof"
+curl -X POST "http://localhost:2661/api/ledger/chains/production/submit-proof"
 
 # 4. Xem block của sub-chain
-curl "http://localhost:2661/api/v1/chains/production/blocks?limit=5&offset=0"
+curl "http://localhost:2661/api/ledger/chains/production/blocks?limit=5&offset=0"
 
 # 5. Truy vết theo entity
-curl "http://localhost:2661/api/v1/entities/PROD-001/trace?chain_name=production"
+curl "http://localhost:2661/api/ledger/entities/PROD-001/trace?chain_name=production"
 ```
 
-Tham chiếu chữ ký và status code: xem [Reference: API v1](../reference/api-v1.md).
+Tham chiếu chữ ký và status code: xem [Reference: API Ledger](../reference/api-ledger.md).
 
 ## Lỗi thường gặp & khắc phục
 
 * 404 `Sub-chain 'X' not found` → Bạn cần tạo sub-chain trước khi gửi sự kiện/proof.
 * 500 `Failed to add event/submit proof/...` → Kiểm tra log server để biết chi tiết; kiểm tra payload hợp lệ theo schema.
-* Không thấy sub-chain trong danh sách → thử `GET /api/v1/chains` để xác minh và xem `block_count`.
+* Không thấy sub-chain trong danh sách → thử `GET /api/ledger/chains` để xác minh và xem `block_count`.
 
 ## Liên quan
 
 * Kiến trúc phân cấp: [Tổng quan](../architecture/overview.md)
 * Mô-đun Hierarchical: [Hierarchical](../modules/hierarchical.md)
-* Tham chiếu API v1: [API v1](../reference/api-v1.md)
+* Tham chiếu API Ledger: [API Ledger](../reference/api-ledger.md)

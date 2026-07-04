@@ -112,7 +112,7 @@ Các sự kiện được đánh chỉ mục ngay khi ghi khối (`add_block()`)
 | Truy vết đơn chuỗi | `SubChain.get_entity_history()` | `hierarchical/sub_chain.py` |
 | Bộ truy vết nâng cao | `EntityTracer.trace_entity()` | `domains/generic/utils/entity_tracer.py` |
 | Cập nhật chỉ mục | `SubChain._update_event_statistics()` | `hierarchical/sub_chain.py` |
-| REST API | `GET /v1/entities/{entity_id}/trace` | `api/v1/routes.py` |
+| REST API | `GET /ledger/entities/{entity_id}/trace` | `api/ledger/routes.py` |
 
 ---
 

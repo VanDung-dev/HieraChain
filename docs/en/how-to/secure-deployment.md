@@ -96,13 +96,13 @@ Default serves at `http://localhost:2661`. Set `HRC_API_HOST`/`HRC_API_PORT` if 
 1. Missing API key (when `HRC_AUTH_ENABLED=true`) → expect 401/403:
 
     ```bash
-    curl -i http://localhost:2661/api/v1/health
+    curl -i http://localhost:2661/api/ledger/health
     ```
 
 2. With API key:
 
     ```bash
-    curl -i -H "X-API-Key: <your-secret-key>" http://localhost:2661/api/v1/health
+    curl -i -H "X-API-Key: <your-secret-key>" http://localhost:2661/api/ledger/health
     ```
 
 3. Heavy load → ResourceGuard may return 503 (if thresholds exceeded).

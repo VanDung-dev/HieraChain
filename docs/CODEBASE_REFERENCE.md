@@ -43,14 +43,10 @@ graph TD
 |-----------|---------|----------------------|
 | `block.py` | Event container using Apache Arrow columnar storage | Composite Pattern - Blocks contain multiple events |
 | `blockchain.py` | Base blockchain with validation, indexing | Template Method - Extended by MainChain and SubChain |
-| `caching.py` | Hybrid caching (LRU, LFU, FIFO, TTL) | Strategy Pattern - Different cache policies per data type |
-| `parallel_engine.py` | Parallel event processing across CPU cores | Pipeline Pattern - Chunked parallel processing |
-| `domain_contract.py` | **[MỚI]** Domain contract system with versioning and lifecycle management | Composite + Observer - Contract with event handlers |
-| `performance.py` | **[MỚI]** Performance metrics and benchmarking utilities | Metrics Collector |
-| `schemas.py` | **[MỚI]** Shared Pydantic/dataclass schemas | Schema Registry |
-| `core/utils.py` | **[MỚI]** Common utility functions (event structure validation, etc.) | Utility Library |
+| `cache.py` / `cache_manager.py` | Hybrid caching (LRU, LFU, FIFO, TTL) | Strategy Pattern - Different cache policies per data type |
+| `core/utils.py` | Common utility functions (event structure validation, etc.) | Utility Library |
 
-**Architectural Highlight**: The use of **Apache Arrow for columnar storage** is a deliberate choice for high-performance data processing. The **`DomainContract` system** is a significant addition enabling business logic to evolve without disrupting ongoing operations—contracts have a lifecycle (`DEVELOPMENT → TESTING → ACTIVE → DEPRECATED → ARCHIVED`) and support semantic versioning.
+**Architectural Highlight**: The use of **Apache Arrow for columnar storage** is a deliberate choice for high-performance data processing. The caching engine supports customizable strategies (`LRU`, `LFU`, `FIFO`, `TTL`) to optimize memory access during block query operations.
 
 ---
 
@@ -219,19 +215,15 @@ Each `RiskAssessment` includes: severity, likelihood (0.0–1.0), affected compo
 
 ---
 
-### Storage & Persistence Layer (`storage/` + `adapters/`)
+### Storage & Persistence Layer (`adapters/database/` + `state/`)
 
 | Component | Purpose | Design Pattern |
 |-----------|---------|----------------|
-| `storage/sql_backend.py` | SQLite/PostgreSQL backend | Repository Pattern |
-| `storage/memory_storage.py` | In-memory cache layer | Cache-Aside Pattern |
-| `storage/world_state.py` | Current state snapshot | Snapshot Pattern |
-| `storage/models.py` | **[MỚI]** SQLAlchemy ORM models | Active Record |
-| `adapters/database/sqlite_adapter.py` | **[MỚI]** Dedicated SQLite adapter with connection pooling | Adapter Pattern |
-| `adapters/storage/redis_storage.py` | **[MỚI]** Redis adapter with entity index, chain stats, batch fetch | Redis Backend |
-| `adapters/storage/file_storage.py` | **[MỚI]** File-based storage adapter | File Backend |
+| `adapters/database/sqlite_adapter.py` | Dedicated SQLite adapter with raw connection management | Adapter Pattern |
+| `adapters/database/redis_adapter.py` | Redis adapter for distributed caching and state management | Redis Backend |
+| `state/world_state.py` | Current world state snapshot engine | Snapshot Pattern |
 
-**Note**: The storage layer follows **Ports & Adapters (Hexagonal Architecture)**: `storage/` provides high-level abstractions; `adapters/storage/` provides concrete backend implementations (SQLite, Redis, File). The **`RedisStorageAdapter`** notably maintains separate entity event indices using sorted sets (by timestamp) for O(log n) entity queries.
+**Note**: The storage layer follows **Ports & Adapters (Hexagonal Architecture)**. The `adapters/database/` directory provides concrete high-performance implementations for SQL (SQLite) and NoSQL (Redis) storage, simplifying database access while keeping it clean and easy to test.
 
 ---
 
@@ -277,9 +269,9 @@ The system converts **ERP business events** → **Blockchain events** via config
 | `api/storage/encryption.py` | **[MỚI]** AES-256-GCM encryption layer for data-at-rest | Encryption Layer |
 | `api/storage/endpoint_helpers.py` | **[MỚI]** Common REST endpoint helpers | Utility |
 | `api/storage/explorer_helpers.py` | **[MỚI]** Explorer-specific query helpers | Utility |
-| `api/v1/endpoints.py` + `schemas.py` | API version 1 routes + Pydantic schemas | Versioned REST |
-| `api/v2/endpoints.py` + `schemas.py` | API version 2 routes + Pydantic schemas | Versioned REST |
-| `api/v3/endpoints.py` + `schemas.py` | API version 3 routes + Pydantic schemas | Versioned REST |
+| `api/ledger/endpoints.py` + `schemas.py` | API version 1 routes + Pydantic schemas | Versioned REST |
+| `api/business/endpoints.py` + `schemas.py` | API version 2 routes + Pydantic schemas | Versioned REST |
+| `api/admin/endpoints.py` + `schemas.py` | API version 3 routes + Pydantic schemas | Versioned REST |
 | `sdk/client.py` | Python client library with retry + circuit breaker | Resilient Client Pattern |
 | `cli/` | Click-based CLI (chain, event, node subcommands) | CLI Tool |
 
@@ -412,11 +404,11 @@ Additional config components:
 
 ---
 
-### Units / Versioning (`units/`)
+### Versioning (`config/`)
 
 | Component | Purpose |
 |-----------|---------|
-| `version.py` | **[MỚI]** Semantic version management and compatibility checking |
+| `version.py` | Semantic version management and compatibility checking |
 
 ### CLI Layer (`cli/`)
 

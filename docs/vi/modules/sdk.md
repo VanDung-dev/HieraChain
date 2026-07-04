@@ -123,6 +123,6 @@ SDK định nghĩa các lớp lỗi cụ thể để ứng dụng có thể xử
 
 ## Liên quan
 
-*   [Tài liệu API v1/v3](../reference/api-v1.md)
+*   [Tài liệu API Ledger/admin](../reference/api-ledger.md)
 *   [Hệ thống bảo mật (Security)](./security.md)
 *   [Quản lý rủi ro (Risk Management)](./risk-management.md)

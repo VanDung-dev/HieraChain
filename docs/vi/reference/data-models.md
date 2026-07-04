@@ -104,9 +104,9 @@ Block đầy đủ gồm header + danh sách events + (tuỳ chọn) ZK proof �
 ```
 ```
 
-## Mapping Pydantic (API v1)
+## Mapping Pydantic (API Ledger)
 
-Các mô hình Pydantic (`hierachain/api/v1/schemas.py`) được sử dụng để validate dữ liệu API, ánh xạ với cấu trúc lõi:
+Các mô hình Pydantic (`hierachain/api/ledger/schemas.py`) được sử dụng để validate dữ liệu API, ánh xạ với cấu trúc lõi:
 
 ```python
 class EventRequest(BaseModel):
@@ -174,4 +174,4 @@ blockchain.is_chain_valid()
 ## Liên quan
 
 * Core module: [Core](../modules/core.md)
-* API v1: [API v1](api-v1.md)
+* API Ledger: [API Ledger](api-ledger.md)

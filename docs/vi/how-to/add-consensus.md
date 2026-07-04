@@ -33,14 +33,14 @@ Trang này hướng dẫn hai con đường: (A) chỉ cấu hình để chọn 
     python -m hierachain.api.server
     ```
 
-4. Kiểm thử nhanh bằng API v1:
+4. Kiểm thử nhanh bằng API Ledger:
 
     ```bash
-    curl -s -X POST http://localhost:2661/api/v1/chains/supply_chain/create
-    curl -s -X POST http://localhost:2661/api/v1/chains/supply_chain/events \
+    curl -s -X POST http://localhost:2661/api/ledger/chains/supply_chain/create
+    curl -s -X POST http://localhost:2661/api/ledger/chains/supply_chain/events \
       -H 'Content-Type: application/json' \
       -d '{"entity_id":"PROD-001","event_type":"production_complete","details":{"quantity":100}}'
-    curl -s -X POST http://localhost:2661/api/v1/chains/supply_chain/submit-proof
+    curl -s -X POST http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
     ```
 
 ## Thêm cơ chế đồng thuận mới (viết mã)
@@ -78,11 +78,11 @@ Trang này hướng dẫn hai con đường: (A) chỉ cấu hình để chọn 
     * Tại nơi khởi tạo chuỗi (Sub‑Chain/DomainChain) hoặc dịch vụ Ordering, tham chiếu cơ chế mới khi `HRC_CONSENSUS_TYPE=my_consensus`.
     * Nếu có factory, bổ sung case ánh xạ `my_consensus` → `MyConsensus`.
 
-4. Kiểm thử với API v1 như phần A (thêm event → finalize → submit proof). Theo dõi log để xác nhận phương thức `propose/validate/commit` mới được gọi.
+4. Kiểm thử với API Ledger như phần A (thêm event → finalize → submit proof). Theo dõi log để xác nhận phương thức `propose/validate/commit` mới được gọi.
 
 ## Liên quan
 
 * Kiến trúc/Đồng thuận: [Consensus & Ordering](../architecture/consensus.md)
 * Mô‑đun Hierarchical: [Hierarchical](../modules/hierarchical.md)
 * Tham chiếu Config: [Config](../reference/config.md)
-* API v1: [API v1](../reference/api-v1.md)
+* API Ledger: [API Ledger](../reference/api-ledger.md)

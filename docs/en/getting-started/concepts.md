@@ -78,7 +78,7 @@ classDiagram
 
 * Core: `hierachain/core/{block.py, blockchain.py, schemas.py}`
 * Hierarchical: `hierachain/hierarchical/{main_chain.py, sub_chain.py, hierarchy_manager.py}`
-* API: `hierachain/api/v1/{endpoints.py, schemas.py}`
+* API: `hierachain/api/ledger/{endpoints.py, schemas.py}`
 * Security: `hierachain/security/*`
 * Configuration: `hierachain/config/settings.py`
 

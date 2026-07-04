@@ -145,7 +145,7 @@ sequenceDiagram
 | Xác thực chuỗi | `BlockVerifier.verify_chain()` | `security/verify/block_verifier.py` |
 | Xác thực đơn khối | `BlockVerifier.verify_block()` | `security/verify/block_verifier.py` |
 | Quét từ khóa cấm | `CrossChainValidator.validate_system_integrity()` | `domains/generic/utils/cross_chain_validator.py` |
-| REST API | `GET /v1/system/integrity` | `api/v1/routes.py` |
+| REST API | `GET /ledger/system/integrity` | `api/ledger/routes.py` |
 
 ---
 

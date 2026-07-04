@@ -56,7 +56,7 @@ sequenceDiagram
 import requests
 import json
 
-API_URL = "http://localhost:2661/api/v1"
+API_URL = "http://localhost:2661/api/ledger"
 API_KEY = "your-api-key-here"  # Nếu có bật xác thực API Key
 
 def log_order_to_chain(order_id, items):
@@ -96,7 +96,7 @@ def log_order_to_chain(order_id, items):
 ### Ví dụ Triển khai (JavaScript/Fetch)
 
 ```javascript
-const API_URL = "http://localhost:2661/api/v1";
+const API_URL = "http://localhost:2661/api/ledger";
 
 async function logOrder(orderId, items) {
   try {
@@ -177,5 +177,5 @@ Xem chi tiết tại: [Mô-đun Tích hợp](../modules/integration.md).
 
 ## Liên quan
 
-* Tài liệu API v1: [API v1](../reference/api-v1.md)
+* Tài liệu API Ledger: [API Ledger](../reference/api-ledger.md)
 * Mô-đun Tích hợp: [Integration](../modules/integration.md)

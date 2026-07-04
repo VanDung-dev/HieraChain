@@ -33,7 +33,7 @@ Bảng này cung cấp cái nhìn tổng quan toàn diện về các luồng cô
 
 | Luồng công việc | Nhóm | Kích hoạt | Kết quả | Mô-đun Chính |
 |:---------|:------|:--------|:-------|:-----------|
-| [Gửi Sự kiện](./event-submission.md) | A | `POST /v1/chains/{name}/events` | Khối được thêm vào Chuỗi phụ (Sub-Chain) | `hierarchical/sub_chain.py` |
+| [Gửi Sự kiện](./event-submission.md) | A | `POST /ledger/chains/{name}/events` | Khối được thêm vào Chuỗi phụ (Sub-Chain) | `hierarchical/sub_chain.py` |
 | [Neo giữ Bằng chứng](./proof-anchoring.md) | A | Khối được hoàn thiện trên Chuỗi phụ | Mã băm bằng chứng trên Chuỗi chính (Main Chain) | `hierarchical/main_chain.py` |
 | [Giao dịch Liên chuỗi 2PC](./cross-chain-2pc.md) | A | `initiate_cross_chain_transaction()` | `COMMITTED` hoặc `ROLLED_BACK` | `hierarchical/hierarchy_manager.py` |
 | [Đồng thuận BFT](./bft-consensus.md) | B | `HRC_CONSENSUS_TYPE=byzantine_fault_tolerant` | Khối được cam kết bởi 2f+1 trình xác thực | `consensus/bft/consensus.py` |

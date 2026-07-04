@@ -22,7 +22,7 @@ icon: material/frequently-asked-questions
     Map<string,string>; non-string values will be converted to strings.
 
 !!! question "Creating a Sub-Chain reports invalid name?"
-    Names can only contain `[a-zA-Z0-9_\-]` (see validation in `api/v1/endpoints.py`).
+    Names can only contain `[a-zA-Z0-9_\-]` (see validation in `api/ledger/endpoints.py`).
 
 !!! question "Why is the block from my Sub-Chain not visible after proof submission?"
     Check block finalization conditions, time/batch event thresholds; try resubmitting or check logs.
@@ -30,8 +30,8 @@ icon: material/frequently-asked-questions
 !!! question "Poor performance or 503 errors?"
     Check `ResourceGuardMiddleware`, enable advanced caching, optimize batch size, check CPU/RAM.
 
-!!! question "Is there an API v2 and what is it for?"
-    Yes; for managing channels, private data, contracts, organizations. See `docs/en/reference/api-v2.md`.
+!!! question "Is there an API business and what is it for?"
+    Yes; for managing channels, private data, contracts, organizations. See `docs/en/reference/api-business.md`.
 
 !!! question "Where is the CLI and how do I use it?"
     The `hrc` command (registered in `pyproject.toml`). See `docs/en/modules/cli.md`.

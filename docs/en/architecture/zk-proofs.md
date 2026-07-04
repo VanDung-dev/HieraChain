@@ -31,7 +31,7 @@ Zero-Knowledge Proofs in HieraChain support two running modes depending on the a
 #### a. Mock Mode (Default)
 
 * This is the Development (Dev) or Testing environment mode.
-* Mock Mode simulates Groth16/Plonk ZK-SNARK by generating a simulated proof format of 2KB - 4KB with `mock_zkp_v2\x00`.
+* Mock Mode simulates Groth16/Plonk ZK-SNARK by generating a simulated proof format of 2KB - 4KB with `mock_zkp_business\x00`.
 * Instead of running algorithm circuits, mock mode uses interpolated hash computation (`hashlib.sha256`) on Public Inputs parameters and simulates a 100-500ms delay to mimic the real proof system.
 * Supports Main/Sub integrated development without requiring significant hardware resources.
 

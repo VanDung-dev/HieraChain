@@ -91,7 +91,7 @@ Lưu ý quan trọng về phạm vi:
 
     * [Config](reference/config.md)
     * [Python SDK](reference/sdk-reference.md) · [GraphQL API](reference/graphql-api.md)
-    * [API v1](reference/api-v1.md) · [API v2](reference/api-v2.md) · [API v3](reference/api-v3.md)
+    * [API Ledger](reference/api-ledger.md) · [API business](reference/api-business.md) · [API Admin](reference/api-admin.md)
     * [Data Models](reference/data-models.md) · [Data Schema](reference/data-schema.md)
     * [Code Map](reference/code-map.md) · [Thuật ngữ](glossary.md)
 

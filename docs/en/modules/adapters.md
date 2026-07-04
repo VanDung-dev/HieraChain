@@ -104,7 +104,7 @@ from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 
 adapter = SQLiteAdapter("data/ledger.db")
 # Get chain statistics
-stats = adapter.get_chain_statistics("supply_chain_v1")
+stats = adapter.get_chain_statistics("supply_chain_ledger")
 print(f"Total blocks: {stats['total_blocks']}")
 ```
 

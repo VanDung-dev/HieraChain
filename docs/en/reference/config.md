@@ -35,7 +35,7 @@ print(settings.AUTH_ENABLED)
 
 * `HRC_API_HOST` (default: `localhost` in dev, `127.0.0.1` in production)
 * `HRC_API_PORT` (default: `2661`)
-* `API_VERSION` (constant: `v1`)
+* `API_VERSION` (constant: `admin`)
 
 ### Consensus/Blockchain
 

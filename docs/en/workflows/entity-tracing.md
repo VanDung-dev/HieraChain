@@ -112,7 +112,7 @@ Events are indexed on write (`add_block()`), so reads are O(1) per chain. Aggreg
 | Per-chain trace | `SubChain.get_entity_history()` | `hierarchical/sub_chain.py` |
 | Advanced trace | `EntityTracer.trace_entity()` | `domains/generic/utils/entity_tracer.py` |
 | Index update | `SubChain._update_event_statistics()` | `hierarchical/sub_chain.py` |
-| REST API | `GET /v1/entities/{entity_id}/trace` | `api/v1/routes.py` |
+| REST API | `GET /ledger/entities/{entity_id}/trace` | `api/ledger/routes.py` |
 
 ---
 

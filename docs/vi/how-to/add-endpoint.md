@@ -1,18 +1,18 @@
 ---
-title: "Thêm endpoint API v1"
-description: "Các bước thêm một endpoint mới vào API v1, wiring schema/handler và kiểm thử nhanh bằng curl."
+title: "Thêm endpoint API Ledger"
+description: "Các bước thêm một endpoint mới vào API Ledger, wiring schema/handler và kiểm thử nhanh bằng curl."
 icon: material/plus-network
 ---
 
-# Thêm endpoint API v1
+# Thêm endpoint API Ledger
 
 ## Mục tiêu
 
-Hướng dẫn từng bước để thêm một endpoint mới vào FastAPI router của HieraChain (phiên bản v1), bao gồm định nghĩa schema Pydantic, viết handler, cập nhật router và kiểm thử nhanh bằng `curl`.
+Hướng dẫn từng bước để thêm một endpoint mới vào FastAPI router của HieraChain (phiên bản ledger), bao gồm định nghĩa schema Pydantic, viết handler, cập nhật router và kiểm thử nhanh bằng `curl`.
 
 ## Bước 1: Chuẩn bị schema (tuỳ chọn)
 
-* Mở `hierachain/api/v1/schemas.py`.
+* Mở `hierachain/api/ledger/schemas.py`.
 * Thêm lớp Pydantic nếu endpoint cần payload mới, ví dụ:
 
 ```pycon
@@ -26,8 +26,8 @@ class PingResponse(BaseModel):
 
 ## Bước 2: Thêm handler trong router
 
-* Mở `hierachain/api/v1/endpoints.py`.
-* Import schema (nếu có) và thêm route vào `APIRouter(prefix="/api/v1", ...)`.
+* Mở `hierachain/api/ledger/endpoints.py`.
+* Import schema (nếu có) và thêm route vào `APIRouter(prefix="/api/ledger", ...)`.
 
 Ví dụ (mô tả):
 
@@ -48,7 +48,7 @@ python -m hierachain.api.server
 Mở `http://localhost:2661/docs` để thử trên Swagger UI hoặc dùng `curl`:
 
 ```bash
-curl -s -X POST http://localhost:2661/api/v1/ping \
+curl -s -X POST http://localhost:2661/api/ledger/ping \
   -H 'Content-Type: application/json' \
   -d '{"message":"hello"}'
 ```
@@ -73,5 +73,5 @@ Nếu bật xác thực API key (production), thêm header theo `settings.API_KE
 ## Liên quan
 
 * API module: [API](../modules/api.md)
-* Reference API v1: [API v1](../reference/api-v1.md)
+* Reference API Ledger: [API Ledger](../reference/api-ledger.md)
 * Config: [Config](../reference/config.md)

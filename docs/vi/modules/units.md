@@ -94,5 +94,5 @@ Khi so sánh phiên bản, HieraChain tuân theo thứ tự ưu tiên sau (từ 
 ## Liên quan
 
 *   [Cấu hình hệ thống (Config)](./config.md)
-*   [API Status v3 (Sử dụng versioning)](./api.md)
+*   [API Status admin (Sử dụng versioning)](./api.md)
 *   [CLI (Hiển thị version)](./cli.md)

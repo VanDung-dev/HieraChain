@@ -16,7 +16,7 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | Consensus | Đồng thuận | Cơ chế chấp thuận Block (PoA, PoF, BFT); `hierachain/consensus/*`, `hierachain/hierarchical/consensus/*`. |
 | Membership Service Provider | MSP | Quản lý danh tính/tổ chức; `hierachain/security/msp.py`, `hierachain/security/identity.py`. |
 | Policy | Chính sách | Kiểm soát truy cập/tài nguyên; `hierachain/security/policy_engine.py`, `hierachain/security/resource_guard.py`. |
-| World State | World State | Trạng thái hiện tại của dữ liệu; `hierachain/storage/world_state.py`. |
+| World State | World State | Trạng thái hiện tại của dữ liệu; `hierachain/state/world_state.py`. |
 | Journal | Nhật ký | Ghi log giao dịch; `hierachain/error_mitigation/journal.py`. |
 | Rollback | Hoàn tác | Khôi phục trạng thái; `hierachain/error_mitigation/rollback_manager.py`. |
 | Recovery | Phục hồi | Cơ chế phục hồi lỗi; `hierachain/error_mitigation/recovery_engine.py`. |
@@ -39,9 +39,9 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | HTTP Strict Transport Security | HSTS | Chính sách bắt buộc HTTPS; `hierachain/config/settings.py`. |
 | Cross‑Origin Resource Sharing | CORS | Cấu hình nguồn gốc chéo; `hierachain/config/settings.py`. |
 | Command Line Interface | CLI | Công cụ dòng lệnh `hrc`; `hierachain/cli/*`. |
-| API v1 | API v1 | REST API v1; `hierachain/api/v1/*`. |
-| API v2 | API v2 | REST API v2; `hierachain/api/v2/*`. |
-| API v3 | API v3 | REST API v3; `hierachain/api/v3/*`. |
+| API Ledger | API Ledger | REST API Ledger; `hierachain/api/ledger/*`. |
+| API business | API business | REST API business; `hierachain/api/business/*`. |
+| API Admin | API Admin | REST API Admin; `hierachain/api/admin/*`. |
 | Cross‑level State Sync | Đồng bộ liên tầng | Đồng bộ trạng thái giữa các tầng; `hierachain/cluster/state_sync_manager.py`. |
 | Kubernetes Namespace | Kubernetes Namespace | Cô lập Sub‑Chain theo namespace; `hierachain/hierarchical/k8s_namespace_manager.py`. |
 | Identity Manager | Quản lý danh tính | Quản lý tổ chức/người dùng/role; `hierachain/security/identity.py`. |

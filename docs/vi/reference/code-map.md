@@ -34,9 +34,9 @@ Tài liệu này ánh xạ các khái niệm (Concepts) trong tài liệu kỹ t
 | Concept | File Path | Vai trò chính |
 |---------|-----------|---------------|
 | **API Server** | `hierachain/api/server.py` | Điểm khởi chạy FastAPI server. |
-| **Endpoints V1** | `hierachain/api/v1/endpoints.py` | Các API cơ bản (Blocks, Chain info). |
-| **Endpoints V2** | `hierachain/api/v2/endpoints.py` | API nâng cao (Events, Domain). |
-| **Endpoints V3** | `hierachain/api/v3/endpoints.py` | API hệ thống (Admin, Health). |
+| **API Ledger** | `hierachain/api/ledger/endpoints.py` | Các API cơ bản (Blocks, Chain info). |
+| **API Business** | `hierachain/api/business/endpoints.py` | API nâng cao (Events, Domain). |
+| **API Admin** | `hierachain/api/admin/endpoints.py` | API hệ thống (Admin, Health). |
 | **WebSocket Manager** | `hierachain/api/websocket/manager.py` | Quản lý kết nối WebSocket thời gian thực. |
 | **GraphQL Schema** | `hierachain/api/graphql/schema.py` | Schema GraphQL cho truy vấn linh hoạt. |
 | **IPFS Client** | `hierachain/api/storage/ipfs_client.py` | Tích hợp lưu trữ Off-chain (AES-256-GCM). |
@@ -60,11 +60,8 @@ Tài liệu này ánh xạ các khái niệm (Concepts) trong tài liệu kỹ t
 
 | Concept | File Path | Vai trò chính |
 |---------|-----------|---------------|
-| **SQLite Adapter** | `hierachain/adapters/database/sqlite_adapter.py` | Lưu trữ dữ liệu vào SQLite (SQLAlchemy). |
-| **File Storage** | `hierachain/adapters/storage/file_storage.py` | Lưu trữ file (Parquet) cho dữ liệu lớn. |
-| **Redis Storage** | `hierachain/adapters/storage/redis_storage.py` | Lưu trữ tạm thời/Cache hiệu năng cao. |
-| **SQL Backend** | `hierachain/storage/sql_backend.py` | Lớp trừu tượng hóa tương tác SQL. |
-| **Memory Storage** | `hierachain/storage/memory_storage.py` | Lưu trữ In-Memory (cho testing/dev). |
+| **SQLite Adapter** | `hierachain/adapters/database/sqlite_adapter.py` | Lưu trữ dữ liệu SQLite gọn nhẹ, hiệu năng cao. |
+| **Redis Adapter** | `hierachain/adapters/database/redis_adapter.py` | Lưu trữ key-value phục vụ caching và consensus state. |
 
 ## Network & Cluster
 

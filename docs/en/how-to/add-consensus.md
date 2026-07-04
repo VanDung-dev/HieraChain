@@ -31,14 +31,14 @@ This page covers two paths: (A) just configure to select existing PoA/PoF/BFT; (
     python -m hierachain.api.server
     ```
 
-4. Quick test using API v1:
+4. Quick test using API Ledger:
 
     ```bash
-    curl -s -X POST http://localhost:2661/api/v1/chains/supply_chain/create
-    curl -s -X POST http://localhost:2661/api/v1/chains/supply_chain/events \
+    curl -s -X POST http://localhost:2661/api/ledger/chains/supply_chain/create
+    curl -s -X POST http://localhost:2661/api/ledger/chains/supply_chain/events \
       -H 'Content-Type: application/json' \
       -d '{"entity_id":"PROD-001","event_type":"production_complete","details":{"quantity":100}}'
-    curl -s -X POST http://localhost:2661/api/v1/chains/supply_chain/submit-proof
+    curl -s -X POST http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
     ```
 
 ## Adding New Consensus Mechanism (Coding Required)
@@ -75,11 +75,11 @@ This page covers two paths: (A) just configure to select existing PoA/PoF/BFT; (
     * At chain initialization (Sub-Chain/DomainChain) or Ordering service, reference the new mechanism when `HRC_CONSENSUS_TYPE=my_consensus`.
     * If a factory exists, add the mapping case `my_consensus` → `MyConsensus`.
 
-4. Test with API v1 as in part A (add event → finalize → submit proof). Monitor logs to confirm the new `propose/validate/commit` methods are called.
+4. Test with API Ledger as in part A (add event → finalize → submit proof). Monitor logs to confirm the new `propose/validate/commit` methods are called.
 
 ## Related
 
 * Architecture/Consensus: [Consensus & Ordering](../architecture/consensus.md)
 * Hierarchical Module: [Hierarchical](../modules/hierarchical.md)
 * Config Reference: [Config](../reference/config.md)
-* API v1: [API v1](../reference/api-v1.md)
+* API Ledger: [API Ledger](../reference/api-ledger.md)

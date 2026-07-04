@@ -123,6 +123,6 @@ The SDK defines specific exception classes for applications to handle with disti
 
 ## Related
 
-*   [API v1/v3 Documentation](../reference/api-v1.md)
+*   [API ledger/admin Documentation](../reference/api-ledger.md)
 *   [Security System](./security.md)
 *   [Risk Management](./risk-management.md)

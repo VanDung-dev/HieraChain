@@ -40,7 +40,7 @@ Lấy thông tin chi tiết của một khối.
 
 #### `get_node_status() -> NodeStatus`
 
-Lấy trạng thái hệ thống từ API v3. Trả về đối tượng chứa `version`, `uptime`, `chains_active`, v.v.
+Lấy trạng thái hệ thống từ API Admin. Trả về đối tượng chứa `version`, `uptime`, `chains_active`, v.v.
 
 #### `trace_entity(entity_id: str, chain_name: str = None, resolve_cid: bool = False) -> EntityTrace`
 

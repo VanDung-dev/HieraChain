@@ -1,25 +1,25 @@
 ---
-title: "API v2"
-description: "Tóm tắt các endpoint API v2, lược đồ chính và ví dụ lệnh curl — đồng bộ với mã nguồn hierachain/api/v2/*."
+title: "API Business"
+description: "Tóm tắt các endpoint API Business, lược đồ chính và ví dụ lệnh curl — đồng bộ với mã nguồn hierachain/api/business/*."
 icon: material/numeric-2-circle
 ---
 
-# API v2
+# API Business
 
-API v2 mở rộng khả năng làm việc với các channel, dữ liệu riêng tư (private data), hợp đồng miền (domain contracts) và các tổ chức (organizations).
+API Busines mở rộng khả năng làm việc với các channel, dữ liệu riêng tư (private data), hợp đồng miền (domain contracts) và các tổ chức (organizations).
 
 ## Các thành phần Mã nguồn
 
-* Định tuyến/Endpoint: `hierachain/api/v2/endpoints.py`
-* Lược đồ dữ liệu (Tùy chọn): `hierachain/api/v2/schemas.py`
-* Tích hợp Server: `hierachain/api/server.py` (đăng ký v2 router)
+* Định tuyến/Endpoint: `hierachain/api/business/endpoints.py`
+* Lược đồ dữ liệu (Tùy chọn): `hierachain/api/business/schemas.py`
+* Tích hợp Server: `hierachain/api/server.py` (đăng ký Business router)
 
 ## Các Endpoint chính (từ mã nguồn và test)
 
 ```mermaid
 sequenceDiagram
     participant User as Người dùng
-    participant API as API v2
+    participant API as API business
     participant Channel as Quản lý Channel
     participant Store as Kho Lưu trữ Riêng tư
 
@@ -40,11 +40,11 @@ sequenceDiagram
     API-->>User: Kết quả
 ```
 
-* `GET  /api/v2/health` — kiểm tra trạng thái hoạt động dịch vụ (health check).
-* `POST /api/v2/channels` — tạo một channel mới.
-* `GET  /api/v2/channels/{channel_id}` — lấy thông tin channel.
-* `POST /api/v2/channels/{channel_id}/private-collections` — tạo một bộ sưu tập dữ liệu riêng tư (private data collection).
-* `POST /api/v2/private-data` — Ghi dữ liệu riêng tư (Hỗ trợ truyền trực tiếp `value` hoặc tham chiếu qua IPFS `value_cid`).
+* `GET  /api/business/health` — kiểm tra trạng thái hoạt động dịch vụ (health check).
+* `POST /api/business/channels` — tạo một channel mới.
+* `GET  /api/business/channels/{channel_id}` — lấy thông tin channel.
+* `POST /api/business/channels/{channel_id}/private-collections` — tạo một bộ sưu tập dữ liệu riêng tư (private data collection).
+* `POST /api/business/private-data` — Ghi dữ liệu riêng tư (Hỗ trợ truyền trực tiếp `value` hoặc tham chiếu qua IPFS `value_cid`).
 
     * `value_nonce: str | None`
     * `event_metadata: dict[str, Any]` (Entity ID, Loại sự kiện, Dấu thời gian)
@@ -58,36 +58,36 @@ sequenceDiagram
     * `implementation_nonce: str | None`
     * `metadata: dict[str, Any]` (Miền, Chủ sở hữu, Chính sách xác thực - Endorsement Policy)
     
-* `POST /api/v2/contracts` — Đăng ký một hợp đồng (Hỗ trợ truyền mã nguồn thô qua `implementation` hoặc tham chiếu IPFS qua `implementation_cid`).
-* `POST /api/v2/contracts/execute` — thực thi một hợp đồng miền.
-* `POST /api/v2/organizations` — đăng ký một tổ chức mới.
+* `POST /api/business/contracts` — Đăng ký một hợp đồng (Hỗ trợ truyền mã nguồn thô qua `implementation` hoặc tham chiếu IPFS qua `implementation_cid`).
+* `POST /api/business/contracts/execute` — thực thi một hợp đồng miền.
+* `POST /api/business/organizations` — đăng ký một tổ chức mới.
 
-*Lưu ý bổ sung: một số kịch bản test/giám sát trong `tests/integration/api_v2/test_api_v2.py` và `scripts/security/*` sử dụng các endpoint trên để kiểm thử bảo mật và xác minh hành vi hệ thống.*
+*Lưu ý bổ sung: một số kịch bản test/giám sát trong `tests/integration/api_business/test_api_business.py` và `scripts/security/*` sử dụng các endpoint trên để kiểm thử bảo mật và xác minh hành vi hệ thống.*
 
 ## Ví dụ lệnh Curl
 
 ```bash
 # Kiểm tra Trạng thái
-curl -s http://localhost:2661/api/v2/health
+curl -s http://localhost:2661/api/business/health
 
 # Tạo channel
-curl -s -X POST http://localhost:2661/api/v2/channels \
+curl -s -X POST http://localhost:2661/api/business/channels \
   -H 'Content-Type: application/json' \
   -d '{"name": "test_channel"}'
 
 # Tạo bộ sưu tập riêng tư cho channel
 curl -s -X POST \
-  http://localhost:2661/api/v2/channels/test_channel/private-collections \
+  http://localhost:2661/api/business/channels/test_channel/private-collections \
   -H 'Content-Type: application/json' \
   -d '{"collection": "sensitive_docs"}'
 
 # Ghi dữ liệu riêng tư
-curl -s -X POST http://localhost:2661/api/v2/private-data \
+curl -s -X POST http://localhost:2661/api/business/private-data \
   -H 'Content-Type: application/json' \
   -d '{"channel": "test_channel", "collection": "sensitive_docs", "key": "doc-001", "value": "..."}'
 
 # Đăng ký & thực thi hợp đồng miền (domain contract)
-curl -s -X POST http://localhost:2661/api/v2/contracts \
+curl -s -X POST http://localhost:2661/api/business/contracts \
   -H 'Content-Type: application/json' \
   -d '{
         "contract_id": "quality_control", 
@@ -96,7 +96,7 @@ curl -s -X POST http://localhost:2661/api/v2/contracts \
         "metadata": {"domain": "mfg"}
       }'
 
-curl -s -X POST http://localhost:2661/api/v2/contracts/execute \
+curl -s -X POST http://localhost:2661/api/business/contracts/execute \
   -H 'Content-Type: application/json' \
   -d '{
         "contract_id": "quality_control", 
@@ -105,7 +105,7 @@ curl -s -X POST http://localhost:2661/api/v2/contracts/execute \
       }'
 
 # Đăng ký Tổ chức
-curl -s -X POST http://localhost:2661/api/v2/organizations -H 'Content-Type: application/json' -d '{"org_id": "orgA", "name": "Org A"}'
+curl -s -X POST http://localhost:2661/api/business/organizations -H 'Content-Type: application/json' -d '{"org_id": "orgA", "name": "Org A"}'
 ```
 
 Nếu bật xác thực bằng API key (trong môi trường sản xuất - production), hãy thêm header tương ứng với `settings.API_KEY_NAME` (mặc định là `X-API-Key`).
@@ -118,6 +118,6 @@ Nếu bật xác thực bằng API key (trong môi trường sản xuất - prod
 
 ## Liên quan
 
-* API v1: [API v1](api-v1.md)
+* API Ledger: [API Ledger](api-ledger.md)
 * Kiến trúc Bảo mật: [Bảo mật (chuyên sâu)](../architecture/security.md)
 * Các mô-đun: [API](../modules/api.md)
