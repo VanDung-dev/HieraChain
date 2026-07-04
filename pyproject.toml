@@ -56,7 +56,7 @@ dependencies = [
 dynamic = ["version"]
 
 [tool.setuptools.dynamic]
-version = {attr = "hierachain.units.version.__version__"}
+version = {attr = "hierachain.config.version.__version__"}
 
 [project.optional-dependencies]
 doc =[
