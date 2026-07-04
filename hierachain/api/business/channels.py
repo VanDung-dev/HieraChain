@@ -1,4 +1,4 @@
-"""API v2 — channel management endpoints.
+"""API business — channel management endpoints.
 
 Create channels and manage private data collections within channels.
 """
@@ -16,7 +16,7 @@ from hierachain.security.secure_logging import SecureLogger
 
 from hierachain.api.business.state import _channels, _private_collections
 
-router = APIRouter(tags=["HieraChain-v2"])
+router = APIRouter(tags=["HieraChain-business"])
 api_logger = SecureLogger("hierachain.api.business")
 
 

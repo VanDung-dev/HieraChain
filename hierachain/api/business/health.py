@@ -1,15 +1,15 @@
-"""API v2 — health-check endpoint."""
+"""API business — health-check endpoint."""
 
 import time
 from fastapi import APIRouter
 
-router = APIRouter(tags=["HieraChain-v2"])
+router = APIRouter(tags=["HieraChain-business"])
 
 
 @router.get("/health")
 async def health_check():
     return {
         "status": "healthy",
-        "version": "v2",
+        "version": "business",
         "timestamp": time.time()
     }

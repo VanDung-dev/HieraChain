@@ -1,5 +1,5 @@
 """
-Pydantic schemas for API v3 requests and responses (System Management)
+Pydantic schemas for API admin requests and responses (System Management)
 """
 
 from typing import Any
@@ -89,7 +89,7 @@ class InjectLicenseResponse(BaseModel):
 
 class SecureEventRequest(BaseModel):
     """
-    High-integrity event submission schema for API v3.
+    High-integrity event submission schema for API admin.
     Enforces strict synchronous validation of cryptographic proofs and payload depth.
     """
     model_config = ConfigDict(
@@ -151,6 +151,6 @@ class SecureEventRequest(BaseModel):
 
 class SecureEventResponse(BaseModel):
     """Response schema for high-integrity event submission"""
-    status: str = Field(..., description="Operation status (always 'committed' for v3)")
+    status: str = Field(..., description="Operation status (always 'committed' for admin)")
     event_hash: str = Field(..., description="Cryptographic hash of the committed event")
     timestamp: float = Field(..., description="Server-side commit timestamp")

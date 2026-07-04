@@ -1,7 +1,7 @@
-"""API v1 — FastAPI dependencies (singleton providers).
+"""API Ledger — FastAPI dependencies (singleton providers).
 
 Lazy-initialised HierarchyManager and EntityTracer shared
-across all v1 endpoint modules.
+across all Ledger endpoint modules.
 """
 
 from fastapi import Depends

@@ -1,4 +1,4 @@
-"""API v1 — event submission endpoint.
+"""API Ledger — event submission endpoint.
 
 Add business events to a sub-chain with optional off-chain
 (IPFS) storage for large payloads.

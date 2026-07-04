@@ -1,4 +1,4 @@
-"""API v2 — domain contract endpoints.
+"""API business — domain contract endpoints.
 
 Create and execute smart contracts with optional off-chain
 (IPFS) storage for large implementations.
@@ -17,7 +17,7 @@ from hierachain.api.storage.endpoint_helpers import process_contract_implementat
 from hierachain.api.storage import IPFSError
 from hierachain.api.business.state import _contracts
 
-router = APIRouter(tags=["HieraChain-v2"])
+router = APIRouter(tags=["HieraChain-business"])
 api_logger = SecureLogger("hierachain.api.business")
 
 

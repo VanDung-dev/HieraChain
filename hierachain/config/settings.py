@@ -158,7 +158,7 @@ class Settings:
     SUPPORTED_ERP_SYSTEMS = ["sap", "oracle", "microsoft_dynamics"]
     
     # API settings
-    API_VERSION = "v1"
+    API_VERSION = "ledger"
     API_HOST = os.getenv("HRC_API_HOST", "localhost")
     API_PORT = int(os.getenv("HRC_API_PORT", "2661"))
     

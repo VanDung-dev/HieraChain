@@ -1,4 +1,4 @@
-"""API v1 — entity tracing endpoint.
+"""API Ledger — entity tracing endpoint.
 
 Trace an entity's events across the main chain and all sub-chains.
 """

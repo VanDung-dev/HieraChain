@@ -1,5 +1,5 @@
 """
-API v3 endpoints for System Management
+API admin endpoints for System Management
 """
 
 import time
@@ -21,7 +21,7 @@ from hierachain.security.secure_logging import SecureLogger
 from hierachain.security.verify.signature_verifier import SignatureVerifier
 
 logger = SecureLogger("hierachain.api.admin")
-router = APIRouter(prefix="/api/admin", tags=["HieraChain-v3 (System & Admin)"])
+router = APIRouter(prefix="/api/admin", tags=["HieraChain-admin (System & Admin)"])
 
 verifier = SignatureVerifier()
 
