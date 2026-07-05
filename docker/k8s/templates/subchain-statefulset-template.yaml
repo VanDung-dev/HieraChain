@@ -16,7 +16,7 @@
 #   {{LOG_LEVEL}} - Logging level
 #   {{PARENT_CHAIN}} - Parent chain ID
 ---
-apiVersion: apps/ledger
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: "hierachain-{{SUBCHAIN_ID}}"

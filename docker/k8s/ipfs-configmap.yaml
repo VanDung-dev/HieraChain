@@ -1,4 +1,4 @@
-apiVersion: ledger
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ipfs-config

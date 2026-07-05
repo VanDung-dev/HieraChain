@@ -2,7 +2,7 @@
 # Headless service for stable DNS: node-0, node-1, node-2, node-3
 # Each pod gets: <pod-name>.<service-name>.<namespace>.svc.cluster.local
 ---
-apiVersion: ledger
+apiVersion: v1
 kind: Service
 metadata:
   name: hierachain-node-headless
@@ -26,7 +26,7 @@ spec:
 ---
 # LoadBalancer service to expose API externally
 # Access via: kubectl port-forward service/hierachain-api 2661:2661 -n hierachain
-apiVersion: ledger
+apiVersion: v1
 kind: Service
 metadata:
   name: hierachain-api

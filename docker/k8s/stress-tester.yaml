@@ -2,7 +2,7 @@
 # Profile: stress-test (only created when explicitly testing)
 # Connects to HieraChain nodes via K8s DNS and to Redis for metrics
 ---
-apiVersion: ledger
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: stress-tester-scripts
@@ -39,7 +39,7 @@ data:
     . .venv/bin/activate
     exec uv run pytest tests/stress/ -v --timeout=${TEST_DURATION} --tb=short
 ---
-apiVersion: batch/ledger
+apiVersion: batch/v1
 kind: Job
 metadata:
   name: stress-tester
