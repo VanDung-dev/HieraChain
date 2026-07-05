@@ -32,7 +32,7 @@ python3 docker/scripts/generate_node_identities.py
 # Step 2: Build Docker image in OrbStack context
 echo ""
 echo "[2/6] Building Docker image in OrbStack context..."
-CURRENT_VERSION=$(python3 -c "import sys; sys.path.insert(0, '.'); from hierachain.units.version import __version__; print(__version__)" 2>/dev/null || echo "0.0.1-k8s")
+CURRENT_VERSION=$(python3 -c "import sys; sys.path.insert(0, '.'); from hierachain.config.version import __version__; print(__version__)" 2>/dev/null || echo "0.0.1-k8s")
 
 docker build -t $IMAGE_NAME \
     --build-arg VERSION=${CURRENT_VERSION} \

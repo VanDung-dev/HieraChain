@@ -61,7 +61,7 @@ INCLUDE_ROGUE_NODE=true python3 docker/scripts/generate_node_identities.py
 echo ""
 echo "[2/6] Building Docker image..."
 # Dynamically extract version from the source code
-CURRENT_VERSION=$(python3 -c "import sys; sys.path.insert(0, '.'); from hierachain.units.version import __version__; print(__version__)")
+CURRENT_VERSION=$(python3 -c "import sys; sys.path.insert(0, '.'); from hierachain.config.version import __version__; print(__version__)")
 echo "  Target Version: ${CURRENT_VERSION}"
 
 docker build -t $IMAGE_NAME \
