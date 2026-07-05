@@ -1,7 +1,7 @@
 # Redis Deployment for HieraChain stress testing
 # Provides fast in-memory storage backend for benchmark tests
 ---
-apiVersion: ledger
+apiVersion: v1
 kind: Service
 metadata:
   name: hierachain-redis
@@ -19,7 +19,7 @@ spec:
       targetPort: 6379
   clusterIP: None
 ---
-apiVersion: apps/ledger
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hierachain-redis

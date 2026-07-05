@@ -1,7 +1,7 @@
 # HieraChain Node Services
 # Headless services for node-to-node communication
 ---
-apiVersion: ledger
+apiVersion: v1
 kind: Service
 metadata:
   name: hierachain-node1
@@ -22,7 +22,7 @@ spec:
       targetPort: 2661
   clusterIP: None # Headless service
 ---
-apiVersion: ledger
+apiVersion: v1
 kind: Service
 metadata:
   name: hierachain-node2
@@ -43,7 +43,7 @@ spec:
       targetPort: 2661
   clusterIP: None
 ---
-apiVersion: ledger
+apiVersion: v1
 kind: Service
 metadata:
   name: hierachain-node3
@@ -64,7 +64,7 @@ spec:
       targetPort: 2661
   clusterIP: None
 ---
-apiVersion: ledger
+apiVersion: v1
 kind: Service
 metadata:
   name: hierachain-node4
@@ -86,7 +86,7 @@ spec:
   clusterIP: None
 ---
 # LoadBalancer service to expose API externally (for local dev with NodePort)
-apiVersion: ledger
+apiVersion: v1
 kind: Service
 metadata:
   name: hierachain-api
