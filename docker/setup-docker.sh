@@ -55,13 +55,13 @@ echo "  Found nodes: ${HRC_NODES}"
 # Step 1: Generate Node Identities (including rogue-node for WireGuard configs)
 echo ""
 echo "[1/6] Generating fresh node identities (cryptographic keys + WireGuard)..."
-INCLUDE_ROGUE_NODE=true python3 docker/scripts/generate_node_identities.py
+INCLUDE_ROGUE_NODE=true uv run python docker/scripts/generate_node_identities.py
 
 # Step 2: Build Docker image
 echo ""
 echo "[2/6] Building Docker image..."
 # Dynamically extract version from the source code
-CURRENT_VERSION=$(python3 -c "import sys; sys.path.insert(0, '.'); from hierachain.config.version import __version__; print(__version__)")
+CURRENT_VERSION=$(uv run python -c "import sys; sys.path.insert(0, '.'); from hierachain.config.version import __version__; print(__version__)")
 echo "  Target Version: ${CURRENT_VERSION}"
 
 docker build -t $IMAGE_NAME \
