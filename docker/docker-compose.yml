@@ -488,7 +488,6 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: hierachain-stress-tester
     environment:
       - TARGET_NODES=10.0.0.5:80,node1:2661,node2:2661,node3:2661,node4:2661
       - TEST_DURATION=60
@@ -496,16 +495,11 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     networks:
-      region-us:
-        ipv4_address: 172.28.1.100
-      region-eu:
-        ipv4_address: 172.28.2.100
-      region-asia:
-        ipv4_address: 172.28.3.100
-      region-rogue:
-        ipv4_address: 172.28.9.100
-      web2-external:
-        ipv4_address: 10.0.0.100
+      - region-us
+      - region-eu
+      - region-asia
+      - region-rogue
+      - web2-external
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./scripts:/app/docker/scripts
