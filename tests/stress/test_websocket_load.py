@@ -147,6 +147,9 @@ class TestWebSocketBasic:
         self.client = RealStressClient()
         if not self.client.wait_for_nodes(timeout=30):
             pytest.skip("No nodes available")
+        healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
+        if healthy:
+            self.client.create_chain(healthy[0], WS_CHAIN)
 
     def test_connect_and_subscribe(self):
         """Connect to WebSocket, subscribe, receive broadcast."""
@@ -222,6 +225,9 @@ class TestWebSocketConcurrent:
         self.client = RealStressClient()
         if not self.client.wait_for_nodes(timeout=30):
             pytest.skip("No nodes available")
+        healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
+        if healthy:
+            self.client.create_chain(healthy[0], WS_CHAIN)
 
     def _connect_clients(self, tester: WebSocketLoadTest, count: int) -> tuple[int, int]:
         successful = 0
@@ -290,6 +296,9 @@ class TestWebSocketBroadcastLoad:
         self.client = RealStressClient()
         if not self.client.wait_for_nodes(timeout=30):
             pytest.skip("No nodes available")
+        healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
+        if healthy:
+            self.client.create_chain(healthy[0], WS_CHAIN)
 
     def _drain_clients(self, tester: WebSocketLoadTest, count: int) -> None:
         for i in range(count):
@@ -302,7 +311,7 @@ class TestWebSocketBroadcastLoad:
         self.client.submit_event(node_id, generate_event(), chain_name=WS_CHAIN)
         time.sleep(1)
         for i in range(count):
-            msg = tester.read_one_sync(i, timeout=3)
+            msg = tester.read_one_sync(i, timeout=0.2)
             if msg:
                 return (time.time() - start) * 1000
         return None
