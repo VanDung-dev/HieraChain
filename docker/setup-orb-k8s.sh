@@ -27,12 +27,12 @@ fi
 # Step 1: Generate Node Identities (Cryptographic Keys)
 echo ""
 echo "[1/6] Generating fresh node identities..."
-python3 docker/scripts/generate_node_identities.py
+uv run python docker/scripts/generate_node_identities.py
 
 # Step 2: Build Docker image in OrbStack context
 echo ""
 echo "[2/6] Building Docker image in OrbStack context..."
-CURRENT_VERSION=$(python3 -c "import sys; sys.path.insert(0, '.'); from hierachain.config.version import __version__; print(__version__)" 2>/dev/null || echo "0.0.1-k8s")
+CURRENT_VERSION=$(uv run python -c "import sys; sys.path.insert(0, '.'); from hierachain.config.version import __version__; print(__version__)" 2>/dev/null || echo "0.0.1-k8s")
 
 docker build -t $IMAGE_NAME \
     --build-arg VERSION=${CURRENT_VERSION} \
@@ -81,7 +81,7 @@ kubectl apply -k docker/k8s/
 echo "  Injecting IPFS swarm.key into ConfigMap..."
 SWARM_KEY_FILE="docker/ipfs/swarm.key"
 if [ -f "$SWARM_KEY_FILE" ]; then
-  SWARM_KEY_CONTENT=$(python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))" < "$SWARM_KEY_FILE")
+  SWARM_KEY_CONTENT=$(uv run python -c "import sys,json; print(json.dumps(sys.stdin.read()))" < "$SWARM_KEY_FILE")
   kubectl patch configmap ipfs-config -n $NAMESPACE \
     --patch "{\"data\":{\"swarm.key\":$SWARM_KEY_CONTENT}}" || {
     echo "  ⚠️  ConfigMap patch failed — trying full replace..."
