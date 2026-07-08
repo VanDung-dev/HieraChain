@@ -1,40 +1,62 @@
 name: Question
-description: Ask a question about HieraChain usage or architecture
+description: Ask a question about HieraChain usage, architecture, or development
 labels: ["question"]
 body:
   - type: markdown
     attributes:
       value: |
-        Have a question? Please check the [documentation](https://docs.hierachain.org/) first. If you still need help, describe your question below.
+        Thanks for reaching out! Before asking, please:
+
+        - Search [existing issues](https://github.com/VanDung-dev/HieraChain/issues) — your question may already be answered.
+        - Review the [documentation](https://docs.hierachain.org/) and [workflow guides](docs/en/workflows/overview.md).
+        - HieraChain is an **enterprise blockchain ledger** — not cryptocurrency. Use proper terminology (event, node, entity_id).
 
   - type: textarea
     id: question
     attributes:
       label: Your Question
-      description: Describe what you'd like to know.
+      description: What would you like to know? Be as specific as possible.
+      placeholder: How does HierarchyManager submit proofs from SubChain to MainChain?
     validations:
       required: true
 
   - type: textarea
+    id: research
+    attributes:
+      label: What I've Tried
+      description: What have you already checked? (docs searched, code read, experiments run)
+      placeholder: I looked at hierachain/hierarchical/hierarchy_manager.py but couldn't find...
+
+  - type: textarea
     id: context
     attributes:
-      label: Context
-      description: Any relevant context (what you've tried, code snippets, config).
+      label: Code / Config Context
+      description: Relevant code snippets, config, or logs (if applicable).
       render: python
 
   - type: dropdown
     id: scope
     attributes:
       label: Related Module
+      description: Which part of HieraChain is your question about?
       options:
-        - Installation / Setup
         - Core (Block, Blockchain)
         - Hierarchical (MainChain, SubChain, HierarchyManager)
-        - Consensus (Ordering, BFT)
-        - Security (Verification, MSP, Policy)
+        - Consensus (Ordering, BFT, ZKP)
+        - Security (Verification, MSP, Policy, Key Management)
+        - Network (Transport, Messaging)
         - API (REST, GraphQL, WebSocket)
         - Storage (SQL, Redis, IPFS)
         - CLI
         - SDK
         - Integration (ERP, Arrow)
+        - Installation / Setup / Docker
+        - Testing
         - Other
+
+  - type: input
+    id: version
+    attributes:
+      label: HieraChain Version
+      description: If applicable, which version are you using?
+      placeholder: e.g. 0.1.0, main, stress-test
