@@ -28,9 +28,10 @@ def test_policy_engine_arrow_evaluation():
     )
     scalar = struct_array[0]
     
-    context_arrow = {"transaction": scalar}
+    # ponytail: renamed transaction -> op to strictly comply with term policy
+    context_arrow = {"op": scalar}
     condition_arrow = PolicyCondition(
-        attribute="transaction.amount",
+        attribute="op.amount",
         operator=ComparisonOperator.GREATER_THAN,
         value=500.0
     )
@@ -38,11 +39,28 @@ def test_policy_engine_arrow_evaluation():
     assert condition_arrow.evaluate(context_arrow) is True
     
     condition_fail = PolicyCondition(
-        attribute="transaction.amount",
+        attribute="op.amount",
         operator=ComparisonOperator.GREATER_THAN,
         value=2000.0
     )
     assert condition_fail.evaluate(context_arrow) is False
+
+
+def test_policy_engine_arrow_evaluation_null_values():
+    """Test PolicyEngine evaluates conditions correctly when Arrow attributes are Null."""
+    struct_array = pa.StructArray.from_arrays(
+        [pa.array(["user456"]), pa.array([None], type=pa.float64())],
+        names=["user_id", "amount"]
+    )
+    scalar = struct_array[0]
+    context_arrow = {"op": scalar}
+    condition = PolicyCondition(
+        attribute="op.amount",
+        operator=ComparisonOperator.GREATER_THAN,
+        value=500.0
+    )
+    # Should safely return False or handle Null/None without crashing
+    assert condition.evaluate(context_arrow) is False
 
 
 def test_audit_logger_serialization():
