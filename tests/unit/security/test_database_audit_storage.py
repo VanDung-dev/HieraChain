@@ -110,3 +110,93 @@ def test_audit_filter_severity_and_type(temp_db_path):
     # Get count
     assert storage.get_event_count(f_crit) == 1
     assert storage.get_event_count(AuditFilter()) == 2
+
+
+def test_database_audit_storage_cleanup(temp_db_path):
+    """Test cleaning up old audit events from database."""
+    storage = DatabaseAuditStorage(temp_db_path)
+    now = time.time()
+    
+    old_event = AuditEvent(
+        event_id="old-event",
+        event_type=AuditEventType.SECURITY_EVENT,
+        severity=AuditSeverity.WARNING,
+        timestamp=now - 100,
+        source_component="test",
+        description="old description",
+        details={}
+    )
+    new_event = AuditEvent(
+        event_id="new-event",
+        event_type=AuditEventType.SECURITY_EVENT,
+        severity=AuditSeverity.WARNING,
+        timestamp=now - 5,
+        source_component="test",
+        description="new description",
+        details={}
+    )
+    
+    storage.store_event(old_event)
+    storage.store_event(new_event)
+    
+    # Cleanup events older than 50 seconds (should remove old_event)
+    deleted = storage.cleanup_old_events(50)
+    assert deleted == 1
+    
+    all_events = storage.retrieve_events(AuditFilter())
+    assert len(all_events) == 1
+    assert all_events[0].event_id == "new-event"
+
+
+def test_database_audit_storage_concurrency(temp_db_path):
+    """Test concurrent storage writes to DatabaseAuditStorage."""
+    import threading
+    storage = DatabaseAuditStorage(temp_db_path)
+    
+    def write_worker(worker_id):
+        event = AuditEvent(
+            event_id=f"concurrent-{worker_id}",
+            event_type=AuditEventType.SYSTEM_EVENT,
+            severity=AuditSeverity.INFO,
+            timestamp=time.time(),
+            source_component="thread",
+            description=f"Worker {worker_id}",
+            details={}
+        )
+        storage.store_event(event)
+        
+    threads = []
+    for i in range(10):
+        t = threading.Thread(target=write_worker, args=(i,))
+        threads.append(t)
+        t.start()
+        
+    for t in threads:
+        t.join()
+        
+    assert storage.get_event_count(AuditFilter()) == 10
+
+
+def test_database_audit_storage_exception_handling(temp_db_path):
+    """Test exception handling under database operation failures."""
+    from unittest.mock import patch
+    import sqlite3
+    storage = DatabaseAuditStorage(temp_db_path)
+    
+    event = AuditEvent(
+        event_id="test-fail",
+        event_type=AuditEventType.SECURITY_EVENT,
+        severity=AuditSeverity.WARNING,
+        timestamp=time.time(),
+        source_component="test",
+        description="test description",
+        details={}
+    )
+    
+    with patch("sqlite3.connect", side_effect=sqlite3.OperationalError("Mock database disk image is malformed")):
+        # Should catch exception and return False safely without crashing
+        assert storage.store_event(event) is False
+        assert len(storage.retrieve_events(AuditFilter())) == 0
+        assert storage.get_event_count(AuditFilter()) == 0
+        assert storage.cleanup_old_events(10) == 0
+
