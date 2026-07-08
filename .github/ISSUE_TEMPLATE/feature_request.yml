@@ -7,18 +7,26 @@ body:
       value: |
         Thanks for suggesting a feature! Please describe your idea clearly so the community can discuss and evaluate it.
 
+        HieraChain is an **enterprise blockchain ledger** — not cryptocurrency. Feature ideas should align with:
+        - Immutability, Distributed Trust, Tamper Evidence, Non-repudiation
+        - Plugin Layer for existing Web2 infrastructure
+        - No cryptocurrency terminology (use event, node, entity_id)
+
   - type: textarea
     id: problem
     attributes:
       label: Problem Statement
       description: What problem does this feature solve? Is this related to a frustration?
       placeholder: I'm always frustrated when...
+    validations:
+      required: true
 
   - type: textarea
     id: solution
     attributes:
       label: Proposed Solution
       description: Describe the solution you'd like to see.
+      placeholder: A new module in hierachain/ that handles...
     validations:
       required: true
 
@@ -36,13 +44,24 @@ body:
       options:
         - Core (Block, Blockchain)
         - Hierarchical (MainChain, SubChain, HierarchyManager)
-        - Consensus (Ordering, BFT)
-        - Security (Verification, MSP, Policy)
+        - Consensus (Ordering, BFT, ZKP)
+        - Security (MSP, Policy, Key Management)
+        - Network (Transport, Messaging)
         - API (REST, GraphQL, WebSocket)
-        - Storage (SQL, Redis, IPFS)
+        - Storage / Adapters (SQL, Redis, IPFS)
+        - State Machine
+        - Cluster / Rollback
         - CLI
         - SDK
         - Integration (ERP, Arrow)
+        - Domains (Generic, Traceability)
+        - Monitoring
+        - Risk Management
+        - Error Mitigation
+        - Config
+        - Tests (Unit, Integration, Stress)
+        - Docker / K8s / Podman
+        - Documentation
         - Other
 
   - type: textarea
