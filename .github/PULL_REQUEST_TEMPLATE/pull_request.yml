@@ -1,0 +1,129 @@
+name: Pull Request
+description: Submit a pull request to HieraChain
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing to HieraChain! Please fill out the sections below to help reviewers understand your changes.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What does this PR do? Why is it needed?
+      placeholder: Describe the change and its motivation...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Change Type
+      multiple: false
+      options:
+        - feat — New feature or enhancement
+        - fix — Bug fix
+        - refactor — Code restructuring (no functional change)
+        - test — Adding or improving tests
+        - docs — Documentation only
+        - chore — Tooling, CI, config, dependency bumps
+        - perf — Performance improvement
+        - security — Security fix
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Affected Module
+      description: Which part(s) of HieraChain does this PR touch?
+      multiple: true
+      options:
+        - Core (Block, Blockchain)
+        - Hierarchical (MainChain, SubChain, HierarchyManager)
+        - Consensus (Ordering, BFT, ZKP)
+        - Security (Verification, MSP, Policy, Key Management)
+        - API (REST, GraphQL, WebSocket)
+        - Storage (SQL, Redis, IPFS)
+        - CLI / SDK
+        - Integration (ERP, Arrow)
+        - Network (Transport, Messaging)
+        - Tests (Unit, Integration, Stress)
+        - CI / Tooling / Docker
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: changes
+    attributes:
+      label: Key Changes
+      description: List the main files changed and what changed in each.
+      placeholder: |
+        - `path/to/file.py`: Added X to handle Y
+        - `path/to/other.py`: Refactored Z for consistency
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: PR Checklist
+      description: Confirm the following before requesting review.
+      options:
+        - label: Code follows project conventions (type hints, naming, patterns)
+          required: true
+        - label: No cryptocurrency terminology introduced (event, not transaction)
+          required: true
+        - label: Tests added/updated for new/changed logic
+          required: false
+        - label: All existing tests pass
+          required: true
+        - label: Lint & type checks pass
+          required: true
+        - label: Relevant documentation updated (if applicable)
+          required: false
+        - label: Security implications considered
+          required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Logs
+      description: Attach screenshots, logs, or test output if relevant.
+      render: shell
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Breaking Change
+      description: Does this PR introduce breaking changes?
+      options:
+        - "No"
+        - "Yes — API change"
+        - "Yes — Storage schema change"
+        - "Yes — Config / CLI change"
+        - "Yes — Other (explain below)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: breaking-details
+    attributes:
+      label: Breaking Change Details
+      description: If yes, describe what breaks and the migration path.
+      placeholder: What breaks, and how to migrate...
+
+  - type: textarea
+    id: related
+    attributes:
+      label: Related Issues
+      description: Link any related issues (e.g. `Closes #123`, `Relates to #456`).
+      placeholder: Closes #
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Anything else reviewers should know?
