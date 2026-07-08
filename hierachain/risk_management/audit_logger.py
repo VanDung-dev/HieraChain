@@ -92,8 +92,9 @@ class DatabaseAuditStorage(AuditStorage):
 
     def store_event(self, event: AuditEvent) -> bool:
         import sqlite3
-        conn = sqlite3.connect(self.db_path)
+        conn = None
         try:
+            conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute(
                 """
@@ -121,15 +122,17 @@ class DatabaseAuditStorage(AuditStorage):
             logging.error("Failed to store audit event in DB: %s", str(e))
             return False
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
     def retrieve_events(
         self, filter_criteria: AuditFilter, limit: int | None = None
     ) -> list[AuditEvent]:
         import sqlite3
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
+        conn = None
         try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             query = "SELECT * FROM audit_events WHERE 1=1"
             params = []
@@ -170,12 +173,14 @@ class DatabaseAuditStorage(AuditStorage):
             logging.error("Failed to retrieve audit events from DB: %s", str(e))
             return []
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
     def get_event_count(self, filter_criteria: AuditFilter) -> int:
         import sqlite3
-        conn = sqlite3.connect(self.db_path)
+        conn = None
         try:
+            conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             query = "SELECT COUNT(*) FROM audit_events WHERE 1=1"
             params = []
@@ -200,7 +205,29 @@ class DatabaseAuditStorage(AuditStorage):
             logging.error("Failed to count audit events in DB: %s", str(e))
             return 0
         finally:
-            conn.close()
+            if conn:
+                conn.close()
+
+    def cleanup_old_events(self, max_age_seconds: float) -> int:
+        """Remove audit events older than max_age_seconds."""
+        # ponytail: simple DELETE statement with timestamp check
+        import sqlite3
+        import time
+        conn = None
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cutoff = time.time() - max_age_seconds
+            cursor.execute("DELETE FROM audit_events WHERE timestamp < ?", (cutoff,))
+            deleted = cursor.rowcount
+            conn.commit()
+            return deleted
+        except Exception as e:
+            logging.error("Failed to cleanup audit events in DB: %s", str(e))
+            return 0
+        finally:
+            if conn:
+                conn.close()
 
 
 
