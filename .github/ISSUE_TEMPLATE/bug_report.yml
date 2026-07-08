@@ -22,8 +22,8 @@ body:
       label: Steps to Reproduce
       description: How can we reproduce this behavior?
       placeholder: |
-        1. Install HieraChain via `pip install HieraChain`
-        2. Run `...`
+        1. Clone the repo and run `docker compose up`
+        2. Submit an event via `POST /api/v1/event`
         3. See error
     validations:
       required: true
@@ -44,6 +44,50 @@ body:
       render: shell
 
   - type: dropdown
+    id: module
+    attributes:
+      label: Affected Module
+      description: Which part of HieraChain is affected?
+      options:
+        - Core (Block, Blockchain)
+        - Hierarchical (MainChain, SubChain, HierarchyManager)
+        - Consensus (Ordering, BFT, ZKP)
+        - Security (MSP, Policy, Key Management)
+        - Network (Transport, Messaging)
+        - API (REST, GraphQL, WebSocket)
+        - Storage / Adapters (SQL, Redis, IPFS)
+        - State Machine
+        - Cluster / Rollback
+        - CLI
+        - SDK
+        - Integration (ERP, Arrow)
+        - Domains (Generic, Traceability)
+        - Monitoring
+        - Risk Management
+        - Error Mitigation
+        - Config
+        - Tests (Unit, Integration, Stress)
+        - Docker / K8s / Podman
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: env
+    attributes:
+      label: Environment
+      description: How are you running HieraChain?
+      options:
+        - Docker
+        - Podman
+        - K8s
+        - Native Python
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
     id: python-version
     attributes:
       label: Python Version
@@ -59,8 +103,8 @@ body:
     id: hierachain-version
     attributes:
       label: HieraChain Version
-      description: Run `python -c "import hierachain; print(hierachain.__version__)"` or check `pip show HieraChain`
-      placeholder: e.g. 0.0.1, 0.1.0, 1.0.0
+      description: Check `hierachain/__init__.py` or the commit/branch you're on.
+      placeholder: e.g. v0.1.0, main, stress-test
     validations:
       required: true
 
@@ -80,4 +124,4 @@ body:
     id: additional
     attributes:
       label: Additional Context
-      description: Any other information that might help (screenshots, config, etc.).
+      description: Any other information that might help (screenshots, config, docker-compose overrides, etc.).
