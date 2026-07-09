@@ -7,10 +7,19 @@ body:
       value: |
         Thanks for contributing to HieraChain! Please fill out the sections below to help reviewers understand your changes.
 
+  - type: input
+    id: title
+    attributes:
+      label: PR Title
+      description: "A concise title for the PR (e.g. `feat(stress): add network fault simulation`)"
+      placeholder: "feat(scope): brief description"
+    validations:
+      required: true
+
   - type: textarea
     id: summary
     attributes:
-      label: Summary
+      label: Description
       description: What does this PR do? Why is it needed?
       placeholder: Describe the change and its motivation...
     validations:
@@ -59,12 +68,27 @@ body:
     id: changes
     attributes:
       label: Key Changes
-      description: List the main files changed and what changed in each.
+      description: List the main files changed and what changed in each. Group by New / Improve / Infra.
       placeholder: |
-        - `path/to/file.py`: Added X to handle Y
-        - `path/to/other.py`: Refactored Z for consistency
+        ### New
+        | File | Changes | Description |
+        |------|---------|-------------|
+        | `path/to/file.py` | +50 | Added feature X |
+
+        ### Improve
+        - **`path/to/file.py`**: Refactored Y for consistency
+
+        ### Infra
+        - **`path/to/config.yml`**: Updated config for Z
     validations:
       required: true
+
+  - type: input
+    id: diff-stats
+    attributes:
+      label: Diff Overview
+      description: Summary of files changed, insertions, deletions
+      placeholder: X files changed, Y insertions(+), Z deletions(-)
 
   - type: checkboxes
     id: checklist
