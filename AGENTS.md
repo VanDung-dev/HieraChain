@@ -57,23 +57,53 @@ event = {
 }
 ```
 
-### 2. Two-Tier Hierarchy
+### 2. Core Primitives
+* **Blockchain**: Base chain implementation storing events in blocks with Merkle tree proofs.
+* **World State**: Tracks current entity states from finalized blocks for fast queries.
+* **Merkle Tree**: Builds cryptographic proofs of event inclusion for tamper evidence.
+
+### 3. Two-Tier Hierarchy
 * **Main Chain**: Stores only cryptographic proofs/hashes from Sub-Chains.
 * **Sub-Chains**: Store domain-specific events, submitting proof hashes up to the Main Chain via `HierarchyManager`.
 
-### 3. Key Classes & Entry Points
+### 4. Key Classes & Entry Points
 
 | Task | Class / Function | File |
 |------|-----------------|------|
-| Submit business event | `SubChain.add_event()` | [hierarchical/sub_chain.py](./hierachain/hierarchical/sub_chain.py) |
-| Manage all chains | `HierarchyManager` | [hierarchical/hierarchy_manager.py](./hierachain/hierarchical/hierarchy_manager.py) |
+| Submit business event | `SubChain.add_event()` | [hierarchical/sub_chain/base.py](./hierachain/hierarchical/sub_chain/base.py) |
+| Manage all chains | `HierarchyManager` | [hierarchical/hierarchy_manager/base.py](./hierachain/hierarchical/hierarchy_manager/base.py) |
 | Order events → blocks | `OrderingService.receive_event()` | [consensus/ordering/service.py](./hierachain/consensus/ordering/service.py) |
 | Policy enforcement | `PolicyEngine.evaluate()` | [security/policy_engine.py](./hierachain/security/policy_engine.py) |
-| Trace entity across chains | `EntityTracer.trace_entity()` | [domains/generic/utils/entity_tracer.py](./hierachain/domains/generic/utils/entity_tracer.py) |
-| Validate system integrity | `CrossChainValidator.validate_system_integrity()` | [domains/generic/utils/cross_chain_validator.py](./hierachain/domains/generic/utils/cross_chain_validator.py) |
+| Trace entity across chains | `EntityTracer.trace_entity()` | [domains/utils/entity_tracer.py](./hierachain/domains/utils/entity_tracer.py) |
+| Validate system integrity | `CrossChainValidator.validate_system_integrity()` | [domains/utils/cross_chain_validator.py](./hierachain/domains/utils/cross_chain_validator.py) |
+| Core blockchain operations | `Blockchain` | [core/blockchain.py](./hierachain/core/blockchain.py) |
+| Merkle tree proofs | `MerkleTree` | [core/merkle_tree.py](./hierachain/core/merkle_tree.py) |
+| Entity state tracking | `WorldState.get_entity_state()` | [state/world_state.py](./hierachain/state/world_state.py) |
 | Real-time streaming | `WebSocketManager` (singleton `ws_manager`) | [api/websocket/manager.py](./hierachain/api/websocket/manager.py) |
 | Store to IPFS (encrypted) | `IPFSClient.upload_json()` | [api/storage/ipfs_client.py](./hierachain/api/storage/ipfs_client.py) |
 | Assess system risks | `RiskAnalyzer.perform_comprehensive_analysis()` | [risk_management/risk_analyzer.py](./hierachain/risk_management/risk_analyzer.py) |
+
+### 5. Full Module Directory
+
+| Package | Purpose |
+|---------|---------|
+| `adapters/` | Database adapters (SQLite, Redis) |
+| `api/` | REST, GraphQL, WebSocket APIs |
+| `cli/` | Command-line interface |
+| `cluster/` | Cluster lockdown, rollback snapshots |
+| `config/` | Environment, secrets, version, settings |
+| `consensus/` | Ordering, BFT, ZK proofs |
+| `core/` | Block, Blockchain, Merkle tree primitives |
+| `domains/` | Generic & traceability domain logic |
+| `error_mitigation/` | Audit logging, integrity verification |
+| `hierarchical/` | MainChain, SubChain, HierarchyManager |
+| `integration/` | ERP, enterprise adapters |
+| `monitoring/` | Metrics, alerting, performance monitoring |
+| `network/` | Transport, messaging, MSP |
+| `risk_management/` | Risk analysis, audit logging |
+| `sdk/` | Async & sync client libraries |
+| `security/` | Identity, key management, policy engine |
+| `state/` | World state tracking |
 
 ---
 
@@ -84,12 +114,12 @@ event = {
 * **Module-level Helpers**: Preferred over deeply nested helper methods.
 * **Facade Pattern**: Complex subsystems must expose a single coordinator class (e.g., `OrderingService`, `HierarchyManager`).
 * **Strategy Pattern**: Use for swappable algorithms (consensus, caching, splitting).
-* **Repository Pattern**: Never access DB directly from business logic; use storage adapters under `adapters/storage/`.
+* **Repository Pattern**: Never access DB directly from business logic; use storage adapters under `adapters/database/`.
 * **State Machine**: Lifecycle transitions must follow defined allowed states (e.g., `DomainContract` lifecycle).
 
 ### Forbidden Patterns
 * **No Cryptocurrency Terminology**: Do not use crypto terms in event data, variable names, or comments.
-* **No Direct Storage Calls**: Do not make direct `sqlite3` or `redis` calls outside of `adapters/storage/`.
+* **No Direct Storage Calls**: Do not make direct `sqlite3` or `redis` calls outside of `adapters/database/`.
 * **No `print()` Statements**: Do not use `print()` in library code (use logging or `SecureLogger`).
 * **No Bulk Test Execution**: Do not run all tests at once to avoid resource conflicts; run per-file.
 * **No Hardcoded Secrets**: Do not store secrets in code; use environment variables.
