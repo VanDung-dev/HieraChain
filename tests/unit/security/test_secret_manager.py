@@ -86,7 +86,7 @@ class TestVaultBackend:
         }
         mock_hvac = MagicMock()
         mock_hvac.Client.return_value.is_authenticated.return_value = True
-        mock_hvac.Client.return_value.secrets.kv.business.read_secret_version.return_value = {
+        mock_hvac.Client.return_value.secrets.kv.v2.read_secret_version.return_value = {
             "data": {"data": {"HRC_CLUSTER_SECRET": "vault_secret_value"}}
         }
 
