@@ -64,7 +64,7 @@ class Blockchain:
         self.query_engine = BlockchainQueryEngine(self)
         with self.lock:
             self.create_genesis_block()
-    
+
     def create_genesis_block(self) -> None:
         """Create the genesis (first) block of the blockchain."""
         genesis_events = [{
