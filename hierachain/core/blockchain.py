@@ -484,8 +484,7 @@ class Blockchain:
         """
         events = []
         for block in self.chain:
-            block_events = block.to_dict()['events']
-            for event in block_events:
+            for event in block.to_event_list():
                 if filter_func(event):
                     events.append(event)
         return events
