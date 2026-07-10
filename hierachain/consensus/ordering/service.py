@@ -10,7 +10,7 @@ import logging
 import time
 import asyncio
 from queue import Queue, Empty
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
 from hierachain.core.block import Block
 from hierachain.error_mitigation.journal import TransactionJournal
@@ -76,42 +76,24 @@ class OrderingService:
         self.config["batch_timeout"] = batch_timeout
 
         self.certifier = EventCertifier()
-
-        self._recover_pending_events_from_journal()
-
-    def _recover_pending_events_from_journal(self) -> None:
-        """Recover pending events from the journal on startup to prevent data loss."""
-        try:
-            for event_data in self.journal.replay():
-                event_id = event_data.get("event_id")
-                if event_id and event_id not in self.pending_events:
-                    # Reconstruct PendingEvent from journal data
-                    from hierachain.consensus.ordering.types import PendingEvent, EventStatus
-                    safe_id = cast(str, event_id)
-                    pending = PendingEvent(
-                        event_id=safe_id,
-                        event_data=event_data,
-                        channel_id=event_data.get("channel_id", "default"),
-                        submitter_org=event_data.get("submitter_org", "unknown"),
-                        received_at=event_data.get("timestamp", time.time()),
-                        status=EventStatus.PENDING,
-                    )
-                    self.pending_events[safe_id] = pending
-                    logger.debug("Recovered pending event %s from journal", safe_id)
-            if self.pending_events:
-                logger.info(
-                    "Recovered %d pending events from journal on startup",
-                    len(self.pending_events)
-                )
-        except Exception as e:
-            logger.error("Failed to recover pending events from journal: %s", e)
-            raise
-
         self.block_builder = BlockBuilder(self.config)
 
         # Complex Logic Handlers
         self.processor = OrderingProcessor(self)
         self.maintenance = OrderingMaintenance(self)
+
+        # Lightweight recovery: just logs, no raise — ordering recovery
+        # re-plays journal events properly in recover_state_async() later.
+        self._recover_pending_events_from_journal()
+
+    def _recover_pending_events_from_journal(self) -> None:
+        """Count uncommitted journal entries (recovery handled by OrderingRecovery)."""
+        try:
+            count = sum(1 for _ in self.journal.replay())
+            if count:
+                logger.info("Journal has %d uncommitted events for processor recovery.", count)
+        except Exception as e:
+            logger.error("Failed to read journal: %s", e)
 
         # Thread Management
         thread = threading.Thread(
