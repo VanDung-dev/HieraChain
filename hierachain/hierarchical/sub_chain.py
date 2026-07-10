@@ -755,16 +755,13 @@ class SubChain(Blockchain):
             event["event"] = event.get("type", "generic_event")
 
         logger.debug("SubChain %s adding event: %s", self.name, event.get("event"))
-        
-        # Send to OrderingService first
+
+        # OrderingService handles queuing, batching, and block creation.
+        # Blockchain.pending_events is not used in SubChain flow (consumer thread
+        # reads from ordering_service.commit_queue), so we skip the inherited append.
         self.ordering_service.receive_event(
             event_data=event, channel_id=self.name, submitter_org=self.name
         )
-        
-        # Also add to Blockchain.pending_events for compatibility
-        with self.lock:
-            if event not in self.pending_events:
-                self.pending_events.append(event)
 
         return f"tx-{hash(str(event))}"
 
