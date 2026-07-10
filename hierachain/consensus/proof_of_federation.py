@@ -383,7 +383,8 @@ def _extract_signature_from_block(block: Block) -> str | None:
 def _verify_block_quorum(
     block: Block,
     validator_metadata: dict[str, dict[str, Any]],
-    signer_id: str | None = None) -> bool:
+    signer_id: str | None = None
+) -> bool:
     """Verify the block's federation signature using Ed25519.
 
     Args:
