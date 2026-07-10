@@ -7,7 +7,7 @@ NODE_ID=${HRC_NODE_ID:-unknown}
 echo "[entrypoint] Starting node $NODE_ID (region: $REGION)"
 
 WG_CONF="/app/config/identity/wg0.conf"
-if [ -f "$WG_CONF" ]; then
+if [ -f "$WG_CONF" ] && [ "$NO_WG" != "true" ]; then
     echo "[entrypoint] Initializing WireGuard interface"
 
     ip link add wg0 type wireguard 2>/dev/null || true
