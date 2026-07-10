@@ -225,8 +225,8 @@ class ProofOfFederation(BaseConsensus):
                 not self.validate_block_proposer(block.index, signer_id)):
             return False
 
-        # 4. Federation signature verification
-        if not _verify_block_quorum(block, self.validator_metadata):
+        # 4. Federation signature verification (pass signer_id to avoid re-extract)
+        if not _verify_block_quorum(block, self.validator_metadata, signer_id):
             logger.error("Block %d federation signature verification FAILED", block.index)
             return False
 
@@ -387,23 +387,22 @@ def _is_signature_valid(
 
 
 def _verify_block_quorum(block: Block,
-                         validator_metadata: dict[str, dict[str, Any]]) -> bool:
+                         validator_metadata: dict[str, dict[str, Any]],
+                         signer_id: str | None = None) -> bool:
     """Verify the block's federation signature using Ed25519.
-
-    Extracts the signer ID and signature from the block's
-    consensus_finalization event, looks up the signer's public key,
-    and verifies the Ed25519 signature against the block hash.
 
     Args:
         block: Block to verify.
         validator_metadata: Dict mapping validator IDs to metadata dicts
                             (must contain "public_key" hex string).
+        signer_id: Pre-extracted signer ID (avoids scanning block events twice).
 
     Returns:
         True if the signature is valid or no signature is present,
         False if the signature is invalid.
     """
-    signer_id = _extract_signer_id(block)
+    if signer_id is None:
+        signer_id = _extract_signer_id(block)
     if not signer_id:
         logger.warning("Block %d has no signer ID — quorum verification skipped", block.index)
         return True
