@@ -263,7 +263,17 @@ class Blockchain:
                         "event": event,
                         "timestamp": event.get("timestamp", time.time())
                     })
-    
+
+    def _rebuild_event_indexes(self) -> None:
+        """Rebuild total_events, event_type_counts, and entity_event_index
+        from scratch based on the current chain."""
+        with self.lock:
+            self.total_events = 0
+            self.event_type_counts.clear()
+            self.entity_event_index.clear()
+            for block in self.chain:
+                self._index_block_events(block)
+
     def get_latest_block(self) -> Block:
         """
         Get the latest block in the chain.
@@ -531,6 +541,7 @@ class Blockchain:
             blockchain.chain.append(block)
         
         blockchain.pending_events = data.get("pending_events", [])
+        blockchain._rebuild_event_indexes()
 
         # Validate chain integrity after loading
         if not blockchain.is_chain_valid():
