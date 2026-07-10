@@ -69,6 +69,13 @@ class ProofOfFederation(BaseConsensus):
             "enforce_rotation": True
         }
 
+    @property
+    def public_key(self) -> str | None:
+        """Hex-encoded public key derived from the node's signing key."""
+        if self._signing_key is None:
+            return None
+        return self._signing_key.verify_key.encode(HexEncoder).decode()
+
     def get_validator_count(self) -> int:
         """Get the number of active validators."""
         return len(self.validators)
@@ -93,7 +100,15 @@ class ProofOfFederation(BaseConsensus):
         # Keep list sorted to ensure deterministic order across all nodes
         self.validators.sort()
     
-        self.validator_metadata[validator_id] = metadata or {}
+        meta = dict(metadata) if metadata is not None else {}
+        if "public_key" not in meta:
+            try:
+                from hierachain.security.security_utils import KeyPair
+                kp = KeyPair()
+                meta["public_key"] = kp.public_key
+            except Exception as e:
+                logger.error("Failed to auto-generate key pair for %s: %s", validator_id, e)
+        self.validator_metadata[validator_id] = meta
         return True
 
     def remove_validator(self, validator_id: str) -> bool:
@@ -231,10 +246,14 @@ class ProofOfFederation(BaseConsensus):
             return block
 
         signature = _create_federation_signature(block, self._signing_key)
+        if not signature:
+            # No signing key configured — cannot sign, return block unmodified
+            return block
         consensus_metadata = {
             "consensus_type": "proof_of_federation",
             "leader_id": authority_id,
             "signature": signature,
+            "block_hash": block.hash,  # unfinalized hash for verification
             "validators_count": len(self.validators),
             "round": block.index,
             "finalized_at": time.time()
@@ -390,27 +409,38 @@ def _verify_block_quorum(block: Block,
         return True
 
     events = block.to_event_list()
+    consensus_event = None
     for event in reversed(events):
         if event.get("event") == "consensus_finalization":
-            signature = event.get("details", {}).get("signature", "")
+            consensus_event = event
             break
-    else:
+    if consensus_event is None:
         logger.warning("Block %d has no consensus_finalization event", block.index)
         return True
 
+    details = consensus_event.get("details", {})
+    signature = details.get("signature", "")
+
     if not signature:
-        logger.warning("Block %d has empty federation signature", block.index)
-        return True
+        logger.warning("Block %d has empty federation signature — rejecting", block.index)
+        return False
 
     public_key = validator_metadata.get(signer_id, {}).get("public_key")
     if not public_key:
         logger.warning(
-            "Block %d signer %s has no public_key in metadata — skipping sig verify",
+            "Block %d signer %s has no public_key in metadata — rejecting",
             block.index, signer_id
         )
-        return True
+        return False
 
-    message = block.hash.encode("utf-8")
+    # Signature was created against the unfinalized block hash (before
+    # consensus_finalization was appended). Use block_hash from the
+    # consensus_finalization details to avoid timestamp/index drift.
+    block_hash = details.get("block_hash")
+    if not block_hash:
+        logger.warning("Block %d consensus_finalization has no block_hash", block.index)
+        return False
+    message = block_hash.encode("utf-8")
     is_valid = verify_signature(public_key, message, signature)
     if not is_valid:
         logger.error(
