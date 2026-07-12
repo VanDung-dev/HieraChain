@@ -75,12 +75,12 @@ class NetworkClient:
     def _parse_seed_node(seed: str) -> tuple[str | None, str | None, bytes | None]:
         """Analyze the structure of the seed node configuration chain."""
         if "@" in seed:
-            # Format: node_id@ip:port[:public_key]
+            # Format: peer_id@ip:port[:public_key]
             peer_id, rest = seed.split("@", 1)
             parts = rest.split(":")
             if len(parts) >= 2:
                 address = f"tcp://{parts[0]}:{parts[1]}"
-                pub_key = ":".join(parts[2:]).encode('utf-8') if len(parts) >= 3 else None
+                pub_key = ":".join(parts[2:]).replace("$$", "$").encode('utf-8') if len(parts) >= 3 else None
                 return peer_id, address, pub_key
             return None, f"tcp://{rest}", None
 
@@ -90,7 +90,7 @@ class NetworkClient:
             if len(parts) >= 2:
                 peer_id = parts[0]
                 address = f"tcp://{parts[0]}:{parts[1]}"
-                pub_key = ":".join(parts[2:]).encode('utf-8') if len(parts) >= 3 else None
+                pub_key = ":".join(parts[2:]).replace("$$", "$").encode('utf-8') if len(parts) >= 3 else None
                 return peer_id, address, pub_key
             return parts[0], f"tcp://{seed}", None
 
