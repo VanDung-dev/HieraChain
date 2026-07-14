@@ -487,27 +487,16 @@ def _rehydrate_chain_from_ordering_service(
     
     # If local chain has fewer blocks, proceed with rehydration
     if latest_local.index < latest_db.index:
-        # Map out the temporary index to save events occurring during rehydration
         with sub_chain.lock:
-            temp_entity_index = dict(sub_chain.entity_event_index)
-
-            # Clear the locally created chain (including the newly created genesis block)
             sub_chain.chain.clear()
             sub_chain.total_events = 0
             sub_chain.event_type_counts.clear()
             sub_chain.entity_event_index.clear()
 
-            # Add all blocks from DB to the chain with proper indexing
             for block in all_blocks:
                 sub_chain.chain.append(block)
                 _update_event_statistics(sub_chain, block)
-                
-            # Restore events added during rehydration
-            for entity_id, events in temp_entity_index.items():
-                if entity_id not in sub_chain.entity_event_index:
-                    sub_chain.entity_event_index[entity_id] = events
 
-            # Also update the ordering service's block_history and blocks_created to match
             sub_chain.ordering_service.block_history = list(sub_chain.chain)
             sub_chain.ordering_service.blocks_created = all_blocks[-1].index + 1
 
@@ -755,16 +744,13 @@ class SubChain(Blockchain):
             event["event"] = event.get("type", "generic_event")
 
         logger.debug("SubChain %s adding event: %s", self.name, event.get("event"))
-        
-        # Send to OrderingService first
+
+        # OrderingService handles queuing, batching, and block creation.
+        # Blockchain.pending_events is not used in SubChain flow (consumer thread
+        # reads from ordering_service.commit_queue), so we skip the inherited append.
         self.ordering_service.receive_event(
             event_data=event, channel_id=self.name, submitter_org=self.name
         )
-        
-        # Also add to Blockchain.pending_events for compatibility
-        with self.lock:
-            if event not in self.pending_events:
-                self.pending_events.append(event)
 
         return f"tx-{hash(str(event))}"
 

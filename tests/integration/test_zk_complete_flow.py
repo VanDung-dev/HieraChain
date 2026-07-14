@@ -87,11 +87,17 @@ def test_pof_zk_happy_path(zk_context):
     Verify the complete lifecycle of ZK proof with Proof of Federation (PoF).
     Similar to PoA but checks that PoF's distinct validation logic works with ZK.
     """
-    # 1. Setup PoF instance locally for this test
-    pof = ProofOfFederation()
+    from nacl.signing import SigningKey
+    from nacl.encoding import HexEncoder
+
+    # 1. Setup PoF instance with signing key
+    sk = SigningKey.generate()
+    sk_hex = sk.encode(HexEncoder).decode()
+    pof = ProofOfFederation(signing_key_hex=sk_hex)
     validator_id = "VAL-FED-001"
-    pof.add_validator(validator_id)
-    
+    pk_hex = sk.verify_key.encode(HexEncoder).decode()
+    pof.add_validator(validator_id, {"public_key": pk_hex})
+
     # 2. Setup Previous Block
     prev_block = Block(
         index=50, 
@@ -111,19 +117,30 @@ def test_pof_zk_happy_path(zk_context):
         new_root, 
         new_index
     )
+
+    # 5. Create pre-consensus block, then sign its hash
+    pre_block = Block(
+        index=new_index,
+        events=[],
+        previous_hash=prev_block.hash,
+        timestamp=prev_block.timestamp + 10,
+    )
+    pre_block.merkle_root = new_root
+    signature = sk.sign(pre_block.hash.encode("utf-8")).signature.hex()
     
-    # 5. Create PoF Consensus Event
+    # 6. Create PoF Consensus Event with real signature and block_hash
     consensus_event = {
         "entity_id": validator_id,
         "event": "consensus_finalization",
         "timestamp": time.time(),
         "details": {
             "leader_id": validator_id,
-            "signature": "valid_fed_sig",
+            "signature": signature,
             "zk_proof": proof_bytes.hex(),
             "previous_state": prev_block.merkle_root,
             "current_state": new_root,
-            "consensus_type": "proof_of_federation"
+            "consensus_type": "proof_of_federation",
+            "block_hash": pre_block.hash
         }
     }
     
@@ -132,11 +149,10 @@ def test_pof_zk_happy_path(zk_context):
         events=[consensus_event],
         previous_hash=prev_block.hash,
         timestamp=prev_block.timestamp + 10,
-        signature="fed_block_sig"
     )
     block.merkle_root = new_root
     
-    # 6. Validate with PoF
+    # 7. Validate with PoF
     is_valid = pof.validate_block(block, prev_block)
     
     assert is_valid is True

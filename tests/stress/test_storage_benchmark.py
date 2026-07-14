@@ -76,21 +76,22 @@ def _require_storage_adapter(backend: str):
 def _generate_block(index: int) -> dict:
     """Generate simulated block data."""
     import hashlib
-    return {
-        "index": index,
-        "hash": hashlib.sha256(f"block_{index}".encode()).hexdigest(),
-        "previous_hash": hashlib.sha256(f"block_{index - 1}".encode()).hexdigest() if index > 0 else None,
-        "timestamp": time.time(),
-        "events_count": random.randint(1, 20),
-        "events": [
-            {
-                "entity_id": f"entity_{random.randint(1, 100)}",
-                "event_type": random.choice(["create", "update", "delete"]),
-                "timestamp": time.time(),
-            }
-            for _ in range(random.randint(1, 10))
-        ],
-    }
+    from hierachain.core import Block
+    events = [
+        {
+            "entity_id": f"entity_{random.randint(1, 100)}",
+            "event": random.choice(["create", "update", "delete"]),
+            "timestamp": time.time(),
+        }
+        for _ in range(random.randint(1, 10))
+    ]
+    prev_hash = hashlib.sha256(f"block_{index - 1}".encode()).hexdigest() if index > 0 else None
+    block = Block(
+        index=index,
+        events=events,
+        previous_hash=prev_hash,
+    )
+    return block.to_dict()
 
 
 class TestStorageBackendSQLite:

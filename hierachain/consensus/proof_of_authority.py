@@ -348,18 +348,19 @@ def _create_authority_signature(
             return kp.sign(sig_str.encode())
         except Exception as e:
             logger.error("Failed to sign block with private key: %s", e)
-            
-    # Fallback to random signature for tests running without proper keys setup
-    # In test mode, prefix with 'valid_' so verification recognizes mock signatures
+
     import os
     import sys
     is_testing = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
     if is_testing:
         return "valid_" + hashlib.sha256(sig_str.encode()).hexdigest()
-    try:
-        return KeyPair().sign(sig_str.encode())
-    except Exception:
-        return hashlib.sha256(sig_str.encode()).hexdigest()
+
+    # No private key and not in test mode — cannot sign
+    logger.error(
+        "Cannot sign block %d for authority %s: no private key",
+        block.index, authority_id
+    )
+    return ""
 
 
 def _validate_entity_id(entity_id: Any) -> bool:
