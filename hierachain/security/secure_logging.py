@@ -7,6 +7,7 @@ by sanitizing user input before logging and using structured log formats.
 
 import logging
 import json
+import re
 from typing import Any
 from datetime import datetime, timezone
 
@@ -26,10 +27,25 @@ _LOG_SANITIZE_TABLE = str.maketrans(LOG_INJECTION_CHARS)
 # Maximum string length before truncation
 MAX_LOG_STRING_LENGTH = 500
 
+_SENSITIVE_KEYS = (
+    "api[_-]?key|secret|password|private[_-]?key|passwd|"
+    "token|credentials?|auth[_-]?token|access[_-]?key|session[_-]?id"
+)
+_JSON_SENSITIVE = re.compile(rf'(?i)("(?:{_SENSITIVE_KEYS})"\s*:\s*)"[^"]*"')
+_KV_SENSITIVE = re.compile(rf'(?i)((?:{_SENSITIVE_KEYS})\s*[:=]\s*)(?:[^\s"\'&,;)}}]+)')
+
+
+def _redact_sensitive_patterns(value: str) -> str:
+    """Replace sensitive values (keys, tokens, passwords) with '***'."""
+    value = _JSON_SENSITIVE.sub(r'\1"***"', value)
+    value = _KV_SENSITIVE.sub(r'\1***', value)
+    return value
+
 
 def _sanitize_string(value: str) -> str:
-    """Sanitize a string for logging - replaces dangerous chars and truncates."""
+    """Sanitize a string for logging - replaces dangerous chars, redacts secrets, and truncates."""
     result = value.translate(_LOG_SANITIZE_TABLE)
+    result = _redact_sensitive_patterns(result)
     if len(result) > MAX_LOG_STRING_LENGTH:
         result = result[:MAX_LOG_STRING_LENGTH] + "...[truncated]"
     return result
