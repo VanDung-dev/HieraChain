@@ -34,6 +34,12 @@ _SENSITIVE_KEYS = (
 _JSON_SENSITIVE = re.compile(rf'(?i)("(?:{_SENSITIVE_KEYS})"\s*:\s*)"[^"]*"')
 _KV_SENSITIVE = re.compile(rf'(?i)((?:{_SENSITIVE_KEYS})\s*[:=]\s*)(?:[^\s"\'&,;)}}]+)')
 
+_SEVERITY_MAP = {
+    "critical": logging.CRITICAL,
+    "high": logging.ERROR,
+    "medium": logging.WARNING,
+    "low": logging.INFO,
+}
 
 def _redact_sensitive_patterns(value: str) -> str:
     """Replace sensitive values (keys, tokens, passwords) with '***'."""
@@ -119,7 +125,7 @@ class SecureLogger:
             except (TypeError, ValueError):
                 pass  # If formatting fails, use original message
         structured = self._format_structured("INFO", message, **kwargs)
-        self.logger.info(structured)
+        self.logger.log(logging.INFO, structured)
     
     def warning(self, message: str, *args: Any, **kwargs: Any):
         """Log warning with sanitized data."""
@@ -130,7 +136,7 @@ class SecureLogger:
             except (TypeError, ValueError):
                 pass  # If formatting fails, use original message
         structured = self._format_structured("WARNING", message, **kwargs)
-        self.logger.warning(structured)
+        self.logger.log(logging.WARNING, structured)
     
     def error(self, message: str, *args: Any, **kwargs: Any):
         """Log error with sanitized data."""
@@ -141,7 +147,7 @@ class SecureLogger:
             except (TypeError, ValueError):
                 pass  # If formatting fails, use original message
         structured = self._format_structured("ERROR", message, **kwargs)
-        self.logger.error(structured)
+        self.logger.log(logging.ERROR, structured)
     
     def debug(self, message: str, *args: Any, **kwargs: Any):
         """Log debug with sanitized data."""
@@ -152,7 +158,7 @@ class SecureLogger:
             except (TypeError, ValueError):
                 pass  # If formatting fails, use original message
         structured = self._format_structured("DEBUG", message, **kwargs)
-        self.logger.debug(structured)
+        self.logger.log(logging.DEBUG, structured)
     
     def critical(self, message: str, *args: Any, **kwargs: Any):
         """Log critical with sanitized data."""
@@ -163,7 +169,7 @@ class SecureLogger:
             except (TypeError, ValueError):
                 pass  # If formatting fails, use original message
         structured = self._format_structured("CRITICAL", message, **kwargs)
-        self.logger.critical(structured)
+        self.logger.log(logging.CRITICAL, structured)
     
     def security_event(
         self,
@@ -196,14 +202,8 @@ class SecureLogger:
         structured = json.dumps(log_entry, ensure_ascii=True)
         
         # Use appropriate log level based on severity
-        if severity == "critical":
-            self.logger.critical(structured)
-        elif severity == "high":
-            self.logger.error(structured)
-        elif severity == "medium":
-            self.logger.warning(structured)
-        else:
-            self.logger.info(structured)
+        level = _SEVERITY_MAP.get(severity, logging.INFO)
+        self.logger.log(level, structured)
     
     def audit(
         self,
@@ -242,7 +242,7 @@ class SecureLogger:
         if kwargs:
             log_entry["details"] = {k: sanitize_for_log(v) for k, v in kwargs.items()}
         
-        self.logger.info(json.dumps(log_entry, ensure_ascii=True))
+        self.logger.log(logging.INFO, json.dumps(log_entry, ensure_ascii=True))
 
 
 # Pre-configured loggers for different modules
