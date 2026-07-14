@@ -118,58 +118,48 @@ class SecureLogger:
     
     def info(self, message: str, *args: Any, **kwargs: Any):
         """Log info with sanitized data."""
-        # Handle standard logging format string (e.g., "message %s", arg)
         if args:
             try:
                 message = message % args
             except (TypeError, ValueError):
-                pass  # If formatting fails, use original message
-        structured = self._format_structured("INFO", message, **kwargs)
-        self.logger.log(logging.INFO, structured)
+                pass
+        self.logger.log(logging.INFO, self._format_structured("INFO", message, **kwargs))
     
     def warning(self, message: str, *args: Any, **kwargs: Any):
         """Log warning with sanitized data."""
-        # Handle standard logging format string (e.g., "message %s", arg)
         if args:
             try:
                 message = message % args
             except (TypeError, ValueError):
-                pass  # If formatting fails, use original message
-        structured = self._format_structured("WARNING", message, **kwargs)
-        self.logger.log(logging.WARNING, structured)
+                pass
+        self.logger.log(logging.WARNING, self._format_structured("WARNING", message, **kwargs))
     
     def error(self, message: str, *args: Any, **kwargs: Any):
         """Log error with sanitized data."""
-        # Handle standard logging format string (e.g., "message %s", arg)
         if args:
             try:
                 message = message % args
             except (TypeError, ValueError):
-                pass  # If formatting fails, use original message
-        structured = self._format_structured("ERROR", message, **kwargs)
-        self.logger.log(logging.ERROR, structured)
+                pass
+        self.logger.log(logging.ERROR, self._format_structured("ERROR", message, **kwargs))
     
     def debug(self, message: str, *args: Any, **kwargs: Any):
         """Log debug with sanitized data."""
-        # Handle standard logging format string (e.g., "message %s", arg)
         if args:
             try:
                 message = message % args
             except (TypeError, ValueError):
-                pass  # If formatting fails, use original message
-        structured = self._format_structured("DEBUG", message, **kwargs)
-        self.logger.log(logging.DEBUG, structured)
+                pass
+        self.logger.log(logging.DEBUG, self._format_structured("DEBUG", message, **kwargs))
     
     def critical(self, message: str, *args: Any, **kwargs: Any):
         """Log critical with sanitized data."""
-        # Handle standard logging format string (e.g., "message %s", arg)
         if args:
             try:
                 message = message % args
             except (TypeError, ValueError):
-                pass  # If formatting fails, use original message
-        structured = self._format_structured("CRITICAL", message, **kwargs)
-        self.logger.log(logging.CRITICAL, structured)
+                pass
+        self.logger.log(logging.CRITICAL, self._format_structured("CRITICAL", message, **kwargs))
     
     def security_event(
         self,
@@ -187,23 +177,18 @@ class SecureLogger:
             severity: Event severity (low, medium, high, critical)
             **kwargs: Additional context data
         """
-        log_entry: dict[str, Any] = {
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            "type": "security_event",
-            "event_type": sanitize_for_log(event_type),
-            "severity": severity,
-            "logger": self.name,
-            "message": sanitize_for_log(message),
-        }
-        
-        if kwargs:
-            log_entry["context"] = {k: sanitize_for_log(v) for k, v in kwargs.items()}
-        
-        structured = json.dumps(log_entry, ensure_ascii=True)
-        
-        # Use appropriate log level based on severity
-        level = _SEVERITY_MAP.get(severity, logging.INFO)
-        self.logger.log(level, structured)
+        self.logger.log(
+            _SEVERITY_MAP.get(severity, logging.INFO),
+            json.dumps({
+                "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "type": "security_event",
+                "event_type": sanitize_for_log(event_type),
+                "severity": severity,
+                "logger": self.name,
+                "message": sanitize_for_log(message),
+                **({"context": {k: sanitize_for_log(v) for k, v in kwargs.items()}} if kwargs else {})
+            }, ensure_ascii=True)
+        )
     
     def audit(
         self,
@@ -225,24 +210,20 @@ class SecureLogger:
             success: Whether the action was successful
             **kwargs: Additional context
         """
-        log_entry: dict[str, Any] = {
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            "type": "audit",
-            "action": sanitize_for_log(action),
-            "resource": sanitize_for_log(resource),
-            "success": success,
-            "logger": self.name,
-        }
-        
-        if user_id:
-            log_entry["user_id"] = sanitize_for_log(user_id)
-        if org_id:
-            log_entry["org_id"] = sanitize_for_log(org_id)
-        
-        if kwargs:
-            log_entry["details"] = {k: sanitize_for_log(v) for k, v in kwargs.items()}
-        
-        self.logger.log(logging.INFO, json.dumps(log_entry, ensure_ascii=True))
+        self.logger.log(
+            logging.INFO,
+            json.dumps({
+                "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "type": "audit",
+                "action": sanitize_for_log(action),
+                "resource": sanitize_for_log(resource),
+                "success": success,
+                "logger": self.name,
+                **({"user_id": sanitize_for_log(user_id)} if user_id else {}),
+                **({"org_id": sanitize_for_log(org_id)} if org_id else {}),
+                **({"details": {k: sanitize_for_log(v) for k, v in kwargs.items()}} if kwargs else {}),
+            }, ensure_ascii=True)
+        )
 
 
 # Pre-configured loggers for different modules
@@ -284,11 +265,8 @@ def log_user_action(
         user_input: User-provided input to sanitize
         **kwargs: Additional data to include
     """
-    safe_input = sanitize_for_log(user_input) if user_input is not None else None
-    safe_kwargs = {k: sanitize_for_log(v) for k, v in kwargs.items()}
-    
-    log_data = {
-        "message": message, "user_input": safe_input, **safe_kwargs
-    }
-    
-    logger.log(level, json.dumps(log_data, ensure_ascii=True))
+    logger.log(level, json.dumps({
+        "message": message,
+        "user_input": sanitize_for_log(user_input) if user_input is not None else None,
+        **({k: sanitize_for_log(v) for k, v in kwargs.items()} if kwargs else {}),
+    }, ensure_ascii=True))
