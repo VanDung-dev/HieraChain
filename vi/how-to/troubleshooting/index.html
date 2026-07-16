@@ -3039,7 +3039,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-ledger/" class="md-nav__link">
         
   
   
@@ -3048,7 +3048,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3068,7 +3068,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-business/" class="md-nav__link">
         
   
   
@@ -3077,7 +3077,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3097,7 +3097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-admin/" class="md-nav__link">
         
   
   
@@ -3106,7 +3106,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -3700,10 +3700,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#v2-endpoints-tra-loi" class="md-nav__link">
+  <a href="#business-endpoints-tra-loi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        V2 endpoints trả lỗi
+        business endpoints trả lỗi
       </span>
     </span>
   </a>
@@ -4436,10 +4436,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#v2-endpoints-tra-loi" class="md-nav__link">
+  <a href="#business-endpoints-tra-loi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        V2 endpoints trả lỗi
+        business endpoints trả lỗi
       </span>
     </span>
   </a>
@@ -4517,7 +4517,7 @@
 <ul>
 <li>
 <p>Production có thể bật AUTH: <code>settings.AUTH_ENABLED</code>. Khi đó cần gửi API key:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;X-API-Key: &lt;your-key&gt;&quot;</span><span class="w"> </span>http://localhost:2661/api/v1/health
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;X-API-Key: &lt;your-key&gt;&quot;</span><span class="w"> </span>http://localhost:2661/api/ledger/health
 </code></pre></div>
 </li>
 <li>
@@ -4544,23 +4544,23 @@
 <ul>
 <li>
 <p>Endpoint tạo chuỗi:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v1/chains/supply_chain/create
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/create
 </code></pre></div>
 </li>
 <li>
-<p>Tên chuỗi phải khớp regex <code>[a-zA-Z0-9_\-]+</code> (xem kiểm tra trong <code>api/v1/endpoints.py</code>).</p>
+<p>Tên chuỗi phải khớp regex <code>[a-zA-Z0-9_\-]+</code> (xem kiểm tra trong <code>api/ledger/endpoints.py</code>).</p>
 </li>
 </ul>
 <h2 id="su-kien-khong-xuat-hien-trong-block-tra-ve">Sự kiện không xuất hiện trong block trả về</h2>
 <ul>
 <li>
 <p>Dùng API lấy block:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/v1/chains/supply_chain/blocks?limit=5&amp;offset=0&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&amp;offset=0&quot;</span>
 </code></pre></div>
 </li>
 <li>
 <p>Một số chuỗi cần gọi finalize/submit proof để thấy block mới. Thử submit proof:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v1/chains/supply_chain/submit-proof
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
 </code></pre></div>
 </li>
 </ul>
@@ -4585,12 +4585,12 @@
 <p>Đổi <code>DEFAULT_STORAGE_BACKEND</code> về <code>memory</code> để cô lập sự cố lưu trữ.</p>
 </li>
 </ul>
-<h2 id="v2-endpoints-tra-loi">V2 endpoints trả lỗi</h2>
+<h2 id="business-endpoints-tra-loi">business endpoints trả lỗi</h2>
 <ul>
-<li>Xác minh API v2 đã được nạp (xem <code>hierachain/api/server.py</code> và <code>hierachain/api/v2/endpoints.py</code>).</li>
+<li>Xác minh API business đã được nạp (xem <code>hierachain/api/server.py</code> và <code>hierachain/api/business/endpoints.py</code>).</li>
 <li>
-<p>Thử health v2:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/v2/health
+<p>Thử health business:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:2661/api/business/health
 </code></pre></div>
 </li>
 </ul>

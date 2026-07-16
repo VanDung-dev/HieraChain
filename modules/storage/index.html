@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#storage-module-hierachainstorage" class="md-skip">
+        <a href="#storage-module-hierachainadaptersdatabase" class="md-skip">
           Skip to content
         </a>
       
@@ -3198,7 +3198,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-ledger/" class="md-nav__link">
         
   
   
@@ -3207,7 +3207,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3227,7 +3227,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-business/" class="md-nav__link">
         
   
   
@@ -3236,7 +3236,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3256,7 +3256,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-admin/" class="md-nav__link">
         
   
   
@@ -3265,7 +3265,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -4489,7 +4489,7 @@
   
 
 
-<h1 id="storage-module-hierachainstorage">Storage Module (<code>hierachain/storage/*</code>)</h1>
+<h1 id="storage-module-hierachainadaptersdatabase">Storage Module (<code>hierachain/adapters/database/*</code>)</h1>
 <h2 id="overview">Overview</h2>
 <p>The <strong>Storage</strong> module is responsible for managing all HieraChain data, from block and event history to the current state of business entities (<strong>World State</strong>). The system is designed with a pluggable architecture, allowing flexible switching of storage backends based on enterprise performance and scale requirements.</p>
 <hr />
@@ -4510,7 +4510,7 @@
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 12v1.5a4 4 0 0 1 4 4c0 .82-.25 1.58-.67 2.21l-1.09-1.09c.17-.34.26-.72.26-1.12A2.5 2.5 0 0 0 19 15v1.5l-2.25-2.25zm0 11v-1.5a4 4 0 0 1-4-4c0-.82.25-1.58.67-2.21l1.09 1.09c-.17.34-.26.72-.26 1.12A2.5 2.5 0 0 0 19 20v-1.5l2.25 2.25zM12 3c4.42 0 8 1.79 8 4s-3.58 4-8 4-8-1.79-8-4 3.58-4 8-4M4 9c0 2.21 3.58 4 8 4 1.11 0 2.17-.11 3.14-.32-.95.86-1.64 1.99-1.96 3.28L12 16c-4.42 0-8-1.79-8-4zm16 0v2h-.5l-.6.03c.7-.6 1.1-1.29 1.1-2.03M4 14c0 2.21 3.58 4 8 4l1-.03c.09 1.06.42 2.03.95 2.91L12 21c-4.42 0-8-1.79-8-4z"/></svg></span> <strong>Persistence Layer (Adapters)</strong></p>
 <hr />
-<p><strong>File</strong>: <code>storage/sql_backend.py</code>, <code>adapters/database/*</code>, <code>adapters/storage/*</code></p>
+<p><strong>File</strong>: <code>adapters/database/sqlite_adapter.py</code>, <code>adapters/database/*</code></p>
 <ul>
 <li><strong>SQL Backend</strong>: Durable storage for blocks and events (SQLite via <code>sqlite_adapter.py</code>).</li>
 <li><strong>Redis Adapter</strong>: Optimized for entity indexing.</li>

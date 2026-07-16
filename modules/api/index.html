@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Multi-protocol API system: REST v1/v2/v3, GraphQL and WebSocket. Multi-layer security integration and IPFS data management.">
+        <meta name="description" content="Multi-protocol API system: REST ledger/business/admin, GraphQL and WebSocket. Multi-layer security integration and IPFS data management.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -2143,10 +2143,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#v1-core-ledger" class="md-nav__link">
+  <a href="#ledger-core-ledger" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v1: Core Ledger
+        ledger: Core Ledger
       </span>
     </span>
   </a>
@@ -2154,10 +2154,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#v2-enterprise-features" class="md-nav__link">
+  <a href="#business-enterprise-features" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v2: Enterprise Features
+        business: Enterprise Features
       </span>
     </span>
   </a>
@@ -2165,10 +2165,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#v3-system-admin" class="md-nav__link">
+  <a href="#admin-system-admin" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v3: System &amp; Admin
+        admin: System &amp; Admin
       </span>
     </span>
   </a>
@@ -3360,7 +3360,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-ledger/" class="md-nav__link">
         
   
   
@@ -3369,7 +3369,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3389,7 +3389,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-business/" class="md-nav__link">
         
   
   
@@ -3398,7 +3398,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3418,7 +3418,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-admin/" class="md-nav__link">
         
   
   
@@ -3427,7 +3427,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -4606,10 +4606,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#v1-core-ledger" class="md-nav__link">
+  <a href="#ledger-core-ledger" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v1: Core Ledger
+        ledger: Core Ledger
       </span>
     </span>
   </a>
@@ -4617,10 +4617,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#v2-enterprise-features" class="md-nav__link">
+  <a href="#business-enterprise-features" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v2: Enterprise Features
+        business: Enterprise Features
       </span>
     </span>
   </a>
@@ -4628,10 +4628,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#v3-system-admin" class="md-nav__link">
+  <a href="#admin-system-admin" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v3: System &amp; Admin
+        admin: System &amp; Admin
       </span>
     </span>
   </a>
@@ -4819,7 +4819,7 @@
 <h3 id="core-components">Core Components</h3>
 <ul>
 <li><strong>FastAPI Server (<code>server.py</code>)</strong>: Launch point, Middleware configuration, Authentication, and Router integration.</li>
-<li><strong>Versioned REST API</strong>: Divided into 3 versions (v1, v2, v3) serving different purposes from core to system administration.</li>
+<li><strong>Versioned REST API</strong>: Divided into 3 versions (ledger, business, admin) serving different purposes from core to system administration.</li>
 <li><strong>GraphQL Endpoint</strong>: Provides flexible query capabilities with security mechanisms (Depth/Complexity limit).</li>
 <li><strong>WebSocket Gateway</strong>: Streams real-time events/blocks using the Publish/Subscribe model.</li>
 <li><strong>IPFS Integration</strong>: Transparent handling of on-chain and off-chain data (IPFS + AES-256-GCM).</li>
@@ -4844,28 +4844,28 @@
 <p>Uses <code>APIKeyVerifier</code> to check access rights based on API Key. This mechanism can be enabled/disabled via the <code>HRC_AUTH_ENABLED</code> environment variable.</p>
 <hr />
 <h2 id="rest-api-reference">REST API Reference</h2>
-<h3 id="v1-core-ledger">v1: Core Ledger</h3>
+<h3 id="ledger-core-ledger">ledger: Core Ledger</h3>
 <p>Focuses on basic blockchain operations:</p>
 <ul>
-<li><code>GET /api/v1/health</code>: Check node health.</li>
-<li><code>GET /api/v1/chains</code>: List all Main Chains and Sub-Chains.</li>
-<li><code>POST /api/v1/chains/{name}/events</code>: Add an event (automatically handles IPFS if data is large).</li>
-<li><code>GET /api/v1/entities/{id}/trace</code>: Trace an entity across all chains in the hierarchy.</li>
-<li><code>GET /api/v1/chains/{name}/blocks</code>: Get block list (supports pagination and IPFS CID decoding).</li>
+<li><code>GET /api/ledger/health</code>: Check node health.</li>
+<li><code>GET /api/ledger/chains</code>: List all Main Chains and Sub-Chains.</li>
+<li><code>POST /api/ledger/chains/{name}/events</code>: Add an event (automatically handles IPFS if data is large).</li>
+<li><code>GET /api/ledger/entities/{id}/trace</code>: Trace an entity across all chains in the hierarchy.</li>
+<li><code>GET /api/ledger/chains/{name}/blocks</code>: Get block list (supports pagination and IPFS CID decoding).</li>
 </ul>
-<h3 id="v2-enterprise-features">v2: Enterprise Features</h3>
+<h3 id="business-enterprise-features">business: Enterprise Features</h3>
 <p>Provides advanced tools for complex business processes:</p>
 <ul>
-<li><strong>Channels</strong>: Create private communication channels between organizations (<code>POST /api/v2/channels</code>).</li>
+<li><strong>Channels</strong>: Create private communication channels between organizations (<code>POST /api/business/channels</code>).</li>
 <li><strong>Private Data</strong>: Manage Private Data Collections that are not publicly shared on the common ledger.</li>
 <li><strong>Domain Contracts</strong>: Deploy and execute business-specific smart contracts.</li>
 <li><strong>Organizations</strong>: Register and manage organizational identities via MSP.</li>
 </ul>
-<h3 id="v3-system-admin">v3: System &amp; Admin</h3>
+<h3 id="admin-system-admin">admin: System &amp; Admin</h3>
 <p>Dedicated to node management and system operations:</p>
 <ul>
-<li><code>POST /api/v3/verify-identity</code>: Node signs a challenge to prove identity to the management system.</li>
-<li><code>GET /api/v3/status</code>: Detailed report of uptime, active chain count, version, and license status.</li>
+<li><code>POST /api/admin/verify-identity</code>: Node signs a challenge to prove identity to the management system.</li>
+<li><code>GET /api/admin/status</code>: Detailed report of uptime, active chain count, version, and license status.</li>
 </ul>
 <hr />
 <h2 id="graphql-api">GraphQL API</h2>
@@ -4930,7 +4930,7 @@
 <hr />
 <h2 id="quick-usage-guide-curl">Quick Usage Guide (curl)</h2>
 <h3 id="write-an-event-to-a-chain">Write an Event to a Chain</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v1/chains/my_chain/events<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/my_chain/events<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-API-Key: your_secret_key&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{</span>
@@ -4940,7 +4940,7 @@
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s1">  }&#39;</span>
 </code></pre></div>
 <h3 id="trace-an-entity">Trace an Entity</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/v1/entities/ITEM-123/trace?resolve_cid=true&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/ledger/entities/ITEM-123/trace?resolve_cid=true&quot;</span>
 </code></pre></div>
 <hr />
 <h2 id="related">Related</h2>

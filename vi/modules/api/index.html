@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Hệ thống API đa giao thức: REST v1/v2/v3, GraphQL và WebSocket. Tích hợp bảo mật đa lớp và quản lý dữ liệu IPFS.">
+        <meta name="description" content="Hệ thống API đa giao thức: REST ledger/business/admin, GraphQL và WebSocket. Tích hợp bảo mật đa lớp và quản lý dữ liệu IPFS.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -2143,10 +2143,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#v1-core-ledger-cot-loi" class="md-nav__link">
+  <a href="#ledger-core-ledger-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v1: Core Ledger (Cốt lõi)
+        ledger: Core Ledger (Cốt lõi)
       </span>
     </span>
   </a>
@@ -2154,10 +2154,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#v2-enterprise-features-tinh-nang-doanh-nghiep" class="md-nav__link">
+  <a href="#business-enterprise-features-tinh-nang-doanh-nghiep" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v2: Enterprise Features (Tính năng doanh nghiệp)
+        business: Enterprise Features (Tính năng doanh nghiệp)
       </span>
     </span>
   </a>
@@ -2165,10 +2165,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#v3-system-admin-quan-tri" class="md-nav__link">
+  <a href="#admin-system-admin-quan-tri" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v3: System &amp; Admin (Quản trị)
+        admin: System &amp; Admin (Quản trị)
       </span>
     </span>
   </a>
@@ -3360,7 +3360,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-ledger/" class="md-nav__link">
         
   
   
@@ -3369,7 +3369,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3389,7 +3389,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-business/" class="md-nav__link">
         
   
   
@@ -3398,7 +3398,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3418,7 +3418,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-admin/" class="md-nav__link">
         
   
   
@@ -3427,7 +3427,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -4606,10 +4606,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#v1-core-ledger-cot-loi" class="md-nav__link">
+  <a href="#ledger-core-ledger-cot-loi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v1: Core Ledger (Cốt lõi)
+        ledger: Core Ledger (Cốt lõi)
       </span>
     </span>
   </a>
@@ -4617,10 +4617,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#v2-enterprise-features-tinh-nang-doanh-nghiep" class="md-nav__link">
+  <a href="#business-enterprise-features-tinh-nang-doanh-nghiep" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v2: Enterprise Features (Tính năng doanh nghiệp)
+        business: Enterprise Features (Tính năng doanh nghiệp)
       </span>
     </span>
   </a>
@@ -4628,10 +4628,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#v3-system-admin-quan-tri" class="md-nav__link">
+  <a href="#admin-system-admin-quan-tri" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        v3: System &amp; Admin (Quản trị)
+        admin: System &amp; Admin (Quản trị)
       </span>
     </span>
   </a>
@@ -4819,7 +4819,7 @@
 <h3 id="cac-thanh-phan-cot-loi">Các thành phần cốt lõi</h3>
 <ul>
 <li><strong>FastAPI Server (<code>server.py</code>)</strong>: Điểm khởi chạy, cấu hình Middleware, Authentication và tích hợp Router.</li>
-<li><strong>Versioned REST API</strong>: Chia làm 3 phiên bản (v1, v2, v3) phục vụ các mục đích khác nhau từ cốt lõi đến quản trị hệ thống.</li>
+<li><strong>Versioned REST API</strong>: Chia làm 3 phiên bản (ledger, business, admin) phục vụ các mục đích khác nhau từ cốt lõi đến quản trị hệ thống.</li>
 <li><strong>GraphQL Endpoint</strong>: Cung cấp khả năng truy vấn linh hoạt với cơ chế bảo mật (Depth/Complexity limit).</li>
 <li><strong>WebSocket Gateway</strong>: Truyền tải sự kiện (events/blocks) thời gian thực theo mô hình Publish/Subscribe.</li>
 <li><strong>IPFS Integration</strong>: Xử lý minh bạch dữ liệu on-chain và off-chain (IPFS + AES-256-GCM).</li>
@@ -4844,28 +4844,28 @@
 <p>Sử dụng <code>APIKeyVerifier</code> để kiểm tra quyền truy cập dựa trên API Key. Cơ chế này có thể bật/tắt qua biến môi trường <code>HRC_AUTH_ENABLED</code>.</p>
 <hr />
 <h2 id="rest-api-reference">REST API Reference</h2>
-<h3 id="v1-core-ledger-cot-loi">v1: Core Ledger (Cốt lõi)</h3>
+<h3 id="ledger-core-ledger-cot-loi">ledger: Core Ledger (Cốt lõi)</h3>
 <p>Tập trung vào các hoạt động blockchain cơ bản:</p>
 <ul>
-<li><code>GET /api/v1/health</code>: Kiểm tra tình trạng node.</li>
-<li><code>GET /api/v1/chains</code>: Liệt kê tất cả Main Chain và Sub-Chains.</li>
-<li><code>POST /api/v1/chains/{name}/events</code>: Thêm sự kiện (tự động xử lý IPFS nếu dữ liệu lớn).</li>
-<li><code>GET /api/v1/entities/{id}/trace</code>: Truy vết thực thể xuyên suốt các chain trong hệ thống phân cấp.</li>
-<li><code>GET /api/v1/chains/{name}/blocks</code>: Lấy danh sách block (hỗ trợ phân trang và giải mã CID IPFS).</li>
+<li><code>GET /api/ledger/health</code>: Kiểm tra tình trạng node.</li>
+<li><code>GET /api/ledger/chains</code>: Liệt kê tất cả Main Chain và Sub-Chains.</li>
+<li><code>POST /api/ledger/chains/{name}/events</code>: Thêm sự kiện (tự động xử lý IPFS nếu dữ liệu lớn).</li>
+<li><code>GET /api/ledger/entities/{id}/trace</code>: Truy vết thực thể xuyên suốt các chain trong hệ thống phân cấp.</li>
+<li><code>GET /api/ledger/chains/{name}/blocks</code>: Lấy danh sách block (hỗ trợ phân trang và giải mã CID IPFS).</li>
 </ul>
-<h3 id="v2-enterprise-features-tinh-nang-doanh-nghiep">v2: Enterprise Features (Tính năng doanh nghiệp)</h3>
+<h3 id="business-enterprise-features-tinh-nang-doanh-nghiep">business: Enterprise Features (Tính năng doanh nghiệp)</h3>
 <p>Cung cấp các công cụ nâng cao cho quy trình kinh doanh phức tạp:</p>
 <ul>
-<li><strong>Channels</strong>: Tạo kênh giao tiếp riêng tư giữa các tổ chức (<code>POST /api/v2/channels</code>).</li>
+<li><strong>Channels</strong>: Tạo kênh giao tiếp riêng tư giữa các tổ chức (<code>POST /api/business/channels</code>).</li>
 <li><strong>Private Data</strong>: Quản lý bộ sưu tập dữ liệu riêng tư (<code>Private Data Collections</code>) không công khai trên sổ cái chung.</li>
 <li><strong>Domain Contracts</strong>: Triển khai và thực thi hợp đồng thông minh theo nghiệp vụ đặc thù.</li>
 <li><strong>Organizations</strong>: Đăng ký và quản lý danh tính tổ chức qua MSP.</li>
 </ul>
-<h3 id="v3-system-admin-quan-tri">v3: System &amp; Admin (Quản trị)</h3>
+<h3 id="admin-system-admin-quan-tri">admin: System &amp; Admin (Quản trị)</h3>
 <p>Dành riêng cho việc quản lý node và vận hành hệ thống:</p>
 <ul>
-<li><code>POST /api/v3/verify-identity</code>: Node ký một challenge để chứng minh danh tính với hệ thống quản lý.</li>
-<li><code>GET /api/v3/status</code>: Báo cáo chi tiết uptime, số lượng chain active, phiên bản và tình trạng bản quyền.</li>
+<li><code>POST /api/admin/verify-identity</code>: Node ký một challenge để chứng minh danh tính với hệ thống quản lý.</li>
+<li><code>GET /api/admin/status</code>: Báo cáo chi tiết uptime, số lượng chain active, phiên bản và tình trạng bản quyền.</li>
 </ul>
 <hr />
 <h2 id="graphql-api">GraphQL API</h2>
@@ -4930,7 +4930,7 @@
 <hr />
 <h2 id="huong-dan-su-dung-nhanh-curl">Hướng dẫn sử dụng nhanh (curl)</h2>
 <h3 id="ghi-su-kien-vao-chuoi">Ghi sự kiện vào chuỗi</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v1/chains/my_chain/events<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/my_chain/events<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-API-Key: your_secret_key&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{</span>
@@ -4940,7 +4940,7 @@
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s1">  }&#39;</span>
 </code></pre></div>
 <h3 id="truy-vet-thuc-the-trace">Truy vết thực thể (Trace)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/v1/entities/ITEM-123/trace?resolve_cid=true&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/ledger/entities/ITEM-123/trace?resolve_cid=true&quot;</span>
 </code></pre></div>
 <hr />
 <h2 id="lien-quan">Liên quan</h2>

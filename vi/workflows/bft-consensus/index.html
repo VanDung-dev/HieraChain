@@ -3181,7 +3181,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-ledger/" class="md-nav__link">
         
   
   
@@ -3190,7 +3190,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3210,7 +3210,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-business/" class="md-nav__link">
         
   
   
@@ -3219,7 +3219,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3239,7 +3239,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-admin/" class="md-nav__link">
         
   
   
@@ -3248,7 +3248,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -4466,8 +4466,8 @@
     autonumber
     participant OS as ⚙️ OrderingService
     participant L as 👑 Nút Trưởng nhóm (Leader Node)
-    participant V1 as 🖥️ Trình xác thực 1 (Validator 1)
-    participant V2 as 🖥️ Trình xác thực 2 (Validator 2)
+    participant ledger as 🖥️ Trình xác thực 1 (Validator 1)
+    participant business as 🖥️ Trình xác thực 2 (Validator 2)
     participant Vf as 🖥️ Trình xác thực f (Validator f)
 
     OS-&gt;&gt;L: Gom cụm sự kiện sẵn sàng → kích hoạt đồng thuận
@@ -4475,27 +4475,27 @@
     rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHA 1 — CHUẨN BỊ TRƯỚC (PRE-PREPARE)
         L-&gt;&gt;L: Gán số thứ tự, tạo thông điệp PRE-PREPARE
-        L-&gt;&gt;V1: PRE-PREPARE(view, seq, block_digest)
-        L-&gt;&gt;V2: PRE-PREPARE(view, seq, block_digest)
+        L-&gt;&gt;ledger: PRE-PREPARE(view, seq, block_digest)
+        L-&gt;&gt;business: PRE-PREPARE(view, seq, block_digest)
         L-&gt;&gt;Vf: PRE-PREPARE(view, seq, block_digest)
     end
 
     rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHA 2 — CHUẨN BỊ (PREPARE)
-        V1-&gt;&gt;V1: Xác thực PRE-PREPARE, phát tin PREPARE
-        V1-&gt;&gt;L: PREPARE(view, seq, digest)
-        V1-&gt;&gt;V2: PREPARE(view, seq, digest)
-        V2-&gt;&gt;L: PREPARE(view, seq, digest)
-        V2-&gt;&gt;V1: PREPARE(view, seq, digest)
+        ledger-&gt;&gt;ledger: Xác thực PRE-PREPARE, phát tin PREPARE
+        ledger-&gt;&gt;L: PREPARE(view, seq, digest)
+        ledger-&gt;&gt;business: PREPARE(view, seq, digest)
+        business-&gt;&gt;L: PREPARE(view, seq, digest)
+        business-&gt;&gt;ledger: PREPARE(view, seq, digest)
         Note over L: Thu thập đủ 2f phiếu bầu PREPARE
     end
 
     rect rgb(0, 0, 0, 0)
         Note over L,Vf: PHA 3 — CAM KẾT (COMMIT)
-        L-&gt;&gt;V1: COMMIT(view, seq, digest)
-        L-&gt;&gt;V2: COMMIT(view, seq, digest)
-        V1-&gt;&gt;L: COMMIT(view, seq, digest)
-        V2-&gt;&gt;L: COMMIT(view, seq, digest)
+        L-&gt;&gt;ledger: COMMIT(view, seq, digest)
+        L-&gt;&gt;business: COMMIT(view, seq, digest)
+        ledger-&gt;&gt;L: COMMIT(view, seq, digest)
+        business-&gt;&gt;L: COMMIT(view, seq, digest)
         Note over L: Thu thập đủ 2f+1 phiếu bầu COMMIT → hoàn tất
         L-&gt;&gt;L: Hoàn tất &amp; ký khối dữ liệu
         L-&gt;&gt;OS: Khối dữ liệu đã cam kết → đẩy vào commit_queue
@@ -4504,13 +4504,13 @@
 <h2 id="bieu-o-luong-thay-oi-phien-view-change-loi-leader">Biểu đồ luồng — Thay đổi Phiên (View Change - Lỗi Leader)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
-    participant V1 as 🖥️ Trình xác thực 1
+    participant ledger as 🖥️ Trình xác thực 1
     participant VM as 🔄 BFTViewChangeManager
     participant NEW as 👑 Trưởng nhóm Mới (New Leader)
 
-    Note over V1: Phát hiện hết hạn kết nối với Leader (không nhận được PRE-PREPARE)
+    Note over ledger: Phát hiện hết hạn kết nối với Leader (không nhận được PRE-PREPARE)
 
-    V1-&gt;&gt;VM: trigger_view_change(current_view, failed_leader)
+    ledger-&gt;&gt;VM: trigger_view_change(current_view, failed_leader)
     VM-&gt;&gt;VM: view += 1
     VM-&gt;&gt;VM: Phát tin VIEW-CHANGE đến tất cả các trình xác thực
     VM-&gt;&gt;VM: Thu thập đủ f+1 phiếu bầu VIEW-CHANGE

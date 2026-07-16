@@ -3192,7 +3192,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-ledger/" class="md-nav__link">
         
   
   
@@ -3201,7 +3201,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3221,7 +3221,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-business/" class="md-nav__link">
         
   
   
@@ -3230,7 +3230,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3250,7 +3250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-admin/" class="md-nav__link">
         
   
   
@@ -3259,7 +3259,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -4552,19 +4552,19 @@
 <h2 id="co-che-du-phong-a-kho-multi-vault-failover">Cơ chế Dự phòng Đa Kho (Multi-Vault Failover)</h2>
 <pre class="mermaid"><code>flowchart LR
     RESTORE["restore_keys(backup_id)"]
-    V1["📁 Kho chính\n_find_backup_file()"]
-    V2["📁 Kho phụ\n(dự phòng)"]
-    V3["📁 Kho thứ ba\n(dự phòng)"]
+    ledger["📁 Kho chính\n_find_backup_file()"]
+    business["📁 Kho phụ\n(dự phòng)"]
+    admin["📁 Kho thứ ba\n(dự phòng)"]
     OK["✅ Khóa được giải mã"]
     ERR["❌ IntegrityError\nTất cả các kho đều thất bại"]
 
-    RESTORE --&gt; V1
-    V1 --&gt;|Tìm thấy + nguyên vẹn| OK
-    V1 --&gt;|Không tìm thấy / bị lỗi| V2
-    V2 --&gt;|Tìm thấy + nguyên vẹn| OK
-    V2 --&gt;|Không tìm thấy / bị lỗi| V3
-    V3 --&gt;|Tìm thấy + nguyên vẹn| OK
-    V3 --&gt;|Không tìm thấy / bị lỗi| ERR</code></pre>
+    RESTORE --&gt; ledger
+    ledger --&gt;|Tìm thấy + nguyên vẹn| OK
+    ledger --&gt;|Không tìm thấy / bị lỗi| business
+    business --&gt;|Tìm thấy + nguyên vẹn| OK
+    business --&gt;|Không tìm thấy / bị lỗi| admin
+    admin --&gt;|Tìm thấy + nguyên vẹn| OK
+    admin --&gt;|Không tìm thấy / bị lỗi| ERR</code></pre>
 <hr />
 <h2 id="chi-tiet-tung-buoc">Chi tiết Từng Bước</h2>
 <table>

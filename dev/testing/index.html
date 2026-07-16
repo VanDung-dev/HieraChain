@@ -3039,7 +3039,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-ledger/" class="md-nav__link">
         
   
   
@@ -3048,7 +3048,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3068,7 +3068,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-business/" class="md-nav__link">
         
   
   
@@ -3077,7 +3077,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3097,7 +3097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-admin/" class="md-nav__link">
         
   
   
@@ -3106,7 +3106,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -4766,7 +4766,7 @@
 <a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>kubectl<span class="w"> </span>port-forward<span class="w"> </span>service/hierachain-api<span class="w"> </span><span class="m">2661</span>:2661<span class="w"> </span>-n<span class="w"> </span>hierachain<span class="w"> </span>--address<span class="w"> </span><span class="m">0</span>.0.0.0
 <a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a>
 <a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a><span class="c1"># Test API  </span>
-<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a>curl<span class="w"> </span>http://localhost:2661/api/v1/health
+<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a>curl<span class="w"> </span>http://localhost:2661/api/ledger/health
 <a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a>
 <a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a><span class="c1"># Run stress test</span>
 <a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.k8s-stress.yml<span class="w"> </span>--profile<span class="w"> </span>stress-test<span class="w"> </span>run<span class="w"> </span>--build<span class="w"> </span>stress-tester<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/stress/<span class="w"> </span>-v<span class="w"> </span>--html<span class="o">=</span>/app/log/report/stress_test_report.html<span class="w"> </span>--self-contained-html
@@ -4832,7 +4832,7 @@
 <h2 id="test-layout-suggestions">Test Layout Suggestions</h2>
 <ul>
 <li>Unit: test individual classes/functions (core, security, storage...).</li>
-<li>Integration: test end-to-end flows via API v1/v2.</li>
+<li>Integration: test end-to-end flows via API Ledger/business.</li>
 <li>Scenarios: business scenarios (e.g. create sub-chain → write event → submit proof → trace entity).</li>
 </ul>
 

@@ -3192,7 +3192,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api-v1/" class="md-nav__link">
+      <a href="../api-ledger/" class="md-nav__link">
         
   
   
@@ -3201,7 +3201,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3221,7 +3221,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api-v2/" class="md-nav__link">
+      <a href="../api-business/" class="md-nav__link">
         
   
   
@@ -3230,7 +3230,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3250,7 +3250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../api-v3/" class="md-nav__link">
+      <a href="../api-admin/" class="md-nav__link">
         
   
   
@@ -3259,7 +3259,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -4574,18 +4574,18 @@
 <td>FastAPI server entry point.</td>
 </tr>
 <tr>
-<td><strong>Endpoints V1</strong></td>
-<td><code>hierachain/api/v1/endpoints.py</code></td>
+<td><strong>API Ledger</strong></td>
+<td><code>hierachain/api/ledger/endpoints.py</code></td>
 <td>Basic API (Blocks, Chain info).</td>
 </tr>
 <tr>
-<td><strong>Endpoints V2</strong></td>
-<td><code>hierachain/api/v2/endpoints.py</code></td>
+<td><strong>API Business</strong></td>
+<td><code>hierachain/api/business/endpoints.py</code></td>
 <td>Advanced API (Events, Domain).</td>
 </tr>
 <tr>
-<td><strong>Endpoints V3</strong></td>
-<td><code>hierachain/api/v3/endpoints.py</code></td>
+<td><strong>API Admin</strong></td>
+<td><code>hierachain/api/admin/endpoints.py</code></td>
 <td>System API (Admin, Health).</td>
 </tr>
 <tr>
@@ -4680,27 +4680,12 @@
 <tr>
 <td><strong>SQLite Adapter</strong></td>
 <td><code>hierachain/adapters/database/sqlite_adapter.py</code></td>
-<td>Stores data in SQLite (SQLAlchemy).</td>
+<td>Light weight, high performance SQLite database storage.</td>
 </tr>
 <tr>
-<td><strong>File Storage</strong></td>
-<td><code>hierachain/adapters/storage/file_storage.py</code></td>
-<td>File storage (Parquet) for large data.</td>
-</tr>
-<tr>
-<td><strong>Redis Storage</strong></td>
-<td><code>hierachain/adapters/storage/redis_storage.py</code></td>
-<td>Temporary storage/High-performance Cache.</td>
-</tr>
-<tr>
-<td><strong>SQL Backend</strong></td>
-<td><code>hierachain/storage/sql_backend.py</code></td>
-<td>Abstraction layer for SQL interactions.</td>
-</tr>
-<tr>
-<td><strong>Memory Storage</strong></td>
-<td><code>hierachain/storage/memory_storage.py</code></td>
-<td>In-Memory storage (for testing/dev).</td>
+<td><strong>Redis Adapter</strong></td>
+<td><code>hierachain/adapters/database/redis_adapter.py</code></td>
+<td>Key-value store for caching and consensus state.</td>
 </tr>
 </tbody>
 </table>

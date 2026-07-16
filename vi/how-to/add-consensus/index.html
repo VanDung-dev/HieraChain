@@ -3039,7 +3039,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-ledger/" class="md-nav__link">
         
   
   
@@ -3048,7 +3048,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3068,7 +3068,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-business/" class="md-nav__link">
         
   
   
@@ -3077,7 +3077,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3097,7 +3097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-admin/" class="md-nav__link">
         
   
   
@@ -3106,7 +3106,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -4370,12 +4370,12 @@
 </code></pre></div>
 </li>
 <li>
-<p>Kiểm thử nhanh bằng API v1:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v1/chains/supply_chain/create
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v1/chains/supply_chain/events<span class="w"> </span><span class="se">\</span>
+<p>Kiểm thử nhanh bằng API Ledger:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/create
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/events<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;entity_id&quot;:&quot;PROD-001&quot;,&quot;event_type&quot;:&quot;production_complete&quot;,&quot;details&quot;:{&quot;quantity&quot;:100}}&#39;</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v1/chains/supply_chain/submit-proof
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/chains/supply_chain/submit-proof
 </code></pre></div>
 </li>
 </ol>
@@ -4418,7 +4418,7 @@
 </ul>
 </li>
 <li>
-<p>Kiểm thử với API v1 như phần A (thêm event → finalize → submit proof). Theo dõi log để xác nhận phương thức <code>propose/validate/commit</code> mới được gọi.</p>
+<p>Kiểm thử với API Ledger như phần A (thêm event → finalize → submit proof). Theo dõi log để xác nhận phương thức <code>propose/validate/commit</code> mới được gọi.</p>
 </li>
 </ol>
 <h2 id="lien-quan">Liên quan</h2>
@@ -4426,7 +4426,7 @@
 <li>Kiến trúc/Đồng thuận: <a href="../../architecture/consensus/">Consensus &amp; Ordering</a></li>
 <li>Mô‑đun Hierarchical: <a href="../../modules/hierarchical/">Hierarchical</a></li>
 <li>Tham chiếu Config: <a href="../../reference/config/">Config</a></li>
-<li>API v1: <a href="../../reference/api-v1/">API v1</a></li>
+<li>API Ledger: <a href="../../reference/api-ledger/">API Ledger</a></li>
 </ul>
 
 

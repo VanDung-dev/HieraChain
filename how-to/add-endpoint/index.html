@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Steps to add a new endpoint to API v1, wire schema/handler, and quick test with curl.">
+        <meta name="description" content="Steps to add a new endpoint to API Ledger, wire schema/handler, and quick test with curl.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Add API v1 Endpoint - HieraChain Docs</title>
+        <title>Add API Ledger Endpoint - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#add-api-v1-endpoint" class="md-skip">
+        <a href="#add-api-ledger-endpoint" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Add API v1 Endpoint
+              Add API Ledger Endpoint
             
           </span>
         </div>
@@ -3039,7 +3039,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-ledger/" class="md-nav__link">
         
   
   
@@ -3048,7 +3048,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3068,7 +3068,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-business/" class="md-nav__link">
         
   
   
@@ -3077,7 +3077,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3097,7 +3097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-admin/" class="md-nav__link">
         
   
   
@@ -3106,7 +3106,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -4433,12 +4433,12 @@
   
 
 
-<h1 id="add-api-v1-endpoint">Add API v1 Endpoint</h1>
+<h1 id="add-api-ledger-endpoint">Add API Ledger Endpoint</h1>
 <h2 id="goal">Goal</h2>
-<p>Step-by-step guide to adding a new endpoint to HieraChain's FastAPI router (v1), including Pydantic schema definition, writing a handler, updating the router, and quick testing with <code>curl</code>.</p>
+<p>Step-by-step guide to adding a new endpoint to HieraChain's FastAPI router (Ledger), including Pydantic schema definition, writing a handler, updating the router, and quick testing with <code>curl</code>.</p>
 <h2 id="step-1-prepare-schema-optional">Step 1: Prepare Schema (optional)</h2>
 <ul>
-<li>Open <code>hierachain/api/v1/schemas.py</code>.</li>
+<li>Open <code>hierachain/api/ledger/schemas.py</code>.</li>
 <li>Add a Pydantic class if the endpoint needs a new payload, e.g.:</li>
 </ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">PingRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4450,8 +4450,8 @@
 </code></pre></div>
 <h2 id="step-2-add-handler-in-router">Step 2: Add Handler in Router</h2>
 <ul>
-<li>Open <code>hierachain/api/v1/endpoints.py</code>.</li>
-<li>Import the schema (if any) and add a route to <code>APIRouter(prefix="/api/v1", ...)</code>.</li>
+<li>Open <code>hierachain/api/ledger/endpoints.py</code>.</li>
+<li>Import the schema (if any) and add a route to <code>APIRouter(prefix="/api/ledger", ...)</code>.</li>
 </ul>
 <p>Example (descriptive):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/ping&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">PingResponse</span><span class="p">)</span>
@@ -4463,7 +4463,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
 </code></pre></div>
 <p>Open <code>http://localhost:2661/docs</code> to try on Swagger UI or use <code>curl</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/v1/ping<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/ping<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;message&quot;:&quot;hello&quot;}&#39;</span>
 </code></pre></div>
@@ -4484,7 +4484,7 @@
 <h2 id="related">Related</h2>
 <ul>
 <li>API Module: <a href="../../modules/api/">API</a></li>
-<li>API v1 Reference: <a href="../../reference/api-v1/">API v1</a></li>
+<li>API Ledger Reference: <a href="../../reference/api-ledger/">API Ledger</a></li>
 <li>Config: <a href="../../reference/config/">Config</a></li>
 </ul>
 

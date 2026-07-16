@@ -184,13 +184,13 @@
         <loc>https://docs.hierachain.org/reference/graphql-api/</loc>
       </url>
       <url>
-        <loc>https://docs.hierachain.org/reference/api-v1/</loc>
+        <loc>https://docs.hierachain.org/reference/api-ledger/</loc>
       </url>
       <url>
-        <loc>https://docs.hierachain.org/reference/api-v2/</loc>
+        <loc>https://docs.hierachain.org/reference/api-business/</loc>
       </url>
       <url>
-        <loc>https://docs.hierachain.org/reference/api-v3/</loc>
+        <loc>https://docs.hierachain.org/reference/api-admin/</loc>
       </url>
       <url>
         <loc>https://docs.hierachain.org/reference/data-models/</loc>

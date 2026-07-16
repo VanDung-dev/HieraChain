@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Step-by-step guide to creating a new Sub-Chain using HierarchyManager and/or API v1, recording events, and submitting proofs.">
+        <meta name="description" content="Step-by-step guide to creating a new Sub-Chain using HierarchyManager and/or API Ledger, recording events, and submitting proofs.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -3039,7 +3039,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-ledger/" class="md-nav__link">
         
   
   
@@ -3048,7 +3048,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3068,7 +3068,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-business/" class="md-nav__link">
         
   
   
@@ -3077,7 +3077,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3097,7 +3097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-admin/" class="md-nav__link">
         
   
   
@@ -3106,7 +3106,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -3424,10 +3424,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#method-2-using-rest-api-v1" class="md-nav__link">
+  <a href="#method-2-using-rest-api-ledger" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Method 2: Using REST API v1
+        Method 2: Using REST API Ledger
       </span>
     </span>
   </a>
@@ -4348,10 +4348,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#method-2-using-rest-api-v1" class="md-nav__link">
+  <a href="#method-2-using-rest-api-ledger" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Method 2: Using REST API v1
+        Method 2: Using REST API Ledger
       </span>
     </span>
   </a>
@@ -4465,13 +4465,13 @@
 <li><code>start_operation(...)</code>, <code>complete_operation(...)</code></li>
 <li><code>submit_proof_to_main_chain(sub_chain_name)</code></li>
 </ul>
-<h2 id="method-2-using-rest-api-v1">Method 2: Using REST API v1</h2>
+<h2 id="method-2-using-rest-api-ledger">Method 2: Using REST API Ledger</h2>
 <p>Assuming API server is running at <code>http://localhost:2661</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 1. Create sub-chain (POST)</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/v1/chains/production/create&quot;</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/ledger/chains/production/create&quot;</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># 2. Record event in sub-chain</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/v1/chains/production/events&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/ledger/chains/production/events&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="s1">    &quot;entity_id&quot;: &quot;PROD-001&quot;,</span>
@@ -4480,26 +4480,26 @@
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="s1">  }&#39;</span>
 <a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
 <a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="c1"># 3. Submit proof</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/v1/chains/production/submit-proof&quot;</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/ledger/chains/production/submit-proof&quot;</span>
 <a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
 <a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># 4. View sub-chain blocks</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>curl<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/v1/chains/production/blocks?limit=5&amp;offset=0&quot;</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>curl<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/ledger/chains/production/blocks?limit=5&amp;offset=0&quot;</span>
 <a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
 <a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="c1"># 5. Trace by entity</span>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>curl<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/v1/entities/PROD-001/trace?chain_name=production&quot;</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>curl<span class="w"> </span><span class="s2">&quot;http://localhost:2661/api/ledger/entities/PROD-001/trace?chain_name=production&quot;</span>
 </code></pre></div>
-<p>Reference signatures and status codes: see <a href="../../reference/api-v1/">Reference: API v1</a>.</p>
+<p>Reference signatures and status codes: see <a href="../../reference/api-ledger/">Reference: API Ledger</a>.</p>
 <h2 id="common-errors-troubleshooting">Common Errors &amp; Troubleshooting</h2>
 <ul>
 <li>404 <code>Sub-chain 'X' not found</code> → Create the sub-chain first before sending events/proofs.</li>
 <li>500 <code>Failed to add event/submit proof/...</code> → Check server logs for details; verify payload is valid per schema.</li>
-<li>Sub-chain not showing in list → try <code>GET /api/v1/chains</code> to verify and see <code>block_count</code>.</li>
+<li>Sub-chain not showing in list → try <code>GET /api/ledger/chains</code> to verify and see <code>block_count</code>.</li>
 </ul>
 <h2 id="related">Related</h2>
 <ul>
 <li>Hierarchical Architecture: <a href="../../architecture/overview/">Overview</a></li>
 <li>Hierarchical Module: <a href="../../modules/hierarchical/">Hierarchical</a></li>
-<li>API v1 Reference: <a href="../../reference/api-v1/">API v1</a></li>
+<li>API Ledger Reference: <a href="../../reference/api-ledger/">API Ledger</a></li>
 </ul>
 
 

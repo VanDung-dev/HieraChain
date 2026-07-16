@@ -3192,7 +3192,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v1/" class="md-nav__link">
+      <a href="../../reference/api-ledger/" class="md-nav__link">
         
   
   
@@ -3201,7 +3201,7 @@
   <span class="md-ellipsis">
     
   
-  API v1
+  API ledger
 
     
   </span>
@@ -3221,7 +3221,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v2/" class="md-nav__link">
+      <a href="../../reference/api-business/" class="md-nav__link">
         
   
   
@@ -3230,7 +3230,7 @@
   <span class="md-ellipsis">
     
   
-  API v2
+  API business
 
     
   </span>
@@ -3250,7 +3250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api-v3/" class="md-nav__link">
+      <a href="../../reference/api-admin/" class="md-nav__link">
         
   
   
@@ -3259,7 +3259,7 @@
   <span class="md-ellipsis">
     
   
-  API v3
+  API admin
 
     
   </span>
@@ -4552,19 +4552,19 @@
 <h2 id="multi-vault-failover">Multi-Vault Failover</h2>
 <pre class="mermaid"><code>flowchart LR
     RESTORE["restore_keys(backup_id)"]
-    V1["📁 Primary Vault\n_find_backup_file()"]
-    V2["📁 Secondary Vault\n(fallback)"]
-    V3["📁 Tertiary Vault\n(fallback)"]
+    ledger["📁 Primary Vault\n_find_backup_file()"]
+    business["📁 Secondary Vault\n(fallback)"]
+    admin["📁 Tertiary Vault\n(fallback)"]
     OK["✅ Decrypted Keys"]
     ERR["❌ IntegrityError\nAll vaults failed"]
 
-    RESTORE --&gt; V1
-    V1 --&gt;|Found + intact| OK
-    V1 --&gt;|Not found / tampered| V2
-    V2 --&gt;|Found + intact| OK
-    V2 --&gt;|Not found / tampered| V3
-    V3 --&gt;|Found + intact| OK
-    V3 --&gt;|Not found / tampered| ERR</code></pre>
+    RESTORE --&gt; ledger
+    ledger --&gt;|Found + intact| OK
+    ledger --&gt;|Not found / tampered| business
+    business --&gt;|Found + intact| OK
+    business --&gt;|Not found / tampered| admin
+    admin --&gt;|Found + intact| OK
+    admin --&gt;|Not found / tampered| ERR</code></pre>
 <hr />
 <h2 id="step-by-step-breakdown">Step-by-Step Breakdown</h2>
 <table>
