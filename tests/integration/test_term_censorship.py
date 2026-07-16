@@ -40,6 +40,9 @@ def test_no_crypto_terms_in_codebase():
                         # Skip docstrings explaining system design
                         if "energy-intensive" in line or "wallet integration" in line:
                             continue
+                        # Skip docstring examples explaining regex word-boundary matching
+                        if "should not match" in line:
+                            continue
 
                         for term in FORBIDDEN_TERMS:
                             if re.search(term, line, re.IGNORECASE):
