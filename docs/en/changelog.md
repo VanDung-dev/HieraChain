@@ -6,6 +6,24 @@ icon: material/history
 
 # Changelog
 
+## v0.0.6 (2026-07-15)
+
+This release focuses on security hardening of the logging subsystem, simplification of the core blockchain and hierarchical layers, and further consensus hardening with proper error handling.
+
+??? note "Improvements (6)"
+
+    * **Secure Logging**: Added regex-based redaction of sensitive keys and tokens in `hierachain/security/` — sensitive values are replaced with `'***'` to prevent credential leakage. Introduced `_SEVERITY_MAP` for consistent security event logging, replacing direct log level methods with `logger.log()` — reducing duplication across all logging call sites.
+    * **Core Blockchain Refactoring**: Added `_rebuild_event_indexes` to reset and rebuild event indexes after block loading — ensuring index consistency across restarts. Changed hash mismatch from silent correction to raising an exception — no more hiding potential data corruption. Replaced direct dictionary access with `block.to_event_list()` for cleaner event filtering.
+    * **Consensus Hardening**: Enhanced `_contains_forbidden_terms` with regex word-boundary matching to eliminate false positives. Removed fallback random signature generation — signing now fails cleanly with an error message when the private key is missing. `ProofOfFederation` auto-generates key pairs for validators, exposes `public_key` property, added `block_hash` to consensus metadata. `_verify_block_quorum` now accepts optional `signer_id` to avoid redundant event re-scanning.
+    * **Hierarchical Layer Simplification**: Removed temporary entity index mapping, local chain clear, event statistics reset in sub-chain rehydration. Removed redundant event addition to `Blockchain.pending_events`. Streamlined `_recover_pending_events_from_journal` to count uncommitted events only, moving event reconstruction to `OrderingRecovery`.
+    * **Testing & Benchmark**: Enhanced ZK Proof-of-Federation test with real keypair, real signatures, and pre-consensus block validation. Updated storage benchmark using `Block` class from `hierachain.core`, renamed `event_type` to `event`. Added helper function for `ProofOfFederation` instantiation with signing key.
+
+??? warning "Fix (1)"
+
+    * **Logger Test Alignment**: Updated test assertions to match new logger method signatures (`mock_info` → `mock_log`, `call_args` indexing adjusted).
+
+---
+
 ## v0.0.5 (2026-06-20)
 
 This release focuses on core `hierachain/` package improvements, including replacing `ipfshttpclient` with `httpx` for Kubo RPC, idempotent sub-chain creation, chain integrity hardening, block persistence, and safe edge-case handling.
