@@ -8,6 +8,12 @@ icon: material/history
 
 ## Unreleased
 
+### 2026-07-16
+
+- **Testing**: Fixed false positive in term censorship test — skipped docstring examples explaining regex word-boundary matching.
+- **Documentation**: Added PR description template for merging v0.0.x into main.
+- **Changelog**: Updated unreleased section with recent developments.
+
 ### 2026-07-12
 
 - **Network**: Fixed seed node public key decoding with special handling for `$$` delimiter characters.

@@ -8,6 +8,12 @@ icon: material/history
 
 ## Unreleased
 
+### 2026-07-16
+
+- **Kiểm thử**: Sửa false positive trong term censorship test — bỏ qua docstring examples giải thích regex word-boundary matching.
+- **Tài liệu**: Thêm PR description template cho việc merge v0.0.x vào main.
+- **Changelog**: Cập nhật unreleased section với các phát triển gần đây.
+
 ### 2026-07-12
 
 - **Network**: Sửa lỗi giải mã public key seed node với xử lý đặc biệt cho ký tự `$$`.
