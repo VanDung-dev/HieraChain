@@ -119,10 +119,10 @@ def test_poa_event_validation():
     }
     assert poa.validate_event_for_consensus(invalid_event) is False
 
-    # Invalid event with mining term
+    # Invalid event with mining term (standalone token -> word boundary match)
     invalid_event2 = {
         "entity_id": "INVALID-002",
-        "event": "mining_start",
+        "event": "mining",
         "timestamp": time.time()
     }
     assert poa.validate_event_for_consensus(invalid_event2) is False

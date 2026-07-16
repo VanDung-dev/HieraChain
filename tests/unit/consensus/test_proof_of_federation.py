@@ -7,8 +7,18 @@ including validator management, round-robin leader selection, and block validati
 
 import time
 
+from nacl.signing import SigningKey
+from nacl.encoding import HexEncoder
+
 from hierachain.consensus import ProofOfFederation
 from hierachain.core import Block
+
+
+def _pof_with_key(name: str = "TestPoF") -> ProofOfFederation:
+    """Helper: create PoF instance with a proper signing key."""
+    sk = SigningKey.generate()
+    sk_hex = sk.encode(HexEncoder).decode()
+    return ProofOfFederation(name=name, signing_key_hex=sk_hex)
 
 
 def test_pof_validator_management():
@@ -59,11 +69,14 @@ def test_pof_round_robin_leader_selection():
 
 def test_pof_block_validation_correct_leader():
     """Test that blocks must be signed by the correct rotating leader"""
-    pof = ProofOfFederation(name="TestPoF")
+    pof = _pof_with_key()
     pof.config["min_validators"] = 2  # Required for test with 2 validators
+    # Register validators with the node's public key so signature can be verified
+    pub_key = pof.public_key
+    assert pub_key is not None
     validators = ["val_A", "val_B"] # sorted: val_A, val_B
     for v in validators:
-        pof.add_validator(v)
+        pof.add_validator(v, {"public_key": pub_key})
         
     # Block 1 should be signed by val_B (1 % 2 = 1)
     expected_leader = "val_B"
@@ -135,7 +148,7 @@ def test_pof_event_validation():
     
     invalid_event = {
         "entity_id": "INVALID",
-        "event": "mining_start", # Forbidden term
+        "event": "mining",  # standalone token -> forbidden
         "timestamp": time.time()
     }
     assert pof.validate_event_for_consensus(invalid_event) is False

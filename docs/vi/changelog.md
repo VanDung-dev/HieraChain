@@ -149,44 +149,75 @@ icon: material/history
 
 ---
 
+## v0.0.6 (2026-07-15)
+
+Phiên bản này tập trung vào củng cố bảo mật cho logging subsystem, đơn giản hóa core blockchain và các tầng hierarchical, cùng với hardening consensus với xử lý lỗi chính xác.
+
+??? note "Improvements (6)"
+
+    * **Secure Logging**: Thêm redaction dữ liệu nhạy cảm dựa trên regex trong `hierachain/security/` — các giá trị nhạy cảm được thay bằng `'***'` để ngăn rò rỉ thông tin xác thực. Giới thiệu `_SEVERITY_MAP` để logging nhất quán, thay thế các method log level trực tiếp bằng `logger.log()` — giảm trùng lặp trên toàn bộ call sites.
+    * **Core Blockchain Refactoring**: Thêm `_rebuild_event_indexes` để reset và rebuild event indexes sau khi load blocks — đảm bảo index consistency giữa các lần khởi động. Thay đổi hash mismatch từ silent correction thành exception — không còn che giấu corruption tiềm ẩn. Thay thế dictionary access bằng `block.to_event_list()` cho event filtering sạch hơn.
+    * **Consensus Hardening**: Cải thiện `_contains_forbidden_terms` với regex word-boundary matching để loại bỏ false positives. Loại bỏ fallback random signature generation — signing fail rõ ràng với error message khi thiếu private key. `ProofOfFederation` tự động sinh key pairs cho validators, expose `public_key` property, thêm `block_hash` vào consensus metadata. `_verify_block_quorum` nhận optional `signer_id` để tránh quét event dư thừa.
+    * **Hierarchical Layer Simplification**: Loại bỏ temporary entity index mapping, local chain clear, event statistics reset trong sub-chain rehydration. Xóa redundant event addition vào `Blockchain.pending_events`. Streamline `_recover_pending_events_from_journal` để chỉ đếm uncommitted events, chuyển event reconstruction sang `OrderingRecovery`.
+    * **Testing & Benchmark**: Nâng cấp ZK Proof-of-Federation test với keypair thật, chữ ký thật và pre-consensus block validation. Cập nhật storage benchmark dùng `Block` class từ `hierachain.core`, đổi tên `event_type` thành `event`. Thêm helper function cho `ProofOfFederation` instantiation với signing key.
+
+??? warning "Fix (1)"
+
+    * **Logger Test Alignment**: Cập nhật test assertions để khớp với method signatures mới của logger (`mock_info` → `mock_log`, `call_args` indexing thay đổi).
+
+---
+
+## v0.0.5 (2026-06-20)
+
+Phiên bản này tập trung vào cải thiện core package `hierachain/`, bao gồm thay thế `ipfshttpclient` bằng `httpx` cho Kubo RPC, tạo sub-chain idempotent, củng cố toàn vẹn chain, persist block và xử lý an toàn các trường hợp biên.
+
+??? note "Improvements (6)"
+
+    * **Kubo RPC Migration**: Thay thế `ipfshttpclient` bằng `httpx` trong `hierachain/api/storage/ipfs_client.py`, thực thi IPFS operations trực tiếp qua Kubo HTTP RPC API. Thêm `_parse_multiaddr` để trích xuất host/port từ multiaddress strings. Refactor core operations (upload, download, pin, unpin, list_pins, stats) sang `httpx.Client` POST requests. Loại bỏ `_IPFSClientContext` wrapper class.
+    * **Idempotent Sub-Chain Creation**: API v1 (`hierachain/api/v1/endpoints.py`) kiểm tra sub-chain tồn tại trước khi tạo, trả về `201 Created` với audit trail `"already_exists"` cho duplicate. Xử lý `409 Conflict` khi `manager.add_sub_chain` báo duplicate qua `ValueError`.
+    * **Chain Integrity Hardening**: Thêm `_verify_chain_links()` trong `hierachain/consensus/ordering/storage.py` để xác thực chuỗi `previous_hash` giữa các block. `_block_from_dict` raise `ValueError` khi computed hash mismatch stored hash, thay vì chỉ log error.
+    * **Event Enrichment & Block Persistence**: Ordering service (`hierachain/consensus/ordering/service.py`) tiêm `event_id` vào `event_data` payload trước khi tạo pending event. Recovery (`recovery.py`) ưu tiên `event_id` từ enriched `event_data`. Sub-chain finalize (`hierachain/hierarchical/sub_chain.py`) persist block qua storage handler, đảm bảo rehydration giữ nguyên consensus events.
+    * **Block Overwrite**: `hierachain/storage/sql_backend.py` — `save_block` query existing block theo `index`/`chain_name`, xóa và ghi đè thay vì silent `UNIQUE constraint` handling.
+    * **Zero Children Safeguard**: Rebalancer (`hierachain/hierarchical/rebalancer.py`) trả về `0` an toàn khi `num_children <= 0`, ngăn lỗi modulo-by-zero.
+
+??? warning "Fix (1)"
+
+    * **Integrity Check Locking**: Di chuyển post-rehydration chain integrity validation ra ngoài lock trong `hierachain/hierarchical/sub_chain.py`. Downgrade mismatch log từ error xuống warning để tính đến pending consumer thread blocks.
+
+---
+
 ## v0.0.4 (2026-05-25)
 
-Phiên bản này tập trung vào hạ tầng mạng cấp production, toàn vẹn mật mã học và kiểm thử stress doanh nghiệp, giới thiệu Node Identity với keypairs Ed25519/Curve25519, mã hóa ZeroMQ CURVE cho P2P, endpoint API v3 cho event an toàn, bộ kiểm thử stress/chaos toàn diện, hỗ trợ Podman/OrbStack và tái cấu trúc tài liệu song ngữ.
+Phiên bản này tập trung vào Node Identity với keypairs Ed25519/Curve25519, mã hóa ZeroMQ CURVE cho P2P, endpoint API v3 cho event an toàn, chữ ký Ed25519 cho Proof of Federation, xác thực timestamp BFT chống replay, và củng cố bảo mật toàn diện trong `hierachain/`.
 
-??? note "Improvements (7)"
+??? note "Improvements (4)"
 
-    * **Node Identity & P2P Networking**: Giới thiệu `NodeIdentity`, mã hóa ZeroMQ CURVE, `send_direct`/`broadcast`, ping-pong heartbeat, tích hợp xuyên suốt BFT consensus, ordering service và API. Thêm cấu hình P2P (`P2P_ENABLED`, `P2P_HOST`, `P2P_PORT`).
-    * **API v3 & Chữ ký số**: Endpoint `POST /api/v3/chains/{chain_name}/secure-events` với xác thực chữ ký Ed25519, giới hạn payload 1MB và độ sâu tối đa 10. Thêm trường `sender`/`signature` vào schema.
-    * **Củng cố Consensus**: Chữ ký Ed25519 cho Proof of Federation, xác thực timestamp BFT 30 giây chống replay, xác minh block hash khi reconstruction, `block_interval` cấu hình được.
-    * **Bảo mật**: Từ chối ZK proof giả trong production (cho phép test), so sánh hằng số thời gian HMAC, `threading.RLock` trong LockdownProtocol, tăng PBKDF2 lên 310,000 iterations.
-    * **Hạ tầng Docker/K8s**: Hỗ trợ Podman (Compose và K8s), di chuyển lên OrbStack, API Gateway Nginx với stealth explorer, Web2 gateway node, Redis deployment, sinh identity động, chaos controller.
-    * **Kiểm thử Stress & Chaos**: Bộ kiểm thử mới cho network partition, kill node, CPU throttling, WAN simulation, DDoS, memory leak soak, WebSocket load, storage benchmark.
-    * **Tài liệu đa ngôn ngữ**: Hỗ trợ tiếng Việt và tiếng Anh, dịch 16 quy trình công việc, hướng dẫn sử dụng, tài liệu tham khảo API. Viết lại `AGENTS.md` với nguyên tắc hành vi AI.
+    * **Node Identity & P2P Networking**: Giới thiệu `NodeIdentity` trong `hierachain/security/identity_loader.py`, mã hóa ZeroMQ CURVE trong `NetworkClient`, `send_direct`/`broadcast`, ping-pong heartbeat. Tích hợp node identity qua `HierarchyManager`, `DomainChain`, `OrderingService` và BFT consensus.
+    * **API v3 & Chữ ký số**: Endpoint `POST /api/v3/chains/{chain_name}/secure-events` với xác thực chữ ký Ed25519, giới hạn payload 1MB và độ sâu tối đa 10. Thêm trường `sender`/`signature` vào schema v1 với validation hex nghiêm ngặt.
+    * **Củng cố Consensus**: Chữ ký Ed25519 cho Proof of Federation (`_create_federation_signature`, `_verify_block_quorum`), xác thực timestamp BFT 30 giây chống replay, xác minh block hash khi reconstruction, `block_interval` cấu hình qua `HRC_BLOCK_INTERVAL`.
+    * **Bảo mật**: Từ chối ZK proof giả trong production (cho phép test), so sánh hằng số thời gian HMAC (`hmac.compare_digest`), `threading.RLock` trong LockdownProtocol, tăng PBKDF2 lên 310,000 iterations, `AdvancedCache` với TTL/LRU cho `KeyManager`.
 
-??? warning "Fix (3)"
+??? warning "Fix (2)"
 
-    * **Consensus & Storage**: Sửa xác thực block signature và sinh key tự động trong PoA, sửa return value mặc định trong BFT message handler, thêm validation proof_hash 64-ký tự SHA-256, xác thực toàn vẹn chain sau deserialization.
-    * **API & SDK**: Cập nhật default base URL SDK từ 8000 sang 2661, validation tên sub-chain bằng regex, thread-safe cho RateLimiter, validation CID/nonce trong IPFS client.
-    * **Build & Dependency**: Thêm `uvicorn[standard]`, `websockets`, `click`, `build`, `twine`; pin `urllib3==2.7.0`; nâng cấp `zensical` và `pymdown-extensions`; ghim Python 3.12 trong CI.
+    * **Consensus & Storage**: Sửa xác thực block signature và sinh key tự động trong PoA, sửa return value mặc định trong BFT handler từ `True` sang `False`, thêm validation proof_hash 64-ký tự SHA-256, xác thực toàn vẹn chain sau deserialization, thêm cột `creator_id`/`signature` vào block DB model.
+    * **API & SDK**: Cập nhật default base URL SDK từ 8000 sang 2661, validation tên sub-chain bằng regex, thread-safe `RateLimiter`, validation CID/nonce trong IPFS client.
 
 ---
 
 ## v0.0.3 (2026-05-02)
 
-Phiên bản này tập trung vào sự sẵn sàng cho production thông qua các cải thiện toàn diện về type safety trong `hierachain/`, triển khai Kubernetes StatefulSet, hạ tầng stress testing mạnh mẽ, và tăng cường xác thực bảo mật.
+Phiên bản này tập trung vào cải thiện type safety toàn diện trong `hierachain/`, đạt full Mypy compliance, xác thực Ed25519 64-byte nghiêm ngặt, canonicalization JSON cho xác minh deterministic, HMAC lockdown protocol, middleware giới hạn payload, và validation timestamp 24 giờ.
 
-??? note "Improvements (6)"
+??? note "Improvements (4)"
 
-    * **Tuân thủ Mypy đầy đủ**: Giải quyết các cảnh báo static typing trên các module consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core và cluster.
-    * **Xác thực Signature Ed25519**: Thực thi chiều dài 64-byte nghiêm ngặt cho signature Ed25519 để ngăn chặn việc bypass validation.
-    * **Canonicalization JSON**: Triển khai canonicalization JSON mạnh mẽ cho xác minh signature để đảm bảo các hoạt động cryptographic nhất quán.
-    * **Chuyển đổi StatefulSet**: Di chuyển từ Deployment sang StatefulSet cho deployment node ổn định với identity persistent.
-    * **Bảo mật**: Thêm middleware giới hạn payload, validation timestamp 24h, ngăn chặn API key mặc định trong production, refactor HMAC lockdown protocol.
-    * **Build & Packaging**: Di chuyển quản lý dependency sang uv, pin dependency versions, thêm uv.lock.
+    * **Tuân thủ Mypy đầy đủ**: Giải quyết các cảnh báo static typing trên tất cả module — consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core và cluster.
+    * **Xác thực Signature Ed25519**: Thực thi chiều dài 64-byte nghiêm ngặt cho signature Ed25519 trong `verify_signature_standalone` để ngăn chặn bypass validation.
+    * **Canonicalization JSON**: Triển khai `get_canonical_bytes` với sắp xếp dict đệ quy, chuẩn hóa Unicode NFC, định dạng float nhất quán cho xác minh chữ ký deterministic.
+    * **Bảo mật**: Thêm `PayloadLimitMiddleware` từ chối POST/PUT/PATCH trên 1MB, validation proof timestamp 24h, ngăn chặn API key mặc định trong production (`RuntimeError`), refactor HMAC lockdown protocol (`hmac.new` SHA256).
 
 ??? warning "Fix (1)"
 
-    * **Testing & Ổn định**: Giới hạn message log trong BFT consensus, cải thiện stress test client, sửa bare except clauses trong integration tests, cải thiện IPFS connection handling.
+    * **BFT & Validation**: Giới hạn BFT message log ở 10,000 entries ngăn memory growth vô hạn, cải thiện IPFS connection handling (`_ensure_connected` với None checks), sửa bare except clauses, thêm `\b` word-boundary matching cho validation thuật ngữ cryptocurrency.
 
 ---
 
@@ -229,7 +260,7 @@ Phiên bản này tập trung vào tăng cường bảo mật, khả năng quan 
         * Cập nhật SDK client để hỗ trợ đầy đủ multi-chain API v3.
         * Đồng bộ block schema với event schema để có cấu trúc dữ liệu nhất quán.
 
-??? warning "Fix (3)"
+??? warning "Fix (2)"
 
     * **Ổn định Consensus & Ordering**:
 
@@ -241,10 +272,6 @@ Phiên bản này tập trung vào tăng cường bảo mật, khả năng quan 
     * **Core & Hierarchical Chain**:
 
         * Sửa race condition trong quản lý hierarchical chain và thêm thủ tục shutdown graceful.
-
-    * **Build & Packaging**:
-
-        * Nhúng template cấu hình vào module Python để sửa lỗi thiếu file `.env.HRC.example` khi cài đặt qua pip.
 
 ---
 
@@ -273,4 +300,3 @@ Phiên bản này đánh dấu việc hoàn thiện định hướng kiến trú
     * **Ổn định & QA**: 
 
         * Sửa lỗi Chain Rehydration giúp khôi phục trạng thái chính xác sau khi restart.
-        * Cải thiện độ tin cậy của CI/CD với matrix testing và xử lý flaky tests.

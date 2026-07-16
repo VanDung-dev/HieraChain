@@ -149,44 +149,75 @@ icon: material/history
 
 ---
 
+## v0.0.6 (2026-07-15)
+
+This release focuses on security hardening of the logging subsystem, simplification of the core blockchain and hierarchical layers, and further consensus hardening with proper error handling.
+
+??? note "Improvements (6)"
+
+    * **Secure Logging**: Added regex-based redaction of sensitive keys and tokens in `hierachain/security/` — sensitive values are replaced with `'***'` to prevent credential leakage. Introduced `_SEVERITY_MAP` for consistent security event logging, replacing direct log level methods with `logger.log()` — reducing duplication across all logging call sites.
+    * **Core Blockchain Refactoring**: Added `_rebuild_event_indexes` to reset and rebuild event indexes after block loading — ensuring index consistency across restarts. Changed hash mismatch from silent correction to raising an exception — no more hiding potential data corruption. Replaced direct dictionary access with `block.to_event_list()` for cleaner event filtering.
+    * **Consensus Hardening**: Enhanced `_contains_forbidden_terms` with regex word-boundary matching to eliminate false positives. Removed fallback random signature generation — signing now fails cleanly with an error message when the private key is missing. `ProofOfFederation` auto-generates key pairs for validators, exposes `public_key` property, added `block_hash` to consensus metadata. `_verify_block_quorum` now accepts optional `signer_id` to avoid redundant event re-scanning.
+    * **Hierarchical Layer Simplification**: Removed temporary entity index mapping, local chain clear, event statistics reset in sub-chain rehydration. Removed redundant event addition to `Blockchain.pending_events`. Streamlined `_recover_pending_events_from_journal` to count uncommitted events only, moving event reconstruction to `OrderingRecovery`.
+    * **Testing & Benchmark**: Enhanced ZK Proof-of-Federation test with real keypair, real signatures, and pre-consensus block validation. Updated storage benchmark using `Block` class from `hierachain.core`, renamed `event_type` to `event`. Added helper function for `ProofOfFederation` instantiation with signing key.
+
+??? warning "Fix (1)"
+
+    * **Logger Test Alignment**: Updated test assertions to match new logger method signatures (`mock_info` → `mock_log`, `call_args` indexing adjusted).
+
+---
+
+## v0.0.5 (2026-06-20)
+
+This release focuses on core `hierachain/` package improvements, including replacing `ipfshttpclient` with `httpx` for Kubo RPC, idempotent sub-chain creation, chain integrity hardening, block persistence, and safe edge-case handling.
+
+??? note "Improvements (6)"
+
+    * **Kubo RPC Migration**: Replaced `ipfshttpclient` with `httpx` in `hierachain/api/storage/ipfs_client.py`, executing IPFS operations directly via Kubo HTTP RPC API. Added `_parse_multiaddr` helper for host/port extraction from multiaddress strings. Refactored core operations (upload, download, pin, unpin, list_pins, stats) to use `httpx.Client` POST requests. Removed `_IPFSClientContext` wrapper class.
+    * **Idempotent Sub-Chain Creation**: API v1 (`hierachain/api/v1/endpoints.py`) checks for existing sub-chain before creation, returns `201 Created` with `"already_exists"` audit trail for duplicates. Returns `409 Conflict` when `manager.add_sub_chain` raises `ValueError` on duplicate.
+    * **Chain Integrity Hardening**: Added `_verify_chain_links()` in `hierachain/consensus/ordering/storage.py` to validate `previous_hash` chain of blocks. `_block_from_dict` raises `ValueError` on computed hash mismatch instead of merely logging an error.
+    * **Event Enrichment & Block Persistence**: Ordering service (`hierachain/consensus/ordering/service.py`) injects `event_id` into `event_data` payload before creating pending events. Recovery (`recovery.py`) prioritizes enriched `event_data` over calculated fallback. Sub-chain finalize (`hierachain/hierarchical/sub_chain.py`) persists blocks via storage handler, ensuring rehydration retains consensus events.
+    * **Block Overwrite**: `hierachain/storage/sql_backend.py` — `save_block` queries for existing blocks by `index`/`chain_name`, deletes and replaces them instead of silently handling `UNIQUE constraint` violations.
+    * **Zero Children Safeguard**: Rebalancer (`hierachain/hierarchical/rebalancer.py`) safely returns `0` when `num_children <= 0`, preventing modulo-by-zero errors.
+
+??? warning "Fix (1)"
+
+    * **Integrity Check Locking**: Moved post-rehydration chain integrity validation outside the lock in `hierachain/hierarchical/sub_chain.py`. Downgraded mismatch log from error to warning to account for pending consumer thread blocks.
+
+---
+
 ## v0.0.4 (2026-05-25)
 
-This release focuses on production-grade networking infrastructure, cryptographic integrity, and enterprise-grade stress testing, introducing Node Identity with Ed25519/Curve25519 keypairs, ZeroMQ CURVE encryption for P2P, API v3 secure event submission, comprehensive stress/chaos testing suite, Podman/OrbStack support, and dual-language documentation restructuring.
+This release focuses on Node Identity with Ed25519/Curve25519 keypairs, ZeroMQ CURVE encryption for P2P, API v3 secure event submission, Ed25519 signing for Proof of Federation, BFT timestamp validation against replay attacks, and comprehensive security hardening within `hierachain/`.
 
-??? note "Improvements (7)"
+??? note "Improvements (4)"
 
-    * **Node Identity & P2P Networking**: Introduced `NodeIdentity`, ZeroMQ CURVE encryption, `send_direct`/`broadcast` methods, ping-pong heartbeat, propagated through BFT consensus, ordering service, and API. Added P2P settings (`P2P_ENABLED`, `P2P_HOST`, `P2P_PORT`).
-    * **API v3 & Cryptographic Signatures**: New `POST /api/v3/chains/{chain_name}/secure-events` endpoint with Ed25519 signature verification, 1MB payload limit, and max depth 10. Added `sender`/`signature` fields to event schemas.
-    * **Consensus Hardening**: Ed25519 signing for Proof of Federation, 30-second BFT timestamp drift check against replay attacks, block hash verification on reconstruction, configurable `block_interval`.
-    * **Security**: Production ZK proof rejection (test environment bypass), HMAC constant-time comparison, `threading.RLock` in LockdownProtocol, PBKDF2 increased to 310,000 iterations.
-    * **Docker/K8s Infrastructure**: Podman support (Compose and K8s), OrbStack migration, Nginx API Gateway with stealth explorer, Web2 gateway node, Redis deployment, dynamic identity generation, chaos controller.
-    * **Stress & Chaos Testing**: New suites for network partition, node kill, CPU throttling, WAN simulation, DDoS, memory leak soak, WebSocket load, and storage benchmarks.
-    * **Multi-language Documentation**: Vietnamese and English support, translated 16 workflows, how-to guides, API references. Rewrote `AGENTS.md` with AI behavioral principles.
+    * **Node Identity & P2P Networking**: Introduced `NodeIdentity` in `hierachain/security/identity_loader.py`, ZeroMQ CURVE encryption in `NetworkClient`, `send_direct`/`broadcast` methods, ping-pong heartbeat. Propagated node identity through `HierarchyManager`, `DomainChain`, `OrderingService`, and BFT consensus.
+    * **API v3 & Cryptographic Signatures**: New `POST /api/v3/chains/{chain_name}/secure-events` endpoint with Ed25519 signature verification, 1MB payload limit, and max depth 10. Added `sender`/`signature` fields to v1 event schemas with strict hex validation.
+    * **Consensus Hardening**: Ed25519 signing for Proof of Federation (`_create_federation_signature`, `_verify_block_quorum`), 30-second BFT timestamp drift check against replay attacks, block hash verification on reconstruction, configurable `block_interval` via `HRC_BLOCK_INTERVAL`.
+    * **Security**: Production ZK proof rejection (test environment bypass), HMAC constant-time comparison (`hmac.compare_digest`), `threading.RLock` in LockdownProtocol, PBKDF2 increased to 310,000 iterations, `AdvancedCache` with TTL/LRU for `KeyManager`.
 
-??? warning "Fix (3)"
+??? warning "Fix (2)"
 
-    * **Consensus & Storage**: Fixed block signature verification and auto key generation in PoA, corrected default return value in BFT handler, added 64-char SHA-256 proof_hash validation, chain integrity checks after deserialization.
-    * **API & SDK**: Updated SDK default base URL from 8000 to 2661, sub-chain name regex validation, thread-safe RateLimiter, CID/nonce validation in IPFS client.
-    * **Build & Dependencies**: Added `uvicorn[standard]`, `websockets`, `click`, `build`, `twine`; pinned `urllib3==2.7.0`; bumped `zensical` and `pymdown-extensions`; pinned Python 3.12 in CI.
+    * **Consensus & Storage**: Fixed block signature verification and auto key generation in PoA, corrected default return value in BFT handler from `True` to `False`, added 64-char SHA-256 proof_hash validation, chain integrity checks after deserialization, added `creator_id`/`signature` columns to block DB model.
+    * **API & SDK**: Updated SDK default base URL from 8000 to 2661, sub-chain name regex validation, thread-safe `RateLimiter`, CID/nonce validation in IPFS client.
 
 ---
 
 ## v0.0.3 (2026-05-02)
 
-This release focuses on production readiness through comprehensive type safety improvements in `hierachain/`, Kubernetes StatefulSet deployment, robust stress testing infrastructure, and enhanced security validation.
+This release focuses on comprehensive type safety improvements across `hierachain/`, achieving full Mypy compliance, strict Ed25519 64-byte signature validation, JSON canonicalization for deterministic verification, HMAC-based lockdown protocol, payload limit middleware, and 24-hour timestamp validation.
 
-??? note "Improvements (6)"
+??? note "Improvements (4)"
 
-    * **Full Mypy Compliance**: Resolved static typing warnings across consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core and cluster modules.
-    * **Ed25519 Signature Validation**: Enforced strict 64-byte length for Ed25519 signatures to prevent validation bypass.
-    * **JSON Canonicalization**: Implemented robust JSON canonicalization for signature verification to ensure consistent cryptographic operations.
-    * **StatefulSet Migration**: Migrated from Deployment to StatefulSet for stable node deployment with persistent identity.
-    * **Security**: Added payload limit middleware, 24h timestamp validation, default API key prevention in production, refactored HMAC lockdown protocol.
-    * **Build & Packaging**: Migrated dependency management to uv, pinned dependency versions, added uv.lock.
+    * **Full Mypy Compliance**: Resolved static typing warnings across all modules — consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core and cluster.
+    * **Ed25519 Signature Validation**: Enforced strict 64-byte length for Ed25519 signatures in `verify_signature_standalone` to prevent validation bypass.
+    * **JSON Canonicalization**: Implemented robust `get_canonical_bytes` with recursive dict sorting, Unicode NFC normalization, and consistent float formatting for deterministic signature verification.
+    * **Security**: Added `PayloadLimitMiddleware` rejecting POST/PUT/PATCH over 1MB, 24h proof timestamp consistency validation, default API key prevention in production (`RuntimeError`), refactored HMAC lockdown protocol (`hmac.new` SHA256).
 
 ??? warning "Fix (1)"
 
-    * **Testing & Stability**: Limited message log in BFT consensus, improved stress test client, fixed bare except clauses in integration tests, improved IPFS connection handling.
+    * **BFT & Validation**: Limited BFT message log to 10,000 entries preventing unbounded memory growth, improved IPFS connection handling (`_ensure_connected` with proper None checks), fixed bare except clauses, enforced `\b` word-boundary matching for cryptocurrency term validation.
 
 ---
 
@@ -229,7 +260,7 @@ This release focuses on enhanced security, system observability, and important s
         * Updated SDK client for full multi-chain API v3 support.
         * Synchronized block schema with event schema for consistent data structure.
 
-??? warning "Fix (3)"
+??? warning "Fix (2)"
 
     * **Consensus & Ordering Stability**:
 
@@ -241,10 +272,6 @@ This release focuses on enhanced security, system observability, and important s
     * **Core & Hierarchical Chain**:
 
         * Fixed race condition in hierarchical chain management and added graceful shutdown procedures.
-
-    * **Build & Packaging**:
-
-        * Embedded config template into Python module to fix missing `.env.HRC.example` file when installing via pip.
 
 ---
 
@@ -273,4 +300,3 @@ This release marks the completion of HieraChain's initial architectural directio
     * **Stability & QA**: 
 
         * Fixed Chain Rehydration bug for correct state restoration after restart.
-        * Improved CI/CD reliability with matrix testing and flaky test handling.

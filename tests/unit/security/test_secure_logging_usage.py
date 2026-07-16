@@ -90,11 +90,11 @@ class TestSecureLoggerSanitization:
         """Newlines in log messages should be escaped."""
         secure = SecureLogger("test.sanitize")
         with patch.object(
-            secure.logger, "info"
-        ) as mock_info:
+            secure.logger, "log"
+        ) as mock_log:
             secure.info("line1\nline2", user_data="a\nb")
-            mock_info.assert_called_once()
-            call_arg = mock_info.call_args[0][0]
+            mock_log.assert_called_once()
+            call_arg = mock_log.call_args[0][1]
             # The structured JSON output should not contain raw newlines
             assert "\n" not in call_arg
 
@@ -102,11 +102,11 @@ class TestSecureLoggerSanitization:
         """ANSI escape codes should be stripped."""
         secure = SecureLogger("test.ansi")
         with patch.object(
-            secure.logger, "warning"
-        ) as mock_warn:
+            secure.logger, "log"
+        ) as mock_log:
             secure.warning("normal\x1b[31mred\x1b[0m")
-            mock_warn.assert_called_once()
-            call_arg = mock_warn.call_args[0][0]
+            mock_log.assert_called_once()
+            call_arg = mock_log.call_args[0][1]
             assert "\x1b" not in call_arg
 
 
@@ -120,31 +120,31 @@ class TestSecurityEventLogging:
     def test_security_event_outputs_structured_json(self):
         secure = SecureLogger("test.events")
         with patch.object(
-            secure.logger, "error"
-        ) as mock_error:
+            secure.logger, "log"
+        ) as mock_log:
             secure.security_event(
                 event_type="test_event",
                 message="Something happened",
                 severity="high",
                 extra_key="extra_value",
             )
-            mock_error.assert_called_once()
-            call_arg = mock_error.call_args[0][0]
+            mock_log.assert_called_once()
+            call_arg = mock_log.call_args[0][1]
             assert "test_event" in call_arg
             assert "security_event" in call_arg
 
     def test_audit_outputs_structured_json(self):
         secure = SecureLogger("test.audit")
         with patch.object(
-            secure.logger, "info"
-        ) as mock_info:
+            secure.logger, "log"
+        ) as mock_log:
             secure.audit(
                 action="create",
                 resource="chain",
                 user_id="user_1",
                 success=True,
             )
-            mock_info.assert_called_once()
-            call_arg = mock_info.call_args[0][0]
+            mock_log.assert_called_once()
+            call_arg = mock_log.call_args[0][1]
             assert "audit" in call_arg
             assert "create" in call_arg

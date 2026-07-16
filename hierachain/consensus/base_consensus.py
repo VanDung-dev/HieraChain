@@ -7,6 +7,7 @@ the event-based model and hierarchical structure principles.
 """
 
 import logging
+import re
 import pyarrow as pa
 from abc import ABC, abstractmethod
 from typing import Any
@@ -109,6 +110,8 @@ class BaseConsensus(ABC):
     def _contains_forbidden_terms(self, value: Any) -> bool:
         """
         Check if a value contains any forbidden cryptocurrency-related terms.
+        Uses word-boundary matching to avoid false positives
+        (e.g., "coffee" should not match "fee").
 
         Args:
             value: The value to check (will be converted to lower-case string)
@@ -117,7 +120,10 @@ class BaseConsensus(ABC):
             True if a forbidden term is found, False otherwise
         """
         value_str = str(value).lower()
-        return any(term in value_str for term in self.FORBIDDEN_TERMS)
+        return any(
+            re.search(rf"\b{re.escape(term)}\b", value_str) is not None
+            for term in self.FORBIDDEN_TERMS
+        )
 
     def _check_content_fields(self, data: dict[str, Any]) -> bool:
         """Validate a dictionary of fields for forbidden content."""

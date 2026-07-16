@@ -175,12 +175,11 @@ class Block:
         )
         # Verify integrity: recalculate hash and compare with stored hash
         stored_hash = data.get("hash")
-        if isinstance(stored_hash, str) and block.hash != stored_hash:
-            logger.error(
-                "Block hash mismatch! index=%d stored=%s computed=%s",
-                block.index, stored_hash[:16], block.hash[:16]
+        if stored_hash is not None and block.hash != stored_hash:
+            raise ValueError(
+                f"Block hash MISMATCH! index={block.index} "
+                f"stored={stored_hash[:16]} computed={block.hash[:16]}"
             )
-            block.hash = stored_hash
         return block
 
     def __str__(self) -> str:
