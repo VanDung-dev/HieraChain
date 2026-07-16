@@ -4191,6 +4191,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v006-2026-07-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.6 (2026-07-15)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v005-2026-06-20" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4302,6 +4313,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v006-2026-07-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.6 (2026-07-15)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v005-2026-06-20" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4388,6 +4410,25 @@
 
 
 <h1 id="changelog">Changelog</h1>
+<h2 id="v006-2026-07-15">v0.0.6 (2026-07-15)</h2>
+<p>This release focuses on security hardening of the logging subsystem, simplification of the core blockchain and hierarchical layers, and further consensus hardening with proper error handling.</p>
+<details class="note">
+<summary>Improvements (6)</summary>
+<ul>
+<li><strong>Secure Logging</strong>: Added regex-based redaction of sensitive keys and tokens in <code>hierachain/security/</code> — sensitive values are replaced with <code>'***'</code> to prevent credential leakage. Introduced <code>_SEVERITY_MAP</code> for consistent security event logging, replacing direct log level methods with <code>logger.log()</code> — reducing duplication across all logging call sites.</li>
+<li><strong>Core Blockchain Refactoring</strong>: Added <code>_rebuild_event_indexes</code> to reset and rebuild event indexes after block loading — ensuring index consistency across restarts. Changed hash mismatch from silent correction to raising an exception — no more hiding potential data corruption. Replaced direct dictionary access with <code>block.to_event_list()</code> for cleaner event filtering.</li>
+<li><strong>Consensus Hardening</strong>: Enhanced <code>_contains_forbidden_terms</code> with regex word-boundary matching to eliminate false positives. Removed fallback random signature generation — signing now fails cleanly with an error message when the private key is missing. <code>ProofOfFederation</code> auto-generates key pairs for validators, exposes <code>public_key</code> property, added <code>block_hash</code> to consensus metadata. <code>_verify_block_quorum</code> now accepts optional <code>signer_id</code> to avoid redundant event re-scanning.</li>
+<li><strong>Hierarchical Layer Simplification</strong>: Removed temporary entity index mapping, local chain clear, event statistics reset in sub-chain rehydration. Removed redundant event addition to <code>Blockchain.pending_events</code>. Streamlined <code>_recover_pending_events_from_journal</code> to count uncommitted events only, moving event reconstruction to <code>OrderingRecovery</code>.</li>
+<li><strong>Testing &amp; Benchmark</strong>: Enhanced ZK Proof-of-Federation test with real keypair, real signatures, and pre-consensus block validation. Updated storage benchmark using <code>Block</code> class from <code>hierachain.core</code>, renamed <code>event_type</code> to <code>event</code>. Added helper function for <code>ProofOfFederation</code> instantiation with signing key.</li>
+</ul>
+</details>
+<details class="warning">
+<summary>Fix (1)</summary>
+<ul>
+<li><strong>Logger Test Alignment</strong>: Updated test assertions to match new logger method signatures (<code>mock_info</code> → <code>mock_log</code>, <code>call_args</code> indexing adjusted).</li>
+</ul>
+</details>
+<hr />
 <h2 id="v005-2026-06-20">v0.0.5 (2026-06-20)</h2>
 <p>This release focuses on core <code>hierachain/</code> package improvements, including replacing <code>ipfshttpclient</code> with <code>httpx</code> for Kubo RPC, idempotent sub-chain creation, chain integrity hardening, block persistence, and safe edge-case handling.</p>
 <details class="note">

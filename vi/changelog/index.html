@@ -4191,6 +4191,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v006-2026-07-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.6 (2026-07-15)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v005-2026-06-20" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4302,6 +4313,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v006-2026-07-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.0.6 (2026-07-15)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v005-2026-06-20" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4388,6 +4410,25 @@
 
 
 <h1 id="changelog">Changelog</h1>
+<h2 id="v006-2026-07-15">v0.0.6 (2026-07-15)</h2>
+<p>Phiên bản này tập trung vào củng cố bảo mật cho logging subsystem, đơn giản hóa core blockchain và các tầng hierarchical, cùng với hardening consensus với xử lý lỗi chính xác.</p>
+<details class="note">
+<summary>Improvements (6)</summary>
+<ul>
+<li><strong>Secure Logging</strong>: Thêm redaction dữ liệu nhạy cảm dựa trên regex trong <code>hierachain/security/</code> — các giá trị nhạy cảm được thay bằng <code>'***'</code> để ngăn rò rỉ thông tin xác thực. Giới thiệu <code>_SEVERITY_MAP</code> để logging nhất quán, thay thế các method log level trực tiếp bằng <code>logger.log()</code> — giảm trùng lặp trên toàn bộ call sites.</li>
+<li><strong>Core Blockchain Refactoring</strong>: Thêm <code>_rebuild_event_indexes</code> để reset và rebuild event indexes sau khi load blocks — đảm bảo index consistency giữa các lần khởi động. Thay đổi hash mismatch từ silent correction thành exception — không còn che giấu corruption tiềm ẩn. Thay thế dictionary access bằng <code>block.to_event_list()</code> cho event filtering sạch hơn.</li>
+<li><strong>Consensus Hardening</strong>: Cải thiện <code>_contains_forbidden_terms</code> với regex word-boundary matching để loại bỏ false positives. Loại bỏ fallback random signature generation — signing fail rõ ràng với error message khi thiếu private key. <code>ProofOfFederation</code> tự động sinh key pairs cho validators, expose <code>public_key</code> property, thêm <code>block_hash</code> vào consensus metadata. <code>_verify_block_quorum</code> nhận optional <code>signer_id</code> để tránh quét event dư thừa.</li>
+<li><strong>Hierarchical Layer Simplification</strong>: Loại bỏ temporary entity index mapping, local chain clear, event statistics reset trong sub-chain rehydration. Xóa redundant event addition vào <code>Blockchain.pending_events</code>. Streamline <code>_recover_pending_events_from_journal</code> để chỉ đếm uncommitted events, chuyển event reconstruction sang <code>OrderingRecovery</code>.</li>
+<li><strong>Testing &amp; Benchmark</strong>: Nâng cấp ZK Proof-of-Federation test với keypair thật, chữ ký thật và pre-consensus block validation. Cập nhật storage benchmark dùng <code>Block</code> class từ <code>hierachain.core</code>, đổi tên <code>event_type</code> thành <code>event</code>. Thêm helper function cho <code>ProofOfFederation</code> instantiation với signing key.</li>
+</ul>
+</details>
+<details class="warning">
+<summary>Fix (1)</summary>
+<ul>
+<li><strong>Logger Test Alignment</strong>: Cập nhật test assertions để khớp với method signatures mới của logger (<code>mock_info</code> → <code>mock_log</code>, <code>call_args</code> indexing thay đổi).</li>
+</ul>
+</details>
+<hr />
 <h2 id="v005-2026-06-20">v0.0.5 (2026-06-20)</h2>
 <p>Phiên bản này tập trung vào cải thiện core package <code>hierachain/</code>, bao gồm thay thế <code>ipfshttpclient</code> bằng <code>httpx</code> cho Kubo RPC, tạo sub-chain idempotent, củng cố toàn vẹn chain, persist block và xử lý an toàn các trường hợp biên.</p>
 <details class="note">
