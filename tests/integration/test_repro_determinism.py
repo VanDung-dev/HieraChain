@@ -63,6 +63,7 @@ def test_determinism():
     blocks_phase1 = _wait_and_log_blocks(service, "Phase 1")
         
     service.shutdown()
+    time.sleep(0.5)
     
     print("\n=== Phase 2: Recovery Run ===")
     
