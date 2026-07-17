@@ -98,9 +98,15 @@ class IPFSClient:
         """Get the connected HTTP client, ensuring connection."""
         if self._client is None:
             try:
+                # Optimize HTTP connection pool limits for heavy concurrent IPFS uploads/downloads
+                limits = httpx.Limits(
+                    max_keepalive_connections=50,
+                    max_connections=150,
+                )
                 client_instance = httpx.Client(
                     base_url=f"http://{self._host}:{self._port}",
                     timeout=self._timeout,
+                    limits=limits,
                 )
                 # Test connection
                 resp = client_instance.post("/api/v0/version")
