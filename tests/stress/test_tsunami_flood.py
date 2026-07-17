@@ -21,14 +21,16 @@ from tests.stress.real_stress_client import DEFAULT_NODES
 
 logger = logging.getLogger(__name__)
 
-# Test configuration
+import os
+
+# Test configuration loaded dynamically (supports Docker Compose configuration)
 DEFAULT_CONFIG = {
-    "num_events": 1000,
-    "batch_size": 100,
-    "event_size_bytes": 1024,
-    "concurrent_senders": 10,
+    "num_events": int(os.getenv("STRESS_NUM_EVENTS", "5000")),
+    "batch_size": int(os.getenv("STRESS_BATCH_SIZE", "100")),
+    "event_size_bytes": int(os.getenv("STRESS_EVENT_SIZE", "1024")),
+    "concurrent_senders": int(os.getenv("STRESS_CONCURRENT_SENDERS", "10")),
     "target_nodes": DEFAULT_NODES,
-    "timeout_seconds": 60,
+    "timeout_seconds": int(os.getenv("STRESS_TIMEOUT", "120")),
 }
 
 
@@ -107,7 +109,8 @@ class TsunamiFloodTest:
         from tests.stress.real_stress_client import REAL_REQUESTS
         if not REAL_REQUESTS or not self.client:
             return
-        if not self.client.wait_for_nodes(timeout=30):
+        # Increased node waiting timeout to 120s for Docker cold start
+        if not self.client.wait_for_nodes(timeout=120):
             logger.warning("No healthy nodes — falling back to simulation")
             self.client = None
             return
@@ -207,7 +210,7 @@ class TestTsunamiFlood:
         result = test.run_flood()
         
         assert result["status"] == "completed"
-        assert result["success_rate"] >= 0.3 # Relaxed for containerized stress
+        assert result["success_rate"] >= 0.8  # Upgraded for optimized performance
 
     def test_flood_throughput(self, small_config):
         """Test throughput threshold."""
@@ -219,8 +222,8 @@ class TestTsunamiFlood:
         test = TsunamiFloodTest(config)
         result = test.run_flood()
         
-        # Expect at least 0.3 events per second under K8s service abstraction
-        assert result["events_per_second"] >= 0.3
+        # Expect at least 10.0 events per second under the upgraded optimized codebase
+        assert result["events_per_second"] >= 10.0
 
     @pytest.mark.stress
     def test_full_flood(self):
@@ -229,7 +232,7 @@ class TestTsunamiFlood:
         result = test.run_flood()
 
         assert result["status"] == "completed"
-        assert result["success_rate"] >= 0.3 # Relaxed for stress test
+        assert result["success_rate"] >= 0.8  # Upgraded success rate threshold
 
 
 if __name__ == "__main__":

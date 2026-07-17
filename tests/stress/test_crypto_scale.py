@@ -20,8 +20,8 @@ import pytest
 
 logger = logging.getLogger(__name__)
 
-BENCHMARK_SMALL = int(os.getenv("CRYPTO_BENCHMARK_SMALL", "100"))
-BENCHMARK_MEDIUM = int(os.getenv("CRYPTO_BENCHMARK_MEDIUM", "1000"))
+BENCHMARK_SMALL = int(os.getenv("CRYPTO_BENCHMARK_SMALL", "500"))
+BENCHMARK_MEDIUM = int(os.getenv("CRYPTO_BENCHMARK_MEDIUM", "5000"))
 
 
 def _make_event_dict(entity_id: str, payload: str) -> dict:

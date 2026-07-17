@@ -107,8 +107,15 @@ class RealStressClient:
         self.results = StressTestResult()
         self.session = requests.Session()
         
-        # Increase connection pool for concurrent workers
-        adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
+        # Increase connection pool for concurrent workers and configure robust HTTP retries
+        from urllib3.util import Retry
+        retries = Retry(
+            total=3,
+            backoff_factor=0.1,
+            status_forcelist=[502, 503, 504],
+            raise_on_status=False
+        )
+        adapter = HTTPAdapter(pool_connections=150, pool_maxsize=150, max_retries=retries)
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 
