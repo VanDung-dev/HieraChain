@@ -408,7 +408,7 @@ class BlockVerifier:
     @staticmethod
     def _get_signable_content(block: Any) -> bytes:
         """Get the content that was signed (block header without signature)."""
-        import json
+        import orjson
         header = {
             "index": block.index,
             "timestamp": block.timestamp,
@@ -417,7 +417,7 @@ class BlockVerifier:
             "nonce": block.nonce,
             "creator_id": block.creator_id
         }
-        return json.dumps(header, sort_keys=True).encode('utf-8')
+        return orjson.dumps(header, option=orjson.OPT_SORT_KEYS)
 
     def verify_chain(self, blocks: list[Any]) -> VerificationResult:
         """

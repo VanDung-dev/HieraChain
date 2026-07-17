@@ -6,7 +6,7 @@ by sanitizing user input before logging and using structured log formats.
 """
 
 import logging
-import json
+import orjson
 import re
 from typing import Any
 from datetime import datetime, timezone
@@ -75,12 +75,11 @@ def sanitize_for_log(value: Any) -> str:
         case str():
             return _sanitize_string(value)
         case dict():
-            return json.dumps(
-                {k: sanitize_for_log(v) for k, v in value.items()},
-                ensure_ascii=True
-            )
+            return orjson.dumps(
+                {k: sanitize_for_log(v) for k, v in value.items()}
+            ).decode()
         case list() | tuple():
-            return json.dumps([sanitize_for_log(item) for item in value])
+            return orjson.dumps([sanitize_for_log(item) for item in value]).decode()
         case _:
             return _sanitize_string(str(value))
 
@@ -114,7 +113,7 @@ class SecureLogger:
         if kwargs:
             log_entry["data"] = {k: sanitize_for_log(v) for k, v in kwargs.items()}
         
-        return json.dumps(log_entry, ensure_ascii=True)
+        return orjson.dumps(log_entry).decode()
     
     def info(self, message: str, *args: Any, **kwargs: Any):
         """Log info with sanitized data."""
@@ -179,7 +178,7 @@ class SecureLogger:
         """
         self.logger.log(
             _SEVERITY_MAP.get(severity, logging.INFO),
-            json.dumps({
+            orjson.dumps({
                 "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                 "type": "security_event",
                 "event_type": sanitize_for_log(event_type),
@@ -187,7 +186,7 @@ class SecureLogger:
                 "logger": self.name,
                 "message": sanitize_for_log(message),
                 **({"context": {k: sanitize_for_log(v) for k, v in kwargs.items()}} if kwargs else {})
-            }, ensure_ascii=True)
+            }).decode()
         )
     
     def audit(
@@ -212,7 +211,7 @@ class SecureLogger:
         """
         self.logger.log(
             logging.INFO,
-            json.dumps({
+            orjson.dumps({
                 "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                 "type": "audit",
                 "action": sanitize_for_log(action),
@@ -222,7 +221,7 @@ class SecureLogger:
                 **({"user_id": sanitize_for_log(user_id)} if user_id else {}),
                 **({"org_id": sanitize_for_log(org_id)} if org_id else {}),
                 **({"details": {k: sanitize_for_log(v) for k, v in kwargs.items()}} if kwargs else {}),
-            }, ensure_ascii=True)
+            }).decode()
         )
 
 
@@ -255,8 +254,8 @@ def log_user_action(
         user_input: User-provided input to sanitize
         **kwargs: Additional data to include
     """
-    logger.log(level, json.dumps({
+    logger.log(level, orjson.dumps({
         "message": message,
         "user_input": sanitize_for_log(user_input) if user_input is not None else None,
         **({k: sanitize_for_log(v) for k, v in kwargs.items()} if kwargs else {}),
-    }, ensure_ascii=True))
+    }).decode())

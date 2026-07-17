@@ -7,7 +7,7 @@ ensuring secure access control without cryptocurrency concepts.
 
 import os
 import time
-import json
+import orjson
 import hashlib
 import secrets
 
@@ -44,9 +44,9 @@ class KeyStorage:
         try:
             data = self.km.storage.get(f"api_key:{api_key}")
             if isinstance(data, (str, bytes, bytearray)):
-                return json.loads(data)
+                return orjson.loads(data)
             return None
-        except (json.JSONDecodeError, TypeError) as e:
+        except (orjson.JSONDecodeError, TypeError) as e:
             logger.error("Error decoding key data from storage", error=str(e))
             return None
         except Exception as e:
@@ -64,7 +64,7 @@ class KeyStorage:
         if hasattr(self.km.storage, 'set') and hasattr(self.km.storage, 'get'):
             # Redis-like storage
             try:
-                self.km.storage.set(f"api_key:{api_key}", json.dumps(data))
+                self.km.storage.set(f"api_key:{api_key}", orjson.dumps(data).decode())
             except Exception as e:
                 logger.error("Error storing key to storage", error=str(e))
                 # Fallback to memory

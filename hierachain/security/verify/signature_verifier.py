@@ -5,7 +5,7 @@ Provides robust signature verification for Events,
 supporting Ed25519 (via PyNaCl) and ECDSA (via cryptography).
 """
 
-import json
+import orjson
 import unicodedata
 from typing import Any
 
@@ -226,13 +226,7 @@ class SignatureVerifier:
         Fixes JSON canonicalization vulnerabilities.
         """
         canonical = SignatureVerifier._canonicalize_value(data)
-        return json.dumps(
-            canonical,
-            sort_keys=True,
-            separators=(',', ':'),
-            ensure_ascii=False,
-            allow_nan=False
-        ).encode('utf-8')
+        return orjson.dumps(canonical, option=orjson.OPT_SORT_KEYS)
 
     @staticmethod
     def _get_signable_event_content(event: dict[str, Any]) -> bytes:

@@ -3,7 +3,7 @@ Module for loading and managing node identity and peer public keys.
 """
 
 import os
-import json
+import orjson
 import logging
 from typing import Any
 from hierachain.security.security_utils import KeyPair
@@ -29,8 +29,8 @@ def load_node_identity() -> NodeIdentity | None:
         return None
     
     try:
-        with open(path, "r") as f:
-            data = json.load(f)
+        with open(path, "rb") as f:
+            data = orjson.loads(f.read())
         return NodeIdentity(data)
     except Exception as e:
         logger.error("Failed to load node identity from %s: %s", path, e)
@@ -42,8 +42,8 @@ def load_all_peer_public_keys(peers_file: str) -> dict[str, str]:
         return {}
     
     try:
-        with open(peers_file, "r") as f:
-            data = json.load(f)
+        with open(peers_file, "rb") as f:
+            data = orjson.loads(f.read())
         
         return {node_id: identity["signing_public_key"] for node_id, identity in data.items()}
     except Exception as e:

@@ -8,7 +8,7 @@ policies and access control decisions.
 from __future__ import annotations
 
 import time
-import json
+import orjson
 import hashlib
 from typing import Any
 
@@ -35,13 +35,13 @@ __all__ = [
 
 
 def _hash_context(context: dict[str, Any]) -> str:
-    def _default_serializer(obj):
+    def _default_serializer(obj: Any) -> Any:
         if hasattr(obj, "schema") or hasattr(obj, "to_pylist"):
             return str(obj)
         return str(obj)
 
-    context_str = json.dumps(context, sort_keys=True, separators=(',', ':'), default=_default_serializer)
-    return hashlib.sha256(context_str.encode()).hexdigest()[:8]
+    context_bytes = orjson.dumps(context, option=orjson.OPT_SORT_KEYS, default=_default_serializer)
+    return hashlib.sha256(context_bytes).hexdigest()[:8]
 
 
 class Policy:

@@ -6,7 +6,7 @@ for different storage backends (Local Memory, File Vault, HSM, KMS) without
 changing the core consensus logic.
 """
 
-import json
+import orjson
 import base64
 import os
 from abc import ABC, abstractmethod
@@ -80,7 +80,7 @@ class LocalKeyProvider(KeyProvider):
             
         try:
             with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
+                data = orjson.loads(f.read())
                 
             private_key_hex = data.get("private_key")
             if not private_key_hex:
@@ -88,7 +88,7 @@ class LocalKeyProvider(KeyProvider):
                 
             keypair = KeyPair.from_private_key(private_key_hex)
             return cls(keypair)
-        except json.JSONDecodeError:
+        except orjson.JSONDecodeError:
             raise CryptoError(f"Invalid JSON format in {path}")
         except Exception as e:
             raise CryptoError(f"Failed to load identity from {path}: {str(e)}")
@@ -137,7 +137,7 @@ class FileVaultProvider(KeyProvider):
             raise CryptoError(f"Vault not found: {self.vault_path}")
             
         with open(self.vault_path, "rb") as f:
-            data = json.load(f)
+            data = orjson.loads(f.read())
             
         encrypted_blob = base64.b64decode(data['blob'])
         salt = base64.b64decode(data['salt'])
@@ -147,7 +147,7 @@ class FileVaultProvider(KeyProvider):
         
         try:
             decrypted = f.decrypt(encrypted_blob)
-            key_data = json.loads(decrypted)
+            key_data = orjson.loads(decrypted)
             self._public_key = key_data['public_key']
         except Exception:
             raise CryptoError("Invalid vault password or corrupted vault")
@@ -182,14 +182,14 @@ class FileVaultProvider(KeyProvider):
         """
         # 1. Load and Decrypt
         with open(self.vault_path, "rb") as f:
-            vault_data = json.load(f)
+            vault_data = orjson.loads(f.read())
             
         salt = base64.b64decode(vault_data['salt'])
         key = self._derive_key(salt)
         f = Fernet(key)
         
         decrypted = f.decrypt(base64.b64decode(vault_data['blob']))
-        key_data = json.loads(decrypted)
+        key_data = orjson.loads(decrypted)
         
         # 2. Re-construct KeyPair ephemeral
         kp = KeyPair.from_private_key(key_data['private_key'])
@@ -225,7 +225,7 @@ class FileVaultProvider(KeyProvider):
         key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
         f = Fernet(key)
         
-        encrypted_blob = f.encrypt(json.dumps(key_data).encode())
+        encrypted_blob = f.encrypt(orjson.dumps(key_data))
         
         # Save
         data = {
@@ -233,7 +233,7 @@ class FileVaultProvider(KeyProvider):
             'blob': base64.b64encode(encrypted_blob).decode('utf-8')
         }
         
-        with open(vault_path, "w") as f_out:
-            json.dump(data, f_out)
+        with open(vault_path, "wb") as f_out:
+            f_out.write(orjson.dumps(data))
             
         return cls(vault_path, password)

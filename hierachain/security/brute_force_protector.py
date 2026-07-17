@@ -10,7 +10,7 @@ Supports both in-memory and persistent storage (Redis or file-based).
 
 import time
 import threading
-import json
+import orjson
 import os
 from pathlib import Path
 
@@ -64,8 +64,8 @@ class _LockoutStorage:
             return {}
         
         try:
-            with open(lockout_file, 'r') as f:
-                data = json.load(f)
+            with open(lockout_file, 'rb') as f:
+                data = orjson.loads(f.read())
                 now = time.time()
                 # Only load non-expired lockouts
                 lockouts = {
@@ -109,8 +109,8 @@ class _LockoutStorage:
         """Save lockouts to file storage."""
         lockout_file = f"{self._path}_lockouts.json"
         try:
-            with open(lockout_file, 'w') as f:
-                json.dump(lockouts, f)
+            with open(lockout_file, 'wb') as f:
+                f.write(orjson.dumps(lockouts))
         except Exception as e:
             logger.error("Failed to persist lockouts: %s", e)
     
