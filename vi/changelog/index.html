@@ -4434,8 +4434,17 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (80)</summary>
+<summary>Improvements (84)</summary>
 <ul>
+<li>
+<p>2026-07-17</p>
+<ul>
+<li><strong>Hiệu năng</strong>: Thay thế <code>json</code> bằng <code>orjson</code> trên toàn bộ codebase — security, risk_management, network, monitoring, privacy, config, CLI, API và hierachain modules — cho serialization/deserialization nhanh hơn.</li>
+<li><strong>Core</strong>: Thêm tính năng phục hồi dữ liệu payload block tối ưu với phân tích cột <code>data</code> trực tiếp khi khả dụng.</li>
+<li><strong>Bảo mật</strong>: Tối ưu xác minh chữ ký với thread pool cấu hình được (CPU count) và tách <code>_get_verify_key</code> helper để giải mã public key.</li>
+<li><strong>Kiểm thử</strong>: Kéo dài thời gian sleep trong <code>test_repro_determinism</code> từ 0.5s lên 1.5s cho độ tin cậy shutdown cao hơn.</li>
+</ul>
+</li>
 <li>
 <p>2026-07-16</p>
 <ul>
