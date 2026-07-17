@@ -12,9 +12,10 @@ from typing import Tuple, Any
 from nacl.signing import SigningKey, VerifyKey
 from nacl.encoding import HexEncoder
 from nacl.exceptions import BadSignatureError
+import os
 from concurrent.futures import ThreadPoolExecutor
 
-_verify_thread_pool = ThreadPoolExecutor(max_workers=4)
+_verify_thread_pool = ThreadPoolExecutor(max_workers=os.cpu_count() or 4)
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +79,8 @@ class KeyPair:
 
 
 @lru_cache(maxsize=1024)
-def _decode_public_key_hex(public_key_hex: str) -> bytes:
-    return HexEncoder.decode(public_key_hex.encode('utf-8'))
+def _get_verify_key(public_key_hex: str) -> VerifyKey:
+    return VerifyKey(HexEncoder.decode(public_key_hex.encode('utf-8')))
 
 
 def verify_signature_standalone(
@@ -98,7 +99,7 @@ def verify_signature_standalone(
         True if valid, False otherwise.
     """
     try:
-        verify_key = VerifyKey(_decode_public_key_hex(public_key_hex))
+        verify_key = _get_verify_key(public_key_hex)
 
         signature_bytes = binascii.unhexlify(signature_hex)
         if len(signature_bytes) != 64:
