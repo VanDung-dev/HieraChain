@@ -2,7 +2,7 @@
 Shared helper functions for HieraChain validators.
 """
 
-import json
+import orjson
 import os
 import logging
 from typing import Any
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def _log_scaling_event(event: dict[str, Any]) -> None:
     try:
-        log_entry = json.dumps(event, indent=2)
+        log_entry = orjson.dumps(event, option=orjson.OPT_INDENT_2).decode()
         logger.info("Scaling event logged: %s", log_entry)
         os.makedirs("log/error_mitigation", exist_ok=True)
         with open("log/error_mitigation/consensus_scaling.log", "a") as f:
@@ -55,11 +55,11 @@ def _check_legacy_structure(data: Any) -> None:
 
 def _serialize_data_content(data: Any) -> str:
     if hasattr(data, "to_pylist"):
-        return json.dumps(data.to_pylist(), sort_keys=True)
+        return orjson.dumps(data.to_pylist(), option=orjson.OPT_SORT_KEYS).decode()
     if hasattr(data, "ToString"):
         return str(data)
     try:
-        return json.dumps(data, sort_keys=True)
+        return orjson.dumps(data, option=orjson.OPT_SORT_KEYS).decode()
     except TypeError:
         return str(data)
 
@@ -84,6 +84,6 @@ def _write_audit_log(audit_entry: dict[str, Any]) -> None:
     try:
         os.makedirs("log/error_mitigation", exist_ok=True)
         with open("log/error_mitigation/api_audit.log", "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now().isoformat()}: {json.dumps(audit_entry)}\n")
+            f.write(f"{datetime.now().isoformat()}: {orjson.dumps(audit_entry).decode()}\n")
     except (IOError, OSError) as ex:
         logger.error("Failed to write audit log: %s", ex)

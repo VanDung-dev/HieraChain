@@ -3,7 +3,7 @@ Backup recovery engine for HieraChain Ledger.
 """
 
 import time
-import json
+import orjson
 import logging
 import hashlib
 import os
@@ -50,7 +50,7 @@ class BackupRecoveryEngine:
                 logger.info("Recovery successful from %s", backup_path)
                 return True
             return False
-        except (OSError, json.JSONDecodeError, ValueError) as exc:
+        except (OSError, orjson.JSONDecodeError, ValueError) as exc:
             logger.error("Recovery attempt %d failed: %s", attempt + 1, exc)
             is_last = (attempt >= self.max_recovery_attempts - 1)
             if not is_last:
@@ -64,7 +64,7 @@ class BackupRecoveryEngine:
         try:
             calculated_hash = _compute_file_hash(backup_path)
             return self._compare_with_stored_hash(backup_path, calculated_hash)
-        except (OSError, json.JSONDecodeError) as exc:
+        except (OSError, orjson.JSONDecodeError) as exc:
             logger.error("Integrity verification failed: %s", exc)
             return False
 
@@ -74,8 +74,8 @@ class BackupRecoveryEngine:
         if not os.path.exists(metadata_path):
             logger.warning("No metadata file found, skipping hash verification")
             return True
-        with open(metadata_path, "r") as fh:
-            metadata = json.load(fh)
+        with open(metadata_path, "rb") as fh:
+            metadata = orjson.loads(fh.read())
         stored_hash = metadata.get("hash")
         if calculated_hash == stored_hash:
             logger.info("Backup integrity verification passed")
@@ -93,10 +93,10 @@ class BackupRecoveryEngine:
                 "backup_path": backup_path,
                 "timestamp": time.time(),
             }
-            logger.info("Data restoration completed: %s", json.dumps(restoration_event))
+            logger.info("Data restoration completed: %s", orjson.dumps(restoration_event).decode())
             os.makedirs("log/error_mitigation", exist_ok=True)
             with open("log/error_mitigation/restoration_events.log", "a") as fh:
-                fh.write(f"{datetime.now().isoformat()}: {json.dumps(restoration_event)}\n")
+                fh.write(f"{datetime.now().isoformat()}: {orjson.dumps(restoration_event).decode()}\n")
             return True
         except Exception as exc:
             logger.error("Data restoration failed: %s", exc)

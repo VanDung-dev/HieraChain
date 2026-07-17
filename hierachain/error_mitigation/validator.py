@@ -7,7 +7,7 @@ forbidden cryptocurrency term detection in Arrow and legacy data formats.
 
 from __future__ import annotations
 
-import json
+import orjson
 import hashlib
 import time
 import logging
@@ -137,7 +137,7 @@ class APIValidator:
                 raise ValidationError(error_msg)
 
     def _validate_legacy_object(self, data: Any) -> None:
-        data_str = json.dumps(data).lower()
+        data_str = orjson.dumps(data).lower().decode()
         for term in self.forbidden_terms:
             if term in data_str:
                 error_msg = f"Forbidden cryptocurrency term '{term}' found in API data"

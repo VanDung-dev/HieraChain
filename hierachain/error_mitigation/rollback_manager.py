@@ -8,7 +8,7 @@ and ensures data integrity during recovery procedures.
 from __future__ import annotations
 
 import time
-import json
+import orjson
 import logging
 import shutil
 import os
@@ -152,8 +152,8 @@ class RollbackManager:
         if not os.path.exists(index_path):
             return
         try:
-            with open(index_path, "r", encoding="utf-8") as f_in:
-                snapshots_data = json.load(f_in)
+            with open(index_path, "rb") as f_in:
+                snapshots_data = orjson.loads(f_in.read())
             for snapshot_data in snapshots_data:
                 snap = StateSnapshot.from_dict(snapshot_data)
                 if os.path.exists(snap.data_path):
@@ -168,8 +168,8 @@ class RollbackManager:
         index_path = os.path.join(self.snapshots_dir, "snapshots_index.json")
         try:
             snapshots_data = [snap.to_dict() for snap in self.snapshots]
-            with open(index_path, "w", encoding="utf-8") as f_out:
-                json.dump(snapshots_data, f_out, indent=2)
+            with open(index_path, "wb") as f_out:
+                f_out.write(orjson.dumps(snapshots_data, option=orjson.OPT_INDENT_2))
         except Exception as e:
             logger.error("Failed to save snapshots index: %s", e)
 
@@ -214,8 +214,8 @@ def _persist_snapshot_data(
     description: str,
     components: list[Any] | None,
 ) -> StateSnapshot:
-    with open(data_path, "w", encoding="utf-8") as f_out:
-        json.dump(data, f_out, indent=4)
+    with open(data_path, "wb") as f_out:
+        f_out.write(orjson.dumps(data, option=orjson.OPT_INDENT_2))
     return StateSnapshot(
         snapshot_id=snapshot_id,
         snapshot_type=snapshot_type,
@@ -233,8 +233,8 @@ def _persist_snapshot_data(
 
 def _execute_rollback(rollback_op: RollbackOperation, target_snapshot: StateSnapshot) -> bool:
     try:
-        with open(target_snapshot.data_path, "r", encoding="utf-8") as f:
-            snapshot_data = json.load(f)
+        with open(target_snapshot.data_path, "rb") as f:
+            snapshot_data = orjson.loads(f.read())
         rollback_op.rollback_steps.append("snapshot_data_loaded")
         success = _dispatch_rollback(target_snapshot.snapshot_type, snapshot_data, rollback_op)
         if success:
@@ -530,6 +530,6 @@ def _log_rollback_operation(rollback_op: RollbackOperation) -> None:
         }
         os.makedirs("log/error_mitigation", exist_ok=True)
         with open("log/error_mitigation/rollback_operations.log", "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now().isoformat()}: {json.dumps(log_entry)}\n")
+            f.write(f"{datetime.now().isoformat()}: {orjson.dumps(log_entry).decode()}\n")
     except Exception as e:
         logger.error("Failed to log rollback operation: %s", e)

@@ -3,7 +3,7 @@ Consensus recovery engine for HieraChain Ledger.
 """
 
 import time
-import json
+import orjson
 import logging
 import os
 from typing import Any
@@ -117,7 +117,7 @@ class ConsensusRecoveryEngine:
                 "view_number": self.view_number,
                 "timestamp": time.time()
             }
-            logger.info("Consensus state recovered: %s", json.dumps(recovery_event))
+            logger.info("Consensus state recovered: %s", orjson.dumps(recovery_event).decode())
             return True
         except Exception as e:
             logger.error("Consensus state recovery failed: %s", e)
@@ -131,13 +131,13 @@ class ConsensusRecoveryEngine:
             "new_view": new_view,
             "timestamp": time.time()
         }
-        logger.info("Initiating view change: %s", json.dumps(view_change_event))
+        logger.info("Initiating view change: %s", orjson.dumps(view_change_event).decode())
         time.sleep(1)
         self.view_number = new_view
         try:
             os.makedirs("log/error_mitigation", exist_ok=True)
             with open("log/error_mitigation/view_changes.log", "a") as f:
-                f.write(f"{datetime.now().isoformat()}: {json.dumps(view_change_event)}\n")
+                f.write(f"{datetime.now().isoformat()}: {orjson.dumps(view_change_event).decode()}\n")
         except Exception as e:
             logger.error("Failed to log view change: %s", e)
         return True

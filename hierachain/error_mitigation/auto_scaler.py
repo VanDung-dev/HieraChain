@@ -5,7 +5,7 @@ Manages automatic scaling of resources and nodes.
 """
 
 import time
-import json
+import orjson
 import logging
 import os
 from typing import Any
@@ -43,7 +43,7 @@ class AutoScaler:
             "threshold": self.scale_up_threshold,
             "timestamp": time.time()
         }
-        logger.info("Scaling up %s: %s", resource_type, json.dumps(scaling_event))
+        logger.info("Scaling up %s: %s", resource_type, orjson.dumps(scaling_event).decode())
         success = self._execute_scaling("up", resource_type)
         if success:
             self.last_scaling_action = time.time()
@@ -70,7 +70,7 @@ class AutoScaler:
             "threshold": self.scale_down_threshold,
             "timestamp": time.time()
         }
-        logger.info("Scaling down %s: %s", resource_type, json.dumps(scaling_event))
+        logger.info("Scaling down %s: %s", resource_type, orjson.dumps(scaling_event).decode())
         success = self._execute_scaling("down", resource_type)
         if success:
             self.last_scaling_action = time.time()
@@ -117,6 +117,6 @@ class AutoScaler:
         try:
             os.makedirs("log/error_mitigation", exist_ok=True)
             with open("log/error_mitigation/scaling_events.log", "a") as f:
-                f.write(f"{datetime.now().isoformat()}: {json.dumps(event)}\n")
+                f.write(f"{datetime.now().isoformat()}: {orjson.dumps(event).decode()}\n")
         except Exception as e:
             logger.error("Failed to log scaling event: %s", e)

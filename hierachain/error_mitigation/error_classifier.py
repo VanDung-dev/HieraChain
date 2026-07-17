@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 import time
-import json
+import orjson
 import logging
 import hashlib
 from typing import Any
@@ -214,7 +214,7 @@ def _log_classification(error_info: ErrorInfo) -> None:
     try:
         os.makedirs("log/error_mitigation", exist_ok=True)
         with open("log/error_mitigation/error_classifications.log", "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now().isoformat()}: {json.dumps(log_entry)}\n")
+            f.write(f"{datetime.now().isoformat()}: {orjson.dumps(log_entry).decode()}\n")
     except (IOError, OSError) as e:
         logger.error("Failed to log error classification: %s", e)
 

@@ -6,7 +6,7 @@ Validates system resource usage and thresholds.
 
 from __future__ import annotations
 
-import json
+import orjson
 import time
 import logging
 import os
@@ -80,7 +80,7 @@ class ResourceValidator:
             "timestamp": time.time(),
             "auto_scale_enabled": self.auto_scale,
         }
-        logger.info("Resource scaling triggered: %s", json.dumps(scaling_event))
+        logger.info("Resource scaling triggered: %s", orjson.dumps(scaling_event).decode())
         os.makedirs("log/error_mitigation", exist_ok=True)
         with open("log/error_mitigation/resource_scaling.log", "a") as f:
-            f.write(f"{datetime.now().isoformat()}: {json.dumps(scaling_event)}\n")
+            f.write(f"{datetime.now().isoformat()}: {orjson.dumps(scaling_event).decode()}\n")

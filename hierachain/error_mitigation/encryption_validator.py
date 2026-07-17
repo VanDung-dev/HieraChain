@@ -7,7 +7,7 @@ Validates encryption configurations and algorithms.
 from __future__ import annotations
 
 import os
-import json
+import orjson
 import time
 import logging
 from typing import Any, cast
@@ -66,4 +66,4 @@ class EncryptionValidator:
             "timestamp": time.time(),
             "next_rotation": time.time() + self.min_key_rotation_interval,
         }
-        logger.info("Key rotation scheduled: %s", json.dumps(rotation_event))
+        logger.info("Key rotation scheduled: %s", orjson.dumps(rotation_event).decode())

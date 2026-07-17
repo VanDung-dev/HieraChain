@@ -6,7 +6,7 @@ ensuring data integrity and schema compliance.
 """
 
 import time
-import json
+import orjson
 import logging
 from enum import Enum
 from typing import Any, Callable, Tuple
@@ -297,7 +297,7 @@ def _check_strict_details(
         return
 
     try:
-        json.dumps(details)
+        orjson.dumps(details).decode()
     except (TypeError, ValueError) as e:
         result.add_error(f"Event[{index}]: details not JSON serializable: {e}")
 

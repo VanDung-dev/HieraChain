@@ -3,7 +3,7 @@ Network recovery engine for HieraChain Ledger.
 """
 
 import time
-import json
+import orjson
 import logging
 import asyncio
 import os
@@ -137,7 +137,7 @@ class NetworkRecoveryEngine:
                 "avg_latency_ms": sum(self.latency_history) / max(len(self.latency_history), 1)
             }
         }
-        logger.info("View change initiated: %s", json.dumps(view_change_event))
+        logger.info("View change initiated: %s", orjson.dumps(view_change_event).decode())
         self._send_alert("Network partition detected, view change initiated")
 
     @staticmethod
@@ -152,6 +152,6 @@ class NetworkRecoveryEngine:
         try:
             os.makedirs("log/error_mitigation", exist_ok=True)
             with open("log/error_mitigation/network_alerts.log", "a") as f:
-                f.write(f"{datetime.now().isoformat()}: {json.dumps(alert)}\n")
+                f.write(f"{datetime.now().isoformat()}: {orjson.dumps(alert).decode()}\n")
         except Exception as e:
             logger.error("Failed to write network alert: %s", str(e))
