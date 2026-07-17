@@ -8,7 +8,7 @@ Supports two output formats, selected via the ``HRC_LOG_FORMAT`` environment var
                        Cloud Logging aggregators.
 """
 
-import json
+import orjson
 import logging
 import os
 
@@ -31,7 +31,7 @@ class _JsonFormatter(logging.Formatter):
         payload = self._build_base_payload(record)
         self._add_extra_fields(record, payload)
         self._add_exception_info(record, payload)
-        return json.dumps(payload, ensure_ascii=False)
+        return orjson.dumps(payload, option=orjson.OPT_NON_STR_KEYS).decode()
 
     def _build_base_payload(self, record: logging.LogRecord) -> dict:
         """Build the base payload with standard fields."""
@@ -51,9 +51,9 @@ class _JsonFormatter(logging.Formatter):
             if key in self._SKIP_FIELDS or key.startswith("_"):
                 continue
             try:
-                json.dumps(value)
+                orjson.dumps(value)
                 payload[key] = value
-            except (TypeError, ValueError):
+            except (TypeError, orjson.JSONEncodeError):
                 payload[key] = str(value)
 
     def _add_exception_info(self, record: logging.LogRecord, payload: dict) -> None:
