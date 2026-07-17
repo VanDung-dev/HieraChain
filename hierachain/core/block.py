@@ -341,5 +341,8 @@ def table_to_list_of_dicts(table: pa.Table) -> list[dict[str, Any]]:
 
     Uses 'data' field for full payload recovery when available.
     """
+    if 'data' in table.column_names:
+        return [orjson.loads(d.as_py()) for d in table.column('data') if d is not None]
+
     has_data_col = 'data' in table.column_names
     return [_process_arrow_row(row, has_data_col) for row in table.to_pylist()]
