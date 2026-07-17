@@ -96,8 +96,8 @@ class EventRequest(BaseModel):
             return v
         
         # Check size (approximate via string conversion)
-        import json
-        if len(json.dumps(v)) > 1024 * 1024:
+        import orjson
+        if len(orjson.dumps(v)) > 1024 * 1024:
             raise ValueError("Event details exceed 1MB size limit")
 
         def get_depth(d, level=1):

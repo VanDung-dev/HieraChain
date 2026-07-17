@@ -6,7 +6,7 @@ bidirectional communication with HieraChain clients.
 """
 
 import asyncio
-import json
+import orjson
 import logging
 from typing import Any, cast
 from dataclasses import dataclass, field
@@ -231,7 +231,7 @@ class WebSocketManager:
             
     async def _send_to_subscribers(self, subscribers: list, message: dict):
         """Send message to list of subscriber connections"""
-        message_json = json.dumps(message)
+        message_json = orjson.dumps(message).decode()
         
         for connection_id in subscribers:
             conn = self._registry.get(connection_id)
@@ -287,7 +287,7 @@ class WebSocketManager:
             return False
             
         try:
-            await conn.websocket.send_text(json.dumps(message))
+            await conn.websocket.send_text(orjson.dumps(message).decode())
             return True
         except Exception as e:
             logger.error(f"Send error to {connection_id}: {e}")

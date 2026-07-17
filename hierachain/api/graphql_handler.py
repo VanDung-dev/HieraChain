@@ -5,7 +5,7 @@ Provides GraphQL validation, query execution, and route registration
 with security measures (rate limiting, depth checking, introspection control).
 """
 
-import json
+import orjson
 import logging
 
 from fastapi import APIRouter, Request
@@ -34,8 +34,8 @@ async def _validate_graphql_request(
         ), None
 
     try:
-        body = json.loads(await request.body())
-    except json.JSONDecodeError:
+        body = orjson.loads(await request.body())
+    except orjson.JSONDecodeError:
         return False, JSONResponse(
             status_code=400,
             content={"errors": [{"message": "Invalid JSON body"}]}

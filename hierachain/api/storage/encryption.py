@@ -7,7 +7,7 @@ Only authorized nodes with the correct encryption keys can decrypt the data.
 """
 
 import os
-import json
+import orjson
 from typing import Tuple
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
@@ -184,7 +184,7 @@ class AESEncryption:
             Tuple of (ciphertext, nonce)
         """
         try:
-            plaintext = json.dumps(data, sort_keys=True).encode('utf-8')
+            plaintext = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
             return self.encrypt(plaintext, associated_data)
         except (TypeError, ValueError) as e:
             raise EncryptionError(f"JSON serialization failed: {str(e)}")
@@ -208,8 +208,8 @@ class AESEncryption:
         """
         plaintext = self.decrypt(ciphertext, nonce, associated_data)
         try:
-            return json.loads(plaintext.decode('utf-8'))
-        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            return orjson.loads(plaintext)
+        except (orjson.JSONDecodeError, UnicodeDecodeError) as e:
             raise EncryptionError(f"JSON deserialization failed: {str(e)}")
 
     @staticmethod

@@ -1,5 +1,5 @@
 import time
-import json
+import orjson
 import graphene
 from graphene import ObjectType
 
@@ -203,8 +203,8 @@ class AddEventMutation(graphene.Mutation):
             details = {}
             if event.details:
                 try:
-                    details = json.loads(event.details)
-                except json.JSONDecodeError:
+                    details = orjson.loads(event.details)
+                except orjson.JSONDecodeError:
                     result = AddEventMutation()
                     result.success = False
                     result.error = "Invalid JSON in details"
@@ -277,7 +277,7 @@ def _to_block_type(block, chain_name):
 def _to_event_type(event):
     details = ""
     if hasattr(event, 'data') and event.data:
-        details = json.dumps(event.data)
+        details = orjson.dumps(event.data).decode()
 
     event_type = getattr(event, 'event_type', None) or getattr(event, 'event', '')
 

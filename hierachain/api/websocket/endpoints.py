@@ -5,7 +5,7 @@ This module provides FastAPI WebSocket endpoints for real-time
 bidirectional communication with HieraChain clients.
 """
 
-import json
+import orjson
 import logging
 import uuid
 
@@ -114,8 +114,8 @@ async def _process_single_message(websocket: WebSocket, connection_id: str):
 def _parse_message(data: str) -> dict | None:
     """Parse incoming JSON message."""
     try:
-        return json.loads(data)
-    except json.JSONDecodeError:
+        return orjson.loads(data)
+    except orjson.JSONDecodeError:
         return None
 
 

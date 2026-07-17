@@ -3,7 +3,7 @@ GraphQL types for Hierachain API
 """
 
 
-import json
+import orjson
 from graphene import (
     ObjectType, String, Int, Float, List, Boolean, Field,
     InputObjectType
@@ -52,15 +52,15 @@ class EventType(ObjectType):
 
     async def _resolve_offchain_details(self):
         if not is_ipfs_enabled():
-            return json.dumps({"error": "IPFS not enabled", "cid": self.details_cid})
+            return orjson.dumps({"error": "IPFS not enabled", "cid": self.details_cid}).decode()
 
         try:
             event_dict = self._build_event_dict()
             resolved = await resolve_event_details(event_dict, resolve=True)
             if 'details' in resolved:
-                return json.dumps(resolved['details'])
+                return orjson.dumps(resolved['details']).decode()
         except Exception as e:
-            return json.dumps({"error": f"Failed to resolve CID: {str(e)}", "cid": self.details_cid})
+            return orjson.dumps({"error": f"Failed to resolve CID: {str(e)}", "cid": self.details_cid}).decode()
 
         return None
 
@@ -74,11 +74,11 @@ class EventType(ObjectType):
         }
 
     def _get_cid_reference(self):
-        return json.dumps({
+        return orjson.dumps({
             "cid": self.details_cid,
             "nonce": getattr(self, 'details_nonce', None),
             "note": "Set resolve_cid=true to fetch actual data"
-        })
+        }).decode()
 
     def resolve_is_offchain(self, _info):
         return hasattr(self, 'details_cid') and bool(self.details_cid)

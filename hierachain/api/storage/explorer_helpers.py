@@ -5,7 +5,7 @@ This module provides utilities for displaying and resolving CIDs
 in the Blockchain Explorer UI.
 """
 
-import json
+import orjson
 from typing import Any
 
 from hierachain.api.storage.endpoint_helpers import (
@@ -339,11 +339,11 @@ def format_event_table_row_html(event: dict[str, Any], index: int, resolve_cid: 
         '''
 
     if resolve_cid and "details" in event:
-        details_html = f"<pre>{json.dumps(event['details'], indent=2)}</pre>"
+        details_html = f"<pre>{orjson.dumps(event['details'], option=orjson.OPT_INDENT_2).decode()}</pre>"
     elif not resolve_cid and storage_info.get("ipfs"):
         details_html = "<em>Click 'Load Details' to view</em>"
     else:
-        details_html = f"<pre>{json.dumps(event.get('details', {}), indent=2)}</pre>"
+        details_html = f"<pre>{orjson.dumps(event.get('details', {}), option=orjson.OPT_INDENT_2).decode()}</pre>"
 
     return (
         f'<tr class="event-row" data-index="{index}">'

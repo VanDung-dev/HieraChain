@@ -7,7 +7,7 @@ including ping/pong handling and dead connection detection.
 
 import asyncio
 import logging
-import json
+import orjson
 from typing import Callable, Awaitable
 from datetime import datetime
 
@@ -35,10 +35,10 @@ class ConnectionHealthHandler:
         """
         try:
             await asyncio.wait_for(
-                websocket.send_text(json.dumps({
+                websocket.send_text(orjson.dumps({
                     "type": "ping",
                     "timestamp": datetime.now().isoformat()
-                })),
+                }).decode()),
                 timeout=self.ping_timeout
             )
             return True

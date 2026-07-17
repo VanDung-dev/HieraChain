@@ -141,8 +141,8 @@ class SecureEventRequest(BaseModel):
     @classmethod
     def validate_details_integrity(cls, v: dict[str, Any]) -> dict[str, Any]:
         """Verify payload integrity, size, and depth to prevent recursion attacks."""
-        import json
-        if len(json.dumps(v)) > 1024 * 1024:
+        import orjson
+        if len(orjson.dumps(v)) > 1024 * 1024:
             raise ValueError("Event details exceed 1MB size limit")
 
         cls._validate_payload_depth(v)

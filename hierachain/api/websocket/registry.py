@@ -5,6 +5,7 @@ This module provides connection registry for tracking WebSocket connections.
 """
 
 import asyncio
+import orjson
 import logging
 from typing import Any
 from dataclasses import dataclass, field
@@ -39,8 +40,7 @@ class WebSocketConnection:
             return
             
         try:
-            import json
-            await self.websocket.send_text(json.dumps(message))
+            await self.websocket.send_text(orjson.dumps(message).decode())
         except Exception as e:
             logger.error(f"Error sending to {self.connection_id}: {e}")
             self._closed = True

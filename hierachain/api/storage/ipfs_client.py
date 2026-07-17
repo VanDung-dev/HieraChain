@@ -8,7 +8,7 @@ The client is designed to work with local IPFS daemons running in a private netw
 ensuring that all data stored remains within the enterprise boundary.
 """
 
-import json
+import orjson
 import os
 from typing import Any
 
@@ -148,7 +148,7 @@ class IPFSClient:
             if encrypt:
                 # Serialize metadata for AAD
                 aad = (
-                    json.dumps(metadata, sort_keys=True).encode("utf-8")
+                    orjson.dumps(metadata, option=orjson.OPT_SORT_KEYS)
                     if metadata
                     else None
                 )
@@ -260,7 +260,7 @@ class IPFSClient:
 
                 # Deserialize metadata for AAD
                 aad = (
-                    json.dumps(metadata, sort_keys=True).encode("utf-8")
+                    orjson.dumps(metadata, option=orjson.OPT_SORT_KEYS)
                     if metadata
                     else None
                 )
@@ -296,7 +296,7 @@ class IPFSClient:
             Upload result dict with CID, nonce, etc.
         """
         try:
-            json_bytes = json.dumps(data, sort_keys=True).encode("utf-8")
+            json_bytes = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
             return self.upload_bytes(json_bytes, encrypt=encrypt, metadata=metadata)
         except (TypeError, ValueError) as e:
             raise IPFSError(f"JSON serialization failed: {str(e)}")
@@ -324,8 +324,8 @@ class IPFSClient:
             json_bytes = self.download_bytes(
                 cid, encrypted=encrypted, nonce=nonce, metadata=metadata
             )
-            return json.loads(json_bytes.decode("utf-8"))
-        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            return orjson.loads(json_bytes)
+        except (orjson.JSONDecodeError, UnicodeDecodeError) as e:
             raise IPFSError(f"JSON deserialization failed: {str(e)}")
 
     # ---- Pin Management ----
