@@ -40,14 +40,10 @@ class OrderingBlockManager:
             )
             merkle_tree = MerkleTree(leaves=merkle_leaves)
             
-            previous_hash = (
-                self.storage_handler.last_block.hash
-                if self.storage_handler.last_block else "0"
-            )
             block = Block(
-                index=self.service.blocks_created,
+                index=0,
                 events=events,
-                previous_hash=previous_hash,
+                previous_hash="",
                 merkle_root=merkle_tree.root
             )
             self.commit_block(block)
@@ -60,7 +56,11 @@ class OrderingBlockManager:
         # Use lock to ensure thread-safe block index assignment
         with self._block_index_lock:
             block.index = self.service.blocks_created
-            block.calculate_hash()
+            block.previous_hash = (
+                self.storage_handler.last_block.hash
+                if self.storage_handler.last_block else "0"
+            )
+            block.hash = block.calculate_hash()
 
             try:
                 chain_name = self.config.get("chain_name")
