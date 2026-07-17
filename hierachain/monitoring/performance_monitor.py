@@ -9,7 +9,7 @@ import time
 import threading
 import logging
 import statistics
-import json
+import orjson
 import psutil
 from typing import Any, Callable
 from dataclasses import asdict
@@ -516,7 +516,7 @@ def _generate_json_report(
         'metrics': current_metrics,
         'summary': _calculate_report_summary(current_metrics)
     }
-    return json.dumps(report_data, indent=2, default=str)
+    return orjson.dumps(report_data, option=orjson.OPT_INDENT_2, default=str).decode()
 
 
 def _generate_text_report(

@@ -7,7 +7,7 @@ Enums and dataclasses used across alert and performance monitoring subsystems.
 from __future__ import annotations
 
 import time
-import json
+import orjson
 import statistics
 from typing import Any
 from dataclasses import dataclass, field, asdict
@@ -67,7 +67,7 @@ class Alert:
         return data
 
     def to_json(self) -> str:
-        return json.dumps(self.to_dict(), default=str)
+        return orjson.dumps(self.to_dict(), default=str).decode()
 
 
 @dataclass

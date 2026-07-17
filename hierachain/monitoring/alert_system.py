@@ -10,7 +10,7 @@ import os
 import smtplib
 import logging
 import threading
-import json
+import orjson
 import statistics
 from collections import deque, defaultdict
 from datetime import datetime
@@ -586,7 +586,7 @@ def _generate_json_report(
         report_data['alert_history'] = [
             alert.to_dict() for alert in manager.alert_history[-100:]
         ]
-    return json.dumps(report_data, indent=2, default=str)
+    return orjson.dumps(report_data, option=orjson.OPT_INDENT_2, default=str).decode()
 
 
 def _generate_text_report(manager: AlertManager, active_alerts: list[Alert]) -> str:
