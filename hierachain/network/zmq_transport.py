@@ -10,7 +10,7 @@ It provides a `ZmqNode` class that handles:
 
 import zmq
 import zmq.asyncio
-import json
+import orjson
 import asyncio
 import inspect
 import time
@@ -141,7 +141,7 @@ class ZmqNode:
 
         try:
             socket = await _get_or_create_dealer(self, target_peer_id)
-            encoded_msg = json.dumps(message).encode('utf-8')
+            encoded_msg = orjson.dumps(message)
             await socket.send(encoded_msg)
             return True
         except Exception as e:
@@ -274,10 +274,10 @@ async def _handle_received_message(node: ZmqNode, msg_parts: list[bytes]) -> Non
     try:
         sender_id = msg_parts[0].decode('utf-8')
         message_str = msg_parts[-1].decode('utf-8')
-        message_data = json.loads(message_str)
+        message_data = orjson.loads(message_str)
 
         await _process_message_data(node, message_data, sender_id)
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except (UnicodeDecodeError, orjson.JSONDecodeError):
         logger.warning("Received invalid message format or encoding")
     except Exception as e:
         logger.error("Error processing message parts: %s", e)

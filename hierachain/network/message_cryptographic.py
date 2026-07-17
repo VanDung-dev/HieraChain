@@ -11,7 +11,7 @@ Features:
 - Message format: {payload, timestamp, nonce, sender_id, signature}
 """
 
-import json
+import orjson
 import time
 import uuid
 import logging
@@ -49,7 +49,7 @@ def create_signable_payload(
         "nonce": nonce,
         "sender_id": sender_id,
     }
-    return json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return orjson.dumps(canonical, option=orjson.OPT_SORT_KEYS)
 
 
 def sign_message(
@@ -134,9 +134,7 @@ def sign_handshake_payload(handshake_data: dict[str, Any], keypair: KeyPair) -> 
     Returns:
         Hex-encoded signature string.
     """
-    canonical = json.dumps(
-        handshake_data, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
+    canonical = orjson.dumps(handshake_data, option=orjson.OPT_SORT_KEYS)
     return keypair.sign(canonical)
 
 
@@ -157,9 +155,7 @@ def verify_handshake_signature(
         True if the signature is valid, False otherwise.
     """
     try:
-        canonical = json.dumps(
-            handshake_data, sort_keys=True, separators=(",", ":")
-        ).encode("utf-8")
+        canonical = orjson.dumps(handshake_data, option=orjson.OPT_SORT_KEYS)
         return verify_signature(public_key_hex, canonical, signature)
     except Exception as e:
         logger.error("Handshake signature verification failed: %s", e)
