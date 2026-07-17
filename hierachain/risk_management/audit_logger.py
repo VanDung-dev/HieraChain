@@ -8,7 +8,7 @@ system activities, risk events, and mitigation actions.
 from __future__ import annotations
 
 import time
-import json
+import orjson
 import logging
 import threading
 import uuid
@@ -109,7 +109,7 @@ class DatabaseAuditStorage(AuditStorage):
                     event.timestamp,
                     event.source_component,
                     event.description,
-                    json.dumps(event.details) if event.details else None,
+                    orjson.dumps(event.details).decode() if event.details else None,
                     event.user_id,
                     event.session_id,
                     event.ip_address,
@@ -161,7 +161,7 @@ class DatabaseAuditStorage(AuditStorage):
             for r in rows:
                 ev_dict = dict(r)
                 if ev_dict.get('details'):
-                    ev_dict['details'] = json.loads(ev_dict['details'])
+                    ev_dict['details'] = orjson.loads(ev_dict['details'])
                 else:
                     ev_dict['details'] = {}
                 # Match enum types
@@ -233,8 +233,8 @@ class DatabaseAuditStorage(AuditStorage):
 
 def _parse_event_line(line: str) -> AuditEvent | None:
     try:
-        return AuditEvent.from_dict(json.loads(line.strip()))
-    except (json.JSONDecodeError, KeyError, ValueError) as e:
+        return AuditEvent.from_dict(orjson.loads(line.strip()))
+    except (orjson.JSONDecodeError, KeyError, ValueError) as e:
         logging.warning("Failed to parse audit event: %s", str(e))
         return None
 
@@ -595,9 +595,11 @@ class AuditLogger:
     ) -> str:
         events = self.storage.retrieve_events(filter_criteria)
         if output_format.lower() == "json":
-            return json.dumps(
-                [event.to_dict() for event in events], indent=2, default=str
-            )
+            return orjson.dumps(
+                [event.to_dict() for event in events],
+                option=orjson.OPT_INDENT_2,
+                default=str
+            ).decode()
         elif output_format.lower() == "csv":
             lines = [
                 "event_id,event_type,severity,timestamp,source_component,description"

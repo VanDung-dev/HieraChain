@@ -7,7 +7,7 @@ and audit logging subsystems.
 
 from __future__ import annotations
 
-import json
+import orjson
 import hashlib
 from typing import Any, Callable
 from dataclasses import dataclass, asdict
@@ -136,7 +136,7 @@ class AuditEvent:
         return data
 
     def to_json(self) -> str:
-        return json.dumps(self.to_dict(), default=str)
+        return orjson.dumps(self.to_dict(), default=str).decode()
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> 'AuditEvent':
