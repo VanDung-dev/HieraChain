@@ -4,7 +4,6 @@ Ordering storage handler for the HieraChain ordering service.
 
 import time
 import hashlib
-import json
 import logging
 import os
 import struct
@@ -87,8 +86,8 @@ def dump_forensic_data(
             "sample_event_ids": sample_ids
         }
 
-        with open(dump_path, "w") as f:
-            json.dump(dump_data, f, indent=2)
+        with open(dump_path, "wb") as f:
+            f.write(orjson.dumps(dump_data, option=orjson.OPT_INDENT_2))
 
         logger.info("Forensic data dumped to %s", dump_path)
     except Exception as e:
