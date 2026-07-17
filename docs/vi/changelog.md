@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (80)"
+??? note "Improvements (84)"
+
+    * 2026-07-17
+
+        * **Hiệu năng**: Thay thế `json` bằng `orjson` trên toàn bộ codebase — security, risk_management, network, monitoring, privacy, config, CLI, API và hierachain modules — cho serialization/deserialization nhanh hơn.
+        * **Core**: Thêm tính năng phục hồi dữ liệu payload block tối ưu với phân tích cột `data` trực tiếp khi khả dụng.
+        * **Bảo mật**: Tối ưu xác minh chữ ký với thread pool cấu hình được (CPU count) và tách `_get_verify_key` helper để giải mã public key.
+        * **Kiểm thử**: Kéo dài thời gian sleep trong `test_repro_determinism` từ 0.5s lên 1.5s cho độ tin cậy shutdown cao hơn.
 
     * 2026-07-16
 

@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (80)"
+??? note "Improvements (84)"
+
+    * 2026-07-17
+
+        * **Performance**: Replaced `json` with `orjson` across the entire codebase — security, risk_management, network, monitoring, privacy, config, CLI, API, and hierachain modules — for faster serialization/deserialization.
+        * **Core**: Added optimized data payload recovery for blocks with direct `data` column parsing when available.
+        * **Security**: Optimized signature verification with configurable thread pool (CPU count) and extracted `_get_verify_key` helper for public key decoding.
+        * **Testing**: Extended sleep duration in `test_repro_determinism` from 0.5s to 1.5s for full service shutdown reliability.
 
     * 2026-07-16
 
