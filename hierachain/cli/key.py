@@ -3,7 +3,7 @@ Key management commands.
 """
 
 import click
-import json
+import orjson
 import os
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -39,8 +39,8 @@ def generate(output: str, key_format: str) -> None:
             "private_key": private_key,
             "public_key": public_key
         }
-        with open(output, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        with open(output, "wb") as f:
+            f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2))
         click.echo(f"Key pair generated and saved to: {output}")
         click.echo(f"Public Key: {public_key}")
     else:
@@ -61,8 +61,8 @@ def show(input_file: str) -> None:
         click.echo(f"Error: Key file not found: {input_file}", err=True)
         raise click.Abort()
 
-    with open(input_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    with open(input_file, "rb") as f:
+        data = orjson.loads(f.read())
 
     public_key = data.get("public_key", "N/A")
     private_key = data.get("private_key", "N/A")
@@ -85,8 +85,8 @@ def verify(input_file: str) -> None:
         click.echo(f"Error: Key file not found: {input_file}", err=True)
         raise click.Abort()
 
-    with open(input_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    with open(input_file, "rb") as f:
+        data = orjson.loads(f.read())
 
     try:
         private_key_hex = data["private_key"]

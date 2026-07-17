@@ -2,7 +2,7 @@
 Node management commands.
 """
 
-import json
+import orjson
 import os
 import time
 import click
@@ -57,8 +57,8 @@ def save_chains_to_file(filepath: str) -> bool:
             "chains": list(_chains_storage.keys()),
             "timestamp": time.time()
         }
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
+        with open(filepath, 'wb') as f:
+            f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2))
         return True
     except Exception as e:
         click.echo(f"Error saving chains: {e}")

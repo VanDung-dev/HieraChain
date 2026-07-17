@@ -4,7 +4,7 @@ Event management commands.
 
 import click
 import time
-import json
+import orjson
 
 from hierachain.cli.store import get_sub_chain, save_chains_to_file
 
@@ -38,8 +38,8 @@ def add_event(ctx: click.Context, chain_name, event_type, entity_id, details):
         event_details = {}
         if details:
             try:
-                event_details = json.loads(details)
-            except json.JSONDecodeError:
+                event_details = orjson.loads(details)
+            except orjson.JSONDecodeError:
                 click.echo("Invalid JSON format for details")
                 return
         
