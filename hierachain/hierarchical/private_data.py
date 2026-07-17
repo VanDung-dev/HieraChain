@@ -8,7 +8,7 @@ This significantly enhances data privacy in enterprise collaborations.
 
 import time
 import hashlib
-import json
+import orjson
 from typing import Any, cast
 from dataclasses import dataclass
 from enum import Enum
@@ -200,11 +200,11 @@ class PrivateCollection:
                 return False
 
             # Encrypt the data
-            value_json = json.dumps(value, sort_keys=True)
-            encrypted_value = self.cipher_suite.encrypt(value_json.encode())
+            value_bytes = orjson.dumps(value, option=orjson.OPT_SORT_KEYS)
+            encrypted_value = self.cipher_suite.encrypt(value_bytes)
 
             # Calculate hash for integrity
-            hash_value = hashlib.sha256(value_json.encode()).hexdigest()
+            hash_value = hashlib.sha256(value_bytes).hexdigest()
 
             # Create private data entry
             entry = PrivateDataEntry(
@@ -265,10 +265,9 @@ class PrivateCollection:
         try:
             # Decrypt and return data
             decrypted_bytes = self.cipher_suite.decrypt(entry.encrypted_value)
-            decrypted_json = decrypted_bytes.decode()
-            return json.loads(decrypted_json)
+            return orjson.loads(decrypted_bytes)
 
-        except (InvalidToken, UnicodeDecodeError, json.JSONDecodeError):
+        except (InvalidToken, UnicodeDecodeError, orjson.JSONDecodeError):
             return None
 
     def get_data_hash(self, key: str, _requester_org_id: str) -> str | None:
