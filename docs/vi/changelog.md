@@ -8,7 +8,16 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (84)"
+??? note "Improvements (89)"
+
+    * 2026-07-18
+
+        * **Kiểm thử**: Thêm hỗ trợ xuất báo cáo XML JUnit (`--junitxml`) cho các script chạy stress test trên Docker, Podman và Kubernetes.
+        * **Dependencies**: Dọn dẹp các thư viện dependencies không sử dụng (`pip`, `vulture`, `wheel`) khỏi môi trường development.
+        * **Lưu trữ**: Tối ưu hóa giới hạn connection pool của IPFS (`max_keepalive_connections=50`, `max_connections=150`) giúp đẩy nhanh tốc độ upload/download đồng thời.
+        * **Stress**: Hỗ trợ cấu hình động qua biến môi trường trong `test_tsunami_flood.py` và triển khai cơ chế tự động thử lại (HTTP retries) khi gặp lỗi cổng kết nối 502/503/504.
+        * **Core**: Khắc phục lỗi tranh chấp chỉ mục (race conditions) khi tạo block đồng thời bằng cách đưa các phép tính hash và index vào phạm vi Lock.
+        * **Database**: Tối ưu hóa SQLite Adapter bằng cách tăng thời gian timeout kết nối cơ sở dữ liệu lên 30.0 giây, loại bỏ lỗi khóa ghi (database lock) dưới tải song song cực lớn.
 
     * 2026-07-17
 

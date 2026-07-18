@@ -8,7 +8,16 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (84)"
+??? note "Improvements (89)"
+
+    * 2026-07-18
+
+        * **Testing**: Added JUnit XML reporting support (`--junitxml`) to Docker, Podman, and Kubernetes stress execution scripts.
+        * **Dependencies**: Cleaned up project dependencies by removing unused packages (`pip`, `vulture`, `wheel`) from dev environments.
+        * **Storage**: Tuned IPFS connection pooling parameters (`max_keepalive_connections=50`, `max_connections=150`) to accelerate concurrent block storage.
+        * **Stress**: Added dynamic configuration support via environment variables in `test_tsunami_flood.py` and implemented resilient HTTP adapter retries on 502/503/504 errors.
+        * **Core**: Resolved critical indexing race conditions in block creation within lock constraints and aligned initial index references.
+        * **Database**: Optimized SQLite adapter by setting database connection timeout to 30.0 seconds to prevent write-lock exceptions under high parallel load.
 
     * 2026-07-17
 
