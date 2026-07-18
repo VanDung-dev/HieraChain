@@ -4434,8 +4434,19 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (84)</summary>
+<summary>Improvements (89)</summary>
 <ul>
+<li>
+<p>2026-07-18</p>
+<ul>
+<li><strong>Testing</strong>: Added JUnit XML reporting support (<code>--junitxml</code>) to Docker, Podman, and Kubernetes stress execution scripts.</li>
+<li><strong>Dependencies</strong>: Cleaned up project dependencies by removing unused packages (<code>pip</code>, <code>vulture</code>, <code>wheel</code>) from dev environments.</li>
+<li><strong>Storage</strong>: Tuned IPFS connection pooling parameters (<code>max_keepalive_connections=50</code>, <code>max_connections=150</code>) to accelerate concurrent block storage.</li>
+<li><strong>Stress</strong>: Added dynamic configuration support via environment variables in <code>test_tsunami_flood.py</code> and implemented resilient HTTP adapter retries on 502/503/504 errors.</li>
+<li><strong>Core</strong>: Resolved critical indexing race conditions in block creation within lock constraints and aligned initial index references.</li>
+<li><strong>Database</strong>: Optimized SQLite adapter by setting database connection timeout to 30.0 seconds to prevent write-lock exceptions under high parallel load.</li>
+</ul>
+</li>
 <li>
 <p>2026-07-17</p>
 <ul>

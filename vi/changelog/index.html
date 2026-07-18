@@ -4434,8 +4434,19 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (84)</summary>
+<summary>Improvements (89)</summary>
 <ul>
+<li>
+<p>2026-07-18</p>
+<ul>
+<li><strong>Kiểm thử</strong>: Thêm hỗ trợ xuất báo cáo XML JUnit (<code>--junitxml</code>) cho các script chạy stress test trên Docker, Podman và Kubernetes.</li>
+<li><strong>Dependencies</strong>: Dọn dẹp các thư viện dependencies không sử dụng (<code>pip</code>, <code>vulture</code>, <code>wheel</code>) khỏi môi trường development.</li>
+<li><strong>Lưu trữ</strong>: Tối ưu hóa giới hạn connection pool của IPFS (<code>max_keepalive_connections=50</code>, <code>max_connections=150</code>) giúp đẩy nhanh tốc độ upload/download đồng thời.</li>
+<li><strong>Stress</strong>: Hỗ trợ cấu hình động qua biến môi trường trong <code>test_tsunami_flood.py</code> và triển khai cơ chế tự động thử lại (HTTP retries) khi gặp lỗi cổng kết nối 502/503/504.</li>
+<li><strong>Core</strong>: Khắc phục lỗi tranh chấp chỉ mục (race conditions) khi tạo block đồng thời bằng cách đưa các phép tính hash và index vào phạm vi Lock.</li>
+<li><strong>Database</strong>: Tối ưu hóa SQLite Adapter bằng cách tăng thời gian timeout kết nối cơ sở dữ liệu lên 30.0 giây, loại bỏ lỗi khóa ghi (database lock) dưới tải song song cực lớn.</li>
+</ul>
+</li>
 <li>
 <p>2026-07-17</p>
 <ul>
