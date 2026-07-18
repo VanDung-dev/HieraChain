@@ -125,7 +125,8 @@ docker compose -f "$COMPOSE_FILE" run --rm stress-tester \
         uv run pytest ${STRESS_PYTEST_TARGET} -v \
             --ignore=tests/stress/security \
             --html=/app/log/report/docker_stress_report.html \
-            --self-contained-html
+            --self-contained-html \
+            --junitxml=/app/log/report/docker_stress_report.xml
     "
 
 echo ""

@@ -118,7 +118,8 @@ podman compose $COMPOSE_FILES run --no-deps --rm stress-tester \
         uv run pytest tests/stress/ -v \
             --ignore=tests/stress/security \
             --html=/app/log/report/podman_stress_report.html \
-            --self-contained-html
+            --self-contained-html \
+            --junitxml=/app/log/report/docker_stress_report.xml
     "
 
 echo ""

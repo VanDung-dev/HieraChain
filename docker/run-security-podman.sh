@@ -162,7 +162,8 @@ podman compose -f "$COMPOSE_FILE" run --rm stress-tester \
         export EXPLORER_TOKEN='${EXPLORER_TOKEN:-podman_secret}'
         uv run pytest ${SECURITY_PYTEST_TARGET} -v \
             --html=/app/log/report/podman_rogue_security_report.html \
-            --self-contained-html
+            --self-contained-html \
+            --junitxml=/app/log/report/docker_stress_report.xml
     "
 
 echo ""

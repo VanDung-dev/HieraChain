@@ -224,7 +224,8 @@ docker --context=orbstack compose -f "$COMPOSE_FILE" run --rm --build stress-tes
         export K8S_NAMESPACE='$NAMESPACE'
         uv run pytest tests/stress/ -v \
             --html=/app/log/report/orb_k8s_stress_report.html \
-            --self-contained-html
+            --self-contained-html \
+            --junitxml=/app/log/report/docker_stress_report.xml
     "
 
 echo ""
