@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
 [![PyPI version](https://img.shields.io/pypi/v/HieraChain.svg)](https://pypi.org/project/HieraChain/)
 
-**English** | [Tiếng Việt](README_vi.md)
+**English** | [Tiếng Việt](README.vi.md)
 
 ## Overview
 
