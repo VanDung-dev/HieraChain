@@ -44,22 +44,18 @@ class Blockchain:
     __slots__ = (
         'name', 'lock',
         'chain', 'pending_events', 'total_events',
-        'event_type_counts', 'entity_event_index', 'query_engine',
+        'event_type_counts', 'event_type_index',
+        'entity_event_index', 'query_engine',
     )
 
     def __init__(self, name: str = "Blockchain") -> None:
-        """
-        Initialize a new blockchain.
-        
-        Args:
-            name: Name identifier for this blockchain
-        """
         self.name = name
         self.lock = threading.RLock()
         self.chain: list[Block] = []
         self.pending_events: list[dict[str, Any]] = []
         self.total_events: int = 0
         self.event_type_counts: dict[str, int] = {}
+        self.event_type_index: dict[str, list[int]] = {}
         self.entity_event_index: dict[str, list[dict[str, Any]]] = {}
         self.query_engine = BlockchainQueryEngine(self)
         with self.lock:
@@ -96,9 +92,15 @@ class Blockchain:
                 else block.events
             )
             self.total_events += len(events)
+            seen_types: set[str] = set()
             for event in events:
                 etype = event.get("event", "unknown")
                 self.event_type_counts[etype] = self.event_type_counts.get(etype, 0) + 1
+                if etype not in seen_types:
+                    seen_types.add(etype)
+                    if etype not in self.event_type_index:
+                        self.event_type_index[etype] = []
+                    self.event_type_index[etype].append(block.index)
 
                 # Update entity index
                 entity_id = event.get("entity_id")
@@ -118,6 +120,7 @@ class Blockchain:
         with self.lock:
             self.total_events = 0
             self.event_type_counts.clear()
+            self.event_type_index.clear()
             self.entity_event_index.clear()
             for block in self.chain:
                 self._index_block_events(block)
@@ -389,10 +392,15 @@ class BlockchainQueryEngine:
     def get_events_by_type(self, event_type: str) -> list[dict[str, Any]]:
         """Get all events of a specific type across the entire chain."""
         with self.blockchain.lock:
-            events = []
-            for block in self.blockchain.chain:
-                events.extend(block.get_events_by_type(event_type))
-            return events
+            idx = self.blockchain.event_type_index
+            if event_type in idx:
+                events = []
+                for bi in idx[event_type]:
+                    events.extend(
+                        self.blockchain.chain[bi].get_events_by_type(event_type)
+                    )
+                return events
+            return []
 
     def get_events_by_filter(
         self, filter_func: Callable[[dict[str, Any]], bool]
@@ -400,8 +408,7 @@ class BlockchainQueryEngine:
         """Get all events that match a custom filter function."""
         events = []
         for block in self.blockchain.chain:
-            block_events = block.to_dict()['events']
-            for event in block_events:
+            for event in block.to_event_list():
                 if filter_func(event):
                     events.append(event)
         return events
