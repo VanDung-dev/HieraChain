@@ -301,6 +301,11 @@ app = create_app()
 
 
 def run_server():
+    try:
+        import uvloop
+        uvloop.install()
+    except ImportError:
+        pass
     import uvicorn
     settings = get_settings()
     api_config = settings.get_api_config()
