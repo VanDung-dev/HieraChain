@@ -12,15 +12,15 @@ Diễn giải chi tiết cơ chế phân cấp của HieraChain: cách Sub‑Cha
 
 ## Thành phần & khái niệm
 
-* Main Chain: `hierachain/hierarchical/main_chain.py` — Lưu Proof từ các Sub‑Chain; tổng hợp báo cáo toàn vẹn.
-* Sub‑Chain (Domain Chain): `hierachain/hierarchical/sub_chain.py` — Xử lý Event domain, Ordering/đóng Block, sinh Proof.
-* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager.py` — Điều phối hệ thống Chain, quản lý vòng đời Sub‑Chain, giao dịch liên chuỗi, thống kê hệ thống.
-* Channel (kênh): `hierachain/hierarchical/channel.py` — Không gian giao tiếp riêng cho nhóm tổ chức, thiết lập chính sách tạo kênh.
-* Multi‑Org: `hierachain/hierarchical/multi_org.py` — Khởi tạo tổ chức, mạng nhiều tổ chức, quan hệ Channel ↔ Organization.
-* Private Data: `hierachain/hierarchical/private_data.py` — Bộ sưu tập dữ liệu riêng tư ở cấp Sub‑Chain.
-* Cross‑Chain Transaction Manager: `hierachain/hierarchical/transaction_manager.py` — Điều phối giao dịch 2PC giữa các Sub‑Chain.
-* Proof Aggregation: `hierachain/hierarchical/proof_aggregation.py` — Gom nhóm, nén proof trước khi gửi/ghi nhận (tùy cấu hình).
-* Rebalancer: `hierachain/hierarchical/rebalancer.py` — Tự động tách/cân bằng Sub‑Chain khi tải cao theo ngưỡng.
+* Main Chain: `hierachain/hierarchical/main_chain/base.py` — Lưu Proofs từ Sub-Chain; tổng hợp báo cáo tính toàn vẹn.
+* Sub-Chain (Domain Chain): `hierachain/hierarchical/sub_chain/base.py` — Xử lý Event domain, Ordering/đóng Block, sinh Proof.
+* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager/base.py` — Điều phối hệ thống Chain, quản lý lifecycle Sub-Chain, giao dịch liên chuỗi, thống kê hệ thống.
+* Channel: `hierachain/hierarchical/channel/channel.py` — Không gian giao tiếp riêng tư cho nhóm tổ chức, cấu hình chính sách tạo channel.
+* Multi-Org: `hierachain/hierarchical/multi_org.py` — Khởi tạo tổ chức, mạng đa tổ chức, quan hệ Channel ↔ Organization.
+* Private Data: `hierachain/hierarchical/private_data.py` — Bộ sưu tập dữ liệu riêng tư cấp Sub-Chain.
+* Cross-Chain Transaction Manager: `hierachain/hierarchical/transaction_manager.py` — Điều phối giao dịch 2PC giữa các Sub-Chain.
+* Proof Aggregation: `hierachain/hierarchical/proof_aggregation/aggregator.py` — Nhóm, nén proof trước khi gửi/ghi (tùy cấu hình).
+* Rebalancer: `hierachain/hierarchical/rebalancer/rebalancer.py` — Tự động chia tách/cân bằng Sub-Chain khi tải cao theo ngưỡng.
 
 ### Luồng tiêu biểu
 

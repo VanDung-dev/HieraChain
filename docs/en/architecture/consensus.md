@@ -13,8 +13,8 @@ Describes the Consensus mechanisms and Ordering Service used by HieraChain to en
 ## Architecture & Concepts
 
 * Base Consensus: `hierachain/consensus/base_consensus.py` — Base interface/framework for consensus algorithms.
-* Proof of Authority (PoA): `hierachain/consensus/proof_of_authority.py` — Centralized/static validator environment; high speed, simple configuration.
-* Proof of Federation (PoF): `hierachain/consensus/proof_of_federation.py` — Dynamic organization federation; suitable for consortiums.
+* Proof of Authority (PoA): `hierachain/consensus/proof_of_authority.py` — Intra-Organization consensus (Single MainChain managing internal domain Sub-Chains).
+* Proof of Federation (PoF): `hierachain/consensus/proof_of_federation.py` — Inter-Organization P2P MainChain Alliance consensus (Consortium without central RootChain).
 * BFT Consensus: `hierachain/consensus/bft/` — Byzantine fault tolerance at the hierarchical level.
 * Ordering Service: `hierachain/consensus/ordering/` — Orders Events before block creation; multi-component architecture (Processor, Certifier, BlockBuilder).
 

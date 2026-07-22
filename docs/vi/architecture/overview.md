@@ -32,9 +32,9 @@ graph BT
 
 ### Thành phần chính
 
-* Main Chain: `hierachain/hierarchical/main_chain.py` — Lưu và xác minh proof từ Sub-Chain, tổng hợp báo cáo tính toàn vẹn.
-* Sub-Chain: `hierachain/hierarchical/sub_chain.py` — Ghi nhận sự kiện domain, sắp xếp/đóng gói thành block, sinh proof và gửi lên Main Chain.
-* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager.py` — Điều phối hệ thống đa chuỗi, quản lý vòng đời Sub-Chain, gửi proof tự động, kiểm chứng chéo.
+* Main Chain: `hierachain/hierarchical/main_chain/base.py` — Lưu và xác minh proof từ Sub-Chain, tổng hợp báo cáo tính toàn vẹn.
+* Sub-Chain: `hierachain/hierarchical/sub_chain/base.py` — Ghi nhận event domain, Ordering/đóng block, tạo proof gửi lên Main Chain.
+* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager/base.py` — Điều phối toàn bộ hệ thống đa chuỗi, quản lý vòng đời Sub-Chain, tự động gửi proof, xác minh liên chuỗi.ứng chéo.
 * IPFS Storage (Off-chain): `hierachain/api/storage/ipfs_client.py` — Lưu trữ dữ liệu nghiệp vụ lớn hoặc nhạy cảm ngoài chuỗi, chỉ neo mã CID lên Blockchain.
 * Ordering Service: `hierachain/consensus/ordering/service.py` — Thành phần sắp xếp sự kiện trước khi tạo block (được Sub-Chain tích hợp khởi tạo).
 

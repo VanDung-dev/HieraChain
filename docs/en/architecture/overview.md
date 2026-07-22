@@ -32,9 +32,9 @@ graph BT
 
 ### Key Components
 
-* Main Chain: `hierachain/hierarchical/main_chain.py` — Stores and verifies proofs from Sub-Chains, aggregates integrity reports.
-* Sub-Chain: `hierachain/hierarchical/sub_chain.py` — Records domain events, orders/packages into blocks, generates proofs and sends to Main Chain.
-* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager.py` — Coordinates multi-chain system, manages Sub-Chain lifecycle, automatic proof submission, cross-chain verification.
+* Main Chain: `hierachain/hierarchical/main_chain/base.py` — Stores and verifies proofs from Sub-Chains, aggregates integrity reports.
+* Sub-Chain: `hierachain/hierarchical/sub_chain/base.py` — Records domain events, orders/packages into blocks, generates proofs and sends to Main Chain.
+* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager/base.py` — Coordinates multi-chain system, manages Sub-Chain lifecycle, automatic proof submission, cross-chain verification.
 * IPFS Storage (Off-chain): `hierachain/api/storage/ipfs_client.py` — Stores large or sensitive business data off-chain, only anchors CID on Blockchain.
 * Ordering Service: `hierachain/consensus/ordering/service.py` — Event ordering component before block creation (integrated and initialized by Sub-Chain).
 
