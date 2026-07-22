@@ -11,6 +11,7 @@ import logging
 from typing import Any
 from dataclasses import dataclass, field
 from enum import Enum
+from collections import OrderedDict
 
 
 class EvictionPolicy(Enum):
@@ -42,12 +43,13 @@ class AdvancedCache(dict):
         self.max_size = max_size
         self.eviction_policy = EvictionPolicy(eviction_policy)
         self.cache: dict[str, CacheEntry] = {}
-        self.access_order: list[str] = []
+        self.access_order: OrderedDict[str, None] = OrderedDict()
         self.lock = threading.RLock()
         self.logger = logging.getLogger(__name__)
         self.hits = 0
         self.misses = 0
         self.evictions = 0
+        self._cleanup_stop = threading.Event()
         self._start_ttl_cleanup_thread()
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -100,8 +102,9 @@ class AdvancedCache(dict):
         entry.access_time = time.time()
         entry.access_count += 1
         if key in self.access_order:
-            self.access_order.remove(key)
-        self.access_order.append(key)
+            self.access_order.move_to_end(key)
+        else:
+            self.access_order[key] = None
 
     def _evict(self) -> None:
         if not self.cache:
@@ -117,46 +120,43 @@ class AdvancedCache(dict):
             self.evictions += 1
 
     def _evict_lru(self) -> str | None:
-        return (
-            min(self.cache.keys(), key=lambda k: self.cache[k].access_time)
-            if self.cache
-            else None
-        )
+        if not self.access_order:
+            return None
+        return next(iter(self.access_order))
 
     def _evict_lfu(self) -> str | None:
-        return (
-            min(
-                self.cache.keys(),
-                key=lambda k: (self.cache[k].access_count, self.cache[k].access_time),
-            )
-            if self.cache
-            else None
+        if not self.cache:
+            return None
+        return min(
+            self.cache.keys(),
+            key=lambda k: (self.cache[k].access_count, self.cache[k].access_time),
         )
 
     def _evict_fifo(self) -> str | None:
-        return (
-            min(self.cache.keys(), key=lambda k: self.cache[k].creation_time)
-            if self.cache
-            else None
-        )
+        if not self.cache:
+            return None
+        return min(self.cache.keys(), key=lambda k: self.cache[k].creation_time)
 
     def _evict_ttl(self) -> str | None:
-        expired_keys = [k for k, entry in self.cache.items() if entry.is_expired]
-        if expired_keys:
-            return expired_keys[0]
-        return self._evict_lru()
+        for k in self.access_order:
+            entry = self.cache.get(k)
+            if entry and entry.is_expired:
+                return k
+        if not self.access_order:
+            return None
+        return next(iter(self.access_order))
 
     def _remove_key(self, key: str) -> None:
         if key in self.cache:
             del self.cache[key]
-        if key in self.access_order:
-            self.access_order.remove(key)
+        self.access_order.pop(key, None)
 
     def _start_ttl_cleanup_thread(self) -> None:
         def cleanup_loop():
-            while True:
+            while not self._cleanup_stop.is_set():
                 try:
-                    time.sleep(60)
+                    if self._cleanup_stop.wait(60):
+                        break
                     self.cleanup_ttl()
                 except Exception as e:
                     self.logger.error(f"TTL cleanup error: {e}")
@@ -167,21 +167,13 @@ class AdvancedCache(dict):
         with self.lock:
             keys = list(self.cache.keys())
         expired_keys = []
-        batch_size = 100
-        for i in range(0, len(keys), batch_size):
-            batch = keys[i:i+batch_size]
-            with self.lock:
-                for key in batch:
-                    entry = self.cache.get(key)
-                    if entry and entry.is_expired:
-                        expired_keys.append(key)
-            time.sleep(0.002)
-        for i in range(0, len(expired_keys), batch_size):
-            batch = expired_keys[i:i+batch_size]
-            with self.lock:
-                for key in batch:
-                    self._remove_key(key)
-            time.sleep(0.002)
+        for k in keys:
+            entry = self.cache.get(k)
+            if entry and entry.is_expired:
+                expired_keys.append(k)
+        with self.lock:
+            for k in expired_keys:
+                self._remove_key(k)
 
     def get_stats(self) -> dict[str, Any]:
         with self.lock:
