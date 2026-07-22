@@ -193,7 +193,8 @@ def _is_valid_replay(node: ZmqNode, message_data: dict[str, Any]) -> bool:
     node.replay_buffer.add(entry)
 
     cutoff = now - node.replay_tolerance
-    node.replay_buffer = {e for e in node.replay_buffer if e[0] > cutoff}
+    if len(node.replay_buffer) > 1000:
+        node.replay_buffer = {e for e in node.replay_buffer if e[0] > cutoff}
 
     return True
 
