@@ -4429,8 +4429,8 @@
 <h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
 <ul>
 <li>Base Consensus: <code>hierachain/consensus/base_consensus.py</code> — Giao diện/khung cơ bản cho các thuật toán đồng thuận.</li>
-<li>Proof of Authority (PoA): <code>hierachain/consensus/proof_of_authority.py</code> — Môi trường tập trung/validator tĩnh; tốc độ cao, cấu hình đơn giản.</li>
-<li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code> — Liên minh tổ chức động; phù hợp consortium.</li>
+<li>Proof of Authority (PoA): <code>hierachain/consensus/proof_of_authority.py</code> — Đồng thuận Nội bộ Tổ chức (1 MainChain quản lý các Sub-Chains thuộc phân khu nội bộ).</li>
+<li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code> — Đồng thuận Liên minh Ngang hàng giữa các MainChain độc lập (Consortium không cần RootChain trung tâm).</li>
 <li>BFT Consensus: <code>hierachain/consensus/bft/</code> — Chống lỗi Byzantine ở lớp phân cấp.</li>
 <li>Ordering Service: <code>hierachain/consensus/ordering/</code> — Sắp xếp Event trước khi đóng Block; kiến trúc đa thành phần (Processor, Certifier, BlockBuilder).</li>
 </ul>

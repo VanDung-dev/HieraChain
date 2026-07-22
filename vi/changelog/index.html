@@ -4434,8 +4434,19 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (97)</summary>
+<summary>Improvements (108)</summary>
 <ul>
+<li>
+<p>2026-07-23</p>
+<ul>
+<li><strong>Kiểm thử (Tích hợp)</strong>: Thêm <code>tests/integration/test_proof_of_federation_mesh.py</code> — bài kiểm thử tích hợp 2 pha chứng minh liên minh PoF đa-MainChain: Pha 1 chứng minh PoA từ chối các block từ tổ chức khác; Pha 2 xác nhận đồng thuận liên minh PoF giữa 3 node (Bệnh viện A, Bệnh viện B, Bảo hiểm Z) qua chữ ký đa phương Ed25519 và luân phiên lãnh đạo vòng tròn, không cần RootChain trung tâm.</li>
+<li><strong>Tái cấu trúc</strong>: Chuyển toàn bộ import nội tuyến/muộn (<code>os</code>, <code>sys</code>, <code>time</code>, <code>uuid</code>, <code>asyncio</code>, <code>warnings</code>, <code>httpx</code>, <code>pyarrow</code>, <code>cast</code>) lên đầu file (module-level) trên 14 file nguồn, tuân thủ hoàn toàn PEP 8 về thứ tự import.</li>
+<li><strong>Tài liệu</strong>: Định nghĩa lại <strong>Proof of Authority (PoA)</strong> là giao thức đồng thuận <em>Nội bộ Tổ chức</em> (một MainChain quản lý các Sub-Chain nội bộ) và <strong>Proof of Federation (PoF)</strong> là giao thức đồng thuận <em>Liên minh P2P giữa các MainChain độc lập</em> (không cần RootChain trung tâm), kèm bảng so sánh kiến trúc trong cả tài liệu tiếng Anh và tiếng Việt.</li>
+<li><strong>Tài liệu</strong>: Đồng bộ hóa toàn bộ đường dẫn file lỗi thời trong <code>docs/en/</code> với cấu trúc thực tế của gói <code>hierachain/</code> — sửa 22 tham chiếu trong <code>architecture/</code>, <code>glossary.md</code>, <code>how-to/</code>, <code>reference/</code> (ví dụ: <code>main_chain.py</code> → <code>main_chain/base.py</code>, <code>endpoints.py</code> → <code>router.py</code>, <code>websocket_manager.py</code> → <code>websocket/manager.py</code>).</li>
+<li><strong>Tài liệu</strong>: Bổ sung các file còn thiếu <code>docs/vi/reference/code-map.md</code> và <code>docs/vi/how-to/add-endpoint.md</code> để đạt tương đương 1:1 hoàn toàn giữa cây tài liệu tiếng Anh và tiếng Việt (cả hai đều có 90 file <code>.md</code>).</li>
+<li><strong>Tài liệu (vi)</strong>: Đồng bộ hóa toàn bộ đường dẫn file và định nghĩa PoA/PoF đã cập nhật từ <code>docs/en/</code> sang toàn bộ bản gương <code>docs/vi/</code> — cập nhật các file tương đương trong <code>architecture/</code>, <code>glossary.md</code>, <code>how-to/</code>, <code>reference/</code>.</li>
+</ul>
+</li>
 <li>
 <p>2026-07-22</p>
 <ul>

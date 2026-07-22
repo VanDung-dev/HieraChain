@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Các bước thêm một endpoint mới vào API Ledger, wiring schema/handler và kiểm thử nhanh bằng curl.">
+        <meta name="description" content="Các bước để thêm một endpoint mới vào API Ledger, kết nối schema/handler và kiểm thử nhanh với curl.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Thêm endpoint API Ledger - HieraChain Docs</title>
+        <title>Thêm API Ledger Endpoint - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#them-endpoint-api-ledger" class="md-skip">
+        <a href="#them-api-ledger-endpoint" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Thêm endpoint API Ledger
+              Thêm API Ledger Endpoint
             
           </span>
         </div>
@@ -3434,7 +3434,7 @@
   <a href="#buoc-1-chuan-bi-schema-tuy-chon" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bước 1: Chuẩn bị schema (tuỳ chọn)
+        Bước 1: Chuẩn bị Schema (tùy chọn)
       </span>
     </span>
   </a>
@@ -3445,7 +3445,7 @@
   <a href="#buoc-2-them-handler-trong-router" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bước 2: Thêm handler trong router
+        Bước 2: Thêm Handler trong Router
       </span>
     </span>
   </a>
@@ -3453,10 +3453,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#buoc-3-chay-server-va-kiem-thu-nhanh" class="md-nav__link">
+  <a href="#buoc-3-khoi-chay-server-va-kiem-thu-nhanh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bước 3: Chạy server và kiểm thử nhanh
+        Bước 3: Khởi chạy Server và Kiểm thử Nhanh
       </span>
     </span>
   </a>
@@ -3467,7 +3467,7 @@
   <a href="#buoc-4-lien-ket-tai-lieu" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bước 4: Liên kết tài liệu
+        Bước 4: Liên kết Tài liệu
       </span>
     </span>
   </a>
@@ -3475,10 +3475,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#luu-y-mo-rong" class="md-nav__link">
+  <a href="#ghi-chu-mo-rong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Lưu ý mở rộng
+        Ghi chú Mở rộng
       </span>
     </span>
   </a>
@@ -3486,10 +3486,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
+  <a href="#tai-lieu-lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Liên quan
+        Tài liệu Liên quan
       </span>
     </span>
   </a>
@@ -4340,7 +4340,7 @@
   <a href="#buoc-1-chuan-bi-schema-tuy-chon" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bước 1: Chuẩn bị schema (tuỳ chọn)
+        Bước 1: Chuẩn bị Schema (tùy chọn)
       </span>
     </span>
   </a>
@@ -4351,7 +4351,7 @@
   <a href="#buoc-2-them-handler-trong-router" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bước 2: Thêm handler trong router
+        Bước 2: Thêm Handler trong Router
       </span>
     </span>
   </a>
@@ -4359,10 +4359,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#buoc-3-chay-server-va-kiem-thu-nhanh" class="md-nav__link">
+  <a href="#buoc-3-khoi-chay-server-va-kiem-thu-nhanh" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bước 3: Chạy server và kiểm thử nhanh
+        Bước 3: Khởi chạy Server và Kiểm thử Nhanh
       </span>
     </span>
   </a>
@@ -4373,7 +4373,7 @@
   <a href="#buoc-4-lien-ket-tai-lieu" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Bước 4: Liên kết tài liệu
+        Bước 4: Liên kết Tài liệu
       </span>
     </span>
   </a>
@@ -4381,10 +4381,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#luu-y-mo-rong" class="md-nav__link">
+  <a href="#ghi-chu-mo-rong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Lưu ý mở rộng
+        Ghi chú Mở rộng
       </span>
     </span>
   </a>
@@ -4392,10 +4392,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#lien-quan" class="md-nav__link">
+  <a href="#tai-lieu-lien-quan" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Liên quan
+        Tài liệu Liên quan
       </span>
     </span>
   </a>
@@ -4433,59 +4433,58 @@
   
 
 
-<h1 id="them-endpoint-api-ledger">Thêm endpoint API Ledger</h1>
+<h1 id="them-api-ledger-endpoint">Thêm API Ledger Endpoint</h1>
 <h2 id="muc-tieu">Mục tiêu</h2>
-<p>Hướng dẫn từng bước để thêm một endpoint mới vào FastAPI router của HieraChain (phiên bản ledger), bao gồm định nghĩa schema Pydantic, viết handler, cập nhật router và kiểm thử nhanh bằng <code>curl</code>.</p>
-<h2 id="buoc-1-chuan-bi-schema-tuy-chon">Bước 1: Chuẩn bị schema (tuỳ chọn)</h2>
+<p>Hướng dẫn từng bước để thêm một endpoint mới vào FastAPI router (Ledger) của HieraChain, bao gồm định nghĩa Pydantic schema, viết handler, cập nhật router và kiểm thử nhanh bằng <code>curl</code>.</p>
+<h2 id="buoc-1-chuan-bi-schema-tuy-chon">Bước 1: Chuẩn bị Schema (tùy chọn)</h2>
 <ul>
 <li>Mở <code>hierachain/api/ledger/schemas.py</code>.</li>
-<li>Thêm lớp Pydantic nếu endpoint cần payload mới, ví dụ:</li>
+<li>Thêm một lớp Pydantic nếu endpoint cần payload mới, ví dụ:</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">class PingRequest(BaseModel):</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="go">  message: str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">PingRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="go">class PingResponse(BaseModel):</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="go">  ok: bool</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="go">  echo: str</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">PingResponse</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  <span class="n">ok</span><span class="p">:</span> <span class="nb">bool</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  <span class="n">echo</span><span class="p">:</span> <span class="nb">str</span>
 </code></pre></div>
-<h2 id="buoc-2-them-handler-trong-router">Bước 2: Thêm handler trong router</h2>
+<h2 id="buoc-2-them-handler-trong-router">Bước 2: Thêm Handler trong Router</h2>
 <ul>
-<li>Mở <code>hierachain/api/ledger/endpoints.py</code>.</li>
-<li>Import schema (nếu có) và thêm route vào <code>APIRouter(prefix="/api/ledger", ...)</code>.</li>
+<li>Mở <code>hierachain/api/ledger/router.py</code>.</li>
+<li>Import schema (nếu có) và thêm route vào <code>APIRouter(prefix="/api/ledger", ...)</code>:</li>
 </ul>
-<p>Ví dụ (mô tả):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/ping&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">PingResponse</span><span class="p">)</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">ping</span><span class="p">(</span><span class="n">req</span><span class="p">:</span> <span class="n">PingRequest</span><span class="p">):</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  <span class="k">return</span> <span class="n">PingResponse</span><span class="p">(</span><span class="n">ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">echo</span><span class="o">=</span><span class="n">req</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
 </code></pre></div>
-<p>Gợi ý: dùng DI sẵn có (ví dụ <code>Depends(get_hierarchy_manager)</code>) nếu endpoint cần truy cập hệ thống chuỗi.</p>
-<h2 id="buoc-3-chay-server-va-kiem-thu-nhanh">Bước 3: Chạy server và kiểm thử nhanh</h2>
+<p>Mẹo: Sử dụng Dependency Injection có sẵn (ví dụ: <code>Depends(get_hierarchy_manager)</code>) nếu endpoint cần truy cập hệ thống chuỗi.</p>
+<h2 id="buoc-3-khoi-chay-server-va-kiem-thu-nhanh">Bước 3: Khởi chạy Server và Kiểm thử Nhanh</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>-m<span class="w"> </span>hierachain.api.server
 </code></pre></div>
-<p>Mở <code>http://localhost:2661/docs</code> để thử trên Swagger UI hoặc dùng <code>curl</code>:</p>
+<p>Mở <code>http://localhost:2661/docs</code> để thử nghiệm trên Swagger UI hoặc sử dụng <code>curl</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:2661/api/ledger/ping<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;message&quot;:&quot;hello&quot;}&#39;</span>
 </code></pre></div>
-<p>Nếu bật xác thực API key (production), thêm header theo <code>settings.API_KEY_NAME</code>:</p>
+<p>Nếu xác thực API Key được bật (môi trường production), hãy thêm header tương ứng với <code>settings.API_KEY_NAME</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>-H<span class="w"> </span><span class="s1">&#39;X-API-Key: &lt;your-key&gt;&#39;</span>
 </code></pre></div>
-<h2 id="buoc-4-lien-ket-tai-lieu">Bước 4: Liên kết tài liệu</h2>
+<h2 id="buoc-4-lien-ket-tai-lieu">Bước 4: Liên kết Tài liệu</h2>
 <ul>
-<li>Cập nhật <code>docs/mkdocs.yml</code> để bổ sung hướng dẫn này vào mục Hướng dẫn (nếu chưa có).</li>
-<li>Liên kết chéo từ trang API module/Reference.</li>
+<li>Cập nhật <code>docs/mkdocs.yml</code> để thêm hướng dẫn này vào mục Hướng dẫn (nếu chưa có).</li>
+<li>Liên kết chéo từ trang Module API / Tham chiếu.</li>
 </ul>
-<h2 id="luu-y-mo-rong">Lưu ý mở rộng</h2>
+<h2 id="ghi-chu-mo-rong">Ghi chú Mở rộng</h2>
 <ul>
-<li>Đặt tên đường dẫn, tham số, và response model rõ ràng.</li>
-<li>Xử lý lỗi với <code>HTTPException</code> (400/404/500) và thông điệp minh bạch.</li>
-<li>Viết test (pytest) nếu endpoint có logic quan trọng.</li>
+<li>Sử dụng tên đường dẫn, tham số và response model rõ ràng.</li>
+<li>Xử lý lỗi bằng <code>HTTPException</code> (400/404/500) với thông điệp minh bạch.</li>
+<li>Viết test case (<code>pytest</code>) nếu endpoint chứa logic quan trọng.</li>
 </ul>
-<h2 id="lien-quan">Liên quan</h2>
+<h2 id="tai-lieu-lien-quan">Tài liệu Liên quan</h2>
 <ul>
-<li>API module: <a href="../../modules/api/">API</a></li>
-<li>Reference API Ledger: <a href="../../reference/api-ledger/">API Ledger</a></li>
-<li>Config: <a href="../../reference/config/">Config</a></li>
+<li>API Module: <a href="../../modules/api/">API</a></li>
+<li>API Ledger Reference: <a href="../../reference/api-ledger/">API Ledger</a></li>
+<li>Cấu hình: <a href="../../reference/config/">Config</a></li>
 </ul>
 
 

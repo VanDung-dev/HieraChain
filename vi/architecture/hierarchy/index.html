@@ -4428,15 +4428,15 @@
 <p>Diễn giải chi tiết cơ chế phân cấp của HieraChain: cách Sub‑Chain tương tác với Main Chain qua <code>HierarchyManager</code>, Channel và mô hình đa tổ chức, dữ liệu riêng tư, giao dịch liên chuỗi (2PC), neo Proof, và tái cân bằng Sub‑Chain.</p>
 <h2 id="thanh-phan-khai-niem">Thành phần &amp; khái niệm</h2>
 <ul>
-<li>Main Chain: <code>hierachain/hierarchical/main_chain.py</code> — Lưu Proof từ các Sub‑Chain; tổng hợp báo cáo toàn vẹn.</li>
-<li>Sub‑Chain (Domain Chain): <code>hierachain/hierarchical/sub_chain.py</code> — Xử lý Event domain, Ordering/đóng Block, sinh Proof.</li>
-<li>Hierarchy Manager: <code>hierachain/hierarchical/hierarchy_manager.py</code> — Điều phối hệ thống Chain, quản lý vòng đời Sub‑Chain, giao dịch liên chuỗi, thống kê hệ thống.</li>
-<li>Channel (kênh): <code>hierachain/hierarchical/channel.py</code> — Không gian giao tiếp riêng cho nhóm tổ chức, thiết lập chính sách tạo kênh.</li>
-<li>Multi‑Org: <code>hierachain/hierarchical/multi_org.py</code> — Khởi tạo tổ chức, mạng nhiều tổ chức, quan hệ Channel ↔ Organization.</li>
-<li>Private Data: <code>hierachain/hierarchical/private_data.py</code> — Bộ sưu tập dữ liệu riêng tư ở cấp Sub‑Chain.</li>
-<li>Cross‑Chain Transaction Manager: <code>hierachain/hierarchical/transaction_manager.py</code> — Điều phối giao dịch 2PC giữa các Sub‑Chain.</li>
-<li>Proof Aggregation: <code>hierachain/hierarchical/proof_aggregation.py</code> — Gom nhóm, nén proof trước khi gửi/ghi nhận (tùy cấu hình).</li>
-<li>Rebalancer: <code>hierachain/hierarchical/rebalancer.py</code> — Tự động tách/cân bằng Sub‑Chain khi tải cao theo ngưỡng.</li>
+<li>Main Chain: <code>hierachain/hierarchical/main_chain/base.py</code> — Lưu Proofs từ Sub-Chain; tổng hợp báo cáo tính toàn vẹn.</li>
+<li>Sub-Chain (Domain Chain): <code>hierachain/hierarchical/sub_chain/base.py</code> — Xử lý Event domain, Ordering/đóng Block, sinh Proof.</li>
+<li>Hierarchy Manager: <code>hierachain/hierarchical/hierarchy_manager/base.py</code> — Điều phối hệ thống Chain, quản lý lifecycle Sub-Chain, giao dịch liên chuỗi, thống kê hệ thống.</li>
+<li>Channel: <code>hierachain/hierarchical/channel/channel.py</code> — Không gian giao tiếp riêng tư cho nhóm tổ chức, cấu hình chính sách tạo channel.</li>
+<li>Multi-Org: <code>hierachain/hierarchical/multi_org.py</code> — Khởi tạo tổ chức, mạng đa tổ chức, quan hệ Channel ↔ Organization.</li>
+<li>Private Data: <code>hierachain/hierarchical/private_data.py</code> — Bộ sưu tập dữ liệu riêng tư cấp Sub-Chain.</li>
+<li>Cross-Chain Transaction Manager: <code>hierachain/hierarchical/transaction_manager.py</code> — Điều phối giao dịch 2PC giữa các Sub-Chain.</li>
+<li>Proof Aggregation: <code>hierachain/hierarchical/proof_aggregation/aggregator.py</code> — Nhóm, nén proof trước khi gửi/ghi (tùy cấu hình).</li>
+<li>Rebalancer: <code>hierachain/hierarchical/rebalancer/rebalancer.py</code> — Tự động chia tách/cân bằng Sub-Chain khi tải cao theo ngưỡng.</li>
 </ul>
 <h3 id="luong-tieu-bieu">Luồng tiêu biểu</h3>
 <pre class="mermaid"><code>graph TD

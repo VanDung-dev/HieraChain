@@ -4429,8 +4429,8 @@
 <h2 id="architecture-concepts">Architecture &amp; Concepts</h2>
 <ul>
 <li>Base Consensus: <code>hierachain/consensus/base_consensus.py</code> — Base interface/framework for consensus algorithms.</li>
-<li>Proof of Authority (PoA): <code>hierachain/consensus/proof_of_authority.py</code> — Centralized/static validator environment; high speed, simple configuration.</li>
-<li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code> — Dynamic organization federation; suitable for consortiums.</li>
+<li>Proof of Authority (PoA): <code>hierachain/consensus/proof_of_authority.py</code> — Intra-Organization consensus (Single MainChain managing internal domain Sub-Chains).</li>
+<li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code> — Inter-Organization P2P MainChain Alliance consensus (Consortium without central RootChain).</li>
 <li>BFT Consensus: <code>hierachain/consensus/bft/</code> — Byzantine fault tolerance at the hierarchical level.</li>
 <li>Ordering Service: <code>hierachain/consensus/ordering/</code> — Orders Events before block creation; multi-component architecture (Processor, Certifier, BlockBuilder).</li>
 </ul>

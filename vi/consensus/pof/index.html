@@ -2838,6 +2838,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#vi-tri-kien-truc-poa-vs-pof" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Vị trí Kiến trúc: PoA vs. PoF
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#co-che-hoat-ong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4337,6 +4348,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#vi-tri-kien-truc-poa-vs-pof" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Vị trí Kiến trúc: PoA vs. PoF
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#co-che-hoat-ong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4435,13 +4457,36 @@
 
 <h1 id="proof-of-federation-hierachainconsensusproof_of_federationpy">Proof of Federation (<code>hierachain/consensus/proof_of_federation.py</code>)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p><strong>Proof of Federation (PoF)</strong> là giao thức đồng thuận được thiết kế dành riêng cho các mạng liên minh (<strong>Consortium</strong>), nơi nhiều tổ chức (ngân hàng, bệnh viện, đối tác cung ứng) cùng tham gia quản trị mà không có một đơn vị nào nắm quyền kiểm soát tuyệt đối. PoF kết hợp tính hiệu năng của PoA với tính bảo mật của cơ chế biểu quyết số đông (Quorum).</p>
+<p><strong>Proof of Federation (PoF)</strong> là giao thức đồng thuận liên chuỗi (<strong>Inter-MainChain</strong>) được thiết kế dành riêng cho các mạng liên minh tổ chức (<strong>Consortium Alliance</strong>). PoF cho phép nhiều tổ chức độc lập (ví dụ: Bệnh viện A, Bệnh viện B, Bảo hiểm Z)—mỗi bên tự vận hành một MainChain riêng—có thể trao đổi, xác thực và đạt được đồng thuận trên các bằng chứng sự kiện liên tổ chức <strong>mà không cần một RootChain trung tâm hay một thẩm quyền tối cao nào cai trị</strong>.</p>
+<hr />
+<h2 id="vi-tri-kien-truc-poa-vs-pof">Vị trí Kiến trúc: PoA vs. PoF</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Giao thức Đồng thuận</th>
+<th style="text-align: left;">Phạm vi &amp; Mục đích</th>
+<th style="text-align: left;">Mô hình Quản trị</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Proof of Authority (PoA)</strong></td>
+<td style="text-align: left;"><strong>Nội bộ 1 Tổ chức</strong> (1 MainChain + các Sub-Chains)</td>
+<td style="text-align: left;">Thẩm quyền chỉ định (Single-entity control trong nội bộ doanh nghiệp)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Proof of Federation (PoF)</strong></td>
+<td style="text-align: left;"><strong>Liên minh đa Tổ chức</strong> (Peer-to-Peer MainChain Alliance)</td>
+<td style="text-align: left;">Liên bang Ngang hàng (Threshold Quorum không cần RootChain)</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h2 id="co-che-hoat-ong">Cơ chế Hoạt động</h2>
-<p>PoF sử dụng mô hình luân phiên kết hợp với xác thực đa chữ ký:
-1.  <strong>Xoay vòng Lãnh đạo (Leader Rotation)</strong>: Leader có quyền đề xuất khối được xác định bằng công thức toán học xác định: <code>Leader = Validators[BlockIndex % TotalValidators]</code>. Điều này ngăn chặn bất kỳ nút nào chiếm quyền điều hành vĩnh viễn.
-2.  <strong>Biểu quyết Quorum</strong>: Để một khối được coi là hợp lệ, nó không chỉ cần chữ ký của Leader mà còn cần sự xác nhận của một số lượng nút tối thiểu trong liên minh (thường là <strong>2/3 + 1</strong>).
-3.  <strong>Danh sách Validator Sắp xếp</strong>: Danh sách các nút tham gia được tự động sắp xếp theo ID để đảm bảo tính nhất quán của lịch trình tạo khối trên toàn mạng lưới.</p>
+<p>PoF sử dụng mô hình luân phiên liên bang ngang hàng kết hợp với xác thực đa chữ ký:
+1.  <strong>Xoay vòng Lãnh đạo (Leader Rotation)</strong>: Leader có quyền đề xuất khối liên minh cho mỗi lượt được xác định bằng công thức toán học: <code>Leader = Validators[BlockIndex % TotalValidators]</code>. Điều này ngăn chặn bất kỳ MainChain nào thao túng độc quyền lượt tạo khối.
+2.  <strong>Biểu quyết Quorum</strong>: Để một khối sự kiện liên tổ chức được xác nhận hợp lệ giữa các MainChain độc lập, nó cần đa chữ ký xác thực từ một ngưỡng tối thiểu các thành viên liên minh (thường là <strong>2/3 + 1</strong>).
+3.  <strong>Danh sách Validator Sắp xếp</strong>: Danh sách các MainChain tham gia được tự động sắp xếp đồng bộ trên tất cả các nút để đảm bảo tính nhất quán của lịch trình tạo khối.</p>
 <hr />
 <h2 id="cac-tinh-nang-noi-bat">Các tính năng nổi bật</h2>
 <div class="grid cards">

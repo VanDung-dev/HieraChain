@@ -4290,11 +4290,11 @@
 </tr>
 <tr>
 <td>Proof of Authority</td>
-<td>PoA; static validator consensus; <code>hierachain/consensus/proof_of_authority.py</code>.</td>
+<td>PoA; Intra-Organization consensus; <code>hierachain/consensus/proof_of_authority.py</code>.</td>
 </tr>
 <tr>
 <td>Proof of Federation</td>
-<td>PoF; federation consensus; <code>hierachain/consensus/proof_of_federation.py</code>.</td>
+<td>PoF; Inter-Organization P2P MainChain Alliance consensus; <code>hierachain/consensus/proof_of_federation.py</code>.</td>
 </tr>
 <tr>
 <td>API Key</td>
@@ -4302,11 +4302,11 @@
 </tr>
 <tr>
 <td>Resource Guard</td>
-<td>Resource protection middleware; <code>hierachain/security/resource_guard.py</code>.</td>
+<td>Resource protection middleware; <code>hierachain/security/brute_force_protector.py</code>.</td>
 </tr>
 <tr>
 <td>Entity Tracer</td>
-<td>Event tracing by entity; <code>hierachain/domains/generic/utils/entity_tracer.py</code>.</td>
+<td>Event tracing by entity; <code>hierachain/domains/utils/entity_tracer.py</code>.</td>
 </tr>
 <tr>
 <td>Zero-Knowledge Proof</td>
@@ -4314,15 +4314,15 @@
 </tr>
 <tr>
 <td>Proof Aggregation</td>
-<td>Multiple proof aggregation; <code>hierachain/hierarchical/proof_aggregation.py</code>.</td>
+<td>Multiple proof aggregation; <code>hierachain/hierarchical/proof_aggregation/aggregator.py</code>.</td>
 </tr>
 <tr>
 <td>Rebalancer</td>
-<td>Automatic Sub-Chain splitting/balancing; <code>hierachain/hierarchical/rebalancer.py</code>.</td>
+<td>Automatic Sub-Chain splitting/balancing; <code>hierachain/hierarchical/rebalancer/rebalancer.py</code>.</td>
 </tr>
 <tr>
 <td>Channel</td>
-<td>Inter-organization private channel; <code>hierachain/hierarchical/channel.py</code>.</td>
+<td>Inter-organization private channel; <code>hierachain/hierarchical/channel/channel.py</code>.</td>
 </tr>
 <tr>
 <td>Multi-Organization</td>
@@ -4370,7 +4370,7 @@
 </tr>
 <tr>
 <td>Kubernetes Namespace</td>
-<td>Sub-Chain namespace isolation; <code>hierachain/hierarchical/k8s_namespace_manager.py</code>.</td>
+<td>Sub-Chain namespace isolation; <code>hierachain/hierarchical/k8s_namespace_manager/operations.py</code>.</td>
 </tr>
 <tr>
 <td>Identity Manager</td>

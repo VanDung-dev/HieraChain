@@ -4435,7 +4435,8 @@
 
 <h1 id="proof-of-authority-hierachainconsensusproof_of_authoritypy">Proof of Authority (<code>hierachain/consensus/proof_of_authority.py</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p><strong>Proof of Authority (PoA)</strong> is an identity-based consensus protocol optimized for private blockchain networks or enterprise internal networks. Instead of solving complex cryptographic problems (like mining), PoA relies on a group of authorized nodes (<strong>Authorities</strong>) to validate and close blocks, achieving extremely fast transaction speeds with minimal latency.</p>
+<p><strong>Proof of Authority (PoA)</strong> is an identity-based consensus protocol optimized for <strong>Intra-Organization enterprise networks</strong> (single MainChain managing internal domain Sub-Chains). Instead of solving complex cryptographic problems (like mining), PoA relies on a group of authorized nodes (<strong>Authorities</strong>) designated by the enterprise to validate and close blocks, achieving ultra-fast transaction speeds (~0ms base latency) with minimal resource overhead.</p>
+<p>For cross-organizational inter-MainChain consensus between independent enterprises, see <a href=".././pof/">Proof of Federation (PoF)</a>.</p>
 <hr />
 <h2 id="how-it-works">How It Works</h2>
 <p>The protocol operates based on trust in the identity of participating nodes:

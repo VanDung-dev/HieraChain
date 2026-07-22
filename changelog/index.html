@@ -4434,8 +4434,19 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (97)</summary>
+<summary>Improvements (108)</summary>
 <ul>
+<li>
+<p>2026-07-23</p>
+<ul>
+<li><strong>Testing (Integration)</strong>: Added <code>tests/integration/test_proof_of_federation_mesh.py</code> — a 2-phase integration test proving the PoF inter-MainChain consortium: Phase 1 demonstrates PoA rejection of cross-organizational blocks; Phase 2 confirms 3-node PoF federation consensus (Hospital A, Hospital B, Insurance Z) via Ed25519 multi-signatures and round-robin leadership, without a central RootChain.</li>
+<li><strong>Refactoring</strong>: Moved all inline/late imports (<code>os</code>, <code>sys</code>, <code>time</code>, <code>uuid</code>, <code>asyncio</code>, <code>warnings</code>, <code>httpx</code>, <code>pyarrow</code>, <code>cast</code>) to module-level top-of-file across 14 source files, fully conforming to PEP 8 import ordering.</li>
+<li><strong>Docs</strong>: Redefined <strong>Proof of Authority (PoA)</strong> as <em>Intra-Organization</em> consensus (single MainChain managing internal Sub-Chains) and <strong>Proof of Federation (PoF)</strong> as <em>Inter-Organization P2P MainChain Alliance</em> consensus (no central RootChain required), with architectural comparison tables in both English and Vietnamese docs.</li>
+<li><strong>Docs</strong>: Synchronized all stale file paths in <code>docs/en/</code> against the actual <code>hierachain/</code> package layout — corrected 22 references across <code>architecture/</code>, <code>glossary.md</code>, <code>how-to/</code>, and <code>reference/</code> (e.g. <code>main_chain.py</code> → <code>main_chain/base.py</code>, <code>endpoints.py</code> → <code>router.py</code>, <code>websocket_manager.py</code> → <code>websocket/manager.py</code>).</li>
+<li><strong>Docs</strong>: Added missing <code>docs/vi/reference/code-map.md</code> and <code>docs/vi/how-to/add-endpoint.md</code> to achieve full 1:1 parity between English and Vietnamese documentation trees (both now have 90 <code>.md</code> files).</li>
+<li><strong>Docs (vi)</strong>: Synchronized all updated file paths and PoA/PoF definitions from <code>docs/en/</code> into the full <code>docs/vi/</code> mirror — updated <code>architecture/</code>, <code>glossary.md</code>, <code>how-to/</code>, <code>reference/</code> equivalents.</li>
+</ul>
+</li>
 <li>
 <p>2026-07-22</p>
 <ul>

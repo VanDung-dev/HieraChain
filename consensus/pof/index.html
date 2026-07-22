@@ -2838,6 +2838,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#architectural-position-poa-vs-pof" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Architectural Position: PoA vs. PoF
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-it-works" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4337,6 +4348,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#architectural-position-poa-vs-pof" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Architectural Position: PoA vs. PoF
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-it-works" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4435,13 +4457,36 @@
 
 <h1 id="proof-of-federation-hierachainconsensusproof_of_federationpy">Proof of Federation (<code>hierachain/consensus/proof_of_federation.py</code>)</h1>
 <h2 id="overview">Overview</h2>
-<p><strong>Proof of Federation (PoF)</strong> is a consensus protocol designed specifically for <strong>Consortium</strong> networks, where multiple organizations (banks, hospitals, supply chain partners) jointly govern without any single entity holding absolute control. PoF combines PoA performance with the security of majority voting (Quorum).</p>
+<p><strong>Proof of Federation (PoF)</strong> is an Inter-MainChain consensus protocol designed specifically for <strong>Consortium Alliance</strong> networks. It enables multiple independent organizations (e.g., Hospital A, Hospital B, Insurance Z)—each operating their own autonomous MainChain—to securely exchange, verify, and reach consensus on cross-organizational event proofs <strong>without requiring a central RootChain or single authority</strong>.</p>
+<hr />
+<h2 id="architectural-position-poa-vs-pof">Architectural Position: PoA vs. PoF</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Consensus Mechanism</th>
+<th style="text-align: left;">Scope &amp; Purpose</th>
+<th style="text-align: left;">Governance Model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Proof of Authority (PoA)</strong></td>
+<td style="text-align: left;"><strong>Intra-Organization</strong> (Single MainChain + Sub-Chains)</td>
+<td style="text-align: left;">Designated Authority (Single-entity control within an enterprise)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Proof of Federation (PoF)</strong></td>
+<td style="text-align: left;"><strong>Inter-Organization</strong> (Peer-to-Peer MainChain Alliance)</td>
+<td style="text-align: left;">Equal Multi-Party Federation (Threshold Quorum without central RootChain)</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h2 id="how-it-works">How It Works</h2>
-<p>PoF uses a rotation model combined with multi-signature verification:
-1.  <strong>Leader Rotation</strong>: The Leader with block proposal rights is determined by a deterministic mathematical formula: <code>Leader = Validators[BlockIndex % TotalValidators]</code>. This prevents any node from permanently seizing control.
-2.  <strong>Quorum Voting</strong>: For a block to be valid, it needs not only the Leader's signature but also confirmation from a minimum number of nodes in the consortium (typically <strong>2/3 + 1</strong>).
-3.  <strong>Sorted Validator List</strong>: The list of participating nodes is automatically sorted by ID to ensure consistent block creation scheduling across the network.</p>
+<p>PoF uses a peer-to-peer federation rotation model combined with multi-signature verification:
+1.  <strong>Leader Rotation</strong>: The Leader with block proposal rights for a federation round is determined by a deterministic mathematical formula: <code>Leader = Validators[BlockIndex % TotalValidators]</code>. This prevents any single MainChain from monopolizing block creation.
+2.  <strong>Quorum Voting</strong>: For a cross-organizational block to be valid across independent MainChains, it requires multi-signature confirmation from a minimum threshold of consortium members (typically <strong>2/3 + 1</strong>).
+3.  <strong>Sorted Validator List</strong>: The list of participating MainChains is deterministically sorted across all nodes to guarantee schedule synchronization.</p>
 <hr />
 <h2 id="key-features">Key Features</h2>
 <div class="grid cards">

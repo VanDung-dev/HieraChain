@@ -4306,12 +4306,12 @@
 <tr>
 <td>Proof of Authority</td>
 <td>PoA</td>
-<td>Đồng thuận validator tĩnh; <code>hierachain/consensus/proof_of_authority.py</code>.</td>
+<td>PoA; đồng thuận Nội bộ 1 Doanh nghiệp; <code>hierachain/consensus/proof_of_authority.py</code>.</td>
 </tr>
 <tr>
 <td>Proof of Federation</td>
 <td>PoF</td>
-<td>Đồng thuận liên minh; <code>hierachain/consensus/proof_of_federation.py</code>.</td>
+<td>PoF; đồng thuận Liên minh Ngang hàng giữa các MainChain độc lập; <code>hierachain/consensus/proof_of_federation.py</code>.</td>
 </tr>
 <tr>
 <td>API Key</td>
@@ -4321,37 +4321,37 @@
 <tr>
 <td>Resource Guard</td>
 <td>Resource Guard</td>
-<td>Middleware bảo vệ tài nguyên; <code>hierachain/security/resource_guard.py</code>.</td>
+<td>Middleware bảo vệ tài nguyên; <code>hierachain/security/brute_force_protector.py</code>.</td>
 </tr>
 <tr>
 <td>Entity Tracer</td>
 <td>Truy vết thực thể</td>
-<td>Truy vết Event theo thực thể; <code>hierachain/domains/generic/utils/entity_tracer.py</code>.</td>
+<td>Truy vết sự kiện theo entity; <code>hierachain/domains/utils/entity_tracer.py</code>.</td>
 </tr>
 <tr>
 <td>Zero‑Knowledge Proof</td>
 <td>Bằng chứng ZK</td>
-<td>Bằng chứng không tiết lộ; <code>hierachain/security/zk_prover.py</code>, <code>hierachain/security/verify/zk_verifier.py</code>.</td>
+<td>ZK Proof; <code>hierachain/security/zk_prover.py</code>, <code>hierachain/security/verify/zk_verifier.py</code>.</td>
 </tr>
 <tr>
 <td>Proof Aggregation</td>
 <td>Gộp bằng chứng</td>
-<td>Gộp/đóng gói nhiều proof; <code>hierachain/hierarchical/proof_aggregation.py</code>.</td>
+<td>Gom nhóm nhiều proof; <code>hierachain/hierarchical/proof_aggregation/aggregator.py</code>.</td>
 </tr>
 <tr>
 <td>Rebalancer</td>
 <td>Rebalancer</td>
-<td>Tự động chia tách/cân bằng Sub‑Chain; <code>hierachain/hierarchical/rebalancer.py</code>.</td>
+<td>Tự động tách/cân bằng Sub-Chain; <code>hierachain/hierarchical/rebalancer/rebalancer.py</code>.</td>
 </tr>
 <tr>
 <td>Channel</td>
 <td>Kênh</td>
-<td>Kênh riêng tư liên tổ chức; <code>hierachain/hierarchical/channel.py</code>.</td>
+<td>Kênh riêng tư giữa các tổ chức; <code>hierachain/hierarchical/channel/channel.py</code>.</td>
 </tr>
 <tr>
 <td>Multi‑Organization</td>
 <td>Đa tổ chức</td>
-<td>Mạng đa tổ chức; <code>hierachain/hierarchical/multi_org.py</code>.</td>
+<td>Mạng nhiều tổ chức; <code>hierachain/hierarchical/multi_org.py</code>.</td>
 </tr>
 <tr>
 <td>Private Data</td>
@@ -4366,22 +4366,22 @@
 <tr>
 <td>Rate Limiting</td>
 <td>Rate limit</td>
-<td>Giới hạn tốc độ request; cấu hình trong <code>hierachain/config/settings.py</code>.</td>
+<td>Giới hạn tần suất yêu cầu; cấu hình trong <code>hierachain/config/settings.py</code>.</td>
 </tr>
 <tr>
 <td>HTTP Strict Transport Security</td>
 <td>HSTS</td>
-<td>Chính sách bắt buộc HTTPS; <code>hierachain/config/settings.py</code>.</td>
+<td>HSTS; <code>hierachain/config/settings.py</code>.</td>
 </tr>
 <tr>
 <td>Cross‑Origin Resource Sharing</td>
 <td>CORS</td>
-<td>Cấu hình nguồn gốc chéo; <code>hierachain/config/settings.py</code>.</td>
+<td>CORS; <code>hierachain/config/settings.py</code>.</td>
 </tr>
 <tr>
 <td>Command Line Interface</td>
 <td>CLI</td>
-<td>Công cụ dòng lệnh <code>hrc</code>; <code>hierachain/cli/*</code>.</td>
+<td>CLI công cụ <code>hrc</code>; <code>hierachain/cli/*</code>.</td>
 </tr>
 <tr>
 <td>API Ledger</td>
@@ -4401,12 +4401,12 @@
 <tr>
 <td>Cross‑level State Sync</td>
 <td>Đồng bộ liên tầng</td>
-<td>Đồng bộ trạng thái giữa các tầng; <code>hierachain/cluster/state_sync_manager.py</code>.</td>
+<td>Đồng bộ trạng thái đa tầng; <code>hierachain/cluster/state_sync_manager.py</code>.</td>
 </tr>
 <tr>
 <td>Kubernetes Namespace</td>
 <td>Kubernetes Namespace</td>
-<td>Cô lập Sub‑Chain theo namespace; <code>hierachain/hierarchical/k8s_namespace_manager.py</code>.</td>
+<td>Phân lập namespace cho Sub-Chain; <code>hierachain/hierarchical/k8s_namespace_manager/operations.py</code>.</td>
 </tr>
 <tr>
 <td>Identity Manager</td>

@@ -4501,17 +4501,17 @@
 </tr>
 <tr>
 <td><strong>Main Chain</strong></td>
-<td><code>hierachain/hierarchical/main_chain.py</code></td>
+<td><code>hierachain/hierarchical/main_chain/base.py</code></td>
 <td>Main chain (Layer 1), stores Proof only and manages Sub-chains.</td>
 </tr>
 <tr>
 <td><strong>Sub Chain</strong></td>
-<td><code>hierachain/hierarchical/sub_chain.py</code></td>
+<td><code>hierachain/hierarchical/sub_chain/base.py</code></td>
 <td>Sub chain (Layer 2), processes Domain data and creates Proof.</td>
 </tr>
 <tr>
 <td><strong>Hierarchy Manager</strong></td>
-<td><code>hierachain/hierarchical/hierarchy_manager.py</code></td>
+<td><code>hierachain/hierarchical/hierarchy_manager/base.py</code></td>
 <td>Coordinator managing Main/Sub-chain lifecycle.</td>
 </tr>
 </tbody>
@@ -4544,12 +4544,12 @@
 <tr>
 <td><strong>Proof of Authority</strong></td>
 <td><code>hierachain/consensus/proof_of_authority.py</code></td>
-<td>PoA consensus mechanism (for Dev/Testnet).</td>
+<td>PoA consensus mechanism (Intra-Organization).</td>
 </tr>
 <tr>
 <td><strong>Proof of Federation</strong></td>
 <td><code>hierachain/consensus/proof_of_federation.py</code></td>
-<td>PoF consensus mechanism (multi-organization).</td>
+<td>PoF consensus mechanism (Inter-Organization Consortium).</td>
 </tr>
 <tr>
 <td><strong>BFT Consensus</strong></td>
@@ -4575,17 +4575,17 @@
 </tr>
 <tr>
 <td><strong>API Ledger</strong></td>
-<td><code>hierachain/api/ledger/endpoints.py</code></td>
+<td><code>hierachain/api/ledger/router.py</code></td>
 <td>Basic API (Blocks, Chain info).</td>
 </tr>
 <tr>
 <td><strong>API Business</strong></td>
-<td><code>hierachain/api/business/endpoints.py</code></td>
+<td><code>hierachain/api/business/router.py</code></td>
 <td>Advanced API (Events, Domain).</td>
 </tr>
 <tr>
 <td><strong>API Admin</strong></td>
-<td><code>hierachain/api/admin/endpoints.py</code></td>
+<td><code>hierachain/api/admin/</code></td>
 <td>System API (Admin, Health).</td>
 </tr>
 <tr>
