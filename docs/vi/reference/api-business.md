@@ -10,7 +10,7 @@ API Busines mở rộng khả năng làm việc với các channel, dữ liệu 
 
 ## Các thành phần Mã nguồn
 
-* Định tuyến/Endpoint: `hierachain/api/business/endpoints.py`
+* Định tuyến/Endpoint: `hierachain/api/business/router.py`
 * Lược đồ dữ liệu (Tùy chọn): `hierachain/api/business/schemas.py`
 * Tích hợp Server: `hierachain/api/server.py` (đăng ký Business router)
 

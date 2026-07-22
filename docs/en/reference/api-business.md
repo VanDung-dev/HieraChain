@@ -10,7 +10,7 @@ API Business extends capabilities for working with channels, private data, domai
 
 ## Source Code Components
 
-* Router/Endpoints: `hierachain/api/business/endpoints.py`
+* Router/Endpoints: `hierachain/api/business/router.py`
 * (Optional) Schemas: `hierachain/api/business/schemas.py`
 * Server integration: `hierachain/api/server.py` (registers Business router)
 

@@ -14,9 +14,9 @@ This document maps concepts in technical documentation to specific source code f
 |---------|-----------|------|
 | **Blockchain (Base)** | `hierachain/core/blockchain.py` | Base class managing chain, adding blocks, integrity checks. |
 | **Block Structure** | `hierachain/core/block.py` | Defines Block structure (Index, Hash, Data, Proof). |
-| **Main Chain** | `hierachain/hierarchical/main_chain.py` | Main chain (Layer 1), stores Proof only and manages Sub-chains. |
-| **Sub Chain** | `hierachain/hierarchical/sub_chain.py` | Sub chain (Layer 2), processes Domain data and creates Proof. |
-| **Hierarchy Manager** | `hierachain/hierarchical/hierarchy_manager.py` | Coordinator managing Main/Sub-chain lifecycle. |
+| **Main Chain** | `hierachain/hierarchical/main_chain/base.py` | Main chain (Layer 1), stores Proof only and manages Sub-chains. |
+| **Sub Chain** | `hierachain/hierarchical/sub_chain/base.py` | Sub chain (Layer 2), processes Domain data and creates Proof. |
+| **Hierarchy Manager** | `hierachain/hierarchical/hierarchy_manager/base.py` | Coordinator managing Main/Sub-chain lifecycle. |
 
 ## Consensus & Ordering
 
@@ -25,8 +25,8 @@ This document maps concepts in technical documentation to specific source code f
 | **Ordering Service** | `hierachain/consensus/ordering/service.py` | Receives Events, orders them before Block creation. |
 | **Block Builder** | `hierachain/consensus/ordering/block_builder.py` | Builds blocks from ordered transactions. |
 | **Block Manager** | `hierachain/consensus/ordering/block_manager.py` | Manages block lifecycle in the ordering system. |
-| **Proof of Authority** | `hierachain/consensus/proof_of_authority.py` | PoA consensus mechanism (for Dev/Testnet). |
-| **Proof of Federation** | `hierachain/consensus/proof_of_federation.py` | PoF consensus mechanism (multi-organization). |
+| **Proof of Authority** | `hierachain/consensus/proof_of_authority.py` | PoA consensus mechanism (Intra-Organization). |
+| **Proof of Federation** | `hierachain/consensus/proof_of_federation.py` | PoF consensus mechanism (Inter-Organization Consortium). |
 | **BFT Consensus** | `hierachain/consensus/bft/consensus.py` | Byzantine Fault Tolerant consensus (for Production). |
 
 ## API & Interfaces
@@ -34,9 +34,9 @@ This document maps concepts in technical documentation to specific source code f
 | Concept | File Path | Role |
 |---------|-----------|------|
 | **API Server** | `hierachain/api/server.py` | FastAPI server entry point. |
-| **API Ledger** | `hierachain/api/ledger/endpoints.py` | Basic API (Blocks, Chain info). |
-| **API Business** | `hierachain/api/business/endpoints.py` | Advanced API (Events, Domain). |
-| **API Admin** | `hierachain/api/admin/endpoints.py` | System API (Admin, Health). |
+| **API Ledger** | `hierachain/api/ledger/router.py` | Basic API (Blocks, Chain info). |
+| **API Business** | `hierachain/api/business/router.py` | Advanced API (Events, Domain). |
+| **API Admin** | `hierachain/api/admin/` | System API (Admin, Health). |
 | **WebSocket Manager** | `hierachain/api/websocket/manager.py` | Manages real-time WebSocket connections. |
 | **GraphQL Schema** | `hierachain/api/graphql/schema.py` | GraphQL schema for flexible queries. |
 | **IPFS Client** | `hierachain/api/storage/ipfs_client.py` | Off-chain storage integration (AES-256-GCM). |
