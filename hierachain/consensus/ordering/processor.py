@@ -256,7 +256,7 @@ class OrderingExecutor:
     ) -> None:
         """Execute parallel batch signature verification using the process pool."""
         try:
-            if len(verification_items) < 15:
+            if len(verification_items) < 4:
                 results = verify_batch_signatures(verification_items)
             else:
                 results = await asyncio.to_thread(

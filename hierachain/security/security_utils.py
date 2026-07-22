@@ -171,6 +171,6 @@ def verify_batch_signatures(items: list[dict[str, Any]]) -> list[bool]:
     Returns:
         List of booleans corresponding to validity of each item.
     """
-    if len(items) < 15:
+    if len(items) < 4:
         return [_verify_single_item(item) for item in items]
     return list(_verify_thread_pool.map(_verify_single_item, items))
