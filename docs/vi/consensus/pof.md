@@ -8,16 +8,25 @@ icon: material/account-group-outline
 
 ## Tổng quan
 
-**Proof of Federation (PoF)** là giao thức đồng thuận được thiết kế dành riêng cho các mạng liên minh (**Consortium**), nơi nhiều tổ chức (ngân hàng, bệnh viện, đối tác cung ứng) cùng tham gia quản trị mà không có một đơn vị nào nắm quyền kiểm soát tuyệt đối. PoF kết hợp tính hiệu năng của PoA với tính bảo mật của cơ chế biểu quyết số đông (Quorum).
+**Proof of Federation (PoF)** là giao thức đồng thuận liên chuỗi (**Inter-MainChain**) được thiết kế dành riêng cho các mạng liên minh tổ chức (**Consortium Alliance**). PoF cho phép nhiều tổ chức độc lập (ví dụ: Bệnh viện A, Bệnh viện B, Bảo hiểm Z)—mỗi bên tự vận hành một MainChain riêng—có thể trao đổi, xác thực và đạt được đồng thuận trên các bằng chứng sự kiện liên tổ chức **mà không cần một RootChain trung tâm hay một thẩm quyền tối cao nào cai trị**.
+
+---
+
+## Vị trí Kiến trúc: PoA vs. PoF
+
+| Giao thức Đồng thuận | Phạm vi & Mục đích | Mô hình Quản trị |
+| :--- | :--- | :--- |
+| **Proof of Authority (PoA)** | **Nội bộ 1 Tổ chức** (1 MainChain + các Sub-Chains) | Thẩm quyền chỉ định (Single-entity control trong nội bộ doanh nghiệp) |
+| **Proof of Federation (PoF)** | **Liên minh đa Tổ chức** (Peer-to-Peer MainChain Alliance) | Liên bang Ngang hàng (Threshold Quorum không cần RootChain) |
 
 ---
 
 ## Cơ chế Hoạt động
 
-PoF sử dụng mô hình luân phiên kết hợp với xác thực đa chữ ký:
-1.  **Xoay vòng Lãnh đạo (Leader Rotation)**: Leader có quyền đề xuất khối được xác định bằng công thức toán học xác định: `Leader = Validators[BlockIndex % TotalValidators]`. Điều này ngăn chặn bất kỳ nút nào chiếm quyền điều hành vĩnh viễn.
-2.  **Biểu quyết Quorum**: Để một khối được coi là hợp lệ, nó không chỉ cần chữ ký của Leader mà còn cần sự xác nhận của một số lượng nút tối thiểu trong liên minh (thường là **2/3 + 1**).
-3.  **Danh sách Validator Sắp xếp**: Danh sách các nút tham gia được tự động sắp xếp theo ID để đảm bảo tính nhất quán của lịch trình tạo khối trên toàn mạng lưới.
+PoF sử dụng mô hình luân phiên liên bang ngang hàng kết hợp với xác thực đa chữ ký:
+1.  **Xoay vòng Lãnh đạo (Leader Rotation)**: Leader có quyền đề xuất khối liên minh cho mỗi lượt được xác định bằng công thức toán học: `Leader = Validators[BlockIndex % TotalValidators]`. Điều này ngăn chặn bất kỳ MainChain nào thao túng độc quyền lượt tạo khối.
+2.  **Biểu quyết Quorum**: Để một khối sự kiện liên tổ chức được xác nhận hợp lệ giữa các MainChain độc lập, nó cần đa chữ ký xác thực từ một ngưỡng tối thiểu các thành viên liên minh (thường là **2/3 + 1**).
+3.  **Danh sách Validator Sắp xếp**: Danh sách các MainChain tham gia được tự động sắp xếp đồng bộ trên tất cả các nút để đảm bảo tính nhất quán của lịch trình tạo khối.
 
 ---
 

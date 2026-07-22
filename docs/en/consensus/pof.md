@@ -8,16 +8,25 @@ icon: material/account-group-outline
 
 ## Overview
 
-**Proof of Federation (PoF)** is a consensus protocol designed specifically for **Consortium** networks, where multiple organizations (banks, hospitals, supply chain partners) jointly govern without any single entity holding absolute control. PoF combines PoA performance with the security of majority voting (Quorum).
+**Proof of Federation (PoF)** is an Inter-MainChain consensus protocol designed specifically for **Consortium Alliance** networks. It enables multiple independent organizations (e.g., Hospital A, Hospital B, Insurance Z)—each operating their own autonomous MainChain—to securely exchange, verify, and reach consensus on cross-organizational event proofs **without requiring a central RootChain or single authority**.
+
+---
+
+## Architectural Position: PoA vs. PoF
+
+| Consensus Mechanism | Scope & Purpose | Governance Model |
+| :--- | :--- | :--- |
+| **Proof of Authority (PoA)** | **Intra-Organization** (Single MainChain + Sub-Chains) | Designated Authority (Single-entity control within an enterprise) |
+| **Proof of Federation (PoF)** | **Inter-Organization** (Peer-to-Peer MainChain Alliance) | Equal Multi-Party Federation (Threshold Quorum without central RootChain) |
 
 ---
 
 ## How It Works
 
-PoF uses a rotation model combined with multi-signature verification:
-1.  **Leader Rotation**: The Leader with block proposal rights is determined by a deterministic mathematical formula: `Leader = Validators[BlockIndex % TotalValidators]`. This prevents any node from permanently seizing control.
-2.  **Quorum Voting**: For a block to be valid, it needs not only the Leader's signature but also confirmation from a minimum number of nodes in the consortium (typically **2/3 + 1**).
-3.  **Sorted Validator List**: The list of participating nodes is automatically sorted by ID to ensure consistent block creation scheduling across the network.
+PoF uses a peer-to-peer federation rotation model combined with multi-signature verification:
+1.  **Leader Rotation**: The Leader with block proposal rights for a federation round is determined by a deterministic mathematical formula: `Leader = Validators[BlockIndex % TotalValidators]`. This prevents any single MainChain from monopolizing block creation.
+2.  **Quorum Voting**: For a cross-organizational block to be valid across independent MainChains, it requires multi-signature confirmation from a minimum threshold of consortium members (typically **2/3 + 1**).
+3.  **Sorted Validator List**: The list of participating MainChains is deterministically sorted across all nodes to guarantee schedule synchronization.
 
 ---
 

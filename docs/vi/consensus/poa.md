@@ -8,7 +8,9 @@ icon: material/account-check-outline
 
 ## Tổng quan
 
-**Proof of Authority (PoA)** là giao thức đồng thuận dựa trên danh tính, được tối ưu hóa cho các mạng blockchain riêng tư hoặc mạng nội bộ doanh nghiệp. Thay vì giải quyết các bài toán mật mã phức tạp (như mining), PoA dựa vào một nhóm các nút được cấp quyền (**Authorities**) để xác thực và đóng khối, giúp đạt được tốc độ giao dịch cực nhanh với độ trễ tối thiểu.
+**Proof of Authority (PoA)** là giao thức đồng thuận dựa trên định danh, được tối ưu hóa cho **nội bộ một Doanh nghiệp / Tổ chức** (1 MainChain quản lý các Sub-Chains thuộc các phân khu/tên miền nội bộ). Thay vì giải các bài toán mã hóa phức tạp (như khai thác), PoA dựa vào một nhóm các nút được ủy quyền (**Authorities**) do doanh nghiệp chỉ định để xác thực và đóng khối, đạt được tốc độ xử lý sự kiện cực nhanh (~0ms latency) với chi phí tài nguyên tối thiểu.
+
+Đối với kịch bản liên kết đồng thuận giữa các MainChain của nhiều doanh nghiệp độc lập, xem [Proof of Federation (PoF)](./pof.md).
 
 ---
 
