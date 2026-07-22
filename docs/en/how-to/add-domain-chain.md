@@ -61,7 +61,7 @@ manager.submit_proof_to_main_chain("supply_chain")
 print(manager.get_system_overview())
 ```
 
-Notes: The above methods follow `hierachain/hierarchical/hierarchy_manager.py`:
+Notes: The above methods follow `hierachain/hierarchical/hierarchy_manager/base.py`:
 
 * `create_sub_chain(name, domain_type, metadata=None)`
 * `start_operation(...)`, `complete_operation(...)`

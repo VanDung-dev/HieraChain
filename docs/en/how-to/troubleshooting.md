@@ -85,7 +85,7 @@ This page provides a checklist and quick diagnostic steps for common errors when
 
 ## business endpoints return errors
 
-* Verify that API business is loaded (see `hierachain/api/server.py` and `hierachain/api/business/endpoints.py`).
+* Verify that API business is loaded (see `hierachain/api/server.py` and `hierachain/api/business/router.py`).
 * Try the business health endpoint:
 
     ```bash

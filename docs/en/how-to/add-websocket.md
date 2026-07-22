@@ -216,4 +216,4 @@ Response:
 
 * API Module: [API](../modules/api.md)
 * API Ledger Reference: [API Ledger](../reference/api-ledger.md)
-* WebSocket Source: `hierachain/api/websocket_manager.py`, `hierachain/api/websocket_endpoints.py`
+* WebSocket Source: `hierachain/api/websocket/manager.py`, `hierachain/api/websocket/endpoints.py`

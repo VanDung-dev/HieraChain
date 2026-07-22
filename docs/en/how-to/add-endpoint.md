@@ -26,7 +26,7 @@ class PingResponse(BaseModel):
 
 ## Step 2: Add Handler in Router
 
-* Open `hierachain/api/ledger/endpoints.py`.
+* Open `hierachain/api/ledger/router.py`.
 * Import the schema (if any) and add a route to `APIRouter(prefix="/api/ledger", ...)`.
 
 Example (descriptive):

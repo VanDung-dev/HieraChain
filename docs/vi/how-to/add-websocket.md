@@ -216,4 +216,5 @@ Phản hồi mẫu:
 
 * API Module: [API](../modules/api.md)
 * Tài liệu API Ledger: [API Ledger](../reference/api-ledger.md)
-* Mã nguồn WebSocket: `hierachain/api/websocket_manager.py`, `hierachain/api/websocket_endpoints.py`
+* Mã nguồn WebSocket: `hierachain/api/websocket/manager.py`, `hierachain/api/websocket/endpoints.py`
+```

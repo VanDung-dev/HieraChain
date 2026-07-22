@@ -85,7 +85,7 @@ Trang này cung cấp checklist và các bước chẩn đoán nhanh cho các l�
 
 ## business endpoints trả lỗi
 
-* Xác minh API business đã được nạp (xem `hierachain/api/server.py` và `hierachain/api/business/endpoints.py`).
+* Xác minh API business đã được nạp (xem `hierachain/api/server.py` và `hierachain/api/business/router.py`).
 * Thử health business:
 
     ```bash
