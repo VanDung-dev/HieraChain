@@ -4,7 +4,7 @@ Proof submission and ZK proof functions for Sub-Chain.
 
 import time
 import logging
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, Callable, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hierachain.hierarchical.sub_chain.base import SubChain
@@ -46,7 +46,6 @@ def _get_old_state_root(chain: list[Any]) -> str:
     """Get the state root from the previous block."""
     previous_block = chain[-2] if len(chain) > 1 else None
     if previous_block is not None:
-        from typing import cast
         return cast(Any, previous_block).merkle_root
     return "genesis"
 

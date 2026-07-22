@@ -6,10 +6,13 @@ for the HieraChain Ledger where specific authorities (Main Chain,
 Sub-Chains) have designated roles and permissions for block creation.
 """
 
+import os
+import sys
 import time
 import hashlib
 import logging
 from typing import Any
+import pyarrow as pa
 
 from hierachain.consensus.base_consensus import (
     BaseConsensus, _verify_block_zk_proof
@@ -201,7 +204,6 @@ class ProofOfAuthority(BaseConsensus):
                 }
             }
             # Append consensus event to Arrow table directly, avoiding dict → Arrow round-trip
-            import pyarrow as pa
             consensus_arrow = convert_events_to_arrow([consensus_event])
             merged_events = pa.concat_tables([block.events, consensus_arrow])
             events_list = table_to_list_of_dicts(merged_events)
@@ -251,8 +253,6 @@ class ProofOfAuthority(BaseConsensus):
         authority_id, signature, public_key, details = metadata
 
         # Allow placeholder mock signatures in tests
-        import os
-        import sys
         is_testing = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
         if is_testing and signature.startswith("valid_"):
             return True
@@ -353,8 +353,6 @@ def _create_authority_signature(
 
     # Fallback to random signature for tests running without proper keys setup
     # In test mode, prefix with 'valid_' so verification recognizes mock signatures
-    import os
-    import sys
     is_testing = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
     if is_testing:
         return "valid_" + hashlib.sha256(sig_str.encode()).hexdigest()

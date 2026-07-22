@@ -65,12 +65,11 @@ class SQLBase(ABC):
     @staticmethod
     def _create_block_data(block_row: Any, events: list[dict[str, Any]]) -> dict[str, Any]:
         """Create block data dictionary from database row and events."""
-        import orjson as _orjson
         metadata = {}
         try:
             raw = block_row['metadata_json']
             if raw:
-                metadata = _orjson.loads(raw) if isinstance(raw, (str, bytes)) else raw
+                metadata = orjson.loads(raw) if isinstance(raw, (str, bytes)) else raw
         except (KeyError, IndexError, TypeError):
             pass
         merkle_root = metadata.get("merkle_root", "") if isinstance(metadata, dict) else ""
@@ -482,10 +481,16 @@ class SQLBase(ABC):
 
     def _execute_save_block(self, conn: Any, block_data: dict[str, Any]) -> bool:
         """Default SQLite implementation — upsert block then insert events."""
-        import orjson as _orjson
         cursor = conn.cursor()
         chain_name = str(block_data.get("chain_name", ""))
         idx = block_data["index"]
+
+        # Ensure parent chain record exists to satisfy Foreign Key constraints
+        if chain_name:
+            cursor.execute(
+                "INSERT OR IGNORE INTO chains (name, chain_type, created_at, updated_at) VALUES (?, ?, ?, ?)",
+                (chain_name, "sub", time.time(), time.time()),
+            )
 
         # Remove existing block at same position (cascade deletes events via FK)
         cursor.execute(
@@ -517,7 +522,7 @@ class SQLBase(ABC):
                 block_data["timestamp"],
                 block_data.get("nonce", 0),
                 len(events),
-                _orjson.dumps(metadata).decode("utf-8") if metadata else None,
+                orjson.dumps(metadata).decode("utf-8") if metadata else None,
             ),
         )
 
@@ -536,7 +541,7 @@ class SQLBase(ABC):
                     event.get("entity_id"),
                     event.get("event", "unknown"),
                     event.get("timestamp", 0.0),
-                    _orjson.dumps(event).decode("utf-8"),
+                    orjson.dumps(event).decode("utf-8"),
                     event.get("submitted_by") or event.get("sender_id"),
                 ),
             )
@@ -630,7 +635,6 @@ class SQLBase(ABC):
     @staticmethod
     def _execute_get_event_by_id(cursor: Any, event_id: str) -> dict[str, Any] | None:
         """Default SQLite implementation."""
-        import orjson as _orjson
         cursor.execute(
             "SELECT * FROM events WHERE event_id = ? LIMIT 1", (event_id,)
         )
@@ -642,7 +646,7 @@ class SQLBase(ABC):
             "status": "ordered",
             "block_hash": row["block_hash"],
             "timestamp": row["timestamp"],
-            "data": _orjson.loads(row["data"]) if row["data"] else {},
+            "data": orjson.loads(row["data"]) if row["data"] else {},
         }
 
     def update_state(self, key: str, value: Any, last_block_hash: str) -> None:
@@ -659,8 +663,6 @@ class SQLBase(ABC):
         conn: Any, key: str, value: Any, last_block_hash: str,
     ) -> None:
         """Default SQLite implementation."""
-        import orjson as _orjson
-        import time as _time
         cursor = conn.cursor()
         cursor.execute(
             """
@@ -673,9 +675,9 @@ class SQLBase(ABC):
             """,
             (
                 key,
-                _orjson.dumps(value).decode("utf-8"),
+                orjson.dumps(value).decode("utf-8") if not isinstance(value, (str, bytes)) else value,
                 last_block_hash,
-                _time.time(),
+                time.time(),
             ),
         )
         conn.commit()

@@ -5,7 +5,7 @@ SubChainRebalancer — manages dynamic sub-chain rebalancing through automatic s
 import logging
 import threading
 import time
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from hierachain.hierarchical.rebalancer.types import (
     RebalanceMetrics,
@@ -234,7 +234,6 @@ class SubChainRebalancer:
 
         k8s_manager = self._k8s_manager
         if k8s_manager is not None:
-            from typing import cast
             cast(Any, k8s_manager).create_namespace(child_id)
 
         return child

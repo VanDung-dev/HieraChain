@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -253,7 +254,6 @@ class NetworkClient:
         
         # Internal ping-pong for testing
         if message.get("type") == "ping":
-            import uuid
             pong_msg = {
                 "type": "pong",
                 "timestamp": time.time(),

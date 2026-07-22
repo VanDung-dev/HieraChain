@@ -10,6 +10,7 @@ import time
 import orjson
 import hashlib
 import secrets
+import warnings
 
 from hierachain.core.cache import AdvancedCache
 from hierachain.security.secure_logging import SecureLogger
@@ -196,8 +197,6 @@ class KeyManager:
                     - verify_signatures: bool, default True.
                       Set to False for testing only!
         """
-        import warnings
-        
         if config is None:
             config = {}
         

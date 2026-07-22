@@ -11,6 +11,7 @@ Features:
 """
 
 import time
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
@@ -217,7 +218,6 @@ class StateSyncManager:
         safe_node = cast(Any, zmq_node)
 
         try:
-            import asyncio
             try:
                 asyncio.get_running_loop()
                 asyncio.create_task(

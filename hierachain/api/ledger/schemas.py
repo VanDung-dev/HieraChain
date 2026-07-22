@@ -13,6 +13,7 @@ IPFS Integration:
 """
 
 from typing import Any
+import orjson
 from pydantic import (
     BaseModel, Field, ConfigDict, field_validator
 )
@@ -96,7 +97,6 @@ class EventRequest(BaseModel):
             return v
         
         # Check size (approximate via string conversion)
-        import orjson
         if len(orjson.dumps(v)) > 1024 * 1024:
             raise ValueError("Event details exceed 1MB size limit")
 

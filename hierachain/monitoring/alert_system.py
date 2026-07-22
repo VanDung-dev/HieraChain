@@ -12,6 +12,7 @@ import logging
 import threading
 import orjson
 import statistics
+import httpx
 from collections import deque, defaultdict
 from datetime import datetime
 from typing import Any, cast
@@ -113,7 +114,6 @@ class WebhookNotifier:
         if not self.enabled or not webhook_url:
             return False
         try:
-            import httpx
             payload = alert.to_dict()
             response = httpx.post(
                 cast(str, webhook_url),

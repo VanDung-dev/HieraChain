@@ -11,6 +11,7 @@ and sanitize output before returning to clients to prevent:
 
 import re
 import html
+import time
 from typing import Any
 import logging
 
@@ -295,7 +296,6 @@ def validate_timestamp(
     Raises:
         ValidationError: If timestamp is too far from current time.
     """
-    import time
     current_time = time.time()
 
     if timestamp < 0:

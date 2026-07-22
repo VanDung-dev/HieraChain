@@ -8,6 +8,7 @@ system activities, risk events, and mitigation actions.
 from __future__ import annotations
 
 import time
+import sqlite3
 import orjson
 import logging
 import threading
@@ -62,7 +63,6 @@ class DatabaseAuditStorage(AuditStorage):
         self._init_db()
 
     def _init_db(self):
-        import sqlite3
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
@@ -91,7 +91,6 @@ class DatabaseAuditStorage(AuditStorage):
             conn.close()
 
     def store_event(self, event: AuditEvent) -> bool:
-        import sqlite3
         conn = None
         try:
             conn = sqlite3.connect(self.db_path)
@@ -128,7 +127,6 @@ class DatabaseAuditStorage(AuditStorage):
     def retrieve_events(
         self, filter_criteria: AuditFilter, limit: int | None = None
     ) -> list[AuditEvent]:
-        import sqlite3
         conn = None
         try:
             conn = sqlite3.connect(self.db_path)
@@ -177,7 +175,6 @@ class DatabaseAuditStorage(AuditStorage):
                 conn.close()
 
     def get_event_count(self, filter_criteria: AuditFilter) -> int:
-        import sqlite3
         conn = None
         try:
             conn = sqlite3.connect(self.db_path)
@@ -211,8 +208,6 @@ class DatabaseAuditStorage(AuditStorage):
     def cleanup_old_events(self, max_age_seconds: float) -> int:
         """Remove audit events older than max_age_seconds."""
         # ponytail: simple DELETE statement with timestamp check
-        import sqlite3
-        import time
         conn = None
         try:
             conn = sqlite3.connect(self.db_path)

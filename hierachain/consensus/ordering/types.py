@@ -2,6 +2,7 @@
 Ordering storage handler for the HieraChain ordering service.
 """
 
+import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -61,6 +62,5 @@ class OrderingNode:
     
     def is_healthy(self, timeout: float = 30.0) -> bool:
         """Check if node is healthy based on heartbeat"""
-        import time
         return (time.time() - self.last_heartbeat) < timeout
 

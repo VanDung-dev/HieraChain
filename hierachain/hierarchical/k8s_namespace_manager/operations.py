@@ -2,6 +2,7 @@
 K8s operations — real and mock implementations for namespace lifecycle management.
 """
 
+import os
 import logging
 from typing import Any
 
@@ -42,7 +43,6 @@ def _get_namespace_resources_mock(
 
 
 def _load_kubeconfig_file(manager: Any) -> bool:
-    import os
     if not os.path.exists(manager.kubeconfig_path):
         logger.info(
             "Kubeconfig not found at %s, falling back to mock mode",
@@ -59,7 +59,6 @@ def _load_default_kubeconfig(manager: Any) -> bool:
         config.load_incluster_config()
         return False
     except config.ConfigException:
-        import os
         default_kubeconfig = os.path.expanduser("~/.kube/config")
         if not os.path.exists(default_kubeconfig):
             logger.info(
