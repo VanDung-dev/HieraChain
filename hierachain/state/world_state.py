@@ -49,12 +49,13 @@ class WorldState:
         with self._lock:
             if not self._states:
                 return "0" * 64
-            sorted_items = sorted(self._states.items())
-            leaves = [
-                {"entity_id": eid, **state}
-                for eid, state in sorted_items
-            ]
-            return MerkleTree(leaves).get_root()
+            snapshot = dict(self._states)
+        sorted_items = sorted(snapshot.items())
+        leaves = [
+            {"entity_id": eid, **state}
+            for eid, state in sorted_items
+        ]
+        return MerkleTree(leaves).get_root()
 
     def state_count(self) -> int:
         with self._lock:
