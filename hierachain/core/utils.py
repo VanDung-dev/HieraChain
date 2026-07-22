@@ -271,23 +271,21 @@ _FORBIDDEN_CRYPTO_PATTERN = re.compile(
 
 
 def validate_no_cryptocurrency_terms(data: Any) -> bool:
-    """
-    Validate that data doesn't contain standalone cryptocurrency terminology.
-    This function uses fast serialization and regular expressions to avoid recursion.
-
-    Returns:
-        True if no cryptocurrency terms found, False otherwise
-    """
-    if isinstance(data, (dict, list)):
-        try:
-            serialized = orjson.dumps(data)
-            data_string = serialized.decode('utf-8').lower()
-        except orjson.JSONEncodeError:
-            data_string = str(data).lower()
-    else:
-        data_string = str(data).lower()
-
-    return _FORBIDDEN_CRYPTO_PATTERN.search(data_string) is None
+    """Validate that data doesn't contain standalone cryptocurrency terminology."""
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if isinstance(key, str) and _FORBIDDEN_CRYPTO_PATTERN.search(key.lower()):
+                return False
+            if isinstance(value, str) and _FORBIDDEN_CRYPTO_PATTERN.search(value.lower()):
+                return False
+            if isinstance(value, (dict, list)) and not validate_no_cryptocurrency_terms(value):
+                return False
+        return True
+    if isinstance(data, list):
+        return all(validate_no_cryptocurrency_terms(item) for item in data)
+    if isinstance(data, str):
+        return _FORBIDDEN_CRYPTO_PATTERN.search(data.lower()) is None
+    return _FORBIDDEN_CRYPTO_PATTERN.search(str(data).lower()) is None
 
 
 def get_block_events(block: Any) -> list[dict[str, Any]]:
