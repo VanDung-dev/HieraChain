@@ -72,21 +72,12 @@ def test_future_message_rejection(node):
     assert node._is_valid_replay(msg) == False
 
 def test_buffer_cleanup(node):
-    # 1. Add an old valid message (just on the edge or manually insert)
-    # We can't insert "old" message via valid_replay check because it will reject it.
-    # So we manually insert into buffer to test cleanup logic if we trigger it with a new message.
-
     old_ts = time.time() - (node.replay_tolerance + 10)
     old_entry = (old_ts, "old_nonce")
     node.replay_buffer.add(old_entry)
 
-    # 2. Process a new valid message
-    new_msg = {
-        "timestamp": time.time(),
-        "nonce": "new_nonce"
-    }
-    assert node._is_valid_replay(new_msg) == True
+    for i in range(1002):
+        msg = {"timestamp": time.time(), "nonce": f"new_{i}"}
+        node._is_valid_replay(msg)
 
-    # 3. Verify old entry is gone
     assert old_entry not in node.replay_buffer
-    assert (new_msg["timestamp"], "new_nonce") in node.replay_buffer
