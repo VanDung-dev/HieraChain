@@ -4434,8 +4434,21 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (89)</summary>
+<summary>Improvements (97)</summary>
 <ul>
+<li>
+<p>2026-07-22</p>
+<ul>
+<li><strong>API</strong>: Bổ sung thư viện <code>uvloop</code> và kích hoạt event loop bất đồng bộ hiệu năng cao trong API Server.</li>
+<li><strong>Blockchain</strong>: Bổ sung chỉ mục <code>event_type_index</code> trên <code>Blockchain</code> và hàm <code>to_event_list</code> trên <code>Block</code> cho phép tra cứu sự kiện theo loại với độ phức tạp O(1).</li>
+<li><strong>Cache</strong>: Thay thế danh sách mặc định bằng <code>OrderedDict</code> cho quản lý thứ tự LRU/TTL và đơn giản hóa vòng đời thread dọn dẹp.</li>
+<li><strong>Bảo mật</strong>: Tái cấu trúc logic kiểm duyệt thuật ngữ crypto bằng phương pháp duyệt đệ quy, loại bỏ serialization JSON tốn kém.</li>
+<li><strong>Hierarchical</strong>: Tối ưu hóa <code>HierarchyManager</code> sử dụng chung ngữ cảnh thread pool executor, giảm overhead khởi tạo thread khi đồng bộ proof.</li>
+<li><strong>State</strong>: Khắc phục lỗi tranh chấp (race condition) khi tính toán Root Hash trong <code>WorldState</code> bằng cách đưa sắp xếp và dựng Merkle Tree ra ngoài phạm vi Lock.</li>
+<li><strong>Mạng</strong>: Tối ưu hóa bộ đệm Replay Buffer trong ZMQ Transport với cơ chế chỉ dọn dẹp khi kích thước vượt ngưỡng (&gt;1000 entries).</li>
+<li><strong>Đồng thuận</strong>: Hạ ngưỡng kích hoạt xác minh chữ ký hàng loạt từ 15 xuống 4 để tận dụng tăng tốc đa luồng sớm hơn.</li>
+</ul>
+</li>
 <li>
 <p>2026-07-18</p>
 <ul>

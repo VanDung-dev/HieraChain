@@ -4434,8 +4434,21 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (89)</summary>
+<summary>Improvements (97)</summary>
 <ul>
+<li>
+<p>2026-07-22</p>
+<ul>
+<li><strong>API</strong>: Integrated <code>uvloop</code> dependency and enabled high-performance async event loop support in API server.</li>
+<li><strong>Blockchain</strong>: Introduced <code>event_type_index</code> on <code>Blockchain</code> and <code>to_event_list</code> on <code>Block</code> for O(1) event type lookups.</li>
+<li><strong>Cache</strong>: Replaced standard list with <code>OrderedDict</code> for LRU/TTL access ordering and simplified thread cleanup lifecycle.</li>
+<li><strong>Security</strong>: Refactored cryptocurrency term validation with recursive structure traversal, replacing expensive JSON regex serialization.</li>
+<li><strong>Hierarchical</strong>: Optimized <code>HierarchyManager</code> to use a shared thread pool executor context, reducing thread creation overhead during proof sync.</li>
+<li><strong>State</strong>: Resolved race condition in <code>WorldState</code> root hash calculation by moving sorting and Merkle tree construction out of the lock.</li>
+<li><strong>Network</strong>: Optimized ZMQ transport replay buffer management with threshold-based cleanup (&gt;1000 entries).</li>
+<li><strong>Consensus</strong>: Lowered parallel signature verification batch threshold from 15 to 4 for earlier multi-threading acceleration.</li>
+</ul>
+</li>
 <li>
 <p>2026-07-18</p>
 <ul>
