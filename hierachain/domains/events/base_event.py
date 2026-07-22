@@ -10,9 +10,7 @@ import time
 from typing import Any
 from abc import ABC, abstractmethod
 
-from hierachain.core.utils import (
-    validate_event_structure, validate_no_cryptocurrency_terms
-)
+from hierachain.core.utils import validate_event_structure
 
 
 class BaseEvent(ABC):
@@ -58,13 +56,9 @@ class BaseEvent(ABC):
         """
         event_dict = self.to_dict()
         
-        # Basic structure validation
+        # Basic structure validation (includes crypto term check)
         if not validate_event_structure(event_dict):
             raise ValueError("Invalid event structure")
-        
-        # Check for cryptocurrency terms
-        if not validate_no_cryptocurrency_terms(event_dict):
-            raise ValueError("Event contains forbidden cryptocurrency terminology")
         
         # Validate entity_id is used as metadata
         if not isinstance(self.entity_id, str) or not self.entity_id:
