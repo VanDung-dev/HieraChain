@@ -8,7 +8,16 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (97)"
+??? note "Improvements (108)"
+
+    * 2026-07-23
+
+        * **Kiểm thử (Tích hợp)**: Thêm `tests/integration/test_proof_of_federation_mesh.py` — bài kiểm thử tích hợp 2 pha chứng minh liên minh PoF đa-MainChain: Pha 1 chứng minh PoA từ chối các block từ tổ chức khác; Pha 2 xác nhận đồng thuận liên minh PoF giữa 3 node (Bệnh viện A, Bệnh viện B, Bảo hiểm Z) qua chữ ký đa phương Ed25519 và luân phiên lãnh đạo vòng tròn, không cần RootChain trung tâm.
+        * **Tái cấu trúc**: Chuyển toàn bộ import nội tuyến/muộn (`os`, `sys`, `time`, `uuid`, `asyncio`, `warnings`, `httpx`, `pyarrow`, `cast`) lên đầu file (module-level) trên 14 file nguồn, tuân thủ hoàn toàn PEP 8 về thứ tự import.
+        * **Tài liệu**: Định nghĩa lại **Proof of Authority (PoA)** là giao thức đồng thuận *Nội bộ Tổ chức* (một MainChain quản lý các Sub-Chain nội bộ) và **Proof of Federation (PoF)** là giao thức đồng thuận *Liên minh P2P giữa các MainChain độc lập* (không cần RootChain trung tâm), kèm bảng so sánh kiến trúc trong cả tài liệu tiếng Anh và tiếng Việt.
+        * **Tài liệu**: Đồng bộ hóa toàn bộ đường dẫn file lỗi thời trong `docs/en/` với cấu trúc thực tế của gói `hierachain/` — sửa 22 tham chiếu trong `architecture/`, `glossary.md`, `how-to/`, `reference/` (ví dụ: `main_chain.py` → `main_chain/base.py`, `endpoints.py` → `router.py`, `websocket_manager.py` → `websocket/manager.py`).
+        * **Tài liệu**: Bổ sung các file còn thiếu `docs/vi/reference/code-map.md` và `docs/vi/how-to/add-endpoint.md` để đạt tương đương 1:1 hoàn toàn giữa cây tài liệu tiếng Anh và tiếng Việt (cả hai đều có 90 file `.md`).
+        * **Tài liệu (vi)**: Đồng bộ hóa toàn bộ đường dẫn file và định nghĩa PoA/PoF đã cập nhật từ `docs/en/` sang toàn bộ bản gương `docs/vi/` — cập nhật các file tương đương trong `architecture/`, `glossary.md`, `how-to/`, `reference/`.
 
     * 2026-07-22
 

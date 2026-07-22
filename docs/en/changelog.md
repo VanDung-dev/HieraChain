@@ -8,7 +8,16 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (97)"
+??? note "Improvements (108)"
+
+    * 2026-07-23
+
+        * **Testing (Integration)**: Added `tests/integration/test_proof_of_federation_mesh.py` — a 2-phase integration test proving the PoF inter-MainChain consortium: Phase 1 demonstrates PoA rejection of cross-organizational blocks; Phase 2 confirms 3-node PoF federation consensus (Hospital A, Hospital B, Insurance Z) via Ed25519 multi-signatures and round-robin leadership, without a central RootChain.
+        * **Refactoring**: Moved all inline/late imports (`os`, `sys`, `time`, `uuid`, `asyncio`, `warnings`, `httpx`, `pyarrow`, `cast`) to module-level top-of-file across 14 source files, fully conforming to PEP 8 import ordering.
+        * **Docs**: Redefined **Proof of Authority (PoA)** as *Intra-Organization* consensus (single MainChain managing internal Sub-Chains) and **Proof of Federation (PoF)** as *Inter-Organization P2P MainChain Alliance* consensus (no central RootChain required), with architectural comparison tables in both English and Vietnamese docs.
+        * **Docs**: Synchronized all stale file paths in `docs/en/` against the actual `hierachain/` package layout — corrected 22 references across `architecture/`, `glossary.md`, `how-to/`, and `reference/` (e.g. `main_chain.py` → `main_chain/base.py`, `endpoints.py` → `router.py`, `websocket_manager.py` → `websocket/manager.py`).
+        * **Docs**: Added missing `docs/vi/reference/code-map.md` and `docs/vi/how-to/add-endpoint.md` to achieve full 1:1 parity between English and Vietnamese documentation trees (both now have 90 `.md` files).
+        * **Docs (vi)**: Synchronized all updated file paths and PoA/PoF definitions from `docs/en/` into the full `docs/vi/` mirror — updated `architecture/`, `glossary.md`, `how-to/`, `reference/` equivalents.
 
     * 2026-07-22
 
