@@ -8,7 +8,18 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (89)"
+??? note "Improvements (97)"
+
+    * 2026-07-22
+
+        * **API**: Integrated `uvloop` dependency and enabled high-performance async event loop support in API server.
+        * **Blockchain**: Introduced `event_type_index` on `Blockchain` and `to_event_list` on `Block` for O(1) event type lookups.
+        * **Cache**: Replaced standard list with `OrderedDict` for LRU/TTL access ordering and simplified thread cleanup lifecycle.
+        * **Security**: Refactored cryptocurrency term validation with recursive structure traversal, replacing expensive JSON regex serialization.
+        * **Hierarchical**: Optimized `HierarchyManager` to use a shared thread pool executor context, reducing thread creation overhead during proof sync.
+        * **State**: Resolved race condition in `WorldState` root hash calculation by moving sorting and Merkle tree construction out of the lock.
+        * **Network**: Optimized ZMQ transport replay buffer management with threshold-based cleanup (>1000 entries).
+        * **Consensus**: Lowered parallel signature verification batch threshold from 15 to 4 for earlier multi-threading acceleration.
 
     * 2026-07-18
 

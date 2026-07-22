@@ -8,7 +8,18 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (89)"
+??? note "Improvements (97)"
+
+    * 2026-07-22
+
+        * **API**: Bổ sung thư viện `uvloop` và kích hoạt event loop bất đồng bộ hiệu năng cao trong API Server.
+        * **Blockchain**: Bổ sung chỉ mục `event_type_index` trên `Blockchain` và hàm `to_event_list` trên `Block` cho phép tra cứu sự kiện theo loại với độ phức tạp O(1).
+        * **Cache**: Thay thế danh sách mặc định bằng `OrderedDict` cho quản lý thứ tự LRU/TTL và đơn giản hóa vòng đời thread dọn dẹp.
+        * **Bảo mật**: Tái cấu trúc logic kiểm duyệt thuật ngữ crypto bằng phương pháp duyệt đệ quy, loại bỏ serialization JSON tốn kém.
+        * **Hierarchical**: Tối ưu hóa `HierarchyManager` sử dụng chung ngữ cảnh thread pool executor, giảm overhead khởi tạo thread khi đồng bộ proof.
+        * **State**: Khắc phục lỗi tranh chấp (race condition) khi tính toán Root Hash trong `WorldState` bằng cách đưa sắp xếp và dựng Merkle Tree ra ngoài phạm vi Lock.
+        * **Mạng**: Tối ưu hóa bộ đệm Replay Buffer trong ZMQ Transport với cơ chế chỉ dọn dẹp khi kích thước vượt ngưỡng (>1000 entries).
+        * **Đồng thuận**: Hạ ngưỡng kích hoạt xác minh chữ ký hàng loạt từ 15 xuống 4 để tận dụng tăng tốc đa luồng sớm hơn.
 
     * 2026-07-18
 
