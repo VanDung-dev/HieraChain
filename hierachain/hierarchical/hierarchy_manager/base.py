@@ -6,8 +6,18 @@ from __future__ import annotations
 
 import time
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import TYPE_CHECKING, Any
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Iterator
+
+
+_SHARED_POOL = ThreadPoolExecutor(max_workers=os.cpu_count() or 4)
+
+
+@contextmanager
+def _shared_pool(max_workers: int = 8) -> Iterator[ThreadPoolExecutor]:
+    yield _SHARED_POOL
 
 from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.multi_org import MultiOrgNetwork
@@ -208,7 +218,7 @@ class HierarchyManager:
         names = list(self.sub_chains.keys())
         results: dict[str, bool] = {}
 
-        with ThreadPoolExecutor(max_workers=min(len(names), 8)) as pool:
+        with _shared_pool(max_workers=min(len(names), 8)) as pool:
             futures = {
                 pool.submit(self.submit_proof_to_main_chain, name): name
                 for name in names
@@ -224,9 +234,22 @@ class HierarchyManager:
         return results
 
     def sync_all_subchains_from_mainchain(self) -> dict[str, dict[str, Any]]:
-        results = {}
-        for name in self.sub_chains:
-            results[name] = self.cross_level_sync_subchain(name)
+        names = list(self.sub_chains.keys())
+        results: dict[str, dict[str, Any]] = {}
+
+        with _shared_pool(max_workers=min(len(names), 8)) as pool:
+            futures = {
+                pool.submit(self.cross_level_sync_subchain, name): name
+                for name in names
+            }
+            for future in as_completed(futures):
+                name = futures[future]
+                try:
+                    results[name] = future.result()
+                except Exception as e:
+                    logger.error("Sync failed for %s: %s", name, e)
+                    results[name] = {"success": False, "error_message": str(e)}
+
         return results
 
     def cross_level_sync_subchain(
