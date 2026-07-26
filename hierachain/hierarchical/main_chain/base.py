@@ -48,17 +48,19 @@ class MainChain(Blockchain):
         'proof_index', 'zk_verifier',
     )
 
-    def __init__(self, name: str = "MainChain"):
+    def __init__(self, name: str = "MainChain", consensus_type: str | None = None):
         """
         Initialize the Main Chain.
 
         Args:
             name: Name identifier for the Main Chain
+            consensus_type: Optional consensus type override ("proof_of_authority" or "proof_of_federation")
         """
         super().__init__(name)
 
         # Dynamic Consensus Loading
-        if settings.CONSENSUS_TYPE == "proof_of_federation":
+        target_consensus = consensus_type or settings.MAINCHAIN_CONSENSUS
+        if target_consensus == "proof_of_federation":
             self.consensus = ProofOfFederation("MainChain_PoF")
         else:
             # Default back to PoA

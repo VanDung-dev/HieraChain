@@ -76,8 +76,9 @@ class SubChain(Blockchain):
         self.custom_config = config
         self.node_identity = node_identity
 
-        # Dynamic Consensus Loading
-        if settings.CONSENSUS_TYPE == "proof_of_federation":
+        # Consensus Loading: SubChain defaults to PoA for intra-organization domain events
+        consensus_type = (config or {}).get("consensus_type", "proof_of_authority")
+        if consensus_type == "proof_of_federation":
             new_consensus = ProofOfFederation(f"{name}_PoF")
         else:
             new_consensus = ProofOfAuthority(f"{name}_PoA", block_interval=settings.BLOCK_INTERVAL)

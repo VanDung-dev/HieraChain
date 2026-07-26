@@ -42,10 +42,14 @@ class Settings:
     PROOF_SUBMISSION_INTERVAL = 300  # 5 minutes in seconds
     
     # Consensus settings
-    # Options:
-    # - "proof_of_authority" (Static/Centralized)
-    # - "proof_of_federation" (Dynamic/Consortium)
-    CONSENSUS_TYPE = os.getenv("HRC_CONSENSUS_TYPE", "proof_of_authority")
+    # MainChain Inter-Organization Consensus Type
+    # Options: "proof_of_federation" (Consortium Alliance default), "proof_of_authority" (Single MainChain)
+    MAINCHAIN_CONSENSUS = os.getenv(
+        "HRC_MAINCHAIN_CONSENSUS",
+        os.getenv("HRC_CONSENSUS_TYPE", "proof_of_authority")
+    )
+    # Backward compatibility alias
+    CONSENSUS_TYPE = MAINCHAIN_CONSENSUS
     BLOCK_INTERVAL = float(os.getenv("HRC_BLOCK_INTERVAL", "10.0"))
     CONSENSUS_FEDERATION_CONFIG: dict[str, Any] = {
         "min_validators": 3,
