@@ -28,22 +28,20 @@ Event là đơn vị dữ liệu nhỏ nhất, đại diện cho một hành đ�
 | `details_nonce` | `string` | **Encryption Nonce**. Khóa giải mã dữ liệu off-chain (dùng cho AES-GCM). |
 | `data` | `binary` | Payload dữ liệu chính (thành phần JSON nội bộ, bao gồm cả on-chain và off-chain refs). |
 
-### Transaction
+### Giao thức Cấu trúc Sự kiện (Event Schema)
 
-Transaction là lớp bao (wrapper) chứa Event cùng với chữ ký số và bằng chứng xác thực (ZK Proof).
+Các sự kiện (Event) được đóng gói cùng chữ ký số (Ed25519) và bằng chứng Zero-Knowledge trước khi gửi vào chuỗi:
 
-**Schema Definition (`hierachain.core.schemas.TRANSACTION_SCHEMA`):**
+**Định nghĩa Cấu trúc (`hierachain.core.schemas.EVENT_SCHEMA`):**
 
-| Field Name | Type (Arrow) | Mô tả |
-|------------|--------------|-------|
-| `tx_id` | `string` | Định danh duy nhất của giao dịch (UUID hoặc Hash). |
-| `entity_id` | `string` | Đồng bộ với Event entity_id. |
-| `event_type` | `string` | Đồng bộ với Event event. |
-| `arrow_payload` | `binary` | Dữ liệu Event đã được serialize theo chuẩn Arrow. |
-| `signature` | `string` | Chữ ký số của người tạo giao dịch (Ed25519/ECDSA). |
-| `timestamp` | `float64` | Thời điểm tạo giao dịch. |
-| `zk_proof` | `binary` | (Optional) Bằng chứng Zero-Knowledge để xác thực tính đúng đắn mà không lộ dữ liệu. |
-| `zk_public_inputs` | `binary` | (Optional) Input công khai đi kèm với ZK Proof. |
+| Tên trường | Kiểu dữ liệu (Arrow) | Mô tả |
+|------------|--------------|-------------|
+| `entity_id` | `string` | Mã định danh thực thể ảnh hưởng (ProductID, OrderID...). |
+| `event` | `string` | Tên loại sự kiện. |
+| `signature` | `string` | Chữ ký số của bên khởi tạo sự kiện. |
+| `timestamp` | `float64` | Thời gian khởi tạo sự kiện. |
+| `zk_proof` | `binary` | (Tùy chọn) Dữ liệu bằng chứng Zero-Knowledge. |
+| `zk_public_inputs` | `binary` | (Tùy chọn) Dữ liệu public inputs cho việc xác minh ZK Proof. |
 
 ### Block
 

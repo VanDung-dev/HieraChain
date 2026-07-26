@@ -109,7 +109,7 @@ According to HieraChain's philosophy, `CrossChainValidator` performs strict scan
 `EntityTracer` allows administrators to reconstruct the complete "journey" of an entity across multiple departments or chains:
 
 ```python
-from hierachain.domains.generic.utils.entity_tracer import EntityTracer
+from hierachain.domains.utils.entity_tracer import EntityTracer
 
 tracer = EntityTracer(hierarchy_manager)
 # Get the history of entity "ORDER-789" across the entire system

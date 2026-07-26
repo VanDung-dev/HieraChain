@@ -8,7 +8,7 @@ icon: material/tray-arrow-down
 
 ## Overview
 
-Events enter HieraChain as structured business operations, are validated, batched by the `OrderingService` into blocks, finalized by the configured **Proof** mechanism (PoA / PoF / BFT), then appended to the Sub-Chain. The consensus mechanism is a pluggable configuration (`HRC_CONSENSUS_TYPE`) — the overall flow is always identical. Only the `finalize_block()` step differs.
+Events enter HieraChain as structured business operations, are validated, batched by the `OrderingService` into blocks, finalized by the configured **Proof** mechanism (PoA / PoF / BFT), then appended to the Sub-Chain. The consensus mechanism for MainChain is pluggable (`HRC_MAINCHAIN_CONSENSUS`), while SubChain defaults to PoA for high-speed intra-org operations. The overall flow is always identical — only the `finalize_block()` step differs.
 
 For detailed PoA and PoF diagrams, see [Consensus Mechanisms](./consensus_mechanisms.md).
 

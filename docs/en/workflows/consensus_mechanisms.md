@@ -8,7 +8,7 @@ icon: material/sync
 
 **Related workflows**: [Event Submission](./event-submission.md) · [BFT Consensus](./bft-consensus.md)
 
-HieraChain supports three pluggable consensus mechanisms, configured via the `HRC_CONSENSUS_TYPE` environment variable. The event submission flow (Event Submission) is identical regardless of which mechanism is selected — only the `finalize_block()` step differs.
+HieraChain supports pluggable consensus mechanisms across layers. At the **MainChain (Inter-Organization Alliance)** level, consensus is configured via the `HRC_MAINCHAIN_CONSENSUS` environment variable (defaults to `proof_of_federation`). At the **SubChain (Intra-Organization)** level, domain event processing strictly defaults to **Proof of Authority (PoA)** for maximum speed (~0ms latency). The event submission flow ([Event Submission](./event-submission.md)) is identical regardless of which mechanism is selected — only the `finalize_block()` step differs.
 
 ---
 
@@ -17,19 +17,20 @@ HieraChain supports three pluggable consensus mechanisms, configured via the `HR
 | Aspect | PoA | PoF | BFT |
 |:-------|:----|:----|:----|
 | **Config value** | `proof_of_authority` | `proof_of_federation` | `byzantine_fault_tolerant` |
+| **Target Layer** | SubChain (Internal) / Single MainChain | MainChain Alliance (Inter-Org) | SubChain / MainChain BFT |
 | **Who finalizes** | Any registered authority | Only rotating leader: `Validators[index % n]` | 2f+1 of n validators via PBFT |
 | **Signature type** | Ed25519 (asymmetric) | SHA-256 federation signature | Aggregated PBFT votes |
 | **Leader rotation** | Optional round-robin | Enforced — deterministic by block index | View-based, changes on failure |
 | **ZK Proof check** | Optional | Enforced in `validate_block()` | N/A |
 | **Min validators** | 1 authority sufficient | ≥ 3 (`min_validators` config) | n ≥ 3f + 1 |
 | **Fault model** | Trust the authority identity | Distributed trust, tolerate absent validator | Tolerates up to f Byzantine nodes |
-| **Use case** | Private / internal networks | Consortium / multi-org | Critical / adversarial environments |
+| **Use case** | Intra-org domain chains | Consortium / multi-org MainChain alliance | Critical / adversarial environments |
 
 ---
 
 ## Proof of Authority (PoA)
 
-> Activated when `HRC_CONSENSUS_TYPE=proof_of_authority` (default).
+> Default for SubChains, or when `HRC_MAINCHAIN_CONSENSUS=proof_of_authority` on MainChain.
 > A single pre-registered authority signs the block with its Ed25519 private key.
 
 ```mermaid
@@ -64,7 +65,7 @@ sequenceDiagram
 
 ## Proof of Federation (PoF)
 
-> Activated when `HRC_CONSENSUS_TYPE=proof_of_federation`.
+> Default for MainChains when `HRC_MAINCHAIN_CONSENSUS=proof_of_federation`.
 > Leader is elected deterministically by block index. ZK proof is enforced.
 
 ```mermaid
@@ -102,7 +103,7 @@ sequenceDiagram
 
 ## Byzantine Fault Tolerance (BFT / PBFT)
 
-> Activated when `HRC_CONSENSUS_TYPE=byzantine_fault_tolerant`.
+> Activated when `HRC_MAINCHAIN_CONSENSUS=byzantine_fault_tolerant`.
 > Full 3-phase PBFT. See [BFT Consensus](./bft-consensus.md) for the complete flow.
 
 **Requirements**: n ≥ 3f + 1 nodes to tolerate f faulty nodes.
@@ -115,6 +116,6 @@ sequenceDiagram
 
 | Variable | Values | Description |
 |:---------|:-------|:------------|
-| `HRC_CONSENSUS_TYPE` | `proof_of_authority` (default), `proof_of_federation`, `byzantine_fault_tolerant` | Active consensus mechanism |
+| `HRC_MAINCHAIN_CONSENSUS` | `proof_of_federation` (default), `proof_of_authority`, `byzantine_fault_tolerant` | MainChain inter-org consensus mechanism |
 | `HRC_ENABLE_ZK_PROOFS` | `true` / `false` | Toggle ZK verification (required for PoF production) |
 | `HRC_ZK_MODE` | `mock`, `production` | ZK implementation: SHA-256 simulation or ZoKrates circuits |

@@ -8,7 +8,7 @@ icon: material/tray-arrow-down
 
 ## Tổng quan
 
-Các sự kiện đi vào HieraChain dưới dạng các hoạt động nghiệp vụ có cấu trúc, được xác thực, gom cụm bởi `OrderingService` thành các khối, hoàn tất bởi cơ chế **Chứng minh (Proof)** được cấu hình (PoA / PoF / BFT), sau đó được nối thêm vào Chuỗi con (Sub-Chain). Cơ chế đồng thuận là một cấu hình có thể cắm (pluggable) qua (`HRC_CONSENSUS_TYPE`) — luồng hoạt động tổng thể luôn giống hệt nhau. Chỉ có bước `finalize_block()` là khác biệt.
+Các sự kiện đi vào HieraChain dưới dạng các hoạt động nghiệp vụ có cấu trúc, được xác thực, gom nhóm theo lô bởi `OrderingService` thành các khối, được hoàn thiện bằng cơ chế **Bằng chứng (Proof)** được cấu hình (PoA / PoF / BFT), sau đó được thêm vào Sub-Chain. Cơ chế đồng thuận cho MainChain có thể cấu hình linh hoạt (`HRC_MAINCHAIN_CONSENSUS`), trong khi SubChain mặc định sử dụng PoA cho các hoạt động nội bộ tốc độ cao. Quy trình tổng thể luôn giống nhau — chỉ khác biệt ở bước `finalize_block()`.
 
 Để xem biểu đồ chi tiết của PoA và PoF, vui lòng tham khảo [Cơ chế Đồng thuận](./consensus_mechanisms.md).
 

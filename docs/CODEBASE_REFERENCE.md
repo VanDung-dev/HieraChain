@@ -497,7 +497,7 @@ flowchart TD
     B --> C["3. Journal Durability Layer<br/>(guarantee persistence first)"]
     C --> D["4. Ordering Service<br/>(certify, build block, commit)"]
     D --> E["5. Consensus Validation<br/>(PoA/PoF/BFT + ZK verification)"]
-    E --> F["6. Storage & Caching<br/>(SQL/Redis + LRU/TTL cache)"]
+    E --> F["6. Storage & Caching<br/>(adapters/database: SQLite/Redis + LRU/TTL cache)"]
     F --> G["7. Proof Submission to Main Chain<br/>(if Sub-Chain)"]
     G --> H["8. Risk Analysis & Monitoring<br/>(concurrent, async)"]
     H --> I["9. Alert Dispatch<br/>(Email/Webhook if thresholds exceeded)"]

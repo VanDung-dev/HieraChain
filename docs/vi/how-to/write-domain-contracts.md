@@ -8,14 +8,14 @@ icon: material/file-document-edit
 
 ## Hợp đồng Miền
 
-HieraChain sử dụng hệ thống Hợp đồng Miền (Domain Contracts) linh hoạt, hỗ trợ xử lý logic nghiệp vụ một cách chuyên biệt cho từng loại dữ liệu hay sự kiện cụ thể. Hệ thống quản lý mã được định nghĩa trực tiếp trong `hierachain/core/domain_contract.py`.
+HieraChain sử dụng hệ thống Domain Contracts linh hoạt hỗ trợ xử lý logic nghiệp vụ riêng cho từng loại dữ liệu hoặc sự kiện. Hệ thống mã quản lý được định nghĩa trực tiếp tại `hierachain/domains/domain_contract.py`.
 
-### 1. Khởi tạo Domain Contract
+### 1. Khởi tạo một Domain Contract
 
-Mỗi hợp đồng cung cấp một số thuộc tính cốt lõi bao gồm định danh, phiên bản, callback thực thi và siêu dữ liệu (metadata):
+Mỗi hợp đồng cung cấp nhiều thuộc tính cốt lõi gồm mã định danh, phiên bản, callback thực thi và metadata:
 
 ```python
-from hierachain.core.domain_contract import DomainContract
+from hierachain.domains.domain_contract import DomainContract
 
 contract = DomainContract(
     contract_id="logistics_tracker_ledger",

@@ -12,12 +12,12 @@ icon: material/account-group-outline
 
 ---
 
-## Vị trí Kiến trúc: PoA vs. PoF
+## Vị trí Kiến trúc: PoA và PoF
 
-| Giao thức Đồng thuận | Phạm vi & Mục đích | Mô hình Quản trị |
+| Cơ chế Đồng thuận | Phạm vi & Mục đích | Tầng Áp dụng & Mô hình Quản trị |
 | :--- | :--- | :--- |
-| **Proof of Authority (PoA)** | **Nội bộ 1 Tổ chức** (1 MainChain + các Sub-Chains) | Thẩm quyền chỉ định (Single-entity control trong nội bộ doanh nghiệp) |
-| **Proof of Federation (PoF)** | **Liên minh đa Tổ chức** (Peer-to-Peer MainChain Alliance) | Liên bang Ngang hàng (Threshold Quorum không cần RootChain) |
+| **Proof of Authority (PoA)** | **Nội bộ Tổ chức** (Các Sub-Chain nghiệp vụ nội bộ) | **Tầng SubChain** (Mặc định cho mọi sự kiện nội bộ; kiểm soát đơn quyền) |
+| **Proof of Federation (PoF)** | **Liên minh Đa Tổ chức** (Mạng liên kết MainChain P2P) | **Tầng MainChain** (Cấu hình qua `HRC_MAINCHAIN_CONSENSUS=proof_of_federation` cho liên minh đa bên) |
 
 ---
 

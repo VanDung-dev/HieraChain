@@ -61,7 +61,7 @@ sequenceDiagram
 flowchart LR
     ERR["❌ Critical Error\nor Integrity Failure"]
     SNAP["📸 Load Snapshot\n(RollbackManager)"]
-    JRNL["📓 Replay Journal\n(TransactionJournal)"]
+    JRNL["📓 Replay Journal\n(EventJournal)"]
     VER["🔍 Validate Restored State\n(DataValidator)"]
     OK["✅ State Restored"]
     ALERT["🚨 Alert + Escalate\n(AlertManager)"]
@@ -73,7 +73,7 @@ flowchart LR
 
 **Rollback steps**:
 1. `RollbackManager.load_snapshot()` — load the most recent consistent snapshot
-2. `TransactionJournal.replay()` — replay committed journal entries since the snapshot
+2. `EventJournal.replay()` — replay committed journal entries since the snapshot
 3. `DataValidator.validate()` — verify the restored state against cryptographic checksums
 4. If validation fails: escalation alert sent via Risk Alerts; manual intervention required
 

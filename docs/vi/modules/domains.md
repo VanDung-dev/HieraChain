@@ -109,7 +109,7 @@ Theo triết lý HieraChain, `CrossChainValidator` thực hiện quét nghiêm n
 `EntityTracer` cho phép người quản trị tái hiện lại toàn bộ "hành trình" của một thực thể qua nhiều phòng ban/chuỗi khác nhau:
 
 ```python
-from hierachain.domains.generic.utils.entity_tracer import EntityTracer
+from hierachain.domains.utils.entity_tracer import EntityTracer
 
 tracer = EntityTracer(hierarchy_manager)
 # Lấy lịch sử thực thể "ORDER-789" trên toàn bộ hệ thống

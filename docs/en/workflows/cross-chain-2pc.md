@@ -4,7 +4,7 @@ description: "Two-Phase Commit (2PC) protocol coordination for atomic cross-chai
 icon: material/swap-horizontal
 ---
 
-# Cross-Chain Transaction (2PC)
+# Cross-Chain Operation (2PC)
 
 ## Overview
 
@@ -20,20 +20,20 @@ When a business operation needs to atomically span two Sub-Chains (e.g., an asse
 sequenceDiagram
     autonumber
     participant HM as 🏛️ HierarchyManager
-    participant TM as 🔄 CrossChainTransactionManager
+    participant TM as 🔄 CrossChainOperationManager
     participant SRC as 📦 Source SubChain
     participant DST as 📦 Destination SubChain
 
-    HM->>TM: initiate_cross_chain_transaction(src, dst, payload)
-    TM->>TM: Create CrossChainTransaction (UUID, state=PENDING)
+    HM->>TM: initiate_cross_chain_operation(src, dst, payload)
+    TM->>TM: Create CrossChainOperation (UUID, state=PENDING)
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: PHASE 1 — PREPARE
-        TM->>SRC: prepare_transaction(tx_id, payload, is_source=True)
+        TM->>SRC: prepare_operation(op_id, payload, is_source=True)
         SRC->>SRC: Lock resources, validate payload
         SRC-->>TM: True ✅
 
-        TM->>DST: prepare_transaction(tx_id, payload, is_source=False)
+        TM->>DST: prepare_operation(op_id, payload, is_source=False)
         DST->>DST: Verify capacity to accept
         DST-->>TM: True ✅
 
@@ -42,14 +42,14 @@ sequenceDiagram
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: PHASE 2 — COMMIT
-        TM->>SRC: commit_transaction(tx_id)
+        TM->>SRC: commit_operation(op_id)
         SRC-->>TM: True ✅
-        TM->>DST: commit_transaction(tx_id)
+        TM->>DST: commit_operation(op_id)
         DST-->>TM: True ✅
         TM->>TM: state = COMMITTED
     end
 
-    TM-->>HM: tx_id (COMMITTED)
+    TM-->>HM: op_id (COMMITTED)
 ```
 
 ---
@@ -59,27 +59,27 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant TM as 🔄 CrossChainTransactionManager
+    participant TM as 🔄 CrossChainOperationManager
     participant SRC as 📦 Source SubChain
     participant DST as 📦 Destination SubChain
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: SCENARIO A — Phase 1 Prepare Fails
-        TM->>SRC: prepare_transaction(tx_id, payload)
+        TM->>SRC: prepare_operation(op_id, payload)
         SRC-->>TM: True ✅
-        TM->>DST: prepare_transaction(tx_id, payload)
+        TM->>DST: prepare_operation(op_id, payload)
         DST-->>TM: False ❌  (capacity / validation fail)
         TM->>TM: state = PENDING → rollback triggered
-        TM->>SRC: rollback_transaction(tx_id)
-        TM->>DST: rollback_transaction(tx_id)
+        TM->>SRC: rollback_operation(op_id)
+        TM->>DST: rollback_operation(op_id)
         TM->>TM: state = ROLLED_BACK ⚠️
     end
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: SCENARIO B — Phase 2 Partial Commit Fails
-        TM->>SRC: commit_transaction(tx_id)
+        TM->>SRC: commit_operation(op_id)
         SRC-->>TM: True ✅
-        TM->>DST: commit_transaction(tx_id)
+        TM->>DST: commit_operation(op_id)
         DST-->>TM: Exception ❌
         TM->>TM: state = FAILED ❌
         Note over TM: Manual reconciliation required<br/>Inspect logs for partial state
@@ -88,7 +88,7 @@ sequenceDiagram
 
 ---
 
-## Transaction State Machine
+## Operation State Machine
 
 ```mermaid
 flowchart LR

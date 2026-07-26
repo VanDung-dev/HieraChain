@@ -28,22 +28,20 @@ Event is the smallest data unit, representing a specific business action.
 | `details_nonce` | `string` | **Encryption Nonce**. Decryption key for off-chain data (used for AES-GCM). |
 | `data` | `binary` | Main data payload (internal JSON component, includes both on-chain and off-chain refs). |
 
-### Transaction
+### Event Schema Protocol
 
-Transaction is a wrapper containing an Event along with digital signature and zero-knowledge proof.
+Events are wrapped with cryptographic digital signatures (Ed25519) and zero-knowledge proofs before submission:
 
-**Schema Definition (`hierachain.core.schemas.TRANSACTION_SCHEMA`):**
+**Event Validation Schema (`hierachain.core.schemas.EVENT_SCHEMA`):**
 
 | Field Name | Type (Arrow) | Description |
 |------------|--------------|-------------|
-| `tx_id` | `string` | Unique transaction identifier (UUID or Hash). |
-| `entity_id` | `string` | Synchronized with Event entity_id. |
-| `event_type` | `string` | Synchronized with Event event. |
-| `arrow_payload` | `binary` | Event data serialized in Arrow format. |
-| `signature` | `string` | Digital signature of the transaction creator (Ed25519/ECDSA). |
-| `timestamp` | `float64` | Transaction creation time. |
-| `zk_proof` | `binary` | (Optional) Zero-Knowledge proof to verify correctness without revealing data. |
-| `zk_public_inputs` | `binary` | (Optional) Public inputs accompanying the ZK Proof. |
+| `entity_id` | `string` | Affected entity identifier (e.g., ProductID, OrderID). |
+| `event` | `string` | Event type name. |
+| `signature` | `string` | Digital signature of the event creator. |
+| `timestamp` | `float64` | Event creation timestamp. |
+| `zk_proof` | `binary` | (Optional) Zero-Knowledge proof payload. |
+| `zk_public_inputs` | `binary` | (Optional) Public inputs for ZK Proof verification. |
 
 ### Block
 

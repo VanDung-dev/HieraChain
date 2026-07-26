@@ -14,10 +14,10 @@ icon: material/account-group-outline
 
 ## Architectural Position: PoA vs. PoF
 
-| Consensus Mechanism | Scope & Purpose | Governance Model |
+| Consensus Mechanism | Scope & Purpose | Target Layer & Governance |
 | :--- | :--- | :--- |
-| **Proof of Authority (PoA)** | **Intra-Organization** (Single MainChain + Sub-Chains) | Designated Authority (Single-entity control within an enterprise) |
-| **Proof of Federation (PoF)** | **Inter-Organization** (Peer-to-Peer MainChain Alliance) | Equal Multi-Party Federation (Threshold Quorum without central RootChain) |
+| **Proof of Authority (PoA)** | **Intra-Organization** (Internal Domain Sub-Chains) | **SubChain Level** (Default for all internal domain events; single-entity control) |
+| **Proof of Federation (PoF)** | **Inter-Organization** (Peer-to-Peer MainChain Alliance) | **MainChain Level** (Configured via `HRC_MAINCHAIN_CONSENSUS=proof_of_federation` for multi-party alliance) |
 
 ---
 

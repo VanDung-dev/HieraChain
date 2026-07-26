@@ -4,36 +4,36 @@ description: "Phối hợp giao thức Cam kết Hai pha (2PC - Two-Phase Commit
 icon: material/swap-horizontal
 ---
 
-# Giao dịch Liên chuỗi (2PC)
+# Thao tác Liên chuỗi (2PC)
 
 ## Tổng quan
 
-Khi một hoạt động nghiệp vụ cần diễn ra đồng thời có tính nguyên tử trên cả hai Chuỗi con (ví dụ: chuyển một tài sản từ chuỗi `logistics` sang chuỗi `finance`), HieraChain sử dụng giao thức **Cam kết Hai pha (2PC - Two-Phase Commit)** để đảm bảo tính toàn vẹn và nguyên tử. Hoặc cả hai chuỗi cùng lưu khối xác nhận sự thay đổi, hoặc cả hai cùng khôi phục lại trạng thái cũ (roll back) — tuyệt đối không có trạng thái lấp lửng hay bất đối xứng.
+Khi một thao tác nghiệp vụ cần thực hiện một cách nguyên tử (atomic) trải dài trên hai Sub-Chain (ví dụ: chuyển tài sản từ Sub-Chain `logistics` sang Sub-Chain `finance`), HieraChain sử dụng giao thức **Cam kết Hai pha (Two-Phase Commit - 2PC)** để đảm bảo tính nguyên tử. Hoặc cả hai chuỗi cùng cam kết thay đổi, hoặc cả hai cùng hoàn tác (rollback) — không cho phép trạng thái dở dở dang dang.
 
 **Ví dụ thực tế**: Chuyển một mặt hàng trong kho giữa hai phòng ban khác nhau. Chuỗi nguồn ghi nhận sự kiện `deduct` (trừ hàng); chuỗi đích ghi nhận sự kiện `receive` (nhận hàng). Cả hai hoạt động đều phải thành công hoặc không hoạt động nào được áp dụng.
 
 ---
 
-## Biểu đồ luồng — Trường hợp Thuận lợi (Happy Path)
+## Biểu đồ Luồng — Kịch bản Thành công (Happy Path)
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant HM as 🏛️ HierarchyManager
-    participant TM as 🔄 CrossChainTransactionManager
-    participant SRC as 📦 Chuỗi con Nguồn (Source SubChain)
-    participant DST as 📦 Chuỗi con Đích (Destination SubChain)
+    participant TM as 🔄 CrossChainOperationManager
+    participant SRC as 📦 Source SubChain
+    participant DST as 📦 Destination SubChain
 
-    HM->>TM: initiate_cross_chain_transaction(src, dst, payload)
-    TM->>TM: Khởi tạo CrossChainTransaction (UUID, state=PENDING)
+    HM->>TM: initiate_cross_chain_operation(src, dst, payload)
+    TM->>TM: Tạo CrossChainOperation (UUID, state=PENDING)
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: PHA 1 — CHUẨN BỊ (PREPARE)
-        TM->>SRC: prepare_transaction(tx_id, payload, is_source=True)
-        SRC->>SRC: Khóa tài nguyên, xác thực dữ liệu payload
+        TM->>SRC: prepare_operation(op_id, payload, is_source=True)
+        SRC->>SRC: Khóa tài nguyên, xác thực payload
         SRC-->>TM: True ✅
 
-        TM->>DST: prepare_transaction(tx_id, payload, is_source=False)
+        TM->>DST: prepare_operation(op_id, payload, is_source=False)
         DST->>DST: Kiểm tra khả năng tiếp nhận
         DST-->>TM: True ✅
 
@@ -42,47 +42,47 @@ sequenceDiagram
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: PHA 2 — CAM KẾT (COMMIT)
-        TM->>SRC: commit_transaction(tx_id)
+        TM->>SRC: commit_operation(op_id)
         SRC-->>TM: True ✅
-        TM->>DST: commit_transaction(tx_id)
+        TM->>DST: commit_operation(op_id)
         DST-->>TM: True ✅
         TM->>TM: state = COMMITTED
     end
 
-    TM-->>HM: tx_id (COMMITTED)
+    TM-->>HM: op_id (COMMITTED)
 ```
 
 ---
 
-## Biểu đồ luồng — Các Trường hợp Thất bại (Failure Paths)
+## Biểu đồ Luồng — Kịch bản Thất bại (Failure Paths)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant TM as 🔄 CrossChainTransactionManager
-    participant SRC as 📦 Chuỗi con Nguồn
-    participant DST as 📦 Chuỗi con Đích
+    participant TM as 🔄 CrossChainOperationManager
+    participant SRC as 📦 Source SubChain
+    participant DST as 📦 Destination SubChain
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: KỊCH BẢN A — Pha 1 Chuẩn bị Thất bại
-        TM->>SRC: prepare_transaction(tx_id, payload)
+        TM->>SRC: prepare_operation(op_id, payload)
         SRC-->>TM: True ✅
-        TM->>DST: prepare_transaction(tx_id, payload)
-        DST-->>TM: False ❌  (Quá tải / Xác thực lỗi)
-        TM->>TM: state = PENDING → Bắt đầu khôi phục (rollback)
-        TM->>SRC: rollback_transaction(tx_id)
-        TM->>DST: rollback_transaction(tx_id)
+        TM->>DST: prepare_operation(op_id, payload)
+        DST-->>TM: False ❌  (Lỗi dung lượng / xác thực)
+        TM->>TM: state = PENDING → Kích hoạt hoàn tác
+        TM->>SRC: rollback_operation(op_id)
+        TM->>DST: rollback_operation(op_id)
         TM->>TM: state = ROLLED_BACK ⚠️
     end
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: KỊCH BẢN B — Pha 2 Cam kết Một phần Thất bại
-        TM->>SRC: commit_transaction(tx_id)
+        TM->>SRC: commit_operation(op_id)
         SRC-->>TM: True ✅
-        TM->>DST: commit_transaction(tx_id)
-        DST-->>TM: Gặp Ngoại lệ (Exception) ❌
+        TM->>DST: commit_operation(op_id)
+        DST-->>TM: Ngoại lệ (Exception) ❌
         TM->>TM: state = FAILED ❌
-        Note over TM: Cần đối soát thủ công<br/>Kiểm tra log để xác định trạng thái một phần
+        Note over TM: Yêu cầu xử lý thủ công<br/>Kiểm tra nhật ký để tìm trạng thái một phần
     end
 ```
 

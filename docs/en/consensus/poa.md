@@ -8,7 +8,7 @@ icon: material/account-check-outline
 
 ## Overview
 
-**Proof of Authority (PoA)** is an identity-based consensus protocol optimized for **Intra-Organization enterprise networks** (single MainChain managing internal domain Sub-Chains). Instead of solving complex cryptographic problems (like mining), PoA relies on a group of authorized nodes (**Authorities**) designated by the enterprise to validate and close blocks, achieving ultra-fast transaction speeds (~0ms base latency) with minimal resource overhead.
+**Proof of Authority (PoA)** is an identity-based consensus protocol optimized for **Intra-Organization enterprise networks** (single MainChain managing internal domain Sub-Chains). In HieraChain's two-tiered consensus architecture, `SubChain` instances **always default to PoA** for processing internal domain events at ultra-fast speeds (~0ms base latency) without requiring cross-organizational roundtrips.
 
 For cross-organizational inter-MainChain consensus between independent enterprises, see [Proof of Federation (PoF)](./pof.md).
 

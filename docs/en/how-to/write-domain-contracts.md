@@ -8,14 +8,14 @@ icon: material/file-document-edit
 
 ## Domain Contracts
 
-HieraChain uses a flexible Domain Contracts system that supports processing business logic specific to each type of data or event. The code management system is defined directly in `hierachain/core/domain_contract.py`.
+HieraChain uses a flexible Domain Contracts system that supports processing business logic specific to each type of data or event. The code management system is defined directly in `hierachain/domains/domain_contract.py`.
 
 ### 1. Initializing a Domain Contract
 
 Each contract provides several core properties including an identifier, version, execution callback, and metadata:
 
 ```python
-from hierachain.core.domain_contract import DomainContract
+from hierachain.domains.domain_contract import DomainContract
 
 contract = DomainContract(
     contract_id="logistics_tracker_ledger",

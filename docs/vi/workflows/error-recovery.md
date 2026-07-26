@@ -59,11 +59,11 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    ERR["❌ Lỗi nghiêm trọng\nhoặc Tính toàn vẹn lỗi"]
-    SNAP["📸 Nạp Ảnh chụp trạng thái\n(RollbackManager)"]
-    JRNL["📓 Phát lại Nhật ký ghi chép\n(TransactionJournal)"]
-    VER["🔍 Xác thực Trạng thái đã khôi phục\n(DataValidator)"]
-    OK["✅ Trạng thái đã phục hồi"]
+    ERR["❌ Lỗi Nghiêm trọng\nhoặc Thất bại Toàn vẹn"]
+    SNAP["📸 Nạp Ảnh chụp nhanh\n(RollbackManager)"]
+    JRNL["📓 Phát lại Nhật ký\n(EventJournal)"]
+    VER["🔍 Xác minh Trạng thái Khôi phục\n(DataValidator)"]
+    OK["✅ Trạng thái Đã Khôi phục"]
     ALERT["🚨 Cảnh báo + Leo thang\n(AlertManager)"]
 
     ERR --> SNAP --> JRNL --> VER
@@ -71,9 +71,9 @@ flowchart LR
     VER -->|Không hợp lệ| ALERT
 ```
 
-**Các bước hoàn trả**:
-1. `RollbackManager.load_snapshot()` — nạp ảnh chụp trạng thái (snapshot) nhất quán gần đây nhất.
-2. `TransactionJournal.replay()` — phát lại (replay) các nhật ký đã cam kết kể từ thời điểm chụp snapshot.
+**Các bước Khôi phục (Rollback)**:
+1. `RollbackManager.load_snapshot()` — nạp ảnh chụp nhanh đồng nhất gần nhất
+2. `EventJournal.replay()` — phát lại các mục nhật ký đã cam kết kể từ thời điểm ảnh chụp nhanh
 3. `DataValidator.validate()` — xác thực trạng thái đã khôi phục so với mã kiểm tra băm (cryptographic checksums).
 4. Nếu xác thực thất bại: gửi cảnh báo leo thang qua hệ thống Cảnh báo Rủi ro; yêu cầu sự can thiệp thủ công từ người quản trị.
 
