@@ -8,7 +8,13 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (108)"
+??? note "Improvements (111)"
+
+    * 2026-07-27
+
+        * **Tài liệu**: Đổi tên `HRC_CONSENSUS_TYPE` → `HRC_MAINCHAIN_CONSENSUS` trên toàn bộ tài liệu EN/VI — consensus_mechanisms, poa, pof, event-submission, overview, cross-chain-2pc, error-recovery. Làm rõ SubChain mặc định PoA (nội bộ), MainChain mặc định PoF (liên minh). Đổi tên "Cross-Chain Transaction" → "Cross-Chain Operation" (2PC), `TransactionJournal` → `EventJournal`, `TRANSACTION_SCHEMA` → `EVENT_SCHEMA`. Cập nhật đường dẫn import lỗi thời và định nghĩa data-schema.
+        * **Đồng thuận**: Giới thiệu biến môi trường `HRC_MAINCHAIN_CONSENSUS` với bí danh tương thích ngược `HRC_CONSENSUS_TYPE`. `MainChain.__init__` chấp nhận tham số `consensus_type` tùy chọn. `SubChain` mặc định sử dụng PoA cho sự kiện nội bộ, có thể cấu hình qua `config["consensus_type"]`.
+        * **Kiểm thử**: Thêm unit test cho khởi tạo consensus của SubChain — mặc định là PoA, giữ PoA khi cấu hình toàn cục PoF, hỗ trợ ghi đè PoF rõ ràng qua config dict.
 
     * 2026-07-23
 

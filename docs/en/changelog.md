@@ -8,7 +8,13 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (108)"
+??? note "Improvements (111)"
+
+    * 2026-07-27
+
+        * **Docs**: Renamed `HRC_CONSENSUS_TYPE` → `HRC_MAINCHAIN_CONSENSUS` across all EN/VI docs — consensus_mechanisms, poa, pof, event-submission, overview, cross-chain-2pc, error-recovery. Clarified SubChain defaults to PoA (intra-org), MainChain defaults to PoF (inter-org). Renamed "Cross-Chain Transaction" → "Cross-Chain Operation" (2PC), `TransactionJournal` → `EventJournal`, `TRANSACTION_SCHEMA` → `EVENT_SCHEMA`. Updated stale import paths and data-schema definitions.
+        * **Consensus**: Introduced `HRC_MAINCHAIN_CONSENSUS` env var with backward-compatible `HRC_CONSENSUS_TYPE` alias. `MainChain.__init__` accepts optional `consensus_type` parameter. `SubChain` now defaults to PoA for intra-org domain events, configurable via `config["consensus_type"]`.
+        * **Testing**: Added unit tests for SubChain consensus initialization — defaults to PoA, stays PoA under global PoF setting, supports explicit PoF override via config dict.
 
     * 2026-07-23
 
