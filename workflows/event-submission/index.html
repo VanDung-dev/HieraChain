@@ -4435,7 +4435,7 @@
 
 <h1 id="event-submission">Event Submission</h1>
 <h2 id="overview">Overview</h2>
-<p>Events enter HieraChain as structured business operations, are validated, batched by the <code>OrderingService</code> into blocks, finalized by the configured <strong>Proof</strong> mechanism (PoA / PoF / BFT), then appended to the Sub-Chain. The consensus mechanism is a pluggable configuration (<code>HRC_CONSENSUS_TYPE</code>) — the overall flow is always identical. Only the <code>finalize_block()</code> step differs.</p>
+<p>Events enter HieraChain as structured business operations, are validated, batched by the <code>OrderingService</code> into blocks, finalized by the configured <strong>Proof</strong> mechanism (PoA / PoF / BFT), then appended to the Sub-Chain. The consensus mechanism for MainChain is pluggable (<code>HRC_MAINCHAIN_CONSENSUS</code>), while SubChain defaults to PoA for high-speed intra-org operations. The overall flow is always identical — only the <code>finalize_block()</code> step differs.</p>
 <p>For detailed PoA and PoF diagrams, see <a href=".././consensus_mechanisms/">Consensus Mechanisms</a>.</p>
 <hr />
 <h2 id="flow-diagram">Flow Diagram</h2>

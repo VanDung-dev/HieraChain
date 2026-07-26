@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#giao-dich-lien-chuoi-2pc" class="md-skip">
+        <a href="#thao-tac-lien-chuoi-2pc" class="md-skip">
           Bỏ qua
         </a>
       
@@ -1449,10 +1449,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-truong-hop-thuan-loi-happy-path" class="md-nav__link">
+  <a href="#bieu-o-luong-kich-ban-thanh-cong-happy-path" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Trường hợp Thuận lợi (Happy Path)
+        Biểu đồ Luồng — Kịch bản Thành công (Happy Path)
       </span>
     </span>
   </a>
@@ -1460,10 +1460,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-cac-truong-hop-that-bai-failure-paths" class="md-nav__link">
+  <a href="#bieu-o-luong-kich-ban-that-bai-failure-paths" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Các Trường hợp Thất bại (Failure Paths)
+        Biểu đồ Luồng — Kịch bản Thất bại (Failure Paths)
       </span>
     </span>
   </a>
@@ -4348,10 +4348,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-truong-hop-thuan-loi-happy-path" class="md-nav__link">
+  <a href="#bieu-o-luong-kich-ban-thanh-cong-happy-path" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Trường hợp Thuận lợi (Happy Path)
+        Biểu đồ Luồng — Kịch bản Thành công (Happy Path)
       </span>
     </span>
   </a>
@@ -4359,10 +4359,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bieu-o-luong-cac-truong-hop-that-bai-failure-paths" class="md-nav__link">
+  <a href="#bieu-o-luong-kich-ban-that-bai-failure-paths" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Các Trường hợp Thất bại (Failure Paths)
+        Biểu đồ Luồng — Kịch bản Thất bại (Failure Paths)
       </span>
     </span>
   </a>
@@ -4455,29 +4455,29 @@
   
 
 
-<h1 id="giao-dich-lien-chuoi-2pc">Giao dịch Liên chuỗi (2PC)</h1>
+<h1 id="thao-tac-lien-chuoi-2pc">Thao tác Liên chuỗi (2PC)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Khi một hoạt động nghiệp vụ cần diễn ra đồng thời có tính nguyên tử trên cả hai Chuỗi con (ví dụ: chuyển một tài sản từ chuỗi <code>logistics</code> sang chuỗi <code>finance</code>), HieraChain sử dụng giao thức <strong>Cam kết Hai pha (2PC - Two-Phase Commit)</strong> để đảm bảo tính toàn vẹn và nguyên tử. Hoặc cả hai chuỗi cùng lưu khối xác nhận sự thay đổi, hoặc cả hai cùng khôi phục lại trạng thái cũ (roll back) — tuyệt đối không có trạng thái lấp lửng hay bất đối xứng.</p>
+<p>Khi một thao tác nghiệp vụ cần thực hiện một cách nguyên tử (atomic) trải dài trên hai Sub-Chain (ví dụ: chuyển tài sản từ Sub-Chain <code>logistics</code> sang Sub-Chain <code>finance</code>), HieraChain sử dụng giao thức <strong>Cam kết Hai pha (Two-Phase Commit - 2PC)</strong> để đảm bảo tính nguyên tử. Hoặc cả hai chuỗi cùng cam kết thay đổi, hoặc cả hai cùng hoàn tác (rollback) — không cho phép trạng thái dở dở dang dang.</p>
 <p><strong>Ví dụ thực tế</strong>: Chuyển một mặt hàng trong kho giữa hai phòng ban khác nhau. Chuỗi nguồn ghi nhận sự kiện <code>deduct</code> (trừ hàng); chuỗi đích ghi nhận sự kiện <code>receive</code> (nhận hàng). Cả hai hoạt động đều phải thành công hoặc không hoạt động nào được áp dụng.</p>
 <hr />
-<h2 id="bieu-o-luong-truong-hop-thuan-loi-happy-path">Biểu đồ luồng — Trường hợp Thuận lợi (Happy Path)</h2>
+<h2 id="bieu-o-luong-kich-ban-thanh-cong-happy-path">Biểu đồ Luồng — Kịch bản Thành công (Happy Path)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant HM as 🏛️ HierarchyManager
-    participant TM as 🔄 CrossChainTransactionManager
-    participant SRC as 📦 Chuỗi con Nguồn (Source SubChain)
-    participant DST as 📦 Chuỗi con Đích (Destination SubChain)
+    participant TM as 🔄 CrossChainOperationManager
+    participant SRC as 📦 Source SubChain
+    participant DST as 📦 Destination SubChain
 
-    HM-&gt;&gt;TM: initiate_cross_chain_transaction(src, dst, payload)
-    TM-&gt;&gt;TM: Khởi tạo CrossChainTransaction (UUID, state=PENDING)
+    HM-&gt;&gt;TM: initiate_cross_chain_operation(src, dst, payload)
+    TM-&gt;&gt;TM: Tạo CrossChainOperation (UUID, state=PENDING)
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: PHA 1 — CHUẨN BỊ (PREPARE)
-        TM-&gt;&gt;SRC: prepare_transaction(tx_id, payload, is_source=True)
-        SRC-&gt;&gt;SRC: Khóa tài nguyên, xác thực dữ liệu payload
+        TM-&gt;&gt;SRC: prepare_operation(op_id, payload, is_source=True)
+        SRC-&gt;&gt;SRC: Khóa tài nguyên, xác thực payload
         SRC--&gt;&gt;TM: True ✅
 
-        TM-&gt;&gt;DST: prepare_transaction(tx_id, payload, is_source=False)
+        TM-&gt;&gt;DST: prepare_operation(op_id, payload, is_source=False)
         DST-&gt;&gt;DST: Kiểm tra khả năng tiếp nhận
         DST--&gt;&gt;TM: True ✅
 
@@ -4486,42 +4486,42 @@
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: PHA 2 — CAM KẾT (COMMIT)
-        TM-&gt;&gt;SRC: commit_transaction(tx_id)
+        TM-&gt;&gt;SRC: commit_operation(op_id)
         SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: commit_transaction(tx_id)
+        TM-&gt;&gt;DST: commit_operation(op_id)
         DST--&gt;&gt;TM: True ✅
         TM-&gt;&gt;TM: state = COMMITTED
     end
 
-    TM--&gt;&gt;HM: tx_id (COMMITTED)</code></pre>
+    TM--&gt;&gt;HM: op_id (COMMITTED)</code></pre>
 <hr />
-<h2 id="bieu-o-luong-cac-truong-hop-that-bai-failure-paths">Biểu đồ luồng — Các Trường hợp Thất bại (Failure Paths)</h2>
+<h2 id="bieu-o-luong-kich-ban-that-bai-failure-paths">Biểu đồ Luồng — Kịch bản Thất bại (Failure Paths)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
-    participant TM as 🔄 CrossChainTransactionManager
-    participant SRC as 📦 Chuỗi con Nguồn
-    participant DST as 📦 Chuỗi con Đích
+    participant TM as 🔄 CrossChainOperationManager
+    participant SRC as 📦 Source SubChain
+    participant DST as 📦 Destination SubChain
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: KỊCH BẢN A — Pha 1 Chuẩn bị Thất bại
-        TM-&gt;&gt;SRC: prepare_transaction(tx_id, payload)
+        TM-&gt;&gt;SRC: prepare_operation(op_id, payload)
         SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: prepare_transaction(tx_id, payload)
-        DST--&gt;&gt;TM: False ❌  (Quá tải / Xác thực lỗi)
-        TM-&gt;&gt;TM: state = PENDING → Bắt đầu khôi phục (rollback)
-        TM-&gt;&gt;SRC: rollback_transaction(tx_id)
-        TM-&gt;&gt;DST: rollback_transaction(tx_id)
+        TM-&gt;&gt;DST: prepare_operation(op_id, payload)
+        DST--&gt;&gt;TM: False ❌  (Lỗi dung lượng / xác thực)
+        TM-&gt;&gt;TM: state = PENDING → Kích hoạt hoàn tác
+        TM-&gt;&gt;SRC: rollback_operation(op_id)
+        TM-&gt;&gt;DST: rollback_operation(op_id)
         TM-&gt;&gt;TM: state = ROLLED_BACK ⚠️
     end
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: KỊCH BẢN B — Pha 2 Cam kết Một phần Thất bại
-        TM-&gt;&gt;SRC: commit_transaction(tx_id)
+        TM-&gt;&gt;SRC: commit_operation(op_id)
         SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: commit_transaction(tx_id)
-        DST--&gt;&gt;TM: Gặp Ngoại lệ (Exception) ❌
+        TM-&gt;&gt;DST: commit_operation(op_id)
+        DST--&gt;&gt;TM: Ngoại lệ (Exception) ❌
         TM-&gt;&gt;TM: state = FAILED ❌
-        Note over TM: Cần đối soát thủ công&lt;br/&gt;Kiểm tra log để xác định trạng thái một phần
+        Note over TM: Yêu cầu xử lý thủ công&lt;br/&gt;Kiểm tra nhật ký để tìm trạng thái một phần
     end</code></pre>
 <hr />
 <h2 id="may-trang-thai-giao-dich-transaction-state-machine">Máy trạng thái Giao dịch (Transaction State Machine)</h2>

@@ -4459,7 +4459,7 @@
 
 <h1 id="tai-lieu-tham-khao-co-che-ong-thuan">Tài liệu tham khảo Cơ chế Đồng thuận</h1>
 <p><strong>Các luồng công việc liên quan</strong>: <a href=".././event-submission/">Gửi Sự kiện</a> · <a href=".././bft-consensus/">Đồng thuận BFT</a></p>
-<p>HieraChain hỗ trợ ba cơ chế đồng thuận có thể cắm (pluggable), được cấu hình thông qua biến môi trường <code>HRC_CONSENSUS_TYPE</code>. Luồng gửi sự kiện (Gửi Sự kiện) là hoàn toàn giống nhau bất kể cơ chế nào được chọn — chỉ khác biệt ở bước <code>finalize_block()</code>.</p>
+<p>HieraChain hỗ trợ các cơ chế đồng thuận có thể cắm (pluggable) trên từng tầng. Ở tầng <strong>MainChain (Liên minh đa Tổ chức)</strong>, cơ chế đồng thuận được cấu hình thông qua biến môi trường <code>HRC_MAINCHAIN_CONSENSUS</code> (mặc định là <code>proof_of_federation</code>). Ở tầng <strong>SubChain (Nội bộ Tổ chức)</strong>, việc xử lý sự kiện nghiệp vụ nội bộ <strong>mặc định luôn sử dụng Proof of Authority (PoA)</strong> để đạt tốc độ tối đa (~0ms latency). Luồng gửi sự kiện (<a href=".././event-submission/">Gửi Sự kiện</a>) là hoàn toàn giống nhau bất kể cơ chế nào được chọn — chỉ khác biệt ở bước <code>finalize_block()</code>.</p>
 <hr />
 <h2 id="so-sanh-cac-co-che">So sánh các Cơ chế</h2>
 <table>
@@ -4477,6 +4477,12 @@
 <td style="text-align: left;"><code>proof_of_authority</code></td>
 <td style="text-align: left;"><code>proof_of_federation</code></td>
 <td style="text-align: left;"><code>byzantine_fault_tolerant</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Tầng áp dụng</strong></td>
+<td style="text-align: left;">SubChain (Nội bộ) / MainChain đơn lẻ</td>
+<td style="text-align: left;">MainChain Liên minh (Đa tổ chức)</td>
+<td style="text-align: left;">SubChain / MainChain BFT</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Thành phần hoàn thiện</strong></td>
@@ -4516,8 +4522,8 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Trường hợp sử dụng</strong></td>
-<td style="text-align: left;">Mạng nội bộ / riêng tư</td>
-<td style="text-align: left;">Liên minh / đa tổ chức</td>
+<td style="text-align: left;">Các Sub-Chain nghiệp vụ nội bộ</td>
+<td style="text-align: left;">Liên minh MainChain đa tổ chức</td>
 <td style="text-align: left;">Môi trường quan trọng / có tính đối kháng</td>
 </tr>
 </tbody>
@@ -4525,7 +4531,7 @@
 <hr />
 <h2 id="ong-thuan-uy-quyen-proof-of-authority-poa">Đồng thuận Ủy quyền (Proof of Authority - PoA)</h2>
 <blockquote>
-<p>Kích hoạt khi <code>HRC_CONSENSUS_TYPE=proof_of_authority</code> (mặc định).
+<p>Mặc định cho SubChain, hoặc khi <code>HRC_MAINCHAIN_CONSENSUS=proof_of_authority</code> trên MainChain.
 Một nút ủy quyền duy nhất được đăng ký trước sẽ ký khối bằng khóa riêng tư Ed25519 của nó.</p>
 </blockquote>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4535,13 +4541,13 @@ Một nút ủy quyền duy nhất được đăng ký trước sẽ ký khối 
 
     OS-&gt;&gt;POA: finalize_block(block, authority_id)
     POA-&gt;&gt;POA: is_authority(authority_id)
-    Note right of POA: Từ chối nếu không có trong danh sách ủy quyền
+    Note right of POA: Từ chối nếu không có trong danh sách nút ủy quyền
     POA-&gt;&gt;POA: _check_block_timing(block, previous_block)
     Note right of POA: block.timestamp - prev.timestamp &gt;= block_interval / 2
     POA-&gt;&gt;POA: _validate_block_events()
     Note right of POA: Quét tất cả các sự kiện để tìm cụm từ bị cấm
     POA-&gt;&gt;POA: _create_authority_signature(block, authority_id, private_key)
-    Note right of POA: Chữ ký Ed25519 (hash + authority_id + timestamp)&lt;br/&gt;Chuyển về KeyPair ngẫu nhiên trong chế độ thử nghiệm
+    Note right of POA: Ed25519 sign(hash + authority_id + timestamp)&lt;br/&gt;Dùng KeyPair ngẫu nhiên trong chế độ test
     POA-&gt;&gt;POA: Thêm sự kiện consensus_finalization&lt;br/&gt;{ authority_id, authority_signature, finalized_at }
     POA--&gt;&gt;OS: Khối đã Hoàn thiện ✅</code></pre>
 <h3 id="cac-lop-quan-trong-poa">Các Lớp Quan trọng — PoA</h3>
@@ -4579,7 +4585,7 @@ Một nút ủy quyền duy nhất được đăng ký trước sẽ ký khối 
 <hr />
 <h2 id="ong-thuan-lien-minh-proof-of-federation-pof">Đồng thuận Liên minh (Proof of Federation - PoF)</h2>
 <blockquote>
-<p>Kích hoạt khi <code>HRC_CONSENSUS_TYPE=proof_of_federation</code>.
+<p>Mặc định cho MainChain khi <code>HRC_MAINCHAIN_CONSENSUS=proof_of_federation</code>.
 Trưởng nhóm (Leader) được bầu chọn một cách xác định bằng chỉ số khối. Bắt buộc kiểm tra bằng chứng ZK.</p>
 </blockquote>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4640,7 +4646,7 @@ Trưởng nhóm (Leader) được bầu chọn một cách xác định bằng c
 <hr />
 <h2 id="chong-loi-byzantine-bft-pbft">Chống lỗi Byzantine (BFT / PBFT)</h2>
 <blockquote>
-<p>Kích hoạt khi <code>HRC_CONSENSUS_TYPE=byzantine_fault_tolerant</code>.
+<p>Kích hoạt khi <code>HRC_MAINCHAIN_CONSENSUS=byzantine_fault_tolerant</code>.
 Đầy đủ quy trình PBFT 3 giai đoạn. Xem <a href=".././bft-consensus/">Đồng thuận BFT</a> để biết luồng chi tiết.</p>
 </blockquote>
 <p><strong>Yêu cầu</strong>: Cần n ≥ 3f + 1 nút để dung thứ tối đa f nút bị lỗi hoặc hoạt động sai (lỗi Byzantine).</p>
@@ -4657,9 +4663,9 @@ Trưởng nhóm (Leader) được bầu chọn một cách xác định bằng c
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>HRC_CONSENSUS_TYPE</code></td>
-<td style="text-align: left;"><code>proof_of_authority</code> (mặc định), <code>proof_of_federation</code>, <code>byzantine_fault_tolerant</code></td>
-<td style="text-align: left;">Cơ chế đồng thuận đang hoạt động</td>
+<td style="text-align: left;"><code>HRC_MAINCHAIN_CONSENSUS</code></td>
+<td style="text-align: left;"><code>proof_of_federation</code> (mặc định), <code>proof_of_authority</code>, <code>byzantine_fault_tolerant</code></td>
+<td style="text-align: left;">Cơ chế đồng thuận tầng MainChain</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>HRC_ENABLE_ZK_PROOFS</code></td>

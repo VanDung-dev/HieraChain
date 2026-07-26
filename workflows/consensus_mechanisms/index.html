@@ -4459,7 +4459,7 @@
 
 <h1 id="consensus-mechanisms-reference">Consensus Mechanisms Reference</h1>
 <p><strong>Related workflows</strong>: <a href=".././event-submission/">Event Submission</a> · <a href=".././bft-consensus/">BFT Consensus</a></p>
-<p>HieraChain supports three pluggable consensus mechanisms, configured via the <code>HRC_CONSENSUS_TYPE</code> environment variable. The event submission flow (Event Submission) is identical regardless of which mechanism is selected — only the <code>finalize_block()</code> step differs.</p>
+<p>HieraChain supports pluggable consensus mechanisms across layers. At the <strong>MainChain (Inter-Organization Alliance)</strong> level, consensus is configured via the <code>HRC_MAINCHAIN_CONSENSUS</code> environment variable (defaults to <code>proof_of_federation</code>). At the <strong>SubChain (Intra-Organization)</strong> level, domain event processing strictly defaults to <strong>Proof of Authority (PoA)</strong> for maximum speed (~0ms latency). The event submission flow (<a href=".././event-submission/">Event Submission</a>) is identical regardless of which mechanism is selected — only the <code>finalize_block()</code> step differs.</p>
 <hr />
 <h2 id="mechanism-comparison">Mechanism Comparison</h2>
 <table>
@@ -4477,6 +4477,12 @@
 <td style="text-align: left;"><code>proof_of_authority</code></td>
 <td style="text-align: left;"><code>proof_of_federation</code></td>
 <td style="text-align: left;"><code>byzantine_fault_tolerant</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Target Layer</strong></td>
+<td style="text-align: left;">SubChain (Internal) / Single MainChain</td>
+<td style="text-align: left;">MainChain Alliance (Inter-Org)</td>
+<td style="text-align: left;">SubChain / MainChain BFT</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Who finalizes</strong></td>
@@ -4516,8 +4522,8 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Use case</strong></td>
-<td style="text-align: left;">Private / internal networks</td>
-<td style="text-align: left;">Consortium / multi-org</td>
+<td style="text-align: left;">Intra-org domain chains</td>
+<td style="text-align: left;">Consortium / multi-org MainChain alliance</td>
 <td style="text-align: left;">Critical / adversarial environments</td>
 </tr>
 </tbody>
@@ -4525,7 +4531,7 @@
 <hr />
 <h2 id="proof-of-authority-poa">Proof of Authority (PoA)</h2>
 <blockquote>
-<p>Activated when <code>HRC_CONSENSUS_TYPE=proof_of_authority</code> (default).
+<p>Default for SubChains, or when <code>HRC_MAINCHAIN_CONSENSUS=proof_of_authority</code> on MainChain.
 A single pre-registered authority signs the block with its Ed25519 private key.</p>
 </blockquote>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4579,7 +4585,7 @@ A single pre-registered authority signs the block with its Ed25519 private key.<
 <hr />
 <h2 id="proof-of-federation-pof">Proof of Federation (PoF)</h2>
 <blockquote>
-<p>Activated when <code>HRC_CONSENSUS_TYPE=proof_of_federation</code>.
+<p>Default for MainChains when <code>HRC_MAINCHAIN_CONSENSUS=proof_of_federation</code>.
 Leader is elected deterministically by block index. ZK proof is enforced.</p>
 </blockquote>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4640,7 +4646,7 @@ Leader is elected deterministically by block index. ZK proof is enforced.</p>
 <hr />
 <h2 id="byzantine-fault-tolerance-bft-pbft">Byzantine Fault Tolerance (BFT / PBFT)</h2>
 <blockquote>
-<p>Activated when <code>HRC_CONSENSUS_TYPE=byzantine_fault_tolerant</code>.
+<p>Activated when <code>HRC_MAINCHAIN_CONSENSUS=byzantine_fault_tolerant</code>.
 Full 3-phase PBFT. See <a href=".././bft-consensus/">BFT Consensus</a> for the complete flow.</p>
 </blockquote>
 <p><strong>Requirements</strong>: n ≥ 3f + 1 nodes to tolerate f faulty nodes.</p>
@@ -4657,9 +4663,9 @@ Full 3-phase PBFT. See <a href=".././bft-consensus/">BFT Consensus</a> for the c
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>HRC_CONSENSUS_TYPE</code></td>
-<td style="text-align: left;"><code>proof_of_authority</code> (default), <code>proof_of_federation</code>, <code>byzantine_fault_tolerant</code></td>
-<td style="text-align: left;">Active consensus mechanism</td>
+<td style="text-align: left;"><code>HRC_MAINCHAIN_CONSENSUS</code></td>
+<td style="text-align: left;"><code>proof_of_federation</code> (default), <code>proof_of_authority</code>, <code>byzantine_fault_tolerant</code></td>
+<td style="text-align: left;">MainChain inter-org consensus mechanism</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>HRC_ENABLE_ZK_PROOFS</code></td>

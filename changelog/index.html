@@ -4434,8 +4434,16 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (108)</summary>
+<summary>Improvements (111)</summary>
 <ul>
+<li>
+<p>2026-07-27</p>
+<ul>
+<li><strong>Docs</strong>: Renamed <code>HRC_CONSENSUS_TYPE</code> → <code>HRC_MAINCHAIN_CONSENSUS</code> across all EN/VI docs — consensus_mechanisms, poa, pof, event-submission, overview, cross-chain-2pc, error-recovery. Clarified SubChain defaults to PoA (intra-org), MainChain defaults to PoF (inter-org). Renamed "Cross-Chain Transaction" → "Cross-Chain Operation" (2PC), <code>TransactionJournal</code> → <code>EventJournal</code>, <code>TRANSACTION_SCHEMA</code> → <code>EVENT_SCHEMA</code>. Updated stale import paths and data-schema definitions.</li>
+<li><strong>Consensus</strong>: Introduced <code>HRC_MAINCHAIN_CONSENSUS</code> env var with backward-compatible <code>HRC_CONSENSUS_TYPE</code> alias. <code>MainChain.__init__</code> accepts optional <code>consensus_type</code> parameter. <code>SubChain</code> now defaults to PoA for intra-org domain events, configurable via <code>config["consensus_type"]</code>.</li>
+<li><strong>Testing</strong>: Added unit tests for SubChain consensus initialization — defaults to PoA, stays PoA under global PoF setting, supports explicit PoF override via config dict.</li>
+</ul>
+</li>
 <li>
 <p>2026-07-23</p>
 <ul>

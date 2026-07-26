@@ -4435,7 +4435,7 @@
 
 <h1 id="gui-su-kien-event-submission">Gửi Sự kiện (Event Submission)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Các sự kiện đi vào HieraChain dưới dạng các hoạt động nghiệp vụ có cấu trúc, được xác thực, gom cụm bởi <code>OrderingService</code> thành các khối, hoàn tất bởi cơ chế <strong>Chứng minh (Proof)</strong> được cấu hình (PoA / PoF / BFT), sau đó được nối thêm vào Chuỗi con (Sub-Chain). Cơ chế đồng thuận là một cấu hình có thể cắm (pluggable) qua (<code>HRC_CONSENSUS_TYPE</code>) — luồng hoạt động tổng thể luôn giống hệt nhau. Chỉ có bước <code>finalize_block()</code> là khác biệt.</p>
+<p>Các sự kiện đi vào HieraChain dưới dạng các hoạt động nghiệp vụ có cấu trúc, được xác thực, gom nhóm theo lô bởi <code>OrderingService</code> thành các khối, được hoàn thiện bằng cơ chế <strong>Bằng chứng (Proof)</strong> được cấu hình (PoA / PoF / BFT), sau đó được thêm vào Sub-Chain. Cơ chế đồng thuận cho MainChain có thể cấu hình linh hoạt (<code>HRC_MAINCHAIN_CONSENSUS</code>), trong khi SubChain mặc định sử dụng PoA cho các hoạt động nội bộ tốc độ cao. Quy trình tổng thể luôn giống nhau — chỉ khác biệt ở bước <code>finalize_block()</code>.</p>
 <p>Để xem biểu đồ chi tiết của PoA và PoF, vui lòng tham khảo <a href=".././consensus_mechanisms/">Cơ chế Đồng thuận</a>.</p>
 <hr />
 <h2 id="bieu-o-luong">Biểu đồ luồng</h2>

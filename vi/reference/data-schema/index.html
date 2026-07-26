@@ -3246,10 +3246,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#transaction" class="md-nav__link">
+  <a href="#giao-thuc-cau-truc-su-kien-event-schema" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Transaction
+        Giao thức Cấu trúc Sự kiện (Event Schema)
       </span>
     </span>
   </a>
@@ -4344,10 +4344,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#transaction" class="md-nav__link">
+  <a href="#giao-thuc-cau-truc-su-kien-event-schema" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Transaction
+        Giao thức Cấu trúc Sự kiện (Event Schema)
       </span>
     </span>
   </a>
@@ -4476,57 +4476,47 @@
 </tr>
 </tbody>
 </table>
-<h3 id="transaction">Transaction</h3>
-<p>Transaction là lớp bao (wrapper) chứa Event cùng với chữ ký số và bằng chứng xác thực (ZK Proof).</p>
-<p><strong>Schema Definition (<code>hierachain.core.schemas.TRANSACTION_SCHEMA</code>):</strong></p>
+<h3 id="giao-thuc-cau-truc-su-kien-event-schema">Giao thức Cấu trúc Sự kiện (Event Schema)</h3>
+<p>Các sự kiện (Event) được đóng gói cùng chữ ký số (Ed25519) và bằng chứng Zero-Knowledge trước khi gửi vào chuỗi:</p>
+<p><strong>Định nghĩa Cấu trúc (<code>hierachain.core.schemas.EVENT_SCHEMA</code>):</strong></p>
 <table>
 <thead>
 <tr>
-<th>Field Name</th>
-<th>Type (Arrow)</th>
+<th>Tên trường</th>
+<th>Kiểu dữ liệu (Arrow)</th>
 <th>Mô tả</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>tx_id</code></td>
-<td><code>string</code></td>
-<td>Định danh duy nhất của giao dịch (UUID hoặc Hash).</td>
-</tr>
-<tr>
 <td><code>entity_id</code></td>
 <td><code>string</code></td>
-<td>Đồng bộ với Event entity_id.</td>
+<td>Mã định danh thực thể ảnh hưởng (ProductID, OrderID...).</td>
 </tr>
 <tr>
-<td><code>event_type</code></td>
+<td><code>event</code></td>
 <td><code>string</code></td>
-<td>Đồng bộ với Event event.</td>
-</tr>
-<tr>
-<td><code>arrow_payload</code></td>
-<td><code>binary</code></td>
-<td>Dữ liệu Event đã được serialize theo chuẩn Arrow.</td>
+<td>Tên loại sự kiện.</td>
 </tr>
 <tr>
 <td><code>signature</code></td>
 <td><code>string</code></td>
-<td>Chữ ký số của người tạo giao dịch (Ed25519/ECDSA).</td>
+<td>Chữ ký số của bên khởi tạo sự kiện.</td>
 </tr>
 <tr>
 <td><code>timestamp</code></td>
 <td><code>float64</code></td>
-<td>Thời điểm tạo giao dịch.</td>
+<td>Thời gian khởi tạo sự kiện.</td>
 </tr>
 <tr>
 <td><code>zk_proof</code></td>
 <td><code>binary</code></td>
-<td>(Optional) Bằng chứng Zero-Knowledge để xác thực tính đúng đắn mà không lộ dữ liệu.</td>
+<td>(Tùy chọn) Dữ liệu bằng chứng Zero-Knowledge.</td>
 </tr>
 <tr>
 <td><code>zk_public_inputs</code></td>
 <td><code>binary</code></td>
-<td>(Optional) Input công khai đi kèm với ZK Proof.</td>
+<td>(Tùy chọn) Dữ liệu public inputs cho việc xác minh ZK Proof.</td>
 </tr>
 </tbody>
 </table>

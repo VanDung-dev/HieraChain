@@ -3519,10 +3519,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-khoi-tao-domain-contract" class="md-nav__link">
+  <a href="#1-khoi-tao-mot-domain-contract" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Khởi tạo Domain Contract
+        1. Khởi tạo một Domain Contract
       </span>
     </span>
   </a>
@@ -4322,10 +4322,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-khoi-tao-domain-contract" class="md-nav__link">
+  <a href="#1-khoi-tao-mot-domain-contract" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Khởi tạo Domain Contract
+        1. Khởi tạo một Domain Contract
       </span>
     </span>
   </a>
@@ -4403,10 +4403,10 @@
 
 <h1 id="viet-hop-ong-mien-domain-contracts">Viết Hợp đồng Miền (Domain Contracts)</h1>
 <h2 id="hop-ong-mien">Hợp đồng Miền</h2>
-<p>HieraChain sử dụng hệ thống Hợp đồng Miền (Domain Contracts) linh hoạt, hỗ trợ xử lý logic nghiệp vụ một cách chuyên biệt cho từng loại dữ liệu hay sự kiện cụ thể. Hệ thống quản lý mã được định nghĩa trực tiếp trong <code>hierachain/core/domain_contract.py</code>.</p>
-<h3 id="1-khoi-tao-domain-contract">1. Khởi tạo Domain Contract</h3>
-<p>Mỗi hợp đồng cung cấp một số thuộc tính cốt lõi bao gồm định danh, phiên bản, callback thực thi và siêu dữ liệu (metadata):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.domain_contract</span><span class="w"> </span><span class="kn">import</span> <span class="n">DomainContract</span>
+<p>HieraChain sử dụng hệ thống Domain Contracts linh hoạt hỗ trợ xử lý logic nghiệp vụ riêng cho từng loại dữ liệu hoặc sự kiện. Hệ thống mã quản lý được định nghĩa trực tiếp tại <code>hierachain/domains/domain_contract.py</code>.</p>
+<h3 id="1-khoi-tao-mot-domain-contract">1. Khởi tạo một Domain Contract</h3>
+<p>Mỗi hợp đồng cung cấp nhiều thuộc tính cốt lõi gồm mã định danh, phiên bản, callback thực thi và metadata:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.domains.domain_contract</span><span class="w"> </span><span class="kn">import</span> <span class="n">DomainContract</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">contract</span> <span class="o">=</span> <span class="n">DomainContract</span><span class="p">(</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">contract_id</span><span class="o">=</span><span class="s2">&quot;logistics_tracker_ledger&quot;</span><span class="p">,</span>

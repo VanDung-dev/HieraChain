@@ -4465,19 +4465,19 @@
 <tr>
 <th style="text-align: left;">Consensus Mechanism</th>
 <th style="text-align: left;">Scope &amp; Purpose</th>
-<th style="text-align: left;">Governance Model</th>
+<th style="text-align: left;">Target Layer &amp; Governance</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;"><strong>Proof of Authority (PoA)</strong></td>
-<td style="text-align: left;"><strong>Intra-Organization</strong> (Single MainChain + Sub-Chains)</td>
-<td style="text-align: left;">Designated Authority (Single-entity control within an enterprise)</td>
+<td style="text-align: left;"><strong>Intra-Organization</strong> (Internal Domain Sub-Chains)</td>
+<td style="text-align: left;"><strong>SubChain Level</strong> (Default for all internal domain events; single-entity control)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Proof of Federation (PoF)</strong></td>
 <td style="text-align: left;"><strong>Inter-Organization</strong> (Peer-to-Peer MainChain Alliance)</td>
-<td style="text-align: left;">Equal Multi-Party Federation (Threshold Quorum without central RootChain)</td>
+<td style="text-align: left;"><strong>MainChain Level</strong> (Configured via <code>HRC_MAINCHAIN_CONSENSUS=proof_of_federation</code> for multi-party alliance)</td>
 </tr>
 </tbody>
 </table>

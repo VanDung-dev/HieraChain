@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#cross-chain-transaction-2pc" class="md-skip">
+        <a href="#cross-chain-operation-2pc" class="md-skip">
           Skip to content
         </a>
       
@@ -1471,10 +1471,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#transaction-state-machine" class="md-nav__link">
+  <a href="#operation-state-machine" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Transaction State Machine
+        Operation State Machine
       </span>
     </span>
   </a>
@@ -4370,10 +4370,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#transaction-state-machine" class="md-nav__link">
+  <a href="#operation-state-machine" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Transaction State Machine
+        Operation State Machine
       </span>
     </span>
   </a>
@@ -4455,7 +4455,7 @@
   
 
 
-<h1 id="cross-chain-transaction-2pc">Cross-Chain Transaction (2PC)</h1>
+<h1 id="cross-chain-operation-2pc">Cross-Chain Operation (2PC)</h1>
 <h2 id="overview">Overview</h2>
 <p>When a business operation needs to atomically span two Sub-Chains (e.g., an asset moves from the <code>logistics</code> chain to the <code>finance</code> chain), HieraChain uses the <strong>Two-Phase Commit (2PC)</strong> protocol to guarantee atomicity. Either both chains commit the change, or both roll back — no partial state is possible.</p>
 <p><strong>Example real-world trigger</strong>: An inventory item is transferred between departments. The source chain records a <code>deduct</code> event; the destination chain records a <code>receive</code> event. Both must succeed or neither applies.</p>
@@ -4464,20 +4464,20 @@
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant HM as 🏛️ HierarchyManager
-    participant TM as 🔄 CrossChainTransactionManager
+    participant TM as 🔄 CrossChainOperationManager
     participant SRC as 📦 Source SubChain
     participant DST as 📦 Destination SubChain
 
-    HM-&gt;&gt;TM: initiate_cross_chain_transaction(src, dst, payload)
-    TM-&gt;&gt;TM: Create CrossChainTransaction (UUID, state=PENDING)
+    HM-&gt;&gt;TM: initiate_cross_chain_operation(src, dst, payload)
+    TM-&gt;&gt;TM: Create CrossChainOperation (UUID, state=PENDING)
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: PHASE 1 — PREPARE
-        TM-&gt;&gt;SRC: prepare_transaction(tx_id, payload, is_source=True)
+        TM-&gt;&gt;SRC: prepare_operation(op_id, payload, is_source=True)
         SRC-&gt;&gt;SRC: Lock resources, validate payload
         SRC--&gt;&gt;TM: True ✅
 
-        TM-&gt;&gt;DST: prepare_transaction(tx_id, payload, is_source=False)
+        TM-&gt;&gt;DST: prepare_operation(op_id, payload, is_source=False)
         DST-&gt;&gt;DST: Verify capacity to accept
         DST--&gt;&gt;TM: True ✅
 
@@ -4486,45 +4486,45 @@
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: PHASE 2 — COMMIT
-        TM-&gt;&gt;SRC: commit_transaction(tx_id)
+        TM-&gt;&gt;SRC: commit_operation(op_id)
         SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: commit_transaction(tx_id)
+        TM-&gt;&gt;DST: commit_operation(op_id)
         DST--&gt;&gt;TM: True ✅
         TM-&gt;&gt;TM: state = COMMITTED
     end
 
-    TM--&gt;&gt;HM: tx_id (COMMITTED)</code></pre>
+    TM--&gt;&gt;HM: op_id (COMMITTED)</code></pre>
 <hr />
 <h2 id="flow-diagram-failure-paths">Flow Diagram — Failure Paths</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
-    participant TM as 🔄 CrossChainTransactionManager
+    participant TM as 🔄 CrossChainOperationManager
     participant SRC as 📦 Source SubChain
     participant DST as 📦 Destination SubChain
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: SCENARIO A — Phase 1 Prepare Fails
-        TM-&gt;&gt;SRC: prepare_transaction(tx_id, payload)
+        TM-&gt;&gt;SRC: prepare_operation(op_id, payload)
         SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: prepare_transaction(tx_id, payload)
+        TM-&gt;&gt;DST: prepare_operation(op_id, payload)
         DST--&gt;&gt;TM: False ❌  (capacity / validation fail)
         TM-&gt;&gt;TM: state = PENDING → rollback triggered
-        TM-&gt;&gt;SRC: rollback_transaction(tx_id)
-        TM-&gt;&gt;DST: rollback_transaction(tx_id)
+        TM-&gt;&gt;SRC: rollback_operation(op_id)
+        TM-&gt;&gt;DST: rollback_operation(op_id)
         TM-&gt;&gt;TM: state = ROLLED_BACK ⚠️
     end
 
     rect rgb(0, 0, 0, 0)
         Note over TM,DST: SCENARIO B — Phase 2 Partial Commit Fails
-        TM-&gt;&gt;SRC: commit_transaction(tx_id)
+        TM-&gt;&gt;SRC: commit_operation(op_id)
         SRC--&gt;&gt;TM: True ✅
-        TM-&gt;&gt;DST: commit_transaction(tx_id)
+        TM-&gt;&gt;DST: commit_operation(op_id)
         DST--&gt;&gt;TM: Exception ❌
         TM-&gt;&gt;TM: state = FAILED ❌
         Note over TM: Manual reconciliation required&lt;br/&gt;Inspect logs for partial state
     end</code></pre>
 <hr />
-<h2 id="transaction-state-machine">Transaction State Machine</h2>
+<h2 id="operation-state-machine">Operation State Machine</h2>
 <pre class="mermaid"><code>flowchart LR
     P["PENDING"] --&gt; PR["PREPARED"]
     PR --&gt; C["COMMITTED ✅"]

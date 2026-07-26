@@ -2838,10 +2838,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vi-tri-kien-truc-poa-vs-pof" class="md-nav__link">
+  <a href="#vi-tri-kien-truc-poa-va-pof" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Vị trí Kiến trúc: PoA vs. PoF
+        Vị trí Kiến trúc: PoA và PoF
       </span>
     </span>
   </a>
@@ -4348,10 +4348,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vi-tri-kien-truc-poa-vs-pof" class="md-nav__link">
+  <a href="#vi-tri-kien-truc-poa-va-pof" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Vị trí Kiến trúc: PoA vs. PoF
+        Vị trí Kiến trúc: PoA và PoF
       </span>
     </span>
   </a>
@@ -4459,25 +4459,25 @@
 <h2 id="tong-quan">Tổng quan</h2>
 <p><strong>Proof of Federation (PoF)</strong> là giao thức đồng thuận liên chuỗi (<strong>Inter-MainChain</strong>) được thiết kế dành riêng cho các mạng liên minh tổ chức (<strong>Consortium Alliance</strong>). PoF cho phép nhiều tổ chức độc lập (ví dụ: Bệnh viện A, Bệnh viện B, Bảo hiểm Z)—mỗi bên tự vận hành một MainChain riêng—có thể trao đổi, xác thực và đạt được đồng thuận trên các bằng chứng sự kiện liên tổ chức <strong>mà không cần một RootChain trung tâm hay một thẩm quyền tối cao nào cai trị</strong>.</p>
 <hr />
-<h2 id="vi-tri-kien-truc-poa-vs-pof">Vị trí Kiến trúc: PoA vs. PoF</h2>
+<h2 id="vi-tri-kien-truc-poa-va-pof">Vị trí Kiến trúc: PoA và PoF</h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Giao thức Đồng thuận</th>
+<th style="text-align: left;">Cơ chế Đồng thuận</th>
 <th style="text-align: left;">Phạm vi &amp; Mục đích</th>
-<th style="text-align: left;">Mô hình Quản trị</th>
+<th style="text-align: left;">Tầng Áp dụng &amp; Mô hình Quản trị</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align: left;"><strong>Proof of Authority (PoA)</strong></td>
-<td style="text-align: left;"><strong>Nội bộ 1 Tổ chức</strong> (1 MainChain + các Sub-Chains)</td>
-<td style="text-align: left;">Thẩm quyền chỉ định (Single-entity control trong nội bộ doanh nghiệp)</td>
+<td style="text-align: left;"><strong>Nội bộ Tổ chức</strong> (Các Sub-Chain nghiệp vụ nội bộ)</td>
+<td style="text-align: left;"><strong>Tầng SubChain</strong> (Mặc định cho mọi sự kiện nội bộ; kiểm soát đơn quyền)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Proof of Federation (PoF)</strong></td>
-<td style="text-align: left;"><strong>Liên minh đa Tổ chức</strong> (Peer-to-Peer MainChain Alliance)</td>
-<td style="text-align: left;">Liên bang Ngang hàng (Threshold Quorum không cần RootChain)</td>
+<td style="text-align: left;"><strong>Liên minh Đa Tổ chức</strong> (Mạng liên kết MainChain P2P)</td>
+<td style="text-align: left;"><strong>Tầng MainChain</strong> (Cấu hình qua <code>HRC_MAINCHAIN_CONSENSUS=proof_of_federation</code> cho liên minh đa bên)</td>
 </tr>
 </tbody>
 </table>

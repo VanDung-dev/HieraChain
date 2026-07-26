@@ -4493,19 +4493,19 @@
 <hr />
 <h2 id="6c-hoan-tra-trang-thai-state-rollback">6C — Hoàn trả Trạng thái (State Rollback)</h2>
 <pre class="mermaid"><code>flowchart LR
-    ERR["❌ Lỗi nghiêm trọng\nhoặc Tính toàn vẹn lỗi"]
-    SNAP["📸 Nạp Ảnh chụp trạng thái\n(RollbackManager)"]
-    JRNL["📓 Phát lại Nhật ký ghi chép\n(TransactionJournal)"]
-    VER["🔍 Xác thực Trạng thái đã khôi phục\n(DataValidator)"]
-    OK["✅ Trạng thái đã phục hồi"]
+    ERR["❌ Lỗi Nghiêm trọng\nhoặc Thất bại Toàn vẹn"]
+    SNAP["📸 Nạp Ảnh chụp nhanh\n(RollbackManager)"]
+    JRNL["📓 Phát lại Nhật ký\n(EventJournal)"]
+    VER["🔍 Xác minh Trạng thái Khôi phục\n(DataValidator)"]
+    OK["✅ Trạng thái Đã Khôi phục"]
     ALERT["🚨 Cảnh báo + Leo thang\n(AlertManager)"]
 
     ERR --&gt; SNAP --&gt; JRNL --&gt; VER
     VER --&gt;|Hợp lệ| OK
     VER --&gt;|Không hợp lệ| ALERT</code></pre>
-<p><strong>Các bước hoàn trả</strong>:
-1. <code>RollbackManager.load_snapshot()</code> — nạp ảnh chụp trạng thái (snapshot) nhất quán gần đây nhất.
-2. <code>TransactionJournal.replay()</code> — phát lại (replay) các nhật ký đã cam kết kể từ thời điểm chụp snapshot.
+<p><strong>Các bước Khôi phục (Rollback)</strong>:
+1. <code>RollbackManager.load_snapshot()</code> — nạp ảnh chụp nhanh đồng nhất gần nhất
+2. <code>EventJournal.replay()</code> — phát lại các mục nhật ký đã cam kết kể từ thời điểm ảnh chụp nhanh
 3. <code>DataValidator.validate()</code> — xác thực trạng thái đã khôi phục so với mã kiểm tra băm (cryptographic checksums).
 4. Nếu xác thực thất bại: gửi cảnh báo leo thang qua hệ thống Cảnh báo Rủi ro; yêu cầu sự can thiệp thủ công từ người quản trị.</p>
 <hr />

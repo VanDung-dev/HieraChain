@@ -3246,10 +3246,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#transaction" class="md-nav__link">
+  <a href="#event-schema-protocol" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Transaction
+        Event Schema Protocol
       </span>
     </span>
   </a>
@@ -4344,10 +4344,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#transaction" class="md-nav__link">
+  <a href="#event-schema-protocol" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Transaction
+        Event Schema Protocol
       </span>
     </span>
   </a>
@@ -4476,9 +4476,9 @@
 </tr>
 </tbody>
 </table>
-<h3 id="transaction">Transaction</h3>
-<p>Transaction is a wrapper containing an Event along with digital signature and zero-knowledge proof.</p>
-<p><strong>Schema Definition (<code>hierachain.core.schemas.TRANSACTION_SCHEMA</code>):</strong></p>
+<h3 id="event-schema-protocol">Event Schema Protocol</h3>
+<p>Events are wrapped with cryptographic digital signatures (Ed25519) and zero-knowledge proofs before submission:</p>
+<p><strong>Event Validation Schema (<code>hierachain.core.schemas.EVENT_SCHEMA</code>):</strong></p>
 <table>
 <thead>
 <tr>
@@ -4489,44 +4489,34 @@
 </thead>
 <tbody>
 <tr>
-<td><code>tx_id</code></td>
-<td><code>string</code></td>
-<td>Unique transaction identifier (UUID or Hash).</td>
-</tr>
-<tr>
 <td><code>entity_id</code></td>
 <td><code>string</code></td>
-<td>Synchronized with Event entity_id.</td>
+<td>Affected entity identifier (e.g., ProductID, OrderID).</td>
 </tr>
 <tr>
-<td><code>event_type</code></td>
+<td><code>event</code></td>
 <td><code>string</code></td>
-<td>Synchronized with Event event.</td>
-</tr>
-<tr>
-<td><code>arrow_payload</code></td>
-<td><code>binary</code></td>
-<td>Event data serialized in Arrow format.</td>
+<td>Event type name.</td>
 </tr>
 <tr>
 <td><code>signature</code></td>
 <td><code>string</code></td>
-<td>Digital signature of the transaction creator (Ed25519/ECDSA).</td>
+<td>Digital signature of the event creator.</td>
 </tr>
 <tr>
 <td><code>timestamp</code></td>
 <td><code>float64</code></td>
-<td>Transaction creation time.</td>
+<td>Event creation timestamp.</td>
 </tr>
 <tr>
 <td><code>zk_proof</code></td>
 <td><code>binary</code></td>
-<td>(Optional) Zero-Knowledge proof to verify correctness without revealing data.</td>
+<td>(Optional) Zero-Knowledge proof payload.</td>
 </tr>
 <tr>
 <td><code>zk_public_inputs</code></td>
 <td><code>binary</code></td>
-<td>(Optional) Public inputs accompanying the ZK Proof.</td>
+<td>(Optional) Public inputs for ZK Proof verification.</td>
 </tr>
 </tbody>
 </table>

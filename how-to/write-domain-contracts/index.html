@@ -4403,10 +4403,10 @@
 
 <h1 id="writing-domain-contracts">Writing Domain Contracts</h1>
 <h2 id="domain-contracts">Domain Contracts</h2>
-<p>HieraChain uses a flexible Domain Contracts system that supports processing business logic specific to each type of data or event. The code management system is defined directly in <code>hierachain/core/domain_contract.py</code>.</p>
+<p>HieraChain uses a flexible Domain Contracts system that supports processing business logic specific to each type of data or event. The code management system is defined directly in <code>hierachain/domains/domain_contract.py</code>.</p>
 <h3 id="1-initializing-a-domain-contract">1. Initializing a Domain Contract</h3>
 <p>Each contract provides several core properties including an identifier, version, execution callback, and metadata:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.core.domain_contract</span><span class="w"> </span><span class="kn">import</span> <span class="n">DomainContract</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.domains.domain_contract</span><span class="w"> </span><span class="kn">import</span> <span class="n">DomainContract</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">contract</span> <span class="o">=</span> <span class="n">DomainContract</span><span class="p">(</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">contract_id</span><span class="o">=</span><span class="s2">&quot;logistics_tracker_ledger&quot;</span><span class="p">,</span>
