@@ -1,0 +1,294 @@
+---
+- name: Provision Redis Server
+  hosts: redis
+  become: yes
+  tasks:
+    - name: Configure Redis to listen on all interfaces
+      lineinfile:
+        path: /etc/redis/redis.conf
+        regexp: '^bind '
+        line: 'bind 0.0.0.0'
+
+    - name: Disable protected mode
+      lineinfile:
+        path: /etc/redis/redis.conf
+        regexp: '^protected-mode '
+        line: 'protected-mode no'
+
+    - name: Restart and enable redis service
+      systemd:
+        name: redis-server
+        state: restarted
+        enabled: yes
+
+- name: Initialize IPFS Private Swarm Nodes
+  hosts: ipfs
+  become: yes
+  tasks:
+    - name: Check if IPFS is initialized
+      stat:
+        path: /root/.ipfs/config
+      register: ipfs_init_check
+
+    - name: Initialize IPFS
+      command: "ipfs init"
+      environment:
+        IPFS_PATH: "/root/.ipfs"
+      when: not ipfs_init_check.stat.exists
+
+    - name: Fix IPFS directory permissions
+      file:
+        path: /root/.ipfs
+        state: directory
+        owner: root
+        group: root
+        recurse: yes
+
+    - name: Configure IPFS API address
+      command: "ipfs config Addresses.API /ip4/0.0.0.0/tcp/5001"
+      environment:
+        IPFS_PATH: "/root/.ipfs"
+
+    - name: Copy private swarm key
+      copy:
+        src: "{{ repo_path }}/docker/ipfs/swarm.key"
+        dest: "/root/.ipfs/swarm.key"
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Remove default IPFS bootstraps
+      command: "ipfs bootstrap rm --all"
+      environment:
+        IPFS_PATH: "/root/.ipfs"
+      failed_when: false
+
+    - name: Create IPFS systemd service
+      copy:
+        dest: /etc/systemd/system/ipfs.service
+        content: |
+          [Unit]
+          Description=IPFS Daemon
+          After=network.target
+
+          [Service]
+          Type=simple
+          ExecStart=/usr/local/bin/ipfs daemon
+          Restart=always
+          User=root
+          Environment=IPFS_PATH=/root/.ipfs
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Start and enable IPFS service
+      systemd:
+        name: ipfs
+        state: restarted
+        daemon_reload: yes
+        enabled: yes
+
+    - name: Pause briefly for daemon startup
+      pause:
+        seconds: 3
+
+- name: Collect IPFS PeerIDs
+  hosts: ipfs
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: Wait for IPFS daemon via API
+      uri:
+        url: "http://127.0.0.1:5001/api/v0/id"
+        method: POST
+        return_content: yes
+      register: ipfs_api_result
+      retries: 10
+      delay: 3
+      until: ipfs_api_result is succeeded and ipfs_api_result.json is defined
+
+    - name: Get PeerID via API
+      uri:
+        url: "http://127.0.0.1:5001/api/v0/id"
+        method: POST
+        return_content: yes
+      register: peerid_result
+
+    - name: Store PeerID
+      set_fact:
+        my_peerid: "{{ (peerid_result.json).ID }}"
+
+- name: Connect IPFS Private Swarm
+  hosts: ipfs
+  gather_facts: no
+  tasks:
+    - name: Connect to all other peers
+      uri:
+        url: "http://127.0.0.1:5001/api/v0/swarm/connect?arg=/dns4/{{ item }}/tcp/4001/p2p/{{ hostvars[item]['my_peerid'] }}"
+        method: POST
+      loop: "{{ groups['ipfs'] }}"
+      when: item != inventory_hostname
+      failed_when: false
+
+- name: Provision HieraChain Ledger Nodes
+  hosts: nodes
+  become: yes
+  tasks:
+    - name: Create symlink to codebase (OrbStack mount)
+      file:
+        src: "/mnt/mac{{ repo_path }}"
+        dest: "/app"
+        state: link
+        force: yes
+      when: provider == 'orbstack'
+
+    - name: Create config directory
+      file:
+        path: /etc/hierachain
+        state: directory
+        mode: '0755'
+
+    - name: Copy node identity
+      copy:
+        src: "{{ repo_path }}/docker/nodes/{{ inventory_hostname.replace('hrc-', '') }}/identity.json"
+        dest: "/etc/hierachain/identity.json"
+
+    - name: Copy node peers.env
+      copy:
+        src: "{{ repo_path }}/docker/nodes/{{ inventory_hostname.replace('hrc-', '') }}/peers.env"
+        dest: "/etc/hierachain/peers.env"
+
+    - name: Create HieraChain systemd service
+      copy:
+        dest: "/etc/systemd/system/hierachain.service"
+        content: |
+          [Unit]
+          Description=HieraChain Node
+          After=network.target
+
+          [Service]
+          Type=simple
+          WorkingDirectory=/root
+          EnvironmentFile=/etc/hierachain/peers.env
+          ExecStart=/root/.venv/bin/python -m hierachain.cli.__init__ node start --host 0.0.0.0 --port 2661
+          Restart=always
+          User=root
+          Environment=NO_WG=true
+          Environment=HRC_ENV=test
+          Environment=HRC_REGION={{ 'us' if 'node1' in inventory_hostname else ('eu' if 'node2' in inventory_hostname else 'asia') }}
+          Environment=HRC_NODE_ID={{ inventory_hostname.replace('hrc-', '') }}
+          Environment=HRC_P2P_HOST=10.200.{{ inventory_hostname.replace('hrc-node', '') }}.1
+          Environment=HRC_P2P_PORT=500{{ inventory_hostname.replace('hrc-node', '') }}
+          Environment=HRC_VALIDATOR_IDENTITY=/etc/hierachain/identity.json
+          Environment=DATABASE_PATH=/root/hierachain.db
+          Environment=HRC_API_HOST=0.0.0.0
+          Environment=HRC_AUTH_ENABLED=false
+          Environment=LOG_LEVEL=INFO
+          Environment=HRC_IPFS_ENABLED=true
+          Environment=HRC_IPFS_HOST=/dns4/hrc-ipfs{{ inventory_hostname.replace('hrc-node', '') }}.{{ dns_suffix }}/tcp/5001
+          Environment=HRC_IPFS_ENCRYPTION_KEY={{ ipfs_encryption_key }}
+          Environment=HRC_IPFS_AUTO_PIN=true
+          Environment=HRC_IPFS_TIMEOUT=120
+          Environment=REDIS_HOST=hrc-redis.{{ dns_suffix }}
+          Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Start and enable HieraChain service
+      systemd:
+        name: hierachain
+        state: restarted
+        daemon_reload: yes
+        enabled: yes
+
+- name: Provision Nginx Gateway
+  hosts: gateway
+  become: yes
+  tasks:
+    - name: Create Nginx gateway configuration
+      copy:
+        dest: /etc/nginx/sites-available/default
+        content: |
+          upstream hierachain_nodes {
+              server hrc-node1.{{ dns_suffix }}:2661 max_fails=3 fail_timeout=10s;
+              server hrc-node2.{{ dns_suffix }}:2661 max_fails=3 fail_timeout=10s;
+              server hrc-node3.{{ dns_suffix }}:2661 max_fails=3 fail_timeout=10s;
+              server hrc-node4.{{ dns_suffix }}:2661 max_fails=3 fail_timeout=10s;
+              keepalive 32;
+          }
+
+          server {
+              listen 80;
+              server_name localhost;
+              proxy_connect_timeout 15s;
+              proxy_send_timeout 60s;
+              proxy_read_timeout 60s;
+
+              location /gateway-health {
+                  access_log off;
+                  return 200 '{"status": "gateway_up"}';
+                  add_header Content-Type application/json;
+              }
+
+              location ~ ^/{{ explorer_token }}/(?<page>status|explorer)$ {
+                  alias /var/www/html/;
+                  try_files $page.html =404;
+              }
+
+              location /api/ {
+                  proxy_pass http://hierachain_nodes;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_http_version 1.1;
+                  proxy_set_header Connection "";
+              }
+
+              location ~ ^/{{ explorer_token }}/nodes$ {
+                  add_header Content-Type application/json;
+                  return 200 "{\"nodes\": \"node1,node2,node3,node4\"}";
+              }
+
+              location / {
+                  return 403 'Forbidden: HieraChain Stealth Mode Active.';
+              }
+          }
+
+    - name: Copy status.html to Web Root
+      copy:
+        src: "{{ repo_path }}/docker/status.html"
+        dest: "/var/www/html/status.html"
+
+    - name: Create explorer.html placeholder
+      copy:
+        dest: "/var/www/html/explorer.html"
+        content: "Explorer View"
+
+    - name: Restart and enable Nginx service
+      systemd:
+        name: nginx
+        state: restarted
+        enabled: yes
+
+- name: Verify Cluster Health
+  hosts: gateway
+  become: yes
+  tasks:
+    - name: Check gateway health endpoint
+      uri:
+        url: "http://localhost/gateway-health"
+        return_content: yes
+      register: gw_health
+      retries: 10
+      delay: 3
+      until: gw_health is succeeded and 'gateway_up' in gw_health.content
+
+    - name: Check node health via API
+      uri:
+        url: "http://localhost/api/ledger/health"
+        return_content: yes
+      register: node_health
+      retries: 10
+      delay: 3
+      until: node_health is succeeded and 'healthy' in node_health.content
