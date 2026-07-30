@@ -74,10 +74,6 @@ case "$REGION" in
                 ;;
         esac
         ;;
-    rogue)
-        tc qdisc replace dev wg0 root netem delay 100ms 20ms
-        echo "[wg-tc] Rogue node: flat 100ms delay"
-        ;;
     *)
         echo "[wg-tc] Unknown region: $REGION, no tc rules applied"
         ;;
