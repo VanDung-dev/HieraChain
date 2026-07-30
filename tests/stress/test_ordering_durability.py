@@ -180,11 +180,12 @@ class TestOrderingThroughput:
         assert results["sent"] > 0
 
     def _wait_for_committed_event(self, node_id: str, timeout: int = 45) -> bool:
-        """Send a single event and wait for it to be committed. Returns True if pipeline is working."""
+        """Send events and wait for them to be committed into a block."""
         before = get_event_count(self.client, node_id)
-        self.client.submit_event(node_id, generate_event(), chain_name=DURABLE_CHAIN)
         deadline = time.time() + timeout
         while time.time() < deadline:
+            for _ in range(5):
+                self.client.submit_event(node_id, generate_event(), chain_name=DURABLE_CHAIN)
             time.sleep(2)
             after = get_event_count(self.client, node_id)
             if after > before:
@@ -235,7 +236,7 @@ class TestOrderingThroughput:
             pytest.skip("No healthy nodes")
 
         # Verify ordering pipeline is actually committing events before running bursts
-        if not self._wait_for_committed_event(node_id, timeout=30):
+        if not self._wait_for_committed_event(node_id, timeout=45):
             pytest.skip("Ordering pipeline not committing events — skip batch size analysis")
 
         results = {f"burst_{b}": self._run_burst(node_id, b) for b in [1, 10, 50]}
