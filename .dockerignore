@@ -540,6 +540,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+!docker/dist/
 downloads/
 eggs/
 .eggs/
