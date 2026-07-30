@@ -1,29 +1,22 @@
 # Podman-specific overrides for HieraChain multi-region simulation
-# Podman needs explicit device passthrough for TUN (WireGuard)
+# Podman needs explicit device passthrough for TUN (WireGuard).
+# Gateway uses the same config as Docker (port 80 inside container works
+# in rootless podman — user namespace maps root internally).
 #
 # Usage:
-#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.podman.yml up -d
-#
-# Or via podman-compose:
 #   podman-compose -f docker/docker-compose.yml -f docker/docker-compose.podman.yml up -d
 
 services:
   node1:
     devices:
       - /dev/net/tun:/dev/net/tun
-
   node2:
     devices:
       - /dev/net/tun:/dev/net/tun
-
   node3:
     devices:
       - /dev/net/tun:/dev/net/tun
-
   node4:
     devices:
       - /dev/net/tun:/dev/net/tun
 
-  rogue-node:
-    devices:
-      - /dev/net/tun:/dev/net/tun

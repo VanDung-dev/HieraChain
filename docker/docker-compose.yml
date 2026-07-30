@@ -1,7 +1,7 @@
 # HieraChain Multi-Region Stress Test Environment
 # Uses WireGuard mesh for cross-region P2P simulation
 #
-# Regions: US (node1), EU (node2), Asia (node3, node4), Rogue (security-test)
+# Regions: US (node1), EU (node2), Asia (node3, node4)
 
 networks:
   region-us:
@@ -19,11 +19,6 @@ networks:
     ipam:
       config:
         - subnet: 172.28.3.0/24
-  region-rogue:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.9.0/24
   wgmesh:
     driver: bridge
     ipam:
@@ -257,64 +252,6 @@ services:
     restart: unless-stopped
 
   # ============================================================
-  # ROGUE NODE — Adversarial region (security-test profile only)
-  # ============================================================
-  rogue-node:
-    profiles:
-      - security-test
-    image: hierachain:latest
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    container_name: hierachain-rogue-node
-    hostname: rogue-node
-    cap_add:
-      - NET_ADMIN
-    env_file:
-      - ./nodes/rogue-node/peers.env
-    environment:
-      - HRC_NODE_ID=${ROGUE_NODE_ID_OVERRIDE:-rogue-node}
-      - HRC_REGION=rogue
-      - HRC_P2P_HOST=10.200.9.1
-      - HRC_P2P_PORT=5005
-      - HRC_AUTH_ENABLED=false
-      - LOG_LEVEL=INFO
-      - DATABASE_PATH=/app/data/hierachain.db
-      - HRC_API_HOST=0.0.0.0
-      - HRC_VALIDATOR_IDENTITY=${ROGUE_IDENTITY_PATH:-/app/config/identity/identity.json}
-      - HRC_ENV=test
-      - HRC_RATE_LIMIT=false
-      - HRC_RATE_LIMIT_RPM=100000
-      - HRC_JOURNAL_FSYNC=false
-      - HRC_BLOCK_INTERVAL=1
-      - HRC_IPFS_ENABLED=true
-      - HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
-      - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
-      - HRC_IPFS_AUTO_PIN=true
-      - HRC_IPFS_TIMEOUT=120
-    networks:
-      region-rogue:
-        ipv4_address: 172.28.9.10
-      wgmesh:
-        ipv4_address: 172.29.0.20
-    volumes:
-      - rogue-node-data:/app/data
-      - ./nodes/rogue-node:/app/config/identity:ro
-      - ./nodes:/app/all-identities:ro
-      - ../log/rogue-node:/app/log
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    restart: unless-stopped
-
-  # ============================================================
   # ENTERPRISE API GATEWAY (Simulated Web2, connected to all regions)
   # ============================================================
   gateway:
@@ -335,8 +272,6 @@ services:
         ipv4_address: 172.28.2.5
       region-asia:
         ipv4_address: 172.28.3.5
-      region-rogue:
-        ipv4_address: 172.28.9.5
       web2-external:
         ipv4_address: 10.0.0.5
     restart: unless-stopped
@@ -498,7 +433,6 @@ services:
       - region-us
       - region-eu
       - region-asia
-      - region-rogue
       - web2-external
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -524,7 +458,6 @@ volumes:
   node2-data:
   node3-data:
   node4-data:
-  rogue-node-data:
   ipfs-node1-data:
   ipfs-node2-data:
   ipfs-node3-data:
