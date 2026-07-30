@@ -4,115 +4,138 @@ HieraChain provides container runtimes dedicated to high-performance benchmarkin
 
 ---
 
+## File Layout
+
+```
+docker/
+├── docker-compose.yml                 # Compose definition (multi-region + WireGuard)
+├── docker-compose.podman.yml          # Podman overlay (TUN device passthrough)
+├── docker-compose.k8s-stress.yml      # Kubernetes stress test
+├── hierachain.sh                      # Unified CLI (recommended)
+├── lib/                               # Shared deployment & provider libraries
+└── scripts/                           # Helper scripts (identity gen, network tc, lxd setup)
+```
+
+---
+
+## Usage
+
+### Via hierachain.sh (recommended)
+
+```bash
+# Docker
+bash docker/hierachain.sh setup docker
+bash docker/hierachain.sh stress docker --reuse
+bash docker/hierachain.sh down docker
+
+# Podman (requires pip install podman-compose)
+bash docker/hierachain.sh setup podman
+bash docker/hierachain.sh stress podman --reuse
+bash docker/hierachain.sh down podman
+
+# LXD Containers (only Linux)
+bash docker/hierachain.sh setup lxd
+bash docker/hierachain.sh stress lxd --reuse
+bash docker/hierachain.sh down lxd
+
+# Kubernetes
+bash docker/hierachain.sh setup k8s
+bash docker/hierachain.sh stress k8s --reuse
+bash docker/hierachain.sh down k8s
+```
+
+### Via compose directly
+
+```bash
+# Docker
+docker compose -f docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml down -v
+
+# Podman
+podman-compose -f docker/docker-compose.yml -f docker/docker-compose.podman.yml up -d
+podman-compose -f docker/docker-compose.yml -f docker/docker-compose.podman.yml down -v
+```
+
+---
+
 ## Platform Requirements
 
 | Platform | Container Runtime | Notes |
 |----------|------------------|-------|
-| **macOS** | Docker Desktop / Colima / OrbStack | macOS cannot run Docker natively, requires VM layer |
-| **Linux** | Docker / Podman | Native container support, no VM required |
+| **macOS** | Docker Desktop / Colima / OrbStack | Requires VM container layer (Docker, Podman, K8s) |
+| **Linux (Ubuntu/Debian)** | Docker / Podman / LXD | Native support. LXD offers high-density LXC container isolation |
 
 ---
 
-## Infrastructure Overview
+## Environment Setup
 
-```
-docker/
-├── setup-docker.sh           # Docker Compose: 4-node cluster
-├── run-stress-docker.sh      # Docker Compose: stress test
-├── run-security-docker.sh    # Docker Compose: security/rogue-node test
-│
-├── setup-podman.sh           # Podman Compose: 4-node cluster
-├── run-stress-podman.sh      # Podman Compose: stress test
-├── run-security-podman.sh    # Podman Compose: security/rogue-node test
-│
-├── setup-orb-k8s.sh          # OrbStack + Kind: K8s cluster
-├── run-stress-orb-k8s.sh     # OrbStack + Kind: stress test
-├── docker-compose.k8s-stress.yml
-│
-├── k8s/                      # Kubernetes manifests
-├── kind-config.yaml
-├── docker-compose.test.yml
-├── podman-compose.yml
-└── default.podman.conf.template
-```
+### 1. LXD Setup (Ubuntu/Linux Only)
 
----
+LXD provides native system container virtualization for running a full HieraChain cluster in isolated LXC environments without VM overhead.
 
-## macOS: Why You Need a VM Layer
-
-**Problem**: macOS does not support running Docker containers natively (Linux-only).  
-**Solution**: Use a lightweight virtualization layer to run Linux containers.
-
-| Tool | Type | Best For | Install |
-|------|------|----------|---------|
-| **Docker Desktop** | Full VM + Docker | Default choice, includes UI | `brew install --cask docker` |
-| **Podman** | Rootless (requires VM) | No daemon, rootless by default | `brew install podman` |
-| **Colima** | Lightweight VM | Minimal overhead, CLI-only | `brew install colima` |
-| **OrbStack** | Lightweight VM + K8s | Fast startup, K8s support | `brew install orbstack` |
-
-### macOS Quick Start
+#### Step 1: Prepare System & Prerequisites
+Run the setup script **without `sudo`** (it will request `sudo` permissions when needed):
 
 ```bash
-# Option 1: Docker Desktop (recommended for beginners)
-docker context use default
-docker/setup-docker.sh
-docker/run-stress-docker.sh
-docker/run-security-docker.sh
+bash docker/scripts/setup-ubuntu-lxd.sh
+```
 
-# Option 2: Podman Machine (rootless, no daemon)
+#### Step 2: Apply Group Permissions
+After setup completes, reload environment and group permissions:
+
+```bash
+source ~/.bashrc
+newgrp lxd
+```
+
+#### Step 3: Deploy & Test Cluster
+Now run the unified CLI without `sudo`:
+
+```bash
+# 1. Deploy 4-node HieraChain cluster + Redis + Gateway + IPFS Swarm
+bash docker/hierachain.sh setup lxd
+
+# 2. Execute stress test suite
+bash docker/hierachain.sh stress lxd --reuse
+
+# 3. Clean up cluster and containers
+bash docker/hierachain.sh down lxd
+```
+
+---
+
+### 2. Docker & Podman Setup
+
+#### macOS Quick Start
+
+```bash
+# Docker Desktop
+docker context use default
+bash docker/hierachain.sh setup docker
+
+# Colima
+colima start --cpu 8 --memory 16 --disk 60
+docker context use colima
+bash docker/hierachain.sh setup docker
+
+# Podman Machine
 podman machine init --cpus 8 --memory 16
 podman machine start
-docker/setup-podman.sh
-docker/run-stress-podman.sh
-docker/run-security-podman.sh
+pip install podman-compose
+bash docker/hierachain.sh setup podman
 
-# Option 3 Colima (lightweight, CLI-only)
-colima start --cpu 8 --memory 16 --disk 60 --vm-type=vz --vz-rosetta --mount-type virtiofs
-docker context use colima
-docker/setup-docker.sh
-docker/run-stress-docker.sh
-docker/run-security-docker.sh
-
-# Option 4: OrbStack + Kubernetes (for K8s testing)
-docker context use orbstack
-docker/setup-orb-k8s.sh
-docker/run-stress-orb-k8s.sh
+# OrbStack + Kubernetes
+orb start
+bash docker/hierachain.sh setup k8s
 ```
 
----
-
-## Linux: Native Containers
-
-Linux runs Docker/Podman natively without VM overhead.
+#### Linux Quick Start (Docker / Podman)
 
 ```bash
-# Option 1: Docker
-docker/setup-docker.sh
-docker/run-stress-docker.sh
-docker/run-security-docker.sh
+# Docker
+bash docker/hierachain.sh setup docker
 
-# Option 2: Podman (rootless, no daemon required)
-docker/setup-podman.sh
-docker/run-stress-podman.sh
-docker/run-security-podman.sh
+# Podman
+pip install podman-compose
+bash docker/hierachain.sh setup podman
 ```
-
----
-
-## Global Configuration
-
-| Variable | Description | Recommendation |
-|----------|-------------|----------------|
-| `EXPLORER_TOKEN` | Secure token for monitor | Auto-generated |
-| `HRC_RATE_LIMIT` | API rate limiting | `false` for stress testing |
-
----
-
-## Cleanup Commands
-
-| Runtime | Command |
-|---------|---------|
-| **Docker** | `docker compose -f docker/docker-compose.test.yml down -v` |
-| **Podman** | `podman compose -f docker/podman-compose.yml down -v` |
-| **OrbStack K8s** | `kubectl delete namespace hierachain` |
-| **Colima** | `colima stop` |
