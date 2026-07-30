@@ -127,13 +127,6 @@ def main() -> None:
     base_dir = "docker/nodes"
     os.makedirs(base_dir, exist_ok=True)
 
-    include_rogue = os.getenv("INCLUDE_ROGUE_NODE", "false").lower() == "true"
-    rogue_node_id = os.getenv("ROGUE_NODE_ID", "rogue-node")
-
-    rogue_wg_ip = "10.200.9.1"
-    rogue_endpoint = "172.29.0.20"
-    rogue_p2p_port = 5005
-
     all_identities: Dict[str, dict] = {}
 
     print("=== Generating HieraChain Node Identities ===")
@@ -145,13 +138,6 @@ def main() -> None:
         _write_identity(node_dir, identity)
         all_identities[node_id] = identity
 
-    if include_rogue:
-        rogue_dir = os.path.join(base_dir, rogue_node_id)
-        rogue_identity = generate_node_identity(rogue_node_id, "RogueOrg-MSP")
-        rogue_identity["wireguard_ip"] = rogue_wg_ip
-        _write_identity(rogue_dir, rogue_identity)
-        all_identities[rogue_node_id] = rogue_identity
-
     # Build WireGuard peer info for wg0.conf generation
     wg_peer_info: Dict[str, dict] = {}
     for node_id in nodes:
@@ -161,38 +147,15 @@ def main() -> None:
             "wg_ip": NODE_WG_IPS[node_id],
             "endpoint": NODE_WG_ENDPOINTS[node_id],
         }
-    if include_rogue:
-        wg_peer_info[rogue_node_id] = {
-            "node_id": rogue_node_id,
-            "wireguard_public_key": all_identities[rogue_node_id]["wireguard_public_key"],
-            "wg_ip": rogue_wg_ip,
-            "endpoint": rogue_endpoint,
-        }
 
     print("\n=== Generating WireGuard Configs ===")
 
-    legitimate_peer_ids = set(nodes)
-
     for node_id in nodes:
         node_dir = os.path.join(base_dir, node_id)
-        peers = [p for pid, p in wg_peer_info.items()
-                 if pid != node_id and pid in legitimate_peer_ids]
+        peers = [p for pid, p in wg_peer_info.items() if pid != node_id]
         _write_wg_config(node_dir, node_id, all_identities[node_id], peers)
 
-    if include_rogue:
-        rogue_dir = os.path.join(base_dir, rogue_node_id)
-        # Rogue knows ALL nodes (including legitimate ones)
-        rogue_peers = [p for pid, p in wg_peer_info.items() if pid != rogue_node_id]
-        _write_wg_config(rogue_dir, rogue_node_id, all_identities[rogue_node_id], rogue_peers)
-
-    # Generate peers.env for HieraChain P2P (using WG IPs for cross-region)
     print("\n=== Generating Peers.env (WireGuard IPs) ===")
-
-    all_ips: Dict[str, str] = dict(NODE_WG_IPS)
-    all_ports: Dict[str, int] = dict(NODE_P2P_PORTS)
-    if include_rogue:
-        all_ips[rogue_node_id] = rogue_wg_ip
-        all_ports[rogue_node_id] = rogue_p2p_port
 
     for node_id in nodes:
         other_peers: List[str] = []
@@ -200,17 +163,9 @@ def main() -> None:
             if peer_id == node_id:
                 continue
             peer_info = all_identities[peer_id]
-            peer_str = f"{peer_id}@{all_ips[peer_id]}:{all_ports[peer_id]}:{peer_info['transport_public_key']}"
+            peer_str = f"{peer_id}@{NODE_WG_IPS[peer_id]}:{NODE_P2P_PORTS[peer_id]}:{peer_info['transport_public_key']}"
             other_peers.append(peer_str)
         _write_peers_env(os.path.join(base_dir, node_id), other_peers)
-
-    if include_rogue:
-        rogue_peers_list: List[str] = []
-        for peer_id in nodes:
-            peer_info = all_identities[peer_id]
-            peer_str = f"{peer_id}@{all_ips[peer_id]}:{all_ports[peer_id]}:{peer_info['transport_public_key']}"
-            rogue_peers_list.append(peer_str)
-        _write_peers_env(os.path.join(base_dir, rogue_node_id), rogue_peers_list)
 
     peer_list_path = os.path.join(base_dir, "peers.json")
     with open(peer_list_path, "w") as f:
