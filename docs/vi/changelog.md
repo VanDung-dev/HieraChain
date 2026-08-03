@@ -8,7 +8,13 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (111)"
+??? note "Improvements (114)"
+
+    * 2026-08-04
+
+        * **Tài liệu**: Chuẩn hóa thuật ngữ trên toàn bộ tài liệu EN/VI: đổi tên "Transaction Journal" → "Event Journal" và "Cross-Chain Transactions" → "Cross-Chain Operations" cho nhất quán với thuật ngữ đồng thuận. Chuẩn hóa định dạng trong API references, cập nhật các mô tả lỗi thời và sửa lỗi chính tả nhỏ trong tài liệu tiếng Anh và tiếng Việt.
+        * **Tài liệu**: Làm rõ tính bền vững (durability) trong workflows guide và sửa link dẫn tới workflows guide trong `AGENTS.md`.
+        * **Chore**: Xóa file `version.py` rỗng khỏi các unit trong hierarchy.
 
     * 2026-07-27
 

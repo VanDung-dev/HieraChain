@@ -8,7 +8,13 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (111)"
+??? note "Improvements (114)"
+
+    * 2026-08-04
+
+        * **Docs**: Standardized terminology across all EN/VI docs: renamed "Transaction Journal" → "Event Journal" and "Cross-Chain Transactions" → "Cross-Chain Operations" to align with consensus terminology. Normalized formatting in API references, adjusted outdated descriptions, and fixed minor typos in English and Vietnamese documentation.
+        * **Docs**: Clarified durability in the workflows guide and corrected the workflows guide link in `AGENTS.md`.
+        * **Chore**: Removed empty `version.py` from hierarchy units.
 
     * 2026-07-27
 
