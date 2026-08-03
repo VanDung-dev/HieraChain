@@ -123,7 +123,7 @@ event = {
 * **No `print()` Statements**: Do not use `print()` in library code (use logging or `SecureLogger`).
 * **No Bulk Test Execution**: Do not run all tests at once to avoid resource conflicts; run per-file.
 * **No Hardcoded Secrets**: Do not store secrets in code; use environment variables.
-* **No Skipping Transaction Journal**: Do not skip the `TransactionJournal` durability step when implementing ordering flows.
+* **No Skipping Event Journal**: Do not skip the `TransactionJournal` (`EventJournal`) durability step when implementing ordering flows.
 * **No Bypassing Policy Engine**: Do not bypass `PolicyEngine` for access-sensitive operations.
 
 ---
@@ -201,4 +201,4 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 * [CODEBASE_REFERENCE.md](./docs/CODEBASE_REFERENCE.md) — Detailed architecture reference (packages, design patterns, data flows, full directory layout).
 * [DEV_GUIDE.md](./docs/DEV_GUIDE.md) — Full developer guide with environment setup, running tests, benchmarks, and scripts.
 * [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — Visual architecture diagrams, Rust integration layers, and ZKP concepts.
-* [workflows/index.md](docs/en/workflows/overview.md) — Comprehensive guide to 16 system workflows including event submission, consensus, security, and recovery.
+* [workflows/overview.md](docs/en/workflows/overview.md) — Comprehensive guide to 16 system workflows including event submission, consensus, security, and recovery.
