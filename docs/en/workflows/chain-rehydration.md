@@ -71,7 +71,7 @@ sequenceDiagram
 | **Crash recovery** | `local.index < db.index` | Append missing blocks only |
 | **Hash mismatch** | `local.hash != db.hash` (same index) | Full rehydration from DB |
 | **Already in sync** | `local.index == db.index AND hash matches` | No-op |
-| **Local ahead of DB** | `local.index > db.index` | WARNING — DB is authoritative; force rehydrate |
+| **Local ahead of DB** | `local.index > db.index` | WARNING: DB is authoritative; force rehydrate |
 
 ---
 
@@ -115,5 +115,5 @@ sequenceDiagram
 
 ## Related
 
-- [Error Mitigation](./error-recovery.md) — rollback triggers rehydration when snapshot fails
-- [System Integrity Validation](./integrity-validation.md) — validates chain consistency after rehydration
+- [Error Mitigation](./error-recovery.md): rollback triggers rehydration when snapshot fails
+- [System Integrity Validation](./integrity-validation.md): validates chain consistency after rehydration

@@ -10,7 +10,7 @@ icon: material/gavel
 
 Mọi hoạt động nhạy cảm về mặt bảo mật trong HieraChain đều được kiểm soát nghiêm ngặt bởi `PolicyEngine` (Bộ máy Thực thi Chính sách). Các chính sách bao gồm các nhóm `PolicyRule` được sắp xếp theo mức độ ưu tiên. Để giảm thiểu độ trễ tối đa, kết quả đánh giá được lưu vào cache (thời gian sống TTL là 5 phút, giải phóng theo cơ chế LRU). Tất cả kết quả đánh giá đều được ghi nhận vào nhật ký kiểm toán trong bộ nhớ (in-memory audit log).
 
-`PolicyEngine` đóng vai trò là **cổng ủy quyền duy nhất (single authorization gateway)** — được gọi bởi MSP (Định danh & Ủy quyền MSP) sau khi danh tính được xác minh thành công và ngay trước khi hàm `SubChain.add_event()` (Gửi Sự kiện) được gọi.
+`PolicyEngine` đóng vai trò là **cổng ủy quyền duy nhất (single authorization gateway)**. Nó được gọi bởi MSP (Định danh & Ủy quyền MSP) sau khi danh tính được xác minh thành công và ngay trước khi hàm `SubChain.add_event()` (Gửi Sự kiện) được gọi.
 
 ---
 
@@ -130,5 +130,5 @@ policy = Policy(
 
 ## Liên quan
 
-- [Định danh & Ủy quyền MSP](./msp-identity.md) — MSP gọi hàm `evaluate_policy()` sau khi xác minh danh tính
-- [Gửi Sự kiện](./event-submission.md) — Quy trình `add_event()` được bảo vệ nghiêm ngặt bởi bộ máy chính sách
+- [Định danh & Ủy quyền MSP](./msp-identity.md): MSP gọi hàm `evaluate_policy()` sau khi xác minh danh tính
+- [Gửi Sự kiện](./event-submission.md): Quy trình `add_event()` được bảo vệ nghiêm ngặt bởi bộ máy chính sách

@@ -56,15 +56,15 @@ sequenceDiagram
     API-->>Client: 200 OK (Proof ID)
 ```
 
-* GET `/api/ledger/health` — Health check.
-* GET `/api/ledger/chains` — List Main Chain and all Sub-Chains.
-* POST `/api/ledger/chains/{chain_name}/create` — Create a new Sub-Chain (auto-creates Main Chain if not exists).
-* POST `/api/ledger/chains/{chain_name}/events` — Add an event to a Sub-Chain.
-* POST `/api/ledger/chains/{chain_name}/submit-proof` — Submit proof from Sub-Chain to Main Chain.
-* GET `/api/ledger/chains/{chain_name}/stats` — Get chain statistics.
-* GET `/api/ledger/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false` — Get block list (paginated). If `resolve_cid=true`, automatically load detailed data from IPFS.
-* GET `/api/ledger/chains/{chain_name}/blocks/{index_or_hash}` — Get details of a specific block.
-* GET `/api/ledger/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]` — Trace events. If `resolve_cid=true`, decrypt event details from IPFS.
+* GET `/api/ledger/health`: Health check.
+* GET `/api/ledger/chains`: List Main Chain and all Sub-Chains.
+* POST `/api/ledger/chains/{chain_name}/create`: Create a new Sub-Chain (auto-creates Main Chain if not exists).
+* POST `/api/ledger/chains/{chain_name}/events`: Add an event to a Sub-Chain.
+* POST `/api/ledger/chains/{chain_name}/submit-proof`: Submit proof from Sub-Chain to Main Chain.
+* GET `/api/ledger/chains/{chain_name}/stats`: Get chain statistics.
+* GET `/api/ledger/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false`: Get block list (paginated). If `resolve_cid=true`, automatically load detailed data from IPFS.
+* GET `/api/ledger/chains/{chain_name}/blocks/{index_or_hash}`: Get details of a specific block.
+* GET `/api/ledger/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]`: Trace events. If `resolve_cid=true`, decrypt event details from IPFS.
 
 ## Main Schemas (from `hierachain/api/ledger/schemas.py`)
 
@@ -216,11 +216,11 @@ curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&off
 
 ## Status Codes & Common Errors
 
-* 200 OK — Success for most GET/POST cases.
-* 201 Created — Sub-Chain created successfully.
-* 400 Bad Request — Invalid `chain_name` when creating (only allows `[a-zA-Z0-9_\-]`).
-* 404 Not Found — Chain or sub-chain not found.
-* 500 Internal Server Error — Internal processing error (e.g., error when listing chains, adding events, submitting proofs, statistics, or retrieving blocks).
+* 200 OK: Success for most GET/POST cases.
+* 201 Created: Sub-Chain created successfully.
+* 400 Bad Request: Invalid `chain_name` when creating (only allows `[a-zA-Z0-9_\-]`).
+* 404 Not Found: Chain or sub-chain not found.
+* 500 Internal Server Error: Internal processing error (e.g., error when listing chains, adding events, submitting proofs, statistics, or retrieving blocks).
 
 ## Implementation Notes (abbreviated from `endpoints.py`)
 

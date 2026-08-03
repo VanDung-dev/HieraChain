@@ -27,7 +27,7 @@ Khi làm việc với các luồng công việc của HieraChain, lập trình v
 
 ---
 
-## 2. Tất cả các Luồng công việc — Tra cứu Nhanh
+## 2. Tất cả các Luồng công việc: Tra cứu Nhanh
 
 Bảng này cung cấp cái nhìn tổng quan toàn diện về các luồng công việc của HieraChain để lập trình viên tra cứu nhanh:
 
@@ -58,7 +58,7 @@ Bảng này cung cấp cái nhìn tổng quan toàn diện về các luồng cô
 
 <div class="grid cards" markdown>
 
-* :material-sitemap:{ .lg .middle } __Nhóm A — Các Hoạt động Chuỗi Cốt lõi__
+* :material-sitemap:{ .lg .middle } __Nhóm A: Các Hoạt động Chuỗi Cốt lõi__
 
     ---
 
@@ -66,9 +66,9 @@ Bảng này cung cấp cái nhìn tổng quan toàn diện về các luồng cô
 
     * [Gửi Sự kiện](./event-submission.md)
     * [Neo giữ Bằng chứng](./proof-anchoring.md)
-    * [Giao dịch Liên chuỗi (2PC)](./cross-chain-2pc.md)
+    * [Thao tác Liên chuỗi (2PC)](./cross-chain-2pc.md)
 
-* :material-shield-key:{ .lg .middle } __Nhóm B — Hoàn thiện Đồng thuận__
+* :material-shield-key:{ .lg .middle } __Nhóm B: Hoàn thiện Đồng thuận__
 
     ---
 
@@ -76,7 +76,7 @@ Bảng này cung cấp cái nhìn tổng quan toàn diện về các luồng cô
 
     * [Đồng thuận BFT (PBFT 3 Giai đoạn)](./bft-consensus.md)
 
-* :material-server-security:{ .lg .middle } __Nhóm C — Quản lý Cụm__
+* :material-server-security:{ .lg .middle } __Nhóm C: Quản lý Cụm__
 
     ---
 
@@ -85,7 +85,7 @@ Bảng này cung cấp cái nhìn tổng quan toàn diện về các luồng cô
     * [Khóa băng Cụm](./cluster-lockdown.md)
     * [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md)
 
-* :material-shield-check:{ .lg .middle } __Nhóm D — Tính Toàn vẹn & Truy vết__
+* :material-shield-check:{ .lg .middle } __Nhóm D: Tính Toàn vẹn & Truy vết__
 
     ---
 
@@ -95,7 +95,7 @@ Bảng này cung cấp cái nhìn tổng quan toàn diện về các luồng cô
     * [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md)
     * [Xác thực Tính toàn vẹn](./integrity-validation.md)
 
-* :material-connection:{ .lg .middle } __Nhóm E — Vận hành & Tích hợp__
+* :material-connection:{ .lg .middle } __Nhóm E: Vận hành & Tích hợp__
 
     ---
 
@@ -107,7 +107,7 @@ Bảng này cung cấp cái nhìn tổng quan toàn diện về các luồng cô
     * [Cảnh báo Rủi ro](./risk-alerts.md)
     * [Đồng bộ Tích hợp ERP](./erp-integration.md)
 
-* :material-key-chain:{ .lg .middle } __Nhóm F — Quản lý Danh tính & Khóa__
+* :material-key-chain:{ .lg .middle } __Nhóm F: Quản lý Danh tính & Khóa__
 
     ---
 

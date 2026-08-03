@@ -14,32 +14,32 @@ Kiến trúc phòng vệ được cấu thành từ 6 luồng chính phối hợ
 
 * **Authorization & Access Control**: 
 
-    * `hierachain/security/{msp.py, identity.py}` — quản lý Organization, User, Role, và PKI Identity.
-    * `hierachain/security/policy_engine.py` — kiểm soát quyền (ABAC).
-    * `hierachain/security/verify/api_key_verifier.py` — xác thực API key.
+    * `hierachain/security/{msp.py, identity.py}`: quản lý Organization, User, Role, và PKI Identity.
+    * `hierachain/security/policy_engine.py`: kiểm soát quyền (ABAC).
+    * `hierachain/security/verify/api_key_verifier.py`: xác thực API key.
 
 * **Lockdown & Logging**: 
 
-    * `hierachain/security/secure_logging.py` — Tamper-evident log, che mờ dữ liệu PII.
-    * `hierachain/cluster/lockdown_protocol.py` — Phong tỏa (Lockdown) khẩn cấp bằng Quorum (chứa lớp `ClusterLockdownManager`).
+    * `hierachain/security/secure_logging.py`: Tamper-evident log, che mờ dữ liệu PII.
+    * `hierachain/cluster/lockdown_protocol.py`: Phong tỏa (Lockdown) khẩn cấp bằng Quorum (chứa lớp `ClusterLockdownManager`).
 
 * **Fault-tolerance & Integrity**: 
 
-    * `hierachain/security/resource_guard.py` — Lá chắn thép chống DoS/DDoS tải cao.
-    * `hierachain/security/integrity.py` — Quét chữ ký checksum các tệp khởi động.
+    * `hierachain/security/resource_guard.py`: Lá chắn thép chống DoS/DDoS tải cao.
+    * `hierachain/security/integrity.py`: Quét chữ ký checksum các tệp khởi động.
 
 * **Risk Analyzer**: 
 
-    * `hierachain/risk_management/risk_analyzer.py` — Theo dõi chỉ báo dị thường Z-score.
-    * `hierachain/security/sanitization.py` — Chống injection đầu vào.
+    * `hierachain/risk_management/risk_analyzer.py`: Theo dõi chỉ báo dị thường Z-score.
+    * `hierachain/security/sanitization.py`: Chống injection đầu vào.
 
 * **Encryption & Keys**: 
 
-    * `hierachain/security/{key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}` — AES-GCM, Ed25519 và vòng đời X.509 cho mTLS.
+    * `hierachain/security/{key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}`: AES-GCM, Ed25519 và vòng đời X.509 cho mTLS.
 
 * **Decentralized Zero-Knowledge Proofs**:
 
-    * `hierachain/security/zk_prover.py` & `hierachain/security/verify/zk_verifier.py` — Triển khai Zero-Knowledge proofs cho Sub-Chains ẩn danh dữ liệu thật.
+    * `hierachain/security/zk_prover.py` & `hierachain/security/verify/zk_verifier.py`: Triển khai Zero-Knowledge proofs cho Sub-Chains ẩn danh dữ liệu thật.
 
 Cấu hình bảo mật hệ thống được bật/tắt linh hoạt tại `hierachain/config/settings.py` (AUTH, CORS, HSTS, rate limit…).
 

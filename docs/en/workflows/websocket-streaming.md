@@ -14,7 +14,7 @@ The `WebSocketManager` is a **singleton** (`ws_manager`) used across all API rou
 
 ---
 
-## Flow Diagram — Connection & Broadcast Lifecycle
+## Flow Diagram: Connection & Broadcast Lifecycle
 
 ```mermaid
 sequenceDiagram
@@ -48,7 +48,7 @@ sequenceDiagram
 
 ---
 
-## Flow Diagram — Ping / Stale Connection Cleanup
+## Flow Diagram: Ping / Stale Connection Cleanup
 
 ```mermaid
 sequenceDiagram
@@ -147,5 +147,5 @@ sequenceDiagram
 
 ## Related
 
-- [Event Submission](./event-submission.md) — triggers `broadcast_new_block()` after block commit
-- [Risk Analysis & Alerts](./risk-alerts.md) — alert notifications can also be pushed via WebSocket
+- [Event Submission](./event-submission.md): triggers `broadcast_new_block()` after block commit
+- [Risk Analysis & Alerts](./risk-alerts.md): alert notifications can also be pushed via WebSocket

@@ -40,11 +40,11 @@ sequenceDiagram
     API-->>User: Result
 ```
 
-* `GET  /api/business/health` — service health check.
-* `POST /api/business/channels` — create a channel.
-* `GET  /api/business/channels/{channel_id}` — get channel info.
-* `POST /api/business/channels/{channel_id}/private-collections` — create a private data collection.
-* `POST /api/business/private-data` — Write private data (Supports raw `value` or `value_cid` IPFS reference).
+* `GET  /api/business/health`: service health check.
+* `POST /api/business/channels`: create a channel.
+* `GET  /api/business/channels/{channel_id}`: get channel info.
+* `POST /api/business/channels/{channel_id}/private-collections`: create a private data collection.
+* `POST /api/business/private-data`: Write private data (Supports raw `value` or `value_cid` IPFS reference).
 
     * `value_nonce: str | None`
     * `event_metadata: dict[str, Any]` (Entity ID, Event Type, Timestamp)
@@ -58,9 +58,9 @@ sequenceDiagram
     * `implementation_nonce: str | None`
     * `metadata: dict[str, Any]` (Domain, Owner, Endorsement Policy)
     
-* `POST /api/business/contracts` — Register a contract (Supports raw `implementation` or `implementation_cid` IPFS reference).
-* `POST /api/business/contracts/execute` — execute a contract.
-* `POST /api/business/organizations` — register an organization.
+* `POST /api/business/contracts`: Register a contract (Supports raw `implementation` or `implementation_cid` IPFS reference).
+* `POST /api/business/contracts/execute`: execute a contract.
+* `POST /api/business/organizations`: register an organization.
 
 Additional note: some test/instrumentation scenarios in `tests/integration/api_business/test_api_business.py` and `scripts/security/*` use the above endpoints for security testing and behavior verification.
 
@@ -113,7 +113,7 @@ If API key authentication is enabled (production), add the header per `settings.
 ## Security & Configuration
 
 * API key authentication via `security/verify/api_key_verifier.py` (when `AUTH_ENABLED=true`).
-* Policy/Identity/Key/Cert — see Security and Modules/Security pages.
+* Policy/Identity/Key/Cert: see Security and Modules/Security pages.
 * Host/port configuration and security in `hierachain/config/settings.py`.
 
 ## Related

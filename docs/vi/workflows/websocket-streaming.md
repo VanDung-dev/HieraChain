@@ -14,7 +14,7 @@ HieraChain tự động đẩy các thông báo về khối mới và sự kiệ
 
 ---
 
-## Biểu đồ luồng — Vòng đời Kết nối & Phát tin (Broadcast)
+## Biểu đồ luồng: Vòng đời Kết nối & Phát tin (Broadcast)
 
 ```mermaid
 sequenceDiagram
@@ -48,7 +48,7 @@ sequenceDiagram
 
 ---
 
-## Biểu đồ luồng — Vòng lặp Ping / Dọn dẹp kết nối rác
+## Biểu đồ luồng: Vòng lặp Ping / Dọn dẹp kết nối rác
 
 ```mermaid
 sequenceDiagram
@@ -147,5 +147,5 @@ sequenceDiagram
 
 ## Liên quan
 
-- [Gửi Sự kiện](./event-submission.md) — Kích hoạt `broadcast_new_block()` sau khi khối mới được cam kết thành công
-- [Cảnh báo Rủi ro](./risk-alerts.md) — Các thông báo cảnh báo cũng được đẩy thời gian thực qua kênh WebSocket này
+- [Gửi Sự kiện](./event-submission.md): Kích hoạt `broadcast_new_block()` sau khi khối mới được cam kết thành công
+- [Cảnh báo Rủi ro](./risk-alerts.md): Các thông báo cảnh báo cũng được đẩy thời gian thực qua kênh WebSocket này

@@ -25,7 +25,7 @@ Provides recommendations for achieving good performance when storing/processing 
 
 ## Recommendations
 
-* Adjust batch size according to actual load (e.g. 100–1000 events/batch).
+* Adjust batch size according to actual load (e.g. 100-1000 events/batch).
 * Enable `PARALLEL_PROCESSING_ENABLED` when multiple CPUs are available; set `MAX_WORKERS=None` to auto-select based on 50% of cores.
 * Use Arrow to reduce conversion overhead; avoid multiple conversions back and forth.
 

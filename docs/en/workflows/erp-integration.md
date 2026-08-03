@@ -63,7 +63,7 @@ sequenceDiagram
 
 ---
 
-## Flow Diagram — Retry on Failure
+## Flow Diagram: Retry on Failure
 
 ```mermaid
 flowchart LR
@@ -128,7 +128,7 @@ blockchain_event = {
 | **3. Change detection** | `ChangeDetector` compares new state vs previous, annotates changed fields |
 | **4. Translation** | `EventTranslator` applies `mapping_rules` to produce a valid HieraChain event dict |
 | **5. Metadata injection** | `add_blockchain_metadata()` adds `timestamp`, `source`, `event: "erp_integration"` |
-| **6. Submit** | `SubChain.add_event(blockchain_event)` — enters Event Submission pipeline |
+| **6. Submit** | `SubChain.add_event(blockchain_event)`: enters Event Submission pipeline |
 | **7. Update timestamp** | `last_sync` updated per profile; next run scheduled |
 | **8. Failure retry** | Exception → exponential backoff up to 300s; after max retries → Risk Alerts alert |
 
@@ -160,6 +160,6 @@ blockchain_event = {
 
 ## Related
 
-- [Event Submission](./event-submission.md) — translated events enter here
-- [Entity Tracing](./entity-tracing.md) — ERP-originated events are traceable by `entity_id`
-- [Risk Analysis & Alerts](./risk-alerts.md) — sync failures escalated here
+- [Event Submission](./event-submission.md): translated events enter here
+- [Entity Tracing](./entity-tracing.md): ERP-originated events are traceable by `entity_id`
+- [Risk Analysis & Alerts](./risk-alerts.md): sync failures escalated here

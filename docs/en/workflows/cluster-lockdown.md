@@ -10,7 +10,7 @@ icon: material/lock
 
 The **Cluster Lockdown Protocol** coordinates a system-wide state freeze across all nodes when a critical anomaly is detected. It uses **gossip-style P2P messaging over ZeroMQ** and requires a **2/3 quorum** of registered nodes to trigger both lockdown and recovery. All messages are authenticated with **HMAC-SHA256** to prevent spoofed lockdown attacks.
 
-**Key property**: No single node can lock the cluster unilaterally — quorum is mandatory.
+**Key property**: No single node can lock the cluster unilaterally; quorum is mandatory.
 
 ---
 
@@ -126,6 +126,6 @@ stateDiagram-v2
 
 ## Related
 
-- [Risk Analysis & Alerts](./risk-alerts.md) — risk threshold breach triggers this workflow
-- [Error Mitigation](./error-recovery.md) — handles state rollback after recovery
-- [Key Backup](./key-backup.md) — lockdown may trigger key rotation → Key Backup & Restoration
+- [Risk Analysis & Alerts](./risk-alerts.md): risk threshold breach triggers this workflow
+- [Error Mitigation](./error-recovery.md): handles state rollback after recovery
+- [Key Backup](./key-backup.md): lockdown may trigger key rotation → Key Backup & Restoration

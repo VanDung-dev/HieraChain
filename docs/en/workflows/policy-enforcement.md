@@ -10,7 +10,7 @@ icon: material/gavel
 
 Every access-sensitive operation in HieraChain is gated by the `PolicyEngine`. Policies are composed of typed `PolicyRule` sets with priority ordering. Results are cached (5-minute TTL, LRU eviction) to minimize latency overhead. All evaluations are written to an in-memory audit log.
 
-The `PolicyEngine` acts as the **single authorization gateway** — it is called by MSP (MSP Identity & Authorization) after identity is verified, and before `SubChain.add_event()` (Event Submission) is invoked.
+The `PolicyEngine` acts as the **single authorization gateway**. It is called by MSP (MSP Identity & Authorization) after identity is verified, and before `SubChain.add_event()` (Event Submission) is invoked.
 
 ---
 
@@ -130,5 +130,5 @@ policy = Policy(
 
 ## Related
 
-- [MSP Identity](./msp-identity.md) — MSP calls `evaluate_policy()` after identity verified
-- [Event Submission](./event-submission.md) — `add_event()` guarded by policy evaluation
+- [MSP Identity](./msp-identity.md): MSP calls `evaluate_policy()` after identity verified
+- [Event Submission](./event-submission.md): `add_event()` guarded by policy evaluation

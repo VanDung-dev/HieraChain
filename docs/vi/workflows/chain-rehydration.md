@@ -71,7 +71,7 @@ sequenceDiagram
 | **Phục hồi sau sự cố crash** | `local.index < db.index` | Chỉ lấy và ghép thêm các khối bị thiếu |
 | **Lệch mã băm (Hash mismatch)** | `local.hash != db.hash` (cùng chỉ số index) | Bắt buộc nạp lại toàn bộ từ cơ sở dữ liệu |
 | **Đã đồng bộ** | Cùng chỉ số index VÀ mã băm trùng khớp | Không thực hiện gì thêm (No-op) |
-| **Cục bộ chạy trước DB** | `local.index > db.index` | CẢNH BÁO — DB là nguồn dữ liệu chuẩn; ép buộc nạp lại từ DB |
+| **Cục bộ chạy trước DB** | `local.index > db.index` | CẢNH BÁO: DB là nguồn dữ liệu chuẩn; ép buộc nạp lại từ DB |
 
 ---
 
@@ -115,5 +115,5 @@ sequenceDiagram
 
 ## Liên quan
 
-- [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) — Việc khôi phục ảnh chụp trạng thái lỗi sẽ kích hoạt nạp lại chuỗi
-- [Xác thực Tính toàn vẹn](./integrity-validation.md) — Kiểm tra tính nhất quán của chuỗi sau khi nạp lại trạng thái
+- [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md): Việc khôi phục ảnh chụp trạng thái lỗi sẽ kích hoạt nạp lại chuỗi
+- [Xác thực Tính toàn vẹn](./integrity-validation.md): Kiểm tra tính nhất quán của chuỗi sau khi nạp lại trạng thái

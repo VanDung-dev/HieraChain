@@ -14,7 +14,7 @@ Các khóa mật mã (khóa đồng thuận, khóa danh tính, khóa mã hóa) �
 
 ---
 
-## Sơ đồ Luồng — Sao lưu
+## Sơ đồ Luồng: Sao lưu
 
 ```mermaid
 sequenceDiagram
@@ -57,7 +57,7 @@ sequenceDiagram
 
 ---
 
-## Sơ đồ Luồng — Khôi phục
+## Sơ đồ Luồng: Khôi phục
 
 ```mermaid
 sequenceDiagram
@@ -172,6 +172,6 @@ flowchart LR
 
 ## Liên kết liên quan
 
-- [Danh tính MSP](./msp-identity.md) — phát hành chứng chỉ mới sẽ kích hoạt việc sao lưu khóa
-- [Khóa băng Cụm](./cluster-lockdown.md) — việc khóa băng có thể yêu cầu xoay vòng khóa, kích hoạt luồng công việc này
-- [Lưu trữ IPFS](./ipfs-storage.md) — sử dụng cùng một cơ chế mã hóa AES-256-GCM
+- [Danh tính MSP](./msp-identity.md): phát hành chứng chỉ mới sẽ kích hoạt việc sao lưu khóa
+- [Khóa băng Cụm](./cluster-lockdown.md): việc khóa băng có thể yêu cầu xoay vòng khóa, kích hoạt luồng công việc này
+- [Lưu trữ IPFS](./ipfs-storage.md): sử dụng cùng một cơ chế mã hóa AES-256-GCM

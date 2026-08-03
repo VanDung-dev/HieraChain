@@ -16,7 +16,7 @@ For PoA and PoF consensus flows, see [Consensus Mechanisms](./consensus_mechanis
 
 ---
 
-## Flow Diagram — 3-Phase PBFT
+## Flow Diagram: 3-Phase PBFT
 
 ```mermaid
 sequenceDiagram
@@ -61,7 +61,7 @@ sequenceDiagram
 
 ---
 
-## Flow Diagram — View Change (Leader Failure)
+## Flow Diagram: View Change (Leader Failure)
 
 ```mermaid
 sequenceDiagram
@@ -130,6 +130,6 @@ sequenceDiagram
 
 ## Related
 
-- [Consensus Mechanisms](./consensus_mechanisms.md) — PoA and PoF details
-- [Event Submission](./event-submission.md) — BFT replaces the `finalize_block()` step
-- [Error Mitigation](./error-recovery.md) — handles leader failure recovery at system level
+- [Consensus Mechanisms](./consensus_mechanisms.md): PoA and PoF details
+- [Event Submission](./event-submission.md): BFT replaces the `finalize_block()` step
+- [Error Mitigation](./error-recovery.md): handles leader failure recovery at system level

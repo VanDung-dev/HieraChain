@@ -23,7 +23,7 @@ Ordering Service được thiết kế theo mô hình **Facade**, điều phối
 | **Block Builder** | Gom nhóm sự kiện (Batching) và xây dựng cấu trúc khối. | `block_builder.py` |
 | **Certifier** | Xác thực chữ ký và quyền hạn của sự kiện trước khi sắp xếp. | `certifier.py` |
 | **Storage** | Quản lý lưu trữ bền vững cho các sự kiện đang chờ (Pending). | `storage.py` |
-| **Recovery** | Khôi phục trạng thái từ **Transaction Journal** sau sự cố. | `recovery.py` |
+| **Recovery** | Khôi phục trạng thái từ **Event Journal** sau sự cố. | `recovery.py` |
 
 ---
 
@@ -31,7 +31,7 @@ Ordering Service được thiết kế theo mô hình **Facade**, điều phối
 
 ```mermaid
 graph TD
-    A[Client Submit Event] --> B[Transaction Journal]
+    A[Client Submit Event] --> B[Event Journal]
     B --> C[Event Pool]
     C --> D[Event Certifier]
     D -- Valid --> E[Ordering Processor]
@@ -46,7 +46,7 @@ graph TD
 ## Các tính năng cốt lõi
 
 ### 1. Persistence & Durability (Tính bền vững)
-Trước khi đưa vào hàng đợi xử lý, mọi sự kiện đều được ghi vào **Transaction Journal**. Nếu service bị dừng đột ngột, module `Recovery` sẽ đọc lại Journal để tái thiết lập trạng thái, đảm bảo không có dữ liệu nào bị mất.
+Trước khi đưa vào hàng đợi xử lý, mọi sự kiện đều được ghi vào **Event Journal**. Nếu service bị dừng đột ngột, module `Recovery` sẽ đọc lại Journal để tái thiết lập trạng thái, đảm bảo không có dữ liệu nào bị mất.
 
 ### 2. Batching Strategy
 Để tối ưu hiệu năng, Ordering Service không đóng khối cho từng sự kiện đơn lẻ mà sử dụng chiến lược gom nhóm:
@@ -56,7 +56,7 @@ Trước khi đưa vào hàng đợi xử lý, mọi sự kiện đều được
 ### 3. Event Certification
 Module `Certifier` tích hợp chặt chẽ với hệ thống **Security** để kiểm tra:
 *   Định dạng dữ liệu (Schema Validation).
-*   Chữ ký số của người gửi (Identity Verification).
+*   Chữ ký số của node gửi (Identity Verification).
 *   Quyền truy cập vào kênh (Policy Enforcement).
 
 ---

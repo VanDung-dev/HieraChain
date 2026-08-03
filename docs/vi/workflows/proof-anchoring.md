@@ -8,7 +8,7 @@ icon: material/anchor
 
 ## Tổng quan
 
-Sau khi một khối được hoàn tất trên Chuỗi con (Sub-Chain), Chuỗi con sẽ gửi một **bằng chứng mã hóa** (hash + bằng chứng ZK tùy chọn) lên Chuỗi chính (Main Chain). Chuỗi chính chỉ lưu trữ bằng chứng này — không bao giờ lưu dữ liệu sự kiện thô. Cơ chế này giúp đảm bảo tính bất biến toàn cục mà không cần lưu trữ dữ liệu miền nhạy cảm trên chuỗi gốc.
+Sau khi một khối được hoàn tất trên Chuỗi con (Sub-Chain), Chuỗi con sẽ gửi một **bằng chứng mã hóa** (hash + bằng chứng ZK tùy chọn) lên Chuỗi chính (Main Chain). Chuỗi chính chỉ lưu trữ bằng chứng này, không bao giờ lưu dữ liệu sự kiện thô. Cơ chế này giúp đảm bảo tính bất biến toàn cục mà không cần lưu trữ dữ liệu miền nhạy cảm trên chuỗi gốc.
 
 Đây là một **cơ chế kích hoạt sau khối (post-block trigger)**, không phải là một lệnh do người dùng yêu cầu. Lệnh này tự động kích hoạt khi `chain_length % proof_interval == 0`.
 
@@ -83,7 +83,7 @@ sequenceDiagram
 | Tình huống | Hành vi |
 |:-----------|:--------|
 | Lỗi tạo bằng chứng ZK | Thử lại tối đa 3 lần với thời gian chờ tăng dần; nếu `HRC_ZK_PROOF_REQUIRED_FOR_MAINCHAIN=true`, hủy bỏ quy trình |
-| Ghi lên Chuỗi chính thất bại | Ghi nhật ký ngoại lệ, không cập nhật `last_proof_submission` — thử lại ở khối tiếp theo |
+| Ghi lên Chuỗi chính thất bại | Ghi nhật ký ngoại lệ, không cập nhật `last_proof_submission`; thử lại ở khối tiếp theo |
 | Xác thực ZK trên Chuỗi chính thất bại | Lệnh `add_proof()` ném ra ngoại lệ, khối bằng chứng không được nối vào chuỗi |
 
 ---
@@ -102,5 +102,5 @@ sequenceDiagram
 
 ## Liên quan
 
-- [Gửi Sự kiện](./event-submission.md) — luồng công việc kích hoạt quy trình này
-- [Xác thực Tính toàn vẹn](./integrity-validation.md) — kiểm tra tính nhất quán của bằng chứng giữa Chuỗi con và Chuỗi chính
+- [Gửi Sự kiện](./event-submission.md): luồng công việc kích hoạt quy trình này
+- [Xác thực Tính toàn vẹn](./integrity-validation.md): kiểm tra tính nhất quán của bằng chứng giữa Chuỗi con và Chuỗi chính

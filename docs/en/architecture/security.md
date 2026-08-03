@@ -6,7 +6,7 @@ icon: material/shield-lock
 
 # Security Architecture
 
-This page describes the security mechanisms at the architectural level and how they integrate into HieraChain. The system follows strict enterprise security strategy — a multi-layered defense architecture spanning the entire application lifecycle.
+This page describes the security mechanisms at the architectural level and how they integrate into HieraChain. The system follows strict enterprise security strategy: a multi-layered defense architecture spanning the entire application lifecycle.
 
 ## Main Security Pillars
 
@@ -14,32 +14,32 @@ The defense architecture consists of 6 main coordinated streams:
 
 * **Authorization & Access Control**: 
 
-    * `hierachain/security/{msp.py, identity.py}` — manages Organization, User, Role, and PKI Identity.
-    * `hierachain/security/policy_engine.py` — permission control (ABAC).
-    * `hierachain/security/verify/api_key_verifier.py` — API key authentication.
+    * `hierachain/security/{msp.py, identity.py}`: manages Organization, User, Role, and PKI Identity.
+    * `hierachain/security/policy_engine.py`: permission control (ABAC).
+    * `hierachain/security/verify/api_key_verifier.py`: API key authentication.
 
 * **Lockdown & Logging**: 
 
-    * `hierachain/security/secure_logging.py` — Tamper-evident log, PII data masking.
-    * `hierachain/cluster/lockdown_protocol.py` — Emergency Lockdown with Quorum (contains `ClusterLockdownManager`).
+    * `hierachain/security/secure_logging.py`: Tamper-evident log, PII data masking.
+    * `hierachain/cluster/lockdown_protocol.py`: Emergency Lockdown with Quorum (contains `ClusterLockdownManager`).
 
 * **Fault-tolerance & Integrity**: 
 
-    * `hierachain/security/resource_guard.py` — Steel shield against DoS/DDoS under high load.
-    * `hierachain/security/integrity.py` — Signature checksum scanning of startup files.
+    * `hierachain/security/resource_guard.py`: Steel shield against DoS/DDoS under high load.
+    * `hierachain/security/integrity.py`: Signature checksum scanning of startup files.
 
 * **Risk Analyzer**: 
 
-    * `hierachain/risk_management/risk_analyzer.py` — Z-score anomaly indicator tracking.
-    * `hierachain/security/sanitization.py` — Input injection prevention.
+    * `hierachain/risk_management/risk_analyzer.py`: Z-score anomaly indicator tracking.
+    * `hierachain/security/sanitization.py`: Input injection prevention.
 
 * **Encryption & Keys**: 
 
-    * `hierachain/security/{key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}` — AES-GCM, Ed25519 and X.509 lifecycle for mTLS.
+    * `hierachain/security/{key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}`: AES-GCM, Ed25519 and X.509 lifecycle for mTLS.
 
 * **Decentralized Zero-Knowledge Proofs**:
 
-    * `hierachain/security/zk_prover.py` & `hierachain/security/verify/zk_verifier.py` — Zero-Knowledge proof implementation for anonymous Sub-Chain data verification.
+    * `hierachain/security/zk_prover.py` & `hierachain/security/verify/zk_verifier.py`: Zero-Knowledge proof implementation for anonymous Sub-Chain data verification.
 
 System security configuration is flexibly toggled at `hierachain/config/settings.py` (AUTH, CORS, HSTS, rate limit…).
 

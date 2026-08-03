@@ -12,11 +12,11 @@ Mô tả các cơ chế Consensus và Ordering Service được HieraChain sử 
 
 ## Kiến trúc & khái niệm
 
-* Base Consensus: `hierachain/consensus/base_consensus.py` — Giao diện/khung cơ bản cho các thuật toán đồng thuận.
-* Proof of Authority (PoA): `hierachain/consensus/proof_of_authority.py` — Đồng thuận Nội bộ Tổ chức (1 MainChain quản lý các Sub-Chains thuộc phân khu nội bộ).
-* Proof of Federation (PoF): `hierachain/consensus/proof_of_federation.py` — Đồng thuận Liên minh Ngang hàng giữa các MainChain độc lập (Consortium không cần RootChain trung tâm).
-* BFT Consensus: `hierachain/consensus/bft/` — Chống lỗi Byzantine ở lớp phân cấp.
-* Ordering Service: `hierachain/consensus/ordering/` — Sắp xếp Event trước khi đóng Block; kiến trúc đa thành phần (Processor, Certifier, BlockBuilder).
+* Base Consensus: `hierachain/consensus/base_consensus.py`, giao diện/khung cơ bản cho các thuật toán đồng thuận.
+* Proof of Authority (PoA): `hierachain/consensus/proof_of_authority.py`, đồng thuận Nội bộ Tổ chức (1 MainChain quản lý các Sub-Chains thuộc phân khu nội bộ).
+* Proof of Federation (PoF): `hierachain/consensus/proof_of_federation.py`, đồng thuận Liên minh Ngang hàng giữa các MainChain độc lập (Consortium không cần RootChain trung tâm).
+* BFT Consensus: `hierachain/consensus/bft/`, chống lỗi Byzantine ở lớp phân cấp.
+* Ordering Service: `hierachain/consensus/ordering/`, sắp xếp Event trước khi đóng Block; kiến trúc đa thành phần (Processor, Certifier, BlockBuilder).
 
 ### Luồng điển hình
 

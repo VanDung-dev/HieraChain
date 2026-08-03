@@ -8,7 +8,7 @@ icon: material/sync
 
 **Các luồng công việc liên quan**: [Gửi Sự kiện](./event-submission.md) · [Đồng thuận BFT](./bft-consensus.md)
 
-HieraChain hỗ trợ các cơ chế đồng thuận có thể cắm (pluggable) trên từng tầng. Ở tầng **MainChain (Liên minh đa Tổ chức)**, cơ chế đồng thuận được cấu hình thông qua biến môi trường `HRC_MAINCHAIN_CONSENSUS` (mặc định là `proof_of_federation`). Ở tầng **SubChain (Nội bộ Tổ chức)**, việc xử lý sự kiện nghiệp vụ nội bộ **mặc định luôn sử dụng Proof of Authority (PoA)** để đạt tốc độ tối đa (~0ms latency). Luồng gửi sự kiện ([Gửi Sự kiện](./event-submission.md)) là hoàn toàn giống nhau bất kể cơ chế nào được chọn — chỉ khác biệt ở bước `finalize_block()`.
+HieraChain hỗ trợ các cơ chế đồng thuận có thể cắm (pluggable) trên từng tầng. Ở tầng **MainChain (Liên minh đa Tổ chức)**, cơ chế đồng thuận được cấu hình thông qua biến môi trường `HRC_MAINCHAIN_CONSENSUS` (mặc định là `proof_of_federation`). Ở tầng **SubChain (Nội bộ Tổ chức)**, việc xử lý sự kiện nghiệp vụ nội bộ **mặc định luôn sử dụng Proof of Authority (PoA)** để đạt tốc độ tối đa (~0ms latency). Luồng gửi sự kiện ([Gửi Sự kiện](./event-submission.md)) là hoàn toàn giống nhau bất kể cơ chế nào được chọn; chỉ khác biệt ở bước `finalize_block()`.
 
 ---
 
@@ -20,7 +20,7 @@ HieraChain hỗ trợ các cơ chế đồng thuận có thể cắm (pluggable)
 | **Tầng áp dụng** | SubChain (Nội bộ) / MainChain đơn lẻ | MainChain Liên minh (Đa tổ chức) | SubChain / MainChain BFT |
 | **Thành phần hoàn thiện** | Bất kỳ nút ủy quyền nào được đăng ký | Chỉ Trưởng nhóm xoay vòng: `Validators[index % n]` | 2f+1 trên tổng số n trình xác thực qua PBFT |
 | **Loại chữ ký** | Ed25519 (bất đối xứng) | Chữ ký liên minh SHA-256 | Phiếu bầu PBFT tổng hợp |
-| **Xoay vòng Trưởng nhóm** | Tùy chọn vòng tròn (round-robin) | Bắt buộc — xác định bởi chỉ số khối | Dựa trên View (Khung nhìn), thay đổi khi gặp lỗi |
+| **Xoay vòng Trưởng nhóm** | Tùy chọn vòng tròn (round-robin) | Bắt buộc, xác định bởi chỉ số khối | Dựa trên View (Khung nhìn), thay đổi khi gặp lỗi |
 | **Kiểm tra Bằng chứng ZK** | Tùy chọn | Bắt buộc trong `validate_block()` | Không áp dụng |
 | **Trình xác thực tối thiểu** | Chỉ cần 1 nút ủy quyền | ≥ 3 (cấu hình `min_validators`) | n ≥ 3f + 1 |
 | **Mô hình lỗi** | Tin cậy danh tính nút ủy quyền | Tin cậy phân tán, dung thứ cho việc thiếu trình xác thực | Dung thứ tối đa f nút lỗi Byzantine |
@@ -52,7 +52,7 @@ sequenceDiagram
     POA-->>OS: Khối đã Hoàn thiện ✅
 ```
 
-### Các Lớp Quan trọng — PoA
+### Các Lớp Quan trọng: PoA
 
 | Bước | Lớp / Phương thức | Tệp |
 |:-----|:--------------|:-----|
@@ -89,7 +89,7 @@ sequenceDiagram
     POF-->>OS: Khối đã Hoàn thiện ✅
 ```
 
-### Các Lớp Quan trọng — PoF
+### Các Lớp Quan trọng: PoF
 
 | Bước | Lớp / Phương thức | Tệp |
 |:-----|:--------------|:-----|

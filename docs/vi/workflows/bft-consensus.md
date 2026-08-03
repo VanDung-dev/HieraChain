@@ -16,7 +16,7 @@ Cơ chế đồng thuận **Chống lỗi Byzantine (BFT - Byzantine Fault-Toler
 
 ---
 
-## Biểu đồ luồng — PBFT 3 Pha (3-Phase PBFT)
+## Biểu đồ luồng: PBFT 3 Pha (3-Phase PBFT)
 
 ```mermaid
 sequenceDiagram
@@ -61,7 +61,7 @@ sequenceDiagram
 
 ---
 
-## Biểu đồ luồng — Thay đổi Phiên (View Change - Lỗi Leader)
+## Biểu đồ luồng: Thay đổi Phiên (View Change - Lỗi Leader)
 
 ```mermaid
 sequenceDiagram
@@ -130,6 +130,6 @@ sequenceDiagram
 
 ## Liên quan
 
-- [Cơ chế Đồng thuận](./consensus_mechanisms.md) — Chi tiết về PoA và PoF
-- [Gửi Sự kiện](./event-submission.md) — BFT thay thế hoàn toàn bước `finalize_block()`
-- [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) — Xử lý khôi phục sau khi Leader gặp lỗi ở cấp hệ thống
+- [Cơ chế Đồng thuận](./consensus_mechanisms.md): Chi tiết về PoA và PoF
+- [Gửi Sự kiện](./event-submission.md): BFT thay thế hoàn toàn bước `finalize_block()`
+- [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md): Xử lý khôi phục sau khi Leader gặp lỗi ở cấp hệ thống

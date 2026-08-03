@@ -10,7 +10,7 @@ icon: material/lock
 
 **Giao thức Khóa băng Cụm (Cluster Lockdown Protocol)** điều phối việc đóng băng trạng thái của toàn bộ hệ thống trên tất cả các nút khi phát hiện sự bất thường nghiêm trọng. Cơ chế này sử dụng **giao thức tin nhắn ngang hàng P2P kiểu tin đồn (gossip) qua ZeroMQ** và yêu cầu **biểu quyết quá bán (tối thiểu 2/3)** của các nút đã đăng ký để kích hoạt cả quá trình khóa băng lẫn phục hồi. Tất cả thông điệp đều được xác thực bằng chữ ký **HMAC-SHA256** nhằm ngăn chặn các cuộc tấn công giả mạo yêu cầu khóa băng.
 
-**Đặc tính quan trọng**: Không một nút đơn lẻ nào có thể đơn phương khóa băng toàn bộ cụm — đạt tỷ lệ biểu quyết tối thiểu (quorum) là điều bắt buộc.
+**Đặc tính quan trọng**: Không một nút đơn lẻ nào có thể đơn phương khóa băng toàn bộ cụm; đạt tỷ lệ biểu quyết tối thiểu (quorum) là điều bắt buộc.
 
 ---
 
@@ -126,6 +126,6 @@ stateDiagram-v2
 
 ## Liên quan
 
-- [Risk Analysis & Alerts](./risk-alerts.md) — Việc vượt quá ngưỡng rủi ro cho phép sẽ kích hoạt quy trình này
-- [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) — Xử lý hoàn trả trạng thái (rollback) sau khi phục hồi thành công
-- [Sao lưu & Khôi phục Khóa](./key-backup.md) — Quá trình khóa băng cụm có thể kích hoạt cơ chế luân chuyển khóa $\rightarrow$ Sao lưu & Khôi phục Khóa
+- [Risk Analysis & Alerts](./risk-alerts.md): Việc vượt quá ngưỡng rủi ro cho phép sẽ kích hoạt quy trình này
+- [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md): Xử lý hoàn trả trạng thái (rollback) sau khi phục hồi thành công
+- [Sao lưu & Khôi phục Khóa](./key-backup.md): Quá trình khóa băng cụm có thể kích hoạt cơ chế luân chuyển khóa $\rightarrow$ Sao lưu & Khôi phục Khóa

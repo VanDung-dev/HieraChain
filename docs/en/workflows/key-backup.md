@@ -14,7 +14,7 @@ Cryptographic keys (consensus keys, identity keys, encryption keys) are backed u
 
 ---
 
-## Flow Diagram — Backup
+## Flow Diagram: Backup
 
 ```mermaid
 sequenceDiagram
@@ -57,7 +57,7 @@ sequenceDiagram
 
 ---
 
-## Flow Diagram — Restoration
+## Flow Diagram: Restoration
 
 ```mermaid
 sequenceDiagram
@@ -172,6 +172,6 @@ flowchart LR
 
 ## Related
 
-- [MSP Identity](./msp-identity.md) — certificate issuance triggers key backup
-- [Cluster Lockdown](./cluster-lockdown.md) — lockdown may require key rotation, triggering this workflow
-- [IPFS Storage](./ipfs-storage.md) — uses the same AES-256-GCM encryption pattern
+- [MSP Identity](./msp-identity.md): certificate issuance triggers key backup
+- [Cluster Lockdown](./cluster-lockdown.md): lockdown may require key rotation, triggering this workflow
+- [IPFS Storage](./ipfs-storage.md): uses the same AES-256-GCM encryption pattern

@@ -27,7 +27,7 @@ When working on HieraChain workflows, developers **must** strictly adhere to the
 
 ---
 
-## 2. All Workflows — Quick Reference
+## 2. All Workflows: Quick Reference
 
 This table provides a comprehensive overview of HieraChain's workflows for quick developer lookup:
 
@@ -58,7 +58,7 @@ To streamline architectural understanding, workflows are organized into six func
 
 <div class="grid cards" markdown>
 
-* :material-sitemap:{ .lg .middle } __Group A — Core Chain Operations__
+* :material-sitemap:{ .lg .middle } __Group A: Core Chain Operations__
 
     ---
 
@@ -66,9 +66,9 @@ To streamline architectural understanding, workflows are organized into six func
 
     * [Event Submission](./event-submission.md)
     * [Proof Anchoring](./proof-anchoring.md)
-    * [Cross-Chain Transaction (2PC)](./cross-chain-2pc.md)
+    * [Cross-Chain Operation (2PC)](./cross-chain-2pc.md)
 
-* :material-shield-key:{ .lg .middle } __Group B — Consensus Finalization__
+* :material-shield-key:{ .lg .middle } __Group B: Consensus Finalization__
 
     ---
 
@@ -76,7 +76,7 @@ To streamline architectural understanding, workflows are organized into six func
 
     * [BFT Consensus (3-Phase PBFT)](./bft-consensus.md)
 
-* :material-server-security:{ .lg .middle } __Group C — Cluster Management__
+* :material-server-security:{ .lg .middle } __Group C: Cluster Management__
 
     ---
 
@@ -85,7 +85,7 @@ To streamline architectural understanding, workflows are organized into six func
     * [Cluster Lockdown & Recovery](./cluster-lockdown.md)
     * [Error Mitigation & Recovery](./error-recovery.md)
 
-* :material-shield-check:{ .lg .middle } __Group D — Integrity & Traceability__
+* :material-shield-check:{ .lg .middle } __Group D: Integrity & Traceability__
 
     ---
 
@@ -95,7 +95,7 @@ To streamline architectural understanding, workflows are organized into six func
     * [Chain Rehydration](./chain-rehydration.md)
     * [System Integrity Validation](./integrity-validation.md)
 
-* :material-connection:{ .lg .middle } __Group E — Operational & Integration__
+* :material-connection:{ .lg .middle } __Group E: Operational & Integration__
 
     ---
 
@@ -107,7 +107,7 @@ To streamline architectural understanding, workflows are organized into six func
     * [Risk Analysis & Alert Lifecycle](./risk-alerts.md)
     * [ERP Integration Sync](./erp-integration.md)
 
-* :material-key-chain:{ .lg .middle } __Group F — Identity & Key Management__
+* :material-key-chain:{ .lg .middle } __Group F: Identity & Key Management__
 
     ---
 

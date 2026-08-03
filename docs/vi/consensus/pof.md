@@ -8,7 +8,7 @@ icon: material/account-group-outline
 
 ## Tổng quan
 
-**Proof of Federation (PoF)** là giao thức đồng thuận liên chuỗi (**Inter-MainChain**) được thiết kế dành riêng cho các mạng liên minh tổ chức (**Consortium Alliance**). PoF cho phép nhiều tổ chức độc lập (ví dụ: Bệnh viện A, Bệnh viện B, Bảo hiểm Z)—mỗi bên tự vận hành một MainChain riêng—có thể trao đổi, xác thực và đạt được đồng thuận trên các bằng chứng sự kiện liên tổ chức **mà không cần một RootChain trung tâm hay một thẩm quyền tối cao nào cai trị**.
+**Proof of Federation (PoF)** là giao thức đồng thuận liên chuỗi (**Inter-MainChain**) được thiết kế dành riêng cho các mạng liên minh tổ chức (**Consortium Alliance**). PoF cho phép nhiều tổ chức độc lập (ví dụ: Bệnh viện A, Bệnh viện B, Bảo hiểm Z), mỗi bên tự vận hành một MainChain riêng, có thể trao đổi, xác thực và đạt được đồng thuận trên các bằng chứng sự kiện liên tổ chức **mà không cần một RootChain trung tâm hay một thẩm quyền tối cao nào cai trị**.
 
 ---
 

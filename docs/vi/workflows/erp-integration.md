@@ -63,7 +63,7 @@ sequenceDiagram
 
 ---
 
-## Biểu đồ luồng — Cơ chế Thử lại khi Thất bại (Retry on Failure)
+## Biểu đồ luồng: Cơ chế Thử lại khi Thất bại (Retry on Failure)
 
 ```mermaid
 flowchart LR
@@ -128,7 +128,7 @@ blockchain_event = {
 | **3. Phát hiện thay đổi**| Lớp `ChangeDetector` so sánh trạng thái mới với trạng thái trước đó, chú thích các trường dữ liệu bị thay đổi. |
 | **4. Ánh xạ dịch nghĩa**| Lớp `EventTranslator` áp dụng các quy tắc `mapping_rules` để tạo ra sự kiện HieraChain hợp lệ. |
 | **5. Chèn Metadata** | Lớp `add_blockchain_metadata()` tự động thêm các thông tin `timestamp`, `source`, `event: "erp_integration"`. |
-| **6. Gửi lên chuỗi** | Gọi hàm `SubChain.add_event(blockchain_event)` — sự kiện chính thức đi vào luồng Gửi Sự kiện. |
+| **6. Gửi lên chuỗi** | Gọi hàm `SubChain.add_event(blockchain_event)`: sự kiện chính thức đi vào luồng Gửi Sự kiện. |
 | **7. Lưu mốc thời gian**| Cập nhật giá trị `last_sync` cho profile; lên lịch chạy tiếp theo. |
 | **8. Cơ chế thử lại** | Nếu xảy ra lỗi $\rightarrow$ thử lại với thời gian chờ tăng dần tối đa 300 giây; vượt quá số lần thử tối đa $\rightarrow$ phát tín hiệu cảnh báo rủi ro. |
 
@@ -160,6 +160,6 @@ blockchain_event = {
 
 ## Liên quan
 
-- [Gửi Sự kiện](./event-submission.md) — Các sự kiện sau khi dịch nghĩa sẽ đi vào luồng này
-- [Truy vết Thực thể](./entity-tracing.md) — Các sự kiện có nguồn gốc từ ERP có thể được truy vết qua `entity_id`
-- [Cảnh báo Rủi ro](./risk-alerts.md) — Các lỗi đồng bộ sẽ được chuyển tới đây để leo thang xử lý
+- [Gửi Sự kiện](./event-submission.md): Các sự kiện sau khi dịch nghĩa sẽ đi vào luồng này
+- [Truy vết Thực thể](./entity-tracing.md): Các sự kiện có nguồn gốc từ ERP có thể được truy vết qua `entity_id`
+- [Cảnh báo Rủi ro](./risk-alerts.md): Các lỗi đồng bộ sẽ được chuyển tới đây để leo thang xử lý

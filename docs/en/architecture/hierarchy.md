@@ -12,15 +12,15 @@ Detailed explanation of HieraChain's hierarchical mechanism: how Sub-Chains inte
 
 ## Components & Concepts
 
-* Main Chain: `hierachain/hierarchical/main_chain/base.py` — Stores Proofs from Sub-Chains; aggregates integrity reports.
-* Sub-Chain (Domain Chain): `hierachain/hierarchical/sub_chain/base.py` — Processes domain Events, Ordering/closes Blocks, generates Proofs.
-* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager/base.py` — Coordinates the Chain system, manages Sub-Chain lifecycle, cross-chain transactions, system statistics.
-* Channel: `hierachain/hierarchical/channel/channel.py` — Private communication space for organization groups, channel creation policy settings.
-* Multi-Org: `hierachain/hierarchical/multi_org.py` — Organization initialization, multi-org network, Channel ↔ Organization relationships.
-* Private Data: `hierachain/hierarchical/private_data.py` — Private data collections at Sub-Chain level.
-* Cross-Chain Transaction Manager: `hierachain/hierarchical/transaction_manager.py` — Coordinates 2PC transactions between Sub-Chains.
-* Proof Aggregation: `hierachain/hierarchical/proof_aggregation/aggregator.py` — Groups, compresses proofs before sending/recording (configurable).
-* Rebalancer: `hierachain/hierarchical/rebalancer/rebalancer.py` — Automatically splits/balances Sub-Chains under high load based on thresholds.
+* Main Chain: `hierachain/hierarchical/main_chain/base.py`, stores Proofs from Sub-Chains; aggregates integrity reports.
+* Sub-Chain (Domain Chain): `hierachain/hierarchical/sub_chain/base.py`, processes domain Events, Ordering/closes Blocks, generates Proofs.
+* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager/base.py`, coordinates the Chain system, manages Sub-Chain lifecycle, cross-chain transactions, system statistics.
+* Channel: `hierachain/hierarchical/channel/channel.py`, private communication space for organization groups, channel creation policy settings.
+* Multi-Org: `hierachain/hierarchical/multi_org.py`, organization initialization, multi-org network, Channel ↔ Organization relationships.
+* Private Data: `hierachain/hierarchical/private_data.py`, private data collections at Sub-Chain level.
+* Cross-Chain Transaction Manager: `hierachain/hierarchical/transaction_manager.py`, coordinates 2PC transactions between Sub-Chains.
+* Proof Aggregation: `hierachain/hierarchical/proof_aggregation/aggregator.py`, groups, compresses proofs before sending/recording (configurable).
+* Rebalancer: `hierachain/hierarchical/rebalancer/rebalancer.py`, automatically splits/balances Sub-Chains under high load based on thresholds.
 
 ### Typical Flow
 

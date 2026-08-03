@@ -8,7 +8,7 @@ icon: material/tray-arrow-down
 
 ## Overview
 
-Events enter HieraChain as structured business operations, are validated, batched by the `OrderingService` into blocks, finalized by the configured **Proof** mechanism (PoA / PoF / BFT), then appended to the Sub-Chain. The consensus mechanism for MainChain is pluggable (`HRC_MAINCHAIN_CONSENSUS`), while SubChain defaults to PoA for high-speed intra-org operations. The overall flow is always identical — only the `finalize_block()` step differs.
+Events enter HieraChain as structured business operations, are validated, batched by the `OrderingService` into blocks, finalized by the configured **Proof** mechanism (PoA / PoF / BFT), then appended to the Sub-Chain. The consensus mechanism for MainChain is pluggable (`HRC_MAINCHAIN_CONSENSUS`), while SubChain defaults to PoA for high-speed intra-org operations. The overall flow is always identical, only the `finalize_block()` step differs.
 
 For detailed PoA and PoF diagrams, see [Consensus Mechanisms](./consensus_mechanisms.md).
 
@@ -73,10 +73,10 @@ sequenceDiagram
 | Step | Description |
 |:-----|:------------|
 | **1. API receive** | FastAPI validates request structure, extracts `event_dict` |
-| **2. SC validate** | `SubChain.add_event()` stamps `timestamp`, calls `validate_event_for_consensus()` — scans for forbidden crypto terms |
+| **2. SC validate** | `SubChain.add_event()` stamps `timestamp`, calls `validate_event_for_consensus()`: scans for forbidden crypto terms |
 | **3. OrderingService queue** | Event pushed to `event_pool` (in-memory queue). The `OrderingService` batches events by timer or `block_size` threshold |
 | **4. Block build** | `BlockBuilder.build()` assembles the block: index, previous_hash, merkle root of events, metadata |
-| **5. Finalize** | `Proof.finalize_block()` — PoA signs with Ed25519, PoF validates leader rotation + ZK proof, BFT runs 3-phase PBFT |
+| **5. Finalize** | `Proof.finalize_block()`: PoA signs with Ed25519, PoF validates leader rotation + ZK proof, BFT runs 3-phase PBFT |
 | **6. Commit** | Block pushed to `commit_queue`, background `consumer_thread` picks it up |
 | **7. Hash chain** | `_process_and_finalize_single_block()` recalculates `previous_hash` and `hash` to ensure chain integrity |
 | **8. Persist** | Block written to storage backend (`SQLiteAdapter`, `RedisStorageAdapter`, or `MemoryStorage`) |
@@ -132,8 +132,8 @@ event = {
 
 ## Related
 
-- [Consensus Mechanisms](./consensus_mechanisms.md) — PoA and PoF sub-diagrams
-- [Proof Anchoring](./proof-anchoring.md) — triggered after block finalized
-- [BFT Consensus](./bft-consensus.md) — full 3-phase PBFT flow
-- [Policy Enforcement](./policy-enforcement.md) — gates access before `add_event()`
-- [MSP Identity](./msp-identity.md) — `authorize_action()` called before submission
+- [Consensus Mechanisms](./consensus_mechanisms.md): PoA and PoF sub-diagrams
+- [Proof Anchoring](./proof-anchoring.md): triggered after block finalized
+- [BFT Consensus](./bft-consensus.md): full 3-phase PBFT flow
+- [Policy Enforcement](./policy-enforcement.md): gates access before `add_event()`
+- [MSP Identity](./msp-identity.md): `authorize_action()` called before submission

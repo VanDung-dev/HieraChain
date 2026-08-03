@@ -40,11 +40,11 @@ sequenceDiagram
     API-->>User: Kết quả
 ```
 
-* `GET  /api/business/health` — kiểm tra trạng thái hoạt động dịch vụ (health check).
-* `POST /api/business/channels` — tạo một channel mới.
-* `GET  /api/business/channels/{channel_id}` — lấy thông tin channel.
-* `POST /api/business/channels/{channel_id}/private-collections` — tạo một bộ sưu tập dữ liệu riêng tư (private data collection).
-* `POST /api/business/private-data` — Ghi dữ liệu riêng tư (Hỗ trợ truyền trực tiếp `value` hoặc tham chiếu qua IPFS `value_cid`).
+* `GET  /api/business/health`: kiểm tra trạng thái hoạt động dịch vụ (health check).
+* `POST /api/business/channels`: tạo một channel mới.
+* `GET  /api/business/channels/{channel_id}`: lấy thông tin channel.
+* `POST /api/business/channels/{channel_id}/private-collections`: tạo một bộ sưu tập dữ liệu riêng tư (private data collection).
+* `POST /api/business/private-data`: Ghi dữ liệu riêng tư (Hỗ trợ truyền trực tiếp `value` hoặc tham chiếu qua IPFS `value_cid`).
 
     * `value_nonce: str | None`
     * `event_metadata: dict[str, Any]` (Entity ID, Loại sự kiện, Dấu thời gian)
@@ -58,9 +58,9 @@ sequenceDiagram
     * `implementation_nonce: str | None`
     * `metadata: dict[str, Any]` (Miền, Chủ sở hữu, Chính sách xác thực - Endorsement Policy)
     
-* `POST /api/business/contracts` — Đăng ký một hợp đồng (Hỗ trợ truyền mã nguồn thô qua `implementation` hoặc tham chiếu IPFS qua `implementation_cid`).
-* `POST /api/business/contracts/execute` — thực thi một hợp đồng miền.
-* `POST /api/business/organizations` — đăng ký một tổ chức mới.
+* `POST /api/business/contracts`: Đăng ký một hợp đồng (Hỗ trợ truyền mã nguồn thô qua `implementation` hoặc tham chiếu IPFS qua `implementation_cid`).
+* `POST /api/business/contracts/execute`: thực thi một hợp đồng miền.
+* `POST /api/business/organizations`: đăng ký một tổ chức mới.
 
 *Lưu ý bổ sung: một số kịch bản test/giám sát trong `tests/integration/api_business/test_api_business.py` và `scripts/security/*` sử dụng các endpoint trên để kiểm thử bảo mật và xác minh hành vi hệ thống.*
 
@@ -113,7 +113,7 @@ Nếu bật xác thực bằng API key (trong môi trường sản xuất - prod
 ## Bảo mật & Cấu hình
 
 * Xác thực API key qua `security/verify/api_key_verifier.py` (khi `AUTH_ENABLED=true`).
-* Chính sách/Định danh/Khóa/Chứng chỉ — xem trang Hướng dẫn Bảo mật và Mô-đun Bảo mật.
+* Chính sách/Định danh/Khóa/Chứng chỉ: xem trang Hướng dẫn Bảo mật và Mô-đun Bảo mật.
 * Cấu hình host/port và bảo mật trong `hierachain/config/settings.py`.
 
 ## Liên quan

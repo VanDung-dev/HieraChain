@@ -8,7 +8,7 @@ icon: material/account-group-outline
 
 ## Overview
 
-**Proof of Federation (PoF)** is an Inter-MainChain consensus protocol designed specifically for **Consortium Alliance** networks. It enables multiple independent organizations (e.g., Hospital A, Hospital B, Insurance Z)—each operating their own autonomous MainChain—to securely exchange, verify, and reach consensus on cross-organizational event proofs **without requiring a central RootChain or single authority**.
+**Proof of Federation (PoF)** is an Inter-MainChain consensus protocol designed specifically for **Consortium Alliance** networks. It enables multiple independent organizations (e.g., Hospital A, Hospital B, Insurance Z), each operating their own autonomous MainChain, to securely exchange, verify, and reach consensus on cross-organizational event proofs **without requiring a central RootChain or single authority**.
 
 ---
 

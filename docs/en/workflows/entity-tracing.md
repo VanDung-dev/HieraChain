@@ -118,5 +118,5 @@ Events are indexed on write (`add_block()`), so reads are O(1) per chain. Aggreg
 
 ## Related
 
-- [System Integrity Validation](./integrity-validation.md) — validates the chains being traced
-- [ERP Integration Sync](./erp-integration.md) — ERP events are what gets traced
+- [System Integrity Validation](./integrity-validation.md): validates the chains being traced
+- [ERP Integration Sync](./erp-integration.md): ERP events are what gets traced

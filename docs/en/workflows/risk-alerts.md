@@ -131,5 +131,5 @@ sequenceDiagram
 
 ## Related
 
-- [Cluster Lockdown](./cluster-lockdown.md) — unresolved critical alerts may trigger lockdown
-- [System Integrity Validation](./integrity-validation.md) — DEGRADED integrity status triggers alerts here
+- [Cluster Lockdown](./cluster-lockdown.md): unresolved critical alerts may trigger lockdown
+- [System Integrity Validation](./integrity-validation.md): DEGRADED integrity status triggers alerts here

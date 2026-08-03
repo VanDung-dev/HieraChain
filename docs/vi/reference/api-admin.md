@@ -12,8 +12,8 @@ Mô tả các endpoint REST trong phiên bản API Admin (System & Admin) dùng 
 
 ## Tổng quan endpoint
 
-* POST `/api/admin/verify-identity` — Xác minh danh tính node bằng cách ký vào một chuỗi challenge. (Yêu cầu xác thực)
-* GET `/api/admin/status` — Lấy báo cáo chi tiết về trạng thái node. (Yêu cầu API Key nếu `AUTH_ENABLED=true`)
+* POST `/api/admin/verify-identity`: Xác minh danh tính node bằng cách ký vào một chuỗi challenge. (Yêu cầu xác thực)
+* GET `/api/admin/status`: Lấy báo cáo chi tiết về trạng thái node. (Yêu cầu API Key nếu `AUTH_ENABLED=true`)
 
 ## Schema chính (trích từ `hierachain/api/admin/schemas.py`)
 
@@ -102,8 +102,8 @@ curl -s http://localhost:2661/api/admin/status
 
 ## Mã trạng thái & lỗi phổ biến
 
-* 200 OK — Thành công.
-* 500 Internal Server Error — Lỗi xác thực danh tính (ví dụ: lỗi crypto khi ký) hoặc lỗi nội bộ khi tính toán trạng thái.
+* 200 OK: Thành công.
+* 500 Internal Server Error: Lỗi xác thực danh tính (ví dụ: lỗi crypto khi ký) hoặc lỗi nội bộ khi tính toán trạng thái.
 
 ## Ghi chú triển khai (rút gọn từ `endpoints.py`)
 

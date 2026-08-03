@@ -28,7 +28,7 @@ When a Node restarts after an unexpected crash, the system automatically checks 
 
 ## 2. Rollback State Management (`RollbackManager`)
 
-In case of larger risks — such as data corruption or mistaken upgrades — the system allows rolling back the entire state to a safe checkpoint.
+In case of larger risks, such as data corruption or mistaken upgrades, the system allows rolling back the entire state to a safe checkpoint.
 
 `RollbackManager` saves system state checkpoints:
 

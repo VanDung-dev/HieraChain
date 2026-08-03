@@ -1,30 +1,30 @@
 ---
-title: "Cross-Chain Transactions"
-description: "Guide to Two-Phase Commit (2PC) mechanism and distributed transaction coordination."
+title: "Cross-Chain Operations"
+description: "Guide to Two-Phase Commit (2PC) mechanism and distributed operation coordination."
 icon: material/swap-horizontal
 ---
 
-# Cross-Chain Transactions
+# Cross-Chain Operations (2PC)
 
 ## Purpose
 
-HieraChain's hierarchical network consists of multiple independent Sub-chains serving different domains. To ensure integrity and atomicity when coordinating data flows or asset transfers across two (or more) different systems, HieraChain integrates a coordination mechanism called **Two-Phase Commit (2PC)**.
+HieraChain's hierarchical network consists of multiple independent Sub-chains serving different domains. To ensure integrity and atomicity when coordinating data flows or asset state transitions across two (or more) different systems, HieraChain integrates a coordination mechanism called **Two-Phase Commit (2PC)**.
 
 This mechanism is primarily managed by the `CrossChainTransactionManager` module at `hierachain/hierarchical/transaction_manager.py`.
 
-### 1. Transaction State Lifecycle
+### 1. Operation State Lifecycle
 
-Each cross-chain transaction moves sequentially through the following states to prevent loss:
+Each cross-chain operation moves sequentially through the following states to prevent loss:
 
-* **`PENDING`**: Transaction has been initialized, network is waiting to execute the main operation.
+* **`PENDING`**: Operation has been initialized, network is waiting to execute the main process.
 * **`PREPARED`**: Both source and destination chains have committed that conditions are sufficient for execution, resources have been successfully locked.
-* **`COMMITTED`**: Transaction completed on all network chains with consensus.
-* **`ROLLED_BACK`**: Transaction cancelled due to failure in one of the locks. Locked resources on branches will be rolled back to previous version.
-* **`FAILED`**: Transaction failed completely (likely due to internal TCP connection failure or critical logic error).
+* **`COMMITTED`**: Operation completed on all network chains with consensus.
+* **`ROLLED_BACK`**: Operation cancelled due to failure in one of the locks. Locked resources on branches will be rolled back to previous version.
+* **`FAILED`**: Operation failed completely (likely due to internal TCP connection failure or critical logic error).
 
 ### 2. Two-Phase Commit (2PC) Model
 
-In `CrossChainTransactionManager`, `_execute_2pc(transaction)` clearly allocates the main process to handle transactions. The core logic consists of two phases:
+In `CrossChainTransactionManager`, `_execute_2pc(transaction)` clearly allocates the main process to handle cross-chain operations. The core logic consists of two phases:
 
 #### Phase 1: Prepare Phase
 

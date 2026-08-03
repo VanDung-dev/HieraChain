@@ -8,13 +8,13 @@ icon: material/swap-horizontal
 
 ## Tổng quan
 
-Khi một thao tác nghiệp vụ cần thực hiện một cách nguyên tử (atomic) trải dài trên hai Sub-Chain (ví dụ: chuyển tài sản từ Sub-Chain `logistics` sang Sub-Chain `finance`), HieraChain sử dụng giao thức **Cam kết Hai pha (Two-Phase Commit - 2PC)** để đảm bảo tính nguyên tử. Hoặc cả hai chuỗi cùng cam kết thay đổi, hoặc cả hai cùng hoàn tác (rollback) — không cho phép trạng thái dở dở dang dang.
+Khi một thao tác nghiệp vụ cần thực hiện một cách nguyên tử (atomic) trải dài trên hai Sub-Chain (ví dụ: chuyển tài sản từ Sub-Chain `logistics` sang Sub-Chain `finance`), HieraChain sử dụng giao thức **Cam kết Hai pha (Two-Phase Commit - 2PC)** để đảm bảo tính nguyên tử. Hoặc cả hai chuỗi cùng cam kết thay đổi, hoặc cả hai cùng hoàn tác (rollback). Không cho phép trạng thái dở dở dang dang.
 
 **Ví dụ thực tế**: Chuyển một mặt hàng trong kho giữa hai phòng ban khác nhau. Chuỗi nguồn ghi nhận sự kiện `deduct` (trừ hàng); chuỗi đích ghi nhận sự kiện `receive` (nhận hàng). Cả hai hoạt động đều phải thành công hoặc không hoạt động nào được áp dụng.
 
 ---
 
-## Biểu đồ Luồng — Kịch bản Thành công (Happy Path)
+## Biểu đồ Luồng: Kịch bản Thành công (Happy Path)
 
 ```mermaid
 sequenceDiagram
@@ -54,7 +54,7 @@ sequenceDiagram
 
 ---
 
-## Biểu đồ Luồng — Kịch bản Thất bại (Failure Paths)
+## Biểu đồ Luồng: Kịch bản Thất bại (Failure Paths)
 
 ```mermaid
 sequenceDiagram
@@ -106,11 +106,11 @@ flowchart LR
 | Bước | Mô tả |
 |:-----|:------|
 | **1. Khởi tạo** | `HierarchyManager` tạo một thực thể `CrossChainTransaction` với UUID duy nhất và trạng thái `state=PENDING`. |
-| **2. Pha 1 — Chuẩn bị nguồn** | Chuỗi nguồn khóa tài nguyên liên quan, xác thực lược đồ (schema) của payload. |
-| **3. Pha 1 — Chuẩn bị đích** | Chuỗi đích kiểm tra dung lượng lưu trữ khả dụng và các ràng buộc nghiệp vụ. |
-| **4. Kết quả Pha 1** | Nếu cả hai chuỗi trả về `True`: trạng thái chuyển thành `PREPARED`. Nếu một trong hai lỗi: khôi phục trạng thái cũ (rollback) ngay lập tức trên cả hai chuỗi. |
-| **5. Pha 2 — Cam kết nguồn** | Chuỗi nguồn hoàn tất hoạt động (phát ra sự kiện thông qua Gửi Sự kiện). |
-| **6. Pha 2 — Cam kết đích** | Chuỗi đích hoàn tất hoạt động (phát ra sự kiện thông qua Gửi Sự kiện). |
+| **2. Pha 1: Chuẩn bị nguồn** | Chuỗi nguồn khóa tài nguyên liên quan, xác thực lược đồ (schema) của payload. |
+| **3. Pha 1: Chuẩn bị đích** | Chuỗi đích kiểm tra dung lượng lưu trữ khả dụng và các ràng buộc nghiệp vụ. |
+| **4. Kết quả Pha 1** | Nếu cả hai trả về `True`: trạng thái → `PREPARED`. Nếu một bên thất bại: rollback ngay lập tức cả hai |
+| **5. Pha 2: Cam kết nguồn** | Chuỗi nguồn hoàn tất hoạt động (phát ra sự kiện thông qua Gửi Sự kiện). |
+| **6. Pha 2: Cam kết đích** | Chuỗi đích hoàn tất hoạt động (phát ra sự kiện thông qua Gửi Sự kiện). |
 | **7. Kết quả** | Trạng thái chuyển thành `COMMITTED`. Mã `tx_id` được trả về cho bên gọi. |
 
 ---
@@ -140,5 +140,5 @@ flowchart LR
 
 ## Liên quan
 
-- [Gửi Sự kiện](./event-submission.md) — mỗi phương thức `commit_transaction()` bên trong sẽ gọi đến `add_event()`
-- [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) — quản lý khôi phục trạng thái ở cấp độ hệ thống
+- [Gửi Sự kiện](./event-submission.md): mỗi phương thức `commit_transaction()` bên trong sẽ gọi đến `add_event()`
+- [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md): quản lý khôi phục trạng thái ở cấp độ hệ thống

@@ -56,15 +56,15 @@ sequenceDiagram
     API-->>Client: 200 OK (Proof ID)
 ```
 
-* GET `/api/ledger/health` — Kiểm tra tình trạng.
-* GET `/api/ledger/chains` — Liệt kê Main Chain và tất cả Sub-Chain.
-* POST `/api/ledger/chains/{chain_name}/create` — Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo).
-* POST `/api/ledger/chains/{chain_name}/events` — Thêm sự kiện vào Sub-Chain.
-* POST `/api/ledger/chains/{chain_name}/submit-proof` — Gửi proof từ Sub-Chain lên Main Chain.
-* GET `/api/ledger/chains/{chain_name}/stats` — Lấy thống kê chuỗi.
-* GET `/api/ledger/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false` — Lấy danh sách block (có phân trang). Nếu `resolve_cid=true`, tự động tải dữ liệu chi tiết từ IPFS.
-* GET `/api/ledger/chains/{chain_name}/blocks/{index_or_hash}` — Lấy chi tiết một block cụ thể.
-* GET `/api/ledger/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]` — Truy vết sự kiện. Nếu `resolve_cid=true`, giải mã chi tiết sự kiện từ IPFS.
+* GET `/api/ledger/health`: Kiểm tra tình trạng.
+* GET `/api/ledger/chains`: Liệt kê Main Chain và tất cả Sub-Chain.
+* POST `/api/ledger/chains/{chain_name}/create`: Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo).
+* POST `/api/ledger/chains/{chain_name}/events`: Thêm sự kiện vào Sub-Chain.
+* POST `/api/ledger/chains/{chain_name}/submit-proof`: Gửi proof từ Sub-Chain lên Main Chain.
+* GET `/api/ledger/chains/{chain_name}/stats`: Lấy thống kê chuỗi.
+* GET `/api/ledger/chains/{chain_name}/blocks?limit=10&offset=0&resolve_cid=false`: Lấy danh sách block (có phân trang). Nếu `resolve_cid=true`, tự động tải dữ liệu chi tiết từ IPFS.
+* GET `/api/ledger/chains/{chain_name}/blocks/{index_or_hash}`: Lấy chi tiết một block cụ thể.
+* GET `/api/ledger/entities/{entity_id}/trace[?chain_name=...&resolve_cid=false]`: Truy vết sự kiện. Nếu `resolve_cid=true`, giải mã chi tiết sự kiện từ IPFS.
 
 ## Schema chính (trích từ `hierachain/api/ledger/schemas.py`)
 
@@ -216,11 +216,11 @@ curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&off
 
 ## Mã trạng thái & lỗi phổ biến
 
-* 200 OK — Thành công cho GET/POST đa số trường hợp.
-* 201 Created — Tạo Sub-Chain thành công.
-* 400 Bad Request — `chain_name` không hợp lệ khi tạo (chỉ cho phép `[a-zA-Z0-9_\-]`).
-* 404 Not Found — Không tìm thấy chuỗi hoặc sub-chain.
-* 500 Internal Server Error — Lỗi xử lý nội bộ (ví dụ lỗi khi liệt kê chuỗi, khi thêm sự kiện, gửi proof, thống kê, truy xuất blocks).
+* 200 OK: Thành công cho GET/POST đa số trường hợp.
+* 201 Created: Tạo Sub-Chain thành công.
+* 400 Bad Request: `chain_name` không hợp lệ khi tạo (chỉ cho phép `[a-zA-Z0-9_\-]`).
+* 404 Not Found: Không tìm thấy chuỗi hoặc sub-chain.
+* 500 Internal Server Error: Lỗi xử lý nội bộ (ví dụ lỗi khi liệt kê chuỗi, khi thêm sự kiện, gửi proof, thống kê, truy xuất blocks).
 
 ## Ghi chú triển khai (rút gọn từ `endpoints.py`)
 

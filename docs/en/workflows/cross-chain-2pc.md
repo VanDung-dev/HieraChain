@@ -8,13 +8,13 @@ icon: material/swap-horizontal
 
 ## Overview
 
-When a business operation needs to atomically span two Sub-Chains (e.g., an asset moves from the `logistics` chain to the `finance` chain), HieraChain uses the **Two-Phase Commit (2PC)** protocol to guarantee atomicity. Either both chains commit the change, or both roll back — no partial state is possible.
+When a business operation needs to atomically span two Sub-Chains (e.g., an asset moves from the `logistics` chain to the `finance` chain), HieraChain uses the **Two-Phase Commit (2PC)** protocol to guarantee atomicity. Either both chains commit the change, or both roll back. No partial state is possible.
 
 **Example real-world trigger**: An inventory item is transferred between departments. The source chain records a `deduct` event; the destination chain records a `receive` event. Both must succeed or neither applies.
 
 ---
 
-## Flow Diagram — Happy Path
+## Flow Diagram: Happy Path
 
 ```mermaid
 sequenceDiagram
@@ -54,7 +54,7 @@ sequenceDiagram
 
 ---
 
-## Flow Diagram — Failure Paths
+## Flow Diagram: Failure Paths
 
 ```mermaid
 sequenceDiagram
@@ -106,11 +106,11 @@ flowchart LR
 | Step | Description |
 |:-----|:------------|
 | **1. Initiate** | `HierarchyManager` creates a `CrossChainTransaction` with UUID and `state=PENDING` |
-| **2. Phase 1 — Prepare SRC** | Source chain locks resources, validates payload schema |
-| **3. Phase 1 — Prepare DST** | Destination chain checks capacity and constraints |
+| **2. Phase 1: Prepare SRC** | Source chain locks resources, validates payload schema |
+| **3. Phase 1: Prepare DST** | Destination chain checks capacity and constraints |
 | **4. Phase 1 result** | If both return `True`: state → `PREPARED`. If either fails: immediate rollback on both |
-| **5. Phase 2 — Commit SRC** | Source chain finalizes the operation (emits event via Event Submission) |
-| **6. Phase 2 — Commit DST** | Destination chain finalizes (emits event via Event Submission) |
+| **5. Phase 2: Commit SRC** | Source chain finalizes the operation (emits event via Event Submission) |
+| **6. Phase 2: Commit DST** | Destination chain finalizes (emits event via Event Submission) |
 | **7. Result** | State → `COMMITTED`. `tx_id` returned to caller |
 
 ---
@@ -140,5 +140,5 @@ flowchart LR
 
 ## Related
 
-- [Event Submission](./event-submission.md) — each `commit_transaction()` internally calls `add_event()`
-- [Error Mitigation](./error-recovery.md) — handles state rollback at the system level
+- [Event Submission](./event-submission.md): each `commit_transaction()` internally calls `add_event()`
+- [Error Mitigation](./error-recovery.md): handles state rollback at the system level

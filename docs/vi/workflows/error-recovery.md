@@ -12,7 +12,7 @@ HieraChain cung cấp các cơ chế khôi phục tự động phân lớp trên
 
 ---
 
-## 6A — Khôi phục Mạng (Network Recovery)
+## 6A: Khôi phục Mạng (Network Recovery)
 
 ```mermaid
 flowchart TB
@@ -34,7 +34,7 @@ flowchart TB
 
 ---
 
-## 6B — Khôi phục Đồng thuận (Lỗi Trưởng nhóm - Leader Failure)
+## 6B: Khôi phục Đồng thuận (Lỗi Trưởng nhóm - Leader Failure)
 
 ```mermaid
 sequenceDiagram
@@ -55,7 +55,7 @@ sequenceDiagram
 
 ---
 
-## 6C — Hoàn trả Trạng thái (State Rollback)
+## 6C: Hoàn trả Trạng thái (State Rollback)
 
 ```mermaid
 flowchart LR
@@ -72,9 +72,9 @@ flowchart LR
 ```
 
 **Các bước Khôi phục (Rollback)**:
-1. `RollbackManager.load_snapshot()` — nạp ảnh chụp nhanh đồng nhất gần nhất
-2. `EventJournal.replay()` — phát lại các mục nhật ký đã cam kết kể từ thời điểm ảnh chụp nhanh
-3. `DataValidator.validate()` — xác thực trạng thái đã khôi phục so với mã kiểm tra băm (cryptographic checksums).
+1. `RollbackManager.load_snapshot()`: nạp ảnh chụp nhanh đồng nhất gần nhất
+2. `EventJournal.replay()`: phát lại các mục nhật ký đã cam kết kể từ thời điểm ảnh chụp nhanh
+3. `DataValidator.validate()`: xác thực trạng thái đã khôi phục so với mã kiểm tra băm (cryptographic checksums).
 4. Nếu xác thực thất bại: gửi cảnh báo leo thang qua hệ thống Cảnh báo Rủi ro; yêu cầu sự can thiệp thủ công từ người quản trị.
 
 ---
@@ -118,7 +118,7 @@ flowchart LR
 
 ## Liên quan
 
-- [Đồng thuận BFT](./bft-consensus.md) — Chi tiết về Thay đổi Phiên (View Change)
-- [Khóa băng Cụm](./cluster-lockdown.md) — Khôi phục ở cấp độ toàn cụm nút
-- [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md) — Tải lại toàn bộ chuỗi từ cơ sở dữ liệu (DB)
-- [Cảnh báo Rủi ro](./risk-alerts.md) — Các thông báo cảnh báo leo thang
+- [Đồng thuận BFT](./bft-consensus.md): Chi tiết về Thay đổi Phiên (View Change)
+- [Khóa băng Cụm](./cluster-lockdown.md): Khôi phục ở cấp độ toàn cụm nút
+- [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md): Tải lại toàn bộ chuỗi từ cơ sở dữ liệu (DB)
+- [Cảnh báo Rủi ro](./risk-alerts.md): Các thông báo cảnh báo leo thang

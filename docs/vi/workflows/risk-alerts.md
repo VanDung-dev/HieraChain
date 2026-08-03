@@ -131,5 +131,5 @@ sequenceDiagram
 
 ## Liên quan
 
-- [Khóa băng Cụm](./cluster-lockdown.md) — Các cảnh báo CRITICAL không được xử lý kịp thời có thể tự động kích hoạt khóa băng cụm
-- [Xác thực Tính toàn vẹn](./integrity-validation.md) — Trạng thái toàn vẹn bị DEGRADED sẽ kích hoạt phát cảnh báo tại đây
+- [Khóa băng Cụm](./cluster-lockdown.md): Các cảnh báo CRITICAL không được xử lý kịp thời có thể tự động kích hoạt khóa băng cụm
+- [Xác thực Tính toàn vẹn](./integrity-validation.md): Trạng thái toàn vẹn bị DEGRADED sẽ kích hoạt phát cảnh báo tại đây

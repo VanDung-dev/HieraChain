@@ -151,6 +151,6 @@ sequenceDiagram
 
 ## Related
 
-- [Proof Anchoring](./proof-anchoring.md) — creates the proofs validated here
-- [Chain Rehydration](./chain-rehydration.md) — called if inconsistency triggers rehydration
-- [Risk Analysis & Alerts](./risk-alerts.md) — receives DEGRADED alerts from this workflow
+- [Proof Anchoring](./proof-anchoring.md): creates the proofs validated here
+- [Chain Rehydration](./chain-rehydration.md): called if inconsistency triggers rehydration
+- [Risk Analysis & Alerts](./risk-alerts.md): receives DEGRADED alerts from this workflow

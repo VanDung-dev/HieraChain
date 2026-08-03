@@ -19,7 +19,7 @@ Every entity must be registered and have its identity validated before being per
 
 ---
 
-## Flow Diagram — Entity Onboarding (Enterprise MSP)
+## Flow Diagram: Entity Onboarding (Enterprise MSP)
 
 ```mermaid
 sequenceDiagram
@@ -51,7 +51,7 @@ sequenceDiagram
 
 ---
 
-## Flow Diagram — Runtime Authorization
+## Flow Diagram: Runtime Authorization
 
 ```mermaid
 sequenceDiagram
@@ -87,7 +87,7 @@ sequenceDiagram
 
 ---
 
-## Flow Diagram — Certificate Revocation
+## Flow Diagram: Certificate Revocation
 
 ```mermaid
 sequenceDiagram
@@ -162,6 +162,6 @@ sequenceDiagram
 
 ## Related
 
-- [Policy Enforcement](./policy-enforcement.md) — called after MSP authorization succeeds
-- [Event Submission](./event-submission.md) — `authorize_action()` gates access before `add_event()`
-- [Key Backup](./key-backup.md) — new certificate issuance triggers key backup
+- [Policy Enforcement](./policy-enforcement.md): called after MSP authorization succeeds
+- [Event Submission](./event-submission.md): `authorize_action()` gates access before `add_event()`
+- [Key Backup](./key-backup.md): new certificate issuance triggers key backup

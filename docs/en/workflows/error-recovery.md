@@ -12,7 +12,7 @@ HieraChain provides layered, automated recovery mechanisms across three dimensio
 
 ---
 
-## 6A — Network Recovery
+## 6A: Network Recovery
 
 ```mermaid
 flowchart TB
@@ -34,7 +34,7 @@ flowchart TB
 
 ---
 
-## 6B — Consensus Recovery (Leader Failure)
+## 6B: Consensus Recovery (Leader Failure)
 
 ```mermaid
 sequenceDiagram
@@ -55,7 +55,7 @@ sequenceDiagram
 
 ---
 
-## 6C — State Rollback
+## 6C: State Rollback
 
 ```mermaid
 flowchart LR
@@ -72,9 +72,9 @@ flowchart LR
 ```
 
 **Rollback steps**:
-1. `RollbackManager.load_snapshot()` — load the most recent consistent snapshot
-2. `EventJournal.replay()` — replay committed journal entries since the snapshot
-3. `DataValidator.validate()` — verify the restored state against cryptographic checksums
+1. `RollbackManager.load_snapshot()`: load the most recent consistent snapshot
+2. `EventJournal.replay()`: replay committed journal entries since the snapshot
+3. `DataValidator.validate()`: verify the restored state against cryptographic checksums
 4. If validation fails: escalation alert sent via Risk Alerts; manual intervention required
 
 ---
@@ -118,7 +118,7 @@ flowchart LR
 
 ## Related
 
-- [BFT Consensus](./bft-consensus.md) — View Change detail
-- [Cluster Lockdown](./cluster-lockdown.md) — cluster-level recovery
-- [Chain Rehydration](./chain-rehydration.md) — full chain reload from DB
-- [Risk Analysis & Alerts](./risk-alerts.md) — escalation notifications
+- [BFT Consensus](./bft-consensus.md): View Change detail
+- [Cluster Lockdown](./cluster-lockdown.md): cluster-level recovery
+- [Chain Rehydration](./chain-rehydration.md): full chain reload from DB
+- [Risk Analysis & Alerts](./risk-alerts.md): escalation notifications

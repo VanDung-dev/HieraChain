@@ -8,7 +8,7 @@ icon: material/sync
 
 **Related workflows**: [Event Submission](./event-submission.md) · [BFT Consensus](./bft-consensus.md)
 
-HieraChain supports pluggable consensus mechanisms across layers. At the **MainChain (Inter-Organization Alliance)** level, consensus is configured via the `HRC_MAINCHAIN_CONSENSUS` environment variable (defaults to `proof_of_federation`). At the **SubChain (Intra-Organization)** level, domain event processing strictly defaults to **Proof of Authority (PoA)** for maximum speed (~0ms latency). The event submission flow ([Event Submission](./event-submission.md)) is identical regardless of which mechanism is selected — only the `finalize_block()` step differs.
+HieraChain supports pluggable consensus mechanisms across layers. At the **MainChain (Inter-Organization Alliance)** level, consensus is configured via the `HRC_MAINCHAIN_CONSENSUS` environment variable (defaults to `proof_of_federation`). At the **SubChain (Intra-Organization)** level, domain event processing strictly defaults to **Proof of Authority (PoA)** for maximum speed (~0ms latency). The event submission flow ([Event Submission](./event-submission.md)) is identical regardless of which mechanism is selected; only the `finalize_block()` step differs.
 
 ---
 
@@ -20,7 +20,7 @@ HieraChain supports pluggable consensus mechanisms across layers. At the **MainC
 | **Target Layer** | SubChain (Internal) / Single MainChain | MainChain Alliance (Inter-Org) | SubChain / MainChain BFT |
 | **Who finalizes** | Any registered authority | Only rotating leader: `Validators[index % n]` | 2f+1 of n validators via PBFT |
 | **Signature type** | Ed25519 (asymmetric) | SHA-256 federation signature | Aggregated PBFT votes |
-| **Leader rotation** | Optional round-robin | Enforced — deterministic by block index | View-based, changes on failure |
+| **Leader rotation** | Optional round-robin | Enforced, deterministic by block index | View-based, changes on failure |
 | **ZK Proof check** | Optional | Enforced in `validate_block()` | N/A |
 | **Min validators** | 1 authority sufficient | ≥ 3 (`min_validators` config) | n ≥ 3f + 1 |
 | **Fault model** | Trust the authority identity | Distributed trust, tolerate absent validator | Tolerates up to f Byzantine nodes |
@@ -52,7 +52,7 @@ sequenceDiagram
     POA-->>OS: Finalized Block ✅
 ```
 
-### Key Classes — PoA
+### Key Classes: PoA
 
 | Step | Class / Method | File |
 |:-----|:--------------|:-----|
@@ -89,7 +89,7 @@ sequenceDiagram
     POF-->>OS: Finalized Block ✅
 ```
 
-### Key Classes — PoF
+### Key Classes: PoF
 
 | Step | Class / Method | File |
 |:-----|:--------------|:-----|

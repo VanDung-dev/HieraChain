@@ -23,7 +23,7 @@ Ordering Service is designed using the **Facade** pattern, coordinating multiple
 | **Block Builder** | Event batching and block structure construction. | `block_builder.py` |
 | **Certifier** | Validates event signatures and permissions before ordering. | `certifier.py` |
 | **Storage** | Manages persistent storage for pending events. | `storage.py` |
-| **Recovery** | Restores state from **Transaction Journal** after failures. | `recovery.py` |
+| **Recovery** | Restores state from **Event Journal** after failures. | `recovery.py` |
 
 ---
 
@@ -31,7 +31,7 @@ Ordering Service is designed using the **Facade** pattern, coordinating multiple
 
 ```mermaid
 graph TD
-    A[Client Submit Event] --> B[Transaction Journal]
+    A[Client Submit Event] --> B[Event Journal]
     B --> C[Event Pool]
     C --> D[Event Certifier]
     D -- Valid --> E[Ordering Processor]
@@ -46,7 +46,7 @@ graph TD
 ## Core Features
 
 ### 1. Persistence & Durability
-Before entering the processing queue, every event is written to the **Transaction Journal**. If the service stops unexpectedly, the `Recovery` module reads the Journal to reconstruct state, ensuring no data is lost.
+Before entering the processing queue, every event is written to the **Event Journal**. If the service stops unexpectedly, the `Recovery` module reads the Journal to reconstruct state, ensuring no data is lost.
 
 ### 2. Batching Strategy
 To optimize performance, Ordering Service does not create a block for each individual event but uses batching:
@@ -56,7 +56,7 @@ To optimize performance, Ordering Service does not create a block for each indiv
 ### 3. Event Certification
 The `Certifier` module integrates closely with the **Security** system to check:
 *   Data format (Schema Validation).
-*   Sender's digital signature (Identity Verification).
+*   Submitter's digital signature (Identity Verification).
 *   Channel access permissions (Policy Enforcement).
 
 ---

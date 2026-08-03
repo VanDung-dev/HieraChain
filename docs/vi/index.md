@@ -3,7 +3,7 @@ title: Tài liệu HieraChain
 description: Bộ tài liệu kỹ thuật bám sát mã nguồn trong thư mục hierachain.
 ---
 
-# HieraChain — Tài liệu kỹ thuật
+# HieraChain: Tài liệu kỹ thuật
 
 ## Tổng quan
 

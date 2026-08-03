@@ -12,18 +12,18 @@ icon: material/history
 
     * 2026-07-27
 
-        * **Tài liệu**: Đổi tên `HRC_CONSENSUS_TYPE` → `HRC_MAINCHAIN_CONSENSUS` trên toàn bộ tài liệu EN/VI — consensus_mechanisms, poa, pof, event-submission, overview, cross-chain-2pc, error-recovery. Làm rõ SubChain mặc định PoA (nội bộ), MainChain mặc định PoF (liên minh). Đổi tên "Cross-Chain Transaction" → "Cross-Chain Operation" (2PC), `TransactionJournal` → `EventJournal`, `TRANSACTION_SCHEMA` → `EVENT_SCHEMA`. Cập nhật đường dẫn import lỗi thời và định nghĩa data-schema.
+        * **Tài liệu**: Đổi tên `HRC_CONSENSUS_TYPE` → `HRC_MAINCHAIN_CONSENSUS` trên toàn bộ tài liệu EN/VI: consensus_mechanisms, poa, pof, event-submission, overview, cross-chain-2pc, error-recovery. Làm rõ SubChain mặc định PoA (nội bộ), MainChain mặc định PoF (liên minh). Đổi tên "Cross-Chain Transaction" → "Cross-Chain Operation" (2PC), `TransactionJournal` → `EventJournal`, `TRANSACTION_SCHEMA` → `EVENT_SCHEMA`. Cập nhật đường dẫn import lỗi thời và định nghĩa data-schema.
         * **Đồng thuận**: Giới thiệu biến môi trường `HRC_MAINCHAIN_CONSENSUS` với bí danh tương thích ngược `HRC_CONSENSUS_TYPE`. `MainChain.__init__` chấp nhận tham số `consensus_type` tùy chọn. `SubChain` mặc định sử dụng PoA cho sự kiện nội bộ, có thể cấu hình qua `config["consensus_type"]`.
-        * **Kiểm thử**: Thêm unit test cho khởi tạo consensus của SubChain — mặc định là PoA, giữ PoA khi cấu hình toàn cục PoF, hỗ trợ ghi đè PoF rõ ràng qua config dict.
+        * **Kiểm thử**: Thêm unit test cho khởi tạo consensus của SubChain: mặc định là PoA, giữ PoA khi cấu hình toàn cục PoF, hỗ trợ ghi đè PoF rõ ràng qua config dict.
 
     * 2026-07-23
 
-        * **Kiểm thử (Tích hợp)**: Thêm `tests/integration/test_proof_of_federation_mesh.py` — bài kiểm thử tích hợp 2 pha chứng minh liên minh PoF đa-MainChain: Pha 1 chứng minh PoA từ chối các block từ tổ chức khác; Pha 2 xác nhận đồng thuận liên minh PoF giữa 3 node (Bệnh viện A, Bệnh viện B, Bảo hiểm Z) qua chữ ký đa phương Ed25519 và luân phiên lãnh đạo vòng tròn, không cần RootChain trung tâm.
+        * **Kiểm thử (Tích hợp)**: Thêm `tests/integration/test_proof_of_federation_mesh.py`, bài kiểm thử tích hợp 2 pha chứng minh liên minh PoF đa-MainChain: Pha 1 chứng minh PoA từ chối các block từ tổ chức khác; Pha 2 xác nhận đồng thuận liên minh PoF giữa 3 node (Bệnh viện A, Bệnh viện B, Bảo hiểm Z) qua chữ ký đa phương Ed25519 và luân phiên lãnh đạo vòng tròn, không cần RootChain trung tâm.
         * **Tái cấu trúc**: Chuyển toàn bộ import nội tuyến/muộn (`os`, `sys`, `time`, `uuid`, `asyncio`, `warnings`, `httpx`, `pyarrow`, `cast`) lên đầu file (module-level) trên 14 file nguồn, tuân thủ hoàn toàn PEP 8 về thứ tự import.
         * **Tài liệu**: Định nghĩa lại **Proof of Authority (PoA)** là giao thức đồng thuận *Nội bộ Tổ chức* (một MainChain quản lý các Sub-Chain nội bộ) và **Proof of Federation (PoF)** là giao thức đồng thuận *Liên minh P2P giữa các MainChain độc lập* (không cần RootChain trung tâm), kèm bảng so sánh kiến trúc trong cả tài liệu tiếng Anh và tiếng Việt.
-        * **Tài liệu**: Đồng bộ hóa toàn bộ đường dẫn file lỗi thời trong `docs/en/` với cấu trúc thực tế của gói `hierachain/` — sửa 22 tham chiếu trong `architecture/`, `glossary.md`, `how-to/`, `reference/` (ví dụ: `main_chain.py` → `main_chain/base.py`, `endpoints.py` → `router.py`, `websocket_manager.py` → `websocket/manager.py`).
+        * **Tài liệu**: Đồng bộ hóa toàn bộ đường dẫn file lỗi thời trong `docs/en/` với cấu trúc thực tế của gói `hierachain/`: sửa 22 tham chiếu trong `architecture/`, `glossary.md`, `how-to/`, `reference/` (ví dụ: `main_chain.py` → `main_chain/base.py`, `endpoints.py` → `router.py`, `websocket_manager.py` → `websocket/manager.py`).
         * **Tài liệu**: Bổ sung các file còn thiếu `docs/vi/reference/code-map.md` và `docs/vi/how-to/add-endpoint.md` để đạt tương đương 1:1 hoàn toàn giữa cây tài liệu tiếng Anh và tiếng Việt (cả hai đều có 90 file `.md`).
-        * **Tài liệu (vi)**: Đồng bộ hóa toàn bộ đường dẫn file và định nghĩa PoA/PoF đã cập nhật từ `docs/en/` sang toàn bộ bản gương `docs/vi/` — cập nhật các file tương đương trong `architecture/`, `glossary.md`, `how-to/`, `reference/`.
+        * **Tài liệu (vi)**: Đồng bộ hóa toàn bộ đường dẫn file và định nghĩa PoA/PoF đã cập nhật từ `docs/en/` sang toàn bộ bản gương `docs/vi/`: cập nhật các file tương đương trong `architecture/`, `glossary.md`, `how-to/`, `reference/`.
 
     * 2026-07-22
 
@@ -47,14 +47,14 @@ icon: material/history
 
     * 2026-07-17
 
-        * **Hiệu năng**: Thay thế `json` bằng `orjson` trên toàn bộ codebase — security, risk_management, network, monitoring, privacy, config, CLI, API và hierachain modules — cho serialization/deserialization nhanh hơn.
+        * **Hiệu năng**: Thay thế `json` bằng `orjson` trên toàn bộ codebase (security, risk_management, network, monitoring, privacy, config, CLI, API và hierachain modules) cho serialization/deserialization nhanh hơn.
         * **Core**: Thêm tính năng phục hồi dữ liệu payload block tối ưu với phân tích cột `data` trực tiếp khi khả dụng.
         * **Bảo mật**: Tối ưu xác minh chữ ký với thread pool cấu hình được (CPU count) và tách `_get_verify_key` helper để giải mã public key.
         * **Kiểm thử**: Kéo dài thời gian sleep trong `test_repro_determinism` từ 0.5s lên 1.5s cho độ tin cậy shutdown cao hơn.
 
     * 2026-07-16
 
-        * **Kiểm thử**: Sửa false positive trong term censorship test — bỏ qua docstring examples giải thích regex word-boundary matching.
+        * **Kiểm thử**: Sửa false positive trong term censorship test: bỏ qua docstring examples giải thích regex word-boundary matching.
         * **Tài liệu**: Thêm PR description template cho việc merge v0.0.x vào main.
         * **Changelog**: Cập nhật unreleased section với các phát triển gần đây.
 
@@ -205,9 +205,9 @@ Phiên bản này tập trung vào củng cố bảo mật cho logging subsystem
 
 ??? note "Improvements (6)"
 
-    * **Secure Logging**: Thêm redaction dữ liệu nhạy cảm dựa trên regex trong `hierachain/security/` — các giá trị nhạy cảm được thay bằng `'***'` để ngăn rò rỉ thông tin xác thực. Giới thiệu `_SEVERITY_MAP` để logging nhất quán, thay thế các method log level trực tiếp bằng `logger.log()` — giảm trùng lặp trên toàn bộ call sites.
-    * **Core Blockchain Refactoring**: Thêm `_rebuild_event_indexes` để reset và rebuild event indexes sau khi load blocks — đảm bảo index consistency giữa các lần khởi động. Thay đổi hash mismatch từ silent correction thành exception — không còn che giấu corruption tiềm ẩn. Thay thế dictionary access bằng `block.to_event_list()` cho event filtering sạch hơn.
-    * **Consensus Hardening**: Cải thiện `_contains_forbidden_terms` với regex word-boundary matching để loại bỏ false positives. Loại bỏ fallback random signature generation — signing fail rõ ràng với error message khi thiếu private key. `ProofOfFederation` tự động sinh key pairs cho validators, expose `public_key` property, thêm `block_hash` vào consensus metadata. `_verify_block_quorum` nhận optional `signer_id` để tránh quét event dư thừa.
+    * **Secure Logging**: Thêm redaction dữ liệu nhạy cảm dựa trên regex trong `hierachain/security/`: các giá trị nhạy cảm được thay bằng `'***'` để ngăn rò rỉ thông tin xác thực. Giới thiệu `_SEVERITY_MAP` để logging nhất quán, thay thế các method log level trực tiếp bằng `logger.log()`, giảm trùng lặp trên toàn bộ call sites.
+    * **Core Blockchain Refactoring**: Thêm `_rebuild_event_indexes` để reset và rebuild event indexes sau khi load blocks, đảm bảo index consistency giữa các lần khởi động. Thay đổi hash mismatch từ silent correction thành exception, không còn che giấu corruption tiềm ẩn. Thay thế dictionary access bằng `block.to_event_list()` cho event filtering sạch hơn.
+    * **Consensus Hardening**: Cải thiện `_contains_forbidden_terms` với regex word-boundary matching để loại bỏ false positives. Loại bỏ fallback random signature generation; signing fail rõ ràng với error message khi thiếu private key. `ProofOfFederation` tự động sinh key pairs cho validators, expose `public_key` property, thêm `block_hash` vào consensus metadata. `_verify_block_quorum` nhận optional `signer_id` để tránh quét event dư thừa.
     * **Hierarchical Layer Simplification**: Loại bỏ temporary entity index mapping, local chain clear, event statistics reset trong sub-chain rehydration. Xóa redundant event addition vào `Blockchain.pending_events`. Streamline `_recover_pending_events_from_journal` để chỉ đếm uncommitted events, chuyển event reconstruction sang `OrderingRecovery`.
     * **Testing & Benchmark**: Nâng cấp ZK Proof-of-Federation test với keypair thật, chữ ký thật và pre-consensus block validation. Cập nhật storage benchmark dùng `Block` class từ `hierachain.core`, đổi tên `event_type` thành `event`. Thêm helper function cho `ProofOfFederation` instantiation với signing key.
 
@@ -227,7 +227,7 @@ Phiên bản này tập trung vào cải thiện core package `hierachain/`, bao
     * **Idempotent Sub-Chain Creation**: API v1 (`hierachain/api/v1/endpoints.py`) kiểm tra sub-chain tồn tại trước khi tạo, trả về `201 Created` với audit trail `"already_exists"` cho duplicate. Xử lý `409 Conflict` khi `manager.add_sub_chain` báo duplicate qua `ValueError`.
     * **Chain Integrity Hardening**: Thêm `_verify_chain_links()` trong `hierachain/consensus/ordering/storage.py` để xác thực chuỗi `previous_hash` giữa các block. `_block_from_dict` raise `ValueError` khi computed hash mismatch stored hash, thay vì chỉ log error.
     * **Event Enrichment & Block Persistence**: Ordering service (`hierachain/consensus/ordering/service.py`) tiêm `event_id` vào `event_data` payload trước khi tạo pending event. Recovery (`recovery.py`) ưu tiên `event_id` từ enriched `event_data`. Sub-chain finalize (`hierachain/hierarchical/sub_chain.py`) persist block qua storage handler, đảm bảo rehydration giữ nguyên consensus events.
-    * **Block Overwrite**: `hierachain/storage/sql_backend.py` — `save_block` query existing block theo `index`/`chain_name`, xóa và ghi đè thay vì silent `UNIQUE constraint` handling.
+    * **Block Overwrite**: Trong `hierachain/storage/sql_backend.py`, `save_block` query existing block theo `index`/`chain_name`, xóa và ghi đè thay vì silent `UNIQUE constraint` handling.
     * **Zero Children Safeguard**: Rebalancer (`hierachain/hierarchical/rebalancer.py`) trả về `0` an toàn khi `num_children <= 0`, ngăn lỗi modulo-by-zero.
 
 ??? warning "Fix (1)"
@@ -260,7 +260,7 @@ Phiên bản này tập trung vào cải thiện type safety toàn diện trong 
 
 ??? note "Improvements (4)"
 
-    * **Tuân thủ Mypy đầy đủ**: Giải quyết các cảnh báo static typing trên tất cả module — consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core và cluster.
+    * **Tuân thủ Mypy đầy đủ**: Giải quyết các cảnh báo static typing trên tất cả module: consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core và cluster.
     * **Xác thực Signature Ed25519**: Thực thi chiều dài 64-byte nghiêm ngặt cho signature Ed25519 trong `verify_signature_standalone` để ngăn chặn bypass validation.
     * **Canonicalization JSON**: Triển khai `get_canonical_bytes` với sắp xếp dict đệ quy, chuẩn hóa Unicode NFC, định dạng float nhất quán cho xác minh chữ ký deterministic.
     * **Bảo mật**: Thêm `PayloadLimitMiddleware` từ chối POST/PUT/PATCH trên 1MB, validation proof timestamp 24h, ngăn chặn API key mặc định trong production (`RuntimeError`), refactor HMAC lockdown protocol (`hmac.new` SHA256).

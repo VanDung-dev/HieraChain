@@ -8,7 +8,7 @@ icon: material/anchor
 
 ## Overview
 
-After a block is finalized on a Sub-Chain, the Sub-Chain submits a **cryptographic proof** (hash + optional ZK proof) to the Main Chain. The Main Chain stores only the proof — never raw event data. This is how global immutability is enforced without storing sensitive domain data on the root chain.
+After a block is finalized on a Sub-Chain, the Sub-Chain submits a **cryptographic proof** (hash + optional ZK proof) to the Main Chain. The Main Chain stores only the proof, never raw event data. This is how global immutability is enforced without storing sensitive domain data on the root chain.
 
 This is a **post-block trigger**, not a user-initiated call. It fires automatically when `chain_length % proof_interval == 0`.
 
@@ -83,7 +83,7 @@ sequenceDiagram
 | Condition | Behavior |
 |:----------|:---------|
 | ZK proof generation fails | Retry up to 3× with exponential backoff; if `HRC_ZK_PROOF_REQUIRED_FOR_MAINCHAIN=true`, abort |
-| Main Chain write fails | Exception logged, `last_proof_submission` not updated — retry on next block |
+| Main Chain write fails | Exception logged, `last_proof_submission` not updated; retry on next block |
 | Main Chain ZK verification fails | `add_proof()` raises, proof block not appended |
 
 ---
@@ -102,5 +102,5 @@ sequenceDiagram
 
 ## Related
 
-- [Event Submission](./event-submission.md) — triggers this workflow
-- [System Integrity Validation](./integrity-validation.md) — checks proof consistency between Sub-Chain and Main Chain
+- [Event Submission](./event-submission.md): triggers this workflow
+- [System Integrity Validation](./integrity-validation.md): checks proof consistency between Sub-Chain and Main Chain

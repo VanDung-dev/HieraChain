@@ -28,7 +28,7 @@ Khi Node khởi động lại sau một sự cố không mong muốn (Crash), h�
 
 ## 2. Quản lý Rollback State (`RollbackManager`)
 
-Trong trường hợp rủi cấu ro lớn hơn — như dữ liệu phân vùng hoặc nâng cấp (upgrade) nhầm lẫn — hệ thống cho phép "lùi" toàn bộ trạng thái về một mốc an toàn.
+Trong trường hợp rủi cấu ro lớn hơn, như dữ liệu phân vùng hoặc nâng cấp (upgrade) nhầm lẫn, hệ thống cho phép "lùi" toàn bộ trạng thái về một mốc an toàn.
 
 `RollbackManager` sẽ lưu lại các điểm trạng thái hệ thống:
 

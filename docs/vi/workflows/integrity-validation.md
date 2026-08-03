@@ -151,6 +151,6 @@ sequenceDiagram
 
 ## Liên quan
 
-- [Neo giữ Bằng chứng](./proof-anchoring.md) — Tạo ra các bằng chứng được kiểm tra tại đây
-- [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md) — Được gọi nếu phát hiện không nhất quán và cần nạp lại chuỗi từ DB
-- [Cảnh báo Rủi ro](./risk-alerts.md) — Tiếp nhận các thông tin cảnh báo DEGRADED từ quy trình này
+- [Neo giữ Bằng chứng](./proof-anchoring.md): Tạo ra các bằng chứng được kiểm tra tại đây
+- [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md): Được gọi nếu phát hiện không nhất quán và cần nạp lại chuỗi từ DB
+- [Cảnh báo Rủi ro](./risk-alerts.md): Tiếp nhận các thông tin cảnh báo DEGRADED từ quy trình này

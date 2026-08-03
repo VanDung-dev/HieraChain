@@ -3,7 +3,7 @@ title: HieraChain Documentation
 description: Technical documentation closely following the source code in the hierachain directory.
 ---
 
-# HieraChain — Technical Documentation
+# HieraChain: Technical Documentation
 
 ## Overview
 

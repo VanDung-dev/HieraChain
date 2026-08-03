@@ -14,7 +14,7 @@ Các dữ liệu lớn hoặc nhạy cảm nằm ngoài chuỗi (ví dụ: tài 
 
 ---
 
-## Biểu đồ luồng — Tải lên (Mã hóa → Lưu trữ → Ghim)
+## Biểu đồ luồng: Tải lên (Mã hóa → Lưu trữ → Ghim)
 
 ```mermaid
 sequenceDiagram
@@ -45,7 +45,7 @@ sequenceDiagram
 
 ---
 
-## Biểu đồ luồng — Tải về (Truy xuất → Giải mã)
+## Biểu đồ luồng: Tải về (Truy xuất → Giải mã)
 
 ```mermaid
 sequenceDiagram
@@ -69,7 +69,7 @@ sequenceDiagram
 
 ---
 
-## Xử lý lỗi — IPFS Ngoại tuyến
+## Xử lý lỗi: IPFS Ngoại tuyến
 
 ```mermaid
 flowchart LR
@@ -97,7 +97,7 @@ flowchart LR
 | **2. Mã hóa** | Sử dụng thuật toán AES-256-GCM với nonce ngẫu nhiên 96-bit. Dữ liệu xác thực bổ sung AAD (Additional Authenticated Data) được xây dựng từ metadata dạng JSON. |
 | **3. Tải lên** | Mảng bytes dữ liệu đã mã hóa (ciphertext) được truyền tới IPFS daemon thông qua Kubo RPC API (`httpx`). |
 | **4. Ghim dữ liệu** | Lệnh `pin.add(CID)` giữ dữ liệu an toàn trên đĩa cứng, ngăn không cho tiến trình dọn rác của IPFS tự động xóa bỏ. |
-| **5. Trả kết quả** | Bên gọi nhận về thông tin `{ cid, nonce }` — cả hai tham số này phải được lưu trữ trên chuỗi phục vụ truy xuất sau này. |
+| **5. Trả kết quả** | Bên gọi nhận về thông tin `{ cid, nonce }`; cả hai tham số này phải được lưu trữ trên chuỗi phục vụ truy xuất sau này. |
 | **6. Truy xuất** | Phương thức `cat(cid)` tải về mảng bytes mã hóa; lệnh `decrypt()` kiểm tra thẻ xác thực GCM trước khi giải mã dữ liệu thô. |
 
 ---
@@ -129,6 +129,6 @@ flowchart LR
 
 ## Liên quan
 
-- [Thực thi Chính sách](./policy-enforcement.md) — Kiểm soát quyền truy cập của việc tải lên/tải xuống dữ liệu
-- [Cảnh báo Rủi ro](./risk-alerts.md) — Lỗi kết nối IPFS sẽ kích hoạt hệ thống gửi cảnh báo
-- [Sao lưu & Khôi phục Khóa](./key-backup.md) — Áp dụng chung mô hình mã hóa AES-256-GCM cho việc lưu trữ các bản sao lưu khóa
+- [Thực thi Chính sách](./policy-enforcement.md): Kiểm soát quyền truy cập của việc tải lên/tải xuống dữ liệu
+- [Cảnh báo Rủi ro](./risk-alerts.md): Lỗi kết nối IPFS sẽ kích hoạt hệ thống gửi cảnh báo
+- [Sao lưu & Khôi phục Khóa](./key-backup.md): Áp dụng chung mô hình mã hóa AES-256-GCM cho việc lưu trữ các bản sao lưu khóa

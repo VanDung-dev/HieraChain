@@ -12,8 +12,8 @@ Describes the REST endpoints in API Admin (System & Admin) used for system admin
 
 ## Endpoint Overview
 
-* POST `/api/admin/verify-identity` — Verify node identity by signing a challenge string. (Requires authentication)
-* GET `/api/admin/status` — Get a detailed report on node status. (Requires API Key if `AUTH_ENABLED=true`)
+* POST `/api/admin/verify-identity`: verify node identity by signing a challenge string. (Requires authentication)
+* GET `/api/admin/status`: get a detailed report on node status. (Requires API Key if `AUTH_ENABLED=true`)
 
 ## Main Schemas (from `hierachain/api/admin/schemas.py`)
 
@@ -102,8 +102,8 @@ curl -s http://localhost:2661/api/admin/status
 
 ## Status Codes & Common Errors
 
-* 200 OK — Success.
-* 500 Internal Server Error — Identity verification error (e.g., crypto error during signing) or internal error when computing status.
+* 200 OK: Success.
+* 500 Internal Server Error: identity verification error (e.g., crypto error during signing) or internal error when computing status.
 
 ## Implementation Notes (abbreviated from `endpoints.py`)
 

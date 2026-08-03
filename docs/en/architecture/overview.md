@@ -32,11 +32,11 @@ graph BT
 
 ### Key Components
 
-* Main Chain: `hierachain/hierarchical/main_chain/base.py` — Stores and verifies proofs from Sub-Chains, aggregates integrity reports.
-* Sub-Chain: `hierachain/hierarchical/sub_chain/base.py` — Records domain events, orders/packages into blocks, generates proofs and sends to Main Chain.
-* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager/base.py` — Coordinates multi-chain system, manages Sub-Chain lifecycle, automatic proof submission, cross-chain verification.
-* IPFS Storage (Off-chain): `hierachain/api/storage/ipfs_client.py` — Stores large or sensitive business data off-chain, only anchors CID on Blockchain.
-* Ordering Service: `hierachain/consensus/ordering/service.py` — Event ordering component before block creation (integrated and initialized by Sub-Chain).
+* Main Chain: `hierachain/hierarchical/main_chain/base.py`, stores and verifies proofs from Sub-Chains, aggregates integrity reports.
+* Sub-Chain: `hierachain/hierarchical/sub_chain/base.py`, records domain events, orders/packages into blocks, generates proofs and sends to Main Chain.
+* Hierarchy Manager: `hierachain/hierarchical/hierarchy_manager/base.py`, coordinates multi-chain system, manages Sub-Chain lifecycle, automatic proof submission, cross-chain verification.
+* IPFS Storage (Off-chain): `hierachain/api/storage/ipfs_client.py`, stores large or sensitive business data off-chain, only anchors CID on Blockchain.
+* Ordering Service: `hierachain/consensus/ordering/service.py`, event ordering component before block creation (integrated and initialized by Sub-Chain).
 
 ### Typical Flow
 
@@ -56,10 +56,10 @@ sequenceDiagram
     Main-->>Sub: Acknowledge
 ```
 
-1. Record Event → Create Block (Sub-Chain) — Event is received by `SubChain.add_event()`, passed through internal Ordering, batched into Block and `finalize_block()` when conditions are met.
-2. Submit Proof to Main Chain — `SubChain.submit_proof_to_main()` generates Proof (e.g. from Merkle root/block hash), sends `MainChain.add_proof()` for anchoring.
-3. Global Reporting — Main Chain aggregates `get_main_chain_stats()` and statistics per Sub-Chain.
-4. System Coordination — `HierarchyManager` supports periodic proof submission (`configure_auto_proof_submission`), synchronization, and cross-chain consistency checks.
+1. Record Event → Create Block (Sub-Chain): event is received by `SubChain.add_event()`, passed through internal Ordering, batched into Block and `finalize_block()` when conditions are met.
+2. Submit Proof to Main Chain: `SubChain.submit_proof_to_main()` generates Proof (e.g. from Merkle root/block hash), sends `MainChain.add_proof()` for anchoring.
+3. Global Reporting: Main Chain aggregates `get_main_chain_stats()` and statistics per Sub-Chain.
+4. System Coordination: `HierarchyManager` supports periodic proof submission (`configure_auto_proof_submission`), synchronization, and cross-chain consistency checks.
 
 ## Related
 

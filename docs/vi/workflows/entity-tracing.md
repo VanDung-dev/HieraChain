@@ -118,5 +118,5 @@ Các sự kiện được đánh chỉ mục ngay khi ghi khối (`add_block()`)
 
 ## Liên quan
 
-- [Xác thực Tính toàn vẹn](./integrity-validation.md) — Xác thực độ tin cậy của các chuỗi đang được thực hiện truy vết
-- [Đồng bộ Tích hợp ERP](./erp-integration.md) — Các sự kiện ERP là dữ liệu chính được theo dõi qua cơ chế này
+- [Xác thực Tính toàn vẹn](./integrity-validation.md): Xác thực độ tin cậy của các chuỗi đang được thực hiện truy vết
+- [Đồng bộ Tích hợp ERP](./erp-integration.md): Các sự kiện ERP là dữ liệu chính được theo dõi qua cơ chế này

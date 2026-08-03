@@ -14,7 +14,7 @@ Large or sensitive off-chain data (e.g., document attachments, audit evidence, b
 
 ---
 
-## Flow Diagram — Upload (Encrypt → Store → Pin)
+## Flow Diagram: Upload (Encrypt → Store → Pin)
 
 ```mermaid
 sequenceDiagram
@@ -45,7 +45,7 @@ sequenceDiagram
 
 ---
 
-## Flow Diagram — Download (Retrieve → Decrypt)
+## Flow Diagram: Download (Retrieve → Decrypt)
 
 ```mermaid
 sequenceDiagram
@@ -69,7 +69,7 @@ sequenceDiagram
 
 ---
 
-## Error Handling — IPFS Unavailable
+## Error Handling: IPFS Unavailable
 
 ```mermaid
 flowchart LR
@@ -97,7 +97,7 @@ flowchart LR
 | **2. Encrypt** | AES-256-GCM with random 96-bit nonce. AAD (additional authenticated data) = JSON-serialized metadata |
 | **3. Upload** | Raw ciphertext bytes sent to IPFS daemon via Kubo RPC API (`httpx`) |
 | **4. Pin** | `pin.add(CID)` prevents garbage collection by IPFS GC daemon |
-| **5. Return** | Caller receives `{ cid, nonce }` — both must be stored on-chain for retrieval |
+| **5. Return** | Caller receives `{ cid, nonce }`; both must be stored on-chain for retrieval |
 | **6. Retrieve** | `cat(cid)` fetches ciphertext; `decrypt()` verifies GCM authentication tag before decrypting |
 
 ---
@@ -129,6 +129,6 @@ flowchart LR
 
 ## Related
 
-- [Policy Enforcement](./policy-enforcement.md) — gates upload/download authorization
-- [Risk Analysis & Alerts](./risk-alerts.md) — IPFS connection failure triggers alerts
-- [Key Backup](./key-backup.md) — same AES-256-GCM pattern used for key backup encryption
+- [Policy Enforcement](./policy-enforcement.md): gates upload/download authorization
+- [Risk Analysis & Alerts](./risk-alerts.md): IPFS connection failure triggers alerts
+- [Key Backup](./key-backup.md): same AES-256-GCM pattern used for key backup encryption

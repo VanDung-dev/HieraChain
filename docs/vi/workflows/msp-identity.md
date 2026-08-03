@@ -19,7 +19,7 @@ Mỗi thực thể phải được đăng ký và xác thực danh tính trướ
 
 ---
 
-## Sơ đồ Luồng — Đăng ký Thực thể (Doanh nghiệp MSP)
+## Sơ đồ Luồng: Đăng ký Thực thể (Doanh nghiệp MSP)
 
 ```mermaid
 sequenceDiagram
@@ -51,7 +51,7 @@ sequenceDiagram
 
 ---
 
-## Sơ đồ Luồng — Xác thực Quyền lúc Khởi chạy
+## Sơ đồ Luồng: Xác thực Quyền lúc Khởi chạy
 
 ```mermaid
 sequenceDiagram
@@ -87,7 +87,7 @@ sequenceDiagram
 
 ---
 
-## Sơ đồ Luồng — Thu hồi Chứng chỉ
+## Sơ đồ Luồng: Thu hồi Chứng chỉ
 
 ```mermaid
 sequenceDiagram
@@ -162,6 +162,6 @@ sequenceDiagram
 
 ## Liên kết liên quan
 
-- [Thực thi Chính sách](./policy-enforcement.md) — được gọi sau khi ủy quyền MSP thành công
-- [Gửi Sự kiện](./event-submission.md) — `authorize_action()` làm rào chắn truy cập trước khi gọi `add_event()`
-- [Sao lưu Khóa](./key-backup.md) — phát hành chứng chỉ mới sẽ kích hoạt việc sao lưu khóa
+- [Thực thi Chính sách](./policy-enforcement.md): được gọi sau khi ủy quyền MSP thành công
+- [Gửi Sự kiện](./event-submission.md): `authorize_action()` làm rào chắn truy cập trước khi gọi `add_event()`
+- [Sao lưu Khóa](./key-backup.md): phát hành chứng chỉ mới sẽ kích hoạt việc sao lưu khóa

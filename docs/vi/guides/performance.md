@@ -25,7 +25,7 @@ icon: material/speedometer
 
 ## Khuyến nghị
 
-* Điều chỉnh batch size theo tải thật (ví dụ 100–1000 sự kiện/batch).
+* Điều chỉnh batch size theo tải thật (ví dụ 100-1000 sự kiện/batch).
 * Bật `PARALLEL_PROCESSING_ENABLED` khi có nhiều CPU; để `MAX_WORKERS=None` để tự chọn theo 50% số lõi.
 * Dùng Arrow để giảm overhead chuyển đổi; tránh chuyển đổi qua lại nhiều lần.
 

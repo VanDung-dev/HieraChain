@@ -1,30 +1,30 @@
 ---
-title: Giao dịch Liên chuỗi (Cross-Chain Transactions)
-description: Hướng dẫn cơ chế Two-Phase Commit (2PC) và điều phối giao dịch phân tán.
+title: Thao tác Liên chuỗi (Cross-Chain Operations)
+description: Hướng dẫn cơ chế Two-Phase Commit (2PC) và điều phối hoạt động phân tán.
 icon: material/swap-horizontal
 ---
 
-# Giao dịch Liên chuỗi (Cross-Chain Transactions)
+# Thao tác Liên chuỗi (Cross-Chain Operations)
 
 ## Mục đính
 
-Mạng lưới phân cấp cấp cao của HieraChain bao gồm nhiều Sub-chain độc lập phục vụ các mảng khác nhau. Để đảm bảo tính toàn vẹn cũng như nguyên tử hạt nhân (Atomicity) khi điều phối luồng dữ liệu hoặc chuyển đổi tài sản ở hai (hay nhiều) hệ thống khác biệt nhau, HieraChain tích hợp một cơ chế điều phối gọi là **Two-Phase Commit (2PC)**.
+Mạng lưới phân cấp cấp cao của HieraChain bao gồm nhiều Sub-chain độc lập phục vụ các mảng khác nhau. Để đảm bảo tính toàn vẹn cũng như nguyên tử hạt nhân (Atomicity) khi điều phối luồng dữ liệu hoặc chuyển đổi trạng thái ở hai (hay nhiều) hệ thống khác biệt nhau, HieraChain tích hợp một cơ chế điều phối gọi là **Two-Phase Commit (2PC)**.
 
 Cơ chế này được quản lý chủ đạo bởi module `CrossChainTransactionManager` tại `hierachain/hierarchical/transaction_manager.py`.
 
-### 1. Vòng đời Trạng thái Giao dịch (TransactionState)
+### 1. Vòng đời Trạng thái Thao tác (TransactionState)
 
-Mỗi giao dịch liên chuỗi sẽ di chuyển tuần tự qua các biểu đồ trạng thái sau nhằm tránh thất thoát:
+Mỗi thao tác liên chuỗi sẽ di chuyển tuần tự qua các biểu đồ trạng thái sau nhằm tránh thất thoát:
 
-* **`PENDING`**: Giao dịch đã được khởi tạo, mạng lưới đang chờ chạy lệnh hoạt động chính.
-* **`PREPARED`**: Cả chuỗi nguồn (Source chain) và chuỗi đích (Destination chain) đều đã cam kết có đủ điều kiện thực hiện giao dịch, thực tế đã khóa (lock) trước tài nguyên thành công.
-* **`COMMITTED`**: Giao dịch hoàn tất trên tất cả các chuỗi mạng lưới một cách đồng thuận.
-* **`ROLLED_BACK`**: Giao dịch bị hủy do một trong hai chốt thất bại. Tài nguyên đã "đặt trước" (locked) trên các chi nhánh sẽ được rollback về phiên bản cũ.
-* **`FAILED`**: Giao dịch thất bại hoàn toàn (nhiều khả năng do không kết nối được TCP nội bộ hoặc lỗi logic nghiêm trọng).
+* **`PENDING`**: Thao tác đã được khởi tạo, mạng lưới đang chờ chạy lệnh hoạt động chính.
+* **`PREPARED`**: Cả chuỗi nguồn (Source chain) và chuỗi đích (Destination chain) đều đã cam kết có đủ điều kiện thực hiện thao tác, thực tế đã khóa (lock) trước tài nguyên thành công.
+* **`COMMITTED`**: Thao tác hoàn tất trên tất cả các chuỗi mạng lưới một cách đồng thuận.
+* **`ROLLED_BACK`**: Thao tác bị hủy do một trong hai chốt thất bại. Tài nguyên đã "đặt trước" (locked) trên các chi nhánh sẽ được rollback về phiên bản cũ.
+* **`FAILED`**: Thao tác thất bại hoàn toàn (nhiều khả năng do không kết nối được TCP nội bộ hoặc lỗi logic nghiêm trọng).
 
 ### 2. Mô hình Two-Phase Commit (2PC)
 
-Trong `CrossChainTransactionManager`, chức năng `_execute_2pc(transaction)` phân bổ rõ ràng quá trình chạy quy trình chính để xử lý giao dịch. Logic hoạt động cốt lõi gồm có hai pha:
+Trong `CrossChainTransactionManager`, chức năng `_execute_2pc(transaction)` phân bổ rõ ràng quá trình chạy quy trình chính để xử lý thao tác liên chuỗi. Logic hoạt động cốt lõi gồm có hai pha:
 
 #### Pha 1: Chuẩn bị (Prepare Phase)
 
