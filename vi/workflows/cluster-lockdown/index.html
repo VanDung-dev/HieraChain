@@ -4436,7 +4436,7 @@
 <h1 id="khoa-bang-cum-cluster-lockdown">Khóa băng Cụm (Cluster Lockdown)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
 <p><strong>Giao thức Khóa băng Cụm (Cluster Lockdown Protocol)</strong> điều phối việc đóng băng trạng thái của toàn bộ hệ thống trên tất cả các nút khi phát hiện sự bất thường nghiêm trọng. Cơ chế này sử dụng <strong>giao thức tin nhắn ngang hàng P2P kiểu tin đồn (gossip) qua ZeroMQ</strong> và yêu cầu <strong>biểu quyết quá bán (tối thiểu 2/3)</strong> của các nút đã đăng ký để kích hoạt cả quá trình khóa băng lẫn phục hồi. Tất cả thông điệp đều được xác thực bằng chữ ký <strong>HMAC-SHA256</strong> nhằm ngăn chặn các cuộc tấn công giả mạo yêu cầu khóa băng.</p>
-<p><strong>Đặc tính quan trọng</strong>: Không một nút đơn lẻ nào có thể đơn phương khóa băng toàn bộ cụm — đạt tỷ lệ biểu quyết tối thiểu (quorum) là điều bắt buộc.</p>
+<p><strong>Đặc tính quan trọng</strong>: Không một nút đơn lẻ nào có thể đơn phương khóa băng toàn bộ cụm; đạt tỷ lệ biểu quyết tối thiểu (quorum) là điều bắt buộc.</p>
 <hr />
 <h2 id="bieu-o-luong">Biểu đồ luồng</h2>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4623,9 +4623,9 @@
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a> — Việc vượt quá ngưỡng rủi ro cho phép sẽ kích hoạt quy trình này</li>
-<li><a href=".././error-recovery/">Giảm thiểu Lỗi &amp; Phục hồi</a> — Xử lý hoàn trả trạng thái (rollback) sau khi phục hồi thành công</li>
-<li><a href=".././key-backup/">Sao lưu &amp; Khôi phục Khóa</a> — Quá trình khóa băng cụm có thể kích hoạt cơ chế luân chuyển khóa $\rightarrow$ Sao lưu &amp; Khôi phục Khóa</li>
+<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: Việc vượt quá ngưỡng rủi ro cho phép sẽ kích hoạt quy trình này</li>
+<li><a href=".././error-recovery/">Giảm thiểu Lỗi &amp; Phục hồi</a>: Xử lý hoàn trả trạng thái (rollback) sau khi phục hồi thành công</li>
+<li><a href=".././key-backup/">Sao lưu &amp; Khôi phục Khóa</a>: Quá trình khóa băng cụm có thể kích hoạt cơ chế luân chuyển khóa $\rightarrow$ Sao lưu &amp; Khôi phục Khóa</li>
 </ul>
 
 

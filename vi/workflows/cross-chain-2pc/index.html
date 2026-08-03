@@ -1452,7 +1452,7 @@
   <a href="#bieu-o-luong-kich-ban-thanh-cong-happy-path" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ Luồng — Kịch bản Thành công (Happy Path)
+        Biểu đồ Luồng: Kịch bản Thành công (Happy Path)
       </span>
     </span>
   </a>
@@ -1463,7 +1463,7 @@
   <a href="#bieu-o-luong-kich-ban-that-bai-failure-paths" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ Luồng — Kịch bản Thất bại (Failure Paths)
+        Biểu đồ Luồng: Kịch bản Thất bại (Failure Paths)
       </span>
     </span>
   </a>
@@ -4351,7 +4351,7 @@
   <a href="#bieu-o-luong-kich-ban-thanh-cong-happy-path" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ Luồng — Kịch bản Thành công (Happy Path)
+        Biểu đồ Luồng: Kịch bản Thành công (Happy Path)
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#bieu-o-luong-kich-ban-that-bai-failure-paths" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ Luồng — Kịch bản Thất bại (Failure Paths)
+        Biểu đồ Luồng: Kịch bản Thất bại (Failure Paths)
       </span>
     </span>
   </a>
@@ -4457,10 +4457,10 @@
 
 <h1 id="thao-tac-lien-chuoi-2pc">Thao tác Liên chuỗi (2PC)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Khi một thao tác nghiệp vụ cần thực hiện một cách nguyên tử (atomic) trải dài trên hai Sub-Chain (ví dụ: chuyển tài sản từ Sub-Chain <code>logistics</code> sang Sub-Chain <code>finance</code>), HieraChain sử dụng giao thức <strong>Cam kết Hai pha (Two-Phase Commit - 2PC)</strong> để đảm bảo tính nguyên tử. Hoặc cả hai chuỗi cùng cam kết thay đổi, hoặc cả hai cùng hoàn tác (rollback) — không cho phép trạng thái dở dở dang dang.</p>
+<p>Khi một thao tác nghiệp vụ cần thực hiện một cách nguyên tử (atomic) trải dài trên hai Sub-Chain (ví dụ: chuyển tài sản từ Sub-Chain <code>logistics</code> sang Sub-Chain <code>finance</code>), HieraChain sử dụng giao thức <strong>Cam kết Hai pha (Two-Phase Commit - 2PC)</strong> để đảm bảo tính nguyên tử. Hoặc cả hai chuỗi cùng cam kết thay đổi, hoặc cả hai cùng hoàn tác (rollback). Không cho phép trạng thái dở dở dang dang.</p>
 <p><strong>Ví dụ thực tế</strong>: Chuyển một mặt hàng trong kho giữa hai phòng ban khác nhau. Chuỗi nguồn ghi nhận sự kiện <code>deduct</code> (trừ hàng); chuỗi đích ghi nhận sự kiện <code>receive</code> (nhận hàng). Cả hai hoạt động đều phải thành công hoặc không hoạt động nào được áp dụng.</p>
 <hr />
-<h2 id="bieu-o-luong-kich-ban-thanh-cong-happy-path">Biểu đồ Luồng — Kịch bản Thành công (Happy Path)</h2>
+<h2 id="bieu-o-luong-kich-ban-thanh-cong-happy-path">Biểu đồ Luồng: Kịch bản Thành công (Happy Path)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant HM as 🏛️ HierarchyManager
@@ -4495,7 +4495,7 @@
 
     TM--&gt;&gt;HM: op_id (COMMITTED)</code></pre>
 <hr />
-<h2 id="bieu-o-luong-kich-ban-that-bai-failure-paths">Biểu đồ Luồng — Kịch bản Thất bại (Failure Paths)</h2>
+<h2 id="bieu-o-luong-kich-ban-that-bai-failure-paths">Biểu đồ Luồng: Kịch bản Thất bại (Failure Paths)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant TM as 🔄 CrossChainOperationManager
@@ -4546,23 +4546,23 @@
 <td style="text-align: left;"><code>HierarchyManager</code> tạo một thực thể <code>CrossChainTransaction</code> với UUID duy nhất và trạng thái <code>state=PENDING</code>.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>2. Pha 1 — Chuẩn bị nguồn</strong></td>
+<td style="text-align: left;"><strong>2. Pha 1: Chuẩn bị nguồn</strong></td>
 <td style="text-align: left;">Chuỗi nguồn khóa tài nguyên liên quan, xác thực lược đồ (schema) của payload.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>3. Pha 1 — Chuẩn bị đích</strong></td>
+<td style="text-align: left;"><strong>3. Pha 1: Chuẩn bị đích</strong></td>
 <td style="text-align: left;">Chuỗi đích kiểm tra dung lượng lưu trữ khả dụng và các ràng buộc nghiệp vụ.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>4. Kết quả Pha 1</strong></td>
-<td style="text-align: left;">Nếu cả hai chuỗi trả về <code>True</code>: trạng thái chuyển thành <code>PREPARED</code>. Nếu một trong hai lỗi: khôi phục trạng thái cũ (rollback) ngay lập tức trên cả hai chuỗi.</td>
+<td style="text-align: left;">Nếu cả hai trả về <code>True</code>: trạng thái → <code>PREPARED</code>. Nếu một bên thất bại: rollback ngay lập tức cả hai</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>5. Pha 2 — Cam kết nguồn</strong></td>
+<td style="text-align: left;"><strong>5. Pha 2: Cam kết nguồn</strong></td>
 <td style="text-align: left;">Chuỗi nguồn hoàn tất hoạt động (phát ra sự kiện thông qua Gửi Sự kiện).</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>6. Pha 2 — Cam kết đích</strong></td>
+<td style="text-align: left;"><strong>6. Pha 2: Cam kết đích</strong></td>
 <td style="text-align: left;">Chuỗi đích hoàn tất hoạt động (phát ra sự kiện thông qua Gửi Sự kiện).</td>
 </tr>
 <tr>
@@ -4645,8 +4645,8 @@
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././event-submission/">Gửi Sự kiện</a> — mỗi phương thức <code>commit_transaction()</code> bên trong sẽ gọi đến <code>add_event()</code></li>
-<li><a href=".././error-recovery/">Giảm thiểu Lỗi &amp; Phục hồi</a> — quản lý khôi phục trạng thái ở cấp độ hệ thống</li>
+<li><a href=".././event-submission/">Gửi Sự kiện</a>: mỗi phương thức <code>commit_transaction()</code> bên trong sẽ gọi đến <code>add_event()</code></li>
+<li><a href=".././error-recovery/">Giảm thiểu Lỗi &amp; Phục hồi</a>: quản lý khôi phục trạng thái ở cấp độ hệ thống</li>
 </ul>
 
 

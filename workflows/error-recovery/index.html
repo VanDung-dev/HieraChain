@@ -1539,7 +1539,7 @@
   <a href="#6a-network-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6A — Network Recovery
+        6A: Network Recovery
       </span>
     </span>
   </a>
@@ -1550,7 +1550,7 @@
   <a href="#6b-consensus-recovery-leader-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6B — Consensus Recovery (Leader Failure)
+        6B: Consensus Recovery (Leader Failure)
       </span>
     </span>
   </a>
@@ -1561,7 +1561,7 @@
   <a href="#6c-state-rollback" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6C — State Rollback
+        6C: State Rollback
       </span>
     </span>
   </a>
@@ -4351,7 +4351,7 @@
   <a href="#6a-network-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6A — Network Recovery
+        6A: Network Recovery
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#6b-consensus-recovery-leader-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6B — Consensus Recovery (Leader Failure)
+        6B: Consensus Recovery (Leader Failure)
       </span>
     </span>
   </a>
@@ -4373,7 +4373,7 @@
   <a href="#6c-state-rollback" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6C — State Rollback
+        6C: State Rollback
       </span>
     </span>
   </a>
@@ -4459,7 +4459,7 @@
 <h2 id="overview">Overview</h2>
 <p>HieraChain provides layered, automated recovery mechanisms across three dimensions: <strong>network resilience</strong>, <strong>consensus leader recovery</strong>, and <strong>state rollback</strong>. These operate independently and can be active simultaneously.</p>
 <hr />
-<h2 id="6a-network-recovery">6A — Network Recovery</h2>
+<h2 id="6a-network-recovery">6A: Network Recovery</h2>
 <pre class="mermaid"><code>flowchart TB
     NET["🌐 Network Issue Detected"]
     LAT["📊 Collect Latency History"]
@@ -4475,7 +4475,7 @@
     PART --&gt;|No| FIRST</code></pre>
 <p><strong>Strategy</strong>: <code>send_with_redundancy()</code> dispatches the same message over N parallel network paths simultaneously. The first successful response wins and remaining in-flight calls are cancelled. This handles intermittent path failures without explicit retry logic.</p>
 <hr />
-<h2 id="6b-consensus-recovery-leader-failure">6B — Consensus Recovery (Leader Failure)</h2>
+<h2 id="6b-consensus-recovery-leader-failure">6B: Consensus Recovery (Leader Failure)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant CRE as 🔧 ConsensusRecoveryEngine
@@ -4491,7 +4491,7 @@
     NEW-&gt;&gt;NEW: Restart PRE-PREPARE phase
     CRE-&gt;&gt;CRE: Clear recovery_attempts on success</code></pre>
 <hr />
-<h2 id="6c-state-rollback">6C — State Rollback</h2>
+<h2 id="6c-state-rollback">6C: State Rollback</h2>
 <pre class="mermaid"><code>flowchart LR
     ERR["❌ Critical Error\nor Integrity Failure"]
     SNAP["📸 Load Snapshot\n(RollbackManager)"]
@@ -4504,9 +4504,9 @@
     VER --&gt;|Valid| OK
     VER --&gt;|Invalid| ALERT</code></pre>
 <p><strong>Rollback steps</strong>:
-1. <code>RollbackManager.load_snapshot()</code> — load the most recent consistent snapshot
-2. <code>EventJournal.replay()</code> — replay committed journal entries since the snapshot
-3. <code>DataValidator.validate()</code> — verify the restored state against cryptographic checksums
+1. <code>RollbackManager.load_snapshot()</code>: load the most recent consistent snapshot
+2. <code>EventJournal.replay()</code>: replay committed journal entries since the snapshot
+3. <code>DataValidator.validate()</code>: verify the restored state against cryptographic checksums
 4. If validation fails: escalation alert sent via Risk Alerts; manual intervention required</p>
 <hr />
 <h2 id="step-by-step-breakdown">Step-by-Step Breakdown</h2>
@@ -4625,10 +4625,10 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././bft-consensus/">BFT Consensus</a> — View Change detail</li>
-<li><a href=".././cluster-lockdown/">Cluster Lockdown</a> — cluster-level recovery</li>
-<li><a href=".././chain-rehydration/">Chain Rehydration</a> — full chain reload from DB</li>
-<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a> — escalation notifications</li>
+<li><a href=".././bft-consensus/">BFT Consensus</a>: View Change detail</li>
+<li><a href=".././cluster-lockdown/">Cluster Lockdown</a>: cluster-level recovery</li>
+<li><a href=".././chain-rehydration/">Chain Rehydration</a>: full chain reload from DB</li>
+<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: escalation notifications</li>
 </ul>
 
 

@@ -4458,7 +4458,7 @@
 <h1 id="thuc-thi-chinh-sach-policy-enforcement">Thực thi Chính sách (Policy Enforcement)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
 <p>Mọi hoạt động nhạy cảm về mặt bảo mật trong HieraChain đều được kiểm soát nghiêm ngặt bởi <code>PolicyEngine</code> (Bộ máy Thực thi Chính sách). Các chính sách bao gồm các nhóm <code>PolicyRule</code> được sắp xếp theo mức độ ưu tiên. Để giảm thiểu độ trễ tối đa, kết quả đánh giá được lưu vào cache (thời gian sống TTL là 5 phút, giải phóng theo cơ chế LRU). Tất cả kết quả đánh giá đều được ghi nhận vào nhật ký kiểm toán trong bộ nhớ (in-memory audit log).</p>
-<p><code>PolicyEngine</code> đóng vai trò là <strong>cổng ủy quyền duy nhất (single authorization gateway)</strong> — được gọi bởi MSP (Định danh &amp; Ủy quyền MSP) sau khi danh tính được xác minh thành công và ngay trước khi hàm <code>SubChain.add_event()</code> (Gửi Sự kiện) được gọi.</p>
+<p><code>PolicyEngine</code> đóng vai trò là <strong>cổng ủy quyền duy nhất (single authorization gateway)</strong>. Nó được gọi bởi MSP (Định danh &amp; Ủy quyền MSP) sau khi danh tính được xác minh thành công và ngay trước khi hàm <code>SubChain.add_event()</code> (Gửi Sự kiện) được gọi.</p>
 <hr />
 <h2 id="bieu-o-luong">Biểu đồ luồng</h2>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4667,8 +4667,8 @@
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././msp-identity/">Định danh &amp; Ủy quyền MSP</a> — MSP gọi hàm <code>evaluate_policy()</code> sau khi xác minh danh tính</li>
-<li><a href=".././event-submission/">Gửi Sự kiện</a> — Quy trình <code>add_event()</code> được bảo vệ nghiêm ngặt bởi bộ máy chính sách</li>
+<li><a href=".././msp-identity/">Định danh &amp; Ủy quyền MSP</a>: MSP gọi hàm <code>evaluate_policy()</code> sau khi xác minh danh tính</li>
+<li><a href=".././event-submission/">Gửi Sự kiện</a>: Quy trình <code>add_event()</code> được bảo vệ nghiêm ngặt bởi bộ máy chính sách</li>
 </ul>
 
 

@@ -1539,7 +1539,7 @@
   <a href="#6a-khoi-phuc-mang-network-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6A — Khôi phục Mạng (Network Recovery)
+        6A: Khôi phục Mạng (Network Recovery)
       </span>
     </span>
   </a>
@@ -1550,7 +1550,7 @@
   <a href="#6b-khoi-phuc-ong-thuan-loi-truong-nhom-leader-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6B — Khôi phục Đồng thuận (Lỗi Trưởng nhóm - Leader Failure)
+        6B: Khôi phục Đồng thuận (Lỗi Trưởng nhóm - Leader Failure)
       </span>
     </span>
   </a>
@@ -1561,7 +1561,7 @@
   <a href="#6c-hoan-tra-trang-thai-state-rollback" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6C — Hoàn trả Trạng thái (State Rollback)
+        6C: Hoàn trả Trạng thái (State Rollback)
       </span>
     </span>
   </a>
@@ -4351,7 +4351,7 @@
   <a href="#6a-khoi-phuc-mang-network-recovery" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6A — Khôi phục Mạng (Network Recovery)
+        6A: Khôi phục Mạng (Network Recovery)
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#6b-khoi-phuc-ong-thuan-loi-truong-nhom-leader-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6B — Khôi phục Đồng thuận (Lỗi Trưởng nhóm - Leader Failure)
+        6B: Khôi phục Đồng thuận (Lỗi Trưởng nhóm - Leader Failure)
       </span>
     </span>
   </a>
@@ -4373,7 +4373,7 @@
   <a href="#6c-hoan-tra-trang-thai-state-rollback" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6C — Hoàn trả Trạng thái (State Rollback)
+        6C: Hoàn trả Trạng thái (State Rollback)
       </span>
     </span>
   </a>
@@ -4459,7 +4459,7 @@
 <h2 id="tong-quan">Tổng quan</h2>
 <p>HieraChain cung cấp các cơ chế khôi phục tự động phân lớp trên ba khía cạnh: <strong>khả năng phục hồi mạng (network resilience)</strong>, <strong>khôi phục nút trưởng nhóm (consensus leader recovery)</strong>, và <strong>hoàn trả trạng thái (state rollback)</strong>. Các cơ chế này hoạt động độc lập và có thể chạy đồng thời.</p>
 <hr />
-<h2 id="6a-khoi-phuc-mang-network-recovery">6A — Khôi phục Mạng (Network Recovery)</h2>
+<h2 id="6a-khoi-phuc-mang-network-recovery">6A: Khôi phục Mạng (Network Recovery)</h2>
 <pre class="mermaid"><code>flowchart TB
     NET["🌐 Phát hiện sự cố mạng"]
     LAT["📊 Thu thập lịch sử độ trễ"]
@@ -4475,7 +4475,7 @@
     PART --&gt;|Không| FIRST</code></pre>
 <p><strong>Chiến lược</strong>: Phương thức <code>send_with_redundancy()</code> gửi cùng một thông điệp qua N đường truyền mạng song song cùng một lúc. Phản hồi thành công đầu tiên sẽ được chấp nhận, và các cuộc gọi đang truyền khác sẽ bị hủy bỏ. Cơ chế này giúp xử lý các lỗi đứt quãng đường truyền mà không cần logic thử lại (retry) phức tạp.</p>
 <hr />
-<h2 id="6b-khoi-phuc-ong-thuan-loi-truong-nhom-leader-failure">6B — Khôi phục Đồng thuận (Lỗi Trưởng nhóm - Leader Failure)</h2>
+<h2 id="6b-khoi-phuc-ong-thuan-loi-truong-nhom-leader-failure">6B: Khôi phục Đồng thuận (Lỗi Trưởng nhóm - Leader Failure)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant CRE as 🔧 ConsensusRecoveryEngine
@@ -4491,7 +4491,7 @@
     NEW-&gt;&gt;NEW: Bắt đầu lại pha PRE-PREPARE
     CRE-&gt;&gt;CRE: Xóa đếm số lần thử recovery_attempts khi thành công</code></pre>
 <hr />
-<h2 id="6c-hoan-tra-trang-thai-state-rollback">6C — Hoàn trả Trạng thái (State Rollback)</h2>
+<h2 id="6c-hoan-tra-trang-thai-state-rollback">6C: Hoàn trả Trạng thái (State Rollback)</h2>
 <pre class="mermaid"><code>flowchart LR
     ERR["❌ Lỗi Nghiêm trọng\nhoặc Thất bại Toàn vẹn"]
     SNAP["📸 Nạp Ảnh chụp nhanh\n(RollbackManager)"]
@@ -4504,9 +4504,9 @@
     VER --&gt;|Hợp lệ| OK
     VER --&gt;|Không hợp lệ| ALERT</code></pre>
 <p><strong>Các bước Khôi phục (Rollback)</strong>:
-1. <code>RollbackManager.load_snapshot()</code> — nạp ảnh chụp nhanh đồng nhất gần nhất
-2. <code>EventJournal.replay()</code> — phát lại các mục nhật ký đã cam kết kể từ thời điểm ảnh chụp nhanh
-3. <code>DataValidator.validate()</code> — xác thực trạng thái đã khôi phục so với mã kiểm tra băm (cryptographic checksums).
+1. <code>RollbackManager.load_snapshot()</code>: nạp ảnh chụp nhanh đồng nhất gần nhất
+2. <code>EventJournal.replay()</code>: phát lại các mục nhật ký đã cam kết kể từ thời điểm ảnh chụp nhanh
+3. <code>DataValidator.validate()</code>: xác thực trạng thái đã khôi phục so với mã kiểm tra băm (cryptographic checksums).
 4. Nếu xác thực thất bại: gửi cảnh báo leo thang qua hệ thống Cảnh báo Rủi ro; yêu cầu sự can thiệp thủ công từ người quản trị.</p>
 <hr />
 <h2 id="cac-buoc-thuc-hien-chi-tiet">Các bước thực hiện chi tiết</h2>
@@ -4625,10 +4625,10 @@
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././bft-consensus/">Đồng thuận BFT</a> — Chi tiết về Thay đổi Phiên (View Change)</li>
-<li><a href=".././cluster-lockdown/">Khóa băng Cụm</a> — Khôi phục ở cấp độ toàn cụm nút</li>
-<li><a href=".././chain-rehydration/">Nạp lại Trạng thái Chuỗi</a> — Tải lại toàn bộ chuỗi từ cơ sở dữ liệu (DB)</li>
-<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a> — Các thông báo cảnh báo leo thang</li>
+<li><a href=".././bft-consensus/">Đồng thuận BFT</a>: Chi tiết về Thay đổi Phiên (View Change)</li>
+<li><a href=".././cluster-lockdown/">Khóa băng Cụm</a>: Khôi phục ở cấp độ toàn cụm nút</li>
+<li><a href=".././chain-rehydration/">Nạp lại Trạng thái Chuỗi</a>: Tải lại toàn bộ chuỗi từ cơ sở dữ liệu (DB)</li>
+<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a>: Các thông báo cảnh báo leo thang</li>
 </ul>
 
 

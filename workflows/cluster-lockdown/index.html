@@ -4436,7 +4436,7 @@
 <h1 id="cluster-lockdown-recovery">Cluster Lockdown &amp; Recovery</h1>
 <h2 id="overview">Overview</h2>
 <p>The <strong>Cluster Lockdown Protocol</strong> coordinates a system-wide state freeze across all nodes when a critical anomaly is detected. It uses <strong>gossip-style P2P messaging over ZeroMQ</strong> and requires a <strong>2/3 quorum</strong> of registered nodes to trigger both lockdown and recovery. All messages are authenticated with <strong>HMAC-SHA256</strong> to prevent spoofed lockdown attacks.</p>
-<p><strong>Key property</strong>: No single node can lock the cluster unilaterally — quorum is mandatory.</p>
+<p><strong>Key property</strong>: No single node can lock the cluster unilaterally; quorum is mandatory.</p>
 <hr />
 <h2 id="flow-diagram">Flow Diagram</h2>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4623,9 +4623,9 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a> — risk threshold breach triggers this workflow</li>
-<li><a href=".././error-recovery/">Error Mitigation</a> — handles state rollback after recovery</li>
-<li><a href=".././key-backup/">Key Backup</a> — lockdown may trigger key rotation → Key Backup &amp; Restoration</li>
+<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: risk threshold breach triggers this workflow</li>
+<li><a href=".././error-recovery/">Error Mitigation</a>: handles state rollback after recovery</li>
+<li><a href=".././key-backup/">Key Backup</a>: lockdown may trigger key rotation → Key Backup &amp; Restoration</li>
 </ul>
 
 

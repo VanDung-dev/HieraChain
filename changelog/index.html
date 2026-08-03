@@ -4434,25 +4434,33 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (111)</summary>
+<summary>Improvements (114)</summary>
 <ul>
+<li>
+<p>2026-08-04</p>
+<ul>
+<li><strong>Docs</strong>: Standardized terminology across all EN/VI docs: renamed "Transaction Journal" → "Event Journal" and "Cross-Chain Transactions" → "Cross-Chain Operations" to align with consensus terminology. Normalized formatting in API references, adjusted outdated descriptions, and fixed minor typos in English and Vietnamese documentation.</li>
+<li><strong>Docs</strong>: Clarified durability in the workflows guide and corrected the workflows guide link in <code>AGENTS.md</code>.</li>
+<li><strong>Chore</strong>: Removed empty <code>version.py</code> from hierarchy units.</li>
+</ul>
+</li>
 <li>
 <p>2026-07-27</p>
 <ul>
-<li><strong>Docs</strong>: Renamed <code>HRC_CONSENSUS_TYPE</code> → <code>HRC_MAINCHAIN_CONSENSUS</code> across all EN/VI docs — consensus_mechanisms, poa, pof, event-submission, overview, cross-chain-2pc, error-recovery. Clarified SubChain defaults to PoA (intra-org), MainChain defaults to PoF (inter-org). Renamed "Cross-Chain Transaction" → "Cross-Chain Operation" (2PC), <code>TransactionJournal</code> → <code>EventJournal</code>, <code>TRANSACTION_SCHEMA</code> → <code>EVENT_SCHEMA</code>. Updated stale import paths and data-schema definitions.</li>
+<li><strong>Docs</strong>: Renamed <code>HRC_CONSENSUS_TYPE</code> → <code>HRC_MAINCHAIN_CONSENSUS</code> across all EN/VI docs: consensus_mechanisms, poa, pof, event-submission, overview, cross-chain-2pc, error-recovery. Clarified SubChain defaults to PoA (intra-org), MainChain defaults to PoF (inter-org). Renamed "Cross-Chain Transaction" → "Cross-Chain Operation" (2PC), <code>TransactionJournal</code> → <code>EventJournal</code>, <code>TRANSACTION_SCHEMA</code> → <code>EVENT_SCHEMA</code>. Updated stale import paths and data-schema definitions.</li>
 <li><strong>Consensus</strong>: Introduced <code>HRC_MAINCHAIN_CONSENSUS</code> env var with backward-compatible <code>HRC_CONSENSUS_TYPE</code> alias. <code>MainChain.__init__</code> accepts optional <code>consensus_type</code> parameter. <code>SubChain</code> now defaults to PoA for intra-org domain events, configurable via <code>config["consensus_type"]</code>.</li>
-<li><strong>Testing</strong>: Added unit tests for SubChain consensus initialization — defaults to PoA, stays PoA under global PoF setting, supports explicit PoF override via config dict.</li>
+<li><strong>Testing</strong>: Added unit tests for SubChain consensus initialization: defaults to PoA, stays PoA under global PoF setting, supports explicit PoF override via config dict.</li>
 </ul>
 </li>
 <li>
 <p>2026-07-23</p>
 <ul>
-<li><strong>Testing (Integration)</strong>: Added <code>tests/integration/test_proof_of_federation_mesh.py</code> — a 2-phase integration test proving the PoF inter-MainChain consortium: Phase 1 demonstrates PoA rejection of cross-organizational blocks; Phase 2 confirms 3-node PoF federation consensus (Hospital A, Hospital B, Insurance Z) via Ed25519 multi-signatures and round-robin leadership, without a central RootChain.</li>
+<li><strong>Testing (Integration)</strong>: Added <code>tests/integration/test_proof_of_federation_mesh.py</code>, a 2-phase integration test proving the PoF inter-MainChain consortium: Phase 1 demonstrates PoA rejection of cross-organizational blocks; Phase 2 confirms 3-node PoF federation consensus (Hospital A, Hospital B, Insurance Z) via Ed25519 multi-signatures and round-robin leadership, without a central RootChain.</li>
 <li><strong>Refactoring</strong>: Moved all inline/late imports (<code>os</code>, <code>sys</code>, <code>time</code>, <code>uuid</code>, <code>asyncio</code>, <code>warnings</code>, <code>httpx</code>, <code>pyarrow</code>, <code>cast</code>) to module-level top-of-file across 14 source files, fully conforming to PEP 8 import ordering.</li>
 <li><strong>Docs</strong>: Redefined <strong>Proof of Authority (PoA)</strong> as <em>Intra-Organization</em> consensus (single MainChain managing internal Sub-Chains) and <strong>Proof of Federation (PoF)</strong> as <em>Inter-Organization P2P MainChain Alliance</em> consensus (no central RootChain required), with architectural comparison tables in both English and Vietnamese docs.</li>
-<li><strong>Docs</strong>: Synchronized all stale file paths in <code>docs/en/</code> against the actual <code>hierachain/</code> package layout — corrected 22 references across <code>architecture/</code>, <code>glossary.md</code>, <code>how-to/</code>, and <code>reference/</code> (e.g. <code>main_chain.py</code> → <code>main_chain/base.py</code>, <code>endpoints.py</code> → <code>router.py</code>, <code>websocket_manager.py</code> → <code>websocket/manager.py</code>).</li>
+<li><strong>Docs</strong>: Synchronized all stale file paths in <code>docs/en/</code> against the actual <code>hierachain/</code> package layout: corrected 22 references across <code>architecture/</code>, <code>glossary.md</code>, <code>how-to/</code>, and <code>reference/</code> (e.g. <code>main_chain.py</code> → <code>main_chain/base.py</code>, <code>endpoints.py</code> → <code>router.py</code>, <code>websocket_manager.py</code> → <code>websocket/manager.py</code>).</li>
 <li><strong>Docs</strong>: Added missing <code>docs/vi/reference/code-map.md</code> and <code>docs/vi/how-to/add-endpoint.md</code> to achieve full 1:1 parity between English and Vietnamese documentation trees (both now have 90 <code>.md</code> files).</li>
-<li><strong>Docs (vi)</strong>: Synchronized all updated file paths and PoA/PoF definitions from <code>docs/en/</code> into the full <code>docs/vi/</code> mirror — updated <code>architecture/</code>, <code>glossary.md</code>, <code>how-to/</code>, <code>reference/</code> equivalents.</li>
+<li><strong>Docs (vi)</strong>: Synchronized all updated file paths and PoA/PoF definitions from <code>docs/en/</code> into the full <code>docs/vi/</code> mirror: updated <code>architecture/</code>, <code>glossary.md</code>, <code>how-to/</code>, <code>reference/</code> equivalents.</li>
 </ul>
 </li>
 <li>
@@ -4482,7 +4490,7 @@
 <li>
 <p>2026-07-17</p>
 <ul>
-<li><strong>Performance</strong>: Replaced <code>json</code> with <code>orjson</code> across the entire codebase — security, risk_management, network, monitoring, privacy, config, CLI, API, and hierachain modules — for faster serialization/deserialization.</li>
+<li><strong>Performance</strong>: Replaced <code>json</code> with <code>orjson</code> across the entire codebase (security, risk_management, network, monitoring, privacy, config, CLI, API, and hierachain modules) for faster serialization/deserialization.</li>
 <li><strong>Core</strong>: Added optimized data payload recovery for blocks with direct <code>data</code> column parsing when available.</li>
 <li><strong>Security</strong>: Optimized signature verification with configurable thread pool (CPU count) and extracted <code>_get_verify_key</code> helper for public key decoding.</li>
 <li><strong>Testing</strong>: Extended sleep duration in <code>test_repro_determinism</code> from 0.5s to 1.5s for full service shutdown reliability.</li>
@@ -4491,7 +4499,7 @@
 <li>
 <p>2026-07-16</p>
 <ul>
-<li><strong>Testing</strong>: Fixed false positive in term censorship test — skipped docstring examples explaining regex word-boundary matching.</li>
+<li><strong>Testing</strong>: Fixed false positive in term censorship test: skipped docstring examples explaining regex word-boundary matching.</li>
 <li><strong>Documentation</strong>: Added PR description template for merging v0.0.x into main.</li>
 <li><strong>Changelog</strong>: Updated unreleased section with recent developments.</li>
 </ul>
@@ -4685,9 +4693,9 @@
 <details class="note">
 <summary>Improvements (6)</summary>
 <ul>
-<li><strong>Secure Logging</strong>: Added regex-based redaction of sensitive keys and tokens in <code>hierachain/security/</code> — sensitive values are replaced with <code>'***'</code> to prevent credential leakage. Introduced <code>_SEVERITY_MAP</code> for consistent security event logging, replacing direct log level methods with <code>logger.log()</code> — reducing duplication across all logging call sites.</li>
-<li><strong>Core Blockchain Refactoring</strong>: Added <code>_rebuild_event_indexes</code> to reset and rebuild event indexes after block loading — ensuring index consistency across restarts. Changed hash mismatch from silent correction to raising an exception — no more hiding potential data corruption. Replaced direct dictionary access with <code>block.to_event_list()</code> for cleaner event filtering.</li>
-<li><strong>Consensus Hardening</strong>: Enhanced <code>_contains_forbidden_terms</code> with regex word-boundary matching to eliminate false positives. Removed fallback random signature generation — signing now fails cleanly with an error message when the private key is missing. <code>ProofOfFederation</code> auto-generates key pairs for validators, exposes <code>public_key</code> property, added <code>block_hash</code> to consensus metadata. <code>_verify_block_quorum</code> now accepts optional <code>signer_id</code> to avoid redundant event re-scanning.</li>
+<li><strong>Secure Logging</strong>: Added regex-based redaction of sensitive keys and tokens in <code>hierachain/security/</code>: sensitive values are replaced with <code>'***'</code> to prevent credential leakage. Introduced <code>_SEVERITY_MAP</code> for consistent security event logging, replacing direct log level methods with <code>logger.log()</code>, reducing duplication across all logging call sites.</li>
+<li><strong>Core Blockchain Refactoring</strong>: Added <code>_rebuild_event_indexes</code> to reset and rebuild event indexes after block loading, ensuring index consistency across restarts. Changed hash mismatch from silent correction to raising an exception, so potential data corruption is no longer hidden. Replaced direct dictionary access with <code>block.to_event_list()</code> for cleaner event filtering.</li>
+<li><strong>Consensus Hardening</strong>: Enhanced <code>_contains_forbidden_terms</code> with regex word-boundary matching to eliminate false positives. Removed fallback random signature generation; signing now fails cleanly with an error message when the private key is missing. <code>ProofOfFederation</code> auto-generates key pairs for validators, exposes <code>public_key</code> property, added <code>block_hash</code> to consensus metadata. <code>_verify_block_quorum</code> now accepts optional <code>signer_id</code> to avoid redundant event re-scanning.</li>
 <li><strong>Hierarchical Layer Simplification</strong>: Removed temporary entity index mapping, local chain clear, event statistics reset in sub-chain rehydration. Removed redundant event addition to <code>Blockchain.pending_events</code>. Streamlined <code>_recover_pending_events_from_journal</code> to count uncommitted events only, moving event reconstruction to <code>OrderingRecovery</code>.</li>
 <li><strong>Testing &amp; Benchmark</strong>: Enhanced ZK Proof-of-Federation test with real keypair, real signatures, and pre-consensus block validation. Updated storage benchmark using <code>Block</code> class from <code>hierachain.core</code>, renamed <code>event_type</code> to <code>event</code>. Added helper function for <code>ProofOfFederation</code> instantiation with signing key.</li>
 </ul>
@@ -4708,7 +4716,7 @@
 <li><strong>Idempotent Sub-Chain Creation</strong>: API v1 (<code>hierachain/api/v1/endpoints.py</code>) checks for existing sub-chain before creation, returns <code>201 Created</code> with <code>"already_exists"</code> audit trail for duplicates. Returns <code>409 Conflict</code> when <code>manager.add_sub_chain</code> raises <code>ValueError</code> on duplicate.</li>
 <li><strong>Chain Integrity Hardening</strong>: Added <code>_verify_chain_links()</code> in <code>hierachain/consensus/ordering/storage.py</code> to validate <code>previous_hash</code> chain of blocks. <code>_block_from_dict</code> raises <code>ValueError</code> on computed hash mismatch instead of merely logging an error.</li>
 <li><strong>Event Enrichment &amp; Block Persistence</strong>: Ordering service (<code>hierachain/consensus/ordering/service.py</code>) injects <code>event_id</code> into <code>event_data</code> payload before creating pending events. Recovery (<code>recovery.py</code>) prioritizes enriched <code>event_data</code> over calculated fallback. Sub-chain finalize (<code>hierachain/hierarchical/sub_chain.py</code>) persists blocks via storage handler, ensuring rehydration retains consensus events.</li>
-<li><strong>Block Overwrite</strong>: <code>hierachain/storage/sql_backend.py</code> — <code>save_block</code> queries for existing blocks by <code>index</code>/<code>chain_name</code>, deletes and replaces them instead of silently handling <code>UNIQUE constraint</code> violations.</li>
+<li><strong>Block Overwrite</strong>: In <code>hierachain/storage/sql_backend.py</code>, <code>save_block</code> queries for existing blocks by <code>index</code>/<code>chain_name</code>, deletes and replaces them instead of silently handling <code>UNIQUE constraint</code> violations.</li>
 <li><strong>Zero Children Safeguard</strong>: Rebalancer (<code>hierachain/hierarchical/rebalancer.py</code>) safely returns <code>0</code> when <code>num_children &lt;= 0</code>, preventing modulo-by-zero errors.</li>
 </ul>
 </details>
@@ -4743,7 +4751,7 @@
 <details class="note">
 <summary>Improvements (4)</summary>
 <ul>
-<li><strong>Full Mypy Compliance</strong>: Resolved static typing warnings across all modules — consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core and cluster.</li>
+<li><strong>Full Mypy Compliance</strong>: Resolved static typing warnings across all modules: consensus, API, security, network, monitoring, error mitigation, storage, adapters, hierarchical, domains, core and cluster.</li>
 <li><strong>Ed25519 Signature Validation</strong>: Enforced strict 64-byte length for Ed25519 signatures in <code>verify_signature_standalone</code> to prevent validation bypass.</li>
 <li><strong>JSON Canonicalization</strong>: Implemented robust <code>get_canonical_bytes</code> with recursive dict sorting, Unicode NFC normalization, and consistent float formatting for deterministic signature verification.</li>
 <li><strong>Security</strong>: Added <code>PayloadLimitMiddleware</code> rejecting POST/PUT/PATCH over 1MB, 24h proof timestamp consistency validation, default API key prevention in production (<code>RuntimeError</code>), refactored HMAC lockdown protocol (<code>hmac.new</code> SHA256).</li>

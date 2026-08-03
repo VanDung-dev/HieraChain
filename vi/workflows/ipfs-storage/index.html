@@ -1713,7 +1713,7 @@
   <a href="#bieu-o-luong-tai-len-ma-hoa-luu-tru-ghim" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Tải lên (Mã hóa → Lưu trữ → Ghim)
+        Biểu đồ luồng: Tải lên (Mã hóa → Lưu trữ → Ghim)
       </span>
     </span>
   </a>
@@ -1724,7 +1724,7 @@
   <a href="#bieu-o-luong-tai-ve-truy-xuat-giai-ma" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Tải về (Truy xuất → Giải mã)
+        Biểu đồ luồng: Tải về (Truy xuất → Giải mã)
       </span>
     </span>
   </a>
@@ -1735,7 +1735,7 @@
   <a href="#xu-ly-loi-ipfs-ngoai-tuyen" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Xử lý lỗi — IPFS Ngoại tuyến
+        Xử lý lỗi: IPFS Ngoại tuyến
       </span>
     </span>
   </a>
@@ -4351,7 +4351,7 @@
   <a href="#bieu-o-luong-tai-len-ma-hoa-luu-tru-ghim" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Tải lên (Mã hóa → Lưu trữ → Ghim)
+        Biểu đồ luồng: Tải lên (Mã hóa → Lưu trữ → Ghim)
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#bieu-o-luong-tai-ve-truy-xuat-giai-ma" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Tải về (Truy xuất → Giải mã)
+        Biểu đồ luồng: Tải về (Truy xuất → Giải mã)
       </span>
     </span>
   </a>
@@ -4373,7 +4373,7 @@
   <a href="#xu-ly-loi-ipfs-ngoai-tuyen" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Xử lý lỗi — IPFS Ngoại tuyến
+        Xử lý lỗi: IPFS Ngoại tuyến
       </span>
     </span>
   </a>
@@ -4460,7 +4460,7 @@
 <p>Các dữ liệu lớn hoặc nhạy cảm nằm ngoài chuỗi (ví dụ: tài liệu đính kèm, bằng chứng kiểm toán, tài sản nhị phân) được lưu trữ trên một mạng riêng tư IPFS swarm với <strong>cơ chế mã hóa bắt buộc AES-256-GCM</strong>. Chỉ có các nút chia sẻ chung khóa mật mã mới có quyền giải mã dữ liệu này. Mã định danh nội dung (CID) do IPFS trả về được lưu trữ trên chuỗi làm tham chiếu trỏ tới; dữ liệu dạng văn bản thô (plaintext) không bao giờ rời khỏi ranh giới mã hóa.</p>
 <p><strong>Đặc tính an toàn cốt lõi</strong>: Ngay cả khi bộ lưu trữ IPFS bị tấn công vật lý, dữ liệu vẫn hoàn toàn không thể đọc được nếu không có khóa giải mã AES-256-GCM.</p>
 <hr />
-<h2 id="bieu-o-luong-tai-len-ma-hoa-luu-tru-ghim">Biểu đồ luồng — Tải lên (Mã hóa → Lưu trữ → Ghim)</h2>
+<h2 id="bieu-o-luong-tai-len-ma-hoa-luu-tru-ghim">Biểu đồ luồng: Tải lên (Mã hóa → Lưu trữ → Ghim)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Caller as 🖥️ API / SubChain
@@ -4486,7 +4486,7 @@
     IC--&gt;&gt;Caller: { cid, size, encrypted: True, nonce: hex(nonce) }
     Note over Caller: Lưu trữ CID + nonce lên chuỗi để truy xuất sau này</code></pre>
 <hr />
-<h2 id="bieu-o-luong-tai-ve-truy-xuat-giai-ma">Biểu đồ luồng — Tải về (Truy xuất → Giải mã)</h2>
+<h2 id="bieu-o-luong-tai-ve-truy-xuat-giai-ma">Biểu đồ luồng: Tải về (Truy xuất → Giải mã)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Caller as 🖥️ API / SubChain
@@ -4505,7 +4505,7 @@
     IC-&gt;&gt;IC: json.loads(plaintext) → dict
     IC--&gt;&gt;Caller: Dữ liệu đã giải mã ✅</code></pre>
 <hr />
-<h2 id="xu-ly-loi-ipfs-ngoai-tuyen">Xử lý lỗi — IPFS Ngoại tuyến</h2>
+<h2 id="xu-ly-loi-ipfs-ngoai-tuyen">Xử lý lỗi: IPFS Ngoại tuyến</h2>
 <pre class="mermaid"><code>flowchart LR
     CALL["upload_json(data)"]
     CONN["Kết nối tới IPFS daemon\n(HRC_IPFS_HOST)"]
@@ -4547,7 +4547,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>5. Trả kết quả</strong></td>
-<td style="text-align: left;">Bên gọi nhận về thông tin <code>{ cid, nonce }</code> — cả hai tham số này phải được lưu trữ trên chuỗi phục vụ truy xuất sau này.</td>
+<td style="text-align: left;">Bên gọi nhận về thông tin <code>{ cid, nonce }</code>; cả hai tham số này phải được lưu trữ trên chuỗi phục vụ truy xuất sau này.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>6. Truy xuất</strong></td>
@@ -4633,9 +4633,9 @@
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././policy-enforcement/">Thực thi Chính sách</a> — Kiểm soát quyền truy cập của việc tải lên/tải xuống dữ liệu</li>
-<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a> — Lỗi kết nối IPFS sẽ kích hoạt hệ thống gửi cảnh báo</li>
-<li><a href=".././key-backup/">Sao lưu &amp; Khôi phục Khóa</a> — Áp dụng chung mô hình mã hóa AES-256-GCM cho việc lưu trữ các bản sao lưu khóa</li>
+<li><a href=".././policy-enforcement/">Thực thi Chính sách</a>: Kiểm soát quyền truy cập của việc tải lên/tải xuống dữ liệu</li>
+<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a>: Lỗi kết nối IPFS sẽ kích hoạt hệ thống gửi cảnh báo</li>
+<li><a href=".././key-backup/">Sao lưu &amp; Khôi phục Khóa</a>: Áp dụng chung mô hình mã hóa AES-256-GCM cho việc lưu trữ các bản sao lưu khóa</li>
 </ul>
 
 

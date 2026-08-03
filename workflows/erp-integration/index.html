@@ -1782,7 +1782,7 @@
   <a href="#flow-diagram-retry-on-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Retry on Failure
+        Flow Diagram: Retry on Failure
       </span>
     </span>
   </a>
@@ -4373,7 +4373,7 @@
   <a href="#flow-diagram-retry-on-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Retry on Failure
+        Flow Diagram: Retry on Failure
       </span>
     </span>
   </a>
@@ -4526,7 +4526,7 @@
         SS-&gt;&gt;SS: schedule_retry(profile_name)&lt;br/&gt;Exponential backoff: min(300, 30 × 2^retry_count)
     end</code></pre>
 <hr />
-<h2 id="flow-diagram-retry-on-failure">Flow Diagram — Retry on Failure</h2>
+<h2 id="flow-diagram-retry-on-failure">Flow Diagram: Retry on Failure</h2>
 <pre class="mermaid"><code>flowchart LR
     SYNC["_execute_sync()"] --&gt;|Success| UPD["update_last_sync()\nnext = now + interval"]
     SYNC --&gt;|Exception| RETRY["schedule_retry(profile)\nbackoff = min(300s, 30 × 2^n)"]
@@ -4626,7 +4626,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>6. Submit</strong></td>
-<td style="text-align: left;"><code>SubChain.add_event(blockchain_event)</code> — enters Event Submission pipeline</td>
+<td style="text-align: left;"><code>SubChain.add_event(blockchain_event)</code>: enters Event Submission pipeline</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>7. Update timestamp</strong></td>
@@ -4712,9 +4712,9 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././event-submission/">Event Submission</a> — translated events enter here</li>
-<li><a href=".././entity-tracing/">Entity Tracing</a> — ERP-originated events are traceable by <code>entity_id</code></li>
-<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a> — sync failures escalated here</li>
+<li><a href=".././event-submission/">Event Submission</a>: translated events enter here</li>
+<li><a href=".././entity-tracing/">Entity Tracing</a>: ERP-originated events are traceable by <code>entity_id</code></li>
+<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: sync failures escalated here</li>
 </ul>
 
 

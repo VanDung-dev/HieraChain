@@ -1829,7 +1829,7 @@
   <a href="#so-o-luong-sao-luu" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ Luồng — Sao lưu
+        Sơ đồ Luồng: Sao lưu
       </span>
     </span>
   </a>
@@ -1840,7 +1840,7 @@
   <a href="#so-o-luong-khoi-phuc" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ Luồng — Khôi phục
+        Sơ đồ Luồng: Khôi phục
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#so-o-luong-sao-luu" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ Luồng — Sao lưu
+        Sơ đồ Luồng: Sao lưu
       </span>
     </span>
   </a>
@@ -4373,7 +4373,7 @@
   <a href="#so-o-luong-khoi-phuc" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ Luồng — Khôi phục
+        Sơ đồ Luồng: Khôi phục
       </span>
     </span>
   </a>
@@ -4482,7 +4482,7 @@
 <p>Các khóa mật mã (khóa đồng thuận, khóa danh tính, khóa mã hóa) được sao lưu tự động sau mỗi sự kiện tạo mới hoặc xoay vòng khóa. Mỗi bản sao lưu được <strong>mã hóa bằng AES-256-GCM</strong> và được phân phối đến nhiều vị trí kho lưu trữ (vault). Khi khôi phục, <code>restore_keys()</code> sẽ xác thực <strong>tính toàn vẹn bằng SHA-512</strong> trước khi giải mã và áp dụng các khóa vào hệ thống.</p>
 <p><strong>Đặc tính quan trọng</strong>: Ngay cả khi một kho lưu trữ bị xâm nhập, các khóa văn bản thô (plaintext keys) vẫn được bảo vệ bằng AES-256-GCM. Ngay cả khi bản mã (ciphertext) bị thay đổi, việc kiểm tra tính toàn vẹn SHA-512 sẽ ngăn chặn giải mã dữ liệu bị hỏng.</p>
 <hr />
-<h2 id="so-o-luong-sao-luu">Sơ đồ Luồng — Sao lưu</h2>
+<h2 id="so-o-luong-sao-luu">Sơ đồ Luồng: Sao lưu</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Trigger as ⚙️ Tạo / Xoay vòng Khóa
@@ -4520,7 +4520,7 @@
     end
     KBM--&gt;&gt;Trigger: backup_id ✅</code></pre>
 <hr />
-<h2 id="so-o-luong-khoi-phuc">Sơ đồ Luồng — Khôi phục</h2>
+<h2 id="so-o-luong-khoi-phuc">Sơ đồ Luồng: Khôi phục</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Trigger as ⚙️ Khắc phục Thảm họa
@@ -4750,9 +4750,9 @@
 <hr />
 <h2 id="lien-ket-lien-quan">Liên kết liên quan</h2>
 <ul>
-<li><a href=".././msp-identity/">Danh tính MSP</a> — phát hành chứng chỉ mới sẽ kích hoạt việc sao lưu khóa</li>
-<li><a href=".././cluster-lockdown/">Khóa băng Cụm</a> — việc khóa băng có thể yêu cầu xoay vòng khóa, kích hoạt luồng công việc này</li>
-<li><a href=".././ipfs-storage/">Lưu trữ IPFS</a> — sử dụng cùng một cơ chế mã hóa AES-256-GCM</li>
+<li><a href=".././msp-identity/">Danh tính MSP</a>: phát hành chứng chỉ mới sẽ kích hoạt việc sao lưu khóa</li>
+<li><a href=".././cluster-lockdown/">Khóa băng Cụm</a>: việc khóa băng có thể yêu cầu xoay vòng khóa, kích hoạt luồng công việc này</li>
+<li><a href=".././ipfs-storage/">Lưu trữ IPFS</a>: sử dụng cùng một cơ chế mã hóa AES-256-GCM</li>
 </ul>
 
 

@@ -4390,49 +4390,49 @@
 
 
 <h1 id="security-architecture">Security Architecture</h1>
-<p>This page describes the security mechanisms at the architectural level and how they integrate into HieraChain. The system follows strict enterprise security strategy — a multi-layered defense architecture spanning the entire application lifecycle.</p>
+<p>This page describes the security mechanisms at the architectural level and how they integrate into HieraChain. The system follows strict enterprise security strategy: a multi-layered defense architecture spanning the entire application lifecycle.</p>
 <h2 id="main-security-pillars">Main Security Pillars</h2>
 <p>The defense architecture consists of 6 main coordinated streams:</p>
 <ul>
 <li>
 <p><strong>Authorization &amp; Access Control</strong>: </p>
 <ul>
-<li><code>hierachain/security/{msp.py, identity.py}</code> — manages Organization, User, Role, and PKI Identity.</li>
-<li><code>hierachain/security/policy_engine.py</code> — permission control (ABAC).</li>
-<li><code>hierachain/security/verify/api_key_verifier.py</code> — API key authentication.</li>
+<li><code>hierachain/security/{msp.py, identity.py}</code>: manages Organization, User, Role, and PKI Identity.</li>
+<li><code>hierachain/security/policy_engine.py</code>: permission control (ABAC).</li>
+<li><code>hierachain/security/verify/api_key_verifier.py</code>: API key authentication.</li>
 </ul>
 </li>
 <li>
 <p><strong>Lockdown &amp; Logging</strong>: </p>
 <ul>
-<li><code>hierachain/security/secure_logging.py</code> — Tamper-evident log, PII data masking.</li>
-<li><code>hierachain/cluster/lockdown_protocol.py</code> — Emergency Lockdown with Quorum (contains <code>ClusterLockdownManager</code>).</li>
+<li><code>hierachain/security/secure_logging.py</code>: Tamper-evident log, PII data masking.</li>
+<li><code>hierachain/cluster/lockdown_protocol.py</code>: Emergency Lockdown with Quorum (contains <code>ClusterLockdownManager</code>).</li>
 </ul>
 </li>
 <li>
 <p><strong>Fault-tolerance &amp; Integrity</strong>: </p>
 <ul>
-<li><code>hierachain/security/resource_guard.py</code> — Steel shield against DoS/DDoS under high load.</li>
-<li><code>hierachain/security/integrity.py</code> — Signature checksum scanning of startup files.</li>
+<li><code>hierachain/security/resource_guard.py</code>: Steel shield against DoS/DDoS under high load.</li>
+<li><code>hierachain/security/integrity.py</code>: Signature checksum scanning of startup files.</li>
 </ul>
 </li>
 <li>
 <p><strong>Risk Analyzer</strong>: </p>
 <ul>
-<li><code>hierachain/risk_management/risk_analyzer.py</code> — Z-score anomaly indicator tracking.</li>
-<li><code>hierachain/security/sanitization.py</code> — Input injection prevention.</li>
+<li><code>hierachain/risk_management/risk_analyzer.py</code>: Z-score anomaly indicator tracking.</li>
+<li><code>hierachain/security/sanitization.py</code>: Input injection prevention.</li>
 </ul>
 </li>
 <li>
 <p><strong>Encryption &amp; Keys</strong>: </p>
 <ul>
-<li><code>hierachain/security/{key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}</code> — AES-GCM, Ed25519 and X.509 lifecycle for mTLS.</li>
+<li><code>hierachain/security/{key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}</code>: AES-GCM, Ed25519 and X.509 lifecycle for mTLS.</li>
 </ul>
 </li>
 <li>
 <p><strong>Decentralized Zero-Knowledge Proofs</strong>:</p>
 <ul>
-<li><code>hierachain/security/zk_prover.py</code> &amp; <code>hierachain/security/verify/zk_verifier.py</code> — Zero-Knowledge proof implementation for anonymous Sub-Chain data verification.</li>
+<li><code>hierachain/security/zk_prover.py</code> &amp; <code>hierachain/security/verify/zk_verifier.py</code>: Zero-Knowledge proof implementation for anonymous Sub-Chain data verification.</li>
 </ul>
 </li>
 </ul>

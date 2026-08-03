@@ -1377,7 +1377,7 @@
   <a href="#key-classes-poa" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Key Classes — PoA
+        Key Classes: PoA
       </span>
     </span>
   </a>
@@ -1405,7 +1405,7 @@
   <a href="#key-classes-pof" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Key Classes — PoF
+        Key Classes: PoF
       </span>
     </span>
   </a>
@@ -4364,7 +4364,7 @@
   <a href="#key-classes-poa" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Key Classes — PoA
+        Key Classes: PoA
       </span>
     </span>
   </a>
@@ -4392,7 +4392,7 @@
   <a href="#key-classes-pof" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Key Classes — PoF
+        Key Classes: PoF
       </span>
     </span>
   </a>
@@ -4459,7 +4459,7 @@
 
 <h1 id="consensus-mechanisms-reference">Consensus Mechanisms Reference</h1>
 <p><strong>Related workflows</strong>: <a href=".././event-submission/">Event Submission</a> · <a href=".././bft-consensus/">BFT Consensus</a></p>
-<p>HieraChain supports pluggable consensus mechanisms across layers. At the <strong>MainChain (Inter-Organization Alliance)</strong> level, consensus is configured via the <code>HRC_MAINCHAIN_CONSENSUS</code> environment variable (defaults to <code>proof_of_federation</code>). At the <strong>SubChain (Intra-Organization)</strong> level, domain event processing strictly defaults to <strong>Proof of Authority (PoA)</strong> for maximum speed (~0ms latency). The event submission flow (<a href=".././event-submission/">Event Submission</a>) is identical regardless of which mechanism is selected — only the <code>finalize_block()</code> step differs.</p>
+<p>HieraChain supports pluggable consensus mechanisms across layers. At the <strong>MainChain (Inter-Organization Alliance)</strong> level, consensus is configured via the <code>HRC_MAINCHAIN_CONSENSUS</code> environment variable (defaults to <code>proof_of_federation</code>). At the <strong>SubChain (Intra-Organization)</strong> level, domain event processing strictly defaults to <strong>Proof of Authority (PoA)</strong> for maximum speed (~0ms latency). The event submission flow (<a href=".././event-submission/">Event Submission</a>) is identical regardless of which mechanism is selected; only the <code>finalize_block()</code> step differs.</p>
 <hr />
 <h2 id="mechanism-comparison">Mechanism Comparison</h2>
 <table>
@@ -4499,7 +4499,7 @@
 <tr>
 <td style="text-align: left;"><strong>Leader rotation</strong></td>
 <td style="text-align: left;">Optional round-robin</td>
-<td style="text-align: left;">Enforced — deterministic by block index</td>
+<td style="text-align: left;">Enforced, deterministic by block index</td>
 <td style="text-align: left;">View-based, changes on failure</td>
 </tr>
 <tr>
@@ -4550,7 +4550,7 @@ A single pre-registered authority signs the block with its Ed25519 private key.<
     Note right of POA: Ed25519 sign(hash + authority_id + timestamp)&lt;br/&gt;Fallback to random KeyPair in test mode
     POA-&gt;&gt;POA: Append consensus_finalization event&lt;br/&gt;{ authority_id, authority_signature, finalized_at }
     POA--&gt;&gt;OS: Finalized Block ✅</code></pre>
-<h3 id="key-classes-poa">Key Classes — PoA</h3>
+<h3 id="key-classes-poa">Key Classes: PoA</h3>
 <table>
 <thead>
 <tr>
@@ -4606,7 +4606,7 @@ Leader is elected deterministically by block index. ZK proof is enforced.</p>
     POF-&gt;&gt;POF: _create_federation_signature(block, leader_id)&lt;br/&gt;SHA-256(hash:leader_id:block.index:time)
     POF-&gt;&gt;POF: Append consensus_finalization event&lt;br/&gt;{ leader_id, validators_count, round, signature }
     POF--&gt;&gt;OS: Finalized Block ✅</code></pre>
-<h3 id="key-classes-pof">Key Classes — PoF</h3>
+<h3 id="key-classes-pof">Key Classes: PoF</h3>
 <table>
 <thead>
 <tr>

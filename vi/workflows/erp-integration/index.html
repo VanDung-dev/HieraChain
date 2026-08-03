@@ -1782,7 +1782,7 @@
   <a href="#bieu-o-luong-co-che-thu-lai-khi-that-bai-retry-on-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Cơ chế Thử lại khi Thất bại (Retry on Failure)
+        Biểu đồ luồng: Cơ chế Thử lại khi Thất bại (Retry on Failure)
       </span>
     </span>
   </a>
@@ -4373,7 +4373,7 @@
   <a href="#bieu-o-luong-co-che-thu-lai-khi-that-bai-retry-on-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Cơ chế Thử lại khi Thất bại (Retry on Failure)
+        Biểu đồ luồng: Cơ chế Thử lại khi Thất bại (Retry on Failure)
       </span>
     </span>
   </a>
@@ -4526,7 +4526,7 @@
         SS-&gt;&gt;SS: schedule_retry(profile_name)&lt;br/&gt;Exponential backoff: min(300, 30 × 2^retry_count)
     end</code></pre>
 <hr />
-<h2 id="bieu-o-luong-co-che-thu-lai-khi-that-bai-retry-on-failure">Biểu đồ luồng — Cơ chế Thử lại khi Thất bại (Retry on Failure)</h2>
+<h2 id="bieu-o-luong-co-che-thu-lai-khi-that-bai-retry-on-failure">Biểu đồ luồng: Cơ chế Thử lại khi Thất bại (Retry on Failure)</h2>
 <pre class="mermaid"><code>flowchart LR
     SYNC["_execute_sync()"] --&gt;|Thành công| UPD["update_last_sync()\nnext = now + interval"]
     SYNC --&gt;|Gặp ngoại lệ| RETRY["schedule_retry(profile)\nbackoff = min(300s, 30 × 2^n)"]
@@ -4626,7 +4626,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>6. Gửi lên chuỗi</strong></td>
-<td style="text-align: left;">Gọi hàm <code>SubChain.add_event(blockchain_event)</code> — sự kiện chính thức đi vào luồng Gửi Sự kiện.</td>
+<td style="text-align: left;">Gọi hàm <code>SubChain.add_event(blockchain_event)</code>: sự kiện chính thức đi vào luồng Gửi Sự kiện.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>7. Lưu mốc thời gian</strong></td>
@@ -4712,9 +4712,9 @@
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././event-submission/">Gửi Sự kiện</a> — Các sự kiện sau khi dịch nghĩa sẽ đi vào luồng này</li>
-<li><a href=".././entity-tracing/">Truy vết Thực thể</a> — Các sự kiện có nguồn gốc từ ERP có thể được truy vết qua <code>entity_id</code></li>
-<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a> — Các lỗi đồng bộ sẽ được chuyển tới đây để leo thang xử lý</li>
+<li><a href=".././event-submission/">Gửi Sự kiện</a>: Các sự kiện sau khi dịch nghĩa sẽ đi vào luồng này</li>
+<li><a href=".././entity-tracing/">Truy vết Thực thể</a>: Các sự kiện có nguồn gốc từ ERP có thể được truy vết qua <code>entity_id</code></li>
+<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a>: Các lỗi đồng bộ sẽ được chuyển tới đây để leo thang xử lý</li>
 </ul>
 
 

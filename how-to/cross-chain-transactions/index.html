@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Guide to Two-Phase Commit (2PC) mechanism and distributed transaction coordination.">
+        <meta name="description" content="Guide to Two-Phase Commit (2PC) mechanism and distributed operation coordination.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Cross-Chain Transactions - HieraChain Docs</title>
+        <title>Cross-Chain Operations - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#cross-chain-transactions" class="md-skip">
+        <a href="#cross-chain-operations-2pc" class="md-skip">
           Skip to content
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Cross-Chain Transactions
+              Cross-Chain Operations
             
           </span>
         </div>
@@ -3693,10 +3693,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-transaction-state-lifecycle" class="md-nav__link">
+  <a href="#1-operation-state-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Transaction State Lifecycle
+        1. Operation State Lifecycle
       </span>
     </span>
   </a>
@@ -4339,10 +4339,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-transaction-state-lifecycle" class="md-nav__link">
+  <a href="#1-operation-state-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Transaction State Lifecycle
+        1. Operation State Lifecycle
       </span>
     </span>
   </a>
@@ -4435,21 +4435,21 @@
   
 
 
-<h1 id="cross-chain-transactions">Cross-Chain Transactions</h1>
+<h1 id="cross-chain-operations-2pc">Cross-Chain Operations (2PC)</h1>
 <h2 id="purpose">Purpose</h2>
-<p>HieraChain's hierarchical network consists of multiple independent Sub-chains serving different domains. To ensure integrity and atomicity when coordinating data flows or asset transfers across two (or more) different systems, HieraChain integrates a coordination mechanism called <strong>Two-Phase Commit (2PC)</strong>.</p>
+<p>HieraChain's hierarchical network consists of multiple independent Sub-chains serving different domains. To ensure integrity and atomicity when coordinating data flows or asset state transitions across two (or more) different systems, HieraChain integrates a coordination mechanism called <strong>Two-Phase Commit (2PC)</strong>.</p>
 <p>This mechanism is primarily managed by the <code>CrossChainTransactionManager</code> module at <code>hierachain/hierarchical/transaction_manager.py</code>.</p>
-<h3 id="1-transaction-state-lifecycle">1. Transaction State Lifecycle</h3>
-<p>Each cross-chain transaction moves sequentially through the following states to prevent loss:</p>
+<h3 id="1-operation-state-lifecycle">1. Operation State Lifecycle</h3>
+<p>Each cross-chain operation moves sequentially through the following states to prevent loss:</p>
 <ul>
-<li><strong><code>PENDING</code></strong>: Transaction has been initialized, network is waiting to execute the main operation.</li>
+<li><strong><code>PENDING</code></strong>: Operation has been initialized, network is waiting to execute the main process.</li>
 <li><strong><code>PREPARED</code></strong>: Both source and destination chains have committed that conditions are sufficient for execution, resources have been successfully locked.</li>
-<li><strong><code>COMMITTED</code></strong>: Transaction completed on all network chains with consensus.</li>
-<li><strong><code>ROLLED_BACK</code></strong>: Transaction cancelled due to failure in one of the locks. Locked resources on branches will be rolled back to previous version.</li>
-<li><strong><code>FAILED</code></strong>: Transaction failed completely (likely due to internal TCP connection failure or critical logic error).</li>
+<li><strong><code>COMMITTED</code></strong>: Operation completed on all network chains with consensus.</li>
+<li><strong><code>ROLLED_BACK</code></strong>: Operation cancelled due to failure in one of the locks. Locked resources on branches will be rolled back to previous version.</li>
+<li><strong><code>FAILED</code></strong>: Operation failed completely (likely due to internal TCP connection failure or critical logic error).</li>
 </ul>
 <h3 id="2-two-phase-commit-2pc-model">2. Two-Phase Commit (2PC) Model</h3>
-<p>In <code>CrossChainTransactionManager</code>, <code>_execute_2pc(transaction)</code> clearly allocates the main process to handle transactions. The core logic consists of two phases:</p>
+<p>In <code>CrossChainTransactionManager</code>, <code>_execute_2pc(transaction)</code> clearly allocates the main process to handle cross-chain operations. The core logic consists of two phases:</p>
 <h4 id="phase-1-prepare-phase">Phase 1: Prepare Phase</h4>
 <ul>
 <li>The manager retrieves objects from <code>get_sub_chain()</code> of HierarchyManager.</li>

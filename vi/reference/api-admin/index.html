@@ -4494,8 +4494,8 @@
 <p>Mô tả các endpoint REST trong phiên bản API Admin (System &amp; Admin) dùng cho các tác vụ quản trị hệ thống: xác minh danh tính node, kiểm tra trạng thái hoạt động (uptime, version, active chains).</p>
 <h2 id="tong-quan-endpoint">Tổng quan endpoint</h2>
 <ul>
-<li>POST <code>/api/admin/verify-identity</code> — Xác minh danh tính node bằng cách ký vào một chuỗi challenge. (Yêu cầu xác thực)</li>
-<li>GET <code>/api/admin/status</code> — Lấy báo cáo chi tiết về trạng thái node. (Yêu cầu API Key nếu <code>AUTH_ENABLED=true</code>)</li>
+<li>POST <code>/api/admin/verify-identity</code>: Xác minh danh tính node bằng cách ký vào một chuỗi challenge. (Yêu cầu xác thực)</li>
+<li>GET <code>/api/admin/status</code>: Lấy báo cáo chi tiết về trạng thái node. (Yêu cầu API Key nếu <code>AUTH_ENABLED=true</code>)</li>
 </ul>
 <h2 id="schema-chinh-trich-tu-hierachainapiadminschemaspy">Schema chính (trích từ <code>hierachain/api/admin/schemas.py</code>)</h2>
 <ul>
@@ -4569,8 +4569,8 @@
 </code></pre></div>
 <h2 id="ma-trang-thai-loi-pho-bien">Mã trạng thái &amp; lỗi phổ biến</h2>
 <ul>
-<li>200 OK — Thành công.</li>
-<li>500 Internal Server Error — Lỗi xác thực danh tính (ví dụ: lỗi crypto khi ký) hoặc lỗi nội bộ khi tính toán trạng thái.</li>
+<li>200 OK: Thành công.</li>
+<li>500 Internal Server Error: Lỗi xác thực danh tính (ví dụ: lỗi crypto khi ký) hoặc lỗi nội bộ khi tính toán trạng thái.</li>
 </ul>
 <h2 id="ghi-chu-trien-khai-rut-gon-tu-endpointspy">Ghi chú triển khai (rút gọn từ <code>endpoints.py</code>)</h2>
 <ul>

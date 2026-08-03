@@ -4494,8 +4494,8 @@
 <p>Describes the REST endpoints in API Admin (System &amp; Admin) used for system administration tasks: node identity verification, health status checks (uptime, version, active chains).</p>
 <h2 id="endpoint-overview">Endpoint Overview</h2>
 <ul>
-<li>POST <code>/api/admin/verify-identity</code> — Verify node identity by signing a challenge string. (Requires authentication)</li>
-<li>GET <code>/api/admin/status</code> — Get a detailed report on node status. (Requires API Key if <code>AUTH_ENABLED=true</code>)</li>
+<li>POST <code>/api/admin/verify-identity</code>: verify node identity by signing a challenge string. (Requires authentication)</li>
+<li>GET <code>/api/admin/status</code>: get a detailed report on node status. (Requires API Key if <code>AUTH_ENABLED=true</code>)</li>
 </ul>
 <h2 id="main-schemas-from-hierachainapiadminschemaspy">Main Schemas (from <code>hierachain/api/admin/schemas.py</code>)</h2>
 <ul>
@@ -4569,8 +4569,8 @@
 </code></pre></div>
 <h2 id="status-codes-common-errors">Status Codes &amp; Common Errors</h2>
 <ul>
-<li>200 OK — Success.</li>
-<li>500 Internal Server Error — Identity verification error (e.g., crypto error during signing) or internal error when computing status.</li>
+<li>200 OK: Success.</li>
+<li>500 Internal Server Error: identity verification error (e.g., crypto error during signing) or internal error when computing status.</li>
 </ul>
 <h2 id="implementation-notes-abbreviated-from-endpointspy">Implementation Notes (abbreviated from <code>endpoints.py</code>)</h2>
 <ul>

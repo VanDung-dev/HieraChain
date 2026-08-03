@@ -4420,12 +4420,12 @@
     API-&gt;&gt;API: Execute Logic (Smart Contract)
     API--&gt;&gt;User: Result</code></pre>
 <ul>
-<li><code>GET  /api/business/health</code> — service health check.</li>
-<li><code>POST /api/business/channels</code> — create a channel.</li>
-<li><code>GET  /api/business/channels/{channel_id}</code> — get channel info.</li>
-<li><code>POST /api/business/channels/{channel_id}/private-collections</code> — create a private data collection.</li>
+<li><code>GET  /api/business/health</code>: service health check.</li>
+<li><code>POST /api/business/channels</code>: create a channel.</li>
+<li><code>GET  /api/business/channels/{channel_id}</code>: get channel info.</li>
+<li><code>POST /api/business/channels/{channel_id}/private-collections</code>: create a private data collection.</li>
 <li>
-<p><code>POST /api/business/private-data</code> — Write private data (Supports raw <code>value</code> or <code>value_cid</code> IPFS reference).</p>
+<p><code>POST /api/business/private-data</code>: Write private data (Supports raw <code>value</code> or <code>value_cid</code> IPFS reference).</p>
 <ul>
 <li><code>value_nonce: str | None</code></li>
 <li><code>event_metadata: dict[str, Any]</code> (Entity ID, Event Type, Timestamp)</li>
@@ -4443,10 +4443,10 @@
 </ul>
 </li>
 <li>
-<p><code>POST /api/business/contracts</code> — Register a contract (Supports raw <code>implementation</code> or <code>implementation_cid</code> IPFS reference).</p>
+<p><code>POST /api/business/contracts</code>: Register a contract (Supports raw <code>implementation</code> or <code>implementation_cid</code> IPFS reference).</p>
 </li>
-<li><code>POST /api/business/contracts/execute</code> — execute a contract.</li>
-<li><code>POST /api/business/organizations</code> — register an organization.</li>
+<li><code>POST /api/business/contracts/execute</code>: execute a contract.</li>
+<li><code>POST /api/business/organizations</code>: register an organization.</li>
 </ul>
 <p>Additional note: some test/instrumentation scenarios in <code>tests/integration/api_business/test_api_business.py</code> and <code>scripts/security/*</code> use the above endpoints for security testing and behavior verification.</p>
 <h2 id="curl-examples">Curl Examples</h2>
@@ -4494,7 +4494,7 @@
 <h2 id="security-configuration">Security &amp; Configuration</h2>
 <ul>
 <li>API key authentication via <code>security/verify/api_key_verifier.py</code> (when <code>AUTH_ENABLED=true</code>).</li>
-<li>Policy/Identity/Key/Cert — see Security and Modules/Security pages.</li>
+<li>Policy/Identity/Key/Cert: see Security and Modules/Security pages.</li>
 <li>Host/port configuration and security in <code>hierachain/config/settings.py</code>.</li>
 </ul>
 <h2 id="related">Related</h2>

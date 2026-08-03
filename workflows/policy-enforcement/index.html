@@ -4458,7 +4458,7 @@
 <h1 id="policy-enforcement">Policy Enforcement</h1>
 <h2 id="overview">Overview</h2>
 <p>Every access-sensitive operation in HieraChain is gated by the <code>PolicyEngine</code>. Policies are composed of typed <code>PolicyRule</code> sets with priority ordering. Results are cached (5-minute TTL, LRU eviction) to minimize latency overhead. All evaluations are written to an in-memory audit log.</p>
-<p>The <code>PolicyEngine</code> acts as the <strong>single authorization gateway</strong> — it is called by MSP (MSP Identity &amp; Authorization) after identity is verified, and before <code>SubChain.add_event()</code> (Event Submission) is invoked.</p>
+<p>The <code>PolicyEngine</code> acts as the <strong>single authorization gateway</strong>. It is called by MSP (MSP Identity &amp; Authorization) after identity is verified, and before <code>SubChain.add_event()</code> (Event Submission) is invoked.</p>
 <hr />
 <h2 id="flow-diagram">Flow Diagram</h2>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4667,8 +4667,8 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././msp-identity/">MSP Identity</a> — MSP calls <code>evaluate_policy()</code> after identity verified</li>
-<li><a href=".././event-submission/">Event Submission</a> — <code>add_event()</code> guarded by policy evaluation</li>
+<li><a href=".././msp-identity/">MSP Identity</a>: MSP calls <code>evaluate_policy()</code> after identity verified</li>
+<li><a href=".././event-submission/">Event Submission</a>: <code>add_event()</code> guarded by policy evaluation</li>
 </ul>
 
 

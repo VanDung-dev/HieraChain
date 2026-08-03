@@ -4531,7 +4531,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Recovery</strong></td>
-<td style="text-align: left;">Khôi phục trạng thái từ <strong>Transaction Journal</strong> sau sự cố.</td>
+<td style="text-align: left;">Khôi phục trạng thái từ <strong>Event Journal</strong> sau sự cố.</td>
 <td style="text-align: left;"><code>recovery.py</code></td>
 </tr>
 </tbody>
@@ -4539,7 +4539,7 @@
 <hr />
 <h2 id="luong-xu-ly-su-kien-ordering-pipeline">Luồng xử lý Sự kiện (Ordering Pipeline)</h2>
 <pre class="mermaid"><code>graph TD
-    A[Client Submit Event] --&gt; B[Transaction Journal]
+    A[Client Submit Event] --&gt; B[Event Journal]
     B --&gt; C[Event Pool]
     C --&gt; D[Event Certifier]
     D -- Valid --&gt; E[Ordering Processor]
@@ -4550,7 +4550,7 @@
 <hr />
 <h2 id="cac-tinh-nang-cot-loi">Các tính năng cốt lõi</h2>
 <h3 id="1-persistence-durability-tinh-ben-vung">1. Persistence &amp; Durability (Tính bền vững)</h3>
-<p>Trước khi đưa vào hàng đợi xử lý, mọi sự kiện đều được ghi vào <strong>Transaction Journal</strong>. Nếu service bị dừng đột ngột, module <code>Recovery</code> sẽ đọc lại Journal để tái thiết lập trạng thái, đảm bảo không có dữ liệu nào bị mất.</p>
+<p>Trước khi đưa vào hàng đợi xử lý, mọi sự kiện đều được ghi vào <strong>Event Journal</strong>. Nếu service bị dừng đột ngột, module <code>Recovery</code> sẽ đọc lại Journal để tái thiết lập trạng thái, đảm bảo không có dữ liệu nào bị mất.</p>
 <h3 id="2-batching-strategy">2. Batching Strategy</h3>
 <p>Để tối ưu hiệu năng, Ordering Service không đóng khối cho từng sự kiện đơn lẻ mà sử dụng chiến lược gom nhóm:
 *   <code>batch_size</code>: Số lượng sự kiện tối đa trong một khối (Mặc định: 100).
@@ -4558,7 +4558,7 @@
 <h3 id="3-event-certification">3. Event Certification</h3>
 <p>Module <code>Certifier</code> tích hợp chặt chẽ với hệ thống <strong>Security</strong> để kiểm tra:
 *   Định dạng dữ liệu (Schema Validation).
-*   Chữ ký số của người gửi (Identity Verification).
+*   Chữ ký số của node gửi (Identity Verification).
 *   Quyền truy cập vào kênh (Policy Enforcement).</p>
 <hr />
 <h2 id="vi-du-su-dung">Ví dụ sử dụng</h2>

@@ -4435,7 +4435,7 @@
 
 <h1 id="event-submission">Event Submission</h1>
 <h2 id="overview">Overview</h2>
-<p>Events enter HieraChain as structured business operations, are validated, batched by the <code>OrderingService</code> into blocks, finalized by the configured <strong>Proof</strong> mechanism (PoA / PoF / BFT), then appended to the Sub-Chain. The consensus mechanism for MainChain is pluggable (<code>HRC_MAINCHAIN_CONSENSUS</code>), while SubChain defaults to PoA for high-speed intra-org operations. The overall flow is always identical — only the <code>finalize_block()</code> step differs.</p>
+<p>Events enter HieraChain as structured business operations, are validated, batched by the <code>OrderingService</code> into blocks, finalized by the configured <strong>Proof</strong> mechanism (PoA / PoF / BFT), then appended to the Sub-Chain. The consensus mechanism for MainChain is pluggable (<code>HRC_MAINCHAIN_CONSENSUS</code>), while SubChain defaults to PoA for high-speed intra-org operations. The overall flow is always identical, only the <code>finalize_block()</code> step differs.</p>
 <p>For detailed PoA and PoF diagrams, see <a href=".././consensus_mechanisms/">Consensus Mechanisms</a>.</p>
 <hr />
 <h2 id="flow-diagram">Flow Diagram</h2>
@@ -4502,7 +4502,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>2. SC validate</strong></td>
-<td style="text-align: left;"><code>SubChain.add_event()</code> stamps <code>timestamp</code>, calls <code>validate_event_for_consensus()</code> — scans for forbidden crypto terms</td>
+<td style="text-align: left;"><code>SubChain.add_event()</code> stamps <code>timestamp</code>, calls <code>validate_event_for_consensus()</code>: scans for forbidden crypto terms</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>3. OrderingService queue</strong></td>
@@ -4514,7 +4514,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>5. Finalize</strong></td>
-<td style="text-align: left;"><code>Proof.finalize_block()</code> — PoA signs with Ed25519, PoF validates leader rotation + ZK proof, BFT runs 3-phase PBFT</td>
+<td style="text-align: left;"><code>Proof.finalize_block()</code>: PoA signs with Ed25519, PoF validates leader rotation + ZK proof, BFT runs 3-phase PBFT</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>6. Commit</strong></td>
@@ -4638,11 +4638,11 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././consensus_mechanisms/">Consensus Mechanisms</a> — PoA and PoF sub-diagrams</li>
-<li><a href=".././proof-anchoring/">Proof Anchoring</a> — triggered after block finalized</li>
-<li><a href=".././bft-consensus/">BFT Consensus</a> — full 3-phase PBFT flow</li>
-<li><a href=".././policy-enforcement/">Policy Enforcement</a> — gates access before <code>add_event()</code></li>
-<li><a href=".././msp-identity/">MSP Identity</a> — <code>authorize_action()</code> called before submission</li>
+<li><a href=".././consensus_mechanisms/">Consensus Mechanisms</a>: PoA and PoF sub-diagrams</li>
+<li><a href=".././proof-anchoring/">Proof Anchoring</a>: triggered after block finalized</li>
+<li><a href=".././bft-consensus/">BFT Consensus</a>: full 3-phase PBFT flow</li>
+<li><a href=".././policy-enforcement/">Policy Enforcement</a>: gates access before <code>add_event()</code></li>
+<li><a href=".././msp-identity/">MSP Identity</a>: <code>authorize_action()</code> called before submission</li>
 </ul>
 
 

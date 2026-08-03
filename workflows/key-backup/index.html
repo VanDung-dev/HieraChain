@@ -1829,7 +1829,7 @@
   <a href="#flow-diagram-backup" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Backup
+        Flow Diagram: Backup
       </span>
     </span>
   </a>
@@ -1840,7 +1840,7 @@
   <a href="#flow-diagram-restoration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Restoration
+        Flow Diagram: Restoration
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#flow-diagram-backup" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Backup
+        Flow Diagram: Backup
       </span>
     </span>
   </a>
@@ -4373,7 +4373,7 @@
   <a href="#flow-diagram-restoration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Restoration
+        Flow Diagram: Restoration
       </span>
     </span>
   </a>
@@ -4482,7 +4482,7 @@
 <p>Cryptographic keys (consensus keys, identity keys, encryption keys) are backed up automatically after each generation or rotation event. Each backup is <strong>AES-256-GCM encrypted</strong> and distributed to multiple vault locations. When restoring, <code>restore_keys()</code> verifies <strong>SHA-512 integrity</strong> before decrypting and applying keys to the system.</p>
 <p><strong>Key property</strong>: Even if one vault is compromised, the plaintext keys are protected by AES-256-GCM. Even if the ciphertext is tampered, the SHA-512 integrity check prevents decryption of corrupted data.</p>
 <hr />
-<h2 id="flow-diagram-backup">Flow Diagram — Backup</h2>
+<h2 id="flow-diagram-backup">Flow Diagram: Backup</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Trigger as ⚙️ Key Generation / Rotation
@@ -4520,7 +4520,7 @@
     end
     KBM--&gt;&gt;Trigger: backup_id ✅</code></pre>
 <hr />
-<h2 id="flow-diagram-restoration">Flow Diagram — Restoration</h2>
+<h2 id="flow-diagram-restoration">Flow Diagram: Restoration</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Trigger as ⚙️ Disaster Recovery
@@ -4750,9 +4750,9 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././msp-identity/">MSP Identity</a> — certificate issuance triggers key backup</li>
-<li><a href=".././cluster-lockdown/">Cluster Lockdown</a> — lockdown may require key rotation, triggering this workflow</li>
-<li><a href=".././ipfs-storage/">IPFS Storage</a> — uses the same AES-256-GCM encryption pattern</li>
+<li><a href=".././msp-identity/">MSP Identity</a>: certificate issuance triggers key backup</li>
+<li><a href=".././cluster-lockdown/">Cluster Lockdown</a>: lockdown may require key rotation, triggering this workflow</li>
+<li><a href=".././ipfs-storage/">IPFS Storage</a>: uses the same AES-256-GCM encryption pattern</li>
 </ul>
 
 

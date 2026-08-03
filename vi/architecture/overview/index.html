@@ -4423,11 +4423,11 @@
 </ul>
 <h3 id="thanh-phan-chinh">Thành phần chính</h3>
 <ul>
-<li>Main Chain: <code>hierachain/hierarchical/main_chain/base.py</code> — Lưu và xác minh proof từ Sub-Chain, tổng hợp báo cáo tính toàn vẹn.</li>
-<li>Sub-Chain: <code>hierachain/hierarchical/sub_chain/base.py</code> — Ghi nhận event domain, Ordering/đóng block, tạo proof gửi lên Main Chain.</li>
-<li>Hierarchy Manager: <code>hierachain/hierarchical/hierarchy_manager/base.py</code> — Điều phối toàn bộ hệ thống đa chuỗi, quản lý vòng đời Sub-Chain, tự động gửi proof, xác minh liên chuỗi.ứng chéo.</li>
-<li>IPFS Storage (Off-chain): <code>hierachain/api/storage/ipfs_client.py</code> — Lưu trữ dữ liệu nghiệp vụ lớn hoặc nhạy cảm ngoài chuỗi, chỉ neo mã CID lên Blockchain.</li>
-<li>Ordering Service: <code>hierachain/consensus/ordering/service.py</code> — Thành phần sắp xếp sự kiện trước khi tạo block (được Sub-Chain tích hợp khởi tạo).</li>
+<li>Main Chain: <code>hierachain/hierarchical/main_chain/base.py</code>, lưu và xác minh proof từ Sub-Chain, tổng hợp báo cáo tính toàn vẹn.</li>
+<li>Sub-Chain: <code>hierachain/hierarchical/sub_chain/base.py</code>, ghi nhận event domain, Ordering/đóng block, tạo proof gửi lên Main Chain.</li>
+<li>Hierarchy Manager: <code>hierachain/hierarchical/hierarchy_manager/base.py</code>, điều phối toàn bộ hệ thống đa chuỗi, quản lý vòng đời Sub-Chain, tự động gửi proof, xác minh liên chuỗi.ứng chéo.</li>
+<li>IPFS Storage (Off-chain): <code>hierachain/api/storage/ipfs_client.py</code>, lưu trữ dữ liệu nghiệp vụ lớn hoặc nhạy cảm ngoài chuỗi, chỉ neo mã CID lên Blockchain.</li>
+<li>Ordering Service: <code>hierachain/consensus/ordering/service.py</code>, thành phần sắp xếp sự kiện trước khi tạo block (được Sub-Chain tích hợp khởi tạo).</li>
 </ul>
 <h3 id="luong-tieu-bieu">Luồng tiêu biểu</h3>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4444,10 +4444,10 @@
     Main-&gt;&gt;Main: Xác minh &amp; Lưu Proof
     Main--&gt;&gt;Sub: Acknowledge</code></pre>
 <ol>
-<li>Ghi Event → Tạo Block (Sub-Chain) — Event được <code>SubChain.add_event()</code> tiếp nhận, đưa qua Ordering nội bộ, gom vào Block và <code>finalize_block()</code> khi đủ điều kiện.</li>
-<li>Gửi Proof lên Main Chain — <code>SubChain.submit_proof_to_main()</code> sinh Proof (ví dụ từ Merkle root/hash block), gửi <code>MainChain.add_proof()</code> để neo mốc.</li>
-<li>Báo cáo toàn cục — Main Chain tổng hợp <code>get_main_chain_stats()</code> và thống kê cho từng Sub-Chain.</li>
-<li>Điều phối hệ thống — <code>HierarchyManager</code> hỗ trợ gửi proof định kỳ (<code>configure_auto_proof_submission</code>), đồng bộ, và kiểm tra tính nhất quán liên chuỗi.</li>
+<li>Ghi Event → Tạo Block (Sub-Chain): Event được <code>SubChain.add_event()</code> tiếp nhận, đưa qua Ordering nội bộ, gom vào Block và <code>finalize_block()</code> khi đủ điều kiện.</li>
+<li>Gửi Proof lên Main Chain: <code>SubChain.submit_proof_to_main()</code> sinh Proof (ví dụ từ Merkle root/hash block), gửi <code>MainChain.add_proof()</code> để neo mốc.</li>
+<li>Báo cáo toàn cục: Main Chain tổng hợp <code>get_main_chain_stats()</code> và thống kê cho từng Sub-Chain.</li>
+<li>Điều phối hệ thống: <code>HierarchyManager</code> hỗ trợ gửi proof định kỳ (<code>configure_auto_proof_submission</code>), đồng bộ, và kiểm tra tính nhất quán liên chuỗi.</li>
 </ol>
 <h2 id="lien-quan">Liên quan</h2>
 <ul>

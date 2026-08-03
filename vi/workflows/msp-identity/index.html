@@ -1800,7 +1800,7 @@
   <a href="#so-o-luong-ang-ky-thuc-the-doanh-nghiep-msp" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ Luồng — Đăng ký Thực thể (Doanh nghiệp MSP)
+        Sơ đồ Luồng: Đăng ký Thực thể (Doanh nghiệp MSP)
       </span>
     </span>
   </a>
@@ -1811,7 +1811,7 @@
   <a href="#so-o-luong-xac-thuc-quyen-luc-khoi-chay" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ Luồng — Xác thực Quyền lúc Khởi chạy
+        Sơ đồ Luồng: Xác thực Quyền lúc Khởi chạy
       </span>
     </span>
   </a>
@@ -1822,7 +1822,7 @@
   <a href="#so-o-luong-thu-hoi-chung-chi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ Luồng — Thu hồi Chứng chỉ
+        Sơ đồ Luồng: Thu hồi Chứng chỉ
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#so-o-luong-ang-ky-thuc-the-doanh-nghiep-msp" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ Luồng — Đăng ký Thực thể (Doanh nghiệp MSP)
+        Sơ đồ Luồng: Đăng ký Thực thể (Doanh nghiệp MSP)
       </span>
     </span>
   </a>
@@ -4373,7 +4373,7 @@
   <a href="#so-o-luong-xac-thuc-quyen-luc-khoi-chay" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ Luồng — Xác thực Quyền lúc Khởi chạy
+        Sơ đồ Luồng: Xác thực Quyền lúc Khởi chạy
       </span>
     </span>
   </a>
@@ -4384,7 +4384,7 @@
   <a href="#so-o-luong-thu-hoi-chung-chi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Sơ đồ Luồng — Thu hồi Chứng chỉ
+        Sơ đồ Luồng: Thu hồi Chứng chỉ
       </span>
     </span>
   </a>
@@ -4503,7 +4503,7 @@
 </table>
 <p>Mỗi thực thể phải được đăng ký và xác thực danh tính trước khi được phép gọi <code>PolicyEngine</code> (Thực thi Chính sách) hoặc gửi sự kiện (Gửi Sự kiện).</p>
 <hr />
-<h2 id="so-o-luong-ang-ky-thuc-the-doanh-nghiep-msp">Sơ đồ Luồng — Đăng ký Thực thể (Doanh nghiệp MSP)</h2>
+<h2 id="so-o-luong-ang-ky-thuc-the-doanh-nghiep-msp">Sơ đồ Luồng: Đăng ký Thực thể (Doanh nghiệp MSP)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Admin as 🏢 Quản trị viên Doanh nghiệp
@@ -4530,7 +4530,7 @@
         MSP--&gt;&gt;Admin: True ✅
     end</code></pre>
 <hr />
-<h2 id="so-o-luong-xac-thuc-quyen-luc-khoi-chay">Sơ đồ Luồng — Xác thực Quyền lúc Khởi chạy</h2>
+<h2 id="so-o-luong-xac-thuc-quyen-luc-khoi-chay">Sơ đồ Luồng: Xác thực Quyền lúc Khởi chạy</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Caller as 🖥️ API Client
@@ -4561,7 +4561,7 @@
         Note right of PE: Luồng Thực thi Chính sách tiếp tục tại đây
     end</code></pre>
 <hr />
-<h2 id="so-o-luong-thu-hoi-chung-chi">Sơ đồ Luồng — Thu hồi Chứng chỉ</h2>
+<h2 id="so-o-luong-thu-hoi-chung-chi">Sơ đồ Luồng: Thu hồi Chứng chỉ</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Admin as 🏢 Quản trị viên Doanh nghiệp
@@ -4732,9 +4732,9 @@
 <hr />
 <h2 id="lien-ket-lien-quan">Liên kết liên quan</h2>
 <ul>
-<li><a href=".././policy-enforcement/">Thực thi Chính sách</a> — được gọi sau khi ủy quyền MSP thành công</li>
-<li><a href=".././event-submission/">Gửi Sự kiện</a> — <code>authorize_action()</code> làm rào chắn truy cập trước khi gọi <code>add_event()</code></li>
-<li><a href=".././key-backup/">Sao lưu Khóa</a> — phát hành chứng chỉ mới sẽ kích hoạt việc sao lưu khóa</li>
+<li><a href=".././policy-enforcement/">Thực thi Chính sách</a>: được gọi sau khi ủy quyền MSP thành công</li>
+<li><a href=".././event-submission/">Gửi Sự kiện</a>: <code>authorize_action()</code> làm rào chắn truy cập trước khi gọi <code>add_event()</code></li>
+<li><a href=".././key-backup/">Sao lưu Khóa</a>: phát hành chứng chỉ mới sẽ kích hoạt việc sao lưu khóa</li>
 </ul>
 
 

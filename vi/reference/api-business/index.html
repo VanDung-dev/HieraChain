@@ -4420,12 +4420,12 @@
     API-&gt;&gt;API: Thực thi Logic (Smart Contract)
     API--&gt;&gt;User: Kết quả</code></pre>
 <ul>
-<li><code>GET  /api/business/health</code> — kiểm tra trạng thái hoạt động dịch vụ (health check).</li>
-<li><code>POST /api/business/channels</code> — tạo một channel mới.</li>
-<li><code>GET  /api/business/channels/{channel_id}</code> — lấy thông tin channel.</li>
-<li><code>POST /api/business/channels/{channel_id}/private-collections</code> — tạo một bộ sưu tập dữ liệu riêng tư (private data collection).</li>
+<li><code>GET  /api/business/health</code>: kiểm tra trạng thái hoạt động dịch vụ (health check).</li>
+<li><code>POST /api/business/channels</code>: tạo một channel mới.</li>
+<li><code>GET  /api/business/channels/{channel_id}</code>: lấy thông tin channel.</li>
+<li><code>POST /api/business/channels/{channel_id}/private-collections</code>: tạo một bộ sưu tập dữ liệu riêng tư (private data collection).</li>
 <li>
-<p><code>POST /api/business/private-data</code> — Ghi dữ liệu riêng tư (Hỗ trợ truyền trực tiếp <code>value</code> hoặc tham chiếu qua IPFS <code>value_cid</code>).</p>
+<p><code>POST /api/business/private-data</code>: Ghi dữ liệu riêng tư (Hỗ trợ truyền trực tiếp <code>value</code> hoặc tham chiếu qua IPFS <code>value_cid</code>).</p>
 <ul>
 <li><code>value_nonce: str | None</code></li>
 <li><code>event_metadata: dict[str, Any]</code> (Entity ID, Loại sự kiện, Dấu thời gian)</li>
@@ -4443,10 +4443,10 @@
 </ul>
 </li>
 <li>
-<p><code>POST /api/business/contracts</code> — Đăng ký một hợp đồng (Hỗ trợ truyền mã nguồn thô qua <code>implementation</code> hoặc tham chiếu IPFS qua <code>implementation_cid</code>).</p>
+<p><code>POST /api/business/contracts</code>: Đăng ký một hợp đồng (Hỗ trợ truyền mã nguồn thô qua <code>implementation</code> hoặc tham chiếu IPFS qua <code>implementation_cid</code>).</p>
 </li>
-<li><code>POST /api/business/contracts/execute</code> — thực thi một hợp đồng miền.</li>
-<li><code>POST /api/business/organizations</code> — đăng ký một tổ chức mới.</li>
+<li><code>POST /api/business/contracts/execute</code>: thực thi một hợp đồng miền.</li>
+<li><code>POST /api/business/organizations</code>: đăng ký một tổ chức mới.</li>
 </ul>
 <p><em>Lưu ý bổ sung: một số kịch bản test/giám sát trong <code>tests/integration/api_business/test_api_business.py</code> và <code>scripts/security/*</code> sử dụng các endpoint trên để kiểm thử bảo mật và xác minh hành vi hệ thống.</em></p>
 <h2 id="vi-du-lenh-curl">Ví dụ lệnh Curl</h2>
@@ -4494,7 +4494,7 @@
 <h2 id="bao-mat-cau-hinh">Bảo mật &amp; Cấu hình</h2>
 <ul>
 <li>Xác thực API key qua <code>security/verify/api_key_verifier.py</code> (khi <code>AUTH_ENABLED=true</code>).</li>
-<li>Chính sách/Định danh/Khóa/Chứng chỉ — xem trang Hướng dẫn Bảo mật và Mô-đun Bảo mật.</li>
+<li>Chính sách/Định danh/Khóa/Chứng chỉ: xem trang Hướng dẫn Bảo mật và Mô-đun Bảo mật.</li>
 <li>Cấu hình host/port và bảo mật trong <code>hierachain/config/settings.py</code>.</li>
 </ul>
 <h2 id="lien-quan">Liên quan</h2>

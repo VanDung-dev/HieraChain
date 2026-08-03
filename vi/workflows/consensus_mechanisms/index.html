@@ -1377,7 +1377,7 @@
   <a href="#cac-lop-quan-trong-poa" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các Lớp Quan trọng — PoA
+        Các Lớp Quan trọng: PoA
       </span>
     </span>
   </a>
@@ -1405,7 +1405,7 @@
   <a href="#cac-lop-quan-trong-pof" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các Lớp Quan trọng — PoF
+        Các Lớp Quan trọng: PoF
       </span>
     </span>
   </a>
@@ -4364,7 +4364,7 @@
   <a href="#cac-lop-quan-trong-poa" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các Lớp Quan trọng — PoA
+        Các Lớp Quan trọng: PoA
       </span>
     </span>
   </a>
@@ -4392,7 +4392,7 @@
   <a href="#cac-lop-quan-trong-pof" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Các Lớp Quan trọng — PoF
+        Các Lớp Quan trọng: PoF
       </span>
     </span>
   </a>
@@ -4459,7 +4459,7 @@
 
 <h1 id="tai-lieu-tham-khao-co-che-ong-thuan">Tài liệu tham khảo Cơ chế Đồng thuận</h1>
 <p><strong>Các luồng công việc liên quan</strong>: <a href=".././event-submission/">Gửi Sự kiện</a> · <a href=".././bft-consensus/">Đồng thuận BFT</a></p>
-<p>HieraChain hỗ trợ các cơ chế đồng thuận có thể cắm (pluggable) trên từng tầng. Ở tầng <strong>MainChain (Liên minh đa Tổ chức)</strong>, cơ chế đồng thuận được cấu hình thông qua biến môi trường <code>HRC_MAINCHAIN_CONSENSUS</code> (mặc định là <code>proof_of_federation</code>). Ở tầng <strong>SubChain (Nội bộ Tổ chức)</strong>, việc xử lý sự kiện nghiệp vụ nội bộ <strong>mặc định luôn sử dụng Proof of Authority (PoA)</strong> để đạt tốc độ tối đa (~0ms latency). Luồng gửi sự kiện (<a href=".././event-submission/">Gửi Sự kiện</a>) là hoàn toàn giống nhau bất kể cơ chế nào được chọn — chỉ khác biệt ở bước <code>finalize_block()</code>.</p>
+<p>HieraChain hỗ trợ các cơ chế đồng thuận có thể cắm (pluggable) trên từng tầng. Ở tầng <strong>MainChain (Liên minh đa Tổ chức)</strong>, cơ chế đồng thuận được cấu hình thông qua biến môi trường <code>HRC_MAINCHAIN_CONSENSUS</code> (mặc định là <code>proof_of_federation</code>). Ở tầng <strong>SubChain (Nội bộ Tổ chức)</strong>, việc xử lý sự kiện nghiệp vụ nội bộ <strong>mặc định luôn sử dụng Proof of Authority (PoA)</strong> để đạt tốc độ tối đa (~0ms latency). Luồng gửi sự kiện (<a href=".././event-submission/">Gửi Sự kiện</a>) là hoàn toàn giống nhau bất kể cơ chế nào được chọn; chỉ khác biệt ở bước <code>finalize_block()</code>.</p>
 <hr />
 <h2 id="so-sanh-cac-co-che">So sánh các Cơ chế</h2>
 <table>
@@ -4499,7 +4499,7 @@
 <tr>
 <td style="text-align: left;"><strong>Xoay vòng Trưởng nhóm</strong></td>
 <td style="text-align: left;">Tùy chọn vòng tròn (round-robin)</td>
-<td style="text-align: left;">Bắt buộc — xác định bởi chỉ số khối</td>
+<td style="text-align: left;">Bắt buộc, xác định bởi chỉ số khối</td>
 <td style="text-align: left;">Dựa trên View (Khung nhìn), thay đổi khi gặp lỗi</td>
 </tr>
 <tr>
@@ -4550,7 +4550,7 @@ Một nút ủy quyền duy nhất được đăng ký trước sẽ ký khối 
     Note right of POA: Ed25519 sign(hash + authority_id + timestamp)&lt;br/&gt;Dùng KeyPair ngẫu nhiên trong chế độ test
     POA-&gt;&gt;POA: Thêm sự kiện consensus_finalization&lt;br/&gt;{ authority_id, authority_signature, finalized_at }
     POA--&gt;&gt;OS: Khối đã Hoàn thiện ✅</code></pre>
-<h3 id="cac-lop-quan-trong-poa">Các Lớp Quan trọng — PoA</h3>
+<h3 id="cac-lop-quan-trong-poa">Các Lớp Quan trọng: PoA</h3>
 <table>
 <thead>
 <tr>
@@ -4606,7 +4606,7 @@ Trưởng nhóm (Leader) được bầu chọn một cách xác định bằng c
     POF-&gt;&gt;POF: _create_federation_signature(block, leader_id)&lt;br/&gt;SHA-256(hash:leader_id:block.index:time)
     POF-&gt;&gt;POF: Thêm sự kiện consensus_finalization&lt;br/&gt;{ leader_id, validators_count, round, signature }
     POF--&gt;&gt;OS: Khối đã Hoàn thiện ✅</code></pre>
-<h3 id="cac-lop-quan-trong-pof">Các Lớp Quan trọng — PoF</h3>
+<h3 id="cac-lop-quan-trong-pof">Các Lớp Quan trọng: PoF</h3>
 <table>
 <thead>
 <tr>

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Hướng dẫn cơ chế Two-Phase Commit (2PC) và điều phối giao dịch phân tán.">
+        <meta name="description" content="Hướng dẫn cơ chế Two-Phase Commit (2PC) và điều phối hoạt động phân tán.">
       
       
         <meta name="author" content="Nguyễn Lê Văn Dũng">
@@ -33,7 +33,7 @@
     
     
       
-        <title>Giao dịch Liên chuỗi (Cross-Chain Transactions) - HieraChain Docs</title>
+        <title>Thao tác Liên chuỗi (Cross-Chain Operations) - HieraChain Docs</title>
       
     
     
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#giao-dich-lien-chuoi-cross-chain-transactions" class="md-skip">
+        <a href="#thao-tac-lien-chuoi-cross-chain-operations" class="md-skip">
           Bỏ qua
         </a>
       
@@ -123,7 +123,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Giao dịch Liên chuỗi (Cross-Chain Transactions)
+              Thao tác Liên chuỗi (Cross-Chain Operations)
             
           </span>
         </div>
@@ -3693,10 +3693,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-vong-oi-trang-thai-giao-dich-transactionstate" class="md-nav__link">
+  <a href="#1-vong-oi-trang-thai-thao-tac-transactionstate" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Vòng đời Trạng thái Giao dịch (TransactionState)
+        1. Vòng đời Trạng thái Thao tác (TransactionState)
       </span>
     </span>
   </a>
@@ -4339,10 +4339,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-vong-oi-trang-thai-giao-dich-transactionstate" class="md-nav__link">
+  <a href="#1-vong-oi-trang-thai-thao-tac-transactionstate" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Vòng đời Trạng thái Giao dịch (TransactionState)
+        1. Vòng đời Trạng thái Thao tác (TransactionState)
       </span>
     </span>
   </a>
@@ -4435,21 +4435,21 @@
   
 
 
-<h1 id="giao-dich-lien-chuoi-cross-chain-transactions">Giao dịch Liên chuỗi (Cross-Chain Transactions)</h1>
+<h1 id="thao-tac-lien-chuoi-cross-chain-operations">Thao tác Liên chuỗi (Cross-Chain Operations)</h1>
 <h2 id="muc-inh">Mục đính</h2>
-<p>Mạng lưới phân cấp cấp cao của HieraChain bao gồm nhiều Sub-chain độc lập phục vụ các mảng khác nhau. Để đảm bảo tính toàn vẹn cũng như nguyên tử hạt nhân (Atomicity) khi điều phối luồng dữ liệu hoặc chuyển đổi tài sản ở hai (hay nhiều) hệ thống khác biệt nhau, HieraChain tích hợp một cơ chế điều phối gọi là <strong>Two-Phase Commit (2PC)</strong>.</p>
+<p>Mạng lưới phân cấp cấp cao của HieraChain bao gồm nhiều Sub-chain độc lập phục vụ các mảng khác nhau. Để đảm bảo tính toàn vẹn cũng như nguyên tử hạt nhân (Atomicity) khi điều phối luồng dữ liệu hoặc chuyển đổi trạng thái ở hai (hay nhiều) hệ thống khác biệt nhau, HieraChain tích hợp một cơ chế điều phối gọi là <strong>Two-Phase Commit (2PC)</strong>.</p>
 <p>Cơ chế này được quản lý chủ đạo bởi module <code>CrossChainTransactionManager</code> tại <code>hierachain/hierarchical/transaction_manager.py</code>.</p>
-<h3 id="1-vong-oi-trang-thai-giao-dich-transactionstate">1. Vòng đời Trạng thái Giao dịch (TransactionState)</h3>
-<p>Mỗi giao dịch liên chuỗi sẽ di chuyển tuần tự qua các biểu đồ trạng thái sau nhằm tránh thất thoát:</p>
+<h3 id="1-vong-oi-trang-thai-thao-tac-transactionstate">1. Vòng đời Trạng thái Thao tác (TransactionState)</h3>
+<p>Mỗi thao tác liên chuỗi sẽ di chuyển tuần tự qua các biểu đồ trạng thái sau nhằm tránh thất thoát:</p>
 <ul>
-<li><strong><code>PENDING</code></strong>: Giao dịch đã được khởi tạo, mạng lưới đang chờ chạy lệnh hoạt động chính.</li>
-<li><strong><code>PREPARED</code></strong>: Cả chuỗi nguồn (Source chain) và chuỗi đích (Destination chain) đều đã cam kết có đủ điều kiện thực hiện giao dịch, thực tế đã khóa (lock) trước tài nguyên thành công.</li>
-<li><strong><code>COMMITTED</code></strong>: Giao dịch hoàn tất trên tất cả các chuỗi mạng lưới một cách đồng thuận.</li>
-<li><strong><code>ROLLED_BACK</code></strong>: Giao dịch bị hủy do một trong hai chốt thất bại. Tài nguyên đã "đặt trước" (locked) trên các chi nhánh sẽ được rollback về phiên bản cũ.</li>
-<li><strong><code>FAILED</code></strong>: Giao dịch thất bại hoàn toàn (nhiều khả năng do không kết nối được TCP nội bộ hoặc lỗi logic nghiêm trọng).</li>
+<li><strong><code>PENDING</code></strong>: Thao tác đã được khởi tạo, mạng lưới đang chờ chạy lệnh hoạt động chính.</li>
+<li><strong><code>PREPARED</code></strong>: Cả chuỗi nguồn (Source chain) và chuỗi đích (Destination chain) đều đã cam kết có đủ điều kiện thực hiện thao tác, thực tế đã khóa (lock) trước tài nguyên thành công.</li>
+<li><strong><code>COMMITTED</code></strong>: Thao tác hoàn tất trên tất cả các chuỗi mạng lưới một cách đồng thuận.</li>
+<li><strong><code>ROLLED_BACK</code></strong>: Thao tác bị hủy do một trong hai chốt thất bại. Tài nguyên đã "đặt trước" (locked) trên các chi nhánh sẽ được rollback về phiên bản cũ.</li>
+<li><strong><code>FAILED</code></strong>: Thao tác thất bại hoàn toàn (nhiều khả năng do không kết nối được TCP nội bộ hoặc lỗi logic nghiêm trọng).</li>
 </ul>
 <h3 id="2-mo-hinh-two-phase-commit-2pc">2. Mô hình Two-Phase Commit (2PC)</h3>
-<p>Trong <code>CrossChainTransactionManager</code>, chức năng <code>_execute_2pc(transaction)</code> phân bổ rõ ràng quá trình chạy quy trình chính để xử lý giao dịch. Logic hoạt động cốt lõi gồm có hai pha:</p>
+<p>Trong <code>CrossChainTransactionManager</code>, chức năng <code>_execute_2pc(transaction)</code> phân bổ rõ ràng quá trình chạy quy trình chính để xử lý thao tác liên chuỗi. Logic hoạt động cốt lõi gồm có hai pha:</p>
 <h4 id="pha-1-chuan-bi-prepare-phase">Pha 1: Chuẩn bị (Prepare Phase)</h4>
 <ul>
 <li>Người quản lý lấy ra đối tượng từ hàm cấp <code>get_sub_chain()</code> của HierarchyManager.</li>

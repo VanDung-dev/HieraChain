@@ -1684,7 +1684,7 @@
   <a href="#flow-diagram-connection-broadcast-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Connection &amp; Broadcast Lifecycle
+        Flow Diagram: Connection &amp; Broadcast Lifecycle
       </span>
     </span>
   </a>
@@ -1695,7 +1695,7 @@
   <a href="#flow-diagram-ping-stale-connection-cleanup" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Ping / Stale Connection Cleanup
+        Flow Diagram: Ping / Stale Connection Cleanup
       </span>
     </span>
   </a>
@@ -4351,7 +4351,7 @@
   <a href="#flow-diagram-connection-broadcast-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Connection &amp; Broadcast Lifecycle
+        Flow Diagram: Connection &amp; Broadcast Lifecycle
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#flow-diagram-ping-stale-connection-cleanup" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Ping / Stale Connection Cleanup
+        Flow Diagram: Ping / Stale Connection Cleanup
       </span>
     </span>
   </a>
@@ -4460,7 +4460,7 @@
 <p>HieraChain pushes block and event notifications to connected clients in real-time via WebSocket. Clients subscribe to specific chains or event types. A background ping loop detects stale connections and removes them automatically.</p>
 <p>The <code>WebSocketManager</code> is a <strong>singleton</strong> (<code>ws_manager</code>) used across all API routes to ensure a single connection registry.</p>
 <hr />
-<h2 id="flow-diagram-connection-broadcast-lifecycle">Flow Diagram — Connection &amp; Broadcast Lifecycle</h2>
+<h2 id="flow-diagram-connection-broadcast-lifecycle">Flow Diagram: Connection &amp; Broadcast Lifecycle</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Client as 🖥️ Browser / SDK Client
@@ -4489,7 +4489,7 @@
         WSM-&gt;&gt;Client: send_text(JSON { type: "block_added", data: block_data })
     end</code></pre>
 <hr />
-<h2 id="flow-diagram-ping-stale-connection-cleanup">Flow Diagram — Ping / Stale Connection Cleanup</h2>
+<h2 id="flow-diagram-ping-stale-connection-cleanup">Flow Diagram: Ping / Stale Connection Cleanup</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant BG as 🔄 PingLoopRunner (background)
@@ -4664,8 +4664,8 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././event-submission/">Event Submission</a> — triggers <code>broadcast_new_block()</code> after block commit</li>
-<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a> — alert notifications can also be pushed via WebSocket</li>
+<li><a href=".././event-submission/">Event Submission</a>: triggers <code>broadcast_new_block()</code> after block commit</li>
+<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: alert notifications can also be pushed via WebSocket</li>
 </ul>
 
 

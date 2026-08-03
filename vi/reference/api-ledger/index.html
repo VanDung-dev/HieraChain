@@ -4697,15 +4697,15 @@
     Main--&gt;&gt;Sub: Xác nhận
     API--&gt;&gt;Client: 200 OK (Proof ID)</code></pre>
 <ul>
-<li>GET <code>/api/ledger/health</code> — Kiểm tra tình trạng.</li>
-<li>GET <code>/api/ledger/chains</code> — Liệt kê Main Chain và tất cả Sub-Chain.</li>
-<li>POST <code>/api/ledger/chains/{chain_name}/create</code> — Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo).</li>
-<li>POST <code>/api/ledger/chains/{chain_name}/events</code> — Thêm sự kiện vào Sub-Chain.</li>
-<li>POST <code>/api/ledger/chains/{chain_name}/submit-proof</code> — Gửi proof từ Sub-Chain lên Main Chain.</li>
-<li>GET <code>/api/ledger/chains/{chain_name}/stats</code> — Lấy thống kê chuỗi.</li>
-<li>GET <code>/api/ledger/chains/{chain_name}/blocks?limit=10&amp;offset=0&amp;resolve_cid=false</code> — Lấy danh sách block (có phân trang). Nếu <code>resolve_cid=true</code>, tự động tải dữ liệu chi tiết từ IPFS.</li>
-<li>GET <code>/api/ledger/chains/{chain_name}/blocks/{index_or_hash}</code> — Lấy chi tiết một block cụ thể.</li>
-<li>GET <code>/api/ledger/entities/{entity_id}/trace[?chain_name=...&amp;resolve_cid=false]</code> — Truy vết sự kiện. Nếu <code>resolve_cid=true</code>, giải mã chi tiết sự kiện từ IPFS.</li>
+<li>GET <code>/api/ledger/health</code>: Kiểm tra tình trạng.</li>
+<li>GET <code>/api/ledger/chains</code>: Liệt kê Main Chain và tất cả Sub-Chain.</li>
+<li>POST <code>/api/ledger/chains/{chain_name}/create</code>: Tạo Sub-Chain mới (nếu chưa có Main Chain sẽ tự tạo).</li>
+<li>POST <code>/api/ledger/chains/{chain_name}/events</code>: Thêm sự kiện vào Sub-Chain.</li>
+<li>POST <code>/api/ledger/chains/{chain_name}/submit-proof</code>: Gửi proof từ Sub-Chain lên Main Chain.</li>
+<li>GET <code>/api/ledger/chains/{chain_name}/stats</code>: Lấy thống kê chuỗi.</li>
+<li>GET <code>/api/ledger/chains/{chain_name}/blocks?limit=10&amp;offset=0&amp;resolve_cid=false</code>: Lấy danh sách block (có phân trang). Nếu <code>resolve_cid=true</code>, tự động tải dữ liệu chi tiết từ IPFS.</li>
+<li>GET <code>/api/ledger/chains/{chain_name}/blocks/{index_or_hash}</code>: Lấy chi tiết một block cụ thể.</li>
+<li>GET <code>/api/ledger/entities/{entity_id}/trace[?chain_name=...&amp;resolve_cid=false]</code>: Truy vết sự kiện. Nếu <code>resolve_cid=true</code>, giải mã chi tiết sự kiện từ IPFS.</li>
 </ul>
 <h2 id="schema-chinh-trich-tu-hierachainapiledgerschemaspy">Schema chính (trích từ <code>hierachain/api/ledger/schemas.py</code>)</h2>
 <ul>
@@ -4830,11 +4830,11 @@
 </code></pre></div>
 <h2 id="ma-trang-thai-loi-pho-bien">Mã trạng thái &amp; lỗi phổ biến</h2>
 <ul>
-<li>200 OK — Thành công cho GET/POST đa số trường hợp.</li>
-<li>201 Created — Tạo Sub-Chain thành công.</li>
-<li>400 Bad Request — <code>chain_name</code> không hợp lệ khi tạo (chỉ cho phép <code>[a-zA-Z0-9_\-]</code>).</li>
-<li>404 Not Found — Không tìm thấy chuỗi hoặc sub-chain.</li>
-<li>500 Internal Server Error — Lỗi xử lý nội bộ (ví dụ lỗi khi liệt kê chuỗi, khi thêm sự kiện, gửi proof, thống kê, truy xuất blocks).</li>
+<li>200 OK: Thành công cho GET/POST đa số trường hợp.</li>
+<li>201 Created: Tạo Sub-Chain thành công.</li>
+<li>400 Bad Request: <code>chain_name</code> không hợp lệ khi tạo (chỉ cho phép <code>[a-zA-Z0-9_\-]</code>).</li>
+<li>404 Not Found: Không tìm thấy chuỗi hoặc sub-chain.</li>
+<li>500 Internal Server Error: Lỗi xử lý nội bộ (ví dụ lỗi khi liệt kê chuỗi, khi thêm sự kiện, gửi proof, thống kê, truy xuất blocks).</li>
 </ul>
 <h2 id="ghi-chu-trien-khai-rut-gon-tu-endpointspy">Ghi chú triển khai (rút gọn từ <code>endpoints.py</code>)</h2>
 <ul>

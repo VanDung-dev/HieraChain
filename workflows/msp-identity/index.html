@@ -1800,7 +1800,7 @@
   <a href="#flow-diagram-entity-onboarding-enterprise-msp" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Entity Onboarding (Enterprise MSP)
+        Flow Diagram: Entity Onboarding (Enterprise MSP)
       </span>
     </span>
   </a>
@@ -1811,7 +1811,7 @@
   <a href="#flow-diagram-runtime-authorization" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Runtime Authorization
+        Flow Diagram: Runtime Authorization
       </span>
     </span>
   </a>
@@ -1822,7 +1822,7 @@
   <a href="#flow-diagram-certificate-revocation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Certificate Revocation
+        Flow Diagram: Certificate Revocation
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#flow-diagram-entity-onboarding-enterprise-msp" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Entity Onboarding (Enterprise MSP)
+        Flow Diagram: Entity Onboarding (Enterprise MSP)
       </span>
     </span>
   </a>
@@ -4373,7 +4373,7 @@
   <a href="#flow-diagram-runtime-authorization" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Runtime Authorization
+        Flow Diagram: Runtime Authorization
       </span>
     </span>
   </a>
@@ -4384,7 +4384,7 @@
   <a href="#flow-diagram-certificate-revocation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Certificate Revocation
+        Flow Diagram: Certificate Revocation
       </span>
     </span>
   </a>
@@ -4503,7 +4503,7 @@
 </table>
 <p>Every entity must be registered and have its identity validated before being permitted to call <code>PolicyEngine</code> (Policy Enforcement) or submit events (Event Submission).</p>
 <hr />
-<h2 id="flow-diagram-entity-onboarding-enterprise-msp">Flow Diagram — Entity Onboarding (Enterprise MSP)</h2>
+<h2 id="flow-diagram-entity-onboarding-enterprise-msp">Flow Diagram: Entity Onboarding (Enterprise MSP)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Admin as 🏢 Enterprise Admin
@@ -4530,7 +4530,7 @@
         MSP--&gt;&gt;Admin: True ✅
     end</code></pre>
 <hr />
-<h2 id="flow-diagram-runtime-authorization">Flow Diagram — Runtime Authorization</h2>
+<h2 id="flow-diagram-runtime-authorization">Flow Diagram: Runtime Authorization</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Caller as 🖥️ API Client
@@ -4561,7 +4561,7 @@
         Note right of PE: Policy Enforcement flow continues here
     end</code></pre>
 <hr />
-<h2 id="flow-diagram-certificate-revocation">Flow Diagram — Certificate Revocation</h2>
+<h2 id="flow-diagram-certificate-revocation">Flow Diagram: Certificate Revocation</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Admin as 🏢 Enterprise Admin
@@ -4732,9 +4732,9 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././policy-enforcement/">Policy Enforcement</a> — called after MSP authorization succeeds</li>
-<li><a href=".././event-submission/">Event Submission</a> — <code>authorize_action()</code> gates access before <code>add_event()</code></li>
-<li><a href=".././key-backup/">Key Backup</a> — new certificate issuance triggers key backup</li>
+<li><a href=".././policy-enforcement/">Policy Enforcement</a>: called after MSP authorization succeeds</li>
+<li><a href=".././event-submission/">Event Submission</a>: <code>authorize_action()</code> gates access before <code>add_event()</code></li>
+<li><a href=".././key-backup/">Key Backup</a>: new certificate issuance triggers key backup</li>
 </ul>
 
 

@@ -4531,7 +4531,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Recovery</strong></td>
-<td style="text-align: left;">Restores state from <strong>Transaction Journal</strong> after failures.</td>
+<td style="text-align: left;">Restores state from <strong>Event Journal</strong> after failures.</td>
 <td style="text-align: left;"><code>recovery.py</code></td>
 </tr>
 </tbody>
@@ -4539,7 +4539,7 @@
 <hr />
 <h2 id="event-processing-flow-ordering-pipeline">Event Processing Flow (Ordering Pipeline)</h2>
 <pre class="mermaid"><code>graph TD
-    A[Client Submit Event] --&gt; B[Transaction Journal]
+    A[Client Submit Event] --&gt; B[Event Journal]
     B --&gt; C[Event Pool]
     C --&gt; D[Event Certifier]
     D -- Valid --&gt; E[Ordering Processor]
@@ -4550,7 +4550,7 @@
 <hr />
 <h2 id="core-features">Core Features</h2>
 <h3 id="1-persistence-durability">1. Persistence &amp; Durability</h3>
-<p>Before entering the processing queue, every event is written to the <strong>Transaction Journal</strong>. If the service stops unexpectedly, the <code>Recovery</code> module reads the Journal to reconstruct state, ensuring no data is lost.</p>
+<p>Before entering the processing queue, every event is written to the <strong>Event Journal</strong>. If the service stops unexpectedly, the <code>Recovery</code> module reads the Journal to reconstruct state, ensuring no data is lost.</p>
 <h3 id="2-batching-strategy">2. Batching Strategy</h3>
 <p>To optimize performance, Ordering Service does not create a block for each individual event but uses batching:
 *   <code>batch_size</code>: Maximum events per block (Default: 100).
@@ -4558,7 +4558,7 @@
 <h3 id="3-event-certification">3. Event Certification</h3>
 <p>The <code>Certifier</code> module integrates closely with the <strong>Security</strong> system to check:
 *   Data format (Schema Validation).
-*   Sender's digital signature (Identity Verification).
+*   Submitter's digital signature (Identity Verification).
 *   Channel access permissions (Policy Enforcement).</p>
 <hr />
 <h2 id="usage-example">Usage Example</h2>

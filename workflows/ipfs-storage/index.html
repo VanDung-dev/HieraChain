@@ -1713,7 +1713,7 @@
   <a href="#flow-diagram-upload-encrypt-store-pin" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Upload (Encrypt → Store → Pin)
+        Flow Diagram: Upload (Encrypt → Store → Pin)
       </span>
     </span>
   </a>
@@ -1724,7 +1724,7 @@
   <a href="#flow-diagram-download-retrieve-decrypt" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Download (Retrieve → Decrypt)
+        Flow Diagram: Download (Retrieve → Decrypt)
       </span>
     </span>
   </a>
@@ -1735,7 +1735,7 @@
   <a href="#error-handling-ipfs-unavailable" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Error Handling — IPFS Unavailable
+        Error Handling: IPFS Unavailable
       </span>
     </span>
   </a>
@@ -4351,7 +4351,7 @@
   <a href="#flow-diagram-upload-encrypt-store-pin" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Upload (Encrypt → Store → Pin)
+        Flow Diagram: Upload (Encrypt → Store → Pin)
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#flow-diagram-download-retrieve-decrypt" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Download (Retrieve → Decrypt)
+        Flow Diagram: Download (Retrieve → Decrypt)
       </span>
     </span>
   </a>
@@ -4373,7 +4373,7 @@
   <a href="#error-handling-ipfs-unavailable" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Error Handling — IPFS Unavailable
+        Error Handling: IPFS Unavailable
       </span>
     </span>
   </a>
@@ -4460,7 +4460,7 @@
 <p>Large or sensitive off-chain data (e.g., document attachments, audit evidence, binary assets) is stored on a private IPFS swarm with <strong>mandatory AES-256-GCM encryption</strong>. Only nodes sharing the same encryption key can decrypt. The CID returned by IPFS is stored on-chain as a reference; the plaintext never leaves the encrypted boundary.</p>
 <p><strong>Key property</strong>: Even if IPFS storage is compromised, data is unreadable without the AES-256-GCM key.</p>
 <hr />
-<h2 id="flow-diagram-upload-encrypt-store-pin">Flow Diagram — Upload (Encrypt → Store → Pin)</h2>
+<h2 id="flow-diagram-upload-encrypt-store-pin">Flow Diagram: Upload (Encrypt → Store → Pin)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Caller as 🖥️ API / SubChain
@@ -4486,7 +4486,7 @@
     IC--&gt;&gt;Caller: { cid, size, encrypted: True, nonce: hex(nonce) }
     Note over Caller: Store CID + nonce on-chain for later retrieval</code></pre>
 <hr />
-<h2 id="flow-diagram-download-retrieve-decrypt">Flow Diagram — Download (Retrieve → Decrypt)</h2>
+<h2 id="flow-diagram-download-retrieve-decrypt">Flow Diagram: Download (Retrieve → Decrypt)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Caller as 🖥️ API / SubChain
@@ -4505,7 +4505,7 @@
     IC-&gt;&gt;IC: json.loads(plaintext) → dict
     IC--&gt;&gt;Caller: Decrypted data ✅</code></pre>
 <hr />
-<h2 id="error-handling-ipfs-unavailable">Error Handling — IPFS Unavailable</h2>
+<h2 id="error-handling-ipfs-unavailable">Error Handling: IPFS Unavailable</h2>
 <pre class="mermaid"><code>flowchart LR
     CALL["upload_json(data)"]
     CONN["Connect to IPFS daemon\n(HRC_IPFS_HOST)"]
@@ -4547,7 +4547,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><strong>5. Return</strong></td>
-<td style="text-align: left;">Caller receives <code>{ cid, nonce }</code> — both must be stored on-chain for retrieval</td>
+<td style="text-align: left;">Caller receives <code>{ cid, nonce }</code>; both must be stored on-chain for retrieval</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>6. Retrieve</strong></td>
@@ -4633,9 +4633,9 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././policy-enforcement/">Policy Enforcement</a> — gates upload/download authorization</li>
-<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a> — IPFS connection failure triggers alerts</li>
-<li><a href=".././key-backup/">Key Backup</a> — same AES-256-GCM pattern used for key backup encryption</li>
+<li><a href=".././policy-enforcement/">Policy Enforcement</a>: gates upload/download authorization</li>
+<li><a href=".././risk-alerts/">Risk Analysis &amp; Alerts</a>: IPFS connection failure triggers alerts</li>
+<li><a href=".././key-backup/">Key Backup</a>: same AES-256-GCM pattern used for key backup encryption</li>
 </ul>
 
 

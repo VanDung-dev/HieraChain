@@ -1452,7 +1452,7 @@
   <a href="#flow-diagram-happy-path" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Happy Path
+        Flow Diagram: Happy Path
       </span>
     </span>
   </a>
@@ -1463,7 +1463,7 @@
   <a href="#flow-diagram-failure-paths" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Failure Paths
+        Flow Diagram: Failure Paths
       </span>
     </span>
   </a>
@@ -4351,7 +4351,7 @@
   <a href="#flow-diagram-happy-path" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Happy Path
+        Flow Diagram: Happy Path
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#flow-diagram-failure-paths" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — Failure Paths
+        Flow Diagram: Failure Paths
       </span>
     </span>
   </a>
@@ -4457,10 +4457,10 @@
 
 <h1 id="cross-chain-operation-2pc">Cross-Chain Operation (2PC)</h1>
 <h2 id="overview">Overview</h2>
-<p>When a business operation needs to atomically span two Sub-Chains (e.g., an asset moves from the <code>logistics</code> chain to the <code>finance</code> chain), HieraChain uses the <strong>Two-Phase Commit (2PC)</strong> protocol to guarantee atomicity. Either both chains commit the change, or both roll back — no partial state is possible.</p>
+<p>When a business operation needs to atomically span two Sub-Chains (e.g., an asset moves from the <code>logistics</code> chain to the <code>finance</code> chain), HieraChain uses the <strong>Two-Phase Commit (2PC)</strong> protocol to guarantee atomicity. Either both chains commit the change, or both roll back. No partial state is possible.</p>
 <p><strong>Example real-world trigger</strong>: An inventory item is transferred between departments. The source chain records a <code>deduct</code> event; the destination chain records a <code>receive</code> event. Both must succeed or neither applies.</p>
 <hr />
-<h2 id="flow-diagram-happy-path">Flow Diagram — Happy Path</h2>
+<h2 id="flow-diagram-happy-path">Flow Diagram: Happy Path</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant HM as 🏛️ HierarchyManager
@@ -4495,7 +4495,7 @@
 
     TM--&gt;&gt;HM: op_id (COMMITTED)</code></pre>
 <hr />
-<h2 id="flow-diagram-failure-paths">Flow Diagram — Failure Paths</h2>
+<h2 id="flow-diagram-failure-paths">Flow Diagram: Failure Paths</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant TM as 🔄 CrossChainOperationManager
@@ -4546,11 +4546,11 @@
 <td style="text-align: left;"><code>HierarchyManager</code> creates a <code>CrossChainTransaction</code> with UUID and <code>state=PENDING</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>2. Phase 1 — Prepare SRC</strong></td>
+<td style="text-align: left;"><strong>2. Phase 1: Prepare SRC</strong></td>
 <td style="text-align: left;">Source chain locks resources, validates payload schema</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>3. Phase 1 — Prepare DST</strong></td>
+<td style="text-align: left;"><strong>3. Phase 1: Prepare DST</strong></td>
 <td style="text-align: left;">Destination chain checks capacity and constraints</td>
 </tr>
 <tr>
@@ -4558,11 +4558,11 @@
 <td style="text-align: left;">If both return <code>True</code>: state → <code>PREPARED</code>. If either fails: immediate rollback on both</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>5. Phase 2 — Commit SRC</strong></td>
+<td style="text-align: left;"><strong>5. Phase 2: Commit SRC</strong></td>
 <td style="text-align: left;">Source chain finalizes the operation (emits event via Event Submission)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>6. Phase 2 — Commit DST</strong></td>
+<td style="text-align: left;"><strong>6. Phase 2: Commit DST</strong></td>
 <td style="text-align: left;">Destination chain finalizes (emits event via Event Submission)</td>
 </tr>
 <tr>
@@ -4645,8 +4645,8 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././event-submission/">Event Submission</a> — each <code>commit_transaction()</code> internally calls <code>add_event()</code></li>
-<li><a href=".././error-recovery/">Error Mitigation</a> — handles state rollback at the system level</li>
+<li><a href=".././event-submission/">Event Submission</a>: each <code>commit_transaction()</code> internally calls <code>add_event()</code></li>
+<li><a href=".././error-recovery/">Error Mitigation</a>: handles state rollback at the system level</li>
 </ul>
 
 

@@ -4457,7 +4457,7 @@
 
 <h1 id="neo-giu-bang-chung-proof-anchoring">Neo giữ Bằng chứng (Proof Anchoring)</h1>
 <h2 id="tong-quan">Tổng quan</h2>
-<p>Sau khi một khối được hoàn tất trên Chuỗi con (Sub-Chain), Chuỗi con sẽ gửi một <strong>bằng chứng mã hóa</strong> (hash + bằng chứng ZK tùy chọn) lên Chuỗi chính (Main Chain). Chuỗi chính chỉ lưu trữ bằng chứng này — không bao giờ lưu dữ liệu sự kiện thô. Cơ chế này giúp đảm bảo tính bất biến toàn cục mà không cần lưu trữ dữ liệu miền nhạy cảm trên chuỗi gốc.</p>
+<p>Sau khi một khối được hoàn tất trên Chuỗi con (Sub-Chain), Chuỗi con sẽ gửi một <strong>bằng chứng mã hóa</strong> (hash + bằng chứng ZK tùy chọn) lên Chuỗi chính (Main Chain). Chuỗi chính chỉ lưu trữ bằng chứng này, không bao giờ lưu dữ liệu sự kiện thô. Cơ chế này giúp đảm bảo tính bất biến toàn cục mà không cần lưu trữ dữ liệu miền nhạy cảm trên chuỗi gốc.</p>
 <p>Đây là một <strong>cơ chế kích hoạt sau khối (post-block trigger)</strong>, không phải là một lệnh do người dùng yêu cầu. Lệnh này tự động kích hoạt khi <code>chain_length % proof_interval == 0</code>.</p>
 <hr />
 <h2 id="bieu-o-luong">Biểu đồ luồng</h2>
@@ -4586,7 +4586,7 @@
 </tr>
 <tr>
 <td style="text-align: left;">Ghi lên Chuỗi chính thất bại</td>
-<td style="text-align: left;">Ghi nhật ký ngoại lệ, không cập nhật <code>last_proof_submission</code> — thử lại ở khối tiếp theo</td>
+<td style="text-align: left;">Ghi nhật ký ngoại lệ, không cập nhật <code>last_proof_submission</code>; thử lại ở khối tiếp theo</td>
 </tr>
 <tr>
 <td style="text-align: left;">Xác thực ZK trên Chuỗi chính thất bại</td>
@@ -4635,8 +4635,8 @@
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././event-submission/">Gửi Sự kiện</a> — luồng công việc kích hoạt quy trình này</li>
-<li><a href=".././integrity-validation/">Xác thực Tính toàn vẹn</a> — kiểm tra tính nhất quán của bằng chứng giữa Chuỗi con và Chuỗi chính</li>
+<li><a href=".././event-submission/">Gửi Sự kiện</a>: luồng công việc kích hoạt quy trình này</li>
+<li><a href=".././integrity-validation/">Xác thực Tính toàn vẹn</a>: kiểm tra tính nhất quán của bằng chứng giữa Chuỗi con và Chuỗi chính</li>
 </ul>
 
 

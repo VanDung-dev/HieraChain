@@ -4428,11 +4428,11 @@
 <p>Mô tả các cơ chế Consensus và Ordering Service được HieraChain sử dụng để đảm bảo tính toàn vẹn, thứ tự và khả năng xác minh của Block/Event.</p>
 <h2 id="kien-truc-khai-niem">Kiến trúc &amp; khái niệm</h2>
 <ul>
-<li>Base Consensus: <code>hierachain/consensus/base_consensus.py</code> — Giao diện/khung cơ bản cho các thuật toán đồng thuận.</li>
-<li>Proof of Authority (PoA): <code>hierachain/consensus/proof_of_authority.py</code> — Đồng thuận Nội bộ Tổ chức (1 MainChain quản lý các Sub-Chains thuộc phân khu nội bộ).</li>
-<li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code> — Đồng thuận Liên minh Ngang hàng giữa các MainChain độc lập (Consortium không cần RootChain trung tâm).</li>
-<li>BFT Consensus: <code>hierachain/consensus/bft/</code> — Chống lỗi Byzantine ở lớp phân cấp.</li>
-<li>Ordering Service: <code>hierachain/consensus/ordering/</code> — Sắp xếp Event trước khi đóng Block; kiến trúc đa thành phần (Processor, Certifier, BlockBuilder).</li>
+<li>Base Consensus: <code>hierachain/consensus/base_consensus.py</code>, giao diện/khung cơ bản cho các thuật toán đồng thuận.</li>
+<li>Proof of Authority (PoA): <code>hierachain/consensus/proof_of_authority.py</code>, đồng thuận Nội bộ Tổ chức (1 MainChain quản lý các Sub-Chains thuộc phân khu nội bộ).</li>
+<li>Proof of Federation (PoF): <code>hierachain/consensus/proof_of_federation.py</code>, đồng thuận Liên minh Ngang hàng giữa các MainChain độc lập (Consortium không cần RootChain trung tâm).</li>
+<li>BFT Consensus: <code>hierachain/consensus/bft/</code>, chống lỗi Byzantine ở lớp phân cấp.</li>
+<li>Ordering Service: <code>hierachain/consensus/ordering/</code>, sắp xếp Event trước khi đóng Block; kiến trúc đa thành phần (Processor, Certifier, BlockBuilder).</li>
 </ul>
 <h3 id="luong-ien-hinh">Luồng điển hình</h3>
 <pre class="mermaid"><code>sequenceDiagram

@@ -4506,7 +4506,7 @@
 <p>Khi Node khởi động lại sau một sự cố không mong muốn (Crash), hệ thống tự động kiểm tra thư mục Log (mặc định <code>data/journal/current.log</code>). Node sẽ tự gọi vòng lặp qua phương thức <code>replay()</code> để phát lại chuỗi RecordBatch và khôi phục mảng sự kiện vào bộ nhớ (MemPool hoặc World State) một cách đầy đủ.</p>
 <hr />
 <h2 id="2-quan-ly-rollback-state-rollbackmanager">2. Quản lý Rollback State (<code>RollbackManager</code>)</h2>
-<p>Trong trường hợp rủi cấu ro lớn hơn — như dữ liệu phân vùng hoặc nâng cấp (upgrade) nhầm lẫn — hệ thống cho phép "lùi" toàn bộ trạng thái về một mốc an toàn.</p>
+<p>Trong trường hợp rủi cấu ro lớn hơn, như dữ liệu phân vùng hoặc nâng cấp (upgrade) nhầm lẫn, hệ thống cho phép "lùi" toàn bộ trạng thái về một mốc an toàn.</p>
 <p><code>RollbackManager</code> sẽ lưu lại các điểm trạng thái hệ thống:</p>
 <ul>
 <li><strong>Configuration State</strong>: Cấu hình file YAML, JSON, PY.</li>

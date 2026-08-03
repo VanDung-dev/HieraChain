@@ -4397,42 +4397,42 @@
 <li>
 <p><strong>Authorization &amp; Access Control</strong>: </p>
 <ul>
-<li><code>hierachain/security/{msp.py, identity.py}</code> — quản lý Organization, User, Role, và PKI Identity.</li>
-<li><code>hierachain/security/policy_engine.py</code> — kiểm soát quyền (ABAC).</li>
-<li><code>hierachain/security/verify/api_key_verifier.py</code> — xác thực API key.</li>
+<li><code>hierachain/security/{msp.py, identity.py}</code>: quản lý Organization, User, Role, và PKI Identity.</li>
+<li><code>hierachain/security/policy_engine.py</code>: kiểm soát quyền (ABAC).</li>
+<li><code>hierachain/security/verify/api_key_verifier.py</code>: xác thực API key.</li>
 </ul>
 </li>
 <li>
 <p><strong>Lockdown &amp; Logging</strong>: </p>
 <ul>
-<li><code>hierachain/security/secure_logging.py</code> — Tamper-evident log, che mờ dữ liệu PII.</li>
-<li><code>hierachain/cluster/lockdown_protocol.py</code> — Phong tỏa (Lockdown) khẩn cấp bằng Quorum (chứa lớp <code>ClusterLockdownManager</code>).</li>
+<li><code>hierachain/security/secure_logging.py</code>: Tamper-evident log, che mờ dữ liệu PII.</li>
+<li><code>hierachain/cluster/lockdown_protocol.py</code>: Phong tỏa (Lockdown) khẩn cấp bằng Quorum (chứa lớp <code>ClusterLockdownManager</code>).</li>
 </ul>
 </li>
 <li>
 <p><strong>Fault-tolerance &amp; Integrity</strong>: </p>
 <ul>
-<li><code>hierachain/security/resource_guard.py</code> — Lá chắn thép chống DoS/DDoS tải cao.</li>
-<li><code>hierachain/security/integrity.py</code> — Quét chữ ký checksum các tệp khởi động.</li>
+<li><code>hierachain/security/resource_guard.py</code>: Lá chắn thép chống DoS/DDoS tải cao.</li>
+<li><code>hierachain/security/integrity.py</code>: Quét chữ ký checksum các tệp khởi động.</li>
 </ul>
 </li>
 <li>
 <p><strong>Risk Analyzer</strong>: </p>
 <ul>
-<li><code>hierachain/risk_management/risk_analyzer.py</code> — Theo dõi chỉ báo dị thường Z-score.</li>
-<li><code>hierachain/security/sanitization.py</code> — Chống injection đầu vào.</li>
+<li><code>hierachain/risk_management/risk_analyzer.py</code>: Theo dõi chỉ báo dị thường Z-score.</li>
+<li><code>hierachain/security/sanitization.py</code>: Chống injection đầu vào.</li>
 </ul>
 </li>
 <li>
 <p><strong>Encryption &amp; Keys</strong>: </p>
 <ul>
-<li><code>hierachain/security/{key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}</code> — AES-GCM, Ed25519 và vòng đời X.509 cho mTLS.</li>
+<li><code>hierachain/security/{key_manager.py, key_provider.py, key_backup_manager.py, certificate.py}</code>: AES-GCM, Ed25519 và vòng đời X.509 cho mTLS.</li>
 </ul>
 </li>
 <li>
 <p><strong>Decentralized Zero-Knowledge Proofs</strong>:</p>
 <ul>
-<li><code>hierachain/security/zk_prover.py</code> &amp; <code>hierachain/security/verify/zk_verifier.py</code> — Triển khai Zero-Knowledge proofs cho Sub-Chains ẩn danh dữ liệu thật.</li>
+<li><code>hierachain/security/zk_prover.py</code> &amp; <code>hierachain/security/verify/zk_verifier.py</code>: Triển khai Zero-Knowledge proofs cho Sub-Chains ẩn danh dữ liệu thật.</li>
 </ul>
 </li>
 </ul>

@@ -1481,7 +1481,7 @@
   <a href="#flow-diagram-3-phase-pbft" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — 3-Phase PBFT
+        Flow Diagram: 3-Phase PBFT
       </span>
     </span>
   </a>
@@ -1492,7 +1492,7 @@
   <a href="#flow-diagram-view-change-leader-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — View Change (Leader Failure)
+        Flow Diagram: View Change (Leader Failure)
       </span>
     </span>
   </a>
@@ -4351,7 +4351,7 @@
   <a href="#flow-diagram-3-phase-pbft" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — 3-Phase PBFT
+        Flow Diagram: 3-Phase PBFT
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#flow-diagram-view-change-leader-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Flow Diagram — View Change (Leader Failure)
+        Flow Diagram: View Change (Leader Failure)
       </span>
     </span>
   </a>
@@ -4461,7 +4461,7 @@
 <p>For PoA and PoF consensus flows, see <a href=".././consensus_mechanisms/">Consensus Mechanisms</a>.</p>
 <p><strong>Requirement</strong>: Minimum 4 nodes to tolerate 1 Byzantine failure (n=4, f=1: 3×1+1=4).</p>
 <hr />
-<h2 id="flow-diagram-3-phase-pbft">Flow Diagram — 3-Phase PBFT</h2>
+<h2 id="flow-diagram-3-phase-pbft">Flow Diagram: 3-Phase PBFT</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant OS as ⚙️ OrderingService
@@ -4501,7 +4501,7 @@
         L-&gt;&gt;OS: Block committed → push to commit_queue
     end</code></pre>
 <hr />
-<h2 id="flow-diagram-view-change-leader-failure">Flow Diagram — View Change (Leader Failure)</h2>
+<h2 id="flow-diagram-view-change-leader-failure">Flow Diagram: View Change (Leader Failure)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant ledger as 🖥️ Validator 1
@@ -4651,9 +4651,9 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././consensus_mechanisms/">Consensus Mechanisms</a> — PoA and PoF details</li>
-<li><a href=".././event-submission/">Event Submission</a> — BFT replaces the <code>finalize_block()</code> step</li>
-<li><a href=".././error-recovery/">Error Mitigation</a> — handles leader failure recovery at system level</li>
+<li><a href=".././consensus_mechanisms/">Consensus Mechanisms</a>: PoA and PoF details</li>
+<li><a href=".././event-submission/">Event Submission</a>: BFT replaces the <code>finalize_block()</code> step</li>
+<li><a href=".././error-recovery/">Error Mitigation</a>: handles leader failure recovery at system level</li>
 </ul>
 
 

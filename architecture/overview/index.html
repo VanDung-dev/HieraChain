@@ -4423,11 +4423,11 @@
 </ul>
 <h3 id="key-components">Key Components</h3>
 <ul>
-<li>Main Chain: <code>hierachain/hierarchical/main_chain/base.py</code> — Stores and verifies proofs from Sub-Chains, aggregates integrity reports.</li>
-<li>Sub-Chain: <code>hierachain/hierarchical/sub_chain/base.py</code> — Records domain events, orders/packages into blocks, generates proofs and sends to Main Chain.</li>
-<li>Hierarchy Manager: <code>hierachain/hierarchical/hierarchy_manager/base.py</code> — Coordinates multi-chain system, manages Sub-Chain lifecycle, automatic proof submission, cross-chain verification.</li>
-<li>IPFS Storage (Off-chain): <code>hierachain/api/storage/ipfs_client.py</code> — Stores large or sensitive business data off-chain, only anchors CID on Blockchain.</li>
-<li>Ordering Service: <code>hierachain/consensus/ordering/service.py</code> — Event ordering component before block creation (integrated and initialized by Sub-Chain).</li>
+<li>Main Chain: <code>hierachain/hierarchical/main_chain/base.py</code>, stores and verifies proofs from Sub-Chains, aggregates integrity reports.</li>
+<li>Sub-Chain: <code>hierachain/hierarchical/sub_chain/base.py</code>, records domain events, orders/packages into blocks, generates proofs and sends to Main Chain.</li>
+<li>Hierarchy Manager: <code>hierachain/hierarchical/hierarchy_manager/base.py</code>, coordinates multi-chain system, manages Sub-Chain lifecycle, automatic proof submission, cross-chain verification.</li>
+<li>IPFS Storage (Off-chain): <code>hierachain/api/storage/ipfs_client.py</code>, stores large or sensitive business data off-chain, only anchors CID on Blockchain.</li>
+<li>Ordering Service: <code>hierachain/consensus/ordering/service.py</code>, event ordering component before block creation (integrated and initialized by Sub-Chain).</li>
 </ul>
 <h3 id="typical-flow">Typical Flow</h3>
 <pre class="mermaid"><code>sequenceDiagram
@@ -4444,10 +4444,10 @@
     Main-&gt;&gt;Main: Verify &amp; Store Proof
     Main--&gt;&gt;Sub: Acknowledge</code></pre>
 <ol>
-<li>Record Event → Create Block (Sub-Chain) — Event is received by <code>SubChain.add_event()</code>, passed through internal Ordering, batched into Block and <code>finalize_block()</code> when conditions are met.</li>
-<li>Submit Proof to Main Chain — <code>SubChain.submit_proof_to_main()</code> generates Proof (e.g. from Merkle root/block hash), sends <code>MainChain.add_proof()</code> for anchoring.</li>
-<li>Global Reporting — Main Chain aggregates <code>get_main_chain_stats()</code> and statistics per Sub-Chain.</li>
-<li>System Coordination — <code>HierarchyManager</code> supports periodic proof submission (<code>configure_auto_proof_submission</code>), synchronization, and cross-chain consistency checks.</li>
+<li>Record Event → Create Block (Sub-Chain): event is received by <code>SubChain.add_event()</code>, passed through internal Ordering, batched into Block and <code>finalize_block()</code> when conditions are met.</li>
+<li>Submit Proof to Main Chain: <code>SubChain.submit_proof_to_main()</code> generates Proof (e.g. from Merkle root/block hash), sends <code>MainChain.add_proof()</code> for anchoring.</li>
+<li>Global Reporting: Main Chain aggregates <code>get_main_chain_stats()</code> and statistics per Sub-Chain.</li>
+<li>System Coordination: <code>HierarchyManager</code> supports periodic proof submission (<code>configure_auto_proof_submission</code>), synchronization, and cross-chain consistency checks.</li>
 </ol>
 <h2 id="related">Related</h2>
 <ul>

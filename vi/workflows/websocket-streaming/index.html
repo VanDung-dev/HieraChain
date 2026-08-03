@@ -1684,7 +1684,7 @@
   <a href="#bieu-o-luong-vong-oi-ket-noi-phat-tin-broadcast" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Vòng đời Kết nối &amp; Phát tin (Broadcast)
+        Biểu đồ luồng: Vòng đời Kết nối &amp; Phát tin (Broadcast)
       </span>
     </span>
   </a>
@@ -1695,7 +1695,7 @@
   <a href="#bieu-o-luong-vong-lap-ping-don-dep-ket-noi-rac" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Vòng lặp Ping / Dọn dẹp kết nối rác
+        Biểu đồ luồng: Vòng lặp Ping / Dọn dẹp kết nối rác
       </span>
     </span>
   </a>
@@ -4351,7 +4351,7 @@
   <a href="#bieu-o-luong-vong-oi-ket-noi-phat-tin-broadcast" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Vòng đời Kết nối &amp; Phát tin (Broadcast)
+        Biểu đồ luồng: Vòng đời Kết nối &amp; Phát tin (Broadcast)
       </span>
     </span>
   </a>
@@ -4362,7 +4362,7 @@
   <a href="#bieu-o-luong-vong-lap-ping-don-dep-ket-noi-rac" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Biểu đồ luồng — Vòng lặp Ping / Dọn dẹp kết nối rác
+        Biểu đồ luồng: Vòng lặp Ping / Dọn dẹp kết nối rác
       </span>
     </span>
   </a>
@@ -4460,7 +4460,7 @@
 <p>HieraChain tự động đẩy các thông báo về khối mới và sự kiện mới phát sinh tới các máy khách (clients) đang kết nối trong thời gian thực thông qua kết nối WebSocket. Các máy khách có thể chọn đăng ký theo dõi toàn bộ chuỗi cụ thể hoặc theo các loại sự kiện nhất định. Một quy trình vòng lặp ping chạy nền (background ping loop) sẽ giám sát để phát hiện các kết nối rác, mất mạng và tự động giải phóng chúng.</p>
 <p><code>WebSocketManager</code> được triển khai dưới dạng <strong>mẫu thiết kế Singleton</strong> (<code>ws_manager</code>) dùng chung cho toàn bộ các định tuyến API để quản lý đăng ký kết nối tập trung tại một nơi duy nhất.</p>
 <hr />
-<h2 id="bieu-o-luong-vong-oi-ket-noi-phat-tin-broadcast">Biểu đồ luồng — Vòng đời Kết nối &amp; Phát tin (Broadcast)</h2>
+<h2 id="bieu-o-luong-vong-oi-ket-noi-phat-tin-broadcast">Biểu đồ luồng: Vòng đời Kết nối &amp; Phát tin (Broadcast)</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant Client as 🖥️ Trình duyệt / SDK Client
@@ -4489,7 +4489,7 @@
         WSM-&gt;&gt;Client: send_text(JSON { type: "block_added", data: block_data })
     end</code></pre>
 <hr />
-<h2 id="bieu-o-luong-vong-lap-ping-don-dep-ket-noi-rac">Biểu đồ luồng — Vòng lặp Ping / Dọn dẹp kết nối rác</h2>
+<h2 id="bieu-o-luong-vong-lap-ping-don-dep-ket-noi-rac">Biểu đồ luồng: Vòng lặp Ping / Dọn dẹp kết nối rác</h2>
 <pre class="mermaid"><code>sequenceDiagram
     autonumber
     participant BG as 🔄 PingLoopRunner (chạy nền)
@@ -4664,8 +4664,8 @@
 <hr />
 <h2 id="lien-quan">Liên quan</h2>
 <ul>
-<li><a href=".././event-submission/">Gửi Sự kiện</a> — Kích hoạt <code>broadcast_new_block()</code> sau khi khối mới được cam kết thành công</li>
-<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a> — Các thông báo cảnh báo cũng được đẩy thời gian thực qua kênh WebSocket này</li>
+<li><a href=".././event-submission/">Gửi Sự kiện</a>: Kích hoạt <code>broadcast_new_block()</code> sau khi khối mới được cam kết thành công</li>
+<li><a href=".././risk-alerts/">Cảnh báo Rủi ro</a>: Các thông báo cảnh báo cũng được đẩy thời gian thực qua kênh WebSocket này</li>
 </ul>
 
 

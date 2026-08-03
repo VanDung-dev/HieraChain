@@ -4697,15 +4697,15 @@
     Main--&gt;&gt;Sub: Confirm
     API--&gt;&gt;Client: 200 OK (Proof ID)</code></pre>
 <ul>
-<li>GET <code>/api/ledger/health</code> — Health check.</li>
-<li>GET <code>/api/ledger/chains</code> — List Main Chain and all Sub-Chains.</li>
-<li>POST <code>/api/ledger/chains/{chain_name}/create</code> — Create a new Sub-Chain (auto-creates Main Chain if not exists).</li>
-<li>POST <code>/api/ledger/chains/{chain_name}/events</code> — Add an event to a Sub-Chain.</li>
-<li>POST <code>/api/ledger/chains/{chain_name}/submit-proof</code> — Submit proof from Sub-Chain to Main Chain.</li>
-<li>GET <code>/api/ledger/chains/{chain_name}/stats</code> — Get chain statistics.</li>
-<li>GET <code>/api/ledger/chains/{chain_name}/blocks?limit=10&amp;offset=0&amp;resolve_cid=false</code> — Get block list (paginated). If <code>resolve_cid=true</code>, automatically load detailed data from IPFS.</li>
-<li>GET <code>/api/ledger/chains/{chain_name}/blocks/{index_or_hash}</code> — Get details of a specific block.</li>
-<li>GET <code>/api/ledger/entities/{entity_id}/trace[?chain_name=...&amp;resolve_cid=false]</code> — Trace events. If <code>resolve_cid=true</code>, decrypt event details from IPFS.</li>
+<li>GET <code>/api/ledger/health</code>: Health check.</li>
+<li>GET <code>/api/ledger/chains</code>: List Main Chain and all Sub-Chains.</li>
+<li>POST <code>/api/ledger/chains/{chain_name}/create</code>: Create a new Sub-Chain (auto-creates Main Chain if not exists).</li>
+<li>POST <code>/api/ledger/chains/{chain_name}/events</code>: Add an event to a Sub-Chain.</li>
+<li>POST <code>/api/ledger/chains/{chain_name}/submit-proof</code>: Submit proof from Sub-Chain to Main Chain.</li>
+<li>GET <code>/api/ledger/chains/{chain_name}/stats</code>: Get chain statistics.</li>
+<li>GET <code>/api/ledger/chains/{chain_name}/blocks?limit=10&amp;offset=0&amp;resolve_cid=false</code>: Get block list (paginated). If <code>resolve_cid=true</code>, automatically load detailed data from IPFS.</li>
+<li>GET <code>/api/ledger/chains/{chain_name}/blocks/{index_or_hash}</code>: Get details of a specific block.</li>
+<li>GET <code>/api/ledger/entities/{entity_id}/trace[?chain_name=...&amp;resolve_cid=false]</code>: Trace events. If <code>resolve_cid=true</code>, decrypt event details from IPFS.</li>
 </ul>
 <h2 id="main-schemas-from-hierachainapiledgerschemaspy">Main Schemas (from <code>hierachain/api/ledger/schemas.py</code>)</h2>
 <ul>
@@ -4830,11 +4830,11 @@
 </code></pre></div>
 <h2 id="status-codes-common-errors">Status Codes &amp; Common Errors</h2>
 <ul>
-<li>200 OK — Success for most GET/POST cases.</li>
-<li>201 Created — Sub-Chain created successfully.</li>
-<li>400 Bad Request — Invalid <code>chain_name</code> when creating (only allows <code>[a-zA-Z0-9_\-]</code>).</li>
-<li>404 Not Found — Chain or sub-chain not found.</li>
-<li>500 Internal Server Error — Internal processing error (e.g., error when listing chains, adding events, submitting proofs, statistics, or retrieving blocks).</li>
+<li>200 OK: Success for most GET/POST cases.</li>
+<li>201 Created: Sub-Chain created successfully.</li>
+<li>400 Bad Request: Invalid <code>chain_name</code> when creating (only allows <code>[a-zA-Z0-9_\-]</code>).</li>
+<li>404 Not Found: Chain or sub-chain not found.</li>
+<li>500 Internal Server Error: Internal processing error (e.g., error when listing chains, adding events, submitting proofs, statistics, or retrieving blocks).</li>
 </ul>
 <h2 id="implementation-notes-abbreviated-from-endpointspy">Implementation Notes (abbreviated from <code>endpoints.py</code>)</h2>
 <ul>

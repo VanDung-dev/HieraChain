@@ -4506,7 +4506,7 @@
 <p>When a Node restarts after an unexpected crash, the system automatically checks the Log directory (default <code>data/journal/current.log</code>). The Node automatically iterates through the <code>replay()</code> method to replay RecordBatch sequences and fully restore the event array to memory (MemPool or World State).</p>
 <hr />
 <h2 id="2-rollback-state-management-rollbackmanager">2. Rollback State Management (<code>RollbackManager</code>)</h2>
-<p>In case of larger risks — such as data corruption or mistaken upgrades — the system allows rolling back the entire state to a safe checkpoint.</p>
+<p>In case of larger risks, such as data corruption or mistaken upgrades, the system allows rolling back the entire state to a safe checkpoint.</p>
 <p><code>RollbackManager</code> saves system state checkpoints:</p>
 <ul>
 <li><strong>Configuration State</strong>: YAML, JSON, PY configuration files.</li>

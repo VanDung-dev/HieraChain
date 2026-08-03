@@ -4457,7 +4457,7 @@
 
 <h1 id="proof-anchoring">Proof Anchoring</h1>
 <h2 id="overview">Overview</h2>
-<p>After a block is finalized on a Sub-Chain, the Sub-Chain submits a <strong>cryptographic proof</strong> (hash + optional ZK proof) to the Main Chain. The Main Chain stores only the proof — never raw event data. This is how global immutability is enforced without storing sensitive domain data on the root chain.</p>
+<p>After a block is finalized on a Sub-Chain, the Sub-Chain submits a <strong>cryptographic proof</strong> (hash + optional ZK proof) to the Main Chain. The Main Chain stores only the proof, never raw event data. This is how global immutability is enforced without storing sensitive domain data on the root chain.</p>
 <p>This is a <strong>post-block trigger</strong>, not a user-initiated call. It fires automatically when <code>chain_length % proof_interval == 0</code>.</p>
 <hr />
 <h2 id="flow-diagram">Flow Diagram</h2>
@@ -4586,7 +4586,7 @@
 </tr>
 <tr>
 <td style="text-align: left;">Main Chain write fails</td>
-<td style="text-align: left;">Exception logged, <code>last_proof_submission</code> not updated — retry on next block</td>
+<td style="text-align: left;">Exception logged, <code>last_proof_submission</code> not updated; retry on next block</td>
 </tr>
 <tr>
 <td style="text-align: left;">Main Chain ZK verification fails</td>
@@ -4635,8 +4635,8 @@
 <hr />
 <h2 id="related">Related</h2>
 <ul>
-<li><a href=".././event-submission/">Event Submission</a> — triggers this workflow</li>
-<li><a href=".././integrity-validation/">System Integrity Validation</a> — checks proof consistency between Sub-Chain and Main Chain</li>
+<li><a href=".././event-submission/">Event Submission</a>: triggers this workflow</li>
+<li><a href=".././integrity-validation/">System Integrity Validation</a>: checks proof consistency between Sub-Chain and Main Chain</li>
 </ul>
 
 
