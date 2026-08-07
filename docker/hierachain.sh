@@ -23,8 +23,6 @@ Commands:
 
 Environments:
   docker                Docker Compose (multi-region + WireGuard)
-  podman                Podman Compose
-  lxd                   LXD containers + Ansible (Only Linux)
   k8s                   OrbStack Kubernetes
 
 Options:
@@ -35,8 +33,7 @@ Options:
 
 Examples:
   bash docker/hierachain.sh setup docker
-  bash docker/hierachain.sh setup lxd
-  bash docker/hierachain.sh stress podman --reuse --duration 120
+  bash docker/hierachain.sh stress docker --reuse --duration 120
   bash docker/hierachain.sh down k8s
 EOF
   exit 1
@@ -55,12 +52,6 @@ while [ $# -gt 0 ]; do
     *)             echo "Unknown option: $1"; usage ;;
   esac
 done
-
-if [ "$ENV" = "lxd" ] && [ "$(uname -s)" != "Linux" ]; then
-  echo "ERROR: LXD environment is only supported on Linux OS (got $(uname -s))."
-  echo "Use 'docker', 'podman', or 'k8s' on non-Linux operating systems."
-  exit 1
-fi
 
 init_env "$ENV"
 check_prereqs

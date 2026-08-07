@@ -1,3 +1,0 @@
----
-- import_playbook: playbook.base.yml
-- import_playbook: playbook.nodes.yml
