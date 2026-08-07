@@ -19,6 +19,7 @@ RUN python3 -m venv /app/.venv && \
     /app/.venv/bin/pip install --no-cache-dir --upgrade pip
 COPY docker/dist/hierachain-*.whl /tmp/
 RUN /app/.venv/bin/pip install --no-cache-dir /tmp/hierachain-*.whl && \
+    /app/.venv/bin/pip install --no-cache-dir pytest pytest-html pytest-asyncio && \
     rm /tmp/hierachain-*.whl
 
 # Copy runtime files
