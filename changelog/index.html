@@ -4202,6 +4202,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#v010-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.1.0 (2026-08-10)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v006-2026-07-15" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4335,6 +4346,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#v010-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        v0.1.0 (2026-08-10)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v006-2026-07-15" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4434,33 +4456,24 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (114)</summary>
+<summary>Improvements (0)</summary>
+</details>
+<hr />
+<h2 id="v010-2026-08-10">v0.1.0 (2026-08-10)</h2>
+<p>This major milestone release marks the consolidation of HieraChain's core library architecture (<code>hierachain/</code>). Key highlights include complete terminology standardization, dual-tier consensus refinement (PoA for Intra-Org SubChains and PoF for Inter-Org MainChain alliances), integration of high-performance libraries (<code>orjson</code>, <code>uvloop</code>), extensive dead code removal, and API router restructuring.</p>
+<details class="note">
+<summary>Improvements (52)</summary>
 <ul>
-<li>
-<p>2026-08-04</p>
-<ul>
-<li><strong>Docs</strong>: Standardized terminology across all EN/VI docs: renamed "Transaction Journal" → "Event Journal" and "Cross-Chain Transactions" → "Cross-Chain Operations" to align with consensus terminology. Normalized formatting in API references, adjusted outdated descriptions, and fixed minor typos in English and Vietnamese documentation.</li>
-<li><strong>Docs</strong>: Clarified durability in the workflows guide and corrected the workflows guide link in <code>AGENTS.md</code>.</li>
-<li><strong>Chore</strong>: Removed empty <code>version.py</code> from hierarchy units.</li>
-</ul>
-</li>
 <li>
 <p>2026-07-27</p>
 <ul>
-<li><strong>Docs</strong>: Renamed <code>HRC_CONSENSUS_TYPE</code> → <code>HRC_MAINCHAIN_CONSENSUS</code> across all EN/VI docs: consensus_mechanisms, poa, pof, event-submission, overview, cross-chain-2pc, error-recovery. Clarified SubChain defaults to PoA (intra-org), MainChain defaults to PoF (inter-org). Renamed "Cross-Chain Transaction" → "Cross-Chain Operation" (2PC), <code>TransactionJournal</code> → <code>EventJournal</code>, <code>TRANSACTION_SCHEMA</code> → <code>EVENT_SCHEMA</code>. Updated stale import paths and data-schema definitions.</li>
 <li><strong>Consensus</strong>: Introduced <code>HRC_MAINCHAIN_CONSENSUS</code> env var with backward-compatible <code>HRC_CONSENSUS_TYPE</code> alias. <code>MainChain.__init__</code> accepts optional <code>consensus_type</code> parameter. <code>SubChain</code> now defaults to PoA for intra-org domain events, configurable via <code>config["consensus_type"]</code>.</li>
-<li><strong>Testing</strong>: Added unit tests for SubChain consensus initialization: defaults to PoA, stays PoA under global PoF setting, supports explicit PoF override via config dict.</li>
 </ul>
 </li>
 <li>
 <p>2026-07-23</p>
 <ul>
-<li><strong>Testing (Integration)</strong>: Added <code>tests/integration/test_proof_of_federation_mesh.py</code>, a 2-phase integration test proving the PoF inter-MainChain consortium: Phase 1 demonstrates PoA rejection of cross-organizational blocks; Phase 2 confirms 3-node PoF federation consensus (Hospital A, Hospital B, Insurance Z) via Ed25519 multi-signatures and round-robin leadership, without a central RootChain.</li>
 <li><strong>Refactoring</strong>: Moved all inline/late imports (<code>os</code>, <code>sys</code>, <code>time</code>, <code>uuid</code>, <code>asyncio</code>, <code>warnings</code>, <code>httpx</code>, <code>pyarrow</code>, <code>cast</code>) to module-level top-of-file across 14 source files, fully conforming to PEP 8 import ordering.</li>
-<li><strong>Docs</strong>: Redefined <strong>Proof of Authority (PoA)</strong> as <em>Intra-Organization</em> consensus (single MainChain managing internal Sub-Chains) and <strong>Proof of Federation (PoF)</strong> as <em>Inter-Organization P2P MainChain Alliance</em> consensus (no central RootChain required), with architectural comparison tables in both English and Vietnamese docs.</li>
-<li><strong>Docs</strong>: Synchronized all stale file paths in <code>docs/en/</code> against the actual <code>hierachain/</code> package layout: corrected 22 references across <code>architecture/</code>, <code>glossary.md</code>, <code>how-to/</code>, and <code>reference/</code> (e.g. <code>main_chain.py</code> → <code>main_chain/base.py</code>, <code>endpoints.py</code> → <code>router.py</code>, <code>websocket_manager.py</code> → <code>websocket/manager.py</code>).</li>
-<li><strong>Docs</strong>: Added missing <code>docs/vi/reference/code-map.md</code> and <code>docs/vi/how-to/add-endpoint.md</code> to achieve full 1:1 parity between English and Vietnamese documentation trees (both now have 90 <code>.md</code> files).</li>
-<li><strong>Docs (vi)</strong>: Synchronized all updated file paths and PoA/PoF definitions from <code>docs/en/</code> into the full <code>docs/vi/</code> mirror: updated <code>architecture/</code>, <code>glossary.md</code>, <code>how-to/</code>, <code>reference/</code> equivalents.</li>
 </ul>
 </li>
 <li>
@@ -4479,10 +4492,7 @@
 <li>
 <p>2026-07-18</p>
 <ul>
-<li><strong>Testing</strong>: Added JUnit XML reporting support (<code>--junitxml</code>) to Docker, Podman, and Kubernetes stress execution scripts.</li>
-<li><strong>Dependencies</strong>: Cleaned up project dependencies by removing unused packages (<code>pip</code>, <code>vulture</code>, <code>wheel</code>) from dev environments.</li>
 <li><strong>Storage</strong>: Tuned IPFS connection pooling parameters (<code>max_keepalive_connections=50</code>, <code>max_connections=150</code>) to accelerate concurrent block storage.</li>
-<li><strong>Stress</strong>: Added dynamic configuration support via environment variables in <code>test_tsunami_flood.py</code> and implemented resilient HTTP adapter retries on 502/503/504 errors.</li>
 <li><strong>Core</strong>: Resolved critical indexing race conditions in block creation within lock constraints and aligned initial index references.</li>
 <li><strong>Database</strong>: Optimized SQLite adapter by setting database connection timeout to 30.0 seconds to prevent write-lock exceptions under high parallel load.</li>
 </ul>
@@ -4493,15 +4503,6 @@
 <li><strong>Performance</strong>: Replaced <code>json</code> with <code>orjson</code> across the entire codebase (security, risk_management, network, monitoring, privacy, config, CLI, API, and hierachain modules) for faster serialization/deserialization.</li>
 <li><strong>Core</strong>: Added optimized data payload recovery for blocks with direct <code>data</code> column parsing when available.</li>
 <li><strong>Security</strong>: Optimized signature verification with configurable thread pool (CPU count) and extracted <code>_get_verify_key</code> helper for public key decoding.</li>
-<li><strong>Testing</strong>: Extended sleep duration in <code>test_repro_determinism</code> from 0.5s to 1.5s for full service shutdown reliability.</li>
-</ul>
-</li>
-<li>
-<p>2026-07-16</p>
-<ul>
-<li><strong>Testing</strong>: Fixed false positive in term censorship test: skipped docstring examples explaining regex word-boundary matching.</li>
-<li><strong>Documentation</strong>: Added PR description template for merging v0.0.x into main.</li>
-<li><strong>Changelog</strong>: Updated unreleased section with recent developments.</li>
 </ul>
 </li>
 <li>
@@ -4511,43 +4512,10 @@
 </ul>
 </li>
 <li>
-<p>2026-07-11</p>
-<ul>
-<li><strong>Docker</strong>: Added <code>DISABLE_WIREGUARD</code> option to skip WireGuard interface initialization.</li>
-</ul>
-</li>
-<li>
-<p>2026-07-10</p>
-<ul>
-<li><strong>Documentation</strong>: Updated docs for clarity and project structure; enhanced PR template.</li>
-</ul>
-</li>
-<li>
 <p>2026-07-09</p>
 <ul>
 <li><strong>Risk Management</strong>: Improved database connection handling in audit logger.</li>
 <li><strong>Policy</strong>: Fixed Null value evaluation in Arrow <code>StructArray</code>.</li>
-<li><strong>Testing</strong>: Added integration test for cryptocurrency term censorship; added database audit storage integrity tests.</li>
-</ul>
-</li>
-<li>
-<p>2026-07-08</p>
-<ul>
-<li><strong>CI</strong>: Refined issue templates for clarity; added pull request template.</li>
-</ul>
-</li>
-<li>
-<p>2026-07-07</p>
-<ul>
-<li><strong>Infrastructure</strong>: Updated K8s/Podman setup scripts to use <code>uv</code> for Python commands.</li>
-<li><strong>Stress</strong>: Tuned poison pill acceptance rate threshold for better reliability.</li>
-</ul>
-</li>
-<li>
-<p>2026-07-06</p>
-<ul>
-<li><strong>Stress Testing</strong>: Implemented full network stress testing framework (bandwidth, latency, packet loss simulation); added resource monitoring and alerting framework.</li>
-<li><strong>WebSocket</strong>: Enhanced load test reliability.</li>
 </ul>
 </li>
 <li>
@@ -4555,8 +4523,6 @@
 <ul>
 <li><strong>Database</strong>: Enhanced SQL adapter with metadata and merkle root support.</li>
 <li><strong>API</strong>: Renamed API version tags for clarity (<code>v1</code> → <code>ledger</code>, <code>v2</code> → <code>business</code>, <code>v3</code> → <code>admin</code>); updated security testing scripts and health check endpoints accordingly.</li>
-<li><strong>Documentation</strong>: Reorganized API version docs for improved clarity.</li>
-<li><strong>Demo</strong>: Fixed metadata filename in IPFS demo; updated version attribute/import paths.</li>
 </ul>
 </li>
 <li>
@@ -4580,7 +4546,6 @@
 <ul>
 <li><strong>API Routing</strong>: Major refactoring of API routing structure and module names; optimized middleware and WebSocket manager.</li>
 <li><strong>Domains</strong>: Refactored event extraction logic and transaction management; removed generic-level re-export shim.</li>
-<li><strong>Testing</strong>: Updated import paths and test files for new API structure.</li>
 </ul>
 </li>
 <li>
@@ -4594,7 +4559,7 @@
 <li>
 <p>2026-06-24</p>
 <ul>
-<li><strong>Dependencies</strong>: Added <code>vulture</code> for dead code detection; removed <code>tox</code> configuration (migrated to <code>uv</code>).</li>
+<li><strong>Dependencies</strong>: Added <code>vulture</code> for dead code detection.</li>
 </ul>
 </li>
 <li>
@@ -4685,6 +4650,12 @@
 <li><strong>Server</strong>: Modularized middleware and GraphQL handler; optimized server setup; modularized blockchain explorer into components.</li>
 </ul>
 </li>
+</ul>
+</details>
+<details class="warning">
+<summary>Breaking Changes (1)</summary>
+<ul>
+<li><strong>API Routing &amp; Data Schemas</strong>: Restructured API routes into domain-specific namespaces (<code>/api/ledger</code>, <code>/api/business</code>, <code>/api/admin</code>), updated payload key names from <code>transaction_*</code> to <code>event</code> / <code>details</code>, and refactored SDK client namespaces.</li>
 </ul>
 </details>
 <hr />
