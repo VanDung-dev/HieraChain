@@ -1,7 +1,5 @@
 # System Architecture Analysis - HieraChain Enterprise Ledger
 
-*Last updated: 2026-03-21*
-
 ---
 
 ## Overview: What is HieraChain?

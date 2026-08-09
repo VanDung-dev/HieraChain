@@ -169,8 +169,8 @@ Dedicated to performance benchmarking and stability testing:
 Quick start:
 
 ```bash
-docker/setup-docker-compose.sh
-docker/run-stress-docker-compose.sh
+bash docker/hierachain.sh setup docker
+bash docker/hierachain.sh stress docker --reuse
 ```
 
 ---
@@ -214,6 +214,22 @@ python -m scripts.static_analysis
 
 ---
 
+### 📦 Packaging & PyPI Release
+
+Build wheel/sdist packages and upload to PyPI:
+
+```bash
+# Clean previous builds and package with uv
+rm -rf dist/ build/ *.egg-info
+uv build
+
+# Verify package and upload to PyPI
+python -m twine check dist/*
+python -m twine upload dist/*
+```
+
+---
+
 ## Quick Reference
 
 | Task | Command | Details in |
@@ -221,8 +237,10 @@ python -m scripts.static_analysis
 | Install all deps | `uv sync` | This file (Installation section) |
 | Install core + dev | `uv sync --extra dev` | This file (Installation section) |
 | Run API server | `python -m hierachain.api.server` | This file (Running Server section) |
+| Build package | `uv build` | This file (Packaging section) |
+| Publish to PyPI | `python -m twine upload dist/*` | This file (Packaging section) |
 | Run demos | `python demo/demo.py` | [`demo/README.md`](../demo/README.md) |
 | Run tests | `python -m pytest tests/unit -v` | [`tests/README.md`](../tests/README.md) |
-| Stress test (Docker) | `docker/run-stress-docker-compose.sh` | [`docker/README.md`](../docker/README.md) |
+| Stress test (Docker) | `bash docker/hierachain.sh stress docker --reuse` | [`docker/README.md`](../docker/README.md) |
 | Build documentation | `zensical build` | [`docs/README.md`](../docs/README.md) |
 | Static analysis | `python -m scripts.static_analysis` | [`scripts/README.md`](../scripts/README.md) |
