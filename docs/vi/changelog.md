@@ -8,28 +8,23 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (114)"
+??? note "Improvements (0)"
 
-    * 2026-08-04
+---
 
-        * **Tài liệu**: Chuẩn hóa thuật ngữ trên toàn bộ tài liệu EN/VI: đổi tên "Transaction Journal" → "Event Journal" và "Cross-Chain Transactions" → "Cross-Chain Operations" cho nhất quán với thuật ngữ đồng thuận. Chuẩn hóa định dạng trong API references, cập nhật các mô tả lỗi thời và sửa lỗi chính tả nhỏ trong tài liệu tiếng Anh và tiếng Việt.
-        * **Tài liệu**: Làm rõ tính bền vững (durability) trong workflows guide và sửa link dẫn tới workflows guide trong `AGENTS.md`.
-        * **Chore**: Xóa file `version.py` rỗng khỏi các unit trong hierarchy.
+## v0.1.0 (2026-08-10)
+
+Phiên bản cột mốc quan trọng này đánh dấu sự củng cố kiến trúc thư viện cốt lõi của HieraChain (`hierachain/`). Các điểm nổi bật bao gồm chuẩn hóa hoàn toàn thuật ngữ, hoàn thiện cơ chế đồng thuận hai tầng (PoA cho SubChain nội bộ và PoF cho liên minh MainChain inter-org), tích hợp các thư viện hiệu năng cao (`orjson`, `uvloop`), dọn dẹp mã nguồn thừa và tái cấu trúc router API.
+
+??? note "Improvements (52)"
 
     * 2026-07-27
 
-        * **Tài liệu**: Đổi tên `HRC_CONSENSUS_TYPE` → `HRC_MAINCHAIN_CONSENSUS` trên toàn bộ tài liệu EN/VI: consensus_mechanisms, poa, pof, event-submission, overview, cross-chain-2pc, error-recovery. Làm rõ SubChain mặc định PoA (nội bộ), MainChain mặc định PoF (liên minh). Đổi tên "Cross-Chain Transaction" → "Cross-Chain Operation" (2PC), `TransactionJournal` → `EventJournal`, `TRANSACTION_SCHEMA` → `EVENT_SCHEMA`. Cập nhật đường dẫn import lỗi thời và định nghĩa data-schema.
         * **Đồng thuận**: Giới thiệu biến môi trường `HRC_MAINCHAIN_CONSENSUS` với bí danh tương thích ngược `HRC_CONSENSUS_TYPE`. `MainChain.__init__` chấp nhận tham số `consensus_type` tùy chọn. `SubChain` mặc định sử dụng PoA cho sự kiện nội bộ, có thể cấu hình qua `config["consensus_type"]`.
-        * **Kiểm thử**: Thêm unit test cho khởi tạo consensus của SubChain: mặc định là PoA, giữ PoA khi cấu hình toàn cục PoF, hỗ trợ ghi đè PoF rõ ràng qua config dict.
 
     * 2026-07-23
 
-        * **Kiểm thử (Tích hợp)**: Thêm `tests/integration/test_proof_of_federation_mesh.py`, bài kiểm thử tích hợp 2 pha chứng minh liên minh PoF đa-MainChain: Pha 1 chứng minh PoA từ chối các block từ tổ chức khác; Pha 2 xác nhận đồng thuận liên minh PoF giữa 3 node (Bệnh viện A, Bệnh viện B, Bảo hiểm Z) qua chữ ký đa phương Ed25519 và luân phiên lãnh đạo vòng tròn, không cần RootChain trung tâm.
         * **Tái cấu trúc**: Chuyển toàn bộ import nội tuyến/muộn (`os`, `sys`, `time`, `uuid`, `asyncio`, `warnings`, `httpx`, `pyarrow`, `cast`) lên đầu file (module-level) trên 14 file nguồn, tuân thủ hoàn toàn PEP 8 về thứ tự import.
-        * **Tài liệu**: Định nghĩa lại **Proof of Authority (PoA)** là giao thức đồng thuận *Nội bộ Tổ chức* (một MainChain quản lý các Sub-Chain nội bộ) và **Proof of Federation (PoF)** là giao thức đồng thuận *Liên minh P2P giữa các MainChain độc lập* (không cần RootChain trung tâm), kèm bảng so sánh kiến trúc trong cả tài liệu tiếng Anh và tiếng Việt.
-        * **Tài liệu**: Đồng bộ hóa toàn bộ đường dẫn file lỗi thời trong `docs/en/` với cấu trúc thực tế của gói `hierachain/`: sửa 22 tham chiếu trong `architecture/`, `glossary.md`, `how-to/`, `reference/` (ví dụ: `main_chain.py` → `main_chain/base.py`, `endpoints.py` → `router.py`, `websocket_manager.py` → `websocket/manager.py`).
-        * **Tài liệu**: Bổ sung các file còn thiếu `docs/vi/reference/code-map.md` và `docs/vi/how-to/add-endpoint.md` để đạt tương đương 1:1 hoàn toàn giữa cây tài liệu tiếng Anh và tiếng Việt (cả hai đều có 90 file `.md`).
-        * **Tài liệu (vi)**: Đồng bộ hóa toàn bộ đường dẫn file và định nghĩa PoA/PoF đã cập nhật từ `docs/en/` sang toàn bộ bản gương `docs/vi/`: cập nhật các file tương đương trong `architecture/`, `glossary.md`, `how-to/`, `reference/`.
 
     * 2026-07-22
 
@@ -44,10 +39,7 @@ icon: material/history
 
     * 2026-07-18
 
-        * **Kiểm thử**: Thêm hỗ trợ xuất báo cáo XML JUnit (`--junitxml`) cho các script chạy stress test trên Docker, Podman và Kubernetes.
-        * **Dependencies**: Dọn dẹp các thư viện dependencies không sử dụng (`pip`, `vulture`, `wheel`) khỏi môi trường development.
         * **Lưu trữ**: Tối ưu hóa giới hạn connection pool của IPFS (`max_keepalive_connections=50`, `max_connections=150`) giúp đẩy nhanh tốc độ upload/download đồng thời.
-        * **Stress**: Hỗ trợ cấu hình động qua biến môi trường trong `test_tsunami_flood.py` và triển khai cơ chế tự động thử lại (HTTP retries) khi gặp lỗi cổng kết nối 502/503/504.
         * **Core**: Khắc phục lỗi tranh chấp chỉ mục (race conditions) khi tạo block đồng thời bằng cách đưa các phép tính hash và index vào phạm vi Lock.
         * **Database**: Tối ưu hóa SQLite Adapter bằng cách tăng thời gian timeout kết nối cơ sở dữ liệu lên 30.0 giây, loại bỏ lỗi khóa ghi (database lock) dưới tải song song cực lớn.
 
@@ -56,152 +48,123 @@ icon: material/history
         * **Hiệu năng**: Thay thế `json` bằng `orjson` trên toàn bộ codebase (security, risk_management, network, monitoring, privacy, config, CLI, API và hierachain modules) cho serialization/deserialization nhanh hơn.
         * **Core**: Thêm tính năng phục hồi dữ liệu payload block tối ưu với phân tích cột `data` trực tiếp khi khả dụng.
         * **Bảo mật**: Tối ưu xác minh chữ ký với thread pool cấu hình được (CPU count) và tách `_get_verify_key` helper để giải mã public key.
-        * **Kiểm thử**: Kéo dài thời gian sleep trong `test_repro_determinism` từ 0.5s lên 1.5s cho độ tin cậy shutdown cao hơn.
-
-    * 2026-07-16
-
-        * **Kiểm thử**: Sửa false positive trong term censorship test: bỏ qua docstring examples giải thích regex word-boundary matching.
-        * **Tài liệu**: Thêm PR description template cho việc merge v0.0.x vào main.
-        * **Changelog**: Cập nhật unreleased section với các phát triển gần đây.
 
     * 2026-07-12
 
-        * **Network**: Sửa lỗi giải mã public key seed node với xử lý đặc biệt cho ký tự `$$`.
-
-    * 2026-07-11
-
-        * **Docker**: Thêm tùy chọn `DISABLE_WIREGUARD` để bỏ qua khởi tạo giao diện WireGuard.
-
-    * 2026-07-10
-
-        * **Tài liệu**: Cập nhật tài liệu cho rõ ràng và cấu trúc dự án; cải thiện PR template.
+        * **Mạng**: Sửa giải mã public key của seed node với xử lý đặc biệt cho ký tự phân cách `$$`.
 
     * 2026-07-09
 
-        * **Risk Management**: Cải thiện xử lý kết nối database trong audit logger.
-        * **Policy**: Sửa lỗi đánh giá giá trị Null trong Arrow `StructArray`.
-        * **Kiểm thử**: Thêm integration test cho kiểm duyệt thuật ngữ cryptocurrency; thêm database audit storage integrity tests.
-
-    * 2026-07-08
-
-        * **CI**: Cải tiến issue templates cho rõ ràng; thêm pull request template.
-
-    * 2026-07-07
-
-        * **Hạ tầng**: Cập nhật script setup K8s/Podman dùng `uv` cho lệnh Python.
-        * **Stress**: Tunning ngưỡng chấp nhận trong poison pill test cho độ tin cậy cao hơn.
-
-    * 2026-07-06
-
-        * **Stress Testing**: Triển khai framework kiểm thử mạng toàn diện (mô phỏng bandwidth, latency, packet loss); thêm framework giám sát tài nguyên và cảnh báo.
-        * **WebSocket**: Cải thiện độ tin cậy của load test.
+        * **Risk Management**: Cải thiện xử lý kết nối cơ sở dữ liệu trong audit logger.
+        * **Policy**: Sửa đánh giá giá trị Null trong Arrow `StructArray`.
 
     * 2026-07-05
 
-        * **Database**: Nâng cấp SQL adapter với hỗ trợ metadata và merkle root.
-        * **API**: Đổi tên API version tags cho rõ ràng (`v1` → `ledger`, `v2` → `business`, `v3` → `admin`); cập nhật security testing scripts và health check endpoints tương ứng.
-        * **Tài liệu**: Tổ chức lại tài liệu API version cho rõ ràng.
-        * **Demo**: Sửa metadata filename trong IPFS demo; cập nhật version attribute/import paths.
+        * **Database**: Nâng cấp SQL adapter hỗ trợ metadata và merkle root.
+        * **API**: Đổi tên các tag phiên bản API (`v1` → `ledger`, `v2` → `business`, `v3` → `admin`); cập nhật script test bảo mật và endpoint kiểm tra sức khỏe tương ứng.
 
     * 2026-07-04
 
-        * **API**: Tái cấu trúc modules API cho bảo mật và bảo trì tốt hơn; dùng background tasks để ghi security events bất đồng bộ.
-        * **Monitoring**: Triển khai module giám sát hiệu suất toàn diện; thêm hệ thống cảnh báo với phát hiện bất thường và thông báo.
-        * **Risk Management**: Triển khai `DatabaseAuditStorage` cho audit logging bền vững.
-        * **Tái cấu trúc**: Xóa deadlock detector và tests liên quan; xóa tham chiếu `sql_backend`; tổ chức lại quản lý version.
+        * **API**: Tái cấu trúc các module API nâng cao bảo mật và khả năng bảo trì; sử dụng background tasks để ghi log sự kiện bảo mật bất đồng bộ.
+        * **Giám sát**: Triển khai module giám sát hiệu năng toàn diện; thêm hệ thống cảnh báo phát hiện bất thường và thông báo.
+        * **Risk Management**: Triển khai `DatabaseAuditStorage` cho lưu trữ audit log bền vững.
+        * **Tái cấu trúc**: Loại bỏ detector phát hiện deadlock và các test liên quan; xóa các tham chiếu `sql_backend`; tổ chức lại quản lý phiên bản.
 
     * 2026-07-02
 
-        * **Storage Migration**: Thay thế `SqlStorageBackend` bằng `SQLiteAdapter`; xóa module storage cũ.
-        * **Database**: Thêm bảng chain state cho tra cứu nhanh; thêm hàm lưu trữ và truy xuất dữ liệu blockchain.
+        * **Chuyển đổi Storage**: Thay thế `SqlStorageBackend` bằng `SQLiteAdapter`; xóa module storage cũ.
+        * **Database**: Thêm bảng chain state cho tra cứu trạng thái nhanh; thêm hàm lưu trữ và truy xuất dữ liệu blockchain.
 
     * 2026-07-01
 
-        * **API Routing**: Tái cấu trúc lớn cấu trúc routing API và tên module; tối ưu middleware và WebSocket manager.
-        * **Domains**: Tái cấu trúc logic trích xuất event và quản lý transaction; xóa generic-level re-export shim.
-        * **Kiểm thử**: Cập nhật import paths và test files cho cấu trúc API mới.
+        * **API Routing**: Tái cấu trúc lớn cấu trúc định tuyến API và tên module; tối ưu hóa middleware và WebSocket manager.
+        * **Domains**: Tái cấu trúc logic trích xuất sự kiện và quản lý transaction; loại bỏ lớp generic-level re-export shim.
 
     * 2026-06-30
 
-        * **Dọn dẹp Code Chết**: Xóa các module không dùng trong core (performance, parallel_engine), storage (`ChainModel`), network (message encryption exception classes), error_mitigation, domains (entity reporting, compliance), consensus, API, và adapters.
-        * **State**: Xóa hàm `apply_event_list` khỏi world state.
-        * **Event Ledger**: Tái cấu trúc cấu trúc dữ liệu event và logic lưu trữ.
+        * **Dọn dẹp mã thừa**: Loại bỏ các module không dùng trong core (performance, parallel_engine), storage (`ChainModel`), network (các class ngoại lệ mã hóa message), error_mitigation, domains (entity reporting, compliance), consensus, API và adapters.
+        * **State**: Loại bỏ hàm `apply_event_list` khỏi world state.
+        * **Event Ledger**: Tái dựng cấu trúc dữ liệu event và logic lưu trữ.
 
     * 2026-06-24
 
-        * **Dependencies**: Thêm `vulture` cho phát hiện code chết; xóa cấu hình `tox` (chuyển sang `uv`).
+        * **Dependencies**: Thêm `vulture` để phát hiện mã thừa.
 
     * 2026-06-23
 
-        * **Hierarchical**: Modular hóa `MainChain` (proof + registry), `SubChain` (rehydration logic), `Rebalancer` (trích xuất event), `HierarchyManager` (khởi tạo cross-level sync), K8s namespace manager; thêm `compliance_checker`.
-        * **Consensus**: Cải thiện logic trích xuất và xác minh chữ ký.
-        * **Monitoring/Alert**: Modular hóa thành packages riêng với shared types.
-        * **ERP**: Modular hóa components tích hợp cho bảo trì tốt hơn.
-        * **Security**: Cải thiện lưu trữ API key và quản lý cache.
-        * **Events**: Di chuyển domain event classes với factory functions; di chuyển metrics và transaction manager sang modules riêng.
-        * **Core**: Cải thiện event queries và xử lý type.
+        * **Hierarchical**: Modular hóa `MainChain` (proof + registry), `SubChain` (logic rehydration), `Rebalancer` (trích xuất event), `HierarchyManager` (khởi tạo đồng bộ cross-level), K8s namespace manager; thêm `compliance_checker`.
+        * **Đồng thuận**: Cải thiện logic trích xuất và xác minh chữ ký.
+        * **Giám sát/Cảnh báo**: Modular hóa thành các gói riêng biệt với types dùng chung.
+        * **ERP**: Modular hóa các thành phần tích hợp cho khả năng bảo trì tốt hơn.
+        * **Bảo mật**: Cải thiện lưu trữ API key và quản lý caching.
+        * **Events**: Chuyển các domain event class kèm hàm factory; chuyển metrics và transaction manager sang module riêng.
+        * **Core**: Cải thiện truy vấn event và xử lý type.
 
     * 2026-06-22
 
-        * **BFT Consensus**: Tái cấu trúc thành components modular (engine, dispatcher, view_change).
-        * **Ordering**: Tái cấu trúc logic xử lý batch và validation.
-        * **Cluster**: Tách helpers xác thực node và authentication.
-        * **Redis**: Tái cấu trúc adapter thành manager classes với delegate operations.
-        * **Security**: Tách production security checks thành helper function.
-        * **API**: Tách helpers tra cứu block và tạo chain.
-        * **WebSocket**: Thêm type annotations `None` rõ ràng cho optional parameters.
-        * **Schemas**: Tối ưu payload depth validation dùng stack traversal.
+        * **BFT Consensus**: Tái cấu trúc thành các thành phần modular (engine, dispatcher, view_change).
+        * **Ordering**: Tái cấu trúc xử lý batch và logic xác thực.
+        * **Cluster**: Tách các helper xác thực node và authentication.
+        * **Redis**: Tái cấu trúc adapter thành các manager class với các thao tác ủy quyền.
+        * **Bảo mật**: Tách các kiểm tra bảo mật production thành hàm helper.
+        * **API**: Tách các helper tra cứu và tạo block chain.
+        * **WebSocket**: Thêm explicit `None` type annotations cho các tham số tùy chọn.
+        * **Schemas**: Tối ưu hóa kiểm tra độ sâu payload sử dụng duyệt stack.
 
     * 2026-06-21
 
-        * **Hiệu năng**: Thay thế `json` bằng `orjson` trên database layer cho serialization nhanh hơn.
-        * **Journal**: Thêm ghi bất đồng bộ background cho event logging.
-        * **Bảo mật**: Tối ưu xác minh chữ ký batch và serialization proof.
+        * **Hiệu năng**: Thay thế `json` bằng `orjson` trên tầng cơ sở dữ liệu cho serialization nhanh hơn.
+        * **Journal**: Thêm ghi file nền bất đồng bộ cho event logging.
+        * **Bảo mật**: Tối ưu hóa xác minh chữ ký hàng loạt và serialization proof.
 
     * 2026-06-20
 
-        * **Consensus**: Tối ưu xác minh chữ ký batch; ủy quyền crypto term validation cho core utility.
+        * **Đồng thuận**: Tối ưu hóa xác minh chữ ký hàng loạt; ủy quyền kiểm tra thuật ngữ crypto cho core utility.
 
     * 2026-06-19
 
-        * **Domains**: Tổ chức lại cấu trúc package; di chuyển các module generic; xóa lớp `generic/`.
-        * **Hierarchical**: Triển khai `HierarchyManager` cho điều phối chain; tái cấu trúc xử lý proof sub-chain.
-        * **Core**: Cải thiện xử lý block event và merkle tree.
-        * **Consensus**: Tổ chức lại BFT consensus; cập nhật PoA và PoF classes.
-        * **Security**: Xóa các module certificate và backup không dùng; đơn giản hóa imports.
-        * **Storage**: Xóa memory storage và world state modules.
-        * **State**: Thêm `WorldState` class cho quản lý trạng thái entity.
-        * **Error Mitigation**: Xóa các module rollback và recovery không dùng.
-        * **Integration**: Xóa `ArrowClient` và các types liên quan.
-        * **Network**: Xóa `NetworkClientSync` synchronous wrapper.
-        * **Database**: Thêm `RedisStorageAdapter` cho lưu trữ blockchain Redis.
-        * **Config**: Xóa cài đặt cache và parallel processing không dùng.
-        * **CLI**: Sửa import path cho `DomainChain`.
-        * **Version**: Đơn giản hóa version module; xóa functions không dùng.
+        * **Domains**: Tái cấu trúc gói; di chuyển các module generic; loại bỏ lớp `generic/`.
+        * **Hierarchical**: Triển khai `HierarchyManager` điều phối chuỗi; tái cấu trúc xử lý sub-chain proof.
+        * **Core**: Cải thiện xử lý block event và Merkle tree.
+        * **Đồng thuận**: Tái cấu trúc BFT consensus; cập nhật các lớp PoA và PoF.
+        * **Bảo mật**: Loại bỏ module certificate và backup cũ; đơn giản hóa imports.
+        * **Lưu trữ**: Loại bỏ các module memory storage và world state cũ.
+        * **State**: Thêm class `WorldState` quản lý trạng thái entity.
+        * **Error Mitigation**: Loại bỏ các module rollback và recovery cũ.
+        * **Integration**: Loại bỏ `ArrowClient` và các kiểu dữ liệu liên quan.
+        * **Mạng**: Loại bỏ wrapper đồng bộ `NetworkClientSync`.
+        * **Database**: Thêm `RedisStorageAdapter` cho lưu trữ blockchain trên Redis.
+        * **Config**: Loại bỏ các cài đặt cache và xử lý song song không dùng.
+        * **CLI**: Sửa đường dẫn import cho `DomainChain`.
+        * **Version**: Đơn giản hóa module version; loại bỏ các hàm không dùng.
         * **Dependencies**: Thêm `orjson 3.11.9`.
 
     * 2026-06-17
 
-        * **SDK**: Tái cấu trúc thành sync và async clients với shared types và exceptions.
-        * **Security**: Modular hóa quản lý certificate và key backup.
-        * **Risk Management**: Tái cấu trúc và tối ưu modules.
+        * **SDK**: Tái cấu trúc thành async và sync clients với shared types và exceptions.
+        * **Bảo mật**: Modular hóa quản lý certificate và backup key.
+        * **Risk Management**: Tái cấu trúc và tối ưu các module.
 
     * 2026-06-16
 
-        * **Core Cache**: Thay thế `caching.py` nguyên khối bằng `Cache` và `CacheManager` modular.
-        * **BFT**: Hợp nhất BFT helpers vào một module duy nhất.
-        * **Cluster**: Di chuyển data types sang modules riêng (lockdown_types, cross_level_sync_types).
-        * **Monitoring**: Hợp nhất alert và performance types vào shared module.
-        * **Integration**: Di chuyển error và sync classes sang types module.
-        * **Hierarchical**: Tập trung shared types vào module `types.py` mới.
-        * **Error Mitigation**: Thêm các modules xử lý lỗi toàn diện (consensus_validator, resource_validator, network_recovery, auto_scaler, backup_recovery).
+        * **Core Cache**: Thay thế `caching.py` đơn khối bằng các thành phần `Cache` và `CacheManager` modular.
+        * **BFT**: Hợp nhất các BFT helper thành module đơn.
+        * **Cluster**: Di chuyển các kiểu dữ liệu sang các module riêng (`lockdown_types`, `cross_level_sync_types`).
+        * **Giám sát**: Hợp nhất các kiểu alert và performance vào module dùng chung.
+        * **Integration**: Di chuyển các class error và sync sang module types.
+        * **Hierarchical**: Tập trung các types dùng chung vào module `types.py` mới.
+        * **Error Mitigation**: Thêm các module error mitigation toàn diện (consensus_validator, resource_validator, network_recovery, auto_scaler, backup_recovery).
 
     * 2026-06-15
 
-        * **API Restructuring**: Chia nhỏ `v1/endpoints.py` nguyên khối thành components modular; modular hóa `v2/endpoints.py`; sửa import paths cho `v3`.
-        * **GraphQL**: Tái cấu trúc schema và resolvers cho tổ chức tốt hơn.
+        * **Tái cấu trúc API**: Tách `v1/endpoints.py` đơn khối thành các thành phần modular; modular hóa `v2/endpoints.py`; sửa đường dẫn import `v3`.
+        * **GraphQL**: Tái cấu trúc schema và resolvers cho cấu trúc tốt hơn.
         * **Database**: Thêm base SQL adapter và tích hợp vào `SQLiteAdapter`.
-        * **Server**: Modular hóa middleware và GraphQL handler; tối ưu setup server; modular hóa blockchain explorer thành components.
+        * **Server**: Modular hóa middleware và GraphQL handler; tối ưu hóa khởi tạo server; modular hóa blockchain explorer thành các thành phần.
+
+??? warning "Breaking Changes (1)"
+
+    * **API Routing & Data Schemas**: Tái cấu trúc toàn bộ đường dẫn API theo các không gian tên domain (`/api/ledger`, `/api/business`, `/api/admin`), đổi tên các trường payload từ `transaction_*` sang `event` / `details`, và tái cấu trúc SDK client.
 
 ---
 

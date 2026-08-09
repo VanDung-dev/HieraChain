@@ -8,28 +8,23 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (114)"
+??? note "Improvements (0)"
 
-    * 2026-08-04
+---
 
-        * **Docs**: Standardized terminology across all EN/VI docs: renamed "Transaction Journal" → "Event Journal" and "Cross-Chain Transactions" → "Cross-Chain Operations" to align with consensus terminology. Normalized formatting in API references, adjusted outdated descriptions, and fixed minor typos in English and Vietnamese documentation.
-        * **Docs**: Clarified durability in the workflows guide and corrected the workflows guide link in `AGENTS.md`.
-        * **Chore**: Removed empty `version.py` from hierarchy units.
+## v0.1.0 (2026-08-10)
+
+This major milestone release marks the consolidation of HieraChain's core library architecture (`hierachain/`). Key highlights include complete terminology standardization, dual-tier consensus refinement (PoA for Intra-Org SubChains and PoF for Inter-Org MainChain alliances), integration of high-performance libraries (`orjson`, `uvloop`), extensive dead code removal, and API router restructuring.
+
+??? note "Improvements (52)"
 
     * 2026-07-27
 
-        * **Docs**: Renamed `HRC_CONSENSUS_TYPE` → `HRC_MAINCHAIN_CONSENSUS` across all EN/VI docs: consensus_mechanisms, poa, pof, event-submission, overview, cross-chain-2pc, error-recovery. Clarified SubChain defaults to PoA (intra-org), MainChain defaults to PoF (inter-org). Renamed "Cross-Chain Transaction" → "Cross-Chain Operation" (2PC), `TransactionJournal` → `EventJournal`, `TRANSACTION_SCHEMA` → `EVENT_SCHEMA`. Updated stale import paths and data-schema definitions.
         * **Consensus**: Introduced `HRC_MAINCHAIN_CONSENSUS` env var with backward-compatible `HRC_CONSENSUS_TYPE` alias. `MainChain.__init__` accepts optional `consensus_type` parameter. `SubChain` now defaults to PoA for intra-org domain events, configurable via `config["consensus_type"]`.
-        * **Testing**: Added unit tests for SubChain consensus initialization: defaults to PoA, stays PoA under global PoF setting, supports explicit PoF override via config dict.
 
     * 2026-07-23
 
-        * **Testing (Integration)**: Added `tests/integration/test_proof_of_federation_mesh.py`, a 2-phase integration test proving the PoF inter-MainChain consortium: Phase 1 demonstrates PoA rejection of cross-organizational blocks; Phase 2 confirms 3-node PoF federation consensus (Hospital A, Hospital B, Insurance Z) via Ed25519 multi-signatures and round-robin leadership, without a central RootChain.
         * **Refactoring**: Moved all inline/late imports (`os`, `sys`, `time`, `uuid`, `asyncio`, `warnings`, `httpx`, `pyarrow`, `cast`) to module-level top-of-file across 14 source files, fully conforming to PEP 8 import ordering.
-        * **Docs**: Redefined **Proof of Authority (PoA)** as *Intra-Organization* consensus (single MainChain managing internal Sub-Chains) and **Proof of Federation (PoF)** as *Inter-Organization P2P MainChain Alliance* consensus (no central RootChain required), with architectural comparison tables in both English and Vietnamese docs.
-        * **Docs**: Synchronized all stale file paths in `docs/en/` against the actual `hierachain/` package layout: corrected 22 references across `architecture/`, `glossary.md`, `how-to/`, and `reference/` (e.g. `main_chain.py` → `main_chain/base.py`, `endpoints.py` → `router.py`, `websocket_manager.py` → `websocket/manager.py`).
-        * **Docs**: Added missing `docs/vi/reference/code-map.md` and `docs/vi/how-to/add-endpoint.md` to achieve full 1:1 parity between English and Vietnamese documentation trees (both now have 90 `.md` files).
-        * **Docs (vi)**: Synchronized all updated file paths and PoA/PoF definitions from `docs/en/` into the full `docs/vi/` mirror: updated `architecture/`, `glossary.md`, `how-to/`, `reference/` equivalents.
 
     * 2026-07-22
 
@@ -44,10 +39,7 @@ icon: material/history
 
     * 2026-07-18
 
-        * **Testing**: Added JUnit XML reporting support (`--junitxml`) to Docker, Podman, and Kubernetes stress execution scripts.
-        * **Dependencies**: Cleaned up project dependencies by removing unused packages (`pip`, `vulture`, `wheel`) from dev environments.
         * **Storage**: Tuned IPFS connection pooling parameters (`max_keepalive_connections=50`, `max_connections=150`) to accelerate concurrent block storage.
-        * **Stress**: Added dynamic configuration support via environment variables in `test_tsunami_flood.py` and implemented resilient HTTP adapter retries on 502/503/504 errors.
         * **Core**: Resolved critical indexing race conditions in block creation within lock constraints and aligned initial index references.
         * **Database**: Optimized SQLite adapter by setting database connection timeout to 30.0 seconds to prevent write-lock exceptions under high parallel load.
 
@@ -56,52 +48,20 @@ icon: material/history
         * **Performance**: Replaced `json` with `orjson` across the entire codebase (security, risk_management, network, monitoring, privacy, config, CLI, API, and hierachain modules) for faster serialization/deserialization.
         * **Core**: Added optimized data payload recovery for blocks with direct `data` column parsing when available.
         * **Security**: Optimized signature verification with configurable thread pool (CPU count) and extracted `_get_verify_key` helper for public key decoding.
-        * **Testing**: Extended sleep duration in `test_repro_determinism` from 0.5s to 1.5s for full service shutdown reliability.
-
-    * 2026-07-16
-
-        * **Testing**: Fixed false positive in term censorship test: skipped docstring examples explaining regex word-boundary matching.
-        * **Documentation**: Added PR description template for merging v0.0.x into main.
-        * **Changelog**: Updated unreleased section with recent developments.
 
     * 2026-07-12
 
         * **Network**: Fixed seed node public key decoding with special handling for `$$` delimiter characters.
 
-    * 2026-07-11
-
-        * **Docker**: Added `DISABLE_WIREGUARD` option to skip WireGuard interface initialization.
-
-    * 2026-07-10
-
-        * **Documentation**: Updated docs for clarity and project structure; enhanced PR template.
-
     * 2026-07-09
 
         * **Risk Management**: Improved database connection handling in audit logger.
         * **Policy**: Fixed Null value evaluation in Arrow `StructArray`.
-        * **Testing**: Added integration test for cryptocurrency term censorship; added database audit storage integrity tests.
-
-    * 2026-07-08
-
-        * **CI**: Refined issue templates for clarity; added pull request template.
-
-    * 2026-07-07
-
-        * **Infrastructure**: Updated K8s/Podman setup scripts to use `uv` for Python commands.
-        * **Stress**: Tuned poison pill acceptance rate threshold for better reliability.
-
-    * 2026-07-06
-
-        * **Stress Testing**: Implemented full network stress testing framework (bandwidth, latency, packet loss simulation); added resource monitoring and alerting framework.
-        * **WebSocket**: Enhanced load test reliability.
 
     * 2026-07-05
 
         * **Database**: Enhanced SQL adapter with metadata and merkle root support.
         * **API**: Renamed API version tags for clarity (`v1` → `ledger`, `v2` → `business`, `v3` → `admin`); updated security testing scripts and health check endpoints accordingly.
-        * **Documentation**: Reorganized API version docs for improved clarity.
-        * **Demo**: Fixed metadata filename in IPFS demo; updated version attribute/import paths.
 
     * 2026-07-04
 
@@ -119,7 +79,6 @@ icon: material/history
 
         * **API Routing**: Major refactoring of API routing structure and module names; optimized middleware and WebSocket manager.
         * **Domains**: Refactored event extraction logic and transaction management; removed generic-level re-export shim.
-        * **Testing**: Updated import paths and test files for new API structure.
 
     * 2026-06-30
 
@@ -129,7 +88,7 @@ icon: material/history
 
     * 2026-06-24
 
-        * **Dependencies**: Added `vulture` for dead code detection; removed `tox` configuration (migrated to `uv`).
+        * **Dependencies**: Added `vulture` for dead code detection.
 
     * 2026-06-23
 
@@ -202,6 +161,10 @@ icon: material/history
         * **GraphQL**: Restructured schema and resolvers for better organization.
         * **Database**: Added base SQL adapter and integrated into `SQLiteAdapter`.
         * **Server**: Modularized middleware and GraphQL handler; optimized server setup; modularized blockchain explorer into components.
+
+??? warning "Breaking Changes (1)"
+
+    * **API Routing & Data Schemas**: Restructured API routes into domain-specific namespaces (`/api/ledger`, `/api/business`, `/api/admin`), updated payload key names from `transaction_*` to `event` / `details`, and refactored SDK client namespaces.
 
 ---
 
