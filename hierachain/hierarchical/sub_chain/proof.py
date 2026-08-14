@@ -147,16 +147,16 @@ def _submit_proof_for_sub_chain(
     metadata_filter: Callable | None,
 ) -> bool:
     """Submit a cryptographic proof to the Main Chain."""
+    if not sub_chain.chain or len(sub_chain.chain) <= 1:
+        logger.debug("SubChain has only genesis block. Aborting proof.")
+        return False
+
     latest_block = sub_chain.get_latest_block()
     logger.debug(
         "SubChain %s submitting proof. "
         "Chain length: %d. Block index: %d",
         sub_chain.name, len(sub_chain.chain), latest_block.index,
     )
-
-    if not sub_chain.chain or len(sub_chain.chain) <= 1:
-        logger.debug("SubChain has only genesis block. Aborting proof.")
-        return False
 
     if not latest_block.hash or latest_block.hash == "0" * 64:
         logger.warning(
