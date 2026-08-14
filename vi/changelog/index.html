@@ -4456,7 +4456,15 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (0)</summary>
+<summary>Improvements (1)</summary>
+<ul>
+<li>
+<p>2026-08-15</p>
+<ul>
+<li><strong>Dọn dẹp mã thừa</strong>: Loại bỏ các hàm tiện ích không dùng trên các module hierarchical và domain (<code>hierachain/core/utils.py</code>, <code>consensus/proof_of_federation.py</code>, <code>domains/chains/domain_chain.py</code>, <code>domains/chains/metrics.py</code>, <code>domains/utils/cross_chain_validator.py</code>, <code>domains/utils/entity_tracer.py</code>, <code>hierarchical/multi_org.py</code>): xóa <code>group_events_by_entity</code>, <code>_is_block_valid</code>, <code>_extract_signature_from_block</code>, <code>_analyze_compliance_status</code>, <code>_calculate_performance_stats</code>, <code>_process_string_value</code>, <code>_process_bytes_value</code>, <code>_generate_recommendations</code>, và <code>create_multi_org_network</code> để codebase gọn gàng và dễ bảo trì hơn.</li>
+</ul>
+</li>
+</ul>
 </details>
 <details class="warning">
 <summary>Fix (2)</summary>
