@@ -411,25 +411,3 @@ def create_organization(
     
     return org
 
-
-def create_multi_org_network(organizations: list[dict[str, Any]]) -> MultiOrgNetwork:
-    """Factory function to create a multi-organization network"""
-    network = MultiOrgNetwork()
-    
-    # Create and add organizations
-    for org_config in organizations:
-        org = create_organization(
-            org_config["org_id"],
-            org_config["name"],
-            org_config.get("admin_users")
-        )
-        network.add_organization(org)
-    
-    # Create system channel
-    system_config = {
-        "consensus_policy": "majority",
-        "admin_policy": "majority"
-    }
-    network.create_system_channel(system_config)
-    
-    return network

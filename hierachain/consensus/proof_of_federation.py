@@ -370,16 +370,6 @@ def _is_signature_valid(
     return verify_signature(public_key, message, signature)
 
 
-def _extract_signature_from_block(block: Block) -> str | None:
-    """Extract signature from the consensus_finalization event."""
-    events = block.to_event_list()
-    for event in reversed(events):
-        if event.get("event") == "consensus_finalization":
-            return event.get("details", {}).get("signature", "")
-    logger.warning("Block %d has no consensus_finalization event", block.index)
-    return None
-
-
 def _verify_block_quorum(
     block: Block,
     validator_metadata: dict[str, dict[str, Any]],

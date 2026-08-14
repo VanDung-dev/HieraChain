@@ -12,9 +12,6 @@ from typing import Any, Callable, cast
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.utils.entity_tracer import EntityTracer
 from hierachain.domains.utils.compliance_checker import ComplianceChecker
-from hierachain.security.secure_logging import get_security_logger
-
-logger = get_security_logger()
 
 
 def _check_operation_consistency(
@@ -188,30 +185,6 @@ def _generate_system_recommendations(validation_results: dict[str, Any]) -> list
     _add_proof_consistency_recommendations(validation_results, recommendations)
     _add_ledger_compliance_recommendations(validation_results, recommendations)
     return recommendations
-
-
-def _process_string_value(v: str) -> str | None:
-    """Process string value with length check."""
-    if len(v) >= 1000:
-        logger.debug(
-            "Skipping validation for long string (length=%d). "
-            "Consider validating with pattern matching for hashes.",
-            len(v)
-        )
-        return None
-    return v.lower()
-
-
-def _process_bytes_value(v: bytes) -> str | None:
-    """Process bytes value with length check."""
-    if len(v) >= 1000:
-        logger.debug(
-            "Skipping validation for long bytes (length=%d). "
-            "Consider validating with pattern matching for hashes.",
-            len(v)
-        )
-        return None
-    return v.decode('utf-8', errors='ignore').lower()
 
 
 def _build_default_validation_rules() -> dict[str, Callable]:

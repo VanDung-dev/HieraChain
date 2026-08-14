@@ -2,47 +2,6 @@
 Operation metrics tracking helpers for HieraChain Ledger.
 """
 
-from typing import Any
-
-
-def _calculate_performance_stats(events: list[dict[str, Any]]) -> dict[str, int]:
-    """Calculate performance statistics from entity events."""
-    stats = {
-        "started": 0, "completed": 0,
-        "quality_total": 0, "quality_passed": 0,
-        "approvals_total": 0, "approvals_granted": 0
-    }
-
-    def handle_start(_: dict[str, Any]) -> None:
-        stats["started"] += 1
-
-    def handle_complete(_: dict[str, Any]) -> None:
-        stats["completed"] += 1
-
-    def handle_quality(details: dict[str, Any]) -> None:
-        stats["quality_total"] += 1
-        if details.get("check_result") == "passed":
-            stats["quality_passed"] += 1
-
-    def handle_approval(details: dict[str, Any]) -> None:
-        stats["approvals_total"] += 1
-        if details.get("approval_status") == "approved":
-            stats["approvals_granted"] += 1
-
-    handlers = {
-        "operation_start": handle_start,
-        "operation_complete": handle_complete,
-        "quality_check": handle_quality,
-        "approval": handle_approval
-    }
-
-    for event in events:
-        handler = handlers.get(event.get("event", ""))
-        if handler:
-            handler(event.get("details", {}))
-
-    return stats
-
 
 def _safe_ratio(numerator: int, denominator: int) -> float:
     """Return numerator / denominator, defaulting to 0.0 when empty."""

@@ -21,23 +21,6 @@ from hierachain.domains.chains.metrics import OperationMetricsTracker
 from hierachain.domains.chains.tx_manager import TransactionManager
 
 
-def _analyze_compliance_status(
-    events: list[dict[str, Any]]
-) -> dict[str, dict[str, Any]]:
-    """Process compliance events into a summary dictionary."""
-    compliance_types: dict[str, dict[str, Any]] = {}
-    for event in events:
-        details = event.get("details", {})
-        comp_type = details.get("compliance_type")
-        if comp_type:
-            compliance_types[comp_type] = {
-                "status": details.get("compliance_status"),
-                "timestamp": event.get("timestamp"),
-                "regulation": details.get("regulation_reference")
-            }
-    return compliance_types
-
-
 # Required fields per operation type
 _OPERATION_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
     "quality_check": ("check_type", "check_result"),

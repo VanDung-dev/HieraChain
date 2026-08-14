@@ -172,51 +172,6 @@ def create_event(
     return event
 
 
-def group_events_by_entity(
-    events: list[dict[str, Any]]
-) -> dict[str, list[dict[str, Any]]]:
-    """
-    Group events by entity_id.
-    
-    Args:
-        events: List of events to group
-        
-    Returns:
-        Dictionary mapping entity_id to list of events
-    """
-    grouped: dict[str, list[dict[str, Any]]] = {}
-    for event in events:
-        entity_id = event.get("entity_id", "unknown")
-        if entity_id not in grouped:
-            grouped[entity_id] = []
-        grouped[entity_id].append(event)
-    
-    return grouped
-
-
-def _is_block_valid(block: dict[str, Any]) -> bool:
-    """Check if a single block is valid according to Ledger rules."""
-    # 1. Check basic block structure
-    required_fields = ["index", "events", "timestamp", "previous_hash", "hash"]
-    if not all(field in block for field in required_fields):
-        return False
-        
-    # 2. Check if events is a list
-    if not isinstance(block["events"], list):
-        return False
-        
-    # 3. Check if hash is consistent
-    recalculated_hash = generate_hash({
-        "index": block["index"],
-        "events": block["events"],
-        "timestamp": block["timestamp"],
-        "previous_hash": block["previous_hash"],
-        "nonce": block.get("nonce", 0)
-    })
-    
-    return recalculated_hash == block["hash"]
-
-
 def _is_summary_value(value: Any) -> bool:
     """Check if a value is brief enough to be considered summary-level."""
     if isinstance(value, (str, int, float, bool)):

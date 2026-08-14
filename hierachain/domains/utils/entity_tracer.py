@@ -144,60 +144,6 @@ def _calculate_performance_metrics(c: dict[str, int]) -> dict[str, float]:
     }
 
 
-def _generate_recommendations(
-    lifecycle: dict[str, Any],
-    performance: dict[str, Any],
-    relationships: dict[str, Any]
-) -> list[str]:
-    """Generate recommendations based on entity analysis."""
-    recommendations = []
-
-    perf_metrics = performance.get("performance_metrics", {})
-
-    # Performance recommendations
-    if perf_metrics.get("completion_rate", 0) < 0.8:
-        recommendations.append(
-            "Incomplete operations detected - completion rate is below 80%"
-        )
-
-    if perf_metrics.get("quality_pass_rate", 0) < 0.9:
-        recommendations.append(
-            "Quality checks are failing frequently - review quality processes"
-        )
-
-    if perf_metrics.get("compliance_violations", 0) > 0:
-        recommendations.append(
-            "Compliance violations detected - immediate attention required"
-        )
-
-    # Activity recommendations
-    activity = performance.get("activity_summary", {})
-    if activity.get("last_activity", 0) < time.time() - 86400:  # 24 hours
-        recommendations.append(
-            "Entity has been inactive for over 24 hours - check if this is expected"
-        )
-
-    # Lifecycle recommendations
-    if len(lifecycle.get("lifecycle_stages", [])) < 3:
-        recommendations.append(
-            "Entity appears to be in early lifecycle stages - monitor progress"
-        )
-
-    # Relationship recommendations
-    total_relationships = sum(len(entities) for entities in relationships.values())
-    if total_relationships == 0:
-        recommendations.append(
-            "Entity has no identified relationships - verify if this is expected"
-        )
-    elif total_relationships > 10:
-        recommendations.append(
-            "Entity has many relationships - consider reviewing for complexity "
-            "management"
-        )
-
-    return recommendations
-
-
 class EntityTracer:
     """
     Entity tracing utility for the HieraChain Ledger.
