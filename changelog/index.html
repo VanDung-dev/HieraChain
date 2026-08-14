@@ -4458,6 +4458,18 @@
 <details class="note">
 <summary>Improvements (0)</summary>
 </details>
+<details class="warning">
+<summary>Fix (2)</summary>
+<ul>
+<li>
+<p>2026-08-14</p>
+<ul>
+<li><strong>Security (ZK Mock Proof)</strong>: <code>_generate_mock_proof</code> in <code>hierachain/security/zk_prover.py</code> now accepts a <code>sub_chain_name</code> parameter and includes it in <code>public_inputs</code>, fixing the SHA-256 commitment being computed with <code>sub_chain_name=""</code> while the verifier hashed with the real sub-chain name (causing every proof to be rejected when <code>ENABLE_ZK_PROOFS=true</code>). <code>_verify_mock_proof</code> replaces the lax <code>mock_proof</code> prefix check with the standard <code>_verify_mock</code> logic from <code>zk_verifier</code> (commitment hash vs <code>public_inputs</code>), rejecting fake proofs.</li>
+<li><strong>Hierarchical</strong>: Moved the genesis-only chain guard above <code>get_latest_block()</code> in <code>_submit_proof_for_sub_chain</code> (<code>hierachain/hierarchical/sub_chain/proof.py</code>), preventing an <code>IndexError</code> on an empty SubChain and returning <code>False</code> as intended.</li>
+</ul>
+</li>
+</ul>
+</details>
 <hr />
 <h2 id="v010-2026-08-10">v0.1.0 (2026-08-10)</h2>
 <p>This major milestone release marks the consolidation of HieraChain's core library architecture (<code>hierachain/</code>). Key highlights include complete terminology standardization, dual-tier consensus refinement (PoA for Intra-Org SubChains and PoF for Inter-Org MainChain alliances), integration of high-performance libraries (<code>orjson</code>, <code>uvloop</code>), extensive dead code removal, and API router restructuring.</p>

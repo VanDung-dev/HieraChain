@@ -4458,6 +4458,18 @@
 <details class="note">
 <summary>Improvements (0)</summary>
 </details>
+<details class="warning">
+<summary>Fix (2)</summary>
+<ul>
+<li>
+<p>2026-08-14</p>
+<ul>
+<li><strong>Bảo mật (ZK Mock Proof)</strong>: <code>_generate_mock_proof</code> trong <code>hierachain/security/zk_prover.py</code> nhận thêm tham số <code>sub_chain_name</code> và đưa vào <code>public_inputs</code>, khắc phục tình trạng commitment SHA-256 được tính với <code>sub_chain_name=""</code> trong khi verifier hash với tên sub-chain thật (làm mọi proof bị reject khi <code>ENABLE_ZK_PROOFS=true</code>). <code>_verify_mock_proof</code> thay thế kiểm tra prefix <code>mock_proof</code> thiếu chặt chẽ bằng logic <code>_verify_mock</code> chuẩn từ <code>zk_verifier</code> (so hash commitment với <code>public_inputs</code>), từ chối fake proof.</li>
+<li><strong>Hierarchical</strong>: Chuyển guard chain chỉ có genesis block lên trước <code>get_latest_block()</code> trong <code>_submit_proof_for_sub_chain</code> (<code>hierachain/hierarchical/sub_chain/proof.py</code>), tránh <code>IndexError</code> khi SubChain rỗng thay vì trả <code>False</code> đúng quy ước.</li>
+</ul>
+</li>
+</ul>
+</details>
 <hr />
 <h2 id="v010-2026-08-10">v0.1.0 (2026-08-10)</h2>
 <p>Phiên bản cột mốc quan trọng này đánh dấu sự củng cố kiến trúc thư viện cốt lõi của HieraChain (<code>hierachain/</code>). Các điểm nổi bật bao gồm chuẩn hóa hoàn toàn thuật ngữ, hoàn thiện cơ chế đồng thuận hai tầng (PoA cho SubChain nội bộ và PoF cho liên minh MainChain inter-org), tích hợp các thư viện hiệu năng cao (<code>orjson</code>, <code>uvloop</code>), dọn dẹp mã nguồn thừa và tái cấu trúc router API.</p>
