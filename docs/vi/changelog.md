@@ -9,6 +9,12 @@ icon: material/history
 ## Unreleased
 
 ??? note "Improvements (0)"
+??? warning "Fix (2)"
+
+    * 2026-08-14
+
+        * **Bảo mật (ZK Mock Proof)**: `_generate_mock_proof` trong `hierachain/security/zk_prover.py` nhận thêm tham số `sub_chain_name` và đưa vào `public_inputs`, khắc phục tình trạng commitment SHA-256 được tính với `sub_chain_name=""` trong khi verifier hash với tên sub-chain thật (làm mọi proof bị reject khi `ENABLE_ZK_PROOFS=true`). `_verify_mock_proof` thay thế kiểm tra prefix `mock_proof` thiếu chặt chẽ bằng logic `_verify_mock` chuẩn từ `zk_verifier` (so hash commitment với `public_inputs`), từ chối fake proof.
+        * **Hierarchical**: Chuyển guard chain chỉ có genesis block lên trước `get_latest_block()` trong `_submit_proof_for_sub_chain` (`hierachain/hierarchical/sub_chain/proof.py`), tránh `IndexError` khi SubChain rỗng thay vì trả `False` đúng quy ước.
 
 ---
 

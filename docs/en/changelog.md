@@ -9,6 +9,12 @@ icon: material/history
 ## Unreleased
 
 ??? note "Improvements (0)"
+??? warning "Fix (2)"
+
+    * 2026-08-14
+
+        * **Security (ZK Mock Proof)**: `_generate_mock_proof` in `hierachain/security/zk_prover.py` now accepts a `sub_chain_name` parameter and includes it in `public_inputs`, fixing the SHA-256 commitment being computed with `sub_chain_name=""` while the verifier hashed with the real sub-chain name (causing every proof to be rejected when `ENABLE_ZK_PROOFS=true`). `_verify_mock_proof` replaces the lax `mock_proof` prefix check with the standard `_verify_mock` logic from `zk_verifier` (commitment hash vs `public_inputs`), rejecting fake proofs.
+        * **Hierarchical**: Moved the genesis-only chain guard above `get_latest_block()` in `_submit_proof_for_sub_chain` (`hierachain/hierarchical/sub_chain/proof.py`), preventing an `IndexError` on an empty SubChain and returning `False` as intended.
 
 ---
 
