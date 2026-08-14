@@ -8,7 +8,12 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (0)"
+??? note "Improvements (1)"
+
+    * 2026-08-15
+
+        * **Dead Code Removal**: Removed unused utility functions across hierarchical and domain modules (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): deleted `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, and `create_multi_org_network` for a leaner, more maintainable codebase.
+
 ??? warning "Fix (2)"
 
     * 2026-08-14

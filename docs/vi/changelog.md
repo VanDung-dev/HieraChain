@@ -8,7 +8,12 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (0)"
+??? note "Improvements (1)"
+
+    * 2026-08-15
+
+        * **Dọn dẹp mã thừa**: Loại bỏ các hàm tiện ích không dùng trên các module hierarchical và domain (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): xóa `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, và `create_multi_org_network` để codebase gọn gàng và dễ bảo trì hơn.
+
 ??? warning "Fix (2)"
 
     * 2026-08-14
