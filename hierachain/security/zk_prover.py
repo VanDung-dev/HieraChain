@@ -55,8 +55,8 @@ __all__ = [
 ]
 
 
-def _generate_mock_proof(old_state_root: str, new_state_root: str, block_index: int) -> bytes:
-    public_inputs = {"old_state_root": old_state_root, "new_state_root": new_state_root, "block_index": block_index, "sub_chain_name": ""}
+def _generate_mock_proof(old_state_root: str, new_state_root: str, block_index: int, sub_chain_name: str = "") -> bytes:
+    public_inputs = {"old_state_root": old_state_root, "new_state_root": new_state_root, "block_index": block_index, "sub_chain_name": sub_chain_name}
     payload_bytes = orjson.dumps(public_inputs, option=orjson.OPT_SORT_KEYS)
     commitment = hashlib.sha256(payload_bytes).digest()
     proof_size = secrets.randbelow(2049) + 2048
@@ -69,13 +69,10 @@ def _generate_mock_proof(old_state_root: str, new_state_root: str, block_index: 
 
 
 
-def _verify_mock_proof(proof: bytes) -> bool:
-    magic = b"mock_zkp_v2\x00"
-    if proof.startswith(b"mock_proof"):
-        return True
-    if not proof.startswith(magic):
-        return False
-    return len(proof) >= 52
+def _verify_mock_proof(proof: bytes, public_inputs: dict[str, Any]) -> bool:
+    from hierachain.security.verify.zk_verifier import _verify_mock, ZKPublicInputs
+
+    return _verify_mock(proof, ZKPublicInputs.from_dict(public_inputs))
 
 
 class ZKProver:
@@ -98,7 +95,7 @@ class ZKProver:
         public_inputs = {"old_state_root": old_state_root, "new_state_root": new_state_root, "block_index": block_index, "sub_chain_name": sub_chain_name}
         try:
             if self.mode == "mock":
-                proof = _generate_mock_proof(old_state_root, new_state_root, block_index)
+                proof = _generate_mock_proof(old_state_root, new_state_root, block_index, sub_chain_name)
             elif self.mode == "production":
                 proof = self._generate_production_proof(old_state_root, new_state_root, block_index, events or [])
             else:
@@ -126,10 +123,9 @@ class ZKProver:
         return self.generate_proof(old_state_root, new_state_root, block_index, events, sub_chain_name)
 
     async def verify_proof_async(self, proof: bytes, public_inputs: dict[str, Any]) -> bool:
-        _ = public_inputs
         if self.mode == "mock":
             await asyncio.sleep(secrets.randbelow(150) / 1000 + 0.05)
-            return _verify_mock_proof(proof)
+            return _verify_mock_proof(proof, public_inputs)
         raise NotImplementedError("Production verification not yet implemented")
 
     def _generate_production_proof(self, old_state_root: str, new_state_root: str, block_index: int, events: list[dict[str, Any]]) -> bytes:
