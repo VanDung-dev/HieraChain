@@ -7,7 +7,23 @@ where the main chain stores proofs from registered sub-chains.
 
 from unittest.mock import Mock
 
+import pytest
+
 from hierachain.hierarchical import MainChain
+from hierachain.security import get_zk_prover, reset_zk_prover
+from hierachain.security.verify import get_zk_verifier, reset_zk_verifier
+from hierachain.config.settings import settings
+
+
+@pytest.fixture(autouse=True)
+def _restore_zk_settings():
+    original_enable = getattr(settings, "ENABLE_ZK_PROOFS", False)
+    original_mode = getattr(settings, "ZK_MODE", "mock")
+    yield
+    settings.ENABLE_ZK_PROOFS = original_enable
+    settings.ZK_MODE = original_mode
+    reset_zk_prover()
+    reset_zk_verifier()
 
 
 def test_main_chain_creation():
@@ -274,3 +290,86 @@ def test_main_chain_with_mock_consensus():
     proof_hash = "a" * 64
     result = main_chain.add_proof("TestSubChain", proof_hash, {"count": 1})
     assert result is True
+
+
+# Regression: ZK mock proof with real sub_chain_name must pass verification
+def test_add_proof_with_zk_mock_proof_and_real_sub_chain_name():
+    """add_proof accepts a mock ZK proof generated with the real sub-chain name."""
+    settings.ENABLE_ZK_PROOFS = True
+    settings.ZK_MODE = "mock"
+
+    main_chain = MainChain(name="ZKProofMainChain")
+    main_chain.consensus.config["block_interval"] = 0
+    main_chain.register_sub_chain("ZKSupplyChain", {"domain": "zk_test"})
+
+    prover = get_zk_prover()
+    proof = prover.generate_proof(
+        "a" * 64, "b" * 64, 5, sub_chain_name="ZKSupplyChain"
+    )
+    assert proof.success is True
+
+    metadata = {
+        "previous_merkle_root": "a" * 64,
+        "latest_merkle_root": "b" * 64,
+        "latest_block_index": 5,
+    }
+    result = main_chain.add_proof(
+        "ZKSupplyChain", "b" * 64, metadata, zk_proof=proof.proof
+    )
+    assert result is True, "ZK mock proof with real sub_chain_name was rejected"
+
+
+def test_add_proof_with_zk_mock_proof_and_wrong_state_root_rejected():
+    """add_proof rejects a mock ZK proof whose state roots don't match metadata."""
+    settings.ENABLE_ZK_PROOFS = True
+    settings.ZK_MODE = "mock"
+
+    main_chain = MainChain(name="ZKRejectMainChain")
+    main_chain.consensus.config["block_interval"] = 0
+    main_chain.register_sub_chain("ZKSupplyChain", {"domain": "zk_test"})
+
+    prover = get_zk_prover()
+    proof = prover.generate_proof(
+        "a" * 64, "b" * 64, 5, sub_chain_name="ZKSupplyChain"
+    )
+
+    metadata = {
+        "previous_merkle_root": "c" * 64,  # tampered: wrong old root
+        "latest_merkle_root": "b" * 64,
+        "latest_block_index": 5,
+    }
+    result = main_chain.add_proof(
+        "ZKSupplyChain", "b" * 64, metadata, zk_proof=proof.proof
+    )
+    assert result is False, "Tampered ZK proof should be rejected"
+
+
+def test_zk_verifier_rejects_fake_mock_proof_prefix():
+    """ZK verification must reject a proof with a bare 'mock_proof' prefix."""
+    settings.ENABLE_ZK_PROOFS = True
+    settings.ZK_MODE = "mock"
+
+    verifier = get_zk_verifier()
+    public_inputs = {
+        "old_state_root": "a" * 64,
+        "new_state_root": "b" * 64,
+        "block_index": 5,
+        "sub_chain_name": "ZKSupplyChain",
+    }
+    assert verifier.verify(b"mock_proof" + b"x" * 32, public_inputs) is False
+
+
+# Regression: empty chain must not crash proof submission
+def test_submit_proof_with_empty_chain_returns_false():
+    """submit_proof_to_main on a sub-chain with an empty chain must return False, not raise."""
+    from hierachain.hierarchical.sub_chain.proof import _submit_proof_for_sub_chain
+
+    sub_chain = Mock()
+    sub_chain.chain = []
+    sub_chain.name = "EmptyChain"
+    sub_chain.domain_type = "generic"
+    sub_chain.completed_operations = 0
+
+    result = _submit_proof_for_sub_chain(sub_chain, Mock(), None)
+    assert result is False
+    sub_chain.get_latest_block.assert_not_called()
