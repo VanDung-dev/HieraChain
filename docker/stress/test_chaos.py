@@ -20,7 +20,7 @@ import subprocess
 import random
 import pytest
 
-from tests.stress.real_stress_client import (
+from docker.stress.real_stress_client import (
     RealStressClient,
     REAL_REQUESTS,
     generate_event,
@@ -77,7 +77,7 @@ K8S_ACTIONS = {
         ["kubectl", "exec", "-n", ns, pod, "--", "tc", "qdisc", "del", "dev", "eth0", "root"]),
 }
 
-from tests.stress.docker_helper import (
+from docker.stress.docker_helper import (
     run_docker_container_action,
     run_docker_container_update,
     run_docker_exec,

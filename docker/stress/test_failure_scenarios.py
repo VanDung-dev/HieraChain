@@ -17,7 +17,7 @@ import pytest
 import requests
 import requests.exceptions
 
-from tests.stress.real_stress_client import RealStressClient, NodeStatus
+from docker.stress.real_stress_client import RealStressClient, NodeStatus
 
 logger = logging.getLogger(__name__)
 

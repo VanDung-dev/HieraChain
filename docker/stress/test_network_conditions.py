@@ -17,7 +17,7 @@ import requests
 import requests.exceptions
 from requests.adapters import HTTPAdapter, Retry
 
-from tests.stress.real_stress_client import RealStressClient, NodeStatus
+from docker.stress.real_stress_client import RealStressClient, NodeStatus
 
 logger = logging.getLogger(__name__)
 

@@ -18,7 +18,7 @@ import os
 import threading
 import pytest
 
-from tests.stress.real_stress_client import (
+from docker.stress.real_stress_client import (
     RealStressClient,
     REAL_REQUESTS,
     generate_event,

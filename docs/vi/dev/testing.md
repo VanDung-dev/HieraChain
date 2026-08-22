@@ -51,13 +51,13 @@ Chạy kiểm thử áp lực trong các container Docker với cấu hình gồ
 * Xây dựng cấu hình và chạy stress test với báo cáo định dạng HTML:
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
+    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest docker/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
     ```
 
 * Chạy stress test trên mạng thực tế (gửi các yêu cầu HTTP thực tế tới các node):
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/test_real_network.py -v -s
+    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest docker/stress/test_real_network.py -v -s
     ```
 
 * Chạy không cần xuất báo cáo HTML:
@@ -109,7 +109,7 @@ kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.
 curl http://localhost:2661/api/ledger/health
 
 # Chạy stress test
-docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
+docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest docker/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
 
 # Dọn dẹp
 kubectl delete -k docker/k8s/

@@ -18,7 +18,7 @@ import os
 import subprocess
 import pytest
 
-from tests.stress.real_stress_client import (
+from docker.stress.real_stress_client import (
     RealStressClient,
     REAL_REQUESTS,
     generate_event,
@@ -46,7 +46,7 @@ def _exec_tc(node_id: str, cmd: list[str]) -> None:
                 capture_output=True, timeout=15,
             )
         else:
-            from tests.stress.docker_helper import run_docker_exec
+            from docker.stress.docker_helper import run_docker_exec
             run_docker_exec(container, cmd)
     except Exception as e:
         logger.debug("tc exec failed on %s: %s", node_id, e)

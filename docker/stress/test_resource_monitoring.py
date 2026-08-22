@@ -13,8 +13,8 @@ from typing import List
 
 import pytest
 
-from tests.stress.real_stress_client import NodeStatus
-from tests.stress.resource_monitoring import ResourceStressTester, ResourceMetrics
+from docker.stress.real_stress_client import NodeStatus
+from docker.stress.resource_monitoring import ResourceStressTester, ResourceMetrics
 
 logger = logging.getLogger(__name__)
 

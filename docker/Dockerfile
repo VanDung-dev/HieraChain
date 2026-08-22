@@ -25,6 +25,7 @@ RUN /app/.venv/bin/pip install --no-cache-dir /tmp/hierachain-*.whl && \
 # Copy runtime files
 COPY docker/entrypoint.sh /app/docker/entrypoint.sh
 COPY docker/scripts/ /app/docker/scripts/
+COPY docker/stress/ /app/docker/stress/
 
 RUN mkdir -p /app/data /app/log && \
     chmod +x /app/docker/entrypoint.sh /app/docker/scripts/wg-tc.sh

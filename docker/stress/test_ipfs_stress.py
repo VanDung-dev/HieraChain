@@ -20,7 +20,7 @@ import pytest
 
 from hierachain.api.storage.ipfs_client import IPFSClient, IPFSError
 
-from tests.stress.real_stress_client import (
+from docker.stress.real_stress_client import (
     RealStressClient,
     REAL_REQUESTS,
     DEFAULT_CHAIN_NAME,

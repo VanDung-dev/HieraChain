@@ -37,7 +37,7 @@ data:
     echo "Starting stress test..."
     cd /app
     . .venv/bin/activate
-    exec uv run pytest tests/stress/ -v --timeout=${TEST_DURATION} --tb=short
+    exec uv run pytest docker/stress/ -v --timeout=${TEST_DURATION} --tb=short
 ---
 apiVersion: batch/v1
 kind: Job

@@ -8,7 +8,7 @@ Requires Docker containers to be running with the API server.
 import pytest
 import logging
 
-from tests.stress.real_stress_client import (
+from docker.stress.real_stress_client import (
     RealStressClient,
     run_real_stress_test,
     REAL_REQUESTS,

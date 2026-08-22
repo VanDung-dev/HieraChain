@@ -15,7 +15,7 @@ from requests.adapters import HTTPAdapter
 from concurrent.futures import as_completed
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
-from tests.stress.real_stress_client import NodeStatus
+from docker.stress.real_stress_client import NodeStatus
 
 logger = logging.getLogger(__name__)
 

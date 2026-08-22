@@ -23,7 +23,7 @@ services:
       - TEST_DURATION=60
       - REAL_REQUESTS=true
     volumes:
-      - ../tests:/app/tests
+      - ../docker/stress:/app/docker/stress
       - ../docker/scripts:/app/docker/scripts
       - ../log:/app/log
       # Uncomment and adjust path to enable Real K8s Namespace Isolation
@@ -41,6 +41,6 @@ services:
           memory: 512M
     entrypoint: ["sh", "/app/docker/scripts/docker-stress-entrypoint.sh"]
     command: >
-      python -m pytest tests/stress/ -v
+      python -m pytest docker/stress/ -v
       --html=/app/log/report/k8s_stress_test_report.html
       --self-contained-html

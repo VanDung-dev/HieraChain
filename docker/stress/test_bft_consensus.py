@@ -21,7 +21,7 @@ import os
 import pytest
 import requests
 
-from tests.stress.real_stress_client import (
+from docker.stress.real_stress_client import (
     RealStressClient,
     REAL_REQUESTS,
     generate_event,
@@ -209,7 +209,7 @@ class TestBFTViewChange:
                 subprocess.run(["kubectl", "rollout", "restart", "deployment", "-n", ns],
                                capture_output=True, timeout=15)
             else:
-                from tests.stress.docker_helper import run_docker_container_action
+                from docker.stress.docker_helper import run_docker_container_action
                 docker_cmd = "stop" if action == "stop" else "start"
                 stdout, stderr = run_docker_container_action(container_name, docker_cmd)
                 if stderr:

@@ -22,7 +22,7 @@ from hierachain.security.verify.signature_verifier import SignatureVerifier
 
 logger = logging.getLogger(__name__)
 
-from tests.stress.real_stress_client import DEFAULT_NODES
+from docker.stress.real_stress_client import DEFAULT_NODES
 
 # Test configuration
 DEFAULT_CONFIG = {
@@ -177,7 +177,7 @@ class PoisonPillTest:
         self.lock = threading.Lock()
         
         # Shared client to avoid redundant health checks and session overhead
-        from tests.stress.real_stress_client import REAL_REQUESTS, RealStressClient
+        from docker.stress.real_stress_client import REAL_REQUESTS, RealStressClient
         self.client = None
         if REAL_REQUESTS:
             self.client = RealStressClient(nodes=self.config["target_nodes"])
@@ -225,7 +225,7 @@ class PoisonPillTest:
         payload.pop("_poison_type", None)
         payload.pop("poison_type", None)
 
-        from tests.stress.real_stress_client import REAL_REQUESTS
+        from docker.stress.real_stress_client import REAL_REQUESTS
         if REAL_REQUESTS and self.client:
             success = self.client.submit_secure_event(
                 chain_name=self.config.get("chain_name", "stress_test"),
@@ -256,7 +256,7 @@ class PoisonPillTest:
         return isinstance(sig, str) and len(sig) >= 66
 
     def _ensure_nodes_ready(self) -> bool:
-        from tests.stress.real_stress_client import REAL_REQUESTS
+        from docker.stress.real_stress_client import REAL_REQUESTS
         if not REAL_REQUESTS or not self.client:
             return True
         if not self.client.wait_for_nodes(timeout=30):
@@ -308,7 +308,7 @@ class PoisonPillTest:
                     logger.error(f"Event failed: {e}")
 
     def _build_results(self, num_valid: int, num_poison: int, total_events: int, elapsed: float) -> dict:
-        from tests.stress.real_stress_client import REAL_REQUESTS
+        from docker.stress.real_stress_client import REAL_REQUESTS
         return {
             "test_name": "poison_pill",
             "status": "completed",
@@ -352,7 +352,7 @@ class TestPoisonPill:
     @pytest.fixture(autouse=True)
     def check_nodes(self):
         """Check if nodes are available for real requests."""
-        from tests.stress.real_stress_client import REAL_REQUESTS, RealStressClient
+        from docker.stress.real_stress_client import REAL_REQUESTS, RealStressClient
         if REAL_REQUESTS:
             client = RealStressClient()
             if not client.wait_for_nodes(timeout=15):
@@ -361,7 +361,7 @@ class TestPoisonPill:
     @pytest.fixture
     def small_config(self):
         """Small config for quick tests."""
-        from tests.stress.real_stress_client import DEFAULT_NODES
+        from docker.stress.real_stress_client import DEFAULT_NODES
         return {
             "num_poison_events": 50,
             "num_valid_events": 50,
@@ -439,7 +439,7 @@ class TestPoisonPillAdmin:
     @pytest.fixture(autouse=True)
     def check_nodes(self):
         """Check if nodes are available for real requests."""
-        from tests.stress.real_stress_client import REAL_REQUESTS, RealStressClient
+        from docker.stress.real_stress_client import REAL_REQUESTS, RealStressClient
         if REAL_REQUESTS:
             client = RealStressClient()
             if not client.wait_for_nodes(timeout=15):

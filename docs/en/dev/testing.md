@@ -51,13 +51,13 @@ Run stress tests in Docker containers with 4 HieraChain nodes (1 CPU, 1GiB RAM e
 * Build and run stress tests with HTML report:
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
+    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest docker/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
     ```
 
 * Run real network stress tests (sends actual HTTP requests to nodes):
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest tests/stress/test_real_network.py -v -s
+    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest docker/stress/test_real_network.py -v -s
     ```
 
 * Run without HTML report:
@@ -109,7 +109,7 @@ kubectl port-forward service/hierachain-api 2661:2661 -n hierachain --address 0.
 curl http://localhost:2661/api/ledger/health
 
 # Run stress test
-docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest tests/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
+docker compose -f docker/docker-compose.k8s-stress.yml --profile stress-test run --build stress-tester python -m pytest docker/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
 
 # Cleanup
 kubectl delete -k docker/k8s/

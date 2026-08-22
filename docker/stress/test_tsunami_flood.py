@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 import pytest
 
-from tests.stress.real_stress_client import DEFAULT_NODES
+from docker.stress.real_stress_client import DEFAULT_NODES
 
 logger = logging.getLogger(__name__)
 
@@ -59,14 +59,14 @@ class TsunamiFloodTest:
         self.results: list[dict] = []
         
         # Shared client to avoid redundant health checks and session overhead
-        from tests.stress.real_stress_client import REAL_REQUESTS, RealStressClient
+        from docker.stress.real_stress_client import REAL_REQUESTS, RealStressClient
         self.client = None
         if REAL_REQUESTS:
             self.client = RealStressClient(nodes=self.config["target_nodes"])
 
     def _process_event(self, event: dict, node_id: str) -> bool:
         """Process a single event returning True on success."""
-        from tests.stress.real_stress_client import REAL_REQUESTS
+        from docker.stress.real_stress_client import REAL_REQUESTS
 
         if REAL_REQUESTS and self.client:
             return self.client.submit_event(node_id, event)
@@ -81,7 +81,7 @@ class TsunamiFloodTest:
         """
         Send a batch of events to a node.
         """
-        from tests.stress.real_stress_client import REAL_REQUESTS
+        from docker.stress.real_stress_client import REAL_REQUESTS
         node_id = node_url.split(":")[0] if (REAL_REQUESTS and self.client) else ""
 
         start_time = time.time()
@@ -106,7 +106,7 @@ class TsunamiFloodTest:
         }
 
     def _ensure_nodes_ready(self) -> None:
-        from tests.stress.real_stress_client import REAL_REQUESTS
+        from docker.stress.real_stress_client import REAL_REQUESTS
         if not REAL_REQUESTS or not self.client:
             return
         # Increased node waiting timeout to 120s for Docker cold start

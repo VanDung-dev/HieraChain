@@ -10,7 +10,7 @@ This test simulates a Distributed Denial of Service (DDoS) attack by:
 import pytest
 import logging
 import time
-from tests.stress.real_stress_client import (
+from docker.stress.real_stress_client import (
     RealStressClient,
     run_real_stress_test,
     REAL_REQUESTS,
@@ -82,7 +82,7 @@ class TestDDoSAttack:
         success = 0
         failed = 0
         
-        from tests.stress.real_stress_client import generate_event
+        from docker.stress.real_stress_client import generate_event
         
         for i in range(500):
             event = generate_event()

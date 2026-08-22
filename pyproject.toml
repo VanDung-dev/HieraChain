@@ -94,7 +94,7 @@ packages = { find = { include = ["hierachain*"] } }
 [tool.pytest.ini_options]
 minversion = "6.0"
 testpaths = ["tests/unit", "tests/integration", "tests/scenarios"]
-norecursedirs = ["tests/stress"]
+norecursedirs = ["docker", "docker/stress", ".git", "build", "dist"]
 
 python_files = "test_*.py"
 python_classes = "Test*"

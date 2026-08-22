@@ -267,7 +267,7 @@ run_tests() {
       export HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
       export HRC_IPFS_ENCRYPTION_KEY='${IPFS_ENCRYPTION_KEY}'
       ${k8s_env}
-      pytest tests/stress/ -v \
+      pytest docker/stress/ -v \
         --html=/app/log/report/${report}.html \
         --self-contained-html \
         --junitxml=/app/log/report/${report}.xml

@@ -437,6 +437,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./scripts:/app/docker/scripts
+      - ./stress:/app/docker/stress
       - ../tests:/app/tests
       - ../log:/app/log
     depends_on:

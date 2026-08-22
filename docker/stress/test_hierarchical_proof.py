@@ -16,7 +16,7 @@ import logging
 import os
 import pytest
 
-from tests.stress.real_stress_client import (
+from docker.stress.real_stress_client import (
     RealStressClient,
     REAL_REQUESTS,
     DEFAULT_NODES,
