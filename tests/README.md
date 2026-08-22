@@ -11,8 +11,7 @@ tests/
 ├── conftest.py          # Pytest configuration and shared fixtures
 ├── unit/                # Unit tests for individual components
 ├── integration/         # Integration tests for module interactions
-├── scenarios/          # End-to-end scenario tests
-└── stress/             # Stress and performance tests
+└── scenarios/           # End-to-end scenario tests
 ```
 
 ---
