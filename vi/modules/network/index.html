@@ -4651,7 +4651,7 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Khởi tạo manager tích hợp MSP</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">secure_node</span> <span class="o">=</span> <span class="n">SecureConnectionManager</span><span class="p">(</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">node_id</span><span class="o">=</span><span class="s2">&quot;node_001&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">node_id</span><span class="o">=</span><span class="s2">"node_001"</span><span class="p">,</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">port</span><span class="o">=</span><span class="mi">5001</span><span class="p">,</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">msp</span><span class="o">=</span><span class="n">msp_instance</span><span class="p">,</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">identity_mgr</span><span class="o">=</span><span class="n">identity_instance</span>
@@ -4661,8 +4661,8 @@
 </code></pre></div>
 <h3 id="2-gui-thong-iep-co-ky-so">2. Gửi thông điệp có ký số</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Tự động ký và gửi qua kênh đã mã hóa</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;block_proposal&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">}}</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">send_secure</span><span class="p">(</span><span class="s2">&quot;peer_002&quot;</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="s2">"block_proposal"</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">}}</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">await</span> <span class="n">secure_node</span><span class="o">.</span><span class="n">send_secure</span><span class="p">(</span><span class="s2">"peer_002"</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
 </code></pre></div>
 <hr />
 <h2 id="cau-hinh-p2p-environment-variables">Cấu hình P2P (Environment Variables)</h2>

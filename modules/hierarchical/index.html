@@ -4712,9 +4712,9 @@
 <p>HieraChain uses the <strong>Two-Phase Commit (2PC)</strong> protocol via <code>CrossChainTransactionManager</code> to ensure atomicity when performing operations involving multiple Sub-Chains:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Example of initiating a cross-chain transaction</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">tx_id</span> <span class="o">=</span> <span class="n">hierarchy_manager</span><span class="o">.</span><span class="n">initiate_cross_chain_transaction</span><span class="p">(</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">source_chain_name</span><span class="o">=</span><span class="s2">&quot;supply_chain&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">dest_chain_name</span><span class="o">=</span><span class="s2">&quot;finance_chain&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">payload</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;asset_id&quot;</span><span class="p">:</span> <span class="s2">&quot;INV-100&quot;</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;settle_payment&quot;</span><span class="p">}</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">source_chain_name</span><span class="o">=</span><span class="s2">"supply_chain"</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">dest_chain_name</span><span class="o">=</span><span class="s2">"finance_chain"</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">payload</span><span class="o">=</span><span class="p">{</span><span class="s2">"asset_id"</span><span class="p">:</span> <span class="s2">"INV-100"</span><span class="p">,</span> <span class="s2">"action"</span><span class="p">:</span> <span class="s2">"settle_payment"</span><span class="p">}</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span>
 </code></pre></div>
 <hr />

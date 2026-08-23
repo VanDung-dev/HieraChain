@@ -4526,7 +4526,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hierachain.error_mitigation.journal</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransactionJournal</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Initialize a secure journal (Path Traversal protected)</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">TransactionJournal</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">&quot;data/journal&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">journal</span> <span class="o">=</span> <span class="n">TransactionJournal</span><span class="p">(</span><span class="n">storage_dir</span><span class="o">=</span><span class="s2">"data/journal"</span><span class="p">)</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Write a durable event</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">journal</span><span class="o">.</span><span class="n">log_event</span><span class="p">(</span><span class="n">event_dict</span><span class="p">)</span>
