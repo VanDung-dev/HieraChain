@@ -82,13 +82,16 @@ def sign_message(
     }
 
 
-def verify_message(message: dict[str, Any], public_key_hex: str) -> bool:
+def verify_message(
+    message: dict[str, Any], public_key_hex: str, max_drift: float = 300.0
+) -> bool:
     """
     Verify the signature on a signed P2P message.
 
     Args:
         message: The signed message dict.
         public_key_hex: The sender's Ed25519 public key (hex).
+        max_drift: Maximum allowed timestamp drift in seconds (default: 300s).
 
     Returns:
         True if signature is valid, False otherwise.
@@ -108,6 +111,13 @@ def verify_message(message: dict[str, Any], public_key_hex: str) -> bool:
             or signature is None
         ):
             logger.warning("Message missing required fields for verification")
+            return False
+
+        if max_drift > 0 and abs(time.time() - float(ts)) > max_drift:
+            logger.warning(
+                "Message timestamp drift too large: %.1fs",
+                abs(time.time() - float(ts)),
+            )
             return False
 
         signable = create_signable_payload(
