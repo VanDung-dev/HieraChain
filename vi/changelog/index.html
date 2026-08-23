@@ -4456,13 +4456,21 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (4)</summary>
+<summary>Improvements (7)</summary>
 <ul>
+<li>
+<p>2026-08-24</p>
+<ul>
+<li><strong>API</strong>: Bổ sung module <code>hierachain/api/context.py</code> quản lý vòng đời instance <code>p2p_client</code> runtime theo ngữ cảnh, loại bỏ import phụ thuộc vòng khi khởi tạo/dừng server và xử lý endpoint network ping.</li>
+<li><strong>Hierarchical (Rebalancer)</strong>: Tập trung các hàm tiện ích kiểm tra Sub-Chain vào <code>hierachain/hierarchical/rebalancer/utils.py</code> và tối ưu hóa luồng di chuyển trạng thái khi phân tách Sub-Chain (chuyển giao <code>pending_events</code> và kế thừa State Snapshot thay vì làm biến đổi lịch sử block đã commit).</li>
+<li><strong>Domains</strong>: Tái cấu trúc cấu trúc module domain event trong <code>hierachain/domains/events/</code>, loại bỏ các import phụ thuộc vòng giữa lớp cơ sở <code>DomainEvent</code> và các định nghĩa sự kiện cụ thể.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-23</p>
 <ul>
 <li><strong>Mạng</strong>: Bổ sung xác thực độ lệch thời gian (<code>max_drift</code>, mặc định 300 giây) cho hàm <code>verify_message</code> trong <code>hierachain/network/message_cryptographic.py</code> nhằm đảm bảo tính tươi của các gói tin P2P và từ chối các thông điệp cũ hoặc lặp lại.</li>
-<li><strong>API (Rate Limiter)</strong>: Tối ưu hóa <code>RateLimiter</code> bộ nhớ trong <code>hierachain/api/middleware.py</code> với cơ chế dọn dẹp hết hạn theo lô định kỳ (<code>_cleanup_expired</code>), loại bỏ việc tái tạo toàn bộ dict O(N) trong lock ở mỗi request dưới tải cao; bổ sung trích xuất IP client từ header <code>X-Forwarded-For</code> khi chạy sau proxy/gateway.</li>
+<li><strong>API (Rate Limiter)</strong>: Tối ưu hóa <code>RateLimiter</code> bộ nhớ trong <code>hierachain/api/middleware.py</code> với cơ chế dọn dẹp hết hạn theo lô định kỳ (<code>_cleanup_expired</code>), loại bỏ việc tái tạo toàn bộ dict $O(N)$ trong lock ở mỗi request dưới tải cao; bổ sung trích xuất IP client từ header <code>X-Forwarded-For</code> khi chạy sau proxy/gateway.</li>
 <li><strong>Core &amp; Hierarchical</strong>: Tối ưu hóa <code>finalize_block</code> trong <code>Blockchain</code> (<code>hierachain/core/blockchain.py</code>) và <code>MainChain</code> (<code>hierachain/hierarchical/main_chain/base.py</code>) để bảo toàn danh sách <code>pending_events</code> khi quá trình tạo hoặc xác thực block thất bại, ngăn ngừa mất dữ liệu sự kiện; bổ sung khóa đồng bộ <code>self.lock</code> cho các phương thức đóng block của <code>MainChain</code>.</li>
 </ul>
 </li>
@@ -4475,8 +4483,16 @@
 </ul>
 </details>
 <details class="warning">
-<summary>Fix (5)</summary>
+<summary>Fix (8)</summary>
 <ul>
+<li>
+<p>2026-08-24</p>
+<ul>
+<li><strong>Đồng thuận (Ordering)</strong>: Bổ sung kiểm tra batch rỗng (<code>if not self.current_batch: return False</code>) cho hàm <code>is_batch_ready</code> trong <code>BlockBuilder</code> (<code>hierachain/consensus/ordering/block_builder.py</code>) nhằm ngăn chặn việc kích hoạt kiểm tra sẵn sàng sai lệch và gọi tạo block rỗng khi hệ thống ở trạng thái nhàn rỗi.</li>
+<li><strong>Core (Merkle Tree)</strong>: Bổ sung tiền tố phân tách miền (<code>0x01</code>) cho các phép băm node trung gian trong <code>MerkleTree._build_tree</code> (<code>hierachain/core/merkle_tree.py</code>) để ngăn ngừa rủi ro va chạm nhánh và trùng lặp băm.</li>
+<li><strong>API (Payload Limit)</strong>: Bổ sung kiểm tra kích thước stream body trực tiếp trong <code>add_payload_limit</code> (<code>hierachain/api/middleware.py</code>) nhằm kiểm soát giới hạn tải lên tối đa (1MB) cho các request dạng chunked transfer không có <code>Content-Length</code>.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-23</p>
 <ul>
