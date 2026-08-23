@@ -57,8 +57,8 @@ class MerkleTree:
             for i in range(0, len(current_level), 2):
                 left = current_level[i]
                 right = current_level[i+1] if i+1 < len(current_level) else left
-                combined = left + right
-                new_level.append(hashlib.sha256(combined.encode()).hexdigest())
+                combined = b"\x01" + left.encode() + right.encode()
+                new_level.append(hashlib.sha256(combined).hexdigest())
             current_level = new_level
             
         return current_level[0]
