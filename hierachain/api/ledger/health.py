@@ -15,8 +15,9 @@ async def health_check():
 
 @router.get("/network/ping/{target_id}")
 async def network_ping(target_id: str):
-    from hierachain.api.server import p2p_client
+    from hierachain.api.context import get_p2p_client
 
+    p2p_client = get_p2p_client()
     if not p2p_client:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
