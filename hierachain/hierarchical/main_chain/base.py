@@ -282,20 +282,23 @@ class MainChain(Blockchain):
         Returns:
             The newly created and added block, or None if no pending events
         """
-        if not self.pending_events:
+        with self.lock:
+            if not self.pending_events:
+                return None
+
+            # Create block with pending events
+            events = self.pending_events.copy()
+            new_block = self.create_block(events)
+
+            # Finalize block using PoA consensus
+            finalized_block = self.consensus.finalize_block(new_block, "main_chain")
+
+            # Add finalized block to chain
+            if finalized_block and self.add_block(finalized_block):
+                self.pending_events = self.pending_events[len(events):]
+                return finalized_block
+
             return None
-
-        # Create block with pending events
-        new_block = self.create_block()
-
-        # Finalize block using PoA consensus
-        finalized_block = self.consensus.finalize_block(new_block, "main_chain")
-
-        # Add finalized block to chain
-        if self.add_block(finalized_block):
-            return finalized_block
-
-        return None
 
     def get_main_chain_stats(self) -> dict[str, Any]:
         """
@@ -313,25 +316,28 @@ class MainChain(Blockchain):
         Returns:
             Information about the finalized block, or None if no pending events
         """
-        if not self.pending_events:
+        with self.lock:
+            if not self.pending_events:
+                return None
+
+            # Create block with pending events
+            events = self.pending_events.copy()
+            new_block = self.create_block(events)
+
+            # Finalize block using PoA consensus
+            finalized_block = self.consensus.finalize_block(new_block, "main_chain")
+
+            # Add finalized block to chain
+            if finalized_block and self.add_block(finalized_block):
+                self.pending_events = self.pending_events[len(events):]
+                return {
+                    "block_index": finalized_block.index,
+                    "block_hash": finalized_block.hash,
+                    "events_count": len(finalized_block.events),
+                    "finalized_at": time.time()
+                }
+
             return None
-
-        # Create block with pending events
-        new_block = self.create_block()
-
-        # Finalize block using PoA consensus
-        finalized_block = self.consensus.finalize_block(new_block, "main_chain")
-
-        # Add finalized block to chain
-        if self.add_block(finalized_block):
-            return {
-                "block_index": finalized_block.index,
-                "block_hash": finalized_block.hash,
-                "events_count": len(finalized_block.events),
-                "finalized_at": time.time()
-            }
-
-        return None
 
     def validate_sub_chain_proof_format(self, proof_data: dict[str, Any]) -> bool:
         """
