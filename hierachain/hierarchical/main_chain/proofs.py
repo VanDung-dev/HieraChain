@@ -142,7 +142,20 @@ def _verify_proof_in_main_chain(
             if _find_proof_in_events(events, proof_hash, sub_chain_name):
                 return True
 
-    return _find_proof_in_events(chain.pending_events, proof_hash, sub_chain_name)
+    if _find_proof_in_events(chain.pending_events, proof_hash, sub_chain_name):
+        return True
+
+    # Fallback to chain scan in case proof was minted into an unindexed block
+    for block in chain.chain:
+        events = (
+            block.to_event_list()
+            if hasattr(block, "to_event_list")
+            else table_to_list_of_dicts(block.events)
+        )
+        if _find_proof_in_events(events, proof_hash, sub_chain_name):
+            return True
+
+    return False
 
 
 def _get_proofs_by_sub_chain_from_main_chain(
