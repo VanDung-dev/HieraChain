@@ -40,6 +40,8 @@ class BlockBuilder:
     
     def is_batch_ready(self) -> bool:
         """Check if current batch is ready for block creation"""
+        if not self.current_batch:
+            return False
         if len(self.current_batch) >= self.block_size:
             return True
         if (time.time() - self.batch_start_time) >= self.batch_timeout:
