@@ -209,8 +209,10 @@ class Blockchain:
             if not self.pending_events:
                 return None
             
-            new_block = self.create_block()
+            events = self.pending_events.copy()
+            new_block = self.create_block(events)
             if self.add_block(new_block):
+                self.pending_events = self.pending_events[len(events):]
                 return new_block
             return None
     
