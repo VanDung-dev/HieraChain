@@ -94,13 +94,20 @@ class RateLimiter:
         self.store: dict = {}
         self.limit = requests_per_minute
         self._lock = threading.Lock()
+        self._last_cleanup = int(time.time())
+
+    def _cleanup_expired(self, now: int) -> None:
+        """Periodic batch cleanup of expired IP records to keep memory bounded."""
+        if now - self._last_cleanup > 60:
+            self._last_cleanup = now
+            expired = [k for k, v in self.store.items() if now - v[0] > 60]
+            for k in expired:
+                self.store.pop(k, None)
 
     def is_allowed(self, ip: str) -> bool:
         now = int(time.time())
         with self._lock:
-            # ponytail: evict expired entries on every call (O(n) but store is bounded by unique IPs)
-            self.store = {k: v for k, v in self.store.items() if now - v[0] <= 60}
-
+            self._cleanup_expired(now)
             start, count = self.store.get(ip, (now, 0))
 
             if now - start > 60:
@@ -183,7 +190,10 @@ def add_rate_limit(fast_app: FastAPI, settings, exempt_paths: set[str]) -> None:
 
         client = request.client
         client_ip = "unknown"
-        if client is not None:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            client_ip = forwarded.split(",")[0].strip()
+        elif client is not None:
             client_ip = client.host
 
         if not limiter.is_allowed(client_ip):
