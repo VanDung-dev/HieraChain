@@ -269,9 +269,8 @@ def _validate_consensus_message(
     if message.sender_id not in all_nodes or message.view < 0 or message.sequence_number < 0:
         return False
     if not verify_message_signature(message, public_keys):
-        if strictness == "high":
-            return False
         log_func(message.sender_id, "signature_verification_failed")
+        return False
     if (time.time() - message.timestamp) > timeout:
         log_func(message.sender_id, "slow_message")
     return True
