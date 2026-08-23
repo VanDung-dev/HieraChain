@@ -67,14 +67,25 @@ def add_payload_limit(fast_app: FastAPI):
     async def limit_upload_size(request: Request, call_next):
         max_size = 1 * 1024 * 1024
 
-        content_length_header = request.headers.get("content-length")
-        if (
-            request.method in ("POST", "PUT", "PATCH")
-            and content_length_header
-        ):
-            try:
-                content_length = int(content_length_header)
-                if content_length > max_size:
+        if request.method in ("POST", "PUT", "PATCH"):
+            content_length_header = request.headers.get("content-length")
+            if content_length_header:
+                try:
+                    content_length = int(content_length_header)
+                    if content_length > max_size:
+                        return JSONResponse(
+                            status_code=413,
+                            content={
+                                "error": "Payload Too Large",
+                                "message": f"Request body too large. Limit is {max_size} bytes",
+                                "status_code": 413
+                            }
+                        )
+                except ValueError:
+                    pass
+            else:
+                body = await request.body()
+                if len(body) > max_size:
                     return JSONResponse(
                         status_code=413,
                         content={
@@ -83,8 +94,6 @@ def add_payload_limit(fast_app: FastAPI):
                             "status_code": 413
                         }
                     )
-            except ValueError:
-                pass
 
         return await call_next(request)
 
