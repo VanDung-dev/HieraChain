@@ -53,11 +53,13 @@ class LockdownMessage:
         message_data = f"{self.node_id}:{self.timestamp}:{self.reason}:{self.message_type.value}"
         return hmac.new(
             secret_key.encode(), message_data.encode(), hashlib.sha256
-        ).hexdigest()[:32]
+        ).hexdigest()
 
     def verify_signature(self, secret_key: str) -> bool:
         expected = self.compute_signature(secret_key)
-        return hmac.compare_digest(self.signature, expected)
+        return hmac.compare_digest(self.signature, expected) or hmac.compare_digest(
+            self.signature, expected[:32]
+        )
 
 
 @dataclass
