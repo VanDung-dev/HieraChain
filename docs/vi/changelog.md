@@ -8,13 +8,25 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (1)"
+??? note "Improvements (4)"
+
+    * 2026-08-23
+
+        * **Mạng**: Bổ sung xác thực độ lệch thời gian (`max_drift`, mặc định 300 giây) cho hàm `verify_message` trong `hierachain/network/message_cryptographic.py` nhằm đảm bảo tính tươi của các gói tin P2P và từ chối các thông điệp cũ hoặc lặp lại.
+        * **API (Rate Limiter)**: Tối ưu hóa `RateLimiter` bộ nhớ trong `hierachain/api/middleware.py` với cơ chế dọn dẹp hết hạn theo lô định kỳ (`_cleanup_expired`), loại bỏ việc tái tạo toàn bộ dict $O(N)$ trong lock ở mỗi request dưới tải cao; bổ sung trích xuất IP client từ header `X-Forwarded-For` khi chạy sau proxy/gateway.
+        * **Core & Hierarchical**: Tối ưu hóa `finalize_block` trong `Blockchain` (`hierachain/core/blockchain.py`) và `MainChain` (`hierachain/hierarchical/main_chain/base.py`) để bảo toàn danh sách `pending_events` khi quá trình tạo hoặc xác thực block thất bại, ngăn ngừa mất dữ liệu sự kiện; bổ sung khóa đồng bộ `self.lock` cho các phương thức đóng block của `MainChain`.
 
     * 2026-08-15
 
         * **Dọn dẹp mã thừa**: Loại bỏ các hàm tiện ích không dùng trên các module hierarchical và domain (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): xóa `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, và `create_multi_org_network` để codebase gọn gàng và dễ bảo trì hơn.
 
-??? warning "Fix (2)"
+??? warning "Fix (5)"
+
+    * 2026-08-23
+
+        * **Đồng thuận (BFT)**: Áp dụng xác thực chữ ký nghiêm ngặt trong `_validate_consensus_message` (`hierachain/consensus/bft/helpers.py`), đảm bảo các thông điệp đồng thuận BFT (`PRE-PREPARE`, `PREPARE`, `COMMIT`) có chữ ký không hợp lệ luôn bị từ chối (`return False`) trên mọi chế độ strictness.
+        * **Hierarchical (Proof Verification)**: Bổ sung cơ chế quét chuỗi dự phòng (fallback chain scan) trong `_verify_proof_in_main_chain` (`hierachain/hierarchical/main_chain/proofs.py`) để tìm kiếm proof trên các block đã commit khi chỉ mục `proof_index` chưa kịp đồng bộ.
+        * **Cluster (Lockdown Protocol)**: Chuẩn hóa chữ ký HMAC-SHA256 của `LockdownMessage` trong `hierachain/cluster/lockdown_types.py` sang định dạng 64 ký tự hex đầy đủ (256-bit), đồng thời duy trì khả năng tương thích ngược với chữ ký cắt ngắn 32 ký tự cũ trong `verify_signature`.
 
     * 2026-08-14
 

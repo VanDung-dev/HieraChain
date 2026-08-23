@@ -8,13 +8,25 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (1)"
+??? note "Improvements (4)"
+
+    * 2026-08-23
+
+        * **Network**: Added timestamp drift validation (`max_drift`, default 300s) to `verify_message` in `hierachain/network/message_cryptographic.py` to ensure freshness of received P2P messages and reject replayed packets with stale timestamps.
+        * **API (Rate Limiter)**: Optimized in-memory `RateLimiter` in `hierachain/api/middleware.py` with periodic batch expiration cleanup (`_cleanup_expired`), eliminating $O(N)$ dictionary rebuilds and lock contention on every request under high traffic load; added client IP extraction from `X-Forwarded-For` header for proxy deployments.
+        * **Core & Hierarchical**: Enhanced `finalize_block` in `Blockchain` (`hierachain/core/blockchain.py`) and `MainChain` (`hierachain/hierarchical/main_chain/base.py`) to preserve `pending_events` when block creation or validation fails, preventing event data loss; added `self.lock` synchronization to `MainChain` block finalization methods.
 
     * 2026-08-15
 
         * **Dead Code Removal**: Removed unused utility functions across hierarchical and domain modules (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): deleted `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, and `create_multi_org_network` for a leaner, more maintainable codebase.
 
-??? warning "Fix (2)"
+??? warning "Fix (5)"
+
+    * 2026-08-23
+
+        * **Consensus (BFT)**: Enforced strict signature verification in `_validate_consensus_message` (`hierachain/consensus/bft/helpers.py`), ensuring that incoming BFT messages (`PRE-PREPARE`, `PREPARE`, `COMMIT`) with invalid or missing signatures are always rejected (`return False`) across all strictness modes.
+        * **Hierarchical (Proof Verification)**: Added fallback chain scanning in `_verify_proof_in_main_chain` (`hierachain/hierarchical/main_chain/proofs.py`) to search committed blocks when a proof submission is not yet reflected in the O(1) `proof_index`.
+        * **Cluster (Lockdown Protocol)**: Standardized `LockdownMessage` HMAC-SHA256 signatures in `hierachain/cluster/lockdown_types.py` to use the full 64-character hex digest (256-bit) while maintaining backward compatibility with legacy 32-character truncated signatures in `verify_signature`.
 
     * 2026-08-14
 
