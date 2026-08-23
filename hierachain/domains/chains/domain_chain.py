@@ -10,7 +10,7 @@ from typing import Any
 
 from hierachain.domains.chains.base_chain import BaseChain
 from hierachain.core.utils import get_block_events as _get_block_events
-from hierachain.domains.events.domain_event import (
+from hierachain.domains.events.event_creators import (
     create_resource_allocation,
     create_quality_check,
     create_status_update,

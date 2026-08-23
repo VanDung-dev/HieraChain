@@ -63,34 +63,5 @@ class DomainEvent(BaseEvent):
         return True
 
 
-# Import and expose sub-components for backward compatibility
-from hierachain.domains.events.custom_events import (
-    ResourceAllocationEvent,
-    QualityCheckEvent,
-    StatusUpdateEvent,
-    ApprovalEvent,
-    ComplianceEvent,
-)
-
-from hierachain.domains.events.event_creators import (
-    create_resource_allocation,
-    create_quality_check,
-    create_status_update,
-    create_approval,
-    create_compliance_check,
-)
-
-__all__ = [
-    "DomainEvent",
-    "ResourceAllocationEvent",
-    "QualityCheckEvent",
-    "StatusUpdateEvent",
-    "ApprovalEvent",
-    "ComplianceEvent",
-    "create_resource_allocation",
-    "create_quality_check",
-    "create_status_update",
-    "create_approval",
-    "create_compliance_check",
-]
+__all__ = ["DomainEvent"]
 
