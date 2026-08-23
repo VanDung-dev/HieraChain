@@ -7,7 +7,7 @@ import time
 from typing import Any
 
 from hierachain.hierarchical.rebalancer.types import RebalanceMetrics
-from hierachain.hierarchical.rebalancer.split_ops import (
+from hierachain.hierarchical.rebalancer.utils import (
     _get_event_count,
     _get_block_count,
 )

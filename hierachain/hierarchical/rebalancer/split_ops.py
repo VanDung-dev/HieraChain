@@ -10,36 +10,16 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from hierachain.hierarchical.rebalancer.types import SplitResult, RebalanceStatus, SplitStrategy
+from hierachain.hierarchical.rebalancer.utils import (
+    _get_sub_chain_id,
+    _get_event_count,
+    _get_block_count,
+)
 
 if TYPE_CHECKING:
     from hierachain.hierarchical.rebalancer.rebalancer import SubChainRebalancer
 
 logger = logging.getLogger(__name__)
-
-
-def _get_sub_chain_id(subchain: Any) -> str:
-    if hasattr(subchain, "name"):
-        return subchain.name
-    if hasattr(subchain, "sub_chain_id"):
-        return subchain.sub_chain_id
-    return f"subchain-{id(subchain)}"
-
-
-def _get_event_count(subchain: Any) -> int:
-    if hasattr(subchain, "get_event_count"):
-        return subchain.get_event_count()
-    if hasattr(subchain, "blockchain"):
-        blocks = subchain.blockchain.get_chain()
-        return sum(len(b.events) for b in blocks if hasattr(b, "events"))
-    return 0
-
-
-def _get_block_count(subchain: Any) -> int:
-    if hasattr(subchain, "get_block_count"):
-        return subchain.get_block_count()
-    if hasattr(subchain, "blockchain"):
-        return len(subchain.blockchain.get_chain())
-    return 0
 
 
 def _get_pending_events(subchain: Any) -> list[Any]:
@@ -148,17 +128,7 @@ def _migrate_state_for_rebalancer(
     if len(children) < 2:
         return 0, 0
 
-    committed_events = _get_committed_block_events(parent)
-    for event in committed_events:
-        target_idx = _select_target_child_for_rebalancer(
-            rebalancer,
-            event,
-            len(children),
-        )
-        target = children[target_idx]
-        if _add_event_to_chain(target, event):
-            events_migrated += 1
-
+    # Migrate pending events that have not yet been finalized
     pending_events = _get_pending_events(parent)
     for event in pending_events:
         target_idx = _select_target_child_for_rebalancer(
@@ -170,11 +140,19 @@ def _migrate_state_for_rebalancer(
         if _add_event_to_chain(target, event):
             events_migrated += 1
 
+    # Inherit entity world state snapshot to avoid altering immutable block history
+    if hasattr(parent, "state") and hasattr(parent.state, "entities"):
+        for entity_id, entity_state in parent.state.entities.items():
+            target_idx = int(hashlib.sha256(str(entity_id).encode()).hexdigest()[:8], 16) % len(children)
+            target = children[target_idx]
+            if hasattr(target, "state") and hasattr(target.state, "entities"):
+                target.state.entities[entity_id] = entity_state.copy() if hasattr(entity_state, "copy") else entity_state
+
     _mark_chain_as_split(parent, [c for c in children])
 
     logger.info(
-        "Migrated %d events (%d pending + %d committed) from parent %s to %d children",
-        events_migrated, len(pending_events), len(committed_events),
+        "Migrated %d pending events and entity state snapshot from parent %s to %d children",
+        events_migrated,
         getattr(parent, "name", str(parent)), len(children)
     )
 
