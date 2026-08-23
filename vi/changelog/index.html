@@ -4462,7 +4462,7 @@
 <p>2026-08-23</p>
 <ul>
 <li><strong>Mạng</strong>: Bổ sung xác thực độ lệch thời gian (<code>max_drift</code>, mặc định 300 giây) cho hàm <code>verify_message</code> trong <code>hierachain/network/message_cryptographic.py</code> nhằm đảm bảo tính tươi của các gói tin P2P và từ chối các thông điệp cũ hoặc lặp lại.</li>
-<li><strong>API (Rate Limiter)</strong>: Tối ưu hóa <code>RateLimiter</code> bộ nhớ trong <code>hierachain/api/middleware.py</code> với cơ chế dọn dẹp hết hạn theo lô định kỳ (<code>_cleanup_expired</code>), loại bỏ việc tái tạo toàn bộ dict $O(N)$ trong lock ở mỗi request dưới tải cao; bổ sung trích xuất IP client từ header <code>X-Forwarded-For</code> khi chạy sau proxy/gateway.</li>
+<li><strong>API (Rate Limiter)</strong>: Tối ưu hóa <code>RateLimiter</code> bộ nhớ trong <code>hierachain/api/middleware.py</code> với cơ chế dọn dẹp hết hạn theo lô định kỳ (<code>_cleanup_expired</code>), loại bỏ việc tái tạo toàn bộ dict O(N) trong lock ở mỗi request dưới tải cao; bổ sung trích xuất IP client từ header <code>X-Forwarded-For</code> khi chạy sau proxy/gateway.</li>
 <li><strong>Core &amp; Hierarchical</strong>: Tối ưu hóa <code>finalize_block</code> trong <code>Blockchain</code> (<code>hierachain/core/blockchain.py</code>) và <code>MainChain</code> (<code>hierachain/hierarchical/main_chain/base.py</code>) để bảo toàn danh sách <code>pending_events</code> khi quá trình tạo hoặc xác thực block thất bại, ngăn ngừa mất dữ liệu sự kiện; bổ sung khóa đồng bộ <code>self.lock</code> cho các phương thức đóng block của <code>MainChain</code>.</li>
 </ul>
 </li>

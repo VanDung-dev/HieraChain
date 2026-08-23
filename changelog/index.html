@@ -4462,7 +4462,7 @@
 <p>2026-08-23</p>
 <ul>
 <li><strong>Network</strong>: Added timestamp drift validation (<code>max_drift</code>, default 300s) to <code>verify_message</code> in <code>hierachain/network/message_cryptographic.py</code> to ensure freshness of received P2P messages and reject replayed packets with stale timestamps.</li>
-<li><strong>API (Rate Limiter)</strong>: Optimized in-memory <code>RateLimiter</code> in <code>hierachain/api/middleware.py</code> with periodic batch expiration cleanup (<code>_cleanup_expired</code>), eliminating $O(N)$ dictionary rebuilds and lock contention on every request under high traffic load; added client IP extraction from <code>X-Forwarded-For</code> header for proxy deployments.</li>
+<li><strong>API (Rate Limiter)</strong>: Optimized in-memory <code>RateLimiter</code> in <code>hierachain/api/middleware.py</code> with periodic batch expiration cleanup (<code>_cleanup_expired</code>), eliminating O(N) dictionary rebuilds and lock contention on every request under high traffic load; added client IP extraction from <code>X-Forwarded-For</code> header for proxy deployments.</li>
 <li><strong>Core &amp; Hierarchical</strong>: Enhanced <code>finalize_block</code> in <code>Blockchain</code> (<code>hierachain/core/blockchain.py</code>) and <code>MainChain</code> (<code>hierachain/hierarchical/main_chain/base.py</code>) to preserve <code>pending_events</code> when block creation or validation fails, preventing event data loss; added <code>self.lock</code> synchronization to <code>MainChain</code> block finalization methods.</li>
 </ul>
 </li>
