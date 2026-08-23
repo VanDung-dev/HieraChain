@@ -35,6 +35,8 @@ from hierachain.config.settings import get_settings
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 from hierachain.network.network_client import NetworkClient, NetworkClientConfig
 
+from hierachain.api.context import set_p2p_client, get_p2p_client
+
 logger = logging.getLogger(__name__)
 
 p2p_client: NetworkClient | None = None
@@ -86,6 +88,7 @@ async def _start_p2p_network_layer(settings) -> None:
     client_instance = NetworkClient(config)
     success = await client_instance.start()
     p2p_client = client_instance
+    set_p2p_client(client_instance)
     if success:
         logger.info("P2P network layer STARTED for node %s", settings.NODE_ID)
     else:
@@ -116,8 +119,10 @@ async def lifespan(_app: FastAPI):
     await ws_manager.stop()
     logger.info("WebSocket manager stopped")
 
-    if p2p_client:
-        await p2p_client.stop()
+    current_p2p = get_p2p_client()
+    if current_p2p:
+        await current_p2p.stop()
+        set_p2p_client(None)
         logger.info("P2P network layer stopped")
 
 
