@@ -13,7 +13,7 @@ icon: material/history
     * 2026-08-23
 
         * **Mạng**: Bổ sung xác thực độ lệch thời gian (`max_drift`, mặc định 300 giây) cho hàm `verify_message` trong `hierachain/network/message_cryptographic.py` nhằm đảm bảo tính tươi của các gói tin P2P và từ chối các thông điệp cũ hoặc lặp lại.
-        * **API (Rate Limiter)**: Tối ưu hóa `RateLimiter` bộ nhớ trong `hierachain/api/middleware.py` với cơ chế dọn dẹp hết hạn theo lô định kỳ (`_cleanup_expired`), loại bỏ việc tái tạo toàn bộ dict $O(N)$ trong lock ở mỗi request dưới tải cao; bổ sung trích xuất IP client từ header `X-Forwarded-For` khi chạy sau proxy/gateway.
+        * **API (Rate Limiter)**: Tối ưu hóa `RateLimiter` bộ nhớ trong `hierachain/api/middleware.py` với cơ chế dọn dẹp hết hạn theo lô định kỳ (`_cleanup_expired`), loại bỏ việc tái tạo toàn bộ dict O(N) trong lock ở mỗi request dưới tải cao; bổ sung trích xuất IP client từ header `X-Forwarded-For` khi chạy sau proxy/gateway.
         * **Core & Hierarchical**: Tối ưu hóa `finalize_block` trong `Blockchain` (`hierachain/core/blockchain.py`) và `MainChain` (`hierachain/hierarchical/main_chain/base.py`) để bảo toàn danh sách `pending_events` khi quá trình tạo hoặc xác thực block thất bại, ngăn ngừa mất dữ liệu sự kiện; bổ sung khóa đồng bộ `self.lock` cho các phương thức đóng block của `MainChain`.
 
     * 2026-08-15

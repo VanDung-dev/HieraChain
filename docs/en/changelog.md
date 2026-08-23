@@ -13,7 +13,7 @@ icon: material/history
     * 2026-08-23
 
         * **Network**: Added timestamp drift validation (`max_drift`, default 300s) to `verify_message` in `hierachain/network/message_cryptographic.py` to ensure freshness of received P2P messages and reject replayed packets with stale timestamps.
-        * **API (Rate Limiter)**: Optimized in-memory `RateLimiter` in `hierachain/api/middleware.py` with periodic batch expiration cleanup (`_cleanup_expired`), eliminating $O(N)$ dictionary rebuilds and lock contention on every request under high traffic load; added client IP extraction from `X-Forwarded-For` header for proxy deployments.
+        * **API (Rate Limiter)**: Optimized in-memory `RateLimiter` in `hierachain/api/middleware.py` with periodic batch expiration cleanup (`_cleanup_expired`), eliminating O(N) dictionary rebuilds and lock contention on every request under high traffic load; added client IP extraction from `X-Forwarded-For` header for proxy deployments.
         * **Core & Hierarchical**: Enhanced `finalize_block` in `Blockchain` (`hierachain/core/blockchain.py`) and `MainChain` (`hierachain/hierarchical/main_chain/base.py`) to preserve `pending_events` when block creation or validation fails, preventing event data loss; added `self.lock` synchronization to `MainChain` block finalization methods.
 
     * 2026-08-15
