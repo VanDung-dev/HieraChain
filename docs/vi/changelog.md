@@ -8,19 +8,31 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (4)"
+??? note "Improvements (7)"
+
+    * 2026-08-24
+
+        * **API**: Bổ sung module `hierachain/api/context.py` quản lý vòng đời instance `p2p_client` runtime theo ngữ cảnh, loại bỏ import phụ thuộc vòng khi khởi tạo/dừng server và xử lý endpoint network ping.
+        * **Hierarchical (Rebalancer)**: Tập trung các hàm tiện ích kiểm tra Sub-Chain vào `hierachain/hierarchical/rebalancer/utils.py` và tối ưu hóa luồng di chuyển trạng thái khi phân tách Sub-Chain (chuyển giao `pending_events` và kế thừa State Snapshot thay vì làm biến đổi lịch sử block đã commit).
+        * **Domains**: Tái cấu trúc cấu trúc module domain event trong `hierachain/domains/events/`, loại bỏ các import phụ thuộc vòng giữa lớp cơ sở `DomainEvent` và các định nghĩa sự kiện cụ thể.
 
     * 2026-08-23
 
         * **Mạng**: Bổ sung xác thực độ lệch thời gian (`max_drift`, mặc định 300 giây) cho hàm `verify_message` trong `hierachain/network/message_cryptographic.py` nhằm đảm bảo tính tươi của các gói tin P2P và từ chối các thông điệp cũ hoặc lặp lại.
-        * **API (Rate Limiter)**: Tối ưu hóa `RateLimiter` bộ nhớ trong `hierachain/api/middleware.py` với cơ chế dọn dẹp hết hạn theo lô định kỳ (`_cleanup_expired`), loại bỏ việc tái tạo toàn bộ dict O(N) trong lock ở mỗi request dưới tải cao; bổ sung trích xuất IP client từ header `X-Forwarded-For` khi chạy sau proxy/gateway.
+        * **API (Rate Limiter)**: Tối ưu hóa `RateLimiter` bộ nhớ trong `hierachain/api/middleware.py` với cơ chế dọn dẹp hết hạn theo lô định kỳ (`_cleanup_expired`), loại bỏ việc tái tạo toàn bộ dict $O(N)$ trong lock ở mỗi request dưới tải cao; bổ sung trích xuất IP client từ header `X-Forwarded-For` khi chạy sau proxy/gateway.
         * **Core & Hierarchical**: Tối ưu hóa `finalize_block` trong `Blockchain` (`hierachain/core/blockchain.py`) và `MainChain` (`hierachain/hierarchical/main_chain/base.py`) để bảo toàn danh sách `pending_events` khi quá trình tạo hoặc xác thực block thất bại, ngăn ngừa mất dữ liệu sự kiện; bổ sung khóa đồng bộ `self.lock` cho các phương thức đóng block của `MainChain`.
 
     * 2026-08-15
 
         * **Dọn dẹp mã thừa**: Loại bỏ các hàm tiện ích không dùng trên các module hierarchical và domain (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): xóa `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, và `create_multi_org_network` để codebase gọn gàng và dễ bảo trì hơn.
 
-??? warning "Fix (5)"
+??? warning "Fix (8)"
+
+    * 2026-08-24
+
+        * **Đồng thuận (Ordering)**: Bổ sung kiểm tra batch rỗng (`if not self.current_batch: return False`) cho hàm `is_batch_ready` trong `BlockBuilder` (`hierachain/consensus/ordering/block_builder.py`) nhằm ngăn chặn việc kích hoạt kiểm tra sẵn sàng sai lệch và gọi tạo block rỗng khi hệ thống ở trạng thái nhàn rỗi.
+        * **Core (Merkle Tree)**: Bổ sung tiền tố phân tách miền (`0x01`) cho các phép băm node trung gian trong `MerkleTree._build_tree` (`hierachain/core/merkle_tree.py`) để ngăn ngừa rủi ro va chạm nhánh và trùng lặp băm.
+        * **API (Payload Limit)**: Bổ sung kiểm tra kích thước stream body trực tiếp trong `add_payload_limit` (`hierachain/api/middleware.py`) nhằm kiểm soát giới hạn tải lên tối đa (1MB) cho các request dạng chunked transfer không có `Content-Length`.
 
     * 2026-08-23
 

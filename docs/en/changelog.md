@@ -8,19 +8,31 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (4)"
+??? note "Improvements (7)"
+
+    * 2026-08-24
+
+        * **API**: Introduced `hierachain/api/context.py` for decoupled, context-based P2P client runtime lifecycle management across API server initialization, shutdown, and network ping endpoints.
+        * **Hierarchical (Rebalancer)**: Centralized sub-chain utility functions into `hierachain/hierarchical/rebalancer/utils.py` and streamlined state migration during sub-chain splitting to migrate pending events and inherit entity World State snapshots without altering committed block history.
+        * **Domains**: Streamlined domain event module structure in `hierachain/domains/events/` by decoupling cross-module circular imports between `DomainEvent` base and concrete event definitions.
 
     * 2026-08-23
 
         * **Network**: Added timestamp drift validation (`max_drift`, default 300s) to `verify_message` in `hierachain/network/message_cryptographic.py` to ensure freshness of received P2P messages and reject replayed packets with stale timestamps.
-        * **API (Rate Limiter)**: Optimized in-memory `RateLimiter` in `hierachain/api/middleware.py` with periodic batch expiration cleanup (`_cleanup_expired`), eliminating O(N) dictionary rebuilds and lock contention on every request under high traffic load; added client IP extraction from `X-Forwarded-For` header for proxy deployments.
+        * **API (Rate Limiter)**: Optimized in-memory `RateLimiter` in `hierachain/api/middleware.py` with periodic batch expiration cleanup (`_cleanup_expired`), eliminating $O(N)$ dictionary rebuilds and lock contention on every request under high traffic load; added client IP extraction from `X-Forwarded-For` header for proxy deployments.
         * **Core & Hierarchical**: Enhanced `finalize_block` in `Blockchain` (`hierachain/core/blockchain.py`) and `MainChain` (`hierachain/hierarchical/main_chain/base.py`) to preserve `pending_events` when block creation or validation fails, preventing event data loss; added `self.lock` synchronization to `MainChain` block finalization methods.
 
     * 2026-08-15
 
         * **Dead Code Removal**: Removed unused utility functions across hierarchical and domain modules (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): deleted `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, and `create_multi_org_network` for a leaner, more maintainable codebase.
 
-??? warning "Fix (5)"
+??? warning "Fix (8)"
+
+    * 2026-08-24
+
+        * **Consensus (Ordering)**: Added empty batch check (`if not self.current_batch: return False`) to `is_batch_ready` in `BlockBuilder` (`hierachain/consensus/ordering/block_builder.py`) to prevent false-positive readiness checks and no-op block creation triggers during idle timeout periods.
+        * **Core (Merkle Tree)**: Added domain separation prefix (`0x01`) to internal node hashing in `MerkleTree._build_tree` (`hierachain/core/merkle_tree.py`) to prevent node duplication and second-preimage collision risks.
+        * **API (Payload Limit)**: Enforced upload payload size limits (1MB) on streaming/chunked requests lacking `Content-Length` in `add_payload_limit` (`hierachain/api/middleware.py`).
 
     * 2026-08-23
 
