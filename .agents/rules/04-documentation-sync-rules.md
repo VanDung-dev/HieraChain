@@ -3,7 +3,7 @@
 When updating or auditing documentation under `docs/en/` and `docs/vi/`:
 
 ## 1. Truth in Source Code (`hierachain/`)
-* **Source of Truth**: The core Python package [`hierachain/`](file:///Users/vandungdev/Documents/GitHub/HieraChain/hierachain) is the absolute authoritative reference for all API signatures, module paths, default settings, and architectural workflows.
+* **Source of Truth**: The core Python package [`hierachain/`](/hierachain) is the absolute authoritative reference for all API signatures, module paths, default settings, and architectural workflows.
 * **No Speculative Documentation**: Never document features, endpoints, configuration keys, or parameter names without verifying their exact implementation in `hierachain/`.
 
 ## 2. Dual Language Parity (`docs/en/` <-> `docs/vi/`)

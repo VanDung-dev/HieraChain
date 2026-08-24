@@ -1,6 +1,6 @@
 # Changelog Maintenance Rules
 
-When updating or maintaining project changelogs ([docs/en/changelog.md](file:///Users/vandungdev/Documents/GitHub/HieraChain/docs/en/changelog.md) & [docs/vi/changelog.md](file:///Users/vandungdev/Documents/GitHub/HieraChain/docs/vi/changelog.md)):
+When updating or maintaining project changelogs ([docs/en/changelog.md](/docs/en/changelog.md) & [docs/vi/changelog.md](/docs/vi/changelog.md)):
 
 * **Scope Constraint**: Only include changes made directly to the core `hierachain/` Python library package (API, Consensus, Core, Security, State, Network, Database, Storage, SDK, etc.).
 * **Exclude Non-Library Items**: Do **NOT** log changes related to documentation (`docs/`), test files (`tests/`), stress test framework, or container deployment scripts (`docker/`, `k8s/`).
