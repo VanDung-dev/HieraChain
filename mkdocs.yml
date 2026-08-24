@@ -166,8 +166,7 @@ nav:
       - Release Process: dev/release-process.md
       - AI Context: dev/ai-context.md
   - Other:
-      - FAQ: faq.md
-      - Future Roadmap: future-roadmap.md
+      - FAQ: other/faq.md
       - Changelog: changelog.md
 
 plugins:

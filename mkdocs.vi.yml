@@ -161,8 +161,7 @@ nav:
       - Quy trình phát hành: dev/release-process.md
       - AI Context: dev/ai-context.md
   - Khác:
-      - FAQ: faq.md
-      - Lộ trình Tương lai: future-roadmap.md
+      - FAQ: other/faq.md
       - Changelog: changelog.md
 
 plugins:
