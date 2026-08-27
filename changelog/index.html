@@ -4423,8 +4423,14 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (7)</summary>
+<summary>Improvements (8)</summary>
 <ul>
+<li>
+<p>2026-08-27</p>
+<ul>
+<li><strong>API</strong>: Adjusted authentication handling in <code>hierachain/api/server.py</code> (added <code>Request</code> annotation to <code>auth_dependency</code>, unified <code>verifier</code> initialization and extended <code>EXEMPT_PATHS</code> with <code>/api/admin/verify-identity</code>) and removed redundant <code>require_chain_access</code> dependencies in <code>hierachain/api/admin/endpoints.py</code> for <code>/verify-identity</code> and <code>/status</code> so health checks and identity verification work correctly when <code>HRC_ENV=product</code>.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-24</p>
 <ul>
@@ -4450,8 +4456,18 @@
 </ul>
 </details>
 <details class="warning">
-<summary>Fix (8)</summary>
+<summary>Fix (13)</summary>
 <ul>
+<li>
+<p>2026-08-27</p>
+<ul>
+<li><strong>Security (Key Manager)</strong>: Added <code>PYTEST_CURRENT_TEST</code>/<code>pytest</code> guard in <code>initialize_default_keys</code> (<code>hierachain/security/key_manager.py</code>) to prevent default API key creation in test environments when <code>HRC_ENV=product</code> and allow safe initialization under <code>pytest</code>.</li>
+<li><strong>Hierarchical (Rebalancer)</strong>: Handle both <code>callable</code> and <code>non-callable</code> pending events in <code>_get_pending_events</code> (<code>hierachain/hierarchical/rebalancer/split_ops.py</code>) by checking <code>callable()</code> and falling back to the <code>pending_events</code> list.</li>
+<li><strong>Consensus (BFT)</strong>: Relaxed timestamp drift threshold from 30s to 120s in <code>verify_message_signature</code> (<code>hierachain/consensus/bft/helpers.py</code>) to avoid drift failures when the suite runs long with a statically created message at import time.</li>
+<li><strong>Config (Env Manager)</strong>: Added <code>HRC_ENV=test</code>/<code>PYTEST_CURRENT_TEST</code> checks in <code>init_env_config</code> (<code>hierachain/config/env_manager.py</code>) to prevent creating <code>.env.HRC.example</code> and loading the product <code>.env</code> while running <code>pytest</code>.</li>
+<li><strong>Cluster (Lockdown)</strong>: Hardened <code>verify_signature</code> in <code>hierachain/cluster/lockdown_types.py</code> with empty <code>str</code> type checks and <code>try/except</code> around <code>hmac.compare_digest</code> to safely handle invalid signatures while maintaining backward compatibility with legacy 32-char truncated signatures.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-24</p>
 <ul>
