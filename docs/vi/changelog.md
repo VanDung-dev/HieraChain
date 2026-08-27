@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (7)"
+??? note "Improvements (8)"
+
+    * 2026-08-27
+
+        * **API**: Điều chỉnh xử lý xác thực trong `hierachain/api/server.py` (thêm annotation `Request` cho `auth_dependency`, hợp nhất khởi tạo `verifier` và mở rộng `EXEMPT_PATHS` với `/api/admin/verify-identity`) và loại bỏ dependency `require_chain_access` dư thừa trong `hierachain/api/admin/endpoints.py` cho `/verify-identity` và `/status` để health check và xác minh identity hoạt động đúng khi `HRC_ENV=product`.
 
     * 2026-08-24
 
@@ -26,7 +30,15 @@ icon: material/history
 
         * **Dọn dẹp mã thừa**: Loại bỏ các hàm tiện ích không dùng trên các module hierarchical và domain (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): xóa `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, và `create_multi_org_network` để codebase gọn gàng và dễ bảo trì hơn.
 
-??? warning "Fix (8)"
+??? warning "Fix (13)"
+
+    * 2026-08-27
+
+        * **Bảo mật (Key Manager)**: Bổ sung guard `PYTEST_CURRENT_TEST`/`pytest` trong `initialize_default_keys` (`hierachain/security/key_manager.py`) để ngăn tạo API key mặc định trong môi trường kiểm thử khi `HRC_ENV=product` và cho phép khởi tạo an toàn dưới `pytest`.
+        * **Hierarchical (Rebalancer)**: Xử lý cả pending events dạng `callable` và `non-callable` trong `_get_pending_events` (`hierachain/hierarchical/rebalancer/split_ops.py`) bằng cách kiểm tra `callable()` và fallback `pending_events` list.
+        * **Đồng thuận (BFT)**: Nới lỏng ngưỡng drift timestamp từ 30s lên 120s trong `verify_message_signature` (`hierachain/consensus/bft/helpers.py`) để tránh lỗi drift khi suite chạy lâu với message tĩnh tạo lúc import.
+        * **Config (Env Manager)**: Bổ sung kiểm tra `HRC_ENV=test`/`PYTEST_CURRENT_TEST` trong `init_env_config` (`hierachain/config/env_manager.py`) để ngăn tạo `.env.HRC.example` và load `.env` product trong khi chạy `pytest`.
+        * **Cluster (Lockdown)**: Chuẩn hóa `verify_signature` trong `hierachain/cluster/lockdown_types.py` với kiểm tra kiểu `str` rỗng và `try/except` quanh `hmac.compare_digest` để xử lý signature không hợp lệ an toàn, duy trì tương thích với chữ ký 32 ký tự cũ.
 
     * 2026-08-24
 

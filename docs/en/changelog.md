@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (7)"
+??? note "Improvements (8)"
+
+    * 2026-08-27
+
+        * **API**: Adjusted authentication handling in `hierachain/api/server.py` (added `Request` annotation to `auth_dependency`, unified `verifier` initialization and extended `EXEMPT_PATHS` with `/api/admin/verify-identity`) and removed redundant `require_chain_access` dependencies in `hierachain/api/admin/endpoints.py` for `/verify-identity` and `/status` so health checks and identity verification work correctly when `HRC_ENV=product`.
 
     * 2026-08-24
 
@@ -26,7 +30,15 @@ icon: material/history
 
         * **Dead Code Removal**: Removed unused utility functions across hierarchical and domain modules (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): deleted `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, and `create_multi_org_network` for a leaner, more maintainable codebase.
 
-??? warning "Fix (8)"
+??? warning "Fix (13)"
+
+    * 2026-08-27
+
+        * **Security (Key Manager)**: Added `PYTEST_CURRENT_TEST`/`pytest` guard in `initialize_default_keys` (`hierachain/security/key_manager.py`) to prevent default API key creation in test environments when `HRC_ENV=product` and allow safe initialization under `pytest`.
+        * **Hierarchical (Rebalancer)**: Handle both `callable` and `non-callable` pending events in `_get_pending_events` (`hierachain/hierarchical/rebalancer/split_ops.py`) by checking `callable()` and falling back to the `pending_events` list.
+        * **Consensus (BFT)**: Relaxed timestamp drift threshold from 30s to 120s in `verify_message_signature` (`hierachain/consensus/bft/helpers.py`) to avoid drift failures when the suite runs long with a statically created message at import time.
+        * **Config (Env Manager)**: Added `HRC_ENV=test`/`PYTEST_CURRENT_TEST` checks in `init_env_config` (`hierachain/config/env_manager.py`) to prevent creating `.env.HRC.example` and loading the product `.env` while running `pytest`.
+        * **Cluster (Lockdown)**: Hardened `verify_signature` in `hierachain/cluster/lockdown_types.py` with empty `str` type checks and `try/except` around `hmac.compare_digest` to safely handle invalid signatures while maintaining backward compatibility with legacy 32-char truncated signatures.
 
     * 2026-08-24
 
