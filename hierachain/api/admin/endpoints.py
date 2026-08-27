@@ -60,7 +60,6 @@ def get_current_key_provider() -> LocalKeyProvider:
 @router.post(
     "/verify-identity",
     response_model=VerifyIdentityResponse,
-    dependencies=[Depends(require_chain_access)]
 )
 async def verify_identity(
     request: VerifyIdentityRequest,
@@ -90,7 +89,6 @@ async def verify_identity(
 @router.get(
     "/status",
     response_model=NodeStatusResponse,
-    dependencies=[Depends(require_chain_access)]
 )
 async def get_status(manager: HierarchyManager = Depends(get_hierarchy_manager)):
     """

@@ -14,7 +14,7 @@ import logging
 import traceback
 from typing import Any, cast
 from fastapi import (
-    FastAPI, HTTPException, Depends
+    FastAPI, HTTPException, Depends, Request
 )
 from fastapi.middleware.cors import CORSMiddleware
 import warnings
@@ -46,6 +46,7 @@ EXEMPT_PATHS = {
     "/api/ledger/health",
     "/api/business/health",
     "/api/admin/status",
+    "/api/admin/verify-identity",
     "/metrics",
     "/docs",
     "/redoc",
@@ -253,15 +254,14 @@ def create_app() -> FastAPI:
     settings = get_settings()
     api_config = settings.get_api_config()
 
-    if settings.AUTH_ENABLED:
-        verifier = APIKeyVerifier(settings.get_auth_config())
+    verifier = APIKeyVerifier(settings.get_auth_config()) if settings.AUTH_ENABLED else None
 
-        async def auth_dependency(request):
-            if request.url.path in EXEMPT_PATHS:
-                return {"user_id": "system", "app_details": {"name": "Exempt"}}
-            return await verifier(request)
-    else:
-        auth_dependency = lambda: None
+    async def auth_dependency(request: Request):
+        if not settings.AUTH_ENABLED:
+            return None
+        if request.url.path in EXEMPT_PATHS:
+            return {"user_id": "system", "app_details": {"name": "Exempt"}}
+        return await verifier(request)  # type: ignore
 
     dependencies = [Depends(auth_dependency)] if settings.AUTH_ENABLED else []
 
