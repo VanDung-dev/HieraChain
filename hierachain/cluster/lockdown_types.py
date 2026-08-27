@@ -56,10 +56,15 @@ class LockdownMessage:
         ).hexdigest()
 
     def verify_signature(self, secret_key: str) -> bool:
+        if not isinstance(self.signature, str) or not self.signature:
+            return False
         expected = self.compute_signature(secret_key)
-        return hmac.compare_digest(self.signature, expected) or hmac.compare_digest(
-            self.signature, expected[:32]
-        )
+        try:
+            return hmac.compare_digest(self.signature, expected) or hmac.compare_digest(
+                self.signature, expected[:32]
+            )
+        except (TypeError, ValueError):
+            return False
 
 
 @dataclass
