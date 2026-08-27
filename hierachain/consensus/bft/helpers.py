@@ -33,7 +33,7 @@ def verify_message_signature(
         logger.warning("No public key for node %s", message.sender_id)
         return False
 
-    if abs(time.time() - message.timestamp) > 30.0:
+    if abs(time.time() - message.timestamp) > 120.0:
         logger.warning(
             "BFTMessage timestamp drift too large: %.1fs",
             abs(time.time() - message.timestamp),
