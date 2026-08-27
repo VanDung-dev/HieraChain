@@ -59,6 +59,11 @@ def _create_bft_setup():
 
 def _check_message_validation_and_error_mitigation(normal_node, other_node):
     assert hasattr(other_node, "log_node_behavior")
+    test_message.timestamp = time.time()
+    test_message.signature = sign_message(
+        network["node_1"].key_provider,
+        test_message.get_signable_payload(),
+    )
     is_valid = validate_consensus_message(
         test_message,
         normal_node.all_nodes,
@@ -406,6 +411,7 @@ def test_bft_with_split_brain_scenario():
     # Test that nodes can initiate view changes when needed
     assert hasattr(node, '_initiate_view_change')
 
+    node.view_change_votes[1] = []
     # Test view change initiation
     node._initiate_view_change(1)
     # View should not change immediately, state should be VIEW_CHANGE

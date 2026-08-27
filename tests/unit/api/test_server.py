@@ -7,7 +7,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from hierachain.api import create_app
-from hierachain.config import DevelopmentSettings, ProductionSettings
+from hierachain.config import DevelopmentSettings, ProductionSettings, TestingSettings, Settings
 
 
 def test_global_exception_handler_dev_debug():
@@ -15,6 +15,10 @@ def test_global_exception_handler_dev_debug():
     with (
         patch.object(DevelopmentSettings, 'LOG_LEVEL', 'DEBUG'),
         patch.object(DevelopmentSettings, 'ENV', 'dev', create=True),
+        patch.object(TestingSettings, 'LOG_LEVEL', 'DEBUG'),
+        patch.object(TestingSettings, 'ENV', 'dev', create=True),
+        patch.object(Settings, 'LOG_LEVEL', 'DEBUG'),
+        patch.object(Settings, 'ENV', 'dev', create=True),
     ):
         app = create_app()
         
@@ -60,6 +64,10 @@ def test_global_exception_handler_dev_info():
     with (
         patch.object(DevelopmentSettings, 'LOG_LEVEL', 'INFO'),
         patch.object(DevelopmentSettings, 'ENV', 'dev', create=True),
+        patch.object(TestingSettings, 'LOG_LEVEL', 'INFO'),
+        patch.object(TestingSettings, 'ENV', 'dev', create=True),
+        patch.object(Settings, 'LOG_LEVEL', 'INFO'),
+        patch.object(Settings, 'ENV', 'dev', create=True),
     ):
         app = create_app()
         
@@ -82,6 +90,10 @@ def test_cors_middleware_dev_allow_all():
     with (
         patch.object(DevelopmentSettings, 'CORS_ALLOW_ALL', True),
         patch.object(DevelopmentSettings, 'ENV', 'dev', create=True),
+        patch.object(TestingSettings, 'CORS_ALLOW_ALL', True),
+        patch.object(TestingSettings, 'ENV', 'dev', create=True),
+        patch.object(Settings, 'CORS_ALLOW_ALL', True),
+        patch.object(Settings, 'ENV', 'dev', create=True),
     ):
         app = create_app()
         client = TestClient(app)

@@ -6,6 +6,11 @@ Ensures project root is on sys.path so test imports like `import api`, `import c
 """
 
 import os
+
+os.environ.setdefault("HRC_ENV", "test")
+# prevent product .env from enabling auth/strict CORS in tests when .env is product
+if os.getenv("HRC_ENV", "").lower() in ("test", "testing"):
+    os.environ.setdefault("HRC_AUTH_ENABLED", "false")
 import sys
 import shutil
 import pytest
