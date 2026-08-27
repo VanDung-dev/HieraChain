@@ -2,7 +2,6 @@
 Resource Monitoring Core utilities.
 Collects and aggregates CPU, Memory, Disk, and Network IO metrics from nodes
 during stress test executions to generate system consumption reports.
-# ponytail: metrics gathered via simple HTTP polling to avoid installing complex agent daemons
 """
 
 import os

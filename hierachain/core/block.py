@@ -31,7 +31,6 @@ class Block:
     - `self.events` property exposes this Table.
     - Hashing uses strict JSON canonicalization.
     """
-    # ponytail: cached event list to avoid redundant Arrow-to-dict deserialization
     __slots__ = (
         'index', 'timestamp', 'previous_hash', 'nonce',
         'merkle_root', 'creator_id', 'signature', '_events', 'hash',

@@ -2,7 +2,6 @@
 Network Failure Scenarios Stress Tests.
 Applies sequential failure scenarios (packet loss, congestion, latency spikes) 
 to observe client-side fallback resilience and error recovery on HieraChain nodes.
-# ponytail: focus on API survivability, mock out heavy OS network controller logic
 """
 
 import os

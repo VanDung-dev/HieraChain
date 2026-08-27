@@ -2,7 +2,6 @@
 Network Conditions Stress Tests.
 Simulates network degradation (latency, jitter, packet loss, congestion, bandwidth limits)
 on HieraChain API endpoints and measures success rates and response times.
-# ponytail: keep simulations client-side to avoid complex tc network controller overhead
 """
 
 import os

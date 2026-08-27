@@ -2,7 +2,6 @@
 Network Simulation Stress Tests.
 Simulates real-world network profiles (latency, jitter, packet loss) across HieraChain nodes
 to evaluate API robustness and consensus stability under adverse conditions.
-# ponytail: client-side network simulation to keep environment simple and reproducible
 """
 
 import os

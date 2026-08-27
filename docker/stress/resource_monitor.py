@@ -1,7 +1,6 @@
 """
 Container Resource Monitor.
 Collects granular CPU and memory consumption statistics from running Docker containers.
-# ponytail: simple direct docker client integration for metric collection
 """
 
 import time

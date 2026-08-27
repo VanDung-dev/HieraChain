@@ -2,7 +2,6 @@
 Docker API Socket Helpers.
 Provides low-level socket communication with the local Docker daemon to inspect,
 stop, start, pause, and check resource usage of container instances.
-# ponytail: direct HTTP over UNIX socket to avoid relying on heavy official docker client
 """
 
 import json

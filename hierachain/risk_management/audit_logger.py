@@ -53,11 +53,7 @@ class AuditStorage:
 
 
 class DatabaseAuditStorage(AuditStorage):
-    """
-    Persistent audit storage using SQLite database.
-    
-    # ponytail: lightweight database storage helper utilizing raw sqlite3.
-    """
+    """Persistent audit storage using SQLite database."""
     def __init__(self, db_path: str = "hierachain.db"):
         self.db_path = db_path
         self._init_db()
@@ -207,7 +203,6 @@ class DatabaseAuditStorage(AuditStorage):
 
     def cleanup_old_events(self, max_age_seconds: float) -> int:
         """Remove audit events older than max_age_seconds."""
-        # ponytail: simple DELETE statement with timestamp check
         conn = None
         try:
             conn = sqlite3.connect(self.db_path)

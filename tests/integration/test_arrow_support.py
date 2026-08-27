@@ -27,8 +27,7 @@ def test_policy_engine_arrow_evaluation():
         names=["user_id", "amount"]
     )
     scalar = struct_array[0]
-    
-    # ponytail: renamed transaction -> op to strictly comply with term policy
+
     context_arrow = {"op": scalar}
     condition_arrow = PolicyCondition(
         attribute="op.amount",

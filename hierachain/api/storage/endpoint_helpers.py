@@ -69,7 +69,6 @@ async def upload_to_ipfs_background(
     Raises:
         IPFSError: If upload fails
     """
-    # ponytail: log secure events in the background to save HTTP response time
     if not is_ipfs_enabled():
         raise IPFSError("IPFS is not enabled")
 

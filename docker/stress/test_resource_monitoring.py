@@ -2,7 +2,6 @@
 Resource Monitoring Stress Tests.
 Evaluates container CPU, memory, network I/O, and disk usage patterns
 under variable request load to ensure physical resource safety boundaries.
-# ponytail: clean assertions based on gathered monitor snapshot averages
 """
 
 import os
