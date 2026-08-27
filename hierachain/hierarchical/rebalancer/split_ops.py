@@ -23,8 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 def _get_pending_events(subchain: Any) -> list[Any]:
-    if hasattr(subchain, "get_pending_events"):
+    if hasattr(subchain, "get_pending_events") and callable(subchain.get_pending_events):
         return subchain.get_pending_events()
+    if hasattr(subchain, "pending_events"):
+        return list(subchain.pending_events)
     return []
 
 
