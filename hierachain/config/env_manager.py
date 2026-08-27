@@ -237,6 +237,10 @@ def init_env_config(
     Returns:
         True if .env.HRC.example was created/updated, False otherwise
     """
+    if os.getenv("HRC_ENV", "").lower() in ("test", "testing"):
+        return False
+    if os.getenv("PYTEST_CURRENT_TEST") is not None or "pytest" in sys.modules:
+        return False
     # Determine settings
     if env_file is None:
         env_file = get_env_file_path()
