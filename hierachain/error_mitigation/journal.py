@@ -9,6 +9,7 @@ rapid shutdowns.
 
 import os
 import re
+import time
 import logging
 import struct
 import orjson
@@ -17,6 +18,7 @@ import threading
 from typing import Any, Generator, BinaryIO
 from pathlib import Path
 import pyarrow as pa
+import pyarrow.parquet as pq
 
 from hierachain.config.settings import get_settings
 
@@ -31,6 +33,9 @@ _EVENT_SCHEMA = pa.schema([
 ])
 
 logger = logging.getLogger(__name__)
+
+_JOURNAL_MAX_FILE_SIZE = 100 * 1024 * 1024
+_JOURNAL_QUEUE_MAXSIZE = 10000
 
 
 def _validate_path_component(comp: str) -> None:
@@ -266,7 +271,7 @@ class TransactionJournal:
             )
 
     def __init__(
-        self, storage_dir: str = "data/journal", active_log_name: str = "current.log"
+        self, storage_dir: str = "data/journal", active_log_name: str = "current.parquet"
     ) -> None:
         """
         Initialize the Transaction Journal.
@@ -318,17 +323,16 @@ class TransactionJournal:
         except (OSError, RuntimeError) as e:
             logger.warning("Filesystem check failed, attempting creation anyway: %s", e)
 
-        self._file_handle: BinaryIO | None = None
+        self._pq_writer: pq.ParquetWriter | None = None
         self._schema = _EVENT_SCHEMA
-
-        # Check if fsync is disabled to decide on using background queue for writes
+        self._lock = threading.Lock()
         self._async_write = not get_settings().JOURNAL_FSYNC
         self._write_queue = None
         self._writer_thread = None
         self._stop_writer = None
 
         if self._async_write:
-            self._write_queue = queue.Queue()
+            self._write_queue = queue.Queue(maxsize=_JOURNAL_QUEUE_MAXSIZE)
             self._stop_writer = threading.Event()
             self._writer_thread = threading.Thread(
                 target=self._background_writer,
@@ -348,11 +352,53 @@ class TransactionJournal:
     def _open_journal(self) -> None:
         """Open the journal file for appending (binary mode)."""
         try:
-            # 'ab' mode for append binary
-            self._file_handle = open(self.active_log_file, "ab")
+            existing = None
+            if self.active_log_file.exists() and self.active_log_file.stat().st_size > 0:
+                try:
+                    existing = pq.read_table(self.active_log_file, schema=self._schema)
+                except Exception:
+                    existing = None
+                    try:
+                        self.active_log_file.unlink()
+                    except Exception:
+                        pass
+            self._pq_writer = pq.ParquetWriter(self.active_log_file, self._schema)
+            if existing is not None and existing.num_rows > 0:
+                self._pq_writer.write_table(existing)
         except (OSError, IOError) as e:
             logger.critical("Failed to open transaction journal: %s", e)
             raise
+
+    def _close_writer(self) -> None:
+        if self._pq_writer is not None:
+            try:
+                self._pq_writer.close()
+            except Exception:
+                pass
+            self._pq_writer = None
+
+    def _should_rotate(self) -> bool:
+        try:
+            return self.active_log_file.exists() and self.active_log_file.stat().st_size >= _JOURNAL_MAX_FILE_SIZE
+        except OSError:
+            return False
+
+    def _rotate_if_needed(self) -> None:
+        if not self._should_rotate():
+            return
+        try:
+            self._close_writer()
+            ts = time.time_ns()
+            rotated = self.storage_path / f"{self.active_log_file.stem}_{ts}.parquet"
+            self.active_log_file.rename(rotated)
+            self._open_journal()
+        except (OSError, IOError) as e:
+            logger.error("Journal rotation failed: %s", e)
+            if self._pq_writer is None:
+                try:
+                    self._open_journal()
+                except Exception:
+                    pass
 
     def _dict_to_arrow_batch(self, event_data: dict[str, Any]) -> pa.RecordBatch:
         """
@@ -391,50 +437,75 @@ class TransactionJournal:
 
     def _write_event_to_file(self, event_data: dict[str, Any]) -> bool:
         """Perform actual file write operations."""
-        if self._file_handle is None:
-            self._open_journal()
-
-        if self._file_handle is None:
-            return False
-
-        try:
-            # 1. Convert to Arrow Batch
-            batch = self._dict_to_arrow_batch(event_data)
-
-            # 2. Serialize Batch to IPC message (buffer)
-            serialized_batch = batch.serialize()
-
-            # 3. Write Length Prefix (4 bytes, little endian)
-            length_prefix = struct.pack("<I", len(serialized_batch))
-            self._file_handle.write(length_prefix)
-
-            # 4. Write Data
-            self._file_handle.write(serialized_batch)
-
-            # 5. Flush and Sync (conditional based on settings)
-            self._file_handle.flush()
-            if get_settings().JOURNAL_FSYNC:
-                os.fsync(self._file_handle.fileno())
-
-            return True
-
-        except (OSError, IOError, pa.ArrowException) as e:
-            logger.critical("CRITICAL: Failed to write to transaction journal: %s", e)
-            return False
+        with self._lock:
+            if self._pq_writer is None:
+                self._open_journal()
+            if self._pq_writer is None:
+                return False
+            self._rotate_if_needed()
+            if self._pq_writer is None:
+                return False
+            try:
+                batch = self._dict_to_arrow_batch(event_data)
+                table = pa.Table.from_batches([batch])
+                self._pq_writer.write_table(table)
+                if get_settings().JOURNAL_FSYNC:
+                    try:
+                        self._pq_writer.close()
+                    except Exception:
+                        pass
+                    self._pq_writer = None
+                return True
+            except (OSError, IOError, pa.ArrowException) as e:
+                logger.critical("CRITICAL: Failed to write to transaction journal: %s", e)
+                return False
 
     def flush(self) -> None:
         """Wait for all pending log entries in the queue to be written."""
         if self._async_write and self._write_queue:
             self._write_queue.join()
+        with self._lock:
+            if self._pq_writer is not None:
+                try:
+                    self._pq_writer.close()
+                except Exception:
+                    pass
+                self._pq_writer = None
 
     def log_event(self, event_data: dict[str, Any]) -> bool:
-        """
-        Durably log an event to the journal using Arrow format.
-        """
+        """Durably log an event to the journal using Arrow format."""
         if self._async_write and self._write_queue is not None:
-            self._write_queue.put(event_data)
-            return True
+            try:
+                self._write_queue.put_nowait(event_data)
+                return True
+            except queue.Full:
+                return self._write_event_to_file(event_data)
         return self._write_event_to_file(event_data)
+
+    def _get_journal_files(self) -> list[Path]:
+        files = sorted(self.storage_path.glob(f"{self.active_log_file.stem}_*.parquet"))
+        files += sorted(self.storage_path.glob(f"{self.active_log_file.stem}_*.arrow"))
+        files += sorted(self.storage_path.glob(f"{self.active_log_file.stem}_*.log"))
+        if self.active_log_file.exists():
+            files.append(self.active_log_file)
+        files = sorted(set(files))
+        return files
+
+    def _iter_parquet_file(self, path: Path) -> Generator[dict[str, Any], None, None]:
+        try:
+            table = pq.read_table(path, schema=self._schema)
+            for batch in table.to_batches():
+                for row in batch.to_pylist():
+                    yield _unpack_row_data(row)
+        except Exception as e:
+            if path.suffix == ".parquet":
+                logger.error("Error replaying parquet journal %s: %s", path, e)
+            else:
+                try:
+                    with open(path, "rb") as f:
+                        yield from _iterate_journal_batches(f, self._schema)
+                except Exception as e2:
+                    logger.error("Error replaying journal %s: %s", path, e2)
 
     def replay(self) -> Generator[dict[str, Any], None, None]:
         """
@@ -442,14 +513,28 @@ class TransactionJournal:
         Reads binary Arrow batches and yields them as Dictionaries.
         """
         self.flush()
-        if not self.active_log_file.exists():
+        with self._lock:
+            if self._pq_writer is not None:
+                try:
+                    self._pq_writer.close()
+                    self._pq_writer = None
+                except Exception:
+                    pass
+        files = self._get_journal_files()
+        if not files:
+            with self._lock:
+                try:
+                    self._open_journal()
+                except Exception:
+                    pass
             return
-
-        try:
-            with open(self.active_log_file, "rb") as f:
-                yield from _iterate_journal_batches(f, self._schema)
-        except (OSError, IOError) as e:
-            logger.error("Error replaying journal: %s", e)
+        for jf in files:
+            yield from self._iter_parquet_file(jf)
+        with self._lock:
+            try:
+                self._open_journal()
+            except Exception:
+                pass
 
     def close(self):
         """Close the journal file handle."""
@@ -457,26 +542,21 @@ class TransactionJournal:
             self._stop_writer.set()
             self._writer_thread.join(timeout=5.0)
             self._writer_thread = None
-        if self._file_handle:
-            try:
-                self._file_handle.flush()
-                self._file_handle.close()
-            except (OSError, IOError) as e:
-                logger.error("Error closing journal: %s", e)
-            finally:
-                self._file_handle = None
+        with self._lock:
+            self._close_writer()
 
     def clear(self):
         """Clear the current journal."""
         self.close()
         try:
-            # Truncate file (binary mode)
-            with open(self.active_log_file, "wb"):
-                pass
-            # Reopen
+            for jf in self._get_journal_files():
+                try:
+                    jf.unlink()
+                except OSError:
+                    pass
             self._open_journal()
             if self._async_write:
-                self._write_queue = queue.Queue()
+                self._write_queue = queue.Queue(maxsize=_JOURNAL_QUEUE_MAXSIZE)
                 self._stop_writer = threading.Event()
                 self._writer_thread = threading.Thread(
                     target=self._background_writer,
