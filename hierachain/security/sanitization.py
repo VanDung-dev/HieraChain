@@ -44,7 +44,7 @@ def _sanitize_html_context(value: str) -> str:
     result = html.escape(value)
 
     def _neutralize_match(match: re.Match[str]) -> str:
-        return html.escape(match.group(0))
+        return "[TEMPLATE_BLOCKED]"
 
     # Neutralize template expressions with single regex pass
     combined_pattern = "|".join(TEMPLATE_PATTERNS)
@@ -58,8 +58,15 @@ def _sanitize_log_context(value: str) -> str:
 
 def _sanitize_filename_context(value: str) -> str:
     """Sanitize for filename context - prevents path traversal."""
-    result = re.sub(r"[\\/:*?\"<>|]", "_", value)
-    return result.replace("..", "_")
+    v = value.replace("\\", "/")
+    parts = v.split("/")
+    safe = []
+    for p in parts:
+        if p in ("", ".", ".."):
+            continue
+        if re.match(r"^[a-zA-Z0-9_\-~.]+$", p):
+            safe.append(p)
+    return "_".join(safe) if safe else "_"
 
 
 # Context-specific sanitizers mapping
