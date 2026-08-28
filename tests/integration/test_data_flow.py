@@ -23,6 +23,15 @@ def _read_first_journal_row(journal_path, schema):
 
         file_path = os.path.join(journal_path, file)
 
+        if file.endswith(".parquet"):
+            try:
+                import pyarrow.parquet as pq
+                table = pq.read_table(file_path, schema=schema)
+                if table.num_rows > 0:
+                    return table.to_pylist()[0]
+            except Exception:
+                continue
+
         with open(file_path, "rb") as f:
             len_bytes = f.read(4)
             if len(len_bytes) != 4:
@@ -31,18 +40,15 @@ def _read_first_journal_row(journal_path, schema):
             length = struct.unpack("<I", len_bytes)[0]
             batch_data = f.read(length)
 
-            # Detect format: JSON starts with '{'
             if batch_data.startswith(b'{'):
                 import json
                 row = json.loads(batch_data)
                 return row
 
             try:
-                # Fallback: standalone RecordBatch
                 batch = pa.ipc.read_record_batch(batch_data, schema)
                 return batch.to_pylist()[0]
             except Exception:
-                # Fallback: Arrow stream
                 try:
                     reader = pa.ipc.open_stream(batch_data)
                     batch = reader.read_next_batch()
