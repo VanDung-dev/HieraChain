@@ -8,7 +8,13 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (8)"
+??? note "Improvements (11)"
+
+    * 2026-08-29
+
+        * **Journal**: Chuyển `TransactionJournal` (`hierachain/error_mitigation/journal.py`) sang lưu trữ Parquet (`pyarrow.parquet`) với giới hạn file 100MB, rotate tự động `current_{ns}.parquet`, hàng đợi async giới hạn 10k và quản lý `ParquetWriter` an toàn luồng, hỗ trợ replay nhiều file Parquet tương thích ngược `.arrow`/`.log`.
+        * **Audit**: Thêm `ArrowAuditStorage` (`hierachain/risk_management/audit_logger.py`) làm backend mặc định, lưu `AuditEvent` qua Parquet với schema Arrow, rotate 100MB, đọc/ghi theo `AuditFilter`, giữ tương thích `*.jsonl`.
+        * **Logging**: Đồng nhất toàn bộ log `log/` sang Parquet qua `hierachain/core/parquet_log.py` (`write_parquet_log`, `ParquetLogHandler`), chuyển `consensus_scaling`, `view_changes`, `error_classifications`, `restoration_events`, `scaling_events`, `network_alerts`, `resource_scaling`, `rollback_operations`, `quarantine_dump`, `risk_analyzer`, `mitigation_strategies` sang `*.parquet`, đổi `OrderingService` sang `node_{id}_journal.parquet`.
 
     * 2026-08-27
 
@@ -30,7 +36,11 @@ icon: material/history
 
         * **Dọn dẹp mã thừa**: Loại bỏ các hàm tiện ích không dùng trên các module hierarchical và domain (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): xóa `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, và `create_multi_org_network` để codebase gọn gàng và dễ bảo trì hơn.
 
-??? warning "Fix (13)"
+??? warning "Fix (14)"
+
+    * 2026-08-29
+
+        * **Bảo mật (Sanitization)**: Sửa `_sanitize_html_context` (`hierachain/security/sanitization.py`) vô hiệu hóa SSTI bằng `[TEMPLATE_BLOCKED]` thay vì `html.escape` no-op, và làm chặt `_sanitize_filename_context` bằng allowlist `^[a-zA-Z0-9_\-~.]+$` và lọc `..`/`.` để ngăn path traversal.
 
     * 2026-08-27
 

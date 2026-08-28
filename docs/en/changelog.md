@@ -8,7 +8,13 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (8)"
+??? note "Improvements (11)"
+
+    * 2026-08-29
+
+        * **Journal**: Migrated `TransactionJournal` (`hierachain/error_mitigation/journal.py`) to Parquet storage (`pyarrow.parquet`) with 100MB file cap, auto rotation `current_{ns}.parquet`, bounded async queue (10k) and thread-safe `ParquetWriter` management, plus replay over multiple Parquet files with backward compat for `.arrow`/`.log`.
+        * **Audit**: Added `ArrowAuditStorage` (`hierachain/risk_management/audit_logger.py`) as default backend, persisting `AuditEvent` via Parquet with Arrow schema, 100MB rotation, `AuditFilter`-aware retrieval, and compat for `*.jsonl`.
+        * **Logging**: Unified all `log/` persistence to Parquet via `hierachain/core/parquet_log.py` (`write_parquet_log`, `ParquetLogHandler`), migrating `consensus_scaling`, `view_changes`, `error_classifications`, `restoration_events`, `scaling_events`, `network_alerts`, `resource_scaling`, `rollback_operations`, `quarantine_dump`, `risk_analyzer`, `mitigation_strategies` to `*.parquet` and switching `OrderingService` to `node_{id}_journal.parquet`.
 
     * 2026-08-27
 
@@ -30,7 +36,11 @@ icon: material/history
 
         * **Dead Code Removal**: Removed unused utility functions across hierarchical and domain modules (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): deleted `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, and `create_multi_org_network` for a leaner, more maintainable codebase.
 
-??? warning "Fix (13)"
+??? warning "Fix (14)"
+
+    * 2026-08-29
+
+        * **Security (Sanitization)**: Fixed `_sanitize_html_context` (`hierachain/security/sanitization.py`) to neutralize SSTI with `[TEMPLATE_BLOCKED]` instead of no-op `html.escape`, and tightened `_sanitize_filename_context` with allowlist `^[a-zA-Z0-9_\-~.]+$` and `..`/`.` filtering to prevent path traversal.
 
     * 2026-08-27
 
