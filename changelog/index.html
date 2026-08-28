@@ -4423,8 +4423,16 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (8)</summary>
+<summary>Improvements (11)</summary>
 <ul>
+<li>
+<p>2026-08-29</p>
+<ul>
+<li><strong>Journal</strong>: Migrated <code>TransactionJournal</code> (<code>hierachain/error_mitigation/journal.py</code>) to Parquet storage (<code>pyarrow.parquet</code>) with 100MB file cap, auto rotation <code>current_{ns}.parquet</code>, bounded async queue (10k) and thread-safe <code>ParquetWriter</code> management, plus replay over multiple Parquet files with backward compat for <code>.arrow</code>/<code>.log</code>.</li>
+<li><strong>Audit</strong>: Added <code>ArrowAuditStorage</code> (<code>hierachain/risk_management/audit_logger.py</code>) as default backend, persisting <code>AuditEvent</code> via Parquet with Arrow schema, 100MB rotation, <code>AuditFilter</code>-aware retrieval, and compat for <code>*.jsonl</code>.</li>
+<li><strong>Logging</strong>: Unified all <code>log/</code> persistence to Parquet via <code>hierachain/core/parquet_log.py</code> (<code>write_parquet_log</code>, <code>ParquetLogHandler</code>), migrating <code>consensus_scaling</code>, <code>view_changes</code>, <code>error_classifications</code>, <code>restoration_events</code>, <code>scaling_events</code>, <code>network_alerts</code>, <code>resource_scaling</code>, <code>rollback_operations</code>, <code>quarantine_dump</code>, <code>risk_analyzer</code>, <code>mitigation_strategies</code> to <code>*.parquet</code> and switching <code>OrderingService</code> to <code>node_{id}_journal.parquet</code>.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-27</p>
 <ul>
@@ -4456,8 +4464,14 @@
 </ul>
 </details>
 <details class="warning">
-<summary>Fix (13)</summary>
+<summary>Fix (14)</summary>
 <ul>
+<li>
+<p>2026-08-29</p>
+<ul>
+<li><strong>Security (Sanitization)</strong>: Fixed <code>_sanitize_html_context</code> (<code>hierachain/security/sanitization.py</code>) to neutralize SSTI with <code>[TEMPLATE_BLOCKED]</code> instead of no-op <code>html.escape</code>, and tightened <code>_sanitize_filename_context</code> with allowlist <code>^[a-zA-Z0-9_\-~.]+$</code> and <code>..</code>/<code>.</code> filtering to prevent path traversal.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-27</p>
 <ul>

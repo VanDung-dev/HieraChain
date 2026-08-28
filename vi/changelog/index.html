@@ -4423,8 +4423,16 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (8)</summary>
+<summary>Improvements (11)</summary>
 <ul>
+<li>
+<p>2026-08-29</p>
+<ul>
+<li><strong>Journal</strong>: Chuyển <code>TransactionJournal</code> (<code>hierachain/error_mitigation/journal.py</code>) sang lưu trữ Parquet (<code>pyarrow.parquet</code>) với giới hạn file 100MB, rotate tự động <code>current_{ns}.parquet</code>, hàng đợi async giới hạn 10k và quản lý <code>ParquetWriter</code> an toàn luồng, hỗ trợ replay nhiều file Parquet tương thích ngược <code>.arrow</code>/<code>.log</code>.</li>
+<li><strong>Audit</strong>: Thêm <code>ArrowAuditStorage</code> (<code>hierachain/risk_management/audit_logger.py</code>) làm backend mặc định, lưu <code>AuditEvent</code> qua Parquet với schema Arrow, rotate 100MB, đọc/ghi theo <code>AuditFilter</code>, giữ tương thích <code>*.jsonl</code>.</li>
+<li><strong>Logging</strong>: Đồng nhất toàn bộ log <code>log/</code> sang Parquet qua <code>hierachain/core/parquet_log.py</code> (<code>write_parquet_log</code>, <code>ParquetLogHandler</code>), chuyển <code>consensus_scaling</code>, <code>view_changes</code>, <code>error_classifications</code>, <code>restoration_events</code>, <code>scaling_events</code>, <code>network_alerts</code>, <code>resource_scaling</code>, <code>rollback_operations</code>, <code>quarantine_dump</code>, <code>risk_analyzer</code>, <code>mitigation_strategies</code> sang <code>*.parquet</code>, đổi <code>OrderingService</code> sang <code>node_{id}_journal.parquet</code>.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-27</p>
 <ul>
@@ -4456,8 +4464,14 @@
 </ul>
 </details>
 <details class="warning">
-<summary>Fix (13)</summary>
+<summary>Fix (14)</summary>
 <ul>
+<li>
+<p>2026-08-29</p>
+<ul>
+<li><strong>Bảo mật (Sanitization)</strong>: Sửa <code>_sanitize_html_context</code> (<code>hierachain/security/sanitization.py</code>) vô hiệu hóa SSTI bằng <code>[TEMPLATE_BLOCKED]</code> thay vì <code>html.escape</code> no-op, và làm chặt <code>_sanitize_filename_context</code> bằng allowlist <code>^[a-zA-Z0-9_\-~.]+$</code> và lọc <code>..</code>/<code>.</code> để ngăn path traversal.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-27</p>
 <ul>
