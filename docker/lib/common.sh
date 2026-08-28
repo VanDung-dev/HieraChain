@@ -44,6 +44,29 @@ check_prereqs() {
   fi
 }
 
+ensure_product_env() {
+  if [ ! -f ".env" ] && [ -f "docker/.env.HRC.example" ]; then
+    cp docker/.env.HRC.example .env
+    echo "  .env created from docker/.env.HRC.example (product)"
+  elif [ ! -f ".env" ] && [ -f ".env.HRC.example" ]; then
+    cp .env.HRC.example .env
+    echo "  .env created from .env.HRC.example (product)"
+  fi
+  if [ -f ".env" ] && [ ! -f "docker/.env" ]; then
+    cp .env docker/.env 2>/dev/null || true
+  fi
+  if [ ! -f "docker/.env" ] && [ -f "docker/.env.HRC.example" ]; then
+    cp docker/.env.HRC.example docker/.env
+    echo "  docker/.env created from docker/.env.HRC.example (product)"
+  fi
+  # verify product
+  if [ -f ".env" ] && grep -q "HRC_ENV=product" .env; then
+    echo "  .env verified: HRC_ENV=product (product mode)"
+  elif [ -f "docker/.env.HRC.example" ]; then
+    echo "  Note: .env not product — docker nodes will still use /app/.env.HRC.example via entrypoint"
+  fi
+}
+
 ensure_keys() {
   if [ ! -f "$IPFS_DIR/swarm.key" ]; then
     mkdir -p "$IPFS_DIR"
@@ -251,8 +274,29 @@ run_tests() {
   echo ""; echo "[4/4] Running tests..."
 
   if $K8S; then
-    TARGET_NODES="${TARGET_NODES:-host.docker.internal:${GATEWAY_PORT}}"
     k8s_env="export K8S_NAMESPACE='${NAMESPACE}'"
+    # K8s in-cluster Job uses K8s DNS (web2-service etc.), compose fallback uses host gateway
+    K8S_JOB_NODES="web2-service:80,hierachain-node-0.hierachain-node-headless:2661,hierachain-node-1.hierachain-node-headless:2661,hierachain-node-2.hierachain-node-headless:2661,hierachain-node-3.hierachain-node-headless:2661"
+    K8S_COMPOSE_NODES="${TARGET_NODES:-host.docker.internal:${GATEWAY_PORT}}"
+    # Try in-cluster Job first
+    if kubectl get namespace "${NAMESPACE}" >/dev/null 2>&1; then
+      echo "  Running K8s stress via Job (in-cluster DNS: ${K8S_JOB_NODES})..."
+      kubectl apply -f docker/k8s/stress-tester.yaml >/dev/null 2>&1 || true
+      # Ensure Job uses correct nodes and duration
+      kubectl set env job/stress-tester -n "${NAMESPACE}" TARGET_NODES="${K8S_JOB_NODES}" TEST_DURATION="${DURATION:-60}" >/dev/null 2>&1 || true
+      if kubectl wait --for=condition=complete job/stress-tester -n "${NAMESPACE}" --timeout=400s 2>/dev/null; then
+        kubectl logs -n "${NAMESPACE}" job/stress-tester --tail=300 2>/dev/null || true
+        # copy reports from job
+        kubectl cp "${NAMESPACE}/$(kubectl get pod -n "${NAMESPACE}" -l job-name=stress-tester -o jsonpath='{.items[0].metadata.name} 2>/dev/null'):/app/log/report/${report}.html" "log/${report}.html" 2>/dev/null || true
+        return 0
+      fi
+      echo "  K8s Job not ready, falling back to compose stress-tester with ${K8S_COMPOSE_NODES}..."
+      TARGET_NODES="${K8S_COMPOSE_NODES}"
+      # Patch docker-stress-entrypoint gateway IP if needed (host.docker.internal fallback)
+      # Let entrypoint handle host.docker.internal -> gateway IP
+    else
+      TARGET_NODES="${K8S_COMPOSE_NODES}"
+    fi
   else
     TARGET_NODES="gateway:80,node1:2661,node2:2661,node3:2661,node4:2661"
   fi

@@ -55,6 +55,7 @@ done
 
 init_env "$ENV"
 check_prereqs
+ensure_product_env
 
 echo "========================================"
 echo " HieraChain ${COMMAND} (${ENV})"

@@ -4,6 +4,19 @@ set -e
 REGION=${HRC_REGION:-unknown}
 NODE_ID=${HRC_NODE_ID:-unknown}
 
+if [ ! -f "/app/.env" ] && [ -f "/app/.env.HRC.example" ]; then
+    cp /app/.env.HRC.example /app/.env
+    echo "[entrypoint] .env created from .env.HRC.example (product)"
+elif [ ! -f "/app/.env" ] && [ -f "/app/docker/.env.HRC.example" ]; then
+    cp /app/docker/.env.HRC.example /app/.env
+    echo "[entrypoint] .env created from docker/.env.HRC.example (product)"
+fi
+# also ensure docker/.env mirrors .env for any code expecting docker/.env
+if [ -f "/app/.env" ] && [ ! -f "/app/docker/.env" ]; then
+    mkdir -p /app/docker
+    cp /app/.env /app/docker/.env 2>/dev/null || true
+fi
+
 echo "[entrypoint] Starting node $NODE_ID (region: $REGION)"
 
 WG_CONF="/app/config/identity/wg0.conf"
