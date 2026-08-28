@@ -22,6 +22,9 @@ RUN /app/.venv/bin/pip install --no-cache-dir /tmp/hierachain-*.whl && \
     /app/.venv/bin/pip install --no-cache-dir pytest pytest-html pytest-asyncio && \
     rm /tmp/hierachain-*.whl
 
+# Copy env template for product mode (nodes use .env copied from .env.HRC.example)
+COPY docker/.env.HRC.example /app/.env.HRC.example
+COPY docker/.env.HRC.example /app/docker/.env.HRC.example
 # Copy runtime files
 COPY docker/entrypoint.sh /app/docker/entrypoint.sh
 COPY docker/scripts/ /app/docker/scripts/

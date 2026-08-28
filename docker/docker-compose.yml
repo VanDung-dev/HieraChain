@@ -44,6 +44,7 @@ services:
     cap_add:
       - NET_ADMIN
     env_file:
+      - ./.env.HRC.example
       - ./nodes/node1/peers.env
     environment:
       - HRC_NODE_ID=node1
@@ -51,11 +52,16 @@ services:
       - HRC_P2P_HOST=10.200.1.1
       - HRC_P2P_PORT=5001
       - HRC_AUTH_ENABLED=false
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=WARNING
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
-      - HRC_ENV=test
+      - HRC_ENV=product
+      - HRC_CORS_ALLOW_ALL=false
+      - HRC_CORS_ORIGINS=
+      - HRC_P2P_TRUST_POLICY=strict
+      - HRC_P2P_REQUIRE_SIGNATURES=true
+      - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
@@ -99,6 +105,7 @@ services:
     cap_add:
       - NET_ADMIN
     env_file:
+      - ./.env.HRC.example
       - ./nodes/node2/peers.env
     environment:
       - HRC_NODE_ID=node2
@@ -106,11 +113,16 @@ services:
       - HRC_P2P_HOST=10.200.2.1
       - HRC_P2P_PORT=5002
       - HRC_AUTH_ENABLED=false
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=WARNING
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
-      - HRC_ENV=test
+      - HRC_ENV=product
+      - HRC_CORS_ALLOW_ALL=false
+      - HRC_CORS_ORIGINS=
+      - HRC_P2P_TRUST_POLICY=strict
+      - HRC_P2P_REQUIRE_SIGNATURES=true
+      - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
@@ -154,6 +166,7 @@ services:
     cap_add:
       - NET_ADMIN
     env_file:
+      - ./.env.HRC.example
       - ./nodes/node3/peers.env
     environment:
       - HRC_NODE_ID=node3
@@ -161,11 +174,16 @@ services:
       - HRC_P2P_HOST=10.200.3.1
       - HRC_P2P_PORT=5003
       - HRC_AUTH_ENABLED=false
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=WARNING
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
-      - HRC_ENV=test
+      - HRC_ENV=product
+      - HRC_CORS_ALLOW_ALL=false
+      - HRC_CORS_ORIGINS=
+      - HRC_P2P_TRUST_POLICY=strict
+      - HRC_P2P_REQUIRE_SIGNATURES=true
+      - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
@@ -209,6 +227,7 @@ services:
     cap_add:
       - NET_ADMIN
     env_file:
+      - ./.env.HRC.example
       - ./nodes/node4/peers.env
     environment:
       - HRC_NODE_ID=node4
@@ -216,11 +235,16 @@ services:
       - HRC_P2P_HOST=10.200.4.1
       - HRC_P2P_PORT=5004
       - HRC_AUTH_ENABLED=false
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=WARNING
       - DATABASE_PATH=/app/data/hierachain.db
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
-      - HRC_ENV=test
+      - HRC_ENV=product
+      - HRC_CORS_ALLOW_ALL=false
+      - HRC_CORS_ORIGINS=
+      - HRC_P2P_TRUST_POLICY=strict
+      - HRC_P2P_REQUIRE_SIGNATURES=true
+      - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
       - HRC_JOURNAL_FSYNC=false
