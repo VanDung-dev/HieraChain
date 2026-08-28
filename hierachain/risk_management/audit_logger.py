@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import time
 import sqlite3
+import struct
 import orjson
 import logging
 import threading
@@ -16,12 +17,32 @@ import uuid
 from typing import Any, Callable, cast
 from pathlib import Path
 
+import pyarrow as pa
+import pyarrow.parquet as pq
+
 from hierachain.risk_management.types import (
     AuditEvent,
     AuditEventType,
     AuditSeverity,
     AuditFilter,
 )
+
+_AUDIT_SCHEMA = pa.schema([
+    ("event_id", pa.string()),
+    ("event_type", pa.string()),
+    ("severity", pa.string()),
+    ("timestamp", pa.float64()),
+    ("source_component", pa.string()),
+    ("description", pa.string()),
+    ("details", pa.string()),
+    ("user_id", pa.string()),
+    ("session_id", pa.string()),
+    ("ip_address", pa.string()),
+    ("correlation_id", pa.string()),
+    ("affected_entities", pa.string()),
+])
+
+_AUDIT_MAX_FILE_SIZE = 100 * 1024 * 1024
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +53,7 @@ __all__ = [
     "AuditFilter",
     "AuditLogger",
     "AuditStorage",
+    "ArrowAuditStorage",
     "FileAuditStorage",
     "RotatingAuditStorage",
     "DatabaseAuditStorage",
@@ -50,6 +72,203 @@ class AuditStorage:
 
     def get_event_count(self, filter_criteria: AuditFilter) -> int:
         raise NotImplementedError
+
+
+def _audit_event_to_row(event: AuditEvent) -> dict[str, Any]:
+    return {
+        "event_id": event.event_id,
+        "event_type": event.event_type.value,
+        "severity": event.severity.value,
+        "timestamp": event.timestamp,
+        "source_component": event.source_component,
+        "description": event.description,
+        "details": orjson.dumps(event.details).decode() if event.details else "",
+        "user_id": event.user_id or "",
+        "session_id": event.session_id or "",
+        "ip_address": event.ip_address or "",
+        "correlation_id": event.correlation_id or "",
+        "affected_entities": orjson.dumps(event.affected_entities).decode() if event.affected_entities else "",
+    }
+
+
+def _row_to_audit_event(row: dict[str, Any]) -> AuditEvent:
+    details = orjson.loads(row["details"]) if row.get("details") else {}
+    affected = orjson.loads(row["affected_entities"]) if row.get("affected_entities") else None
+    return AuditEvent(
+        event_id=row["event_id"],
+        event_type=AuditEventType(row["event_type"]),
+        severity=AuditSeverity(row["severity"]),
+        timestamp=row["timestamp"],
+        source_component=row["source_component"],
+        description=row["description"],
+        details=details,
+        user_id=row["user_id"] or None,
+        session_id=row["session_id"] or None,
+        ip_address=row["ip_address"] or None,
+        correlation_id=row["correlation_id"] or None,
+        affected_entities=affected,
+    )
+
+
+class ArrowAuditStorage(AuditStorage):
+    def __init__(self, audit_directory: str = "log/risk_management/audit_logs", active_name: str = "audit_current.parquet"):
+        self.audit_directory = Path(audit_directory)
+        self.audit_directory.mkdir(parents=True, exist_ok=True)
+        self.active_log_file = self.audit_directory / active_name
+        self._schema = _AUDIT_SCHEMA
+        self._lock = threading.Lock()
+        self._pq_writer: pq.ParquetWriter | None = None
+        self._open()
+
+    def _open(self):
+        try:
+            existing = None
+            if self.active_log_file.exists() and self.active_log_file.stat().st_size > 0:
+                try:
+                    existing = pq.read_table(self.active_log_file, schema=self._schema)
+                except Exception:
+                    existing = None
+                    try:
+                        self.active_log_file.unlink()
+                    except Exception:
+                        pass
+            self._pq_writer = pq.ParquetWriter(self.active_log_file, self._schema)
+            if existing is not None and existing.num_rows > 0:
+                self._pq_writer.write_table(existing)
+        except (OSError, IOError) as e:
+            logging.error("Failed to open audit journal: %s", e)
+            raise
+
+    def _close_writer(self):
+        if self._pq_writer is not None:
+            try:
+                self._pq_writer.close()
+            except Exception:
+                pass
+            self._pq_writer = None
+
+    def _should_rotate(self) -> bool:
+        try:
+            return self.active_log_file.exists() and self.active_log_file.stat().st_size >= _AUDIT_MAX_FILE_SIZE
+        except OSError:
+            return False
+
+    def _rotate_if_needed(self):
+        if not self._should_rotate():
+            return
+        try:
+            self._close_writer()
+            ts = time.time_ns()
+            rotated = self.audit_directory / f"audit_{ts}.parquet"
+            self.active_log_file.rename(rotated)
+            self._open()
+        except (OSError, IOError) as e:
+            logging.error("Audit rotation failed: %s", e)
+            if self._pq_writer is None:
+                try:
+                    self._open()
+                except Exception:
+                    pass
+
+    def _get_files(self) -> list[Path]:
+        files = sorted(self.audit_directory.glob("audit_*.parquet"))
+        files += sorted(self.audit_directory.glob("audit_*.arrow"))
+        files += sorted(self.audit_directory.glob("audit_*.log"))
+        files += sorted(self.audit_directory.glob("audit_*.jsonl"))
+        if self.active_log_file.exists() and self.active_log_file not in files:
+            files.append(self.active_log_file)
+        return sorted(set(files))
+
+    def _iter_parquet(self, path: Path):
+        try:
+            table = pq.read_table(path, schema=self._schema)
+            for batch in table.to_batches():
+                for row in batch.to_pylist():
+                    yield _row_to_audit_event(row)
+        except Exception:
+            try:
+                with open(path, "rb") as f:
+                    lb = f.read(4)
+                    if not lb:
+                        return
+                    f.seek(0)
+                    while True:
+                        lb2 = f.read(4)
+                        if not lb2 or len(lb2) < 4:
+                            return
+                        ml = struct.unpack("<I", lb2)[0]
+                        data = f.read(ml)
+                        if len(data) < ml:
+                            return
+                        try:
+                            batch = pa.ipc.read_record_batch(data, self._schema)
+                            row = batch.to_pylist()[0]
+                            yield _row_to_audit_event(row)
+                        except Exception:
+                            continue
+            except Exception as e:
+                logging.error("Failed to read audit file %s: %s", path, e)
+
+    def store_event(self, event: AuditEvent) -> bool:
+        row = _audit_event_to_row(event)
+        try:
+            with self._lock:
+                if self._pq_writer is None:
+                    self._open()
+                self._rotate_if_needed()
+                if self._pq_writer is None:
+                    return False
+                pydict = {name: [row.get(name, "")] for name in self._schema.names}
+                batch = pa.record_batch(pydict, schema=self._schema)
+                table = pa.Table.from_batches([batch])
+                self._pq_writer.write_table(table)
+                return True
+        except Exception as e:
+            logging.error("Failed to store audit event (parquet): %s", e)
+            return False
+
+    def retrieve_events(self, filter_criteria: AuditFilter, limit: int | None = None) -> list[AuditEvent]:
+        events: list[AuditEvent] = []
+        try:
+            with self._lock:
+                if self._pq_writer is not None:
+                    try:
+                        self._close_writer()
+                    except Exception:
+                        pass
+            for jf in reversed(self._get_files()):
+                try:
+                    if jf.suffix == ".jsonl":
+                        for ev in _iter_events_from_file(jf):
+                            if filter_criteria.matches(ev):
+                                events.append(ev)
+                                if limit and len(events) >= limit:
+                                    return events
+                    else:
+                        for ev in self._iter_parquet(jf):
+                            if filter_criteria.matches(ev):
+                                events.append(ev)
+                                if limit and len(events) >= limit:
+                                    return events
+                except (OSError, IOError):
+                    continue
+            with self._lock:
+                try:
+                    if self._pq_writer is None:
+                        self._open()
+                except Exception:
+                    pass
+            return events
+        except Exception as e:
+            logging.error("Failed to retrieve audit events (parquet): %s", e)
+            return events
+
+    def get_event_count(self, filter_criteria: AuditFilter) -> int:
+        return len(self.retrieve_events(filter_criteria))
+
+    def close(self):
+        with self._lock:
+            self._close_writer()
 
 
 class DatabaseAuditStorage(AuditStorage):
@@ -353,7 +572,7 @@ class AuditLogger:
         storage: AuditStorage | None = None,
         enable_real_time_alerts: bool = True
     ):
-        self.storage = storage or FileAuditStorage("log/risk_management/audit_logs")
+        self.storage = storage or ArrowAuditStorage("log/risk_management/audit_logs")
         self.enable_real_time_alerts = enable_real_time_alerts
         self.logger = logging.getLogger(__name__)
         self.alert_handlers: list[Callable[[AuditEvent], None]] = []

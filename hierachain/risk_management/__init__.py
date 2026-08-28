@@ -39,8 +39,10 @@ from hierachain.risk_management.mitigation_strategies import (
 from hierachain.risk_management.audit_logger import (
     AuditLogger,
     AuditStorage,
+    ArrowAuditStorage,
     FileAuditStorage,
     RotatingAuditStorage,
+    DatabaseAuditStorage,
     verify_integrity,
 )
 
@@ -72,7 +74,9 @@ __all__ = [
     'AuditSeverity',
     'AuditFilter',
     'AuditStorage',
+    'ArrowAuditStorage',
     'FileAuditStorage',
     'RotatingAuditStorage',
+    'DatabaseAuditStorage',
     'verify_integrity',
 ]
