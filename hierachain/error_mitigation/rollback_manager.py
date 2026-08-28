@@ -528,8 +528,7 @@ def _log_rollback_operation(rollback_op: RollbackOperation) -> None:
             "operation_data": rollback_op.to_dict(),
             "timestamp": time.time(),
         }
-        os.makedirs("log/error_mitigation", exist_ok=True)
-        with open("log/error_mitigation/rollback_operations.log", "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now().isoformat()}: {orjson.dumps(log_entry).decode()}\n")
+        from hierachain.core.parquet_log import write_parquet_log
+        write_parquet_log("log/error_mitigation/rollback_operations.parquet", log_entry)
     except Exception as e:
         logger.error("Failed to log rollback operation: %s", e)

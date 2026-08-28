@@ -150,8 +150,7 @@ class NetworkRecoveryEngine:
         }
         logger.warning("Network alert: %s", message)
         try:
-            os.makedirs("log/error_mitigation", exist_ok=True)
-            with open("log/error_mitigation/network_alerts.log", "a") as f:
-                f.write(f"{datetime.now().isoformat()}: {orjson.dumps(alert).decode()}\n")
+            from hierachain.core.parquet_log import write_parquet_log
+            write_parquet_log("log/error_mitigation/network_alerts.parquet", alert)
         except Exception as e:
             logger.error("Failed to write network alert: %s", str(e))

@@ -115,8 +115,7 @@ class AutoScaler:
     @staticmethod
     def _log_scaling_event(event: dict[str, Any]) -> None:
         try:
-            os.makedirs("log/error_mitigation", exist_ok=True)
-            with open("log/error_mitigation/scaling_events.log", "a") as f:
-                f.write(f"{datetime.now().isoformat()}: {orjson.dumps(event).decode()}\n")
+            from hierachain.core.parquet_log import write_parquet_log
+            write_parquet_log("log/error_mitigation/scaling_events.parquet", event)
         except Exception as e:
             logger.error("Failed to log scaling event: %s", e)

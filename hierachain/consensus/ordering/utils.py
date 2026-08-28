@@ -74,10 +74,7 @@ def dump_forensic_data(
 ) -> None:
     """Dump event pool summary for forensic analysis."""
     try:
-        os.makedirs("log", exist_ok=True)
-        dump_path = "log/quarantine_dump.json"
-
-        # Collect sample of pending events (max 100)
+        from hierachain.core.parquet_log import write_parquet_log
         sample_ids = list(pending_events.keys())[:100]
         dump_data = {
             "timestamp": time.time(),
@@ -85,10 +82,7 @@ def dump_forensic_data(
             "event_pool_size": event_pool.qsize(),
             "sample_event_ids": sample_ids
         }
-
-        with open(dump_path, "wb") as f:
-            f.write(orjson.dumps(dump_data, option=orjson.OPT_INDENT_2))
-
-        logger.info("Forensic data dumped to %s", dump_path)
+        write_parquet_log("log/quarantine_dump.parquet", dump_data)
+        logger.info("Forensic data dumped to %s", "log/quarantine_dump.parquet")
     except Exception as e:
         logger.error("Failed to dump forensic data: %s", e)

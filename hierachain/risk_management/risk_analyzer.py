@@ -32,8 +32,8 @@ class RiskAnalyzer:
     def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
         self.logger = logging.getLogger(__name__)
-        os.makedirs('log/risk_management', exist_ok=True)
-        handler = logging.FileHandler('log/risk_management/risk_analyzer.log')
+        from hierachain.core.parquet_log import ParquetLogHandler
+        handler = ParquetLogHandler('log/risk_management/risk_analyzer.parquet')
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )

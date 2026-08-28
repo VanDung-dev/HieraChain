@@ -94,9 +94,8 @@ class BackupRecoveryEngine:
                 "timestamp": time.time(),
             }
             logger.info("Data restoration completed: %s", orjson.dumps(restoration_event).decode())
-            os.makedirs("log/error_mitigation", exist_ok=True)
-            with open("log/error_mitigation/restoration_events.log", "a") as fh:
-                fh.write(f"{datetime.now().isoformat()}: {orjson.dumps(restoration_event).decode()}\n")
+            from hierachain.core.parquet_log import write_parquet_log
+            write_parquet_log("log/error_mitigation/restoration_events.parquet", restoration_event)
             return True
         except Exception as exc:
             logger.error("Data restoration failed: %s", exc)

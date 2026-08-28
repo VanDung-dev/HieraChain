@@ -61,7 +61,7 @@ class OrderingService:
         # Configure journal based on storage_dir and node_id for persistence
         storage_dir = config.get("storage_dir", "journal")
         node_id = nodes[0].node_id if nodes else "unknown"
-        active_log_name = f"node_{node_id}_journal.log"
+        active_log_name = f"node_{node_id}_journal.parquet"
         self.journal = TransactionJournal(
             storage_dir=storage_dir, active_log_name=active_log_name
         )

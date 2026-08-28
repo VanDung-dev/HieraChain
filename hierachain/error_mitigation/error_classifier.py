@@ -212,9 +212,8 @@ def _log_classification(error_info: ErrorInfo) -> None:
         "timestamp": error_info.timestamp,
     }
     try:
-        os.makedirs("log/error_mitigation", exist_ok=True)
-        with open("log/error_mitigation/error_classifications.log", "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now().isoformat()}: {orjson.dumps(log_entry).decode()}\n")
+        from hierachain.core.parquet_log import write_parquet_log
+        write_parquet_log("log/error_mitigation/error_classifications.parquet", log_entry)
     except (IOError, OSError) as e:
         logger.error("Failed to log error classification: %s", e)
 

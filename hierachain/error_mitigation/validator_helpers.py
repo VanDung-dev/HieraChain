@@ -18,11 +18,10 @@ logger = logging.getLogger(__name__)
 
 def _log_scaling_event(event: dict[str, Any]) -> None:
     try:
+        from hierachain.core.parquet_log import write_parquet_log
         log_entry = orjson.dumps(event, option=orjson.OPT_INDENT_2).decode()
         logger.info("Scaling event logged: %s", log_entry)
-        os.makedirs("log/error_mitigation", exist_ok=True)
-        with open("log/error_mitigation/consensus_scaling.log", "a") as f:
-            f.write(f"{datetime.now().isoformat()}: {log_entry}\n")
+        write_parquet_log("log/error_mitigation/consensus_scaling.parquet", {"event": "consensus_scaling", "payload": event, "log_entry": log_entry})
     except (IOError, OSError, ValueError) as ex:
         logger.error("Failed to log scaling event: %s", ex)
 
@@ -82,8 +81,7 @@ def _check_forbidden_terms_in_array(
 
 def _write_audit_log(audit_entry: dict[str, Any]) -> None:
     try:
-        os.makedirs("log/error_mitigation", exist_ok=True)
-        with open("log/error_mitigation/api_audit.log", "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now().isoformat()}: {orjson.dumps(audit_entry).decode()}\n")
+        from hierachain.core.parquet_log import write_parquet_log
+        write_parquet_log("log/error_mitigation/api_audit.parquet", {"event": "api_audit", "payload": audit_entry})
     except (IOError, OSError) as ex:
         logger.error("Failed to write audit log: %s", ex)

@@ -81,6 +81,5 @@ class ResourceValidator:
             "auto_scale_enabled": self.auto_scale,
         }
         logger.info("Resource scaling triggered: %s", orjson.dumps(scaling_event).decode())
-        os.makedirs("log/error_mitigation", exist_ok=True)
-        with open("log/error_mitigation/resource_scaling.log", "a") as f:
-            f.write(f"{datetime.now().isoformat()}: {orjson.dumps(scaling_event).decode()}\n")
+        from hierachain.core.parquet_log import write_parquet_log
+        write_parquet_log("log/error_mitigation/resource_scaling.parquet", scaling_event)

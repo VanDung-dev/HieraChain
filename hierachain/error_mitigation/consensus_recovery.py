@@ -135,9 +135,8 @@ class ConsensusRecoveryEngine:
         time.sleep(1)
         self.view_number = new_view
         try:
-            os.makedirs("log/error_mitigation", exist_ok=True)
-            with open("log/error_mitigation/view_changes.log", "a") as f:
-                f.write(f"{datetime.now().isoformat()}: {orjson.dumps(view_change_event).decode()}\n")
+            from hierachain.core.parquet_log import write_parquet_log
+            write_parquet_log("log/error_mitigation/view_changes.parquet", view_change_event)
         except Exception as e:
             logger.error("Failed to log view change: %s", e)
         return True
