@@ -214,6 +214,48 @@ python -m scripts.static_analysis
 
 ---
 
+### 🛡️ Security Auditing & Code Scanning
+
+Run automated security linters and vulnerability scanners across the codebase and dependencies:
+
+#### 1. Python Code Security (Bandit)
+Scan source code for common security vulnerabilities (injection, insecure deserialization, unsafe imports):
+
+```bash
+# Full security scan across all severity levels
+uv run bandit -r hierachain/
+
+# Scan Medium and High severity issues only
+uv run bandit -r hierachain/ -ll
+
+# Export scan report to JSON
+uv run bandit -r hierachain/ -f json -o bandit_report.json
+```
+
+#### 2. Dependency Vulnerability Audit (pip-audit)
+Scan all installed packages in `.venv` against known CVE databases (PyPI Advisory Database / OSV):
+
+```bash
+# Scan all installed dependencies
+uv run pip-audit
+
+# Strict mode (fail on any vulnerability)
+uv run pip-audit --strict
+```
+
+#### 3. Semantic & API Security Analysis (Semgrep)
+Perform deep semantic analysis and taint tracking for API endpoints:
+
+```bash
+# Auto-detect relevant rules for the codebase
+uv run semgrep --config=auto hierachain/
+
+# Run OWASP Top 10 security ruleset
+uv run semgrep --config=p/owasp-top-ten hierachain/
+```
+
+---
+
 ### 📦 Packaging & PyPI Release
 
 Build wheel/sdist packages and upload to PyPI:
@@ -237,6 +279,9 @@ python -m twine upload dist/*
 | Install all deps | `uv sync` | This file (Installation section) |
 | Install core + dev | `uv sync --extra dev` | This file (Installation section) |
 | Run API server | `python -m hierachain.api.server` | This file (Running Server section) |
+| Security scan (Bandit) | `uv run bandit -r hierachain/` | This file (Security Auditing section) |
+| Dependency audit | `uv run pip-audit` | This file (Security Auditing section) |
+| Semantic analysis (Semgrep) | `uv run semgrep --config=auto hierachain/` | This file (Security Auditing section) |
 | Build package | `uv build` | This file (Packaging section) |
 | Publish to PyPI | `python -m twine upload dist/*` | This file (Packaging section) |
 | Run demos | `python demo/demo.py` | [`demo/README.md`](../demo/README.md) |

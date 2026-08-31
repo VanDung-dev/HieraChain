@@ -130,6 +130,40 @@ python -m scripts.static_analysis
 python -m scripts.static_analysis --output analysis_report.json
 ```
 
+### Rà quét & Kiểm tra Bảo mật (Security Auditing)
+
+Rà quét mã nguồn và các thư viện phụ thuộc bằng các công cụ chuyên dụng:
+
+* **Bandit** (Phân tích bảo mật mã nguồn tĩnh SAST cho Python):
+
+    ```bash
+    # Quét toàn bộ các mức độ cảnh báo
+    uv run bandit -r hierachain/
+
+    # Chỉ quét cảnh báo mức Medium và High
+    uv run bandit -r hierachain/ -ll
+    ```
+
+* **pip-audit** (Rà quét lỗ hổng CVE trong các thư viện phụ thuộc):
+
+    ```bash
+    # Quét toàn bộ thư viện đã cài đặt trong .venv
+    uv run pip-audit
+
+    # Chế độ nghiêm ngặt (Strict mode)
+    uv run pip-audit --strict
+    ```
+
+* **Semgrep** (Phân tích ngữ nghĩa & quy tắc bảo mật API):
+
+    ```bash
+    # Tự động nhận diện quy tắc phù hợp
+    uv run semgrep --config=auto hierachain/
+
+    # Chạy bộ quy tắc OWASP Top 10
+    uv run semgrep --config=p/owasp-top-ten hierachain/
+    ```
+
 ### Kiểm thử Hiệu năng (Benchmarking)
 
 * **Hiệu năng Băm** (So sánh băm cây Merkle vs băm JSON):

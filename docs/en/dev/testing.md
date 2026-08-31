@@ -130,6 +130,40 @@ python -m scripts.static_analysis
 python -m scripts.static_analysis --output analysis_report.json
 ```
 
+### Security Auditing & Code Scanning
+
+Automated security checks across codebase and dependencies:
+
+* **Bandit** (SAST security analysis for Python code):
+
+    ```bash
+    # Full security scan across all severity levels
+    uv run bandit -r hierachain/
+
+    # Scan Medium and High severity issues only
+    uv run bandit -r hierachain/ -ll
+    ```
+
+* **pip-audit** (Vulnerability & CVE scanner for packages):
+
+    ```bash
+    # Scan all installed dependencies
+    uv run pip-audit
+
+    # Strict mode (fail on any vulnerability)
+    uv run pip-audit --strict
+    ```
+
+* **Semgrep** (Semantic API security & taint analysis):
+
+    ```bash
+    # Auto-detect relevant rules
+    uv run semgrep --config=auto hierachain/
+
+    # Run OWASP Top 10 ruleset
+    uv run semgrep --config=p/owasp-top-ten hierachain/
+    ```
+
 ### Benchmarking
 
 * **Hashing Performance** (Compare Merkle tree hash vs JSON):
