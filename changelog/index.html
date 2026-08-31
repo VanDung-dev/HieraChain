@@ -4423,8 +4423,15 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (11)</summary>
+<summary>Improvements (12)</summary>
 <ul>
+<li>
+<p>2026-08-31</p>
+<ul>
+<li><strong>SDK</strong>: Replaced <code>assert</code> statements with explicit <code>RuntimeError</code> checks in <code>_get_session</code> across <code>hierachain/sdk/client.py</code> and <code>hierachain/sdk/async_client.py</code> to prevent session validation from being skipped in optimized byte-code mode (<code>-O</code>).</li>
+<li><strong>Logging &amp; Error Mitigation</strong>: Replaced bare <code>except Exception: pass</code> and <code>continue</code> blocks with explicit <code>logger.debug()</code> messages in <code>hierachain/core/parquet_log.py</code>, <code>hierachain/error_mitigation/journal.py</code>, and <code>hierachain/risk_management/audit_logger.py</code> for file closing, unlinking, rotation recovery, and batch replaying, improving error visibility while maintaining fail-safe execution.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-29</p>
 <ul>
@@ -4444,7 +4451,7 @@
 <ul>
 <li><strong>API</strong>: Introduced <code>hierachain/api/context.py</code> for decoupled, context-based P2P client runtime lifecycle management across API server initialization, shutdown, and network ping endpoints.</li>
 <li><strong>Hierarchical (Rebalancer)</strong>: Centralized sub-chain utility functions into <code>hierachain/hierarchical/rebalancer/utils.py</code> and streamlined state migration during sub-chain splitting to migrate pending events and inherit entity World State snapshots without altering committed block history.</li>
-<li><strong>Domains</strong>: Streamlined domain event module structure in <code>hierachain/domains/events/</code> by decoupling cross-module circular imports between <code>DomainEvent</code> base and concrete event definitions.</li>
+<li><strong>Domains</strong>: Streamlined domain event module structure in <code>hierachain/domains/events/</code>, decoupling cross-module circular imports between <code>DomainEvent</code> base and concrete event definitions.</li>
 </ul>
 </li>
 <li>
@@ -4464,8 +4471,14 @@
 </ul>
 </details>
 <details class="warning">
-<summary>Fix (14)</summary>
+<summary>Fix (15)</summary>
 <ul>
+<li>
+<p>2026-08-31</p>
+<ul>
+<li><strong>Security (Secret Manager)</strong>: Sanitized exception logging templates in <code>_get_from_aws</code> (<code>hierachain/config/secret_manager.py</code>) to eliminate false-positive credential disclosure warnings during static security audits.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-29</p>
 <ul>

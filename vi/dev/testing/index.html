@@ -4117,6 +4117,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#ra-quet-kiem-tra-bao-mat-security-auditing" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Rà quét &amp; Kiểm tra Bảo mật (Security Auditing)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#kiem-thu-hieu-nang-benchmarking" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4555,6 +4566,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#ra-quet-kiem-tra-bao-mat-security-auditing" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Rà quét &amp; Kiểm tra Bảo mật (Security Auditing)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#kiem-thu-hieu-nang-benchmarking" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4751,16 +4773,47 @@
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Xuất kết quả phân tích ra file</span>
 <a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis<span class="w"> </span>--output<span class="w"> </span>analysis_report.json
 </code></pre></div>
+<h3 id="ra-quet-kiem-tra-bao-mat-security-auditing">Rà quét &amp; Kiểm tra Bảo mật (Security Auditing)</h3>
+<p>Rà quét mã nguồn và các thư viện phụ thuộc bằng các công cụ chuyên dụng:</p>
+<ul>
+<li>
+<p><strong>Bandit</strong> (Phân tích bảo mật mã nguồn tĩnh SAST cho Python):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Quét toàn bộ các mức độ cảnh báo</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>uv<span class="w"> </span>run<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Chỉ quét cảnh báo mức Medium và High</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>uv<span class="w"> </span>run<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/<span class="w"> </span>-ll
+</code></pre></div>
+</li>
+<li>
+<p><strong>pip-audit</strong> (Rà quét lỗ hổng CVE trong các thư viện phụ thuộc):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Quét toàn bộ thư viện đã cài đặt trong .venv</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># Chế độ nghiêm ngặt (Strict mode)</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit<span class="w"> </span>--strict
+</code></pre></div>
+</li>
+<li>
+<p><strong>Semgrep</strong> (Phân tích ngữ nghĩa &amp; quy tắc bảo mật API):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Tự động nhận diện quy tắc phù hợp</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>uv<span class="w"> </span>run<span class="w"> </span>semgrep<span class="w"> </span>--config<span class="o">=</span>auto<span class="w"> </span>hierachain/
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># Chạy bộ quy tắc OWASP Top 10</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>uv<span class="w"> </span>run<span class="w"> </span>semgrep<span class="w"> </span>--config<span class="o">=</span>p/owasp-top-ten<span class="w"> </span>hierachain/
+</code></pre></div>
+</li>
+</ul>
 <h3 id="kiem-thu-hieu-nang-benchmarking">Kiểm thử Hiệu năng (Benchmarking)</h3>
 <ul>
 <li>
 <p><strong>Hiệu năng Băm</strong> (So sánh băm cây Merkle vs băm JSON):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python<span class="w"> </span>scripts/benchmark_hashing.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>python<span class="w"> </span>scripts/benchmark_hashing.py
 </code></pre></div>
 </li>
 <li>
 <p><strong>Đo lường Băng thông</strong> (Đo tốc độ xử lý sự kiện):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>python<span class="w"> </span>scripts/benchmark_throughput.py<span class="w"> </span>--events<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">4</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">100</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>python<span class="w"> </span>scripts/benchmark_throughput.py<span class="w"> </span>--events<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">4</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">100</span>
 </code></pre></div>
 </li>
 </ul>
@@ -4768,7 +4821,7 @@
 <ul>
 <li>
 <p><strong>Xác minh tính Bền vững Lưu trữ</strong> (Kiểm tra độ bền SQLite):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>python<span class="w"> </span>scripts/verify_storage.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>python<span class="w"> </span>scripts/verify_storage.py
 </code></pre></div>
 </li>
 </ul>
@@ -4787,8 +4840,8 @@
 </li>
 </ul>
 <h2 id="vi-du-chay-kiem-thu-theo-marker">Ví dụ chạy kiểm thử theo Marker</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
 </code></pre></div>
 <h2 id="cac-nguyen-tac-kiem-thu">Các Nguyên tắc Kiểm thử</h2>
 <ul>

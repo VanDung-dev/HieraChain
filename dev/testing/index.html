@@ -4117,6 +4117,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#security-auditing-code-scanning" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Security Auditing &amp; Code Scanning
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#benchmarking" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4555,6 +4566,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#security-auditing-code-scanning" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Security Auditing &amp; Code Scanning
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#benchmarking" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -4751,16 +4773,47 @@
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Export results to file</span>
 <a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>python<span class="w"> </span>-m<span class="w"> </span>scripts.static_analysis<span class="w"> </span>--output<span class="w"> </span>analysis_report.json
 </code></pre></div>
+<h3 id="security-auditing-code-scanning">Security Auditing &amp; Code Scanning</h3>
+<p>Automated security checks across codebase and dependencies:</p>
+<ul>
+<li>
+<p><strong>Bandit</strong> (SAST security analysis for Python code):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Full security scan across all severity levels</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>uv<span class="w"> </span>run<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Scan Medium and High severity issues only</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>uv<span class="w"> </span>run<span class="w"> </span>bandit<span class="w"> </span>-r<span class="w"> </span>hierachain/<span class="w"> </span>-ll
+</code></pre></div>
+</li>
+<li>
+<p><strong>pip-audit</strong> (Vulnerability &amp; CVE scanner for packages):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Scan all installed dependencies</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># Strict mode (fail on any vulnerability)</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>uv<span class="w"> </span>run<span class="w"> </span>pip-audit<span class="w"> </span>--strict
+</code></pre></div>
+</li>
+<li>
+<p><strong>Semgrep</strong> (Semantic API security &amp; taint analysis):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Auto-detect relevant rules</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>uv<span class="w"> </span>run<span class="w"> </span>semgrep<span class="w"> </span>--config<span class="o">=</span>auto<span class="w"> </span>hierachain/
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># Run OWASP Top 10 ruleset</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>uv<span class="w"> </span>run<span class="w"> </span>semgrep<span class="w"> </span>--config<span class="o">=</span>p/owasp-top-ten<span class="w"> </span>hierachain/
+</code></pre></div>
+</li>
+</ul>
 <h3 id="benchmarking">Benchmarking</h3>
 <ul>
 <li>
 <p><strong>Hashing Performance</strong> (Compare Merkle tree hash vs JSON):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python<span class="w"> </span>scripts/benchmark_hashing.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>python<span class="w"> </span>scripts/benchmark_hashing.py
 </code></pre></div>
 </li>
 <li>
 <p><strong>Throughput Benchmark</strong> (Measure event processing throughput):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>python<span class="w"> </span>scripts/benchmark_throughput.py<span class="w"> </span>--events<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">4</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">100</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>python<span class="w"> </span>scripts/benchmark_throughput.py<span class="w"> </span>--events<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">4</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">100</span>
 </code></pre></div>
 </li>
 </ul>
@@ -4768,7 +4821,7 @@
 <ul>
 <li>
 <p><strong>Verify Storage Persistence</strong> (Test SQLite durability):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>python<span class="w"> </span>scripts/verify_storage.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>python<span class="w"> </span>scripts/verify_storage.py
 </code></pre></div>
 </li>
 </ul>
@@ -4787,8 +4840,8 @@
 </li>
 </ul>
 <h2 id="running-by-marker-example">Running by Marker Example</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>critical
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>pytest<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>integration
 </code></pre></div>
 <h2 id="testing-principles">Testing Principles</h2>
 <ul>

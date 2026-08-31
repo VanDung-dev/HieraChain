@@ -4423,8 +4423,15 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (11)</summary>
+<summary>Improvements (12)</summary>
 <ul>
+<li>
+<p>2026-08-31</p>
+<ul>
+<li><strong>SDK</strong>: Thay thế câu lệnh <code>assert</code> bằng kiểm tra ngoại lệ <code>RuntimeError</code> tường minh trong phương thức <code>_get_session</code> tại <code>hierachain/sdk/client.py</code> và <code>hierachain/sdk/async_client.py</code> nhằm đảm bảo tính hợp lệ của session khi chạy ở chế độ tối ưu byte-code (<code>-O</code>).</li>
+<li><strong>Logging &amp; Giảm thiểu Rủi ro</strong>: Thay thế các khối <code>except Exception: pass</code> và <code>continue</code> ẩn danh bằng thông điệp <code>logger.debug()</code> chi tiết trong <code>hierachain/core/parquet_log.py</code>, <code>hierachain/error_mitigation/journal.py</code> và <code>hierachain/risk_management/audit_logger.py</code> khi đóng file, xóa file lỗi, phục hồi xoay vòng log và replay batch, nâng cao khả năng gỡ lỗi mà vẫn giữ an toàn vận hành.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-29</p>
 <ul>
@@ -4464,8 +4471,14 @@
 </ul>
 </details>
 <details class="warning">
-<summary>Fix (14)</summary>
+<summary>Fix (15)</summary>
 <ul>
+<li>
+<p>2026-08-31</p>
+<ul>
+<li><strong>Bảo mật (Secret Manager)</strong>: Chuẩn hóa lại các template log thông báo lỗi trong <code>_get_from_aws</code> (<code>hierachain/config/secret_manager.py</code>) nhằm loại bỏ cảnh báo nhận diện nhầm rò rỉ credential khi quét bảo mật tĩnh.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-29</p>
 <ul>
