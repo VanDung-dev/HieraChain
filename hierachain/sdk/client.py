@@ -84,7 +84,8 @@ class HieraChainClient:
                 self._session = session
             except ImportError:
                 raise ImportError("requests library required: pip install requests")
-        assert self._session is not None
+        if self._session is None:
+            raise RuntimeError("Failed to initialize requests Session")
         return self._session
 
     def _calculate_delay(self, attempt: int) -> float:
