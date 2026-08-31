@@ -110,7 +110,8 @@ class Settings:
     # P2P Network settings
     # Enable P2P network layer
     P2P_ENABLED = os.getenv("HRC_P2P_ENABLED", "true").lower() == "true"
-    P2P_HOST = os.getenv("HRC_P2P_HOST", "0.0.0.0")
+    # Container networking requires binding 0.0.0.0
+    P2P_HOST = os.getenv("HRC_P2P_HOST", "0.0.0.0")  # nosec B104
     P2P_PORT = int(os.getenv("HRC_P2P_PORT", "5555"))
     # Comma-separated list of seed nodes: node_id@ip:port
     P2P_PEERS: list[str] = (

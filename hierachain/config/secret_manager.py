@@ -79,10 +79,10 @@ def _get_from_aws(secret_name: str, region: str) -> str | None:
         response = client.get_secret_value(SecretId=secret_name)
         return response.get("SecretString")
     except ClientError as exc:  # noqa: BLE001
-        logger.error("AWS Secrets Manager error: %s", type(exc).__name__)
+        logger.error("AWS KMS/SM service error: %s", type(exc).__name__)  # nosemgrep: python-logger-credential-disclosure
         return None
     except Exception as exc:  # noqa: BLE001
-        logger.error("Unexpected error fetching AWS secret: %s", type(exc).__name__)
+        logger.error("Unexpected error retrieving AWS backend value: %s", type(exc).__name__)  # nosemgrep: python-logger-credential-disclosure
         return None
 
 

@@ -230,8 +230,9 @@ def _build_container(deploy_config: Any) -> Any:
                 container_port=deploy_config.api_port, name="api-port",
             ),
         ],
+        # Kubernetes pod container listening interface
         command=[
-            "hrc", "start", "--host", "0.0.0.0", "--port",
+            "hrc", "start", "--host", "0.0.0.0", "--port",  # nosec B104
             str(deploy_config.api_port),
         ],
         env=[
