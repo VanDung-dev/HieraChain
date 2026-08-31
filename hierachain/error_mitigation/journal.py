@@ -360,8 +360,8 @@ class TransactionJournal:
                     existing = None
                     try:
                         self.active_log_file.unlink()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("Could not unlink corrupted journal file: %s", e)
             self._pq_writer = pq.ParquetWriter(self.active_log_file, self._schema)
             if existing is not None and existing.num_rows > 0:
                 self._pq_writer.write_table(existing)
@@ -373,8 +373,8 @@ class TransactionJournal:
         if self._pq_writer is not None:
             try:
                 self._pq_writer.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Error closing journal writer: %s", e)
             self._pq_writer = None
 
     def _should_rotate(self) -> bool:
@@ -397,8 +397,8 @@ class TransactionJournal:
             if self._pq_writer is None:
                 try:
                     self._open_journal()
-                except Exception:
-                    pass
+                except Exception as ex:
+                    logger.debug("Error reopening journal after rotation failure: %s", ex)
 
     def _dict_to_arrow_batch(self, event_data: dict[str, Any]) -> pa.RecordBatch:
         """
@@ -452,8 +452,8 @@ class TransactionJournal:
                 if get_settings().JOURNAL_FSYNC:
                     try:
                         self._pq_writer.close()
-                    except Exception:
-                        pass
+                    except Exception as ex:
+                        logger.debug("Error closing writer on fsync: %s", ex)
                     self._pq_writer = None
                 return True
             except (OSError, IOError, pa.ArrowException) as e:
@@ -468,8 +468,8 @@ class TransactionJournal:
             if self._pq_writer is not None:
                 try:
                     self._pq_writer.close()
-                except Exception:
-                    pass
+                except Exception as ex:
+                    logger.debug("Error closing writer on flush: %s", ex)
                 self._pq_writer = None
 
     def log_event(self, event_data: dict[str, Any]) -> bool:
@@ -518,23 +518,23 @@ class TransactionJournal:
                 try:
                     self._pq_writer.close()
                     self._pq_writer = None
-                except Exception:
-                    pass
+                except Exception as ex:
+                    logger.debug("Error closing writer before replay: %s", ex)
         files = self._get_journal_files()
         if not files:
             with self._lock:
                 try:
                     self._open_journal()
-                except Exception:
-                    pass
+                except Exception as ex:
+                    logger.debug("Error reopening journal on replay: %s", ex)
             return
         for jf in files:
             yield from self._iter_parquet_file(jf)
         with self._lock:
             try:
                 self._open_journal()
-            except Exception:
-                pass
+            except Exception as ex:
+                logger.debug("Error reopening journal after replay: %s", ex)
 
     def close(self):
         """Close the journal file handle."""

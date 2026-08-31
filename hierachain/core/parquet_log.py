@@ -21,8 +21,8 @@ def write_parquet_log(path: str | Path, record: dict) -> None:
             try:
                 existing = pq.read_table(p, schema=_SCHEMA)
                 table = pa.concat_tables([existing, table])
-            except Exception:
-                pass
+            except Exception as e:
+                logging.getLogger(__name__).debug("Failed to read existing parquet log: %s", e)
         pq.write_table(table, p)
 
 class ParquetLogHandler(logging.Handler):
