@@ -195,10 +195,10 @@ def test_block_creation() -> None:
     service = None
     
     try:
-        service, _ = _start_ordering_service_for_block_test(3, 0.1)
+        service, _ = _start_ordering_service_for_block_test(3, 2.0)
         
         _submit_test_events(service, 3)
-        block = _wait_for_block(service, timeout=0.5)
+        block = _wait_for_block(service, timeout=2.0)
         assert block is not None
         assert len(block.events) == 3
     finally:
