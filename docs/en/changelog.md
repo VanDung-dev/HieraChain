@@ -8,7 +8,12 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (11)"
+??? note "Improvements (12)"
+
+    * 2026-08-31
+
+        * **SDK**: Replaced `assert` statements with explicit `RuntimeError` checks in `_get_session` across `hierachain/sdk/client.py` and `hierachain/sdk/async_client.py` to prevent session validation from being skipped in optimized byte-code mode (`-O`).
+        * **Logging & Error Mitigation**: Replaced bare `except Exception: pass` and `continue` blocks with explicit `logger.debug()` messages in `hierachain/core/parquet_log.py`, `hierachain/error_mitigation/journal.py`, and `hierachain/risk_management/audit_logger.py` for file closing, unlinking, rotation recovery, and batch replaying, improving error visibility while maintaining fail-safe execution.
 
     * 2026-08-29
 
@@ -24,7 +29,7 @@ icon: material/history
 
         * **API**: Introduced `hierachain/api/context.py` for decoupled, context-based P2P client runtime lifecycle management across API server initialization, shutdown, and network ping endpoints.
         * **Hierarchical (Rebalancer)**: Centralized sub-chain utility functions into `hierachain/hierarchical/rebalancer/utils.py` and streamlined state migration during sub-chain splitting to migrate pending events and inherit entity World State snapshots without altering committed block history.
-        * **Domains**: Streamlined domain event module structure in `hierachain/domains/events/` by decoupling cross-module circular imports between `DomainEvent` base and concrete event definitions.
+        * **Domains**: Streamlined domain event module structure in `hierachain/domains/events/`, decoupling cross-module circular imports between `DomainEvent` base and concrete event definitions.
 
     * 2026-08-23
 
@@ -36,7 +41,11 @@ icon: material/history
 
         * **Dead Code Removal**: Removed unused utility functions across hierarchical and domain modules (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): deleted `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, and `create_multi_org_network` for a leaner, more maintainable codebase.
 
-??? warning "Fix (14)"
+??? warning "Fix (15)"
+
+    * 2026-08-31
+
+        * **Security (Secret Manager)**: Sanitized exception logging templates in `_get_from_aws` (`hierachain/config/secret_manager.py`) to eliminate false-positive credential disclosure warnings during static security audits.
 
     * 2026-08-29
 

@@ -8,7 +8,12 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (11)"
+??? note "Improvements (12)"
+
+    * 2026-08-31
+
+        * **SDK**: Thay thế câu lệnh `assert` bằng kiểm tra ngoại lệ `RuntimeError` tường minh trong phương thức `_get_session` tại `hierachain/sdk/client.py` và `hierachain/sdk/async_client.py` nhằm đảm bảo tính hợp lệ của session khi chạy ở chế độ tối ưu byte-code (`-O`).
+        * **Logging & Giảm thiểu Rủi ro**: Thay thế các khối `except Exception: pass` và `continue` ẩn danh bằng thông điệp `logger.debug()` chi tiết trong `hierachain/core/parquet_log.py`, `hierachain/error_mitigation/journal.py` và `hierachain/risk_management/audit_logger.py` khi đóng file, xóa file lỗi, phục hồi xoay vòng log và replay batch, nâng cao khả năng gỡ lỗi mà vẫn giữ an toàn vận hành.
 
     * 2026-08-29
 
@@ -36,7 +41,11 @@ icon: material/history
 
         * **Dọn dẹp mã thừa**: Loại bỏ các hàm tiện ích không dùng trên các module hierarchical và domain (`hierachain/core/utils.py`, `consensus/proof_of_federation.py`, `domains/chains/domain_chain.py`, `domains/chains/metrics.py`, `domains/utils/cross_chain_validator.py`, `domains/utils/entity_tracer.py`, `hierarchical/multi_org.py`): xóa `group_events_by_entity`, `_is_block_valid`, `_extract_signature_from_block`, `_analyze_compliance_status`, `_calculate_performance_stats`, `_process_string_value`, `_process_bytes_value`, `_generate_recommendations`, và `create_multi_org_network` để codebase gọn gàng và dễ bảo trì hơn.
 
-??? warning "Fix (14)"
+??? warning "Fix (15)"
+
+    * 2026-08-31
+
+        * **Bảo mật (Secret Manager)**: Chuẩn hóa lại các template log thông báo lỗi trong `_get_from_aws` (`hierachain/config/secret_manager.py`) nhằm loại bỏ cảnh báo nhận diện nhầm rò rỉ credential khi quét bảo mật tĩnh.
 
     * 2026-08-29
 
