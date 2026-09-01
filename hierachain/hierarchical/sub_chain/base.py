@@ -171,15 +171,16 @@ class SubChain(Blockchain):
         )
 
         db_url = settings.DATABASE_URL
-        db_dir = "data"
-        if db_url.startswith("sqlite:///"):
-            base_data_dir = os.path.realpath("data")
-            safe_name = re.sub(r"[^a-zA-Z0-9_\-]", "", self.name)
-            db_dir = os.path.normpath(os.path.join(base_data_dir, safe_name))
+        base_data_dir = os.path.realpath("data")
+        safe_name = re.sub(r"[^a-zA-Z0-9_\-]", "", self.name)
+        db_dir = os.path.normpath(os.path.join(base_data_dir, safe_name))
 
-            if not db_dir.startswith(base_data_dir):
-                raise ValueError("Invalid SubChain name: path traversal detected")
-            os.makedirs(db_dir, exist_ok=True)
+        if not db_dir.startswith(base_data_dir):
+            raise ValueError("Invalid SubChain name: path traversal detected")
+        os.makedirs(db_dir, exist_ok=True)
+        os.makedirs(os.path.join(db_dir, "journal"), exist_ok=True)
+
+        if db_url.startswith("sqlite:///"):
             db_url = f"sqlite:///{db_dir}/hierachain.db"
 
         default_config = {

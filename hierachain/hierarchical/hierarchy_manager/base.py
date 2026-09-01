@@ -403,14 +403,18 @@ class HierarchyManager:
         return True
 
     @staticmethod
-    def _create_storage() -> SQLiteAdapter | RedisStorageAdapter | None:
-        backend = settings.DEFAULT_STORAGE_BACKEND
+    def _create_storage() -> Any | None:
+        backend = getattr(settings, "STORAGE_BACKEND", settings.DEFAULT_STORAGE_BACKEND)
 
         if backend == "sqlite":
             db_path = "hierachain.db"
             if settings.DATABASE_URL.startswith("sqlite:///"):
                 db_path = settings.DATABASE_URL.replace("sqlite:///", "")
             return SQLiteAdapter(database_path=db_path)
+
+        if backend in ("postgres", "postgresql"):
+            from hierachain.adapters.database.postgres_adapter import PostgresAdapter
+            return PostgresAdapter(database_url=settings.DATABASE_URL)
 
         if backend == "redis":
             return RedisStorageAdapter()
