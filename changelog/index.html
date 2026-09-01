@@ -4423,8 +4423,17 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (12)</summary>
+<summary>Improvements (16)</summary>
 <ul>
+<li>
+<p>2026-09-01</p>
+<ul>
+<li><strong>Database (PostgreSQL)</strong>: Introduced <code>PostgresAdapter</code> (<code>hierachain/adapters/database/postgres_adapter.py</code>) extending <code>SQLBase</code> with <code>psycopg</code>/<code>psycopg2</code> connection pooling (dictionary row access) and <code>postgres_schema.py</code> defining tables (<code>chains</code>, <code>blocks</code>, <code>events</code>, <code>proofs</code>, <code>chain_state</code>) with optimized composite indexes (<code>chain_name+timestamp</code>, <code>entity_id+chain_name</code>, <code>block_hash</code>) and full CRUD for blockchain data.</li>
+<li><strong>Config</strong>: Enhanced storage/database flexibility in <code>hierachain/config/settings.py</code> and <code>hierachain/config/product_config_template.py</code> — added <code>BLOCK_CREATION_MODE</code>/<code>BLOCK_MAX_WAIT_SEC</code> for block creation control, <code>PARQUET_ROLL_INTERVAL</code> (<code>monthly</code>/<code>daily</code>/<code>by_size_mb</code>), <code>POSTGRES_SYNC_MODE</code> (<code>realtime</code>/<code>batch_worker</code>/<code>disabled</code>), <code>SQL_RETENTION_DAYS</code>; made <code>STORAGE_BACKEND</code> auto-detect <code>postgres</code> from <code>DATABASE_URL</code> with <code>sqlite</code> fallback and unified <code>DATABASE_URL</code>/<code>HRC_DATABASE_URL</code> handling; streamlined product template backends to <code>sqlite</code>, <code>postgres</code>, <code>redis</code>, <code>memory</code>, <code>parquet_only</code>.</li>
+<li><strong>Storage (Hierarchical &amp; Ordering)</strong>: Added dynamic adapter selection in <code>hierachain/consensus/ordering/storage.py</code> (<code>OrderingStorageHandler</code>), <code>hierachain/hierarchical/hierarchy_manager/base.py</code> (<code>_create_storage</code>) and <code>hierachain/hierarchical/sub_chain/base.py</code> — selects <code>PostgresAdapter</code> when <code>db_url</code> starts with <code>postgres://</code>/<code>postgresql://</code> otherwise <code>SQLiteAdapter</code>; refactored <code>SubChain</code> DB path generation to always ensure <code>data/{safe_name}/journal</code> exists with path-traversal guard.</li>
+<li><strong>Database (Query &amp; Indexes)</strong>: Optimized <code>hierachain/adapters/database/sqlite_schema.py</code> (<code>create_indexes</code> now uses full <code>CREATE INDEX</code> statements) and refactored <code>hierachain/adapters/database/base/sql_adapter.py</code> to use predefined reusable query templates (<code>_QUERIES_WITH_CHAIN</code>/<code>_QUERIES_WITHOUT_CHAIN</code>) with parameterized queries for chain-aware event filtering, and fixed block cleanup to delete via <code>hash</code>/<code>block_hash</code> instead of <code>id</code>/<code>block_id</code>.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-31</p>
 <ul>

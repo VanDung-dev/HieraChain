@@ -4423,8 +4423,17 @@
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
 <details class="note">
-<summary>Improvements (12)</summary>
+<summary>Improvements (16)</summary>
 <ul>
+<li>
+<p>2026-09-01</p>
+<ul>
+<li><strong>Database (PostgreSQL)</strong>: Bổ sung <code>PostgresAdapter</code> (<code>hierachain/adapters/database/postgres_adapter.py</code>) kế thừa <code>SQLBase</code> với connection pooling <code>psycopg</code>/<code>psycopg2</code> (truy cập row dạng dict) và <code>postgres_schema.py</code> định nghĩa các bảng (<code>chains</code>, <code>blocks</code>, <code>events</code>, <code>proofs</code>, <code>chain_state</code>) cùng composite indexes tối ưu (<code>chain_name+timestamp</code>, <code>entity_id+chain_name</code>, <code>block_hash</code>) và đầy đủ CRUD cho dữ liệu blockchain.</li>
+<li><strong>Config</strong>: Nâng cao linh hoạt cấu hình lưu trữ/cơ sở dữ liệu trong <code>hierachain/config/settings.py</code> và <code>hierachain/config/product_config_template.py</code> — thêm <code>BLOCK_CREATION_MODE</code>/<code>BLOCK_MAX_WAIT_SEC</code> điều khiển tạo block, <code>PARQUET_ROLL_INTERVAL</code> (<code>monthly</code>/<code>daily</code>/<code>by_size_mb</code>), <code>POSTGRES_SYNC_MODE</code> (<code>realtime</code>/<code>batch_worker</code>/<code>disabled</code>), <code>SQL_RETENTION_DAYS</code>; <code>STORAGE_BACKEND</code> tự động nhận diện <code>postgres</code> từ <code>DATABASE_URL</code> với fallback <code>sqlite</code> và thống nhất xử lý <code>DATABASE_URL</code>/<code>HRC_DATABASE_URL</code>; tinh gọn template product về các backend <code>sqlite</code>, <code>postgres</code>, <code>redis</code>, <code>memory</code>, <code>parquet_only</code>.</li>
+<li><strong>Storage (Hierarchical &amp; Ordering)</strong>: Thêm lựa chọn adapter động trong <code>hierachain/consensus/ordering/storage.py</code> (<code>OrderingStorageHandler</code>), <code>hierachain/hierarchical/hierarchy_manager/base.py</code> (<code>_create_storage</code>) và <code>hierachain/hierarchical/sub_chain/base.py</code> — chọn <code>PostgresAdapter</code> khi <code>db_url</code> bắt đầu bằng <code>postgres://</code>/<code>postgresql://</code> ngược lại dùng <code>SQLiteAdapter</code>; tái cấu trúc sinh đường dẫn DB của <code>SubChain</code> để luôn đảm bảo <code>data/{safe_name}/journal</code> tồn tại kèm guard chống path traversal.</li>
+<li><strong>Database (Query &amp; Indexes)</strong>: Tối ưu <code>hierachain/adapters/database/sqlite_schema.py</code> (<code>create_indexes</code> chuyển sang dùng câu lệnh <code>CREATE INDEX</code> đầy đủ) và tái cấu trúc <code>hierachain/adapters/database/base/sql_adapter.py</code> sang dùng template query tái sử dụng (<code>_QUERIES_WITH_CHAIN</code>/<code>_QUERIES_WITHOUT_CHAIN</code>) với parameterized queries cho lọc event theo chain, đồng thời sửa dọn dẹp block để xóa qua <code>hash</code>/<code>block_hash</code> thay vì <code>id</code>/<code>block_id</code>.</li>
+</ul>
+</li>
 <li>
 <p>2026-08-31</p>
 <ul>
