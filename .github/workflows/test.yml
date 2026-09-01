@@ -39,13 +39,15 @@ jobs:
         run: pytest tests/unit -v --junitxml=test-results-unit.xml
 
       - name: Run integration tests
+        if: success() || failure()
         run: pytest tests/integration -v --junitxml=test-results-integration.xml
 
       - name: Run scenario tests
+        if: success() || failure()
         run: pytest tests/scenarios -v --junitxml=test-results-scenarios.xml
 
       - name: Upload test results
-        if: always()
+        if: !cancelled()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.python-version }}
@@ -78,6 +80,7 @@ jobs:
         run: flake8 --config=.flake8 hierachain tests --output-file=lint-results.txt
 
       - name: Upload lint results
+        if: !cancelled()
         uses: actions/upload-artifact@v4
         with:
           name: lint-results
