@@ -91,21 +91,19 @@ def create_proofs_table(cursor: sqlite3.Cursor) -> None:
 
 def create_indexes(cursor: sqlite3.Cursor) -> None:
     """Create database indexes for efficient querying."""
-    indexes = [
-        ("idx_events_entity_id", "events (entity_id)"),
-        ("idx_events_type", "events (event_type)"),
-        ("idx_events_timestamp", "events (timestamp)"),
-        ("idx_events_chain", "events (chain_name)"),
-        ("idx_events_event_id", "events (event_id)"),
-        ("idx_blocks_hash_val", "blocks (hash)"),
-        ("idx_blocks_chain", "blocks (chain_name)"),
-        ("idx_proofs_sub_chain", "proofs (sub_chain_name)")
+    index_statements = [
+        "CREATE INDEX IF NOT EXISTS idx_events_entity_id ON events (entity_id)",
+        "CREATE INDEX IF NOT EXISTS idx_events_type ON events (event_type)",
+        "CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events (timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_events_chain ON events (chain_name)",
+        "CREATE INDEX IF NOT EXISTS idx_events_event_id ON events (event_id)",
+        "CREATE INDEX IF NOT EXISTS idx_blocks_hash_val ON blocks (hash)",
+        "CREATE INDEX IF NOT EXISTS idx_blocks_chain ON blocks (chain_name)",
+        "CREATE INDEX IF NOT EXISTS idx_proofs_sub_chain ON proofs (sub_chain_name)",
     ]
 
-    for index_name, index_definition in indexes:
-        cursor.execute(
-            f"CREATE INDEX IF NOT EXISTS {index_name} ON {index_definition}"
-        )
+    for stmt in index_statements:
+        cursor.execute(stmt)
 
 
 def create_chain_state_table(cursor: sqlite3.Cursor) -> None:

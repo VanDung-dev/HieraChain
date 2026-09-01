@@ -193,6 +193,44 @@ class SQLBase(ABC):
         "timestamp": "timestamp",
     }
 
+    _QUERIES_WITH_CHAIN: dict[str, str] = {
+        "chain_name": (
+            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "FROM events WHERE chain_name = :cn AND chain_name = :fv ORDER BY timestamp"
+        ),
+        "event_type": (
+            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "FROM events WHERE chain_name = :cn AND event_type = :fv ORDER BY timestamp"
+        ),
+        "entity_id": (
+            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "FROM events WHERE chain_name = :cn AND entity_id = :fv ORDER BY timestamp"
+        ),
+        "timestamp": (
+            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "FROM events WHERE chain_name = :cn AND timestamp = :fv ORDER BY timestamp"
+        ),
+    }
+
+    _QUERIES_WITHOUT_CHAIN: dict[str, str] = {
+        "chain_name": (
+            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "FROM events WHERE chain_name = :fv ORDER BY timestamp"
+        ),
+        "event_type": (
+            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "FROM events WHERE event_type = :fv ORDER BY timestamp"
+        ),
+        "entity_id": (
+            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "FROM events WHERE entity_id = :fv ORDER BY timestamp"
+        ),
+        "timestamp": (
+            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "FROM events WHERE timestamp = :fv ORDER BY timestamp"
+        ),
+    }
+
     def _get_events_by_filter(
         self, filter_field: str, filter_value: str,
         chain_name: str | None, operation_name: str,
@@ -224,24 +262,16 @@ class SQLBase(ABC):
         self, cursor: Any, filter_column: str,
         filter_value: str, chain_name: str | None,
     ) -> list[dict[str, Any]]:
-        """Default SQLite implementation."""
+        """Default SQLite implementation with parameterized queries."""
         if chain_name:
-            query = (
-                """
-                SELECT chain_name, block_index, entity_id, event_type, timestamp, details
-                FROM events WHERE chain_name = :cn AND {col} = :fv
-                ORDER BY timestamp
-                """.replace("{col}", filter_column)
-            )
+            query = self._QUERIES_WITH_CHAIN.get(filter_column)
+            if not query:
+                return []
             cursor.execute(query, {"cn": chain_name, "fv": filter_value})
         else:
-            query = (
-                """
-                SELECT chain_name, block_index, entity_id, event_type, timestamp, details
-                FROM events WHERE {col} = :fv
-                ORDER BY timestamp
-                """.replace("{col}", filter_column)
-            )
+            query = self._QUERIES_WITHOUT_CHAIN.get(filter_column)
+            if not query:
+                return []
             cursor.execute(query, {"fv": filter_value})
         return [self._create_event_from_row(row) for row in cursor.fetchall()]
 
@@ -443,8 +473,8 @@ class SQLBase(ABC):
 
         cursor.execute(
             """
-            DELETE FROM blocks WHERE id NOT IN (
-                SELECT DISTINCT block_id FROM events
+            DELETE FROM blocks WHERE hash NOT IN (
+                SELECT DISTINCT block_hash FROM events
             ) AND created_at < ?
             """,
             (cutoff_time,),
