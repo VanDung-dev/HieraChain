@@ -18,28 +18,19 @@ HRC_API_HOST=0.0.0.0
 HRC_API_PORT=2661
 
 # ==================== DATABASE CONFIGURATION ====================
-# Supported backends: sqlite, postgres, mysql, memory
-# Default: sqlite (for development ease)
-# For production, recommended: postgres or mysql
+# Supported backends: sqlite, postgres, redis, memory, parquet_only
+# Default: sqlite (for standalone development)
+# For cluster/consortium production: postgres
+# Note: In docker-compose, node1..node4 automatically connect to their
+# respective postgres-node1..node4 sidecars via container environment.
 
-# Database Backend (uncomment and modify as needed)
-# HRC_STORAGE_BACKEND=sqlite
-# HRC_DATABASE_URL=sqlite:///hierachain.db
-
-# Example: PostgreSQL (uncomment and modify)
+# Database Backend & Connection URL
 # HRC_STORAGE_BACKEND=postgres
-# HRC_DATABASE_URL=postgresql://user:password@localhost:5432/hierachain
+# DATABASE_URL=postgresql://hiera:hiera_password@localhost:5432/hierachain
 
-# Example: MySQL (uncomment and modify)
-# HRC_STORAGE_BACKEND=mysql
-# HRC_DATABASE_URL=mysql://user:password@localhost:3306/hierachain
-
-# Example: Redis (uncomment and modify)
-# HRC_STORAGE_BACKEND=redis
-# REDIS_HOST=localhost
-# REDIS_PORT=6379
-# REDIS_DB=0
-
+# Default fallback (SQLite for standalone development)
+HRC_STORAGE_BACKEND=sqlite
+DATABASE_URL=sqlite:///hierachain.db
 # ==================== END DATABASE CONFIGURATION ====================
 
 # Security - Authentication (MANDATORY in production)
@@ -59,15 +50,6 @@ HRC_HSTS_ENABLED=true
 # Security - Rate Limiting
 HRC_RATE_LIMIT=true
 HRC_RATE_LIMIT_RPM=100
-
-# Storage Backend (Optional - uncomment and configure for production)
-# HRC_STORAGE_BACKEND=redis
-# REDIS_HOST=localhost
-# REDIS_PORT=6379
-# REDIS_DB=0
-
-# Default: SQLite (for development)
-HRC_DATABASE_URL=sqlite:///hierachain.db
 
 # Master Key Management (Env-based in production)
 HRC_MASTER_KEY_SOURCE=env

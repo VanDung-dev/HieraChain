@@ -60,7 +60,30 @@ class Settings:
     BFT_FAULT_TOLERANCE = 1  # Number of Byzantine faults to tolerate (f)
     BFT_NODE_COUNT = 4  # Total number of nodes (must be >= 3f + 1)
     
-    # Storage settings - memory, redis, sqlite
+    # Block Creation Mode: "event_driven" (creates block only when event arrives) or "batch_or_timer"
+    BLOCK_CREATION_MODE = os.getenv("HRC_BLOCK_CREATION_MODE", "event_driven")
+    BLOCK_MAX_WAIT_SEC = float(os.getenv("HRC_BLOCK_MAX_WAIT_SEC", "5.0"))
+
+    # Parquet Partitioning & Rolling: "monthly", "daily", or "by_size_mb"
+    PARQUET_ROLL_INTERVAL = os.getenv("HRC_PARQUET_ROLL_INTERVAL", "monthly")
+
+    # PostgreSQL Sync Pipeline Mode: "realtime", "batch_worker", or "disabled"
+    POSTGRES_SYNC_MODE = os.getenv("HRC_POSTGRES_SYNC_MODE", "realtime")
+
+    # SQL hot data retention days (0 = infinite)
+    SQL_RETENTION_DAYS = int(os.getenv("HRC_SQL_RETENTION_DAYS", "90"))
+
+    # Storage settings - memory, redis, sqlite, postgres, parquet_only
+    @property
+    def STORAGE_BACKEND(self) -> str:
+        backend = os.getenv("HRC_STORAGE_BACKEND")
+        if backend:
+            return backend.lower()
+        db_url = os.getenv("DATABASE_URL", "")
+        if db_url.startswith(("postgres://", "postgresql://", "postgresql+psycopg://")):
+            return "postgres"
+        return "sqlite"
+
     DEFAULT_STORAGE_BACKEND = os.getenv("HRC_STORAGE_BACKEND", "sqlite")
     
     # Advanced Caching settings
@@ -175,7 +198,9 @@ class Settings:
     CLI_LOG_LEVEL = "INFO"
     
     # Database settings (if using database storage)
-    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///hierachain.db")
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL", os.getenv("HRC_DATABASE_URL", "sqlite:///hierachain.db")
+    )
     
     # Redis settings (if using Redis storage)
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
