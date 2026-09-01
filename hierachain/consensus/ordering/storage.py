@@ -68,9 +68,14 @@ class OrderingStorageHandler:
     """Manages persistent storage and caching for blocks and events"""
     def __init__(self, config: dict[str, Any]):
         self.config = config
-        self.storage = SQLiteAdapter(
-            database_path=_db_url_to_path(config.get("db_url"))
-        )
+        db_url = config.get("db_url", "")
+        if db_url.startswith(("postgres://", "postgresql://", "postgresql+psycopg://")):
+            from hierachain.adapters.database.postgres_adapter import PostgresAdapter
+            self.storage = PostgresAdapter(database_url=db_url)
+        else:
+            self.storage = SQLiteAdapter(
+                database_path=_db_url_to_path(db_url)
+            )
         cache_size = config.get("block_cache_size", 100)
         self.block_history: deque[Block] = deque(maxlen=cache_size)
         self.last_block: Block | None = None
