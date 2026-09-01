@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (12)"
+??? note "Improvements (16)"
+
+    * 2026-09-01
+
+        * **Database (PostgreSQL)**: Bổ sung `PostgresAdapter` (`hierachain/adapters/database/postgres_adapter.py`) kế thừa `SQLBase` với connection pooling `psycopg`/`psycopg2` (truy cập row dạng dict) và `postgres_schema.py` định nghĩa các bảng (`chains`, `blocks`, `events`, `proofs`, `chain_state`) cùng composite indexes tối ưu (`chain_name+timestamp`, `entity_id+chain_name`, `block_hash`) và đầy đủ CRUD cho dữ liệu blockchain.
+        * **Config**: Nâng cao linh hoạt cấu hình lưu trữ/cơ sở dữ liệu trong `hierachain/config/settings.py` và `hierachain/config/product_config_template.py` — thêm `BLOCK_CREATION_MODE`/`BLOCK_MAX_WAIT_SEC` điều khiển tạo block, `PARQUET_ROLL_INTERVAL` (`monthly`/`daily`/`by_size_mb`), `POSTGRES_SYNC_MODE` (`realtime`/`batch_worker`/`disabled`), `SQL_RETENTION_DAYS`; `STORAGE_BACKEND` tự động nhận diện `postgres` từ `DATABASE_URL` với fallback `sqlite` và thống nhất xử lý `DATABASE_URL`/`HRC_DATABASE_URL`; tinh gọn template product về các backend `sqlite`, `postgres`, `redis`, `memory`, `parquet_only`.
+        * **Storage (Hierarchical & Ordering)**: Thêm lựa chọn adapter động trong `hierachain/consensus/ordering/storage.py` (`OrderingStorageHandler`), `hierachain/hierarchical/hierarchy_manager/base.py` (`_create_storage`) và `hierachain/hierarchical/sub_chain/base.py` — chọn `PostgresAdapter` khi `db_url` bắt đầu bằng `postgres://`/`postgresql://` ngược lại dùng `SQLiteAdapter`; tái cấu trúc sinh đường dẫn DB của `SubChain` để luôn đảm bảo `data/{safe_name}/journal` tồn tại kèm guard chống path traversal.
+        * **Database (Query & Indexes)**: Tối ưu `hierachain/adapters/database/sqlite_schema.py` (`create_indexes` chuyển sang dùng câu lệnh `CREATE INDEX` đầy đủ) và tái cấu trúc `hierachain/adapters/database/base/sql_adapter.py` sang dùng template query tái sử dụng (`_QUERIES_WITH_CHAIN`/`_QUERIES_WITHOUT_CHAIN`) với parameterized queries cho lọc event theo chain, đồng thời sửa dọn dẹp block để xóa qua `hash`/`block_hash` thay vì `id`/`block_id`.
 
     * 2026-08-31
 

@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? note "Improvements (12)"
+??? note "Improvements (16)"
+
+    * 2026-09-01
+
+        * **Database (PostgreSQL)**: Introduced `PostgresAdapter` (`hierachain/adapters/database/postgres_adapter.py`) extending `SQLBase` with `psycopg`/`psycopg2` connection pooling (dictionary row access) and `postgres_schema.py` defining tables (`chains`, `blocks`, `events`, `proofs`, `chain_state`) with optimized composite indexes (`chain_name+timestamp`, `entity_id+chain_name`, `block_hash`) and full CRUD for blockchain data.
+        * **Config**: Enhanced storage/database flexibility in `hierachain/config/settings.py` and `hierachain/config/product_config_template.py` — added `BLOCK_CREATION_MODE`/`BLOCK_MAX_WAIT_SEC` for block creation control, `PARQUET_ROLL_INTERVAL` (`monthly`/`daily`/`by_size_mb`), `POSTGRES_SYNC_MODE` (`realtime`/`batch_worker`/`disabled`), `SQL_RETENTION_DAYS`; made `STORAGE_BACKEND` auto-detect `postgres` from `DATABASE_URL` with `sqlite` fallback and unified `DATABASE_URL`/`HRC_DATABASE_URL` handling; streamlined product template backends to `sqlite`, `postgres`, `redis`, `memory`, `parquet_only`.
+        * **Storage (Hierarchical & Ordering)**: Added dynamic adapter selection in `hierachain/consensus/ordering/storage.py` (`OrderingStorageHandler`), `hierachain/hierarchical/hierarchy_manager/base.py` (`_create_storage`) and `hierachain/hierarchical/sub_chain/base.py` — selects `PostgresAdapter` when `db_url` starts with `postgres://`/`postgresql://` otherwise `SQLiteAdapter`; refactored `SubChain` DB path generation to always ensure `data/{safe_name}/journal` exists with path-traversal guard.
+        * **Database (Query & Indexes)**: Optimized `hierachain/adapters/database/sqlite_schema.py` (`create_indexes` now uses full `CREATE INDEX` statements) and refactored `hierachain/adapters/database/base/sql_adapter.py` to use predefined reusable query templates (`_QUERIES_WITH_CHAIN`/`_QUERIES_WITHOUT_CHAIN`) with parameterized queries for chain-aware event filtering, and fixed block cleanup to delete via `hash`/`block_hash` instead of `id`/`block_id`.
 
     * 2026-08-31
 
