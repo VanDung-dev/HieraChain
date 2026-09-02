@@ -71,6 +71,7 @@ services:
       - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
       - HRC_IPFS_AUTO_PIN=true
       - HRC_IPFS_TIMEOUT=120
+      - DATABASE_URL=postgresql://hiera:hiera_password@postgres-node1:5432/hierachain
     networks:
       region-us:
         ipv4_address: 172.28.1.10
@@ -85,6 +86,9 @@ services:
         limits:
           cpus: '1.0'
           memory: 1G
+    depends_on:
+      postgres-node1:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
@@ -132,6 +136,7 @@ services:
       - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
       - HRC_IPFS_AUTO_PIN=true
       - HRC_IPFS_TIMEOUT=120
+      - DATABASE_URL=postgresql://hiera:hiera_password@postgres-node2:5432/hierachain
     networks:
       region-eu:
         ipv4_address: 172.28.2.10
@@ -146,6 +151,9 @@ services:
         limits:
           cpus: '1.0'
           memory: 1G
+    depends_on:
+      postgres-node2:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
@@ -193,6 +201,7 @@ services:
       - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
       - HRC_IPFS_AUTO_PIN=true
       - HRC_IPFS_TIMEOUT=120
+      - DATABASE_URL=postgresql://hiera:hiera_password@postgres-node3:5432/hierachain
     networks:
       region-asia:
         ipv4_address: 172.28.3.10
@@ -207,6 +216,9 @@ services:
         limits:
           cpus: '1.0'
           memory: 1G
+    depends_on:
+      postgres-node3:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
@@ -254,6 +266,7 @@ services:
       - HRC_IPFS_ENCRYPTION_KEY=${IPFS_ENCRYPTION_KEY}
       - HRC_IPFS_AUTO_PIN=true
       - HRC_IPFS_TIMEOUT=120
+      - DATABASE_URL=postgresql://hiera:hiera_password@postgres-node4:5432/hierachain
     networks:
       region-asia:
         ipv4_address: 172.28.3.11
@@ -268,6 +281,9 @@ services:
         limits:
           cpus: '1.0'
           memory: 1G
+    depends_on:
+      postgres-node4:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2661/api/ledger/health', timeout=5)"]
       interval: 10s
@@ -298,6 +314,117 @@ services:
         ipv4_address: 172.28.3.5
       web2-external:
         ipv4_address: 10.0.0.5
+    restart: unless-stopped
+
+  # ============================================================
+  # POSTGRESQL INSTANCES (1 Local DB per Node / Region)
+  # ============================================================
+  postgres-node1:
+    image: postgres:16-alpine
+    container_name: hierachain-postgres-node1
+    hostname: postgres-node1
+    environment:
+      POSTGRES_DB: hierachain
+      POSTGRES_USER: hiera
+      POSTGRES_PASSWORD: hiera_password
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata-node1:/var/lib/postgresql/data
+    networks:
+      region-us:
+        ipv4_address: 172.28.1.55
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hiera -d hierachain"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  postgres-node2:
+    image: postgres:16-alpine
+    container_name: hierachain-postgres-node2
+    hostname: postgres-node2
+    environment:
+      POSTGRES_DB: hierachain
+      POSTGRES_USER: hiera
+      POSTGRES_PASSWORD: hiera_password
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata-node2:/var/lib/postgresql/data
+    networks:
+      region-eu:
+        ipv4_address: 172.28.2.55
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hiera -d hierachain"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  postgres-node3:
+    image: postgres:16-alpine
+    container_name: hierachain-postgres-node3
+    hostname: postgres-node3
+    environment:
+      POSTGRES_DB: hierachain
+      POSTGRES_USER: hiera
+      POSTGRES_PASSWORD: hiera_password
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - pgdata-node3:/var/lib/postgresql/data
+    networks:
+      region-asia:
+        ipv4_address: 172.28.3.55
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hiera -d hierachain"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  postgres-node4:
+    image: postgres:16-alpine
+    container_name: hierachain-postgres-node4
+    hostname: postgres-node4
+    environment:
+      POSTGRES_DB: hierachain
+      POSTGRES_USER: hiera
+      POSTGRES_PASSWORD: hiera_password
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - pgdata-node4:/var/lib/postgresql/data
+    networks:
+      region-asia:
+        ipv4_address: 172.28.3.56
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hiera -d hierachain"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
 
   # ============================================================
@@ -479,6 +606,10 @@ services:
       - stress-test
 
 volumes:
+  pgdata-node1:
+  pgdata-node2:
+  pgdata-node3:
+  pgdata-node4:
   node1-data:
   node2-data:
   node3-data:

@@ -319,7 +319,7 @@ run_tests() {
 }
 
 discover_nodes() {
-  HRC_NODES=$(grep "hostname:" docker/docker-compose.yml | awk '{print $2}' | grep -v -E "gateway|redis|ipfs" | tr '\n' ',' | sed 's/,$//')
+  HRC_NODES=$(grep "hostname:" docker/docker-compose.yml | awk '{print $2}' | grep -v -E "gateway|redis|ipfs|postgres" | tr '\n' ',' | sed 's/,$//')
   export HRC_NODES
   echo "  Nodes: $HRC_NODES"
 }

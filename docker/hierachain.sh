@@ -97,7 +97,8 @@ case "$COMMAND" in
       kubectl rollout status statefulset/ipfs -n "$NAMESPACE" --timeout=300s
       kubectl rollout status deployment/web2-node -n "$NAMESPACE" --timeout=300s
     else
-      start_services node1 node2 node3 node4 gateway redis \
+      start_services postgres-node1 postgres-node2 postgres-node3 postgres-node4 \
+        node1 node2 node3 node4 gateway redis \
         ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4
       sleep 5
     fi
@@ -113,7 +114,8 @@ case "$COMMAND" in
       build_image
       down_cluster
       echo ""; echo "Starting cluster..."
-      start_services node1 node2 node3 node4 gateway redis \
+      start_services postgres-node1 postgres-node2 postgres-node3 postgres-node4 \
+        node1 node2 node3 node4 gateway redis \
         ipfs-node1 ipfs-node2 ipfs-node3 ipfs-node4
     fi
     wait_nodes_healthy
