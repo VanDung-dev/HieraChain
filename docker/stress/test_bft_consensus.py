@@ -254,11 +254,13 @@ class TestBFTViewChange:
             self.client.submit_event(nid, event, chain_name=BFT_CHAIN)
 
         logger.info("Killing primary node: %s", primary)
-        self._run_node_command(primary, "stop")
+        try:
+            self._run_node_command(primary, "stop")
 
-        recovery_time = self._poll_recovery(others, time.time())
-        logger.info("Recovery time: %.2fs", recovery_time or -1)
-        assert recovery_time is not None, "Cluster should recover after view change"
-        assert recovery_time < 60, "Recovery should complete within 60s"
-
-        self._run_node_command(primary, "start")
+            recovery_time = self._poll_recovery(others, time.time())
+            logger.info("Recovery time: %.2fs", recovery_time or -1)
+            assert recovery_time is not None, "Cluster should recover after view change"
+            assert recovery_time < 60, "Recovery should complete within 60s"
+        finally:
+            self._run_node_command(primary, "start")
+            time.sleep(3)
