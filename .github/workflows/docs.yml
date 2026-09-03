@@ -5,13 +5,13 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
-      - 'mkdocs.yml'
-      - 'mkdocs.vi.yml'
+      - 'zensical.toml'
+      - 'zensical.vi.toml'
   pull_request:
     paths:
       - 'docs/**'
-      - 'mkdocs.yml'
-      - 'mkdocs.vi.yml'
+      - 'zensical.toml'
+      - 'zensical.vi.toml'
   workflow_dispatch:
     inputs:
       publish_docs:
@@ -45,13 +45,13 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install zensical==0.0.43
+          pip install zensical==0.0.58
 
       - name: Build English Docs
-        run: zensical build -f mkdocs.yml
+        run: zensical build -f zensical.toml
 
       - name: Build Vietnamese Docs
-        run: zensical build -f mkdocs.vi.yml
+        run: zensical build -f zensical.vi.toml
 
       - name: Check for Build Warnings
         run: |
