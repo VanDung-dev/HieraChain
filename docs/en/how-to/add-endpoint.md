@@ -61,7 +61,7 @@ If API key authentication is enabled (production), add the header per `settings.
 
 ## Step 4: Documentation Linking
 
-* Update `docs/mkdocs.yml` to add this guide to the Guides section (if not already).
+* Update `zensical.toml` to add this guide to the Guides section (if not already).
 * Cross-link from API module/Reference page.
 
 ## Extension Notes

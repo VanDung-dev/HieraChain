@@ -59,7 +59,7 @@ Nếu xác thực API Key được bật (môi trường production), hãy thêm
 
 ## Bước 4: Liên kết Tài liệu
 
-* Cập nhật `docs/mkdocs.yml` để thêm hướng dẫn này vào mục Hướng dẫn (nếu chưa có).
+* Cập nhật `zensical.toml` để thêm hướng dẫn này vào mục Hướng dẫn (nếu chưa có).
 * Liên kết chéo từ trang Module API / Tham chiếu.
 
 ## Ghi chú Mở rộng

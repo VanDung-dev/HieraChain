@@ -132,7 +132,7 @@ Lưu ý quan trọng về phạm vi:
 
     ---
 
-    * [FAQ](faq.md)
-    * [Changelog](changelog.md) · [Future Roadmap](future-roadmap.md)
+    * [FAQ](other/faq.md)
+    * [Changelog](changelog.md)
 
 </div>

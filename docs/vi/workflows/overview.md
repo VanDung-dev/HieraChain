@@ -188,10 +188,10 @@ Mỗi trang luồng công việc riêng lẻ (ví dụ: `event-submission.md`) t
 ### Quy trình Thêm hoặc Sửa đổi một Luồng công việc
 
 1. **Viết Markdown chuẩn**: Lưu các luồng công việc mới dưới đường dẫn `docs/en/workflows/name.md` sử dụng chính xác hệ thống thiết kế hiện tại.
-2. **Đăng ký trong mkdocs.yml**: Thêm luồng công việc mới của bạn vào nhánh `Workflows` trong [mkdocs.yml](../../mkdocs.yml) với tên gọn gàng và bóng bẩy.
+2. **Đăng ký trong zensical.toml**: Thêm luồng công việc mới của bạn vào nhánh `Workflows` trong [zensical.toml](../../zensical.toml) với tên gọn gàng và bóng bẩy.
 3. **Quét thuật ngữ**: Đảm bảo không đưa bất kỳ từ vựng tiền mã hóa bị cấm nào vào tài liệu.
 4. **Biên dịch và Xác thực**: Chạy lệnh dựng Zensical trong môi trường HieraChain để xác nhận định dạng và tính toàn vẹn của các liên kết:
 
     ```bash
-    zensical build -f mkdocs.yml
+    zensical build -f zensical.toml
     ```

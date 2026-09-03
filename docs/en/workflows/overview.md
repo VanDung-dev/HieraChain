@@ -188,10 +188,10 @@ Each individual workflow page (e.g., `event-submission.md`) has a strict, highly
 ### Process for Adding or Modifying a Workflow
 
 1. **Write Clean Markdown**: Save new flows under `docs/en/workflows/name.md` using the exact design system.
-2. **Register in mkdocs.yml**: Add your new workflow to the `Workflows` tree in [mkdocs.yml](../../mkdocs.yml) using a clean, polished name.
+2. **Register in zensical.toml**: Add your new workflow to the `Workflows` tree in [zensical.toml](../../zensical.toml) using a clean, polished name.
 3. **Run Term Scanner**: Ensure that no forbidden cryptocurrency vocabulary is introduced.
 4. **Compile and Verify**: Run the Zensical build command in the HieraChain environment to confirm formatting and link integrity:
 
     ```bash
-    zensical build -f mkdocs.yml
+    zensical build -f zensical.toml
     ```
