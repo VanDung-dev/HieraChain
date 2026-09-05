@@ -43,12 +43,9 @@ def _sanitize_html_context(value: str) -> str:
     """Sanitize for HTML/general context - prevents XSS and template injection."""
     result = html.escape(value)
 
-    def _neutralize_match(match: re.Match[str]) -> str:
-        return "[TEMPLATE_BLOCKED]"
-
     # Neutralize template expressions with single regex pass
     combined_pattern = "|".join(TEMPLATE_PATTERNS)
-    return re.sub(combined_pattern, _neutralize_match, result)
+    return re.sub(combined_pattern, "[TEMPLATE_BLOCKED]", result)
 
 
 def _sanitize_log_context(value: str) -> str:

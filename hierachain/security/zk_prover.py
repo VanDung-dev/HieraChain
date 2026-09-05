@@ -70,9 +70,10 @@ def _generate_mock_proof(old_state_root: str, new_state_root: str, block_index: 
 
 
 def _verify_mock_proof(proof: bytes, public_inputs: dict[str, Any]) -> bool:
-    from hierachain.security.verify.zk_verifier import _verify_mock, ZKPublicInputs
+    from hierachain.security.verify.zk_verifier import ZKVerifier
 
-    return _verify_mock(proof, ZKPublicInputs.from_dict(public_inputs))
+    verifier = ZKVerifier(mode="mock")
+    return verifier.verify(proof, public_inputs)
 
 
 class ZKProver:
