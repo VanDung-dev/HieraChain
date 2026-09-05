@@ -108,9 +108,10 @@ class Block:
 
     def to_event_list(self) -> list[dict[str, Any]]:
         """Convert internal Arrow events to a list of dictionaries."""
-        if self._cached_events is None:
-            self._cached_events = table_to_list_of_dicts(self.events)
-        return self._cached_events
+        cached = self._cached_events
+        if cached is None:
+            cached = self._cached_events = table_to_list_of_dicts(self.events)
+        return cached
 
     def validate_structure(self) -> bool:
         """
@@ -174,7 +175,7 @@ class Block:
         )
         # Verify integrity: recalculate hash and compare with stored hash
         stored_hash = data.get("hash")
-        if stored_hash is not None and block.hash != stored_hash:
+        if isinstance(stored_hash, str) and block.hash != stored_hash:
             raise ValueError(
                 f"Block hash MISMATCH! index={block.index} "
                 f"stored={stored_hash[:16]} computed={block.hash[:16]}"

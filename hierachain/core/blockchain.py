@@ -11,6 +11,8 @@ for both Main Chain and Sub-Chain implementations, following Ledger guidelines:
 import time
 import logging
 import threading
+import hashlib
+import orjson
 from typing import Any, Callable, cast
 
 from hierachain.core.block import Block
@@ -22,6 +24,8 @@ logger = logging.getLogger(__name__)
 def _is_block_linked_correctly(current: Block, previous: Block) -> bool:
     """Check if current block is correctly linked to the previous block."""
     if not current.validate_structure():
+        return False
+    if current.calculate_merkle_root() != current.merkle_root:
         return False
     if current.hash != current.calculate_hash():
         return False
@@ -135,12 +139,15 @@ class Blockchain:
         with self.lock:
             return self.chain[-1]
     
-    def add_event(self, event: dict[str, Any]) -> None:
+    def add_event(self, event: dict[str, Any]) -> str:
         """
         Add an event to the pending events list.
         
         Args:
             event: Event dictionary with required metadata
+
+        Returns:
+            The event identifier string
         """
         with self.lock:
             # Validate event structure
@@ -152,6 +159,14 @@ class Blockchain:
                 event["timestamp"] = time.time()
             
             self.pending_events.append(event)
+            event_id = event.get("event_id")
+            if not event_id:
+                try:
+                    event_bytes = orjson.dumps(event, option=orjson.OPT_SORT_KEYS)
+                except (TypeError, ValueError, orjson.JSONEncodeError):
+                    event_bytes = str(sorted(event.items())).encode()
+                event_id = f"evt-{hashlib.sha256(event_bytes).hexdigest()[:16]}"
+            return event_id
     
     def create_block(self, events: list[dict[str, Any]] | None = None) -> Block:
         """
