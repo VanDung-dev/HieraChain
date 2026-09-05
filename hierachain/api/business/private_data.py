@@ -5,6 +5,7 @@ with optional off-chain (IPFS) storage.
 """
 
 import time
+from typing import Any
 from fastapi import APIRouter, HTTPException, status, Depends, BackgroundTasks
 
 from hierachain.api.business.schemas import PrivateDataRequest, PrivateDataResponse
@@ -43,7 +44,7 @@ async def add_private_data(
             background_tasks=background_tasks
         )
 
-        private_data_entry = {
+        private_data_entry: dict[str, Any] = {
             "key": key,
             "collection": collection_name,
             "event_metadata": data_request.event_metadata,
@@ -53,8 +54,9 @@ async def add_private_data(
         if cid_info:
             private_data_entry["value_cid"] = cid_info["cid"]
             private_data_entry["value_nonce"] = cid_info["nonce"]
-            if cid_info.get("metadata"):
-                private_data_entry["value_metadata"] = cid_info["metadata"]
+            val_metadata = cid_info.get("metadata")
+            if val_metadata:
+                private_data_entry["value_metadata"] = val_metadata
 
             api_logger.info(
                 "Private data using off-chain storage",
