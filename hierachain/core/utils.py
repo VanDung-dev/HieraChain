@@ -8,7 +8,6 @@ including cryptographic utilities, validation helpers, and data processing funct
 import time
 import uuid
 import re
-import orjson
 from typing import Any
 
 from hierachain.core.merkle_tree import generate_hash

@@ -78,7 +78,6 @@ async def upload_to_ipfs_background(
     result = client.upload_json(data, encrypt=True, metadata=metadata)
 
     if background_tasks:
-        from hierachain.monitoring import alert_manager
         # Asynchronously log security event using background task
         background_tasks.add_task(
             logger.info,

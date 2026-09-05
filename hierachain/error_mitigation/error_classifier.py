@@ -7,13 +7,10 @@ priority matrix and predefined error patterns.
 
 from __future__ import annotations
 
-import os
 import time
-import orjson
 import logging
 import hashlib
 from typing import Any
-from datetime import datetime
 
 from hierachain.error_mitigation.classifier_types import (
     PriorityLevel,

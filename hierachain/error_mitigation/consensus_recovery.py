@@ -5,9 +5,7 @@ Consensus recovery engine for HieraChain Ledger.
 import time
 import orjson
 import logging
-import os
 from typing import Any
-from datetime import datetime
 
 
 logger = logging.getLogger(__name__)

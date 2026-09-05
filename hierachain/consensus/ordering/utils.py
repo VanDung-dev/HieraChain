@@ -5,7 +5,6 @@ Ordering storage handler for the HieraChain ordering service.
 import time
 import hashlib
 import logging
-import os
 import struct
 from typing import Any
 from queue import Queue

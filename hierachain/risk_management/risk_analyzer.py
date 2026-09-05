@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import time
 import logging
-import os
 from typing import Any
 
 from hierachain.risk_management.types import (
