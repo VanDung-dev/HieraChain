@@ -345,13 +345,17 @@ def format_event_table_row_html(event: dict[str, Any], index: int, resolve_cid: 
     else:
         details_html = f"<pre>{orjson.dumps(event.get('details', {}), option=orjson.OPT_INDENT_2).decode()}</pre>"
 
+    entity_id = event.get("entity_id") or "N/A"
+    event_type = event.get("event") or event.get("event_type") or "N/A"
+    timestamp = event.get("timestamp") or "N/A"
+
     return (
         f'<tr class="event-row" data-index="{index}">'
         f'<td>{index}</td>'
-        f'<td>{event.get("entity_id", "N/A")}</td>'
-        f'<td>{event.get("event", event.get("event_type", "N/A"))}</td>'
+        f'<td>{entity_id}</td>'
+        f'<td>{event_type}</td>'
         f'<td>{storage_badge}</td>'
         f'<td class="event-details">{cid_display}{details_html}</td>'
-        f'<td>{event.get("timestamp", "N/A")}</td>'
+        f'<td>{timestamp}</td>'
         f'</tr>'
     )
