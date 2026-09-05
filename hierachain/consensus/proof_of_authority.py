@@ -356,10 +356,6 @@ def _create_authority_signature(
     is_testing = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
     if is_testing:
         return "valid_" + hashlib.sha256(sig_str.encode()).hexdigest()
-    try:
-        return KeyPair().sign(sig_str.encode())
-    except Exception:
-        return hashlib.sha256(sig_str.encode()).hexdigest()
 
     # No private key and not in test mode — cannot sign
     logger.error(

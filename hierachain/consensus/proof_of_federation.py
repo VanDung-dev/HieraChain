@@ -406,12 +406,12 @@ def _verify_block_quorum(
     details = consensus_event.get("details", {})
     signature = details.get("signature", "")
 
-    if not signature:
+    if not isinstance(signature, str) or not signature:
         logger.warning("Block %d has empty federation signature — rejecting", block.index)
         return False
 
     public_key = validator_metadata.get(signer_id, {}).get("public_key")
-    if not public_key:
+    if not isinstance(public_key, str) or not public_key:
         logger.warning(
             "Block %d signer %s has no public_key in metadata — rejecting",
             block.index, signer_id
@@ -422,7 +422,7 @@ def _verify_block_quorum(
     # consensus_finalization was appended). Use block_hash from the
     # consensus_finalization details to avoid timestamp/index drift.
     block_hash = details.get("block_hash")
-    if not block_hash:
+    if not isinstance(block_hash, str) or not block_hash:
         logger.warning("Block %d consensus_finalization has no block_hash", block.index)
         return False
     message = block_hash.encode("utf-8")
