@@ -16,8 +16,12 @@ _SHARED_POOL = ThreadPoolExecutor(max_workers=os.cpu_count() or 4)
 
 
 @contextmanager
-def _shared_pool(max_workers: int = 8) -> Iterator[ThreadPoolExecutor]:
-    yield _SHARED_POOL
+def _shared_pool(max_workers: int | None = None) -> Iterator[ThreadPoolExecutor]:
+    if max_workers and max_workers != getattr(_SHARED_POOL, "_max_workers", None):
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            yield pool
+    else:
+        yield _SHARED_POOL
 
 from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.multi_org import MultiOrgNetwork
