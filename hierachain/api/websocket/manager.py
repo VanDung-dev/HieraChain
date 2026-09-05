@@ -102,8 +102,9 @@ class WebSocketManager:
     async def start(self):
         """Start the WebSocket manager"""
         self._running = True
-        self._ping_runner = PingLoopRunner(self._health_handler)
-        await self._ping_runner.start(
+        runner = PingLoopRunner(self._health_handler)
+        self._ping_runner = runner
+        await runner.start(
             self._registry.get_all,
             self.disconnect
         )
