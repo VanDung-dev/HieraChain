@@ -116,3 +116,13 @@ def create_indexes(cursor: Any) -> None:
 
     for stmt in index_statements:
         cursor.execute(stmt)
+
+
+def init_database_schema(cursor: Any) -> None:
+    """Create all PostgreSQL database tables and indexes."""
+    create_chains_table(cursor)
+    create_blocks_table(cursor)
+    create_events_table(cursor)
+    create_proofs_table(cursor)
+    create_chain_state_table(cursor)
+    create_indexes(cursor)

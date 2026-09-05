@@ -118,3 +118,13 @@ def create_chain_state_table(cursor: sqlite3.Cursor) -> None:
         )
         """
     )
+
+
+def init_database_schema(cursor: sqlite3.Cursor) -> None:
+    """Create all SQLite database tables and indexes."""
+    create_chains_table(cursor)
+    create_blocks_table(cursor)
+    create_events_table(cursor)
+    create_proofs_table(cursor)
+    create_chain_state_table(cursor)
+    create_indexes(cursor)

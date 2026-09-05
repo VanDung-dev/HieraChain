@@ -10,14 +10,7 @@ from contextlib import contextmanager
 
 from hierachain.adapters.database.base.sql_adapter import SQLBase
 from hierachain.security.secure_logging import get_storage_logger
-from hierachain.adapters.database.sqlite_schema import (
-    create_chains_table,
-    create_blocks_table,
-    create_events_table,
-    create_proofs_table,
-    create_chain_state_table,
-    create_indexes,
-)
+from hierachain.adapters.database.sqlite_schema import init_database_schema
 
 logger = get_storage_logger()
 
@@ -57,13 +50,7 @@ class SQLiteAdapter(SQLBase):
     def _init_schema(self) -> None:
         """Create database tables and indexes."""
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-            create_chains_table(cursor)
-            create_blocks_table(cursor)
-            create_events_table(cursor)
-            create_proofs_table(cursor)
-            create_chain_state_table(cursor)
-            create_indexes(cursor)
+            init_database_schema(conn.cursor())
             conn.commit()
 
     def close(self) -> None:
