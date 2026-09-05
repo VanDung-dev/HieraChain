@@ -6,7 +6,11 @@ import os
 import logging
 from typing import Any
 
-from kubernetes import client, config
+try:
+    from kubernetes import client, config
+except ImportError:
+    client = None
+    config = None
 
 from hierachain.hierarchical.k8s_namespace_manager.types import (
     NamespaceInfo,

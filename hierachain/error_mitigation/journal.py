@@ -343,15 +343,15 @@ class TransactionJournal:
     def _open_journal(self) -> None:
         """Open the journal file for appending (binary mode)."""
         try:
-            existing = None
+            existing: pa.Table | None = None
             if self.active_log_file.exists() and self.active_log_file.stat().st_size > 0:
                 try:
                     existing = pq.read_table(self.active_log_file, schema=self._schema)
-                except Exception:
+                except (OSError, pa.ArrowException, ValueError):
                     existing = None
                     try:
                         self.active_log_file.unlink()
-                    except Exception as e:
+                    except OSError as e:
                         logger.debug("Could not unlink corrupted journal file: %s", e)
             self._pq_writer = pq.ParquetWriter(self.active_log_file, self._schema)
             if existing is not None and existing.num_rows > 0:
