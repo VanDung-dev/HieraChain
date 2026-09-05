@@ -8,18 +8,8 @@ from typing import Any
 
 import pyarrow as pa
 
-from hierachain.core.block import Block
+from hierachain.core.block import Block, EVENT_SCHEMA as _EVENT_SCHEMA
 from hierachain.hierarchical.channel.query import _filter_block_events
-
-_EVENT_SCHEMA = pa.schema([
-    ('entity_id', pa.string()),
-    ('event', pa.string()),
-    ('timestamp', pa.float64()),
-    ('details', pa.map_(pa.string(), pa.string())),
-    ('details_cid', pa.string()),
-    ('details_nonce', pa.string()),
-    ('data', pa.binary()),
-])
 
 logger = logging.getLogger(__name__)
 

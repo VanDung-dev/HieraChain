@@ -8,19 +8,10 @@ from typing import Any, Callable
 import pyarrow as pa
 
 from hierachain.config.settings import settings
+from hierachain.core.block import EVENT_SCHEMA as _EVENT_SCHEMA
 from hierachain.security.verify.zk_verifier import ZKVerifier
 from hierachain.consensus.ordering.types import PendingEvent
 from hierachain.consensus.ordering.utils import verify_event_signature
-
-_EVENT_SCHEMA = pa.schema([
-    ('entity_id', pa.string()),
-    ('event', pa.string()),
-    ('timestamp', pa.float64()),
-    ('details', pa.map_(pa.string(), pa.string())),
-    ('details_cid', pa.string()),
-    ('details_nonce', pa.string()),
-    ('data', pa.binary()),
-])
 
 logger = logging.getLogger(__name__)
 

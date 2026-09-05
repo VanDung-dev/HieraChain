@@ -257,17 +257,20 @@ def _prepare_events(events_list: list[dict[str, Any]]) -> tuple[list[dict[str, A
     return processed, data_list
 
 
+EVENT_SCHEMA = pa.schema([
+    ('entity_id', pa.string()),
+    ('event', pa.string()),
+    ('timestamp', pa.float64()),
+    ('details', pa.map_(pa.string(), pa.string())),
+    ('details_cid', pa.string()),
+    ('details_nonce', pa.string()),
+    ('data', pa.binary()),
+])
+
+
 def _build_arrow_from_processed(processed_events: list[dict[str, Any]]) -> pa.Table:
     """Build Arrow table from pre-processed event dicts (avoids re-serialization)."""
-    schema = pa.schema([
-        ('entity_id', pa.string()),
-        ('event', pa.string()),
-        ('timestamp', pa.float64()),
-        ('details', pa.map_(pa.string(), pa.string())),
-        ('details_cid', pa.string()),
-        ('details_nonce', pa.string()),
-        ('data', pa.binary()),
-    ])
+    schema = EVENT_SCHEMA
     if not processed_events:
         return pa.table({name: [] for name in schema.names}, schema=schema)
     pydict = {

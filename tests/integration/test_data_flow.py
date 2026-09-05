@@ -10,6 +10,7 @@ import time
 import pyarrow as pa
 import struct
 
+from hierachain.core.block import EVENT_SCHEMA
 from hierachain.hierarchical import SubChain
 
 
@@ -73,15 +74,7 @@ def _wait_for_latest_block(chain, max_retries=20, delay=0.1):
 def test_end_to_end_flow():
     chain_name = "test_flow_chain"
     data_dir = f"data/{chain_name}"
-    schema = pa.schema([
-        ('entity_id', pa.string()),
-        ('event', pa.string()),
-        ('timestamp', pa.float64()),
-        ('details', pa.map_(pa.string(), pa.string())),
-        ('details_cid', pa.string()),
-        ('details_nonce', pa.string()),
-        ('data', pa.binary()),
-    ])
+    schema = EVENT_SCHEMA
     
     # Setup: Clean up previous runs
     if os.path.exists(data_dir):

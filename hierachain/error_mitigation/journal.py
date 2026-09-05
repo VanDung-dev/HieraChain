@@ -21,16 +21,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from hierachain.config.settings import get_settings
-
-_EVENT_SCHEMA = pa.schema([
-    ('entity_id', pa.string()),
-    ('event', pa.string()),
-    ('timestamp', pa.float64()),
-    ('details', pa.map_(pa.string(), pa.string())),
-    ('details_cid', pa.string()),
-    ('details_nonce', pa.string()),
-    ('data', pa.binary()),
-])
+from hierachain.core.block import EVENT_SCHEMA as _EVENT_SCHEMA
 
 logger = logging.getLogger(__name__)
 
