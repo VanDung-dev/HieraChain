@@ -37,12 +37,13 @@ class EventType(ObjectType):
 
         return self.details if hasattr(self, 'details') else None
 
-    def _has_inline_details(self):
-        details_val = getattr(self, 'details', None)
-        if not details_val:
+    def _has_inline_details(self) -> bool:
+        if not hasattr(self, 'details') or not self.details:
             return False
-        details_str = details_val if isinstance(details_val, str) else str(details_val)
-        return not is_cid_string(details_str)
+        details_val = self.details
+        if isinstance(details_val, str):
+            return not is_cid_string(details_val)
+        return True
 
     def _should_resolve_cid(self, resolve_cid):
         return hasattr(self, 'details_cid') and self.details_cid and resolve_cid

@@ -217,11 +217,12 @@ class AddEventMutation(graphene.Mutation):
                 "details": details
             }
 
-            block_index = chain.add_event(event_obj)
+            res = chain.add_event(event_obj)
+            block_idx = res if isinstance(res, int) else getattr(chain.get_latest_block(), "index", None)
 
             result = AddEventMutation()
             result.success = True
-            result.block_index = block_index
+            result.block_index = block_idx
             return result
         except Exception as e:
             result = AddEventMutation()
