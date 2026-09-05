@@ -273,6 +273,8 @@ def _validate_consensus_message(
         return False
     if (time.time() - message.timestamp) > timeout:
         log_func(message.sender_id, "slow_message")
+        if strictness in ("high", "strict"):
+            return False
     return True
 
 def validate_consensus_message(
@@ -366,11 +368,20 @@ def _process_commit_quorum_logic(
     f: int, commit_msgs: list[BFTMessage],
     pre_prep_messages: dict[int, BFTMessage],
 ) -> tuple[bool, BFTMessage | None]:
-    if len(commit_msgs) >= 2 * f + 1:
-        for msg in commit_msgs:
-            pre_prep = pre_prep_messages.get(msg.sequence_number)
-            if pre_prep:
-                return True, pre_prep
+    for msg in commit_msgs:
+        pre_prep = pre_prep_messages.get(msg.sequence_number)
+        if not pre_prep:
+            continue
+        expected_digest = pre_prep.data.get("digest")
+        expected_view = pre_prep.view
+        matching = [
+            m for m in commit_msgs
+            if m.sequence_number == msg.sequence_number
+            and m.view == expected_view
+            and (m.data.get("digest") == expected_digest or expected_digest is None)
+        ]
+        if len(matching) >= 2 * f + 1:
+            return True, pre_prep
     return False, None
 
 def _init_bft_mitigation_data(error_config: dict[str, Any]) -> dict[str, Any]:
