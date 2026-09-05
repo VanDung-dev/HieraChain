@@ -7,6 +7,8 @@ import threading
 import logging
 import re
 import os
+import hashlib
+import orjson
 from typing import Any, Callable
 
 from hierachain.core.blockchain import Blockchain
@@ -218,7 +220,12 @@ class SubChain(Blockchain):
             if event not in self.pending_events:
                 self.pending_events.append(event)
 
-        return f"tx-{hash(str(event))}"
+        try:
+            event_bytes = orjson.dumps(event, option=orjson.OPT_SORT_KEYS)
+        except (TypeError, ValueError, orjson.JSONEncodeError):
+            event_bytes = str(sorted(event.items())).encode()
+        event_digest = hashlib.sha256(event_bytes).hexdigest()[:16]
+        return f"evt-{event_digest}"
 
     def connect_to_main_chain(self, main_chain: Any) -> bool:
         return _connect_sub_chain_to_main(self, main_chain)
