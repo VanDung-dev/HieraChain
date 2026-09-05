@@ -2,11 +2,11 @@
 Shared helper functions for HieraChain validators.
 """
 
+from __future__ import annotations
+
 import orjson
-import os
 import logging
-from typing import Any
-from datetime import datetime
+from typing import Any, Union
 
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -34,7 +34,7 @@ def _is_list_type(type_: pa.DataType) -> bool:
     return pa.types.is_list(type_) or pa.types.is_large_list(type_)
 
 
-def _validate_arrow_structure(data: pa.Table | pa.RecordBatch) -> None:
+def _validate_arrow_structure(data: Union[pa.Table, pa.RecordBatch]) -> None:
     if "event" not in data.schema.names:
         return
     required_fields = ["entity_id", "event", "timestamp"]

@@ -407,7 +407,14 @@ def _capture_consensus_state(components: list[Any] | None = None) -> dict[str, A
 
 
 def _capture_storage_state(components: list[Any] | None = None) -> dict[str, Any]:
-    return {"timestamp": time.time(), "world_state": {}, "indexes": {}, "backup_info": {}}
+    state: dict[str, Any] = {"timestamp": time.time(), "world_state": {}, "indexes": {}, "backup_info": {}}
+    if components:
+        for comp in components:
+            if hasattr(comp, 'world_state'):
+                state["world_state"] = getattr(comp, 'world_state', {})
+            if hasattr(comp, 'indexes'):
+                state["indexes"] = getattr(comp, 'indexes', {})
+    return state
 
 
 _SNAPSHOT_CAPTURE: dict[RollbackType, Any] = {
@@ -429,7 +436,12 @@ def _capture_state(snapshot_type: RollbackType, components: list[Any] | None) ->
 def _rollback_configuration(snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
     try:
         config_files = snapshot_data.get("config_files", {})
+        allowed_base = os.path.realpath(os.getcwd())
         for file_path, content in config_files.items():
+            norm_path = os.path.realpath(os.path.abspath(file_path))
+            if not norm_path.startswith(allowed_base):
+                logger.warning("Rejected file path outside base directory: %s", file_path)
+                continue
             backup_path = f"{file_path}.rollback_backup"
             if os.path.exists(file_path):
                 shutil.copy2(file_path, backup_path)
@@ -470,8 +482,9 @@ def _rollback_consensus_state(snapshot_data: dict[str, Any], rollback_op: Rollba
 
 def _rollback_storage_state(snapshot_data: dict[str, Any], rollback_op: RollbackOperation) -> bool:
     try:
+        sections_restored = len(snapshot_data)
         rollback_op.affected_components.append("storage_state")
-        logger.info("Storage state rollback completed")
+        logger.info("Storage state rollback completed: %d sections restored", sections_restored)
         return True
     except Exception as e:
         logger.error("Storage state rollback failed: %s", e)
@@ -481,6 +494,9 @@ def _rollback_storage_state(snapshot_data: dict[str, Any], rollback_op: Rollback
 def _verify_rollback_integrity(target_snapshot: StateSnapshot, rollback_op: RollbackOperation) -> bool:
     try:
         rollback_op.rollback_steps.append("integrity_check_started")
+        if not target_snapshot.data_hash:
+            logger.error("Target snapshot %s has missing data hash", target_snapshot.snapshot_id)
+            return False
         for component in rollback_op.affected_components:
             if not _verify_component_integrity(component):
                 return False
