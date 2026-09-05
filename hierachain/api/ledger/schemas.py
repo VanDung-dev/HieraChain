@@ -100,16 +100,20 @@ class EventRequest(BaseModel):
         if len(orjson.dumps(v)) > 1024 * 1024:
             raise ValueError("Event details exceed 1MB size limit")
 
-        def get_depth(d, level=1):
-            if level > 10:
+        stack: list[tuple[Any, int]] = [(v, 1)]
+        while stack:
+            current, depth = stack.pop()
+            if depth > 10:
                 raise ValueError("Event details are too deeply nested (max depth 10)")
-            if not isinstance(d, (dict, list)) or not d:
-                return level
-            if isinstance(d, list):
-                return max((get_depth(item, level + 1) for item in d), default=level)
-            return max((get_depth(val, level + 1) for val in d.values()), default=level)
-            
-        get_depth(v)
+            if isinstance(current, dict):
+                for val in current.values():
+                    if isinstance(val, (dict, list)):
+                        stack.append((val, depth + 1))
+            elif isinstance(current, list):
+                for item in current:
+                    if isinstance(item, (dict, list)):
+                        stack.append((item, depth + 1))
+
         return v
 
     @field_validator('sender', 'signature')
