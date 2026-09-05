@@ -60,6 +60,7 @@ def get_current_key_provider() -> LocalKeyProvider:
 @router.post(
     "/verify-identity",
     response_model=VerifyIdentityResponse,
+    dependencies=[Depends(require_chain_access)],
 )
 async def verify_identity(
     request: VerifyIdentityRequest,
@@ -70,7 +71,8 @@ async def verify_identity(
     Used by management tools to confirm this node is a legitimate member of the network.
     """
     try:
-        signature = key_provider.sign(request.challenge.encode())
+        challenge_bytes = b"HRC_IDENTITY_CHALLENGE:" + request.challenge.encode()
+        signature = key_provider.sign(challenge_bytes)
         settings = get_settings()
         return VerifyIdentityResponse(
             status="success",
@@ -143,6 +145,18 @@ async def add_secure_event(
         
         # Add event to chain
         event_data = request.model_dump()
+
+        target_chain_id = request.chain_id
+        if target_chain_id is not None and target_chain_id != chain_name:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Target chain mismatch: event specifies '{target_chain_id}' but endpoint is '{chain_name}'."
+            )
+        if request.timestamp is not None and abs(time.time() - request.timestamp) > 300:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Event timestamp has expired or is too far in the future."
+            )
         
         # 1. Cryptographic validation using SignatureVerifier
         # This performs canonicalization and Ed25519/ECDSA verification

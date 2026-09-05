@@ -111,6 +111,9 @@ class SecureEventRequest(BaseModel):
     details: dict[str, Any] = Field(default_factory=dict)
     sender: str = Field(..., description="Hex-encoded sender identity")
     signature: str = Field(..., description="Hex-encoded digital signature")
+    nonce: str | None = Field(default=None, description="Optional unique nonce for replay prevention")
+    timestamp: float | None = Field(default=None, description="Optional event timestamp")
+    chain_id: str | None = Field(default=None, description="Optional destination chain identifier")
 
     @field_validator('sender', 'signature')
     @classmethod
