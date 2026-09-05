@@ -5,7 +5,6 @@ ordering service.
 
 import time
 import logging
-from typing import Any, cast
 from hierachain.consensus.ordering.types import PendingEvent, EventStatus
 from hierachain.consensus.ordering.utils import make_serializable, generate_event_id
 
@@ -32,7 +31,7 @@ def _extract_block_index(event_data: dict) -> int | None:
         return None
 
     try:
-        return int(cast(Any, block_index_raw))
+        return int(block_index_raw)
     except (ValueError, TypeError) as e:
         logger.warning("Invalid block_index in marker: %s", e)
         return None
@@ -78,7 +77,7 @@ class OrderingRecovery:
                 
         return count, skipped_events
 
-    async def _process_single_journal_entry(self, event_data: dict) -> str:
+    async def _process_single_journal_entry(self, event_data: dict | None) -> str:
         """
         Process a single journal entry.
         Returns: "restored", "skipped", or "error"
