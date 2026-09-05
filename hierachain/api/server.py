@@ -250,6 +250,17 @@ def register_routers(fast_app: FastAPI):
     _register_root_endpoint(fast_app)
 
 
+def _add_cors_middleware(fast_app: Any, cors_config: dict[str, Any]) -> None:
+    """Configure CORS middleware on application instance."""
+    fast_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_config.get("allow_origins", ["*"]),
+        allow_credentials=cors_config.get("allow_credentials", False),
+        allow_methods=cors_config.get("allow_methods", ["*"]),
+        allow_headers=cors_config.get("allow_headers", ["*"]),
+    )
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
     api_config = settings.get_api_config()
@@ -276,14 +287,11 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         lifespan=lifespan,
-        dependencies=dependencies
+        dependencies=dependencies,
     )
 
     cors_config = settings.get_cors_config()
-    fast_app.add_middleware(
-        cast(Any, CORSMiddleware),
-        **cors_config
-    )
+    _add_cors_middleware(fast_app, cors_config)
 
     add_security_headers(fast_app, settings.env in ("dev", "development"))
     add_request_logging(fast_app)
@@ -306,11 +314,9 @@ app = create_app()
 
 
 def run_server():
-    try:
-        import uvloop
-        uvloop.install()
-    except ImportError:
-        pass
+    import uvloop
+    uvloop.install()
+
     import uvicorn
     settings = get_settings()
     api_config = settings.get_api_config()

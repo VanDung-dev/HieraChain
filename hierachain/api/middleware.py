@@ -84,16 +84,24 @@ def add_payload_limit(fast_app: FastAPI):
                 except ValueError:
                     pass
             else:
-                body = await request.body()
-                if len(body) > max_size:
-                    return JSONResponse(
-                        status_code=413,
-                        content={
-                            "error": "Payload Too Large",
-                            "message": f"Request body too large. Limit is {max_size} bytes",
-                            "status_code": 413
-                        }
-                    )
+                chunks = []
+                bytes_read = 0
+                async for chunk in request.stream():
+                    bytes_read += len(chunk)
+                    if bytes_read > max_size:
+                        return JSONResponse(
+                            status_code=413,
+                            content={
+                                "error": "Payload Too Large",
+                                "message": f"Request body too large. Limit is {max_size} bytes",
+                                "status_code": 413
+                            }
+                        )
+                    chunks.append(chunk)
+                full_body = b"".join(chunks)
+                async def receive():
+                    return {"type": "http.request", "body": full_body, "more_body": False}
+                request._receive = receive
 
         return await call_next(request)
 
@@ -198,12 +206,11 @@ def add_rate_limit(fast_app: FastAPI, settings, exempt_paths: set[str]) -> None:
             return await call_next(request)
 
         client = request.client
-        client_ip = "unknown"
+        client_ip = client.host if client is not None else "unknown"
+        trusted_proxies = {ip.strip() for ip in getattr(settings, "TRUSTED_PROXIES", "127.0.0.1").split(",")}
         forwarded = request.headers.get("x-forwarded-for")
-        if forwarded:
+        if forwarded and client_ip in trusted_proxies:
             client_ip = forwarded.split(",")[0].strip()
-        elif client is not None:
-            client_ip = client.host
 
         if not limiter.is_allowed(client_ip):
             remaining = limiter.remaining(client_ip)
