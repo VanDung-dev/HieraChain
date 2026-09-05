@@ -4,15 +4,12 @@ Block processing functions for Sub-Chain.
 
 import time
 import logging
-from typing import Any, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from hierachain.hierarchical.sub_chain.base import SubChain
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def _process_and_finalize_single_block(sub_chain: "SubChain", block: Any) -> bool:
+def _process_and_finalize_single_block(sub_chain: Any, block: Any) -> bool:
     """Process and finalize a single block."""
     with sub_chain.block_processing_lock:
         latest_block = sub_chain.get_latest_block()
@@ -40,7 +37,7 @@ def _process_and_finalize_single_block(sub_chain: "SubChain", block: Any) -> boo
     return False
 
 
-def _finalize_sub_chain_block_for_chain(sub_chain: "SubChain") -> dict[str, Any] | None:
+def _finalize_sub_chain_block_for_chain(sub_chain: Any) -> dict[str, Any] | None:
     """Finalize and return a block for the Main Chain."""
     new_blocks: list[Any] = []
 
@@ -75,7 +72,7 @@ def _finalize_sub_chain_block_for_chain(sub_chain: "SubChain") -> dict[str, Any]
 
 
 def _flush_pending_and_finalize_for_sub_chain(
-    sub_chain: "SubChain", timeout: float
+    sub_chain: Any, timeout: float
 ) -> dict[str, Any] | None:
     """Flush pending events and finalize the block."""
     logger.debug("flush_pending_and_finalize for %s", sub_chain.name)

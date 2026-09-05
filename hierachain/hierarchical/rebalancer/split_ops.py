@@ -7,17 +7,10 @@ from __future__ import annotations
 import hashlib
 import logging
 import time
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from hierachain.hierarchical.rebalancer.types import SplitResult, RebalanceStatus, SplitStrategy
-from hierachain.hierarchical.rebalancer.utils import (
-    _get_sub_chain_id,
-    _get_event_count,
-    _get_block_count,
-)
-
-if TYPE_CHECKING:
-    from hierachain.hierarchical.rebalancer.rebalancer import SubChainRebalancer
+from hierachain.hierarchical.rebalancer.utils import _get_sub_chain_id
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +56,7 @@ def _mark_chain_as_split(parent: Any, children: list[Any]) -> None:
 
 
 def _split_sub_chain_for_rebalancer(
-    rebalancer: SubChainRebalancer, sub_chain: Any
+    rebalancer: Any, sub_chain: Any
 ) -> SplitResult:
     start_time = time.time()
     rebalancer.stats["splits_initiated"] += 1
@@ -120,7 +113,7 @@ def _split_sub_chain_for_rebalancer(
 
 
 def _migrate_state_for_rebalancer(
-    rebalancer: SubChainRebalancer,
+    rebalancer: Any,
     parent: Any,
     children: list[Any]
 ) -> tuple[int, int]:
@@ -179,7 +172,7 @@ def _get_committed_block_events(subchain: Any) -> list[Any]:
 
 
 def _select_target_child_for_rebalancer(
-    rebalancer: SubChainRebalancer,
+    rebalancer: Any,
     event: Any,
     num_children: int,
 ) -> int:

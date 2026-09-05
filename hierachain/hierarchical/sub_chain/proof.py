@@ -4,10 +4,7 @@ Proof submission and ZK proof functions for Sub-Chain.
 
 import time
 import logging
-from typing import Any, Callable, cast, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from hierachain.hierarchical.sub_chain.base import SubChain
+from typing import Any, Callable, cast
 
 from hierachain.config.settings import settings
 from hierachain.core.utils import sanitize_metadata_for_main_chain
@@ -142,7 +139,7 @@ def _generate_default_proof_metadata(
 
 
 def _submit_proof_for_sub_chain(
-    sub_chain: "SubChain",
+    sub_chain: Any,
     main_chain: Any,
     metadata_filter: Callable | None,
 ) -> bool:
@@ -226,7 +223,7 @@ def _update_local_state_after_proof(
     sub_chain.add_event(proof_event)
 
 
-def _connect_sub_chain_to_main(sub_chain: "SubChain", main_chain: Any) -> bool:
+def _connect_sub_chain_to_main(sub_chain: Any, main_chain: Any) -> bool:
     """Connect a Sub-Chain to the Main Chain."""
     try:
         metadata = {

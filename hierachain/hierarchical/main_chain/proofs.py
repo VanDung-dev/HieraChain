@@ -4,14 +4,11 @@ Proof helper functions for Main Chain.
 
 import time
 import logging
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 from hierachain.core.block import table_to_list_of_dicts
 from hierachain.config.settings import settings
 from hierachain.security.verify.zk_verifier import ZKVerificationError
-
-if TYPE_CHECKING:
-    from hierachain.hierarchical.main_chain.base import MainChain
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +53,7 @@ def _filter_proofs_by_sub_chain(
 
 
 def _record_proof_on_main_chain(
-    chain: "MainChain",
+    chain: Any,
     sub_chain_name: str,
     proof_hash: str,
     sanitized_metadata: dict[str, Any],
@@ -106,7 +103,7 @@ def _record_proof_on_main_chain(
 
 
 def _update_recent_proofs_on_main_chain(
-    chain: "MainChain",
+    chain: Any,
     sub_chain_name: str,
     proof_hash: str,
     sanitized_metadata: dict[str, Any],
@@ -126,7 +123,7 @@ def _update_recent_proofs_on_main_chain(
 
 
 def _verify_proof_in_main_chain(
-    chain: "MainChain", proof_hash: str, sub_chain_name: str
+    chain: Any, proof_hash: str, sub_chain_name: str
 ) -> bool:
     """Verify a proof exists in the Main Chain using the proof index."""
     # Use index to avoid full chain scan
@@ -159,7 +156,7 @@ def _verify_proof_in_main_chain(
 
 
 def _get_proofs_by_sub_chain_from_main_chain(
-    chain: "MainChain", sub_chain_name: str
+    chain: Any, sub_chain_name: str
 ) -> list[dict[str, Any]]:
     """Get all proofs submitted by a specific Sub-Chain using the proof index."""
     proofs: list[dict[str, Any]] = []

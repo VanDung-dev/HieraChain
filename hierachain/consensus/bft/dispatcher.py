@@ -2,19 +2,16 @@
 BFT Message Dispatcher component.
 """
 
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 from hierachain.consensus.bft.types import BFTMessage
 from hierachain.consensus.bft.helpers import send_via_zmq, broadcast
-
-if TYPE_CHECKING:
-    from hierachain.consensus.bft.consensus import BFTConsensus
 
 
 class BFTMessageDispatcher:
     """Handles network transmission and broadcasting for BFT consensus"""
 
-    def __init__(self, consensus: "BFTConsensus"):
+    def __init__(self, consensus: Any):
         self.consensus = consensus
 
     def direct_send(self, target_node: str, message: dict[str, Any]) -> None:

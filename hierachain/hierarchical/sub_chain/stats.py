@@ -2,17 +2,14 @@
 Domain statistics functions for Sub-Chain.
 """
 
-from typing import Any, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from hierachain.hierarchical.sub_chain.base import SubChain
+from typing import Any
 
 
 def _get_domain_stats_summary(
     chain: list[Any],
     domain_type: str,
     completed_ops: int,
-    sub_chain: "SubChain | None" = None,
+    sub_chain: Any | None = None,
 ) -> dict[str, Any]:
     """Calculate domain-specific statistics summary.
 

@@ -3,16 +3,13 @@ Ordering service rehydration and sync functions for Sub-Chain.
 """
 
 import logging
-from typing import Any, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from hierachain.hierarchical.sub_chain.base import SubChain
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 def _check_divergence_and_rehydrate(
-    sub_chain: "SubChain", latest_local: Any, latest_db: Any
+    sub_chain: Any, latest_local: Any, latest_db: Any
 ) -> bool:
     """Check for state divergence between local and database. Returns True if rehydrate is needed."""
     if latest_local.index > latest_db.index:
@@ -50,7 +47,7 @@ def _check_divergence_and_rehydrate(
     return True
 
 
-def _apply_rehydrated_blocks(sub_chain: "SubChain", all_blocks: list) -> None:
+def _apply_rehydrated_blocks(sub_chain: Any, all_blocks: list) -> None:
     """Refresh the entire local chain from the reloaded block list."""
     with sub_chain.lock:
         temp_entity_index = dict(sub_chain.entity_event_index)
@@ -82,7 +79,7 @@ def _apply_rehydrated_blocks(sub_chain: "SubChain", all_blocks: list) -> None:
 
 
 def _rehydrate_chain_from_ordering_service(
-    sub_chain: "SubChain", _latest_block_os: Any
+    sub_chain: Any, _latest_block_os: Any
 ) -> None:
     """Rehydrate the local chain from the Ordering Service."""
     all_blocks = (
@@ -107,7 +104,7 @@ def _rehydrate_chain_from_ordering_service(
     )
 
 
-def _sync_chain_for_sub_chain(sub_chain: "SubChain") -> None:
+def _sync_chain_for_sub_chain(sub_chain: Any) -> None:
     """Synchronize local chain with Ordering Service (Rehydration)."""
     try:
         latest_block_os = sub_chain.ordering_service.get_latest_block()
@@ -117,7 +114,7 @@ def _sync_chain_for_sub_chain(sub_chain: "SubChain") -> None:
         logger.error("Sync failed: %s", e)
 
 
-def _update_event_statistics(sub_chain: "SubChain", block: Any) -> None:
+def _update_event_statistics(sub_chain: Any, block: Any) -> None:
     """Update event statistics for a block during rehydration."""
     events = (
         block.to_event_list()
@@ -142,7 +139,7 @@ def _update_event_statistics(sub_chain: "SubChain", block: Any) -> None:
             })
 
 
-def _reset_ordering_service_state(sub_chain: "SubChain") -> None:
+def _reset_ordering_service_state(sub_chain: Any) -> None:
     """Reset the Ordering Service state."""
     latest_local = sub_chain.get_latest_block()
     sub_chain.ordering_service.block_history = list(sub_chain.chain)

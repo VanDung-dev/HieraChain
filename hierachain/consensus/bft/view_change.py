@@ -3,7 +3,7 @@ BFT View Change Manager component.
 """
 
 import logging
-from typing import TYPE_CHECKING
+from typing import Any
 
 from hierachain.consensus.bft.types import ConsensusState, MessageType, BFTMessage
 from hierachain.consensus.bft.helpers import (
@@ -14,15 +14,12 @@ from hierachain.consensus.bft.helpers import (
     _add_to_votes,
 )
 
-if TYPE_CHECKING:
-    from hierachain.consensus.bft.consensus import BFTConsensus
-
 logger = logging.getLogger(__name__)
 
 
 class BFTViewChangeManager:
     """View change manager for BFT consensus"""
-    def __init__(self, consensus: "BFTConsensus"):
+    def __init__(self, consensus: Any):
         self.consensus = consensus
 
     def start_timer(self):
@@ -48,13 +45,23 @@ class BFTViewChangeManager:
         """Initiate a new view change."""
         with self.consensus.lock:
             self.consensus.state = ConsensusState.VIEW_CHANGE
+            prepared_set = {}
+            for seq, pre_prep in self.consensus.pre_prepare_messages.items():
+                if seq > self.consensus.committed_sequence:
+                    prepares = [
+                        m.to_dict() for m in self.consensus.prepare_messages.get(seq, [])
+                    ]
+                    prepared_set[str(seq)] = {
+                        "pre_prepare": pre_prep.to_dict(),
+                        "prepares": prepares,
+                    }
             msg = _create_signed_bft_message(
                 MessageType.VIEW_CHANGE,
                 new_view,
                 self.consensus.committed_sequence,
                 self.consensus.node_id,
                 self.consensus.key_provider,
-                {}
+                {"prepared_proofs": prepared_set}
             )
             if new_view not in self.consensus.view_change_votes:
                 self.consensus.view_change_votes[new_view] = []

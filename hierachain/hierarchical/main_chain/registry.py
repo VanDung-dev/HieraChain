@@ -2,16 +2,13 @@
 Registry, statistics, and integrity report helpers for Main Chain.
 """
 
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 from hierachain.hierarchical.main_chain.proofs import _get_proofs_by_sub_chain_from_main_chain
 
-if TYPE_CHECKING:
-    from hierachain.hierarchical.main_chain.base import MainChain
-
 
 def _get_sub_chain_summary_from_main_chain(
-    chain: "MainChain", sub_chain_name: str
+    chain: Any, sub_chain_name: str
 ) -> dict[str, Any]:
     """Get summary information about a Sub-Chain from the Main Chain."""
     if sub_chain_name not in chain.registered_sub_chains:
@@ -31,7 +28,7 @@ def _get_sub_chain_summary_from_main_chain(
     }
 
 
-def _get_main_chain_stats_for_chain(chain: "MainChain") -> dict[str, Any]:
+def _get_main_chain_stats_for_chain(chain: Any) -> dict[str, Any]:
     """Get comprehensive statistics about the Main Chain."""
     base_stats = chain.get_chain_stats()
     proof_events = chain.get_events_by_type("proof_submission")
@@ -47,7 +44,7 @@ def _get_main_chain_stats_for_chain(chain: "MainChain") -> dict[str, Any]:
     }
 
 
-def _get_hierarchical_integrity_report_for_chain(chain: "MainChain") -> dict[str, Any]:
+def _get_hierarchical_integrity_report_for_chain(chain: Any) -> dict[str, Any]:
     """Generate an integrity report for the entire hierarchical system."""
     sub_chains: dict[str, Any] = {}
     for sub_chain_name in chain.registered_sub_chains:

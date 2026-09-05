@@ -3,7 +3,7 @@ BFT Consensus Engine component.
 """
 
 import logging
-from typing import TYPE_CHECKING
+from typing import Any
 
 from hierachain.config.settings import settings
 from hierachain.consensus.bft.types import ConsensusState, MessageType, BFTMessage
@@ -20,16 +20,13 @@ from hierachain.consensus.bft.helpers import (
     _cleanup_messages,
 )
 
-if TYPE_CHECKING:
-    from hierachain.consensus.bft.consensus import BFTConsensus
-
 logger = logging.getLogger(__name__)
 
 
 class BFTConsensusEngine:
     """Manages the 3-phase PBFT protocol consensus engine execution"""
 
-    def __init__(self, consensus: "BFTConsensus"):
+    def __init__(self, consensus: Any):
         self.consensus = consensus
 
     def handle_pre_prepare(self, message: BFTMessage) -> bool:
