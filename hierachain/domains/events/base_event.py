@@ -187,7 +187,7 @@ class BaseEvent(ABC):
                 f"event_type={self.event_type}, timestamp={self.timestamp}, "
                 f"details_count={len(self.details)})")
     
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Check equality with another event."""
         if not isinstance(other, BaseEvent):
             return False
