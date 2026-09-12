@@ -8,6 +8,8 @@ icon: material/history
 
 ## Unreleased
 
+## v0.2.0 (2026-09-12)
+
 ??? note "Improvements (26)"
 
     * 2026-09-05
