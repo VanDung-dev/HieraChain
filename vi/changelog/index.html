@@ -4444,6 +4444,43 @@
 
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
+<details class="note">
+<summary>Improvements (3)</summary>
+<ul>
+<li>
+<p>2026-09-18</p>
+<ul>
+<li><strong>Config &amp; Khởi động API</strong>: Tập trung nhận diện môi trường vào <code>_get_environment()</code> (<code>hierachain/config/settings.py</code>), ưu tiên <code>HRC_ENV</code> hơn <code>ENV</code>, chuẩn hóa chữ hoa/thường và khoảng trắng, đồng thời ánh xạ <code>prod</code>/<code>product</code>, <code>dev</code> và <code>testing</code> về tên môi trường chuẩn. Thêm <code>validate_startup_security()</code> để từ chối listener không bật xác thực khi bind ngoài loopback trước khi khởi động WebSocket/P2P; các kiểm tra CORS và lỗi debug trong <code>hierachain/api/server.py</code> nay dùng <code>settings.env</code> đã chuẩn hóa.</li>
+<li><strong>API (Phân quyền GraphQL)</strong>: Truyền <code>request.state.auth_context</code> qua <code>hierachain/api/graphql_handler.py</code> đến resolver trong <code>hierachain/api/graphql/resolvers.py</code>. Thực thi quyền truy cập chain (<code>all</code>, <code>chains</code>, <code>chain:&lt;name&gt;</code>, <code>chains:&lt;name&gt;</code>) và giới hạn tùy chọn <code>allowed_chains</code>, lọc danh sách chain theo quyền, đồng thời yêu cầu quyền event cho truy vấn, mutation và trường event lồng trong block tại <code>hierachain/api/graphql/types.py</code>.</li>
+<li><strong>Bảo mật (Quyền API Key)</strong>: Thêm <code>KeyManager.get_permissions()</code> trong <code>hierachain/security/key_manager.py</code> và điền <code>app_details["permissions"]</code> bằng quyền lưu trên API key trong <code>hierachain/security/verify/api_key_verifier.py</code>, cung cấp dữ liệu cho các kiểm tra quyền tài nguyên.</li>
+</ul>
+</li>
+</ul>
+</details>
+<details class="warning">
+<summary>Fix (1)</summary>
+<ul>
+<li>
+<p>2026-09-18</p>
+<ul>
+<li><strong>API (Tra cứu Chain GraphQL)</strong>: Loại bỏ fallback ngầm sang MainChain khi tên chain không tồn tại trong <code>hierachain/api/graphql/resolvers.py</code>; chỉ <code>main_chain</code> mới chọn MainChain. Truy vấn đã được cấp quyền nay báo lỗi không tìm thấy chain, còn mutation event trả về thất bại thay vì ghi nhầm chain.</li>
+</ul>
+</li>
+</ul>
+</details>
+<details class="warning">
+<summary>Breaking Changes (2)</summary>
+<ul>
+<li>
+<p>2026-09-18</p>
+<ul>
+<li><strong>Cấu hình &amp; Khởi động</strong>: Giá trị <code>HRC_ENV</code>/<code>ENV</code> không được hỗ trợ nay gây <code>ValueError</code> thay vì âm thầm chọn cấu hình development. Khởi động gây <code>RuntimeError</code> khi <code>AUTH_ENABLED=False</code> và <code>API_HOST</code> không phải loopback; cần bật xác thực hoặc bind vào loopback.</li>
+<li><strong>Truy cập GraphQL</strong>: Thao tác chain/event nay yêu cầu ngữ cảnh phân quyền phù hợp, kể cả lời gọi trực tiếp <code>schema.execute()</code> qua <code>context_value</code>. Client cần có quyền chain và event tương ứng; truy cập trái quyền trả lỗi GraphQL, còn <code>allChains</code> chỉ trả các chain được phép. HTTP handler vẫn cho phép truy cập cục bộ không giới hạn khi tắt xác thực.</li>
+</ul>
+</li>
+</ul>
+</details>
+<hr />
 <h2 id="v020-2026-09-12">v0.2.0 (2026-09-12)</h2>
 <details class="note">
 <summary>Improvements (26)</summary>

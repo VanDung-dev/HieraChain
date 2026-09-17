@@ -4444,6 +4444,43 @@
 
 <h1 id="changelog">Changelog</h1>
 <h2 id="unreleased">Unreleased</h2>
+<details class="note">
+<summary>Improvements (3)</summary>
+<ul>
+<li>
+<p>2026-09-18</p>
+<ul>
+<li><strong>Config &amp; API Startup</strong>: Centralized environment detection in <code>_get_environment()</code> (<code>hierachain/config/settings.py</code>), prioritizing <code>HRC_ENV</code> over <code>ENV</code>, normalizing case and whitespace, and mapping <code>prod</code>/<code>product</code>, <code>dev</code>, and <code>testing</code> to canonical environments. Added <code>validate_startup_security()</code> to reject unauthenticated non-loopback listeners before starting WebSocket/P2P services; CORS and debug-error checks in <code>hierachain/api/server.py</code> now use the canonical <code>settings.env</code>.</li>
+<li><strong>API (GraphQL Authorization)</strong>: Passed <code>request.state.auth_context</code> through <code>hierachain/api/graphql_handler.py</code> to resolvers in <code>hierachain/api/graphql/resolvers.py</code>. Enforced chain permissions (<code>all</code>, <code>chains</code>, <code>chain:&lt;name&gt;</code>, <code>chains:&lt;name&gt;</code>) and optional <code>allowed_chains</code> restrictions, filtered chain listings to permitted chains, and required event permission for event queries, mutations, and nested block events in <code>hierachain/api/graphql/types.py</code>.</li>
+<li><strong>Security (API Key Permissions)</strong>: Added <code>KeyManager.get_permissions()</code> in <code>hierachain/security/key_manager.py</code> and populated <code>app_details["permissions"]</code> with permissions stored on the API key in <code>hierachain/security/verify/api_key_verifier.py</code>, making them available to resource permission checks.</li>
+</ul>
+</li>
+</ul>
+</details>
+<details class="warning">
+<summary>Fix (1)</summary>
+<ul>
+<li>
+<p>2026-09-18</p>
+<ul>
+<li><strong>API (GraphQL Chain Lookup)</strong>: Removed the implicit MainChain fallback for unknown chain names in <code>hierachain/api/graphql/resolvers.py</code>; only <code>main_chain</code> selects MainChain. Authorized queries now report a missing-chain error, and event mutations return failure instead of writing to the wrong chain.</li>
+</ul>
+</li>
+</ul>
+</details>
+<details class="warning">
+<summary>Breaking Changes (2)</summary>
+<ul>
+<li>
+<p>2026-09-18</p>
+<ul>
+<li><strong>Configuration &amp; Startup</strong>: Unsupported <code>HRC_ENV</code>/<code>ENV</code> values now raise <code>ValueError</code> instead of silently selecting development settings. Startup raises <code>RuntimeError</code> when <code>AUTH_ENABLED=False</code> and <code>API_HOST</code> is not loopback; enable authentication or bind to a loopback host.</li>
+<li><strong>GraphQL Access</strong>: Chain/event operations now require an appropriate authorization context, including direct <code>schema.execute()</code> calls via <code>context_value</code>. Clients must have the required chain and event permissions; unauthorized access produces GraphQL errors, and <code>allChains</code> only returns permitted chains. The HTTP handler retains unrestricted local access when authentication is disabled.</li>
+</ul>
+</li>
+</ul>
+</details>
+<hr />
 <h2 id="v020-2026-09-12">v0.2.0 (2026-09-12)</h2>
 <details class="note">
 <summary>Improvements (26)</summary>
