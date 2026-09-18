@@ -17,12 +17,6 @@ from hierachain.cluster.cluster_manager import (
     ClusterHealthMetrics,
     NodeStatus,
 )
-from hierachain.cluster.state_sync_manager import (
-    StateSyncManager,
-    SyncRequest,
-    SyncResponse,
-    SyncStatus,
-)
 from hierachain.cluster.cross_level_sync import CrossLevelSyncManager
 from hierachain.cluster.cross_level_sync_types import (
     CrossLevelSyncStatus,
@@ -43,10 +37,6 @@ __all__ = [
     "NodeHealthStatus",
     "ClusterHealthMetrics",
     "NodeStatus",
-    "StateSyncManager",
-    "SyncRequest",
-    "SyncResponse",
-    "SyncStatus",
     "CrossLevelSyncManager",
     "CrossLevelSyncStatus",
     "SyncDirection",
