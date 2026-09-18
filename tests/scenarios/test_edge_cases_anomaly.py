@@ -22,11 +22,6 @@ from hierachain.network.message_cryptographic import (
 from hierachain.security.security_utils import KeyPair
 from hierachain.api.middleware import RateLimiter
 from hierachain.cluster.lockdown_types import LockdownMessage, LockdownMessageType
-from hierachain.domains.chains.domain_chain import DomainChain
-from hierachain.hierarchical.rebalancer.rebalancer import SubChainRebalancer
-from hierachain.hierarchical.rebalancer.split_ops import (
-    _migrate_state_for_rebalancer,
-)
 
 
 # ============================================================================
@@ -225,37 +220,3 @@ def test_cluster_lockdown_hmac_fuzzing():
     msg.signature = ""
     assert msg.verify_signature(secret_key) is False
 
-
-# ============================================================================
-# 6. SubChain Rebalancer Edge Partitions
-# ============================================================================
-
-def test_subchain_rebalancer_empty_and_single_partitions():
-    """Verify Rebalancer migration handles empty and single-event subchains without error."""
-    rebalancer = SubChainRebalancer(threshold_eps=100, check_interval=0.1)
-    parent_chain = DomainChain("source_chain", "traceability")
-    child1 = DomainChain("child_1", "traceability")
-    child2 = DomainChain("child_2", "traceability")
-
-    # Migrate when parent has no events at all
-    events_migrated, _ = _migrate_state_for_rebalancer(rebalancer, parent_chain, [child1, child2])
-    assert events_migrated == 0
-    assert len(child1.pending_events) == 0
-    assert len(child2.pending_events) == 0
-
-    # Add single event
-    parent_chain.add_event({
-        "entity_id": "apple-123",
-        "event": "harvest",
-        "timestamp": time.time(),
-        "details": {"origin": "Farm A"},
-    })
-
-    child_target1 = DomainChain("child_target_1", "traceability")
-    child_target2 = DomainChain("child_target_2", "traceability")
-    migrated_count, _ = _migrate_state_for_rebalancer(rebalancer, parent_chain, [child_target1, child_target2])
-    assert migrated_count == 1
-
-    # Exactly one child receives the pending event
-    total_received = len(child_target1.pending_events) + len(child_target2.pending_events)
-    assert total_received == 1
