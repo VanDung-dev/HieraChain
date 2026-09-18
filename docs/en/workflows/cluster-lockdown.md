@@ -106,7 +106,7 @@ stateDiagram-v2
 | Vote timestamp > 300s old | Vote rejected (replay protection) |
 | Lockdown quorum never reached | System continues operating normally, votes expire |
 | Recovery quorum never reached | Cluster stays locked; escalation alert sent via Risk Alerts |
-| Node joins during lockdown | New node receives LOCKED state via `StateSyncManager` |
+| Node joins during lockdown | New node remains locked until the recovery quorum completes |
 
 ---
 
@@ -119,7 +119,6 @@ stateDiagram-v2
 | Quorum check | `_check_lockdown_quorum()` | `cluster/lockdown_protocol.py` |
 | System freeze | `local_lockdown_callback()` | `cluster/lockdown_protocol.py` |
 | Recovery quorum | `_check_recovery_quorum()` | `cluster/lockdown_protocol.py` |
-| State sync | `StateSyncManager.sync_state()` | `cluster/state_sync_manager.py` |
 | Transport | `ZmqTransport.broadcast()` | `network/zmq_transport.py` |
 
 ---

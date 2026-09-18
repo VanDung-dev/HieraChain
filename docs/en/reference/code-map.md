@@ -73,7 +73,6 @@ This document maps concepts in technical documentation to specific source code f
 | **Peer Trust Manager** | `hierachain/network/peer_trust_manager.py` | Manages Peer-to-Peer trust. |
 | **Secure Connection** | `hierachain/network/secure_connection.py` | Establishes secure connections between nodes. |
 | **Cluster Manager** | `hierachain/cluster/cluster_manager.py` | Manages state and membership in cluster. |
-| **State Sync** | `hierachain/cluster/state_sync_manager.py` | State synchronization between cluster nodes. |
 | **Lockdown Protocol** | `hierachain/cluster/lockdown_protocol.py` | Cluster lockdown protocol when critical issues are detected. |
 | **Cross-Chain Sync** | `hierachain/cluster/cross_level_sync.py` | Cross-level data synchronization (Main <-> Sub). |
 

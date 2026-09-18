@@ -73,7 +73,6 @@ Tài liệu này ánh xạ các khái niệm trong tài liệu kỹ thuật sang
 | **Peer Trust Manager** | `hierachain/network/peer_trust_manager.py` | Quản lý độ tin cậy Peer-to-Peer. |
 | **Secure Connection** | `hierachain/network/secure_connection.py` | Thiết lập kết nối an toàn giữa các node. |
 | **Cluster Manager** | `hierachain/cluster/cluster_manager.py` | Quản lý trạng thái và thành viên trong cụm. |
-| **State Sync** | `hierachain/cluster/state_sync_manager.py` | Đồng bộ trạng thái giữa các node trong cụm. |
 | **Lockdown Protocol** | `hierachain/cluster/lockdown_protocol.py` | Giao thức phong tỏa cụm khi phát hiện sự cố nghiêm trọng. |
 | **Cross-Chain Sync** | `hierachain/cluster/cross_level_sync.py` | Đồng bộ dữ liệu liên tầng (Main <-> Sub). |
 

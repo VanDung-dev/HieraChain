@@ -129,7 +129,6 @@ graph TD
 |-----------|---------|----------------|
 | `cluster_manager.py` | Node health tracking, quorum-based coordination | Observer + Quorum |
 | `lockdown_protocol.py` | Gossip-style P2P lockdown broadcast and voting | State Machine + P2P |
-| `state_sync_manager.py` | Cross-node state synchronization | Sync Manager |
 | `cross_level_sync.py` | Cross-level hierarchical synchronization | Hierarchical Sync |
 
 **Key Feature — Quorum-Based Lockdown**:

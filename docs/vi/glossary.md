@@ -42,7 +42,7 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | API Ledger | API Ledger | REST API Ledger; `hierachain/api/ledger/*`. |
 | API business | API business | REST API business; `hierachain/api/business/*`. |
 | API Admin | API Admin | REST API Admin; `hierachain/api/admin/*`. |
-| Cross‑level State Sync | Đồng bộ liên tầng | Đồng bộ qua `hierachain/cluster/state_sync_manager.py` + `hierarchical/hierarchy_manager/` + `HRC_CROSS_LEVEL_*`. |
+| Cross‑level State Sync | Đồng bộ liên tầng | Đồng bộ qua `hierachain/cluster/cross_level_sync.py` + `hierarchical/hierarchy_manager/` + `HRC_CROSS_LEVEL_*`. |
 | Kubernetes Namespace | Kubernetes Namespace | Phân lập namespace cho Sub-Chain; `hierachain/hierarchical/k8s_namespace_manager/operations.py`. |
 | Identity Manager | Quản lý danh tính | Quản lý tổ chức/người dùng/role; `hierachain/security/identity.py`. |
 | Certificate | Chứng chỉ | Dataclass `Certificate` nội bộ trong `hierachain/security/msp.py` (không phải X.509, không có `certificate.py`). |

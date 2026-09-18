@@ -40,7 +40,7 @@ icon: material/alphabetical
 | API Ledger | REST API Ledger; `hierachain/api/ledger/*`. |
 | API business | REST API business; `hierachain/api/business/*`. |
 | API Admin | REST API Admin; `hierachain/api/admin/*`. |
-| Cross-level State Sync | Cross-tier sync via `hierachain/cluster/state_sync_manager.py` + `hierachain/hierarchical/hierarchy_manager/` + `HRC_CROSS_LEVEL_*` settings. |
+| Cross-level State Sync | Cross-tier sync via `hierachain/cluster/cross_level_sync.py` + `hierachain/hierarchical/hierarchy_manager/` + `HRC_CROSS_LEVEL_*` settings. |
 | Kubernetes Namespace | Sub-Chain namespace isolation; `hierachain/hierarchical/k8s_namespace_manager/operations.py`. |
 | Identity Manager | Organization/user/role management; `hierachain/security/identity.py`. |
 | Certificate | Internal `Certificate` dataclass in `hierachain/security/msp.py` (not X.509, no `certificate.py`). |

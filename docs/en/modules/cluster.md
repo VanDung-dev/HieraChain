@@ -38,16 +38,6 @@ The system is designed according to a decentralized model with specialized compo
     * Secured with HMAC-SHA256 signatures (`HRC_CLUSTER_SECRET`).
     * Quarantine Report mechanism.
 
-*   :material-database-sync:{ .lg .middle } __State Sync (Resurrection)__
-
-    ---
-
-    __File__: `state_sync_manager.py`
-
-    * State recovery after incidents or lockdown.
-    * Block gap-fill mechanism.
-    * Verification of blocks received from peers.
-
 *   :material-connection:{ .lg .middle } __Cross-Level Sync__
 
     ---
@@ -78,14 +68,9 @@ All cluster messages (Lockdown, Vote, Sync) must be signed with **HMAC-SHA256** 
 
 ---
 
-## State Synchronization Mechanism
+## Recovery Scope
 
-When a new node joins or a node recovers from lockdown, it performs the **Resurrection** process:
-
-1.  **Gap Identification**: Compare the last block index with peers.
-2.  **Sync Request**: Send a gap-fill request to healthy nodes.
-3.  **Multi-layer Verification**: Each received block is checked for hash chaining and signatures by `BlockVerifier`.
-4.  **Merging**: Only valid data is written to the local database.
+The lockdown protocol coordinates votes, quarantine reports, and recovery. Automatic block gap-fill is not wired into the current runtime; missing-block recovery must be handled by the deployment workflow. Cross-level synchronization remains a separate optional feature through `CrossLevelSyncManager`.
 
 ---
 

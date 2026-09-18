@@ -38,16 +38,6 @@ Hệ thống được thiết kế theo mô hình phi tập trung với các th�
     * Bảo mật bằng chữ ký HMAC-SHA256 (`HRC_CLUSTER_SECRET`).
     * Cơ chế "Quarantine Report" (Báo cáo cách ly).
 
-*   :material-database-sync:{ .lg .middle } __State Sync (Resurrection)__
-
-    ---
-
-    __File__: `state_sync_manager.py`
-
-    * Khôi phục trạng thái sau sự cố hoặc phong tỏa.
-    * Cơ chế "Gap-fill" (Lấp đầy khoảng trống) block.
-    * Xác thực block nhận được từ đồng đẳng (peers).
-
 *   :material-connection:{ .lg .middle } __Cross-Level Sync__
 
     ---
@@ -78,14 +68,9 @@ Mọi thông điệp trong cụm (Lockdown, Vote, Sync) đều phải được k
 
 ---
 
-## Cơ chế Đồng bộ Trạng thái (State Synchronization)
+## Phạm vi Khôi phục (Recovery Scope)
 
-Khi một node mới gia nhập hoặc một node vừa khôi phục từ trạng thái phong tỏa, nó sẽ thực hiện quy trình **Resurrection**:
-
-1.  **Xác định khoảng trống (Gap Identification)**: Đối chiếu chỉ số (index) block cuối cùng với các peers.
-2.  **Yêu cầu dữ liệu (Sync Request)**: Gửi yêu cầu lấp đầy khoảng trống cho các node lành mạnh.
-3.  **Xác thực đa tầng (Verification)**: Mỗi block nhận về đều được kiểm tra hash chaining và chữ ký bởi `BlockVerifier`.
-4.  **Hợp nhất (Merging)**: Chỉ các dữ liệu hợp lệ mới được ghi vào database địa phương.
+Giao thức phong tỏa điều phối việc bỏ phiếu, báo cáo cách ly và khôi phục. Runtime hiện tại chưa tự động lấp đầy block bị thiếu; việc khôi phục block phải do quy trình deployment xử lý. Đồng bộ liên tầng vẫn là tính năng tùy chọn riêng thông qua `CrossLevelSyncManager`.
 
 ---
 

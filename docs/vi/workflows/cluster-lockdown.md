@@ -106,7 +106,7 @@ stateDiagram-v2
 | Timestamp phiếu > 300 giây | Từ chối phiếu (chống replay) |
 | Không đủ quorum khóa băng | Hệ thống tiếp tục bình thường, phiếu tự hết hạn |
 | Không đủ quorum khôi phục | Cụm vẫn bị khóa; gửi cảnh báo leo thang qua Risk Alerts |
-| Node mới tham gia khi đang khóa | Node mới nhận trạng thái LOCKED qua `StateSyncManager` |
+| Node mới tham gia khi đang khóa | Node mới vẫn bị khóa cho đến khi quorum khôi phục hoàn tất |
 
 ---
 
@@ -119,7 +119,6 @@ stateDiagram-v2
 | Kiểm tra quorum | `_check_lockdown_quorum()` | `cluster/lockdown_protocol.py` |
 | Đóng băng | `local_lockdown_callback()` | `cluster/lockdown_protocol.py` |
 | Quorum khôi phục | `_check_recovery_quorum()` | `cluster/lockdown_protocol.py` |
-| Đồng bộ trạng thái | `StateSyncManager.sync_state()` | `cluster/state_sync_manager.py` |
 | Giao thức mạng | `ZmqTransport.broadcast()` | `network/zmq_transport.py` |
 
 ---
