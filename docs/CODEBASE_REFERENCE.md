@@ -56,17 +56,12 @@ graph TD
 | `sub_chain.py` | Domain-specific chains with detailed events | Worker / Specialist |
 | `channel.py` | Isolated data spaces for organizations | Communication Channel |
 | `multi_org.py` | Multi-organization architecture with MSP | Enterprise Boundary Manager |
-| `proof_aggregation.py` | Batches multiple proofs into one | Aggregator / Compressor |
 | `hierarchy_manager.py` | Orchestrates entire chain hierarchy | Facade / Controller |
 | `transaction_manager.py` | Cross-chain 2PC transactions | Transaction Coordinator |
 | `private_data.py` | **[MỚI]** Private data collections per organization | Data Privacy Guard |
-| `k8s_namespace_manager.py` | **[MỚI]** Kubernetes namespace lifecycle management for sub-chain isolation | Infrastructure Manager |
-| `rebalancer.py` | **[MỚI]** Dynamic sub-chain splitting when load exceeds threshold | Auto-Scaling Engine |
 
 **Key Additions**:
 
-* **`K8sNamespaceManager`**: Deploys each Sub-Chain into an isolated Kubernetes namespace—ensuring complete resource isolation, fault isolation, independent scaling, and easier monitoring. Supports both real K8s and mock mode.
-* **`SubChainRebalancer`**: Monitors sub-chain load in events/second (EPS). When throughput exceeds a configurable threshold, automatically splits the sub-chain into two child branches and migrates state using configurable strategies (`HASH_BASED`, `TIME_BASED`, `ROUND_ROBIN`).
 * **`private_data.py`**: Manages private data collections scoped per-organization within a channel, ensuring data isolation even between organizations sharing the same Sub-Chain.
 
 ---
@@ -455,7 +450,6 @@ This mirrors enterprise organizational structure: CEO coordinates at high level,
 ### 5. Cloud-Native / Kubernetes-Ready
 
 * **K8s Namespace Manager** for sub-chain isolation in production clusters
-* **Sub-chain auto-rebalancer** for elastic horizontal scaling
 * **Cross-level state sync** for distributed consistency
 
 ### 6. Observability & Operations

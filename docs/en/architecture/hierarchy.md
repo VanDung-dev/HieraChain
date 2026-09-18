@@ -19,8 +19,6 @@ This page explains how HieraChain organizes its hierarchy. It covers how Sub-Cha
 * Multi-Org: `hierachain/hierarchical/multi_org.py` handles organization initialization, the multi-org network, and the relationship between channels and organizations.
 * Private Data: `hierachain/hierarchical/private_data.py` holds private data collections at the Sub-Chain level.
 * Cross-Chain Transaction Manager: `hierachain/hierarchical/transaction_manager.py` coordinates 2PC transactions between Sub-Chains.
-* Proof Aggregation: `hierachain/hierarchical/proof_aggregation/aggregator.py` groups and compresses proofs before they are sent or recorded. This is configurable.
-* Rebalancer: `hierachain/hierarchical/rebalancer/rebalancer.py` splits or balances Sub-Chains automatically when load crosses thresholds.
 
 ### Typical flow
 
@@ -40,19 +38,15 @@ graph TD
 3. Anchor the proof to the Main Chain with `SubChain.submit_proof_to_main(main_chain, ...)` or `HierarchyManager.submit_proof_to_main_chain(name)`.
 4. Run cross-chain transactions (2PC) with `HierarchyManager.transaction_manager.initiate_transaction(src, dst, payload)`, which handles prepare, commit and rollback.
 5. Channels and private data: create a channel between organizations. Private collections are stored at the Sub-Chain according to the channel policy.
-6. Sub-Chain rebalancing: the rebalancer watches EPS and configured thresholds, then proposes branch splitting or load movement.
 
 ## Related configuration (settings.py, actual `HRC_*`)
 
-* Proof: `HRC_PROOF_AGGREGATION`, `HRC_PROOF_BATCH_SIZE`, `HRC_PROOF_BATCH_TIMEOUT`, `HRC_PROOF_COMPRESSION`.
-* Rebalance: `HRC_REBALANCE_ENABLED`, `HRC_REBALANCE_THRESHOLD_EPS`, `HRC_REBALANCE_CHECK_INTERVAL`, `HRC_REBALANCE_MIN_EVENTS`, `HRC_REBALANCE_COOLDOWN`.
-* K8s (Sub-Chain isolation): `HRC_K8S_ENABLED`, `HRC_K8S_NAMESPACE_PREFIX`, `HRC_K8S_CPU_LIMIT`/`HRC_K8S_MEMORY_LIMIT`/`HRC_K8S_CPU_REQUEST`/`HRC_K8S_MEMORY_REQUEST`, `HRC_K8S_CONFIG`.
 * Consensus/Ordering: see [Consensus & Ordering](consensus.md) and `HRC_CONSENSUS_TYPE`/`HRC_MAINCHAIN_CONSENSUS`, `VALIDATOR_TIMEOUT`, `HRC_BLOCK_INTERVAL`.
 
 ## Features and limitations
 
-* Features: domain data separation, centralized proof anchoring on the Main Chain, 2PC support, channels and multi-org, private data, and rebalancing.
-* Limitations: channel and multi-org operations need clear policies, 2PC needs good synchronization, and rebalancing can require operational intervention outside the normal flow.
+* Features: domain data separation, centralized proof anchoring on the Main Chain, 2PC support, channels and multi-org, and private data.
+* Limitations: channel and multi-org operations need clear policies, and 2PC needs good synchronization.
 
 ## Related
 

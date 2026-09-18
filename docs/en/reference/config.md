@@ -126,33 +126,6 @@ print(settings.AUTH_ENABLED)
 * `HRC_ZK_VERIFICATION_KEY`, `HRC_ZK_PROVING_KEY`, `HRC_ZK_CIRCUIT` (file paths)
 * `HRC_ZK_REQUIRED_MAINCHAIN` (default: `false`)
 
-### Kubernetes (sub-chain namespace isolation)
-
-* `HRC_K8S_ENABLED` (default: `false`)
-* `HRC_K8S_NAMESPACE_PREFIX` (default: `hrc-subchain-`)
-* `HRC_K8S_CONFIG` (kubeconfig path, empty if in-cluster)
-* Limits and resources:
-
-    * `HRC_K8S_CPU_LIMIT` (default: `1000m`)
-    * `HRC_K8S_MEMORY_LIMIT` (default: `1Gi`)
-    * `HRC_K8S_CPU_REQUEST` (default: `250m`)
-    * `HRC_K8S_MEMORY_REQUEST` (default: `256Mi`)
-
-### Proof aggregation
-
-* `HRC_PROOF_AGGREGATION` (default: `true`)
-* `HRC_PROOF_BATCH_SIZE` (default: `10`)
-* `HRC_PROOF_BATCH_TIMEOUT` (default: `30.0` seconds)
-* `HRC_PROOF_COMPRESSION` (default: `true`)
-
-### Sub-chain rebalancing
-
-* `HRC_REBALANCE_ENABLED` (default: `true`)
-* `HRC_REBALANCE_THRESHOLD_EPS` (default: `1000` events/sec)
-* `HRC_REBALANCE_CHECK_INTERVAL` (default: `60.0` seconds)
-* `HRC_REBALANCE_MIN_EVENTS` (default: `5000` events before split)
-* `HRC_REBALANCE_COOLDOWN` (default: `300.0` seconds = 5 minutes)
-
 ### Cross-level state sync
 
 * `HRC_CROSS_LEVEL_SYNC` (default: `true`)

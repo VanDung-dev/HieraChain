@@ -19,8 +19,6 @@ Phần này giải thích cách HieraChain tổ chức phân cấp. Nó bao gồ
 * Multi-Org: `hierachain/hierarchical/multi_org.py` xử lý khởi tạo organization, mạng multi-org và quan hệ giữa channel với organization.
 * Private Data: `hierachain/hierarchical/private_data.py` giữ collection dữ liệu riêng ở tầng Sub-Chain.
 * Cross-Chain Transaction Manager: `hierachain/hierarchical/transaction_manager.py` điều phối giao dịch 2PC giữa các Sub-Chain.
-* Proof Aggregation: `hierachain/hierarchical/proof_aggregation/aggregator.py` gom và nén proof trước khi gửi hoặc ghi nhận. Phần này có thể cấu hình.
-* Rebalancer: `hierachain/hierarchical/rebalancer/rebalancer.py` tách hoặc cân bằng Sub-Chain tự động khi tải vượt ngưỡng.
 
 ### Luồng tiêu biểu
 
@@ -40,19 +38,15 @@ graph TD
 3. Neo proof lên Main Chain bằng `SubChain.submit_proof_to_main(main_chain, ...)` hoặc `HierarchyManager.submit_proof_to_main_chain(name)`.
 4. Chạy giao dịch liên chuỗi (2PC) bằng `HierarchyManager.transaction_manager.initiate_transaction(src, dst, payload)`, xử lý prepare, commit và rollback.
 5. Channel và private data: tạo channel giữa các organization. Collection private được lưu ở Sub-Chain theo policy của channel.
-6. Cân bằng lại Sub-Chain: rebalancer theo dõi EPS và các ngưỡng đã cấu hình, sau đó đề xuất tách nhánh hoặc di chuyển tải.
 
 ## Cấu hình liên quan (settings.py, thực tế `HRC_*`)
 
-* Proof: `HRC_PROOF_AGGREGATION`, `HRC_PROOF_BATCH_SIZE`, `HRC_PROOF_BATCH_TIMEOUT`, `HRC_PROOF_COMPRESSION`.
-* Rebalance: `HRC_REBALANCE_ENABLED`, `HRC_REBALANCE_THRESHOLD_EPS`, `HRC_REBALANCE_CHECK_INTERVAL`, `HRC_REBALANCE_MIN_EVENTS`, `HRC_REBALANCE_COOLDOWN`.
-* K8s (cô lập Sub-Chain): `HRC_K8S_ENABLED`, `HRC_K8S_NAMESPACE_PREFIX`, `HRC_K8S_CPU_LIMIT`/`HRC_K8S_MEMORY_LIMIT`/`HRC_K8S_CPU_REQUEST`/`HRC_K8S_MEMORY_REQUEST`, `HRC_K8S_CONFIG`.
 * Consensus/Ordering: xem [Consensus & Ordering](consensus.md) và `HRC_CONSENSUS_TYPE`/`HRC_MAINCHAIN_CONSENSUS`, `VALIDATOR_TIMEOUT`, `HRC_BLOCK_INTERVAL`.
 
 ## Tính năng và hạn chế
 
-* Tính năng: tách dữ liệu theo domain, neo proof tập trung trên Main Chain, hỗ trợ 2PC, channel và multi-org, private data và rebalancing.
-* Hạn chế: vận hành channel và multi-org cần policy rõ ràng, 2PC cần đồng bộ tốt, và rebalancing có thể cần can thiệp vận hành ngoài luồng thông thường.
+* Tính năng: tách dữ liệu theo domain, neo proof tập trung trên Main Chain, hỗ trợ 2PC, channel và multi-org và private data.
+* Hạn chế: vận hành channel và multi-org cần policy rõ ràng và 2PC cần đồng bộ tốt.
 
 ## Liên quan
 

@@ -48,7 +48,7 @@ graph TD
         A[Business Events] --> B[Ordering Service]
         B --> C[Block Builder]
         C --> D[(Local DB)]
-        C --> E[Merkle Tree / ZK Prover]
+    C --> E[Merkle Tree / ZK Prover]
     end
 
     subgraph "Main Chain (Root Authority)"
@@ -60,27 +60,12 @@ graph TD
     
     subgraph "Hierarchy Manager"
         I[Transaction Manager 2PC]
-        J[Rebalancer]
-        K[K8s Namespace Manager]
     end
     
     I -. "Coordinate" .-> A
 ```
 
-## 4. Scalability and infrastructure management
-
-### Sub-chain rebalancer (`rebalancer/rebalancer.py`)
-
-The rebalancer monitors throughput and splits heavily loaded Sub-Chains when events-per-second (EPS) exceed operational thresholds:
-
-* Strategies: Hash-based, time-based, or volume-based partitioning.
-* Migration: Relocates entity states to daughter chains without service interruption.
-
-### Kubernetes namespace isolation (`k8s_namespace_manager/operations.py`)
-
-Maps each Sub-Chain into a dedicated Kubernetes namespace, enforcing resource quotas and network policies per domain.
-
-## 5. Cross-chain operations (2PC)
+## 4. Cross-chain operations (2PC)
 
 `CrossChainTransactionManager` in `hierachain/hierarchical/transaction_manager.py` implements a two-phase commit protocol to maintain atomicity across Sub-Chains:
 
@@ -95,7 +80,7 @@ tx_id = manager.initiate_cross_chain_transaction(
 )
 ```
 
-## 6. Privacy and zero-knowledge verification
+## 5. Privacy and zero-knowledge verification
 
 * Main Chain verification: Sub-Chains can submit zero-knowledge proofs confirming valid state transitions according to consensus rules without revealing raw event details.
 * Private data collections: Sensitive payloads are restricted to authorized member nodes, while only hashes are propagated across the common ledger.

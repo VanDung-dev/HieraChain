@@ -60,27 +60,12 @@ graph TD
     
     subgraph "Hierarchy Manager"
         I[Transaction Manager 2PC]
-        J[Rebalancer]
-        K[K8s Namespace Manager]
     end
     
     I -. "Coordinate" .-> A
 ```
 
-## 4. Khả năng mở rộng và quản lý hạ tầng
-
-### Bộ tái cân bằng chuỗi con (`rebalancer/rebalancer.py`)
-
-Bộ tái cân bằng theo dõi lưu lượng và tách các Sub-Chain chịu tải cao khi số sự kiện mỗi giây (EPS) vượt ngưỡng vận hành:
-
-* Chiến lược: Phân vùng dựa trên mã băm, thời gian hoặc khối lượng dữ liệu.
-* Di chuyển dữ liệu: Chuyển giao trạng thái thực thể sang các chuỗi nhánh mà không làm gián đoạn dịch vụ.
-
-### Phân lập namespace Kubernetes (`k8s_namespace_manager/operations.py`)
-
-Ánh xạ từng Sub-Chain vào một namespace Kubernetes riêng biệt, áp dụng hạn mức tài nguyên và chính sách mạng độc lập cho từng miền.
-
-## 5. Thao tác liên chuỗi (2PC)
+## 4. Thao tác liên chuỗi (2PC)
 
 `CrossChainTransactionManager` trong `hierachain/hierarchical/transaction_manager.py` triển khai giao thức Two-Phase Commit để duy trì tính nguyên tử qua các Sub-Chain:
 
@@ -95,7 +80,7 @@ tx_id = manager.initiate_cross_chain_transaction(
 )
 ```
 
-## 6. Tính riêng tư và xác thực zero-knowledge
+## 5. Tính riêng tư và xác thực zero-knowledge
 
 * Xác thực Main Chain: Sub-Chain có thể nộp zero-knowledge proof để chứng minh bước chuyển trạng thái hợp lệ theo quy tắc đồng thuận mà không để lộ nội dung sự kiện thô.
 * Bộ sưu tập dữ liệu riêng tư: Dữ liệu nhạy cảm được giới hạn trong các node thành viên được cấp quyền, chỉ có mã băm được phát tán trên sổ cái chung.

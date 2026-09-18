@@ -45,14 +45,15 @@ Trong quá trình triển khai, cần thiết lập danh sách các peer (thông
 
 ## 3. Triển khai qua Kubernetes (K8s Orchestration)
 
-Với HieraChain, môi trường Kubernetes là lựa chọn hàng đầu cho quản lý Sub-chain. Hệ thống tích hợp sẵn component **`K8sNamespaceManager`** nhằm cung cấp:
+Repository cung cấp các manifest triển khai Kubernetes trong `docker/k8s/`. Vòng đời namespace và workload do quy trình triển khai Kubernetes quản lý, không do namespace manager trong runtime:
 
 * **Nguyên lý Cách ly (Isolation)**: Mỗi Sub-chain được cấp phát một **Namespace** riêng biệt. Sự cố rò rỉ bộ nhớ, quá tải tài nguyên ở một Sub-chain sẽ không lây lan sang Sub-chain khác.
 * **Microservice Lifecycle**: Sử dụng K8s Deployment để quản lý Pods.
+* **Cô lập tài nguyên**: Namespace, resource request, limit và network policy được định nghĩa trong manifest triển khai.
 
 ### Quản lý Namespace & Resource Limits
 
-Khi tạo mới một Sub-chain thông qua `HierarchyManager`, hệ thống sẽ tự động gửi yêu cầu đến `K8sNamespaceManager` để cấp phát Deployment với cấu hình giới hạn (Quota) như sau:
+Resource request và limit được định nghĩa trong các manifest Kubernetes và áp dụng bởi quy trình triển khai. `HierarchyManager` không cấp phát namespace Kubernetes trong runtime.
 
 * **Tài nguyên Yêu cầu (Requests):**
 
@@ -63,11 +64,3 @@ Khi tạo mới một Sub-chain thông qua `HierarchyManager`, hệ thống sẽ
 
     * **CPU:** `1000m` (1 vCPU). Tận dụng module `parallel_engine.py` cho đa luồng.
     * **Memory:** `1Gi` (Tránh Out-of-Memory do In-memory Storage tràn ngập).
-
-### Lifecycle Management
-
-Thông qua API hoặc SDK, người quản trị có thể:
-
-1. **Provisioning**: Gọi `K8sNamespaceManager.provision_sub_chain_deployment(deploy_config)` truyền vào số lượng `replicas`.
-2. **Monitoring**: Giám sát lượng Pod đang `ACTIVE`, lấy `resource_quotas` thông qua hàm `get_namespace_resources`.
-3. **Termination**: Khi một Sub-chain ngừng hoạt động, `delete_namespace` sẽ được gọi để dọn sạch toàn bộ Pods, Volume (nếu có) mà không ảnh hưởng Main-chain.

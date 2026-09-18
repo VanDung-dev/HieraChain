@@ -126,33 +126,6 @@ print(settings.AUTH_ENABLED)
 * `HRC_ZK_VERIFICATION_KEY`, `HRC_ZK_PROVING_KEY`, `HRC_ZK_CIRCUIT` (đường dẫn file)
 * `HRC_ZK_REQUIRED_MAINCHAIN` (mặc định: `false`)
 
-### Kubernetes (cô lập namespace cho Sub-Chain)
-
-* `HRC_K8S_ENABLED` (mặc định: `false`)
-* `HRC_K8S_NAMESPACE_PREFIX` (mặc định: `hrc-subchain-`)
-* `HRC_K8S_CONFIG` (đường dẫn kubeconfig, rỗng nếu chạy in-cluster)
-* Giới hạn tài nguyên:
-
-    * `HRC_K8S_CPU_LIMIT` (mặc định: `1000m`)
-    * `HRC_K8S_MEMORY_LIMIT` (mặc định: `1Gi`)
-    * `HRC_K8S_CPU_REQUEST` (mặc định: `250m`)
-    * `HRC_K8S_MEMORY_REQUEST` (mặc định: `256Mi`)
-
-### Proof aggregation
-
-* `HRC_PROOF_AGGREGATION` (mặc định: `true`)
-* `HRC_PROOF_BATCH_SIZE` (mặc định: `10`)
-* `HRC_PROOF_BATCH_TIMEOUT` (mặc định: `30.0` giây)
-* `HRC_PROOF_COMPRESSION` (mặc định: `true`)
-
-### Cân bằng lại Sub-Chain
-
-* `HRC_REBALANCE_ENABLED` (mặc định: `true`)
-* `HRC_REBALANCE_THRESHOLD_EPS` (mặc định: `1000` events/giây)
-* `HRC_REBALANCE_CHECK_INTERVAL` (mặc định: `60.0` giây)
-* `HRC_REBALANCE_MIN_EVENTS` (mặc định: `5000` events trước khi tách)
-* `HRC_REBALANCE_COOLDOWN` (mặc định: `300.0` giây = 5 phút)
-
 ### Đồng bộ trạng thái cross-level
 
 * `HRC_CROSS_LEVEL_SYNC` (mặc định: `true`)

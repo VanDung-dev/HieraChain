@@ -27,8 +27,6 @@ icon: material/alphabetical
 | Resource Guard | Resource protection middleware; `hierachain/security/brute_force_protector.py`. |
 | Entity Tracer | Event tracing by entity; `hierachain/domains/utils/entity_tracer.py`. |
 | Zero-Knowledge Proof | ZK Proof; `hierachain/security/zk_prover.py`, `hierachain/security/verify/zk_verifier.py`. |
-| Proof Aggregation | Multiple proof aggregation; `hierachain/hierarchical/proof_aggregation/aggregator.py`. |
-| Rebalancer | Automatic Sub-Chain splitting/balancing; `hierachain/hierarchical/rebalancer/rebalancer.py`. |
 | Channel | Inter-organization private channel; `hierachain/hierarchical/channel/channel.py`. |
 | Multi-Organization | Multi-org network; `hierachain/hierarchical/multi_org.py`. |
 | Private Data | Private data collections; `hierachain/hierarchical/private_data.py`. |
@@ -41,6 +39,5 @@ icon: material/alphabetical
 | API business | REST API business; `hierachain/api/business/*`. |
 | API Admin | REST API Admin; `hierachain/api/admin/*`. |
 | Cross-level State Sync | Cross-tier sync via `hierachain/cluster/cross_level_sync.py` + `hierachain/hierarchical/hierarchy_manager/` + `HRC_CROSS_LEVEL_*` settings. |
-| Kubernetes Namespace | Sub-Chain namespace isolation; `hierachain/hierarchical/k8s_namespace_manager/operations.py`. |
 | Identity Manager | Organization/user/role management; `hierachain/security/identity.py`. |
 | Certificate | Internal `Certificate` dataclass in `hierachain/security/msp.py` (not X.509, no `certificate.py`). |
