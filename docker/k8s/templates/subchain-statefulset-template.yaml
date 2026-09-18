@@ -1,8 +1,8 @@
 # Sub-chain StatefulSet Template
-# This template is used by K8sNamespaceManager to deploy sub-chain nodes
+# This template is used by the Kubernetes deployment workflow to deploy sub-chain nodes
 # into their isolated namespaces with stable network identity.
 #
-# Variables (replaced by K8sNamespaceManager):
+# Variables (replaced by the deployment workflow):
 #   {{SUBCHAIN_ID}} - Unique identifier for the sub-chain
 #   {{NAMESPACE}} - Full namespace name
 #   {{IMAGE}} - Docker image for hierachain
