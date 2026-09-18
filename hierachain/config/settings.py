@@ -237,41 +237,6 @@ class Settings:
         os.getenv("HRC_ZK_REQUIRED_MAINCHAIN", "false").lower() == "true"
     )
 
-    # K8s Namespace Isolation settings (for Sub-chain isolation)
-    K8S_ENABLED = os.getenv("HRC_K8S_ENABLED", "false").lower() == "true"
-    K8S_NAMESPACE_PREFIX = os.getenv("HRC_K8S_NAMESPACE_PREFIX", "hrc-subchain-")
-
-    # Path to kubeconfig, empty for in-cluster
-    K8S_CONFIG_PATH = os.getenv("HRC_K8S_CONFIG", "")
-
-    K8S_RESOURCE_LIMITS_CPU = os.getenv("HRC_K8S_CPU_LIMIT", "1000m")
-    K8S_RESOURCE_LIMITS_MEMORY = os.getenv("HRC_K8S_MEMORY_LIMIT", "1Gi")
-    K8S_RESOURCE_REQUESTS_CPU = os.getenv("HRC_K8S_CPU_REQUEST", "250m")
-    K8S_RESOURCE_REQUESTS_MEMORY = os.getenv("HRC_K8S_MEMORY_REQUEST", "256Mi")
-
-    # Proof Aggregation Engine settings
-    PROOF_AGGREGATION_ENABLED = (
-        os.getenv("HRC_PROOF_AGGREGATION", "true").lower() == "true"
-    )
-    PROOF_BATCH_SIZE = int(os.getenv("HRC_PROOF_BATCH_SIZE", "10"))
-    PROOF_BATCH_TIMEOUT = float(os.getenv("HRC_PROOF_BATCH_TIMEOUT", "30.0"))  # seconds
-    PROOF_COMPRESSION_ENABLED = (
-        os.getenv("HRC_PROOF_COMPRESSION", "true").lower() == "true"
-    )
-
-    # Sub-chain Rebalancing settings (Auto-splitting)
-    REBALANCE_ENABLED = os.getenv("HRC_REBALANCE_ENABLED", "true").lower() == "true"
-
-    # events/sec
-    REBALANCE_THRESHOLD_EPS = int(os.getenv("HRC_REBALANCE_THRESHOLD_EPS", "1000"))
-
-    # seconds
-    REBALANCE_CHECK_INTERVAL = float(os.getenv("HRC_REBALANCE_CHECK_INTERVAL", "60.0"))
-    REBALANCE_MIN_EVENTS_FOR_SPLIT = int(os.getenv("HRC_REBALANCE_MIN_EVENTS", "5000"))
-
-    # 5 min cooldown
-    REBALANCE_COOLDOWN = float(os.getenv("HRC_REBALANCE_COOLDOWN", "300.0"))
-
     # Cross-level State Sync settings
     CROSS_LEVEL_SYNC_ENABLED = (
         os.getenv("HRC_CROSS_LEVEL_SYNC", "true").lower() == "true"
