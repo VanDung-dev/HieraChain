@@ -7,8 +7,12 @@ import os
 import tempfile
 import shutil
 from typing import Any
+from unittest.mock import patch
+
+import pytest
 
 from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
+from hierachain.config import Settings
 from hierachain.core import Block
 from hierachain.error_mitigation import (
     ErrorClassifier,
@@ -106,6 +110,45 @@ def test_init_with_params():
             except PermissionError:
                 time.sleep(0.5)
                 shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def test_event_pool_uses_configured_limit():
+    """Test that the event pool applies the configured hard limit."""
+    temp_dir = create_test_temp_dir()
+    service = None
+    try:
+        service = OrderingService(nodes=[node], config=get_test_config(temp_dir))
+        assert service.event_pool.maxsize == Settings.EVENT_POOL_MAX_SIZE
+    finally:
+        if service:
+            service.shutdown()
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def test_receive_event_rejects_unavailable_service():
+    """Test that events are rejected when recovery cannot activate the service."""
+    temp_dir = create_test_temp_dir()
+    service = None
+    try:
+        service = OrderingService(nodes=[node], config=get_test_config(temp_dir))
+        service.status = OrderingStatus.MAINTENANCE
+
+        with patch.object(service, "wait_for_active", return_value=False):
+            with pytest.raises(Exception, match="maintenance"):
+                service.receive_event(
+                    {"entity_id": "UNAVAILABLE-001", "event": "test_event"},
+                    "test-channel",
+                    "test-org",
+                )
+
+        assert not service.pending_events
+        assert service.event_pool.empty()
+    finally:
+        if service:
+            service.shutdown()
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def test_receive_valid_event():
