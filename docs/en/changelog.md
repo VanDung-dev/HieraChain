@@ -8,6 +8,23 @@ icon: material/history
 
 ## Unreleased
 
+??? warning "Breaking Changes (2)"
+
+    * 2026-09-19
+
+        * **Hierarchical & Config**: Removed deprecated packages `k8s_namespace_manager`, `proof_aggregation`, and `rebalancer` from `hierachain/hierarchical/` (`K8sNamespaceManager`, `ProofAggregator`, `SubChainRebalancer`) along with related configuration settings (`K8S_*`, `PROOF_*`, `REBALANCE_*`) in `hierachain/config/settings.py`.
+
+    * 2026-09-18
+
+        * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
+
+??? note "Improvements (2)"
+
+    * 2026-09-18
+
+        * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
+        * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
+
 ## v0.2.0 (2026-09-12)
 
 ??? note "Improvements (26)"

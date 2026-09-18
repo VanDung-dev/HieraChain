@@ -8,6 +8,23 @@ icon: material/history
 
 ## Unreleased
 
+??? warning "Breaking Changes (2)"
+
+    * 2026-09-19
+
+        * **Hierarchical & Config**: Loại bỏ các gói deprecated `k8s_namespace_manager`, `proof_aggregation` và `rebalancer` khỏi `hierachain/hierarchical/` (`K8sNamespaceManager`, `ProofAggregator`, `SubChainRebalancer`) cùng các cấu hình liên quan (`K8S_*`, `PROOF_*`, `REBALANCE_*`) trong `hierachain/config/settings.py`.
+
+    * 2026-09-18
+
+        * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
+
+??? note "Improvements (2)"
+
+    * 2026-09-18
+
+        * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
+        * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
+
 ## v0.2.0 (2026-09-12)
 
 ??? note "Improvements (26)"
