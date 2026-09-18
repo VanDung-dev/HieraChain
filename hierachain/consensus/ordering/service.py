@@ -13,6 +13,7 @@ from queue import Queue, Empty
 from typing import Any, Callable
 
 from hierachain.core.block import Block
+from hierachain.config.settings import Settings
 from hierachain.error_mitigation.journal import TransactionJournal
 from hierachain.consensus.ordering.types import (
     PendingEvent, EventStatus, OrderingStatus
@@ -39,7 +40,9 @@ class OrderingService:
         self.node_identity = node_identity
         self._status = OrderingStatus.MAINTENANCE
         self.should_stop = threading.Event()
-        self.event_pool: Queue[PendingEvent] = Queue()
+        self.event_pool: Queue[PendingEvent] = Queue(
+            maxsize=Settings.EVENT_POOL_MAX_SIZE
+        )
         self.pending_events: dict[str, PendingEvent] = {}
         self.commit_queue: Queue[Block] = Queue()
         self.processing_thread: threading.Thread | None = None
@@ -127,7 +130,10 @@ class OrderingService:
         self, event_data: dict[str, Any], channel_id: str, submitter_org: str
     ) -> str:
         """Submit a new event for ordering"""
-        if self.status in [OrderingStatus.LOCKDOWN, OrderingStatus.SHUTDOWN]:
+        if self.status == OrderingStatus.MAINTENANCE:
+            self.wait_for_active()
+
+        if self.status != OrderingStatus.ACTIVE:
             status_str = self.status.value
             raise Exception(f"Ordering service is in {status_str} mode")
 
