@@ -101,7 +101,7 @@ async def add_event(
 
     event = _build_event_data(event_request, inline_details, cid_info)
 
-    sub_chain.add_event(event)
+    event_id = sub_chain.add_event(event)
 
     _log_event_success(chain_name, event["entity_id"], cid_info)
 
@@ -110,7 +110,5 @@ async def add_event(
         message=f"Event added to chain '{chain_name}'" + (
             " (off-chain storage)" if cid_info else ""
         ),
-        event_id=(
-            f"{chain_name}_{len(sub_chain.chain)}_{len(sub_chain.pending_events)}"
-        )
+        event_id=event_id
     )
