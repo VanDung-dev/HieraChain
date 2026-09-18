@@ -135,3 +135,5 @@ docker/nodes/peers.json
 docker/nodes/*/wg0.conf
 !docker/nodes/README.md
 docker/bin/
+
+graphify-out/
