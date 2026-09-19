@@ -1,81 +1,13 @@
-"""
-Risk Management — Shared types, enums, and value objects.
-
-Enums and dataclasses used across the risk analysis, mitigation,
-and audit logging subsystems.
-"""
+"""Shared types for audit logging."""
 
 from __future__ import annotations
 
 import orjson
 import hashlib
-from typing import Any, Callable
+from typing import Any
 from dataclasses import dataclass, asdict
 from enum import Enum
 
-
-# --- Risk Analyzer Types ---
-
-class RiskSeverity(Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
-
-
-class RiskCategory(Enum):
-    CONSENSUS = "consensus"
-    SECURITY = "security"
-    PERFORMANCE = "performance"
-    STORAGE = "storage"
-    OPERATIONAL = "operational"
-
-
-@dataclass
-class RiskAssessment:
-    risk_id: str
-    category: RiskCategory
-    severity: RiskSeverity
-    description: str
-    impact: str
-    likelihood: float
-    mitigation_recommendations: list[str]
-    detected_at: float
-    affected_components: list[str]
-
-
-# --- Mitigation Strategy Types ---
-
-class MitigationStatus(Enum):
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    SKIPPED = "skipped"
-
-
-@dataclass
-class MitigationAction:
-    action_id: str
-    description: str
-    execution_function: Callable[[dict[str, Any]], bool]
-    priority: int
-    estimated_duration: int
-    requires_downtime: bool = False
-    dependencies: list[str] | None = None
-
-
-@dataclass
-class MitigationResult:
-    action_id: str
-    status: MitigationStatus
-    start_time: float
-    end_time: float | None
-    error_message: str | None
-    output: dict[str, Any]
-
-
-# --- Audit Logger Types ---
 
 class AuditEventType(Enum):
     RISK_DETECTED = "risk_detected"
