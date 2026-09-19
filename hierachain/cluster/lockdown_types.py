@@ -1,8 +1,4 @@
-"""Lockdown data types for the cluster lockdown protocol.
-
-Dataclasses and enums used by ClusterLockdownManager for
-cluster-wide lockdown coordination.
-"""
+"""Dataclasses and enums for cluster lockdown messages and reports."""
 
 import hashlib
 import hmac
@@ -65,15 +61,6 @@ class LockdownMessage:
             )
         except (TypeError, ValueError):
             return False
-
-
-@dataclass
-class ClusterState:
-    is_locked: bool = False
-    locked_by: str = ""
-    lock_reason: str = ""
-    lock_timestamp: float = 0.0
-    locked_nodes: set = field(default_factory=set)
 
 
 @dataclass

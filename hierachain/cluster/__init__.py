@@ -1,21 +1,9 @@
-"""
-HieraChain Cluster Management Module.
+"""Cluster-level synchronization and message types."""
 
-Provides cluster-wide coordination for lockdown events and health tracking.
-"""
-
-from hierachain.cluster.lockdown_protocol import ClusterLockdownManager
 from hierachain.cluster.lockdown_types import (
-    ClusterState,
     LockdownMessage,
     LockdownMessageType,
     QuarantineReport,
-)
-from hierachain.cluster.cluster_manager import (
-    ClusterManager,
-    NodeHealthStatus,
-    ClusterHealthMetrics,
-    NodeStatus,
 )
 from hierachain.cluster.cross_level_sync import CrossLevelSyncManager
 from hierachain.cluster.cross_level_sync_types import (
@@ -28,15 +16,9 @@ from hierachain.cluster.cross_level_sync_types import (
 )
 
 __all__ = [
-    "ClusterLockdownManager",
-    "ClusterState",
     "LockdownMessage",
     "LockdownMessageType",
     "QuarantineReport",
-    "ClusterManager",
-    "NodeHealthStatus",
-    "ClusterHealthMetrics",
-    "NodeStatus",
     "CrossLevelSyncManager",
     "CrossLevelSyncStatus",
     "SyncDirection",
