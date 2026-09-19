@@ -13,9 +13,7 @@ from unittest.mock import Mock, patch
 
 from fastapi import Request
 
-from hierachain.error_mitigation import (
-    ConsensusValidator, NetworkRecoveryEngine
-)
+from hierachain.error_mitigation import ConsensusValidator
 from hierachain.security import (
     KeyManager, APIKeyVerifier
 )
@@ -117,99 +115,6 @@ async def test_view_change_recovery():
     # Test new leader selection
     available_backups = [node for node in mock_network.backup_nodes if node.status == "active"]
     assert len(available_backups) >= 3  # Sufficient for new consensus
-
-
-# Test network-related recovery scenarios.
-# Validates timeout adjustments, redundancy, and partition handling.
-
-@pytest.mark.recovery
-@pytest.mark.asyncio
-async def test_network_partition_recovery():
-    """
-    Test recovery from network partition scenarios.
-    Validates partition detection and healing mechanisms.
-    """
-    config = {
-        "timeout_multiplier": 2.0,
-        "redundancy_factor": 2,
-        "partition_detection_threshold": 0.5
-    }
-    _recovery_engine = NetworkRecoveryEngine(config)
-    
-    # Simulate network partition
-    total_nodes = 6
-    reachable_nodes = 2  # Less than majority
-    partition_detected = reachable_nodes / total_nodes < config["partition_detection_threshold"]
-    
-    assert partition_detected is True
-    
-    # Test recovery actions
-    if partition_detected:
-        # Should trigger view change and attempt reconnection
-        recovery_actions = ["view_change", "reconnect_attempts"]
-        assert "view_change" in recovery_actions
-        assert "reconnect_attempts" in recovery_actions
-
-@pytest.mark.recovery
-@pytest.mark.asyncio
-async def test_timeout_escalation_recovery():
-    """
-    Test progressive timeout escalation during network issues.
-    Validates adaptive timeout adjustment mechanisms.
-    """
-    config = {"timeout_multiplier": 2.0, "max_timeout": 30.0}
-    recovery_engine = NetworkRecoveryEngine(config)
-    
-    # Simulate increasing latency
-    latency_progression = [
-        [100, 150, 200],    # Normal
-        [500, 750, 1000],   # High
-        [2000, 2500, 3000]  # Very high
-    ]
-    
-    timeouts = []
-    for latency_batch in latency_progression:
-        timeout = recovery_engine.adjust_timeout(latency_batch)
-        timeouts.append(timeout)
-    
-    # Timeouts should be numeric values
-    assert isinstance(timeouts[0], (int, float))
-    assert isinstance(timeouts[1], (int, float))
-    assert isinstance(timeouts[2], (int, float))
-    
-    # Timeouts should increase progressively (this is the fixed assertion)
-    # Since we have a max_timeout of 30.0, we need to check if they are increasing
-    # but alsorespect the max_timeout
-    assert timeouts[1] >= timeouts[0]
-    assert timeouts[2] >= timeouts[1]
-    
-    # Should not exceed maximum
-    assert all(t <= config["max_timeout"] for t in timeouts)
-
-@pytest.mark.recovery
-@pytest.mark.asyncio
-async def test_redundant_path_recovery():
-    """
-    Test recovery using redundant communication paths.
-    Validates message delivery through alternative routes.
-    """
-    config = {"redundancy_factor": 3}
-    _recovery_engine = NetworkRecoveryEngine(config)
-    
-    # Mock multiple paths with different success rates
-    mock_paths = [
-        Mock(success_rate=0.1, name="path1"),  # Failing
-        Mock(success_rate=0.9, name="path2"),  # Good
-        Mock(success_rate=0.8, name="path3")   # Good
-    ]
-    
-    # Test path selection logic
-    viable_paths = [p for p in mock_paths if p.success_rate > 0.5]
-    assert len(viable_paths) >= 2  # Should have backup paths
-    
-    # Test redundant sending
-    redundancy_count = min(config["redundancy_factor"], len(viable_paths))
-    assert redundancy_count >= 2  # Should use multiple paths
 
 
 # Test key backup and recovery scenarios.
@@ -578,15 +483,8 @@ def recovery_config():
             "auto_scale_threshold": 0.8,
             "health_check_interval": 30
         },
-        "network": {
-            "timeout_multiplier": 2.0,
-            "redundancy_factor": 2,
-            "max_timeout": 30.0
-        },
-        "backup": {
-            "enabled": True,
-            "locations": ["primary", "secondary", "tertiary"],
-            "auto_restore_threshold": 1
+        "journal": {
+            "storage_dir": "data/journal"
         }
     }
 
@@ -596,9 +494,7 @@ def mock_system_components():
     """Fixture for mock system components."""
     return {
         "consensus_validator": Mock(),
-        "network_recovery": Mock(),
-        "backup_manager": Mock(),
-        "rollback_manager": Mock(),
+        "transaction_journal": Mock(),
         "api_verifier": Mock()
     }
 

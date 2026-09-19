@@ -16,7 +16,6 @@ from hierachain.error_mitigation import (
     ValidationError,
     validate_certificate
 )
-from hierachain.error_mitigation import NetworkRecoveryEngine
 from hierachain.security import (
     KeyManager,
     APIKeyVerifier
@@ -79,30 +78,6 @@ def test_signature_verification_strictness():
     mock_consensus.config["verification_strictness"] = "high"
     # This would test the quorum-based fallback in actual implementation
     assert mock_consensus.config["fallback_mode"] == "quorum_based"
-
-@pytest.mark.critical
-@pytest.mark.asyncio
-async def test_network_recovery_timeout_adjustment():
-    """
-    Test dynamic timeout adjustment for network recovery.
-    Validates network fault tolerance in consensus process.
-    """
-    config = {"timeout_multiplier": 2.0, "redundancy_factor": 2}
-    recovery_engine = NetworkRecoveryEngine(config)
-    
-    # Test timeout adjustment with high latency
-    latency_history = [2000, 2500, 3000]  # High latency in ms
-    adjusted_timeout = recovery_engine.adjust_timeout(latency_history)
-    
-    # Should be significantly higher than base timeout
-    expected_min = recovery_engine.timeout_base * config["timeout_multiplier"]
-    assert adjusted_timeout >= expected_min
-    
-    # Test with low latency
-    low_latency = [50, 75, 100]
-    low_timeout = recovery_engine.adjust_timeout(low_latency)
-    assert low_timeout < adjusted_timeout  # Should be less than high latency timeout
-
 
 # Priority Level 2: High Risk Validation Tests  
 # Tests for risks with significant impact on system security and performance.
@@ -367,7 +342,7 @@ def test_post_upgrade_validation():
     """
     components_status = {
         "consensus_validator": True,
-        "network_recovery": True,
+        "transaction_journal": True,
         "api_key_verification": True,
         "validation_suites": True
     }

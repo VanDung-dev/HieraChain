@@ -19,7 +19,7 @@ from hierachain.consensus import (
 )
 from hierachain.security import KeyPair
 from hierachain.error_mitigation import (
-    ConsensusValidator, ErrorClassifier, ConsensusRecoveryEngine, NetworkRecoveryEngine
+    ConsensusValidator, ErrorClassifier
 )
 
 # Create a BFT network
@@ -190,36 +190,6 @@ def test_error_classifier_integration():
     assert "priorities" in summary
 
 
-def test_consensus_recovery_engine_integration():
-    """Test integration with ConsensusRecoveryEngine from error_mitigation module"""
-    # Create a recovery engine
-    config = {
-        "max_recovery_attempts": 3,
-        "view_change_timeout": 10
-    }
-    recovery_engine = ConsensusRecoveryEngine(config)
-
-    # Test leader failure handling
-    result = recovery_engine.handle_leader_failure("failed_leader_1", 0)
-    assert result is True  # Should succeed
-
-    # Test message ordering failure handling
-    failed_messages = [
-        {"message_id": "msg_1", "timestamp": time.time()},
-        {"message_id": "msg_2", "timestamp": time.time() - 1}
-    ]
-    result = recovery_engine.handle_message_ordering_failure(failed_messages)
-    assert result is True  # Should succeed
-
-    # Test consensus state recovery
-    last_known_state = {
-        "view_number": 5,
-        "timestamp": time.time()
-    }
-    result = recovery_engine.recover_consensus_state(last_known_state)
-    assert result is True  # Should succeed
-
-
 def test_error_mitigation_with_node_failures():
     """Test error mitigation mechanisms with various node failures"""
     error_config = {
@@ -271,28 +241,6 @@ def test_error_mitigation_with_node_failures():
     primary.log_node_behavior("node_2", "no_response")
     # Check that node failure is tracked
     assert "node_2" in primary.node_failure_counts
-
-    # Test that recovery engine can be created
-    recovery_config = {
-        "max_recovery_attempts": 3,
-        "view_change_timeout": 10
-    }
-    recovery_engine = ConsensusRecoveryEngine(recovery_config)
-    assert recovery_engine is not None
-
-    # Test handling node performance issues
-    node_metrics = {
-        "node_2": {
-            "last_response": time.time() - 45,  # 45 seconds ago - silent node
-            "response_time": 10.0,
-            "failure_count": 5
-        }
-    }
-
-    actions = recovery_engine.handle_node_performance_issues(node_metrics)
-    assert "view_change" in actions
-    assert "isolated_nodes" in actions
-
 
 def test_bft_with_slow_nodes():
     """Test BFT consensus behavior with slow nodes"""
@@ -378,32 +326,6 @@ def test_bft_with_malicious_nodes():
 
 def test_bft_with_split_brain_scenario():
     """Test BFT consensus behavior with split brain scenario"""
-    # Test split brain detection and recovery mechanisms
-    recovery_config = {
-        "max_recovery_attempts": 3,
-        "view_change_timeout": 10
-    }
-    consensus_recovery = ConsensusRecoveryEngine(recovery_config)
-
-    # Simulate split brain with node metrics
-    node_metrics = {
-        "node_1": {
-            "last_response": time.time() - 45,  # Silent
-            "response_time": 10.0,
-            "failure_count": 5
-        },
-        "node_2": {
-            "last_response": time.time() - 50,  # Silent
-            "response_time": 12.0,
-            "failure_count": 6
-        }
-    }
-
-    # Test handling of node performance issues
-    actions = consensus_recovery.handle_node_performance_issues(node_metrics)
-    assert "view_change" in actions
-    assert len(actions["isolated_nodes"]) > 0
-
     # Test that BFT nodes can detect and handle split brain
     node = network["node_1"]
     assert node.f == 1  # Fault tolerance
@@ -422,28 +344,15 @@ def test_bft_with_split_brain_scenario():
 
 def test_bft_with_temporary_network_partition():
     """Test BFT consensus behavior with temporary network partition"""
-    # Focus on component-level testing rather than full consensus flow
-    # Test network recovery engine handling of partitions
-    recovery_config = {
-        "timeout_multiplier": 2.0,
-        "redundancy_factor": 2,
-        "max_retries": 3
-    }
-    network_recovery = NetworkRecoveryEngine(recovery_config)
-
-    # Test that network recovery engine can detect partitions
-    # Avoid recursion by not triggering view change
-    network_recovery.latency_history = [6000, 7000, 8000]  # High latency indicating partition
-    network_recovery.partition_detected = False  # Reset partition detection
-
-    # Manually check partition detection logic
+    # Test partition detection without a separate recovery engine.
+    latency_history = [6000, 7000, 8000]
     health_status = {
         "timestamp": time.time(),
-        "avg_latency_ms": sum(network_recovery.latency_history) / len(network_recovery.latency_history),
-        "max_latency_ms": max(network_recovery.latency_history),
+        "avg_latency_ms": sum(latency_history) / len(latency_history),
+        "max_latency_ms": max(latency_history),
         "partition_detected": False,
         "healthy_paths": 0,
-        "total_paths": network_recovery.redundancy_factor
+        "total_paths": 2
     }
 
     # Apply the same logic as in monitor_network_health but without triggering view change
@@ -451,10 +360,6 @@ def test_bft_with_temporary_network_partition():
         health_status["partition_detected"] = True
 
     assert health_status["partition_detected"] is True
-
-    # Test timeout adjustment based on network conditions
-    adjusted_timeout = network_recovery.adjust_timeout([100, 150, 200])
-    assert adjusted_timeout > 0
 
     # Test that nodes can handle network issues
     node = network["node_1"]
@@ -485,17 +390,6 @@ def test_bft_with_complex_byzantine_attacks():
     error_info = classifier.classify_error(error_data)
     assert error_info.category.value == "consensus"
     assert error_info.priority.name in ["CRITICAL", "HIGH"]
-
-    # Test consensus recovery engine
-    recovery_config = {
-        "max_recovery_attempts": 3,
-        "view_change_timeout": 10
-    }
-    consensus_recovery = ConsensusRecoveryEngine(recovery_config)
-
-    # Test recovery from Byzantine failures
-    result = consensus_recovery.handle_leader_failure("node_2", 0)
-    assert result is True
 
     # Test that BFT nodes can handle complex attacks by checking internal mechanisms
     normal_node = network["node_1"]
