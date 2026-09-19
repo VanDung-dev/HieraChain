@@ -8,7 +8,15 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (2)"
+??? warning "Breaking Changes (7)"
+
+    * 2026-09-20
+
+        * **Core (Cache)**: Loại bỏ `BlockchainCacheManager`, `CacheInvalidator`, `EntityEventFetcher` và `CachePerformanceTracker` khỏi `hierachain/core/cache_manager.py` (xóa file).
+        * **Giảm thiểu Rủi ro (Recovery & Rollback)**: Loại bỏ `RollbackManager` và các kiểu dữ liệu liên quan (`RollbackType`, `RollbackStatus`, `StateSnapshot`, `RollbackOperation`), các engine phục hồi (`NetworkRecoveryEngine`, `ConsensusRecoveryEngine`, `BackupRecoveryEngine`, `AutoScaler`), cùng `RecoveryError` khỏi `hierachain/error_mitigation/`.
+        * **Quản trị Rủi ro (Risk Management)**: Loại bỏ `RiskAnalyzer`, `MitigationManager`, `MitigationStrategies` và các kiểu dữ liệu liên quan (`RiskAssessment`, `RiskSeverity`, `RiskCategory`, `MitigationAction`, `MitigationResult`, `MitigationStatus`) khỏi `hierachain/risk_management/`, chỉ giữ lại các nguyên thủy ghi log kiểm toán.
+        * **Giám sát (Monitoring)**: Loại bỏ `PerformanceMetrics`, `MetricType` và `PerformanceSnapshot` khỏi `hierachain/monitoring/performance_metrics.py` (xóa file).
+        * **Cluster**: Loại bỏ `ClusterManager`, `ClusterLockdownManager`, `ClusterState` và cơ chế điều phối lockdown theo quorum khỏi `hierachain/cluster/` (xóa `cluster_manager.py` và `lockdown_protocol.py`).
 
     * 2026-09-19
 

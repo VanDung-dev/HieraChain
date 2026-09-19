@@ -8,7 +8,15 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (2)"
+??? warning "Breaking Changes (7)"
+
+    * 2026-09-20
+
+        * **Core (Cache)**: Removed `BlockchainCacheManager`, `CacheInvalidator`, `EntityEventFetcher`, and `CachePerformanceTracker` from `hierachain/core/cache_manager.py` (file deleted).
+        * **Error Mitigation (Recovery & Rollback)**: Removed `RollbackManager` and associated types (`RollbackType`, `RollbackStatus`, `StateSnapshot`, `RollbackOperation`), recovery engines (`NetworkRecoveryEngine`, `ConsensusRecoveryEngine`, `BackupRecoveryEngine`, `AutoScaler`), and `RecoveryError` from `hierachain/error_mitigation/`.
+        * **Risk Management**: Removed `RiskAnalyzer`, `MitigationManager`, `MitigationStrategies`, and related risk/mitigation types (`RiskAssessment`, `RiskSeverity`, `RiskCategory`, `MitigationAction`, `MitigationResult`, `MitigationStatus`) from `hierachain/risk_management/`, keeping only audit logging primitives.
+        * **Monitoring**: Removed `PerformanceMetrics`, `MetricType`, and `PerformanceSnapshot` from `hierachain/monitoring/performance_metrics.py` (file deleted).
+        * **Cluster**: Removed `ClusterManager`, `ClusterLockdownManager`, `ClusterState`, and quorum-based lockdown coordination from `hierachain/cluster/` (`cluster_manager.py` and `lockdown_protocol.py` deleted).
 
     * 2026-09-19
 
