@@ -1,12 +1,10 @@
 """
 Error mitigation module for HieraChain Ledger.
 
-This module provides comprehensive error mitigation capabilities including:
+This module provides the runtime error mitigation primitives used by HieraChain:
 - Data validation
 - Error classification and risk assessment
 - Transaction journaling for durability
-- Recovery engines for network, consensus, and auto-scaling
-- Rollback management and state snapshots
 - Validators for consensus, encryption, resources, and APIs
 """
 
@@ -39,24 +37,6 @@ from hierachain.error_mitigation.risk_matrix import RiskPriorityMatrix
 
 # Transaction journal
 from hierachain.error_mitigation.journal import TransactionJournal
-
-# Recovery engine
-from hierachain.error_mitigation.recovery_types import RecoveryError
-from hierachain.error_mitigation.network_recovery import NetworkRecoveryEngine
-from hierachain.error_mitigation.auto_scaler import AutoScaler
-from hierachain.error_mitigation.consensus_recovery import ConsensusRecoveryEngine
-from hierachain.error_mitigation.backup_recovery import BackupRecoveryEngine
-
-# Rollback manager
-from hierachain.error_mitigation.rollback_manager import (
-    RollbackManager,
-)
-from hierachain.error_mitigation.rollback_types import (
-    RollbackType,
-    RollbackStatus,
-    StateSnapshot,
-    RollbackOperation,
-)
 
 # Validators
 from hierachain.error_mitigation.consensus_validator import ConsensusValidator
@@ -91,18 +71,6 @@ __all__ = [
     "get_priority_threshold",
     # Transaction journal
     "TransactionJournal",
-    # Recovery engine
-    "RecoveryError",
-    "NetworkRecoveryEngine",
-    "AutoScaler",
-    "ConsensusRecoveryEngine",
-    "BackupRecoveryEngine",
-    # Rollback manager
-    "RollbackManager",
-    "RollbackType",
-    "RollbackStatus",
-    "StateSnapshot",
-    "RollbackOperation",
     # Validators
     "ConsensusValidator",
     "EncryptionValidator",
