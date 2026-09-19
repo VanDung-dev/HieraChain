@@ -32,10 +32,10 @@ Toàn bộ thành phần cốt lõi nằm tại `hierachain/core/`.
 * Tạo bằng chứng bao hàm (inclusion proof) phục vụ kiểm toán.
 * Xác thực Merkle root giữa các tầng chuỗi trong kiến trúc phân cấp.
 
-### 2.4 Bộ nhớ đệm và Trình quản lý Caching (`cache.py`, `cache_manager.py`)
+### 2.4 Bộ nhớ đệm (`cache.py`)
 
-* Triển khai các thuật toán dọn dẹp cache: LRU, LFU, FIFO và TTL.
-* `BlockchainCacheManager` điều phối lưu cache đồng bộ cho khối, sự kiện và trạng thái thực thể.
+* Cung cấp bộ nhớ đệm trong RAM với các chính sách dọn dẹp LRU, LFU, FIFO và TTL.
+* `KeyManager` sử dụng bộ nhớ đệm này cho các tra cứu khóa và quyền.
 
 ## 3. Cấu trúc bộ nhớ và lưu trữ của Block
 
@@ -58,17 +58,7 @@ Lớp `Blockchain` điều phối truy cập đồng thời thông qua cơ chế
 * Hàm `safe_lock(timeout)` ngăn chặn tình trạng treo luồng khi xảy ra tranh chấp ghi đồng thời.
 * Cơ chế callback thông báo cảnh báo tắc nghẽn lên tầng giám sát hệ thống.
 
-## 5. Hệ thống Caching đa tầng
-
-`BlockchainCacheManager` quản lý ba tầng bộ nhớ đệm chuyên biệt:
-
-| Tầng Cache | Chính sách mặc định | Thao tác đích |
-| :--- | :--- | :--- |
-| Block Cache | LRU (Least Recently Used) | Truy xuất khối theo chỉ mục hoặc mã băm |
-| Event Cache | TTL (Time To Live) | Truy vấn luồng sự kiện gần đây |
-| Entity Cache | LFU (Least Frequently Used) | Truy vết lịch sử vòng đời thực thể |
-
-## 6. Thực thi đồng thời
+## 5. Thực thi đồng thời
 
 Các tác vụ xác thực mật mã và đồng bộ liên chuỗi chạy đồng thời thông qua các worker `ThreadPoolExecutor` do môi trường thực thi quản lý. Quá trình băm và kiểm tra chữ ký được mở rộng trên nhiều lõi CPU trong khi vẫn bảo toàn thứ tự khối tuần tự.
 

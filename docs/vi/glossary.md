@@ -18,8 +18,8 @@ Ghi chú: Khi một thuật ngữ xuất hiện lần đầu trong mỗi trang, 
 | Policy | Chính sách | Kiểm soát truy cập/tài nguyên; `hierachain/security/policy_engine.py`, `hierachain/security/policy_types.py`. Không có `resource_guard.py`. |
 | World State | World State | Trạng thái hiện tại của dữ liệu; `hierachain/state/world_state.py`. |
 | Journal | Nhật ký | Ghi log giao dịch; `hierachain/error_mitigation/journal.py`. |
-| Rollback | Hoàn tác | Khôi phục trạng thái; `hierachain/error_mitigation/rollback_manager.py`. |
-| Recovery | Phục hồi | Phục hồi lỗi qua `hierachain/error_mitigation/rollback_manager.py`, `consensus_recovery.py`, `network_recovery.py` (không có `recovery_engine.py`). |
+| Rollback | Hoàn tác | Hoàn tác transaction do `hierachain/hierarchical/transaction_manager.py` sở hữu; không có manager rollback trạng thái toàn cục. |
+| Recovery | Phục hồi | Phục hồi runtime qua replay journal, validation, BFT view change và quy trình deployment. |
 | Ordering | Sắp xếp | Xếp thứ tự Event; `hierachain/consensus/ordering/*`. |
 | Transport | Truyền tải | Giao tiếp mạng; `hierachain/network/zmq_transport.py`. |
 | Byzantine Fault Tolerance | BFT | Chịu lỗi Byzantine; `hierachain/consensus/bft/*`. |

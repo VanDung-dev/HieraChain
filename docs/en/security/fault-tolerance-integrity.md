@@ -20,14 +20,14 @@ There is no startup signature scan in `security/integrity.py`. The actual integr
 
 * Merkle and chain links in `hierachain/core/block.py` and `core/merkle_tree.py` (domain-separated `0x01` prefix) and `consensus/ordering/storage.py:_verify_chain_links()` (`previous_hash` chain).
 * Proof verification in `hierachain/hierarchical/main_chain/proofs.py:_verify_proof_in_main_chain` (fallback chain scan) and `security/verify/block_verifier.py`.
-* Rollback integrity in `hierachain/error_mitigation/rollback_manager.py:_verify_rollback_integrity` (`data_hash` check) with a path traversal guard.
+* Runtime integrity checks use chain links, Merkle roots, proof verification, and consensus validation. State snapshots and rollback are deployment responsibilities.
 
 ```mermaid
 graph LR
     A[Block finalize] --> B[previous_hash check]
     B --> C[Merkle root verify]
     C --> D[Proof verify on MainChain]
-    D --> E[Rollback data_hash if needed]
+    D --> E[Operational recovery if needed]
 ```
 
 ---

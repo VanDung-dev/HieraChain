@@ -16,8 +16,8 @@ icon: material/alphabetical
 | Policy | Access/resource control; `hierachain/security/policy_engine.py`, `hierachain/security/policy_types.py`. No `resource_guard.py` (fabricated). |
 | World State | Current data state; `hierachain/state/world_state.py`. |
 | Journal | Transaction log; `hierachain/error_mitigation/journal.py`. |
-| Rollback | State restoration; `hierachain/error_mitigation/rollback_manager.py`. |
-| Recovery | Error recovery via `hierachain/error_mitigation/rollback_manager.py`, `consensus_recovery.py`, `network_recovery.py` (no `recovery_engine.py`). |
+| Rollback | Transaction rollback owned by `hierachain/hierarchical/transaction_manager.py`; no global state rollback manager is provided. |
+| Recovery | Runtime recovery through journal replay, validation, BFT view change, and deployment procedures. |
 | Ordering | Event ordering; `hierachain/consensus/ordering/*`. |
 | Transport | Network communication; `hierachain/network/zmq_transport.py`. |
 | Byzantine Fault Tolerance | BFT; `hierachain/consensus/bft/*`. |

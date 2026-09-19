@@ -12,14 +12,13 @@ Provides practices to ensure stable system operation and easy recovery from fail
 
 ## Related Components
 
-* Journal/Recovery: `hierachain/error_mitigation/journal.py`, `rollback_manager.py`, `consensus_recovery.py`, `network_recovery.py`, `backup_recovery.py`
+* Journal/Recovery: `hierachain/error_mitigation/journal.py`, `error_classifier.py`, and BFT view change in `hierachain/consensus/bft/view_change.py`
 * Cross-level Sync: `HRC_CROSS_LEVEL_SYNC` via `hierarchical/hierarchy_manager/base.py`, `hierachain/cluster/cross_level_sync.py`
 
 ## Patterns
 
 * Durable Journal: write before applying changes.
-* Safe Rollback: state can return to a safe point.
-* Automatic Recovery: standard scenarios for connection loss/DB errors.
+* Operational Recovery: backups, snapshots, and node replacement are owned by deployment.
 * Idempotency + Retry with backoff: repeat actions without duplicating effects.
 
 ## Implementation Recommendations

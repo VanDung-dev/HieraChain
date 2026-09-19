@@ -25,7 +25,7 @@ Phòng thủ được chia thành sáu nhóm phối hợp với nhau:
 
 * Fault tolerance và tính toàn vẹn:
 
-    * `hierachain/error_mitigation/{rollback_manager.py, consensus_validator.py, resource_validator.py}` và `hierachain/cluster/lockdown_types.py` cung cấp kiểm tra toàn vẹn, snapshot rollback và HMAC lockdown. Không có `security/resource_guard.py` hay `security/integrity.py`, các đường dẫn này đã bị xóa hoặc chưa từng tồn tại.
+    * `hierachain/error_mitigation/{consensus_validator.py, resource_validator.py}` và `hierachain/cluster/lockdown_types.py` cung cấp validation, kiểm tra tài nguyên và HMAC lockdown. Không có `security/resource_guard.py` hay `security/integrity.py`, các đường dẫn này đã bị xóa hoặc chưa từng tồn tại.
 
 * Làm sạch input:
 

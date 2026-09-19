@@ -37,7 +37,7 @@ Bảng này liệt kê tất cả luồng để tra cứu nhanh:
 | [Neo giữ Bằng chứng](./proof-anchoring.md) | A | Khối được hoàn thiện trên Sub-Chain | Mã băm bằng chứng trên Main Chain | `hierarchical/main_chain/base.py` + `hierarchical/sub_chain/proof.py` |
 | [Giao dịch Liên chuỗi 2PC](./cross-chain-2pc.md) | A | `HierarchyManager.transaction_manager` | `COMMITTED` hoặc `ROLLED_BACK` | `hierarchical/hierarchy_manager/base.py` + `hierarchical/transaction_manager.py` |
 | [Đồng thuận BFT](./bft-consensus.md) | B | `HRC_MAINCHAIN_CONSENSUS` / `HRC_CONSENSUS_TYPE` | Khối được xác nhận bởi 2f+1 validator | `consensus/bft/consensus.py` |
-| [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) | C | Lỗi mạng / hết hạn leader / lỗi toàn vẹn | Trạng thái khôi phục từ snapshot | `error_mitigation/rollback_manager.py` + `consensus_recovery.py` |
+| [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) | C | Lỗi xác thực / hết hạn leader / sự kiện bị gián đoạn | Lỗi được phân loại, replay journal hoặc BFT view change | `error_mitigation/error_classifier.py` + `journal.py` + `consensus/bft/view_change.py` |
 | [Truy vết Thực thể](./entity-tracing.md) | D | `EntityTracer.trace_entity()` | Dấu vết kiểm toán liên chuỗi đầy đủ | `domains/utils/entity_tracer.py` |
 | [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md) | D | Khởi động lại node hoặc lệch mã băm | Chuỗi trong bộ nhớ đồng bộ với DB | `hierarchical/sub_chain/base.py` + `hierarchical/sub_chain/ordering.py` |
 | [Xác thực Tính toàn vẹn](./integrity-validation.md) | D | Định kỳ / thủ công / bất thường Risk Alerts | `IntegrityReport` (HEALTHY / DEGRADED) | `security/verify/block_verifier.py` |
@@ -159,8 +159,8 @@ flowchart TD
 |:---|:---|
 | **ERP → ERP Sync → Gửi Sự kiện → Neo giữ Bằng chứng** | Pipeline tiếp nhận: thay đổi nghiệp vụ → sự kiện nội bộ → khối Sub-Chain → mã băm bằng chứng neo lên chuỗi gốc. |
 | **MSP Identity → Thực thi Chính sách → Gửi Sự kiện** | Đường xác thực bảo mật: xác minh cert nội bộ (`msp.py:verify_certificate`) → kiểm tra chính sách ABAC → chấp nhận/từ chối sự kiện. |
-| **Quét Tính Toàn vẹn → Cảnh báo Rủi ro → Phục hồi Lỗi** | Đường phát hiện bất thường: `block_verifier` → gửi cảnh báo → `rollback_manager` khôi phục. |
-| **Phục hồi Lỗi → Nạp lại Trạng thái** | Dự phòng đồng bộ trạng thái: xác thực snapshot cục bộ thất bại kích hoạt dựng lại chuỗi trong bộ nhớ từ nhật ký DB. |
+| **Quét Tính Toàn vẹn → Cảnh báo Rủi ro → Phục hồi Lỗi** | Đường phát hiện bất thường: `block_verifier` → gửi cảnh báo → phục hồi vận hành. |
+| **Phục hồi Lỗi → Nạp lại Trạng thái** | Dự phòng đồng bộ trạng thái: replay journal và nạp lại chuỗi dựng lại trạng thái trong bộ nhớ từ storage bền vững. |
 
 ---
 

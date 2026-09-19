@@ -25,7 +25,7 @@ The defense is organized into six coordinated areas:
 
 * Fault tolerance and integrity:
 
-    * `hierachain/error_mitigation/{rollback_manager.py, consensus_validator.py, resource_validator.py}` and `hierachain/cluster/lockdown_types.py` provide integrity checks, rollback snapshots and HMAC lockdown. There is no `security/resource_guard.py` or `security/integrity.py`; those paths were removed or never existed.
+    * `hierachain/error_mitigation/{consensus_validator.py, resource_validator.py}` and `hierachain/cluster/lockdown_types.py` provide validation, resource checks and HMAC lockdown. There is no `security/resource_guard.py` or `security/integrity.py`; those paths were removed or never existed.
 
 * Input sanitization:
 

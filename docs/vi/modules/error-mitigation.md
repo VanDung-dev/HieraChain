@@ -1,6 +1,6 @@
 ---
 title: "Error Mitigation Module"
-description: "Hệ thống giảm thiểu rủi ro và phục hồi sau sự cố: Validation, Journaling, Rollback và Automated Recovery."
+description: "Xác thực runtime, ghi nhật ký bền vững và phân loại lỗi."
 icon: material/bug
 ---
 
@@ -8,7 +8,7 @@ icon: material/bug
 
 ## 1. Tổng quan
 
-Module `error_mitigation` xử lý khả năng chịu lỗi, xác thực trạng thái và phục hồi hệ thống. Module này cung cấp nhật ký sự kiện ghi tiếp (append-only), phân loại lỗi tự động, snapshot hoàn tác và các bộ máy phục hồi chuyên biệt cho các lỗi mạng, đồng thuận và trạng thái.
+Module `error_mitigation` cung cấp các primitive runtime để xác thực trạng thái, ghi nhật ký bền vững và phân loại lỗi. View change của đồng thuận và khôi phục vận hành thuộc về các tầng runtime hoặc deployment tương ứng.
 
 ## 2. Các thành phần lõi
 
@@ -25,19 +25,6 @@ Các thành phần nằm trong thư mục `hierachain/error_mitigation/`.
 * Áp dụng lưu trữ chỉ ghi tiếp trước khi sự kiện được commit vào trạng thái blockchain.
 * Cung cấp các generator phát lại để tái tạo các sự kiện chưa commit sau các lần tắt máy đột ngột.
 
-### 2.3 Quản lý hoàn tác (`rollback_manager.py`)
-
-* Tạo và xác minh snapshot trạng thái theo thời điểm (`FULL_SYSTEM`, `CHAIN_STATE`, `CONSENSUS_STATE`, `CONFIGURATION`).
-* Xác thực mã băm SHA-256 của snapshot trước khi áp dụng hoàn tác.
-* Tích hợp cơ chế cách ly cho các block trạng thái bị hỏng.
-
-### 2.4 Các hệ thống con phục hồi
-
-* `backup_recovery.py`: Quản lý lưu trữ sao lưu, khôi phục snapshot và chính sách lưu giữ.
-* `consensus_recovery.py`: Xử lý đồng bộ hóa khi chuyển view, phục hồi khi leader gặp sự cố và khởi động lại vòng BFT.
-* `network_recovery.py`: Phát hiện sự kiện phân đoạn mạng, kích hoạt giãn cách thời gian kết nối lại và quản lý cảnh báo nút mạng.
-* `auto_scaler.py`: Theo dõi mức sử dụng bộ nhớ và CPU để điều chỉnh ngưỡng validator một cách linh hoạt.
-
 ## 3. Chiến lược phân loại lỗi
 
 `ErrorClassifier` trong `error_classifier.py` phân loại lỗi theo mức độ nghiêm trọng và đề xuất hành động xử lý:
@@ -46,7 +33,7 @@ Các thành phần nằm trong thư mục `hierachain/error_mitigation/`.
 | :--- | :--- | :--- |
 | INFO / WARNING | Bất thường vận hành nhỏ | Ghi log và tiếp tục |
 | ERROR | Lỗi xác thực sự kiện hoặc lỗi xử lý tạm thời | Thử lại kèm giãn cách hoặc từ chối |
-| CRITICAL | Hỏng trạng thái hoặc không khớp Merkle root | Hoàn tác và cách ly |
+| CRITICAL | Hỏng trạng thái hoặc không khớp Merkle root | Từ chối, ghi log và yêu cầu khôi phục vận hành |
 | FATAL | Lỗi phần cứng hoặc lỗi đồng thuận không thể phục hồi | Khóa hệ thống khẩn cấp |
 
 ## 4. Nhật ký sự kiện
@@ -64,35 +51,8 @@ journal = TransactionJournal(storage_dir="data/journal")
 journal.log_event(event_dict)
 ```
 
-## 5. Quy trình phục hồi
-
-```mermaid
-graph TD
-    A[Phát hiện sự cố] --> B{ErrorClassifier}
-    B -->|Mức độ Thấp| C[Ghi log và tiếp tục]
-    B -->|Mức độ Trung bình| D[Thử lại / Phục hồi tự động]
-    B -->|Mức độ Cao| E[Hoàn tác về snapshot đã xác minh]
-    
-    D --> D1[Phục hồi mạng]
-    D --> D2[Phục hồi đồng thuận]
-    D --> D3[Tự động mở rộng]
-    
-    E --> F[Xác thực trạng thái sau hoàn tác]
-    F --> G[Phát lại nhật ký để khôi phục dữ liệu hợp lệ]
-```
-
-## 6. Các loại snapshot
-
-`RollbackManager` quản lý 4 phạm vi snapshot:
-
-* `CONFIGURATION`: Cài đặt nút và các tham số môi trường.
-* `CHAIN_STATE`: Mã băm block và sổ cái trạng thái thế giới trên Main Chain cùng các Sub-Chain.
-* `CONSENSUS_STATE`: Số thứ tự view hiện tại, tập hợp validator và trạng thái leader.
-* `FULL_SYSTEM`: Bản lưu trữ toàn diện kết hợp cấu hình, block chuỗi và trạng thái đồng thuận.
-
 ## Tài liệu liên quan
 
 * [Module Adapters](./adapters.md)
 * [Module Core](./core.md)
 * [Khóa cụm khẩn cấp](./cluster.md)
-

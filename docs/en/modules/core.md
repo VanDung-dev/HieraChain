@@ -32,10 +32,10 @@ All core primitives reside in `hierachain/core/`.
 * Produces cryptographic inclusion proofs for audit verification.
 * Validates Merkle roots across hierarchical chain tiers.
 
-### 2.4 Cache and Cache Manager (`cache.py`, `cache_manager.py`)
+### 2.4 Cache (`cache.py`)
 
-* Implements cache eviction algorithms: LRU, LFU, FIFO, and TTL.
-* `BlockchainCacheManager` provides coordinated caching for blocks, events, and entity state.
+* Provides an in-memory cache with LRU, LFU, FIFO, and TTL eviction policies.
+* `KeyManager` uses it for key and permission lookups.
 
 ## 3. Block memory and storage layout
 
@@ -58,17 +58,7 @@ The `Blockchain` class coordinates concurrent access through a timeout-guarded l
 * `safe_lock(timeout)` prevents thread hangs under heavy concurrent writes.
 * Callback hooks report contention warnings to the monitoring layer.
 
-## 5. Multi-tier caching
-
-`BlockchainCacheManager` manages three dedicated cache tiers:
-
-| Cache Tier | Default Policy | Target Operation |
-| :--- | :--- | :--- |
-| Block Cache | LRU (Least Recently Used) | Block retrieval by index or hash |
-| Event Cache | TTL (Time To Live) | Recent event stream queries |
-| Entity Cache | LFU (Least Frequently Used) | Historical entity lifecycle tracing |
-
-## 6. Concurrent execution
+## 5. Concurrent execution
 
 Cryptographic verification tasks and cross-chain synchronization run concurrently via `ThreadPoolExecutor` workers managed by the runtime environment. Hashing and signature checks scale across CPU cores while preserving sequential block order.
 

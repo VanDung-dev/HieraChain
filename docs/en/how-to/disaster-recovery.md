@@ -1,67 +1,50 @@
 ---
-title: "Disaster Recovery"
-description: "Details of TransactionJournal, RollbackManager, and KeyBackupManager mechanisms for handling interruptions and recovering the HieraChain system."
+title: "Durability and Disaster Recovery"
+description: "How HieraChain protects pending events and resumes consensus after interruptions."
 icon: material/backup-restore
 ---
 
-# Disaster Recovery
+# Durability and disaster recovery
 
-HieraChain is designed with the highest priority on durability and system irreversibility. This document explains how the system automatically handles and how to operate recovery procedures when interruptions or server disasters occur.
+The repository provides event journaling and consensus view changes. Database
+backups, filesystem snapshots, key recovery, and infrastructure scaling remain
+deployment responsibilities.
 
----
+## 1. Event journaling
 
-## 1. Transaction Journaling (Replay Data)
+`TransactionJournal` records pending events before they enter the ordering
+service. This protects events from application crashes or abrupt shutdowns.
 
-To prevent data loss due to application crashes, power outages, or abrupt OS shutdown, HieraChain implements a **`TransactionJournal`** module before events are submitted to the Ordering Service for processing.
+The journal uses a durable append-only format and exposes replay support for
+rebuilding the pending event stream after restart.
 
-### How It Works
+```python
+from hierachain.error_mitigation.journal import TransactionJournal
 
-* **Storage Format:** Journal logs are serialized in **Apache Arrow RecordBatch** format, enabling extremely fast read/write speeds and preserving schema structure.
-* **Length-Prefixed Framing:** Append-only files written in `[4-Byte Length][Batch Data]` structure.
-* **Sync & Fsync:** All event log operations call `os.fsync()` to ensure disk I/O actually writes to hardware before returning success.
+journal = TransactionJournal(storage_dir="data/journal")
+journal.log_event(event_dict)
+```
 
-### Recovery Guide (Replay)
+## 2. Consensus restart behavior
 
-When a Node restarts after an unexpected crash, the system automatically checks the Log directory (default `data/journal/current.log`). The Node automatically iterates through the `replay()` method to replay RecordBatch sequences and fully restore the event array to memory (MemPool or World State).
+`BFTConsensus` uses `BFTViewChangeManager` when the current leader fails or a
+view-change timeout expires. The manager coordinates the quorum and installs a
+new view so consensus can continue without a separate recovery engine.
 
----
+## 3. Deployment recovery responsibilities
 
-## 2. Rollback State Management (`RollbackManager`)
+The application deployment must provide and verify:
 
-In case of larger risks, such as data corruption or mistaken upgrades, the system allows rolling back the entire state to a safe checkpoint.
+- database and filesystem backups;
+- key backup and restoration procedures;
+- snapshot retention and rollback policy;
+- node replacement and infrastructure scaling.
 
-`RollbackManager` saves system state checkpoints:
+These operations are intentionally not exposed as automatic classes in
+`hierachain.error_mitigation`.
 
-* **Configuration State**: YAML, JSON, PY configuration files.
-* **Chain State**: Block count and latest hash.
-* **Consensus State**: View Number, current Leader Node ID.
-* **Storage State**: World State Snapshot.
+## Related
 
-### Rollback Procedure
-
-1. Get snapshot list via `manager.get_snapshots()`.
-2. System checks **Integrity Hash** of the snapshot. Corrupted or too old (over 72 hours) snapshots will likely be rejected unless `force=True` is set.
-3. Execute `rollback_to_snapshot(snapshot_id)`. It will restore each part of `Configuration` and `Chain State`.
-
----
-
-## 3. Key Backup and Recovery (`KeyBackupManager`)
-
-Protecting ECDSA/Ed25519 key pairs is critical. `KeyBackupManager` automatically creates secure backups when the system generates new Keys:
-
-* **AES-256-GCM Security**: Node Public/Private Keys are collected, encrypted with GCM (Authenticated Encryption) using the Master Key provided by Admin.
-* **Integrity Verification**: Uses `SHA-512` hashing combined with `HMAC` for verification each time recovery is performed.
-* **Multi-location Distribution**: Hash and `.enc` files are distributed across multiple `locations` to prevent Single Point of Failure (SPOF).
-
-### Recovery When Needed
-
-Use `restore_keys(backup_id)`. The Manager will read the IO stream, verify `SHA-512` checksum, decrypt GCM, and immediately inject into the Node process without stopping the system. The key pair format is always verified by `_validate_keys` to prevent loading corrupted keys.
-
----
-
-## 4. Network Error and Partition Handling (BFT Consensus Recovery)
-
-HieraChain's BFT cluster (with View Change based algorithm) inherently contains "Self-recovery" properties for communication failures:
-
-* **Leader Node-down Failure**: If the Leader crashes, times out (fails to broadcast new blocks on time), Validators send protest messages. When over `2f + 1` protest messages are reached, the system initiates a **View Change**, transferring to the next Leader (e.g., `Leader_ID = View_Number % Total_Nodes`).
-* **Network Partition**: If the network splits into 2 partitions, the partition without the majority (***< 2f + 1***) automatically halts. The larger partition (over 66% of nodes) continues processing. When connection is restored, the smaller partition automatically calls P2P API to sync blocks with the longest chain.
+- [Error Handling and Recovery](../workflows/error-recovery.md)
+- [Error Mitigation Module](../modules/error-mitigation.md)
+- [Chain Rehydration](../workflows/chain-rehydration.md)

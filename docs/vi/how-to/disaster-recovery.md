@@ -1,67 +1,51 @@
 ---
-title: Khôi phục sau thảm họa
-description: Chi tiết cơ chế TransactionJournal, RollbackManager và KeyBackupManager để xử lý gián đoạn và khôi phục hệ thống HieraChain.
+title: "Độ bền dữ liệu và phục hồi sau sự cố"
+description: "Cách HieraChain bảo vệ sự kiện đang chờ và tiếp tục đồng thuận sau gián đoạn."
 icon: material/backup-restore
 ---
 
-# Khôi phục sau thảm họa
+# Độ bền dữ liệu và phục hồi sau sự cố
 
-HieraChain được thiết kế với tiêu chí ưu tiên cao nhất cho tính bền vững (Durability) và tính không thể đảo ngược hệ thống. Tài liệu này hướng dẫn cách hệ thống tự động xử lý và cách vận hành quy trình khôi phục khi xảy ra gián đoạn hoặc thảm họa máy chủ.
+Repository cung cấp journaling sự kiện và view change của đồng thuận. Backup
+database, snapshot filesystem, khôi phục khóa và mở rộng hạ tầng thuộc về
+deployment.
 
----
+## 1. Ghi nhật ký sự kiện
 
-## 1. Cơ chế Transaction Journaling (Replay Data)
+`TransactionJournal` ghi các sự kiện đang chờ trước khi chúng đi vào ordering
+service. Cơ chế này bảo vệ sự kiện khi ứng dụng crash hoặc hệ điều hành tắt đột
+ngột.
 
-Nhằm chống lại việc mất dữ liệu do crash ứng dụng, mất điện, hoặc hệ điều hành bị tắt đột ngột, HieraChain triển khai một module gọi là **`TransactionJournal`** trước khi sự kiện (event) được đưa vào Ordering Service để xử lý.
+Journal sử dụng định dạng ghi tiếp bền vững và cung cấp khả năng replay để xây
+dựng lại luồng sự kiện đang chờ sau khi restart.
 
-### Cách thức hoạt động
+```python
+from hierachain.error_mitigation.journal import TransactionJournal
 
-* **Storage Format:** Các log journal được tuần tự hóa theo định dạng **Apache Arrow RecordBatch**, cho phép tốc độ đọc/ghi cực nhanh và bảo toàn cấu trúc schema.
-* **Length-Prefixed Framing:** Tập tin append-only ghi theo cấu trúc `[Độ dài 4 Bytes][Dữ liệu Batch]`.
-* **Sync & Fsync:** Mọi thao tác log sự kiện đều được gọi `os.fsync()` đảm bảo disk I/O thực sự ghi xuống phần cứng trước khi phản hồi thành công.
+journal = TransactionJournal(storage_dir="data/journal")
+journal.log_event(event_dict)
+```
 
-### Hướng dẫn Khôi phục (Replay)
+## 2. Hành vi của đồng thuận sau restart
 
-Khi Node khởi động lại sau một sự cố không mong muốn (Crash), hệ thống tự động kiểm tra thư mục Log (mặc định `data/journal/current.log`). Node sẽ tự gọi vòng lặp qua phương thức `replay()` để phát lại chuỗi RecordBatch và khôi phục mảng sự kiện vào bộ nhớ (MemPool hoặc World State) một cách đầy đủ.
+`BFTConsensus` sử dụng `BFTViewChangeManager` khi leader hiện tại hỏng hoặc
+timeout view change hết hạn. Manager điều phối quorum và cài đặt view mới để
+đồng thuận tiếp tục mà không cần recovery engine riêng.
 
----
+## 3. Trách nhiệm phục hồi của deployment
 
-## 2. Quản lý Rollback State (`RollbackManager`)
+Deployment phải cung cấp và xác minh:
 
-Trong trường hợp rủi cấu ro lớn hơn, như dữ liệu phân vùng hoặc nâng cấp (upgrade) nhầm lẫn, hệ thống cho phép "lùi" toàn bộ trạng thái về một mốc an toàn.
+- backup database và filesystem;
+- quy trình backup và khôi phục khóa;
+- chính sách snapshot retention và rollback;
+- thay thế node và mở rộng hạ tầng.
 
-`RollbackManager` sẽ lưu lại các điểm trạng thái hệ thống:
+Các thao tác này cố ý không được expose thành các class tự động trong
+`hierachain.error_mitigation`.
 
-* **Configuration State**: Cấu hình file YAML, JSON, PY.
-* **Chain State**: Khối lượng block và Hash gần nhất.
-* **Consensus State**: View Number, Node ID của Leader hiện tại.
-* **Storage State**: Snapshot của World State.
+## Tài liệu liên quan
 
-### Quy trình Rollback
-
-1. Lấy danh sách snapshot bằng `manager.get_snapshots()`.
-2. Hệ thống kiểm tra **Integrity Hash (Hàm băm nguyên vẹn)** của snapshot. Snapshot không nguyên vẹn hoặc quá cũ (hơn 72 giờ) có khả năng bị từ chối nếu không bật cờ `force=True`.
-3. Thực thi hàm `rollback_to_snapshot(snapshot_id)`. Nó sẽ khôi phục từng phần của `Configuration` và `Chain State`.
-
----
-
-## 3. Sao lưu và Khôi phục Khóa (`KeyBackupManager`)
-
-Bảo vệ cặp quá ký ECDSA/Ed25519 là nhiệm vụ quan trọng. `KeyBackupManager` tự động sao lưu an toàn khi hệ thống tạo Key mới:
-
-* **Bảo mật AES-256-GCM**: Key Public / Private của Node được thu thập, mã hóa GCM (Authenticate Encryption) với Key Master được cấp bởi Admin.
-* **Xác minh toàn vẹn (Integrity)**: Sử dụng cấu hình băm `SHA-512` kết hợp `HMAC` để đối chiếu mỗi khi khôi phục.
-* **Phân phối đa vị trí (Multi-location)**: Mã băm và file `.enc` được hệ thống "copy" phân tán ra nhiều đường dẫn `locations` nhằm chống Single Point of Failure (SPOF).
-
-### Khôi phục khi cần thiết
-
-Sử dụng `restore_keys(backup_id)`. Manger sẽ đọc luồng IO, xác minh checksum `SHA-512`, giải mã GCM, và ngay lập tức tiêm vào tiến trình Node mà không cần stop hệ thống. Định dạng cặp khóa luôn được `_validate_keys` xác minh để tránh lỗi load key hỏng.
-
----
-
-## 4. Xử lý Lỗi Mạng và Suy Trái (BFT Consensus Recovery)
-
-Cụm BFT của HieraChain (với thuật toán dựa trên View Change) tự chứa các đặc tính "Tự phục hồi" (Self-recovery) đối với các sự cố liên lạc:
-
-* **Sự cố Leader bị Node-down**: Nếu Leader gặp crash, timeout (không broadcast block mới đúng hạn), các Validators sẽ gửi tin nhắn kháng nghị. Khi đạt trên `2f + 1` tin nhắn kháng nghị, hệ thống khởi tạo **View Change**, chuyển qua Leader tiếp theo (ví dụ: `Leader_ID = View_Number % Total_Nodes`).
-* **Sự cố Network Partition (Chia cắt mạng)**: Nếu mạng bị chia làm 2 mảnh, mảnh không chiếm đa số (***< 2f + 1***) sẽ tự động ngừng (Halt). Mảng lớn hơn (trên 66% số node) tiếp tục giao dịch. Khi kết nối khôi phục, mảnh nhỏ hơn tự động gọi API P2P để đồng bộ (Sync Blocks) với nhánh dài nhất.
+- [Xử lý lỗi và phục hồi](../workflows/error-recovery.md)
+- [Module Error Mitigation](../modules/error-mitigation.md)
+- [Nạp lại trạng thái chuỗi](../workflows/chain-rehydration.md)

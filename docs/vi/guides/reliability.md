@@ -12,14 +12,13 @@ icon: material/check-decagram
 
 ## Thành phần liên quan
 
-* Journal/Recovery: `hierachain/error_mitigation/journal.py`, `rollback_manager.py`, `consensus_recovery.py`, `network_recovery.py`, `backup_recovery.py`
+* Journal/Recovery: `hierachain/error_mitigation/journal.py`, `error_classifier.py` và BFT view change trong `hierachain/consensus/bft/view_change.py`
 * Cross-level Sync: `HRC_CROSS_LEVEL_SYNC` qua `hierarchical/hierarchy_manager/base.py`, `hierachain/cluster/cross_level_sync.py`
 
 ## Mẫu hình
 
 * Nhật ký bền vững (Journal): ghi trước khi áp dụng thay đổi.
-* Hoàn tác an toàn (Rollback): trạng thái có thể quay lại điểm an toàn.
-* Phục hồi tự động (Recovery): kịch bản tiêu chuẩn cho mất kết nối/DB lỗi.
+* Phục hồi vận hành: backup, snapshot và thay thế node do deployment sở hữu.
 * Idempotency + Retry with backoff: lặp lại hành động mà không gây nhân đôi hiệu ứng.
 
 ## Khuyến nghị triển khai

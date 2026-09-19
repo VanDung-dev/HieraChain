@@ -20,14 +20,14 @@ Không có quét chữ ký lúc khởi động trong `security/integrity.py`. C�
 
 * Merkle và chain link trong `hierachain/core/block.py` và `core/merkle_tree.py` (tiền tố phân tách domain `0x01`) và `consensus/ordering/storage.py:_verify_chain_links()` (chuỗi `previous_hash`).
 * Xác minh proof trong `hierachain/hierarchical/main_chain/proofs.py:_verify_proof_in_main_chain` (quét fallback) và `security/verify/block_verifier.py`.
-* Tính toàn vẹn rollback trong `hierachain/error_mitigation/rollback_manager.py:_verify_rollback_integrity` (kiểm tra `data_hash`) kèm guard chống path traversal.
+* Cơ chế toàn vẹn runtime dùng chain link, Merkle root, xác minh proof và consensus validation. Snapshot trạng thái và rollback thuộc trách nhiệm deployment.
 
 ```mermaid
 graph LR
     A[Block finalize] --> B[previous_hash check]
     B --> C[Merkle root verify]
     C --> D[Proof verify on MainChain]
-    D --> E[Rollback data_hash nếu cần]
+    D --> E[Phục hồi vận hành nếu cần]
 ```
 
 ---

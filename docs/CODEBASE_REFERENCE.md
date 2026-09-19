@@ -41,10 +41,10 @@ graph TD
 |-----------|---------|----------------------|
 | `block.py` | Event container using Apache Arrow columnar storage | Composite Pattern - Blocks contain multiple events |
 | `blockchain.py` | Base blockchain with validation, indexing | Template Method - Extended by MainChain and SubChain |
-| `cache.py` / `cache_manager.py` | Hybrid caching (LRU, LFU, FIFO, TTL) | Strategy Pattern - Different cache policies per data type |
+| `cache.py` | In-memory cache with LRU, LFU, FIFO, and TTL policies | Utility used by `KeyManager` |
 | `core/utils.py` | Common utility functions (event structure validation, etc.) | Utility Library |
 
-**Architectural Highlight**: The use of **Apache Arrow for columnar storage** is a deliberate choice for high-performance data processing. The caching engine supports customizable strategies (`LRU`, `LFU`, `FIFO`, `TTL`) to optimize memory access during block query operations.
+**Architectural Highlight**: The use of **Apache Arrow for columnar storage** is a deliberate choice for high-performance data processing. The caching engine supports customizable strategies (`LRU`, `LFU`, `FIFO`, `TTL`) for the security key and permission lookups that use it.
 
 ---
 
@@ -187,8 +187,6 @@ Alert categories: `RISK_MANAGEMENT | PERFORMANCE | SECURITY | CONSENSUS | STORAG
 | Component | Purpose |
 |-----------|---------|
 | `journal.py` | Durability layer using Apache Arrow (`[Length (4 bytes)][Batch Bytes...]`) |
-| `recovery_engine.py` | Automated failure recovery |
-| `rollback_manager.py` | State rollback capabilities |
 | `data_validator.py` | Input validation |
 | `error_classifier.py` | **[MỚI]** Classify errors by type for targeted recovery |
 | `validator.py` | **[MỚI]** Extended validation framework for business rules |
