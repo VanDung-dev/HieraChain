@@ -46,16 +46,6 @@ Module **Monitoring** cung cấp khả năng quan sát (Observability) 360 độ
     * Phân tích lịch sử dữ liệu trong các cửa sổ thời gian (Sliding Windows) để xác định độ lệch chuẩn.
     * Giúp phát hiện sớm các cuộc tấn công DDoS hoặc nghẽn thắt nút cổ chai.
 
-*   :material-chart-bar:{ .lg .middle } __Blockchain Metrics__
-
-    ---
-
-    __File__: `performance_metrics.py`
-
-    * **Throughput**: Số lượng sự kiện xử lý trên mỗi giây (EPS).
-    * **Latency**: Thời gian trung bình để một sự kiện được xác thực và đóng khối.
-    * **Consensus Health**: Tỷ lệ vòng đồng thuận thành công và thời gian hội tụ.
-
 </div>
 
 ---

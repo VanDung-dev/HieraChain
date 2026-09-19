@@ -119,6 +119,5 @@ Các bước rollback:
 ## Liên quan
 
 - [Đồng thuận BFT](./bft-consensus.md): chi tiết View Change
-- [Khóa băng Cụm](./cluster-lockdown.md): khôi phục ở cấp cụm
 - [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md): tải lại toàn bộ chuỗi từ DB
 - [Cảnh báo Rủi ro](./risk-alerts.md): thông báo leo thang

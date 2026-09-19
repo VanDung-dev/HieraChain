@@ -36,4 +36,4 @@ graph LR
 
 *   [Error Mitigation](../modules/error-mitigation.md)
 *   [Monitoring](../modules/monitoring.md)
-*   [Cluster Lockdown](./lockdown-logging.md)
+*   [Secure Logging](./lockdown-logging.md)

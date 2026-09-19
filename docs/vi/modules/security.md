@@ -25,11 +25,11 @@ Thiết kế gom các biện pháp bảo vệ thành sáu nhóm phối hợp v�
     Quản lý danh tính (MSP), xác thực API key và kiểm soát truy cập theo thuộc tính (ABAC).
     [:octicons-arrow-right-24: Chi tiết](../security/authorization-access-control.md)
 
-*   :material-lock-alert:{ .lg .middle } __Lockdown và logging__
+*   :material-lock-alert:{ .lg .middle } __Ghi nhật ký an toàn__
 
     ---
 
-    Phong tỏa cụm khẩn cấp và log chống giả mạo.
+    Ghi log chống giả mạo cho các thao tác nhạy cảm về bảo mật.
     [:octicons-arrow-right-24: Chi tiết](../security/lockdown-logging.md)
 
 *   :material-shield-check:{ .lg .middle } __Integrity và guard__
@@ -39,11 +39,11 @@ Thiết kế gom các biện pháp bảo vệ thành sáu nhóm phối hợp v�
     Bảo vệ tài nguyên trước DoS và kiểm tra tính toàn vẹn của code và cấu hình khi khởi động.
     [:octicons-arrow-right-24: Chi tiết](../security/fault-tolerance-integrity.md)
 
-*   :material-security-network:{ .lg .middle } __Risk và sanitization__
+*   :material-security-network:{ .lg .middle } __Làm sạch input__
 
     ---
 
-    Phát hiện bất thường và làm sạch input để chặn injection.
+    Xác thực và làm sạch input để chặn injection.
     [:octicons-arrow-right-24: Chi tiết](../security/risk-analyzer.md)
 
 *   :material-key-chain:{ .lg .middle } __Encryption và keys__
@@ -79,7 +79,6 @@ Mọi phần của HieraChain đều dùng chung các lớp này:
 Các thiết lập chính nằm ở `hierachain/config/settings.py`:
 
 * `AUTH_ENABLED` bật hoặc tắt xác thực API.
-* `HRC_CLUSTER_SECRET` là secret cho lệnh điều khiển cụm.
 * `HRC_ENABLE_ZK_PROOFS` bật xác thực bằng ZK proof.
 
 ---

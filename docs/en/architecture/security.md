@@ -18,18 +18,17 @@ The defense is organized into six coordinated areas:
     * `hierachain/security/policy_engine.py` handles permission control (ABAC).
     * `hierachain/security/verify/api_key_verifier.py` handles API key authentication.
 
-* Lockdown and logging:
+* Logging and integrity:
 
     * `hierachain/security/secure_logging.py` provides tamper-evident logs and masks PII.
-    * `hierachain/cluster/lockdown_protocol.py` provides emergency lockdown with quorum and contains `ClusterLockdownManager`.
+    * `hierachain/risk_management/audit_logger.py` records operational audit events.
 
 * Fault tolerance and integrity:
 
     * `hierachain/error_mitigation/{rollback_manager.py, consensus_validator.py, resource_validator.py}` and `hierachain/cluster/lockdown_types.py` provide integrity checks, rollback snapshots and HMAC lockdown. There is no `security/resource_guard.py` or `security/integrity.py`; those paths were removed or never existed.
 
-* Risk analyzer:
+* Input sanitization:
 
-    * `hierachain/risk_management/risk_analyzer.py` handles risk scoring and uses validators in `hierachain/error_mitigation/*`.
     * `hierachain/security/sanitization.py` helps prevent injection by neutralizing HTML/templates and enforcing a filename allowlist.
 
 * Encryption and keys:

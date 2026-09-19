@@ -18,25 +18,9 @@ HieraChain monitors health across four risk domains: consensus, security, perfor
 sequenceDiagram
     autonumber
     participant PM as 📊 PerformanceMonitor
-    participant RA as 🔍 RiskAnalyzer
     participant AM as 🚨 AlertManager
     participant AD as 📈 AnomalyDetector
     participant NTF as 📧 Email / Webhook Notifier
-
-    PM->>RA: perform_comprehensive_analysis(system_data)
-
-    par Consensus risks
-        RA->>RA: analyze_consensus_risks()<br/>Check: node_count >= 3f+1, leader_timeout, msg_verify_rate
-    and Security risks
-        RA->>RA: analyze_security_risks()<br/>Check: cert_expiry, failed_auth, encryption_strength
-    and Performance risks
-        RA->>RA: analyze_performance_risks()<br/>Check: CPU%, memory%, event_pool_size
-    and Storage risks
-        RA->>RA: analyze_storage_risks()<br/>Check: world_state_size, backup_age
-    end
-
-    RA->>RA: Update active_risks + risk_history
-    RA-->>PM: all_risks { consensus, security, performance, storage }
 
     PM->>AM: check_metric(metric_name, value, source)
     AM->>AD: add_data_point(metric_name, value)
@@ -92,14 +76,13 @@ sequenceDiagram
 
 | Step | Description |
 |:-----|:------------|
-| **1. Analysis** | `RiskAnalyzer.perform_comprehensive_analysis()` runs 4 domain checks in parallel |
-| **2. Metric check** | `AlertManager.check_metric()` evaluates each incoming metric against defined rules |
-| **3. Anomaly detection** | `AnomalyDetector` uses statistical baseline to flag outliers |
-| **4. Cooldown check** | Rules have configurable cooldown period to suppress alert storms |
-| **5. Duplicate check** | `_is_duplicate_alert()` suppresses if same rule + same source already active |
-| **6. Notification** | Email and/or Webhook notifiers dispatch concurrently |
-| **7. Escalation** | Unacknowledged alerts auto-escalate: `escalation_level += 1`, re-notified |
-| **8. Lifecycle end** | Operator acknowledges → `ACKNOWLEDGED`; metric recovers → `RESOLVED` |
+| **1. Metric check** | `AlertManager.check_metric()` evaluates each incoming metric against defined rules |
+| **2. Anomaly detection** | `AnomalyDetector` uses statistical baseline to flag outliers |
+| **3. Cooldown check** | Rules have configurable cooldown period to suppress alert storms |
+| **4. Duplicate check** | `_is_duplicate_alert()` suppresses if same rule + same source already active |
+| **5. Notification** | Email and/or Webhook notifiers dispatch concurrently |
+| **6. Escalation** | Unacknowledged alerts auto-escalate: `escalation_level += 1`, re-notified |
+| **7. Lifecycle end** | Operator acknowledges → `ACKNOWLEDGED`; metric recovers → `RESOLVED` |
 
 ---
 
@@ -110,7 +93,6 @@ sequenceDiagram
 | Email notification fails | Logged as warning; Webhook notifier still attempted |
 | Webhook endpoint unreachable | Retry once; log failure; alert marked `notification_failed` |
 | Alert storm (too many duplicates) | Cooldown mechanism suppresses duplicates per rule |
-| RiskAnalyzer raises exception | Exception caught, partial risk data returned, alert triggered for analysis failure |
 
 ---
 
@@ -118,7 +100,6 @@ sequenceDiagram
 
 | Step | Class / Method | File |
 |:-----|:--------------|:-----|
-| Trigger analysis | `RiskAnalyzer.perform_comprehensive_analysis()` | `risk_management/risk_analyzer.py` |
 | Metric check | `AlertManager.check_metric()` | `monitoring/alert_system.py` |
 | Anomaly detection | `AnomalyDetector.is_anomaly()` | `monitoring/alert_system.py` |
 | Create alert | `AlertManager._create_alert()` | `monitoring/alert_system.py` |
@@ -131,5 +112,4 @@ sequenceDiagram
 
 ## Related
 
-- [Cluster Lockdown](./cluster-lockdown.md): unresolved critical alerts may trigger lockdown
 - [System Integrity Validation](./integrity-validation.md): DEGRADED integrity status triggers alerts here

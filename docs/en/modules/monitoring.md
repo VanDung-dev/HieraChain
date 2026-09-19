@@ -46,16 +46,6 @@ The **Monitoring** module provides 360-degree observability for the HieraChain s
     * Analyzes historical data in sliding windows to determine standard deviation.
     * Helps early detection of DDoS attacks or bottleneck congestion.
 
-*   :material-chart-bar:{ .lg .middle } __Blockchain Metrics__
-
-    ---
-
-    __File__: `performance_metrics.py`
-
-    * **Throughput**: Number of events processed per second (EPS).
-    * **Latency**: Average time for an event to be validated and block-closed.
-    * **Consensus Health**: Ratio of successful consensus rounds and convergence time.
-
 </div>
 
 ---

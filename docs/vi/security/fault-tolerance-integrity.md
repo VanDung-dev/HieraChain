@@ -36,4 +36,4 @@ graph LR
 
 *   [Xử lý lỗi](../modules/error-mitigation.md)
 *   [Giám sát](../modules/monitoring.md)
-*   [Cluster Lockdown](./lockdown-logging.md)
+*   [Ghi nhật ký an toàn](./lockdown-logging.md)

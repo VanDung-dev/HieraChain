@@ -25,11 +25,11 @@ The design groups protections into six areas that work together:
     Identity management (MSP), API key authentication, and attribute-based access control (ABAC).
     [:octicons-arrow-right-24: Details](../security/authorization-access-control.md)
 
-*   :material-lock-alert:{ .lg .middle } __Lockdown and logging__
+*   :material-lock-alert:{ .lg .middle } __Secure logging__
 
     ---
 
-    Emergency cluster lockdown and tamper-evident logging.
+    Tamper-evident logging for security-sensitive operations.
     [:octicons-arrow-right-24: Details](../security/lockdown-logging.md)
 
 *   :material-shield-check:{ .lg .middle } __Integrity and guard__
@@ -39,11 +39,11 @@ The design groups protections into six areas that work together:
     Resource protection against DoS and integrity checks for code and configuration at startup.
     [:octicons-arrow-right-24: Details](../security/fault-tolerance-integrity.md)
 
-*   :material-security-network:{ .lg .middle } __Risk and sanitization__
+*   :material-security-network:{ .lg .middle } __Input sanitization__
 
     ---
 
-    Anomaly detection and input sanitization against injection attacks.
+    Input validation and sanitization against injection attacks.
     [:octicons-arrow-right-24: Details](../security/risk-analyzer.md)
 
 *   :material-key-chain:{ .lg .middle } __Encryption and keys__
@@ -79,7 +79,6 @@ Each part of HieraChain uses the same layers:
 Main settings live in `hierachain/config/settings.py`:
 
 * `AUTH_ENABLED` turns API authentication on or off.
-* `HRC_CLUSTER_SECRET` is the secret for cluster control commands.
 * `HRC_ENABLE_ZK_PROOFS` enables ZK proof verification.
 
 ---

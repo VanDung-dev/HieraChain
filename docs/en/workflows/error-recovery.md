@@ -120,6 +120,5 @@ Rollback does four things in order:
 ## Related
 
 - [BFT Consensus](./bft-consensus.md): View Change detail
-- [Cluster Lockdown](./cluster-lockdown.md): cluster-level recovery
 - [Chain Rehydration](./chain-rehydration.md): full chain reload from DB
 - [Risk Analysis & Alerts](./risk-alerts.md): escalation notifications

@@ -72,8 +72,6 @@ Tài liệu này ánh xạ các khái niệm trong tài liệu kỹ thuật sang
 | **Message Crypto** | `hierachain/network/message_cryptographic.py` | Mã hóa tin nhắn giữa các Node. |
 | **Peer Trust Manager** | `hierachain/network/peer_trust_manager.py` | Quản lý độ tin cậy Peer-to-Peer. |
 | **Secure Connection** | `hierachain/network/secure_connection.py` | Thiết lập kết nối an toàn giữa các node. |
-| **Cluster Manager** | `hierachain/cluster/cluster_manager.py` | Quản lý trạng thái và thành viên trong cụm. |
-| **Lockdown Protocol** | `hierachain/cluster/lockdown_protocol.py` | Giao thức phong tỏa cụm khi phát hiện sự cố nghiêm trọng. |
 | **Cross-Chain Sync** | `hierachain/cluster/cross_level_sync.py` | Đồng bộ dữ liệu liên tầng (Main <-> Sub). |
 
 ## Giám sát & Quản lý Rủi ro
@@ -82,7 +80,6 @@ Tài liệu này ánh xạ các khái niệm trong tài liệu kỹ thuật sang
 |---------|-----------|------|
 | **Alert System** | `hierachain/monitoring/alert_system.py` | Hệ thống cảnh báo thời gian thực. |
 | **Performance Monitor**| `hierachain/monitoring/performance_monitor.py` | Giám sát hiệu năng hệ thống (CPU, RAM, TPS). |
-| **Risk Analyzer** | `hierachain/risk_management/risk_analyzer.py` | Phân tích rủi ro dựa trên hành vi hệ thống. |
 | **Audit Logger** | `hierachain/risk_management/audit_logger.py` | Ghi nhật ký kiểm toán cho khả năng truy vết. |
 
 ## CLI & Cấu hình

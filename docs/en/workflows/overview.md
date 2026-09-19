@@ -37,7 +37,6 @@ This table lists all workflows for quick lookup:
 | [Proof Anchoring](./proof-anchoring.md) | A | Block finalized on Sub-Chain | Proof hash on Main Chain | `hierarchical/main_chain/base.py` + `hierarchical/sub_chain/proof.py` |
 | [Cross-Chain 2PC](./cross-chain-2pc.md) | A | `HierarchyManager.transaction_manager` | `COMMITTED` or `ROLLED_BACK` | `hierarchical/hierarchy_manager/base.py` + `hierarchical/transaction_manager.py` |
 | [BFT Consensus](./bft-consensus.md) | B | `HRC_MAINCHAIN_CONSENSUS` / `HRC_CONSENSUS_TYPE` | Block committed by 2f+1 validators | `consensus/bft/consensus.py` |
-| [Cluster Lockdown](./cluster-lockdown.md) | C | Anomaly exceeds risk threshold | All nodes frozen / resumed | `cluster/lockdown_types.py` + `cluster/lockdown_protocol.py` |
 | [Error Mitigation](./error-recovery.md) | C | Network fail / leader timeout / integrity error | State restored from snapshot | `error_mitigation/rollback_manager.py` + `consensus_recovery.py` |
 | [Entity Tracing](./entity-tracing.md) | D | `EntityTracer.trace_entity()` | Complete cross-chain audit trail | `domains/utils/entity_tracer.py` |
 | [Chain Rehydration](./chain-rehydration.md) | D | Node restart or hash divergence | In-memory chain synced to DB | `hierarchical/sub_chain/base.py` + `hierarchical/sub_chain/ordering.py` |
@@ -82,7 +81,6 @@ Workflows are grouped into six areas. Use the dashboard to find the group that m
 
     Governance, lockdown triggers and recovery.
 
-    * [Cluster Lockdown & Recovery](./cluster-lockdown.md)
     * [Error Mitigation & Recovery](./error-recovery.md)
 
 * :material-shield-check:{ .lg .middle } __Group D: Integrity and traceability__
@@ -144,12 +142,10 @@ flowchart TD
     WF1 -->|BFT mode| WF4["👑 BFT Consensus"]
 
     WF9["🔍 Integrity Scan"] -->|DEGRADED| WF13["🚨 Risk & Alerts"]
-    WF13 -->|critical threshold| WF5["🔒 Cluster Lockdown"]
-    WF5 -.->|after lockdown| WF6["🔧 Error Recovery"]
+    WF13 -->|critical alert| WF6["🔧 Error Recovery"]
     WF6 -.->|snapshot fail| WF8["♻️ Rehydration"]
     WF8 -.->|restore state| WF1
 
-    WF5 -.->|key rotation| WF16["🔑 Key Backup"]
     WF15 -.->|cert issued| WF16
 
     WF7["🗂️ Entity Tracing"] -.->|reads| WF1
@@ -163,8 +159,7 @@ flowchart TD
 |:---|:---|
 | **ERP → ERP Sync → Event Submission → Proof Anchoring** | Ingestion pipeline: business change → local event → Sub-Chain block → proof hash anchored to root chain. |
 | **MSP Identity → Policy Enforcement → Event Submission** | Security validation path: verify internal cert (`msp.py:verify_certificate`) → check ABAC policies → accept/reject event. |
-| **Integrity Scan → Risk & Alerts → Cluster Lockdown → Error Recovery** | Anomaly detection path: `block_verifier`/`risk_analyzer` → alert dispatch → lockdown → `rollback_manager` restore. |
-| **Cluster Lockdown → Key Backup** | No automatic coupling in code: key rotation/backup is manual via `cli/key.py` (not triggered by lockdown). |
+| **Integrity Scan → Risk & Alerts → Error Recovery** | Anomaly detection path: `block_verifier` → alert dispatch → `rollback_manager` restore. |
 | **Error Recovery → Rehydration** | State sync fallback: local snapshot validation fail triggers in-memory chain rebuild from DB journal. |
 
 ---

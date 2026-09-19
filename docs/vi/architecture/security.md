@@ -18,18 +18,17 @@ Phòng thủ được chia thành sáu nhóm phối hợp với nhau:
     * `hierachain/security/policy_engine.py` xử lý kiểm soát quyền (ABAC).
     * `hierachain/security/verify/api_key_verifier.py` xử lý xác thực API key.
 
-* Lockdown và logging:
+* Logging và tính toàn vẹn:
 
     * `hierachain/security/secure_logging.py` ghi log có khả năng phát hiện giả mạo và che PII.
-    * `hierachain/cluster/lockdown_protocol.py` xử lý phong tỏa khẩn cấp theo quorum và chứa `ClusterLockdownManager`.
+    * `hierachain/risk_management/audit_logger.py` ghi các sự kiện kiểm toán vận hành.
 
 * Fault tolerance và tính toàn vẹn:
 
     * `hierachain/error_mitigation/{rollback_manager.py, consensus_validator.py, resource_validator.py}` và `hierachain/cluster/lockdown_types.py` cung cấp kiểm tra toàn vẹn, snapshot rollback và HMAC lockdown. Không có `security/resource_guard.py` hay `security/integrity.py`, các đường dẫn này đã bị xóa hoặc chưa từng tồn tại.
 
-* Risk analyzer:
+* Làm sạch input:
 
-    * `hierachain/risk_management/risk_analyzer.py` xử lý chấm điểm rủi ro và dùng các validator trong `hierachain/error_mitigation/*`.
     * `hierachain/security/sanitization.py` giúp ngăn injection bằng cách trung hòa HTML/template và áp allowlist cho tên file.
 
 * Encryption và khóa:

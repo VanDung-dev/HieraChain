@@ -72,5 +72,4 @@ sequenceDiagram
 ## Related
 
 - [MSP Identity](./msp-identity.md): `security/msp.py` issues in-memory certs; no trigger to key backup
-- [Cluster Lockdown](./cluster-lockdown.md): no automatic key rotation
 - [Encryption & Keys](../security/encryption-keys.md): corrected description of `msp.py`/`key_provider.py`
