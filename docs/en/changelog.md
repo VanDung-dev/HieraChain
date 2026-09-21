@@ -8,7 +8,12 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (7)"
+??? warning "Breaking Changes (9)"
+
+    * 2026-09-21
+
+        * **Monitoring**: Removed `PrometheusMetrics` and singleton `metrics` from `hierachain/monitoring/metrics.py` (file deleted), removing Prometheus metrics collection utilities.
+        * **Risk Management**: Removed `RotatingAuditStorage` from `hierachain/risk_management/audit_logger.py` and package exports (`hierachain/risk_management/__init__.py`).
 
     * 2026-09-20
 

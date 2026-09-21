@@ -8,7 +8,12 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (7)"
+??? warning "Breaking Changes (9)"
+
+    * 2026-09-21
+
+        * **Giám sát (Monitoring)**: Loại bỏ `PrometheusMetrics` và singleton `metrics` khỏi `hierachain/monitoring/metrics.py` (xóa file), loại bỏ các tiện ích thu thập số liệu Prometheus.
+        * **Quản trị Rủi ro (Risk Management)**: Loại bỏ `RotatingAuditStorage` khỏi `hierachain/risk_management/audit_logger.py` và các export của package (`hierachain/risk_management/__init__.py`).
 
     * 2026-09-20
 
