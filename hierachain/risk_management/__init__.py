@@ -16,7 +16,6 @@ from hierachain.risk_management.audit_logger import (
     AuditStorage,
     ArrowAuditStorage,
     FileAuditStorage,
-    RotatingAuditStorage,
     DatabaseAuditStorage,
     verify_integrity,
 )
@@ -30,7 +29,6 @@ __all__ = [
     'AuditStorage',
     'ArrowAuditStorage',
     'FileAuditStorage',
-    'RotatingAuditStorage',
     'DatabaseAuditStorage',
     'verify_integrity',
 ]

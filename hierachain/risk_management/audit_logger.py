@@ -55,7 +55,6 @@ __all__ = [
     "AuditStorage",
     "ArrowAuditStorage",
     "FileAuditStorage",
-    "RotatingAuditStorage",
     "DatabaseAuditStorage",
     "verify_integrity",
 ]
@@ -525,38 +524,6 @@ class FileAuditStorage(AuditStorage):
 
     def get_event_count(self, filter_criteria: AuditFilter) -> int:
         return len(self.retrieve_events(filter_criteria))
-
-
-class RotatingAuditStorage(FileAuditStorage):
-    def __init__(
-        self,
-        audit_directory: str = "log/risk_management/audit_logs",
-        max_file_size: int = 100 * 1024 * 1024,
-        retention_days: int = 90
-    ):
-        super().__init__(audit_directory)
-        self.max_file_size = max_file_size
-        self.retention_days = retention_days
-
-    def store_event(self, event: AuditEvent) -> bool:
-        result = super().store_event(event)
-        if result:
-            self._check_rotation(event.timestamp)
-            self._cleanup_old_files()
-        return result
-
-    def _check_rotation(self, timestamp: float) -> None:
-        log_file = self._get_log_file(timestamp)
-        if log_file.exists() and log_file.stat().st_size > self.max_file_size:
-            rotated_name = f"{log_file.stem}_{int(timestamp)}.jsonl"
-            rotated_path = log_file.parent / rotated_name
-            log_file.rename(rotated_path)
-
-    def _cleanup_old_files(self) -> None:
-        cutoff_time = time.time() - (self.retention_days * 86400)
-        for log_file in self.audit_directory.glob("audit_*.jsonl"):
-            if log_file.stat().st_mtime < cutoff_time:
-                log_file.unlink()
 
 
 def verify_integrity(events: list[AuditEvent]) -> bool:
