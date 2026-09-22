@@ -25,7 +25,7 @@ logging.basicConfig(
     level=logging.INFO, 
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("benchmark_debug.log"),
+        logging.FileHandler(os.getenv("HRC_BENCHMARK_LOG_FILE", "benchmark_debug.log")),
         logging.StreamHandler()
     ]
 )
@@ -61,7 +61,10 @@ async def run_benchmark(event_count: int, batch_size: int) -> None:
     # Configure settings override
     config = {
         "block_size": batch_size,
-        "batch_timeout": 0.5 # Low timeout to trigger block creation frequently
+        "batch_timeout": 0.5,  # Low timeout to trigger block creation frequently
+        "db_url": os.getenv("HRC_BENCHMARK_DB_URL", "hierachain.db"),
+        "storage_dir": os.getenv("HRC_BENCHMARK_JOURNAL_DIR", "journal"),
+        "chain_name": "benchmark",
     }
     
     # Initialize Service with Dummy Node
@@ -86,6 +89,9 @@ async def run_benchmark(event_count: int, batch_size: int) -> None:
     
     # Start Service
     service.start()
+    baseline = service.get_statistics()
+    baseline_processed = baseline["events_certified"]
+    baseline_rejected = baseline["events_rejected"]
     
     try:
         start_time = time.time()
@@ -99,8 +105,8 @@ async def run_benchmark(event_count: int, batch_size: int) -> None:
         # Wait for completion
         while True:
             stats = service.get_statistics()
-            processed = stats["events_certified"]
-            rejected = stats["events_rejected"]
+            processed = stats["events_certified"] - baseline_processed
+            rejected = stats["events_rejected"] - baseline_rejected
             completed = (processed + rejected) >= event_count
             required_blocks = initial_blocks + (processed + batch_size - 1) // batch_size
             if completed and service.blocks_created >= required_blocks:
