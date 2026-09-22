@@ -49,13 +49,14 @@ print(settings.AUTH_ENABLED)
 
 ### Lưu trữ và cache
 
-* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (tự phát hiện `postgres` từ URL; mặc định: `sqlite` dev, `memory` test, `redis` prod; giá trị: `sqlite`, `postgres`, `redis`, `memory`, `parquet_only`)
+* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (mặc định: `postgres` ở development và production, `memory` ở test; giá trị: `sqlite`, `postgres`, `redis`, `memory`, `parquet_only`)
+* Nếu PostgreSQL không khả dụng, tiến trình khởi động sẽ fallback về SQLite. Đặt `HRC_STORAGE_BACKEND=sqlite` để chọn SQLite tường minh.
 * `WORLD_STATE_CACHE_SIZE` (mặc định: `1000`)
 * Cache nâng cao: `ADVANCED_CACHING_ENABLED` (mặc định: `True`)
 * `BLOCK_CACHE_SIZE` (mặc định: `5000`), `EVENT_CACHE_SIZE` (`20000`), `ENTITY_CACHE_SIZE` (`10000`)
 * Chính sách cache: `BLOCK_CACHE_POLICY` (`lru`), `EVENT_CACHE_POLICY` (`ttl`), `ENTITY_CACHE_POLICY` (`lfu`)
 * `ENTITY_TTL` (mặc định: `3600` giây)
-* DB: `DATABASE_URL` (mặc định: `sqlite:///hierachain.db`)
+* DB: `DATABASE_URL` (mặc định: `postgresql://hiera:hiera@localhost:5432/hierachain`)
 * Redis: `REDIS_HOST` (`localhost`), `REDIS_PORT` (`6379`), `REDIS_DB` (`0`)
 
 ### IPFS (lưu trữ off-chain)
@@ -158,7 +159,7 @@ HRC_API_PORT=2661
 HRC_CONSENSUS_TYPE=proof_of_authority
 HRC_AUTH_ENABLED=false
 HRC_CORS_ALLOW_ALL=true
-DATABASE_URL=sqlite:///hierachain.db
+DATABASE_URL=postgresql://hiera:hiera@localhost:5432/hierachain
 LOG_LEVEL=DEBUG
 ```
 

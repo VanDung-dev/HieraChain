@@ -13,7 +13,7 @@ The `adapters` module provides the persistence layer for HieraChain. The core sy
 ### Main roles
 
 * Standardizes database read and write operations for chains, blocks, events, proofs, and entity state.
-* Supports multiple environments, from local development (SQLite, in-memory) to production clusters (PostgreSQL, Redis).
+* Supports multiple environments, with PostgreSQL as the default and SQLite as the local fallback.
 * Enforces data isolation and input sanitization across database engines.
 
 ## 2. Available database adapters
@@ -22,7 +22,7 @@ All storage adapters reside in `hierachain/adapters/database/`.
 
 ### 2.1 SQLite Database Adapter (`sqlite_adapter.py`)
 
-The default adapter for development, testing, and single-node setups.
+The fallback adapter for environments where PostgreSQL is unavailable, and the explicit choice for lightweight single-node setups.
 
 * Technology: SQLite3 via `sqlite3` and `hierachain/adapters/database/base/sql_base.py`.
 * Schema: Initialized through `sqlite_schema.py`, creating tables for `chains`, `blocks`, `events`, `proofs`, and `chain_state`.

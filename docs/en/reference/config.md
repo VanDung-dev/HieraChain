@@ -49,13 +49,14 @@ print(settings.AUTH_ENABLED)
 
 ### Storage and cache
 
-* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (auto-detects `postgres` from URL; defaults: `sqlite` dev, `memory` test, `redis` prod; values: `sqlite`, `postgres`, `redis`, `memory`, `parquet_only`)
+* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (defaults: `postgres` in development and production, `memory` in tests; values: `sqlite`, `postgres`, `redis`, `memory`, `parquet_only`)
+* If PostgreSQL is unavailable, startup falls back to SQLite. Set `HRC_STORAGE_BACKEND=sqlite` to select SQLite explicitly.
 * `WORLD_STATE_CACHE_SIZE` (default: `1000`)
 * Advanced caching: `ADVANCED_CACHING_ENABLED` (default: `True`)
 * `BLOCK_CACHE_SIZE` (default: `5000`), `EVENT_CACHE_SIZE` (`20000`), `ENTITY_CACHE_SIZE` (`10000`)
 * Cache policies: `BLOCK_CACHE_POLICY` (`lru`), `EVENT_CACHE_POLICY` (`ttl`), `ENTITY_CACHE_POLICY` (`lfu`)
 * `ENTITY_TTL` (default: `3600` seconds)
-* DB: `DATABASE_URL` (default: `sqlite:///hierachain.db`)
+* DB: `DATABASE_URL` (default: `postgresql://hiera:hiera@localhost:5432/hierachain`)
 * Redis: `REDIS_HOST` (`localhost`), `REDIS_PORT` (`6379`), `REDIS_DB` (`0`)
 
 ### IPFS (off-chain storage)
@@ -158,7 +159,7 @@ HRC_API_PORT=2661
 HRC_CONSENSUS_TYPE=proof_of_authority
 HRC_AUTH_ENABLED=false
 HRC_CORS_ALLOW_ALL=true
-DATABASE_URL=sqlite:///hierachain.db
+DATABASE_URL=postgresql://hiera:hiera@localhost:5432/hierachain
 LOG_LEVEL=DEBUG
 ```
 

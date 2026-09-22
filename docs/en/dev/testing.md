@@ -42,6 +42,39 @@ python -m pytest tests --benchmark-only -v --benchmark-histogram=benchmark_repor
 python -m pytest tests -v
 ```
 
+### Durable Throughput Benchmark in Docker
+
+Run the benchmark from the current source tree with PostgreSQL 16, 1 CPU,
+1 GiB RAM, and durable journal writes enabled:
+
+```bash
+docker compose -f docker/docker-compose.benchmark.yml up --build --abort-on-container-exit
+```
+
+Override the workload with `BENCHMARK_EVENTS`, `BENCHMARK_BATCH_SIZE`,
+`BENCHMARK_CPUS`, `BENCHMARK_MEMORY`, or set `HRC_JOURNAL_FSYNC=false` for a
+non-durable comparison. Run `down -v` before a clean-database comparison;
+clean any Compose leftovers with:
+
+```bash
+docker compose -f docker/docker-compose.benchmark.yml down -v
+```
+
+### Docker-specific Runtime Tests
+
+Run deterministic checks for the image, native dependencies, journal replay,
+and PostgreSQL adapter wiring without starting the four-node cluster:
+
+```bash
+docker compose -f docker/docker-compose.test.yml \
+  --profile docker-test run --rm docker-tests
+```
+
+The profile starts an isolated PostgreSQL 16 service, stores the append-only
+journal under `/app/data`, and uses `HRC_JOURNAL_FSYNC=true`. Override
+`DOCKER_TEST_CPUS` or
+`DOCKER_TEST_MEMORY` to change the container limit.
+
 ## Stress Testing
 
 ### Docker Stress Testing
@@ -51,25 +84,25 @@ Run stress tests in Docker containers with 4 HieraChain nodes (1 CPU, 1GiB RAM e
 * Build and run stress tests with HTML report:
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest docker/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
+    docker compose -f docker/docker-compose.yml --profile stress-test run --rm stress-tester python -m pytest docker/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
     ```
 
 * Run real network stress tests (sends actual HTTP requests to nodes):
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest docker/stress/test_real_network.py -v -s
+    docker compose -f docker/docker-compose.yml --profile stress-test run --rm stress-tester python -m pytest docker/stress/test_real_network.py -v -s
     ```
 
 * Run without HTML report:
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester
+    docker compose -f docker/docker-compose.yml --profile stress-test run --rm stress-tester
     ```
 
 * Stop and clean up containers:
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml down --remove-orphans
+    docker compose -f docker/docker-compose.yml down --remove-orphans
     ```
 
 Reports are saved to `log/report/` directory.
@@ -180,7 +213,7 @@ Automated security checks across codebase and dependencies:
 
 ### Storage Verification
 
-* **Verify Storage Persistence** (Test SQLite durability):
+* **Verify Storage Persistence** (Test local storage durability):
 
     ```bash
     python scripts/verify_storage.py

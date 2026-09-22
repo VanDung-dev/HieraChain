@@ -13,7 +13,7 @@ Module `adapters` cung cấp lớp lưu trữ bền vững cho HieraChain. Hệ 
 ### Vai trò chính
 
 * Chuẩn hóa thao tác đọc và ghi dữ liệu cho chuỗi, khối, sự kiện, bằng chứng và trạng thái thực thể.
-* Hỗ trợ nhiều môi trường, từ phát triển cục bộ (SQLite, in-memory) đến cụm sản xuất (PostgreSQL, Redis).
+* Hỗ trợ nhiều môi trường, với PostgreSQL là mặc định và SQLite là backend fallback cục bộ.
 * Đảm bảo phân lập dữ liệu và kiểm tra tính hợp lệ của đầu vào trên các hệ quản trị cơ sở dữ liệu.
 
 ## 2. Các adapter cơ sở dữ liệu hiện có
@@ -22,7 +22,7 @@ Toàn bộ adapter lưu trữ nằm tại `hierachain/adapters/database/`.
 
 ### 2.1 SQLite Database Adapter (`sqlite_adapter.py`)
 
-Adapter mặc định cho môi trường phát triển, kiểm thử và thiết lập một node.
+Adapter fallback khi PostgreSQL không khả dụng, đồng thời là lựa chọn tường minh cho thiết lập một node nhẹ.
 
 * Công nghệ: SQLite3 qua `sqlite3` và `hierachain/adapters/database/base/sql_base.py`.
 * Lược đồ dữ liệu: Khởi tạo qua `sqlite_schema.py`, tạo các bảng `chains`, `blocks`, `events`, `proofs` và `chain_state`.

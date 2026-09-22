@@ -42,6 +42,38 @@ python -m pytest tests --benchmark-only -v --benchmark-histogram=benchmark_repor
 python -m pytest tests -v
 ```
 
+### Benchmark throughput bền vững bằng Docker
+
+Chạy benchmark từ source hiện tại với PostgreSQL 16, giới hạn 1 CPU, 1 GiB RAM
+và bật ghi journal bền vững:
+
+```bash
+docker compose -f docker/docker-compose.benchmark.yml up --build --abort-on-container-exit
+```
+
+Có thể đổi workload bằng `BENCHMARK_EVENTS`, `BENCHMARK_BATCH_SIZE`,
+`BENCHMARK_CPUS`, `BENCHMARK_MEMORY`, hoặc đặt `HRC_JOURNAL_FSYNC=false` để
+so sánh chế độ không bền vững. Hãy chạy `down -v` trước khi cần benchmark với
+database sạch; xóa phần còn lại của Compose bằng:
+
+```bash
+docker compose -f docker/docker-compose.benchmark.yml down -v
+```
+
+### Bộ kiểm thử runtime chuyên biệt cho Docker
+
+Chạy các kiểm tra xác định cho image, dependency native, replay journal và
+PostgreSQL adapter mà không cần khởi động cluster bốn node:
+
+```bash
+docker compose -f docker/docker-compose.test.yml \
+  --profile docker-test run --rm docker-tests
+```
+
+Profile này khởi động PostgreSQL 16 riêng, lưu journal append-only tại
+`/app/data` và dùng `HRC_JOURNAL_FSYNC=true`. Có thể đổi giới hạn container bằng
+`DOCKER_TEST_CPUS` hoặc `DOCKER_TEST_MEMORY`.
+
 ## Kiểm thử Áp lực (Stress Testing)
 
 ### Kiểm thử Áp lực với Docker
@@ -51,25 +83,25 @@ Chạy kiểm thử áp lực trong các container Docker với cấu hình gồ
 * Xây dựng cấu hình và chạy stress test với báo cáo định dạng HTML:
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest docker/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
+    docker compose -f docker/docker-compose.yml --profile stress-test run --rm stress-tester python -m pytest docker/stress/ -v --html=/app/log/report/stress_test_report.html --self-contained-html
     ```
 
 * Chạy stress test trên mạng thực tế (gửi các yêu cầu HTTP thực tế tới các node):
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester python -m pytest docker/stress/test_real_network.py -v -s
+    docker compose -f docker/docker-compose.yml --profile stress-test run --rm stress-tester python -m pytest docker/stress/test_real_network.py -v -s
     ```
 
 * Chạy không cần xuất báo cáo HTML:
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml --profile stress-test run stress-tester
+    docker compose -f docker/docker-compose.yml --profile stress-test run --rm stress-tester
     ```
 
 * Dừng và dọn dẹp các container:
 
     ```bash
-    docker compose -f docker/docker-compose.test.yml down --remove-orphans
+    docker compose -f docker/docker-compose.yml down --remove-orphans
     ```
 
 Các báo cáo kết quả được lưu tại thư mục `log/report/`.
@@ -180,7 +212,7 @@ Rà quét mã nguồn và các thư viện phụ thuộc bằng các công cụ 
 
 ### Xác minh Lưu trữ (Storage Verification)
 
-* **Xác minh tính Bền vững Lưu trữ** (Kiểm tra độ bền SQLite):
+* **Xác minh tính Bền vững Lưu trữ** (Kiểm tra độ bền lưu trữ cục bộ):
 
     ```bash
     python scripts/verify_storage.py

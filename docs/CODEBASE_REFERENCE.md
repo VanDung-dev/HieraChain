@@ -340,14 +340,14 @@ The configuration is highly flexible via **environment variables**:
 | Key | Purpose | Default |
 |-----|---------|---------|
 | `HRC_CONSENSUS_TYPE` | Consensus selection (PoA/PoF/BFT) | `proof_of_authority` |
-| `HRC_STORAGE_BACKEND` | Storage backend (sqlite/redis/memory) | `sqlite` |
+| `HRC_STORAGE_BACKEND` | Storage backend (sqlite/postgres/redis/memory) | `postgres` |
 | `HRC_ENABLE_ZK_PROOFS` | Enable ZK proof verification | `false` |
 | `HRC_AUTH_ENABLED` | API authentication enforcement | `false` |
 | `HRC_CLUSTER_SECRET` | **[MỚI]** Shared HMAC secret for cluster lockdown messages | _(required for cluster)_ |
 | `HRC_SMTP_USERNAME` / `HRC_SMTP_PASSWORD` | **[MỚI]** Email alert credentials | _(optional)_ |
 | `HRC_IPFS_HOST` | **[MỚI]** IPFS daemon API address (multiaddr) | `/ip4/127.0.0.1/tcp/5001` |
 | `HRC_IPFS_ENCRYPTION_KEY` | **[MỚI]** Hex-encoded AES-256 key for IPFS content | _(auto-generated if missing)_ |
-| `DATABASE_URL` | Database connection string | `sqlite:///hierachain.db` |
+| `DATABASE_URL` | Database connection string | `postgresql://hiera:hiera@localhost:5432/hierachain` |
 
 Additional config components:
 
