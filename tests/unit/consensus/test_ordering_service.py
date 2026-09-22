@@ -21,7 +21,6 @@ from hierachain.error_mitigation import (
     ConsensusValidator,
     EncryptionValidator,
     ResourceValidator,
-    APIValidator,
     ValidationError,
     SecurityError,
 )
@@ -1161,35 +1160,6 @@ def test_encryption_validator_with_large_keys():
         pass  # Acceptable for this test
 
 
-def test_api_validator_with_complex_forbidden_content():
-    """Test API validator with complex forbidden content"""
-    config = {}
-    validator = APIValidator(config)
-
-    # Test with nested forbidden terms
-    complex_data = {
-        "entity_id": "API-TEST-001",
-        "event": "api_complex_test",
-        "timestamp": time.time(),
-        "payload": {
-            "nested": {
-                "transaction": "should not be here",  # Forbidden term
-                "data": "normal data"
-            }
-        }
-    }
-
-    # Should raise ValidationError due to forbidden term "transaction"
-    try:
-        validator.validate_endpoint_data(complex_data)
-        # If we get here, the validation didn't catch the forbidden term
-        # This might be expected depending on implementation depth
-        pass
-    except ValidationError:
-        # This is expected if the validator properly checks nested content
-        pass
-
-
 def test_resource_validator_with_extreme_values():
     """Test resource validator with extreme threshold values"""
     # Test with very low thresholds
@@ -1521,4 +1491,3 @@ def test_access_control_validation():
             except PermissionError:
                 time.sleep(0.5)
                 shutil.rmtree(temp_dir, ignore_errors=True)
-

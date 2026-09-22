@@ -3,6 +3,7 @@ Test suite for the TransactionJournal class.
 """
 
 import pytest
+import time
 
 from hierachain.error_mitigation import TransactionJournal
 from hierachain.hierarchical import SubChain
@@ -67,6 +68,35 @@ def test_log_file_escape_prevention(monkeypatch, tmp_path):
     outside_dir.mkdir()
     with pytest.raises(ValueError, match="Security: Storage path"):
         TransactionJournal(storage_dir=str(outside_dir), active_log_name="ok.log")
+
+
+def test_append_only_journal_round_trip(monkeypatch, tmp_path):
+    """Events survive append-only writes and replay in insertion order."""
+    monkeypatch.chdir(tmp_path)
+    journal = TransactionJournal(storage_dir="journal", active_log_name="events.arrow")
+
+    try:
+        events = [
+            {
+                "event_id": "evt-1",
+                "entity_id": "entity-1",
+                "event": "created",
+                "timestamp": time.time(),
+            },
+            {
+                "event_id": "evt-2",
+                "entity_id": "entity-2",
+                "event": "updated",
+                "timestamp": time.time(),
+            },
+        ]
+        for event in events:
+            assert journal.log_event(event)
+
+        replayed = list(journal.replay())
+        assert [event["event_id"] for event in replayed] == ["evt-1", "evt-2"]
+    finally:
+        journal.close()
 
 
 def test_sub_chain_init_validation():
