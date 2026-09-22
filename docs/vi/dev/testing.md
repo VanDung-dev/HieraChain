@@ -175,7 +175,7 @@ Rà quét mã nguồn và các thư viện phụ thuộc bằng các công cụ 
 * **Đo lường Băng thông** (Đo tốc độ xử lý sự kiện):
 
     ```bash
-    python scripts/benchmark_throughput.py --events 1000 --workers 4 --batch-size 100
+    python scripts/benchmark_throughput.py --events 1000 --batch-size 100
     ```
 
 ### Xác minh Lưu trữ (Storage Verification)

@@ -98,9 +98,10 @@ HieraChain computes an overall health score (0-100) based on weighted alert thre
 
 ### 1. Start Performance Monitoring
 ```python
-from hierachain.monitoring import PerformanceMonitor
+from hierachain.monitoring import AlertManager, PerformanceMonitor
 
 monitor = PerformanceMonitor(config={"collection_interval": 10.0})
+alert_manager = AlertManager()
 monitor.start_monitoring()
 
 # Get instant health report

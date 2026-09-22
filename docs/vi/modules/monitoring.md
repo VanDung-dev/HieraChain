@@ -98,9 +98,10 @@ HieraChain tính toán điểm số sức khỏe tổng thể (0-100) dựa trê
 
 ### 1. Khởi chạy Giám sát Hiệu năng
 ```python
-from hierachain.monitoring import PerformanceMonitor
+from hierachain.monitoring import AlertManager, PerformanceMonitor
 
 monitor = PerformanceMonitor(config={"collection_interval": 10.0})
+alert_manager = AlertManager()
 monitor.start_monitoring()
 
 # Lấy báo cáo sức khỏe tức thì

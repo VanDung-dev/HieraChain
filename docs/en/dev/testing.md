@@ -175,7 +175,7 @@ Automated security checks across codebase and dependencies:
 * **Throughput Benchmark** (Measure event processing throughput):
 
     ```bash
-    python scripts/benchmark_throughput.py --events 1000 --workers 4 --batch-size 100
+    python scripts/benchmark_throughput.py --events 1000 --batch-size 100
     ```
 
 ### Storage Verification

@@ -35,7 +35,7 @@ HieraChain splits storage into layers to balance durability and query speed:
 
     * **SQLite/Postgres** via `SQLBase` + `init_database_schema()` (`chains`, `blocks`, `events`, `proofs`, `chain_state` tables; composite indexes).
     * **Redis Adapter**: `hierachain/adapters/database/redis_adapter.py` for entity indexing.
-    * **Memory**: `HRC_STORAGE_BACKEND=memory` for tests. There is no built-in File Adapter. Parquet is for logs and journals (`core/parquet_log.py`, `error_mitigation/journal.py`), not for chain storage.
+    * **Memory**: `HRC_STORAGE_BACKEND=memory` for tests. There is no built-in File Adapter. Parquet is for logs, while the transaction journal uses append-only Arrow IPC (`core/parquet_log.py`, `error_mitigation/journal.py`), not chain storage.
 
 *   :material-cloud-sync:{ .lg .middle } __Off-chain Storage (IPFS)__
 
