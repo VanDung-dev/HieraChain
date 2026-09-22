@@ -188,6 +188,26 @@ def _read_next_batch(f: BinaryIO) -> bytes | None:
     return batch_data
 
 
+def _serialize_arrow_batch(batch: pa.RecordBatch) -> bytes:
+    """Serialize one record batch as a self-contained Arrow IPC stream."""
+    sink = pa.BufferOutputStream()
+    with pa.ipc.new_stream(sink, batch.schema) as writer:
+        writer.write_batch(batch)
+    return sink.getvalue().to_pybytes()
+
+
+def _is_parquet_file(path: Path) -> bool:
+    """Identify a legacy Parquet file before reusing its active path."""
+    try:
+        with path.open("rb") as handle:
+            if handle.read(4) != b"PAR1":
+                return False
+            handle.seek(-4, os.SEEK_END)
+            return handle.read(4) == b"PAR1"
+    except (OSError, ValueError):
+        return False
+
+
 def _apply_extra_fields(row: dict[str, Any], extra_data: dict[str, Any]) -> None:
     """Merge extra data into row only for non-existent keys."""
     for k, v in extra_data.items():
@@ -229,12 +249,15 @@ def _iterate_journal_batches(
             break
 
         try:
-            batch = pa.ipc.read_record_batch(batch_data, schema)
-            row = batch.to_pylist()[0]
-            yield _unpack_row_data(row)
-        except (pa.ArrowException, ValueError) as arrow_err:
+            try:
+                batch = pa.ipc.read_record_batch(batch_data, schema)
+            except (OSError, pa.ArrowException, ValueError):
+                reader = pa.ipc.open_stream(batch_data)
+                batch = reader.read_next_batch()
+            for row in batch.to_pylist():
+                yield _unpack_row_data(row)
+        except (OSError, pa.ArrowException, StopIteration, ValueError) as arrow_err:
             logger.error("Corrupted Arrow batch in journal: %s", arrow_err)
-            continue
 
 
 class TransactionJournal:
@@ -262,7 +285,7 @@ class TransactionJournal:
             )
 
     def __init__(
-        self, storage_dir: str = "data/journal", active_log_name: str = "current.parquet"
+        self, storage_dir: str = "data/journal", active_log_name: str = "current.arrow"
     ) -> None:
         """
         Initialize the Transaction Journal.
@@ -296,6 +319,11 @@ class TransactionJournal:
 
         # Build active log file path strictly inside storage_path
         self.active_log_file = self.storage_path / safe_log_name
+        self._legacy_active_file = (
+            self.active_log_file.with_suffix(".parquet")
+            if self.active_log_file.suffix != ".parquet"
+            else None
+        )
 
         try:
             self.active_log_file.relative_to(self.storage_path)
@@ -314,7 +342,7 @@ class TransactionJournal:
         except (OSError, RuntimeError) as e:
             logger.warning("Filesystem check failed, attempting creation anyway: %s", e)
 
-        self._pq_writer: pq.ParquetWriter | None = None
+        self._journal_file: BinaryIO | None = None
         self._schema = _EVENT_SCHEMA
         self._lock = threading.Lock()
         self._async_write = not get_settings().JOURNAL_FSYNC
@@ -341,32 +369,25 @@ class TransactionJournal:
             self._writer_thread.start()
 
     def _open_journal(self) -> None:
-        """Open the journal file for appending (binary mode)."""
+        """Open the active Arrow IPC journal for append-only writes."""
         try:
-            existing: pa.Table | None = None
-            if self.active_log_file.exists() and self.active_log_file.stat().st_size > 0:
-                try:
-                    existing = pq.read_table(self.active_log_file, schema=self._schema)
-                except (OSError, pa.ArrowException, ValueError):
-                    existing = None
-                    try:
-                        self.active_log_file.unlink()
-                    except OSError as e:
-                        logger.debug("Could not unlink corrupted journal file: %s", e)
-            self._pq_writer = pq.ParquetWriter(self.active_log_file, self._schema)
-            if existing is not None and existing.num_rows > 0:
-                self._pq_writer.write_table(existing)
+            if self.active_log_file.exists() and _is_parquet_file(self.active_log_file):
+                legacy_file = self.storage_path / (
+                    f"{self.active_log_file.stem}_legacy_{time.time_ns()}.parquet"
+                )
+                self.active_log_file.rename(legacy_file)
+            self._journal_file = self.active_log_file.open("ab", buffering=0)
         except (OSError, IOError) as e:
             logger.critical("Failed to open transaction journal: %s", e)
             raise
 
     def _close_writer(self) -> None:
-        if self._pq_writer is not None:
+        if self._journal_file is not None:
             try:
-                self._pq_writer.close()
+                self._journal_file.close()
             except Exception as e:
                 logger.debug("Error closing journal writer: %s", e)
-            self._pq_writer = None
+            self._journal_file = None
 
     def _should_rotate(self) -> bool:
         try:
@@ -380,12 +401,12 @@ class TransactionJournal:
         try:
             self._close_writer()
             ts = time.time_ns()
-            rotated = self.storage_path / f"{self.active_log_file.stem}_{ts}.parquet"
+            rotated = self.storage_path / f"{self.active_log_file.stem}_{ts}.arrow"
             self.active_log_file.rename(rotated)
             self._open_journal()
         except (OSError, IOError) as e:
             logger.error("Journal rotation failed: %s", e)
-            if self._pq_writer is None:
+            if self._journal_file is None:
                 try:
                     self._open_journal()
                 except Exception as ex:
@@ -429,23 +450,21 @@ class TransactionJournal:
     def _write_event_to_file(self, event_data: dict[str, Any]) -> bool:
         """Perform actual file write operations."""
         with self._lock:
-            if self._pq_writer is None:
+            if self._journal_file is None:
                 self._open_journal()
-            if self._pq_writer is None:
+            if self._journal_file is None:
                 return False
             self._rotate_if_needed()
-            if self._pq_writer is None:
+            if self._journal_file is None:
                 return False
             try:
                 batch = self._dict_to_arrow_batch(event_data)
-                table = pa.Table.from_batches([batch])
-                self._pq_writer.write_table(table)
+                payload = _serialize_arrow_batch(batch)
+                self._journal_file.write(struct.pack("<I", len(payload)))
+                self._journal_file.write(payload)
+                self._journal_file.flush()
                 if get_settings().JOURNAL_FSYNC:
-                    try:
-                        self._pq_writer.close()
-                    except Exception as ex:
-                        logger.debug("Error closing writer on fsync: %s", ex)
-                    self._pq_writer = None
+                    os.fsync(self._journal_file.fileno())
                 return True
             except (OSError, IOError, pa.ArrowException) as e:
                 logger.critical("CRITICAL: Failed to write to transaction journal: %s", e)
@@ -456,12 +475,13 @@ class TransactionJournal:
         if self._async_write and self._write_queue:
             self._write_queue.join()
         with self._lock:
-            if self._pq_writer is not None:
+            if self._journal_file is not None:
                 try:
-                    self._pq_writer.close()
+                    self._journal_file.flush()
+                    if get_settings().JOURNAL_FSYNC:
+                        os.fsync(self._journal_file.fileno())
                 except Exception as ex:
-                    logger.debug("Error closing writer on flush: %s", ex)
-                self._pq_writer = None
+                    logger.debug("Error flushing journal on flush: %s", ex)
 
     def log_event(self, event_data: dict[str, Any]) -> bool:
         """Durably log an event to the journal using Arrow format."""
@@ -477,6 +497,8 @@ class TransactionJournal:
         files = sorted(self.storage_path.glob(f"{self.active_log_file.stem}_*.parquet"))
         files += sorted(self.storage_path.glob(f"{self.active_log_file.stem}_*.arrow"))
         files += sorted(self.storage_path.glob(f"{self.active_log_file.stem}_*.log"))
+        if self._legacy_active_file and self._legacy_active_file.exists():
+            files.append(self._legacy_active_file)
         if self.active_log_file.exists():
             files.append(self.active_log_file)
         files = sorted(set(files))
@@ -491,12 +513,11 @@ class TransactionJournal:
         except Exception as e:
             if path.suffix == ".parquet":
                 logger.error("Error replaying parquet journal %s: %s", path, e)
-            else:
-                try:
-                    with open(path, "rb") as f:
-                        yield from _iterate_journal_batches(f, self._schema)
-                except Exception as e2:
-                    logger.error("Error replaying journal %s: %s", path, e2)
+            try:
+                with open(path, "rb") as f:
+                    yield from _iterate_journal_batches(f, self._schema)
+            except Exception as e2:
+                logger.error("Error replaying journal %s: %s", path, e2)
 
     def replay(self) -> Generator[dict[str, Any], None, None]:
         """
@@ -505,12 +526,7 @@ class TransactionJournal:
         """
         self.flush()
         with self._lock:
-            if self._pq_writer is not None:
-                try:
-                    self._pq_writer.close()
-                    self._pq_writer = None
-                except Exception as ex:
-                    logger.debug("Error closing writer before replay: %s", ex)
+            self._close_writer()
         files = self._get_journal_files()
         if not files:
             with self._lock:
