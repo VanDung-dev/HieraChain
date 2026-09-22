@@ -4,9 +4,17 @@ Unit tests for PostgreSQL adapter.
 
 from unittest.mock import MagicMock
 
+import pytest
+
 from hierachain.adapters.database.postgres_adapter import PostgresAdapter
 from hierachain.adapters.database import PostgresAdapter as ExportedPostgresAdapter
 from hierachain.core import Blockchain
+
+
+@pytest.fixture(autouse=True)
+def no_database_connection(monkeypatch):
+    """Keep dialect unit tests independent from a running PostgreSQL server."""
+    monkeypatch.setattr(PostgresAdapter, "_init_pool", lambda self: None)
 
 
 def test_export():
@@ -66,13 +74,78 @@ def test_save_block_with_mock_conn():
                 "sender_id": "user-1",
             }
         ],
-        "metadata_json": {"merkle_root": "mrk_123"},
+        "metadata": {"merkle_root": "mrk_123"},
     }
 
     result = adapter._execute_save_block(mock_conn, block_data)
     assert result is True
-    assert mock_cursor.execute.call_count == 2
+    assert mock_cursor.execute.call_count == 3
+    assert mock_cursor.execute.call_args_list[1].args[1][7] == '{"merkle_root":"mrk_123"}'
     mock_conn.commit.assert_called_once()
+
+
+def test_get_block_by_index_returns_events_with_base_contract():
+    """Test PostgreSQL block reads match SQLBase's normalized block shape."""
+    cursor = MagicMock()
+    cursor.fetchone.return_value = {
+        "index": 1,
+        "hash": "hash_123456",
+        "previous_hash": "hash_000000",
+        "timestamp": 1234567890.0,
+        "nonce": 42,
+        "metadata_json": {"merkle_root": "mrk_123"},
+    }
+    cursor.fetchall.return_value = [
+        {
+            "chain_name": "TestPGChain",
+            "entity_id": "ent-1",
+            "event_type": "create",
+            "timestamp": 1234567890.0,
+            "data": {"key": "val"},
+        }
+    ]
+
+    adapter = PostgresAdapter(
+        database_url="postgresql://user:pass@localhost:5432/testdb"
+    )
+    block = adapter._execute_get_block_by_index(
+        cursor, 1, "TestPGChain"
+    )
+
+    assert block["index"] == 1
+    assert block["events"] == [
+        {
+            "chain_name": "TestPGChain",
+            "entity_id": "ent-1",
+            "event": "create",
+            "timestamp": 1234567890.0,
+            "data": {"key": "val"},
+        }
+    ]
+    assert cursor.execute.call_args_list[0].args[1] == (1, "TestPGChain")
+
+
+def test_get_latest_block_returns_events_with_base_contract():
+    """Test PostgreSQL latest-block reads return the normalized block shape."""
+    cursor = MagicMock()
+    cursor.fetchone.return_value = {
+        "index": 2,
+        "hash": "hash_222222",
+        "previous_hash": "hash_111111",
+        "timestamp": 1234567891.0,
+        "nonce": 43,
+        "metadata_json": None,
+    }
+    cursor.fetchall.return_value = []
+    adapter = PostgresAdapter(
+        database_url="postgresql://user:pass@localhost:5432/testdb"
+    )
+
+    block = adapter._execute_get_latest_block(cursor, "TestPGChain")
+
+    assert block["index"] == 2
+    assert block["events"] == []
+    assert cursor.execute.call_args_list[0].args[1] == ("TestPGChain",)
 
 
 def test_store_proof_with_mock_conn():
