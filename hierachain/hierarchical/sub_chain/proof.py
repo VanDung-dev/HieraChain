@@ -206,6 +206,7 @@ def _update_local_state_after_proof(
 ) -> None:
     """Update local state after successful proof submission."""
     sub_chain.last_proof_submission = time.time()
+    sub_chain.last_proof_block_index = latest_block.index
 
     proof_event = {
         "entity_id": sub_chain.name,

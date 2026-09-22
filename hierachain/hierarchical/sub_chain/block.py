@@ -24,9 +24,10 @@ def _process_and_finalize_single_block(sub_chain: Any, block: Any) -> bool:
                 finalized_block, sub_chain.name
             )
         except Exception as e:  # noqa: BLE001
-            logger.warning(
+            logger.error(
                 "Failed to persist finalized block %d: %s", finalized_block.index, e
             )
+            return False
 
         if sub_chain.add_block(finalized_block):
             sub_chain.world_state.apply_block(finalized_block)

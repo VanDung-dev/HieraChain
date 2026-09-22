@@ -7,8 +7,6 @@ import threading
 import logging
 import re
 import os
-import hashlib
-import orjson
 from typing import Any, Callable
 
 from hierachain.core.blockchain import Blockchain
@@ -54,6 +52,7 @@ class SubChain(Blockchain):
         'domain_type', 'custom_config', 'node_identity',
         'consensus', 'main_chain_connection',
         'proof_submission_interval', 'last_proof_submission',
+        'last_proof_block_index',
         'completed_operations', 'ordering_service', 'world_state',
         '_block_processing_lock', '_async_sync_lock', 'running',
         '_shutdown_event', 'consumer_thread',
@@ -89,6 +88,7 @@ class SubChain(Blockchain):
         self.main_chain_connection: Any | None = None
         self.proof_submission_interval: float = 60.0
         self.last_proof_submission: float = time.time()
+        self.last_proof_block_index: int = 0
         self.completed_operations: int = 0
 
         if hasattr(self.consensus, "add_authority"):
@@ -212,7 +212,7 @@ class SubChain(Blockchain):
 
         logger.debug("SubChain %s adding event: %s", self.name, event.get("event"))
 
-        self.ordering_service.receive_event(
+        event_id = self.ordering_service.receive_event(
             event_data=event, channel_id=self.name, submitter_org=self.name
         )
 
@@ -220,12 +220,7 @@ class SubChain(Blockchain):
             if event not in self.pending_events:
                 self.pending_events.append(event)
 
-        try:
-            event_bytes = orjson.dumps(event, option=orjson.OPT_SORT_KEYS)
-        except (TypeError, ValueError, orjson.JSONEncodeError):
-            event_bytes = str(sorted(event.items())).encode()
-        event_digest = hashlib.sha256(event_bytes).hexdigest()[:16]
-        return f"evt-{event_digest}"
+        return event_id
 
     def connect_to_main_chain(self, main_chain: Any) -> bool:
         return _connect_sub_chain_to_main(self, main_chain)
@@ -300,11 +295,13 @@ class SubChain(Blockchain):
         current_time = time.time()
         time_since_last = current_time - self.last_proof_submission
 
-        has_pending = False
-        if hasattr(self, 'ordering_service'):
-            has_pending = len(self.ordering_service.pending_events) > 0
+        latest_block = self.get_latest_block()
+        has_unsubmitted_block = (
+            latest_block is not None
+            and latest_block.index > self.last_proof_block_index
+        )
 
-        return time_since_last >= self.proof_submission_interval and has_pending
+        return time_since_last >= self.proof_submission_interval and has_unsubmitted_block
 
     def auto_submit_proof_if_needed(self) -> bool:
         if self.should_submit_proof() and self.main_chain_connection:
