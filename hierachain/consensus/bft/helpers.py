@@ -13,7 +13,7 @@ from typing import Any, Callable
 from hierachain.config.settings import settings
 from hierachain.security.security_utils import verify_signature
 from hierachain.security.verify.zk_verifier import ZKVerifier
-from hierachain.error_mitigation.validator import ConsensusValidator
+from hierachain.error_mitigation.consensus_validator import ConsensusValidator
 from hierachain.error_mitigation.error_classifier import ErrorClassifier
 from hierachain.consensus.bft.types import BFTMessage, MessageType, ConsensusState
 
