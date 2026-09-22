@@ -55,12 +55,11 @@ def generate_events(count: int) -> list[dict[str, Any]]:
         events.append(event)
     return events
 
-async def run_benchmark(event_count: int, workers: int, batch_size: int):
-    logger.info(f"Starting benchmark with {event_count} events, {workers} workers, batch size {batch_size}")
+async def run_benchmark(event_count: int, batch_size: int) -> None:
+    logger.info("Starting benchmark with %d events, batch size %d", event_count, batch_size)
     
     # Configure settings override
     config = {
-        "max_workers": workers,
         "block_size": batch_size,
         "batch_timeout": 0.5 # Low timeout to trigger block creation frequently
     }
@@ -76,6 +75,7 @@ async def run_benchmark(event_count: int, workers: int, batch_size: int):
     )
     
     service = OrderingService(nodes=[node], config=config)
+    initial_blocks = service.blocks_created
     # Force status to active
     service.status = OrderingStatus.ACTIVE
     
@@ -101,16 +101,16 @@ async def run_benchmark(event_count: int, workers: int, batch_size: int):
             stats = service.get_statistics()
             processed = stats["events_certified"]
             rejected = stats["events_rejected"]
-            blocks = service.blocks_created
-            
-            if (processed + rejected) >= event_count:
+            completed = (processed + rejected) >= event_count
+            required_blocks = initial_blocks + (processed + batch_size - 1) // batch_size
+            if completed and service.blocks_created >= required_blocks:
                 break
             
             if time.time() - start_time > 60: # 1 minute timeout
                 logger.warning("Timeout reached!")
                 break
                 
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.01)
             
         end_time = time.time()
         duration = end_time - start_time
@@ -128,12 +128,11 @@ async def run_benchmark(event_count: int, workers: int, batch_size: int):
 def main():
     parser = argparse.ArgumentParser(description="HieraChain Throughput Benchmark")
     parser.add_argument("--events", type=int, default=1000, help="Number of events")
-    parser.add_argument("--workers", type=int, default=4, help="Number of workers")
     parser.add_argument("--batch-size", type=int, default=100, help="Events per block")
     
     args = parser.parse_args()
     
-    asyncio.run(run_benchmark(args.events, args.workers, args.batch_size))
+    asyncio.run(run_benchmark(args.events, args.batch_size))
 
 if __name__ == "__main__":
     main()
