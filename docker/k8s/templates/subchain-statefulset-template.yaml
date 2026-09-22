@@ -61,8 +61,6 @@ spec:
               value: "{{PEERS}}"
             - name: LOG_LEVEL
               value: "{{LOG_LEVEL}}"
-            - name: DATABASE_PATH
-              value: "/app/data/hierachain.db"
             - name: HRC_API_HOST
               value: "0.0.0.0"
             - name: HRC_SUBCHAIN_ID

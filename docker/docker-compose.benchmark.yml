@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: hierachain
+      POSTGRES_USER: hiera
+      POSTGRES_PASSWORD: hiera_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hiera -d hierachain"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - /var/lib/postgresql/data
+
+  throughput:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: benchmark
+    image: hierachain-benchmark:local
+    working_dir: /app
+    environment:
+      HRC_ENV: test
+      HRC_NODE_ID: benchmark-docker
+      HRC_STORAGE_BACKEND: postgres
+      DATABASE_URL: postgresql://hiera:hiera_password@postgres:5432/hierachain
+      HRC_DATABASE_URL: postgresql://hiera:hiera_password@postgres:5432/hierachain
+      HRC_JOURNAL_FSYNC: "${HRC_JOURNAL_FSYNC:-true}"
+      HRC_AUTH_ENABLED: "false"
+      HRC_P2P_ENABLED: "false"
+      HRC_IPFS_ENABLED: "false"
+      HRC_RATE_LIMIT: "false"
+      HRC_BENCHMARK_DB_URL: postgresql://hiera:hiera_password@postgres:5432/hierachain
+      HRC_BENCHMARK_JOURNAL_DIR: /app/data/journal
+      HRC_BENCHMARK_LOG_FILE: /app/log/benchmark_debug.log
+    command:
+      - python
+      - docker/scripts/benchmark_throughput.py
+      - --events
+      - "${BENCHMARK_EVENTS:-5000}"
+      - --batch-size
+      - "${BENCHMARK_BATCH_SIZE:-100}"
+    cpus: "${BENCHMARK_CPUS:-1.0}"
+    mem_limit: "${BENCHMARK_MEMORY:-1g}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - /app/data
+      - /app/log

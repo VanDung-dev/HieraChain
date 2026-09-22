@@ -82,11 +82,6 @@ spec:
                 configMapKeyRef:
                   name: hierachain-config
                   key: LOG_LEVEL
-            - name: DATABASE_PATH
-              valueFrom:
-                configMapKeyRef:
-                  name: hierachain-config
-                  key: DATABASE_PATH
             - name: HRC_API_HOST
               valueFrom:
                 configMapKeyRef:

@@ -96,7 +96,9 @@ WHEEL_DIR="docker/dist"
 build_wheel() {
   local wheel
   wheel=$(ls "$WHEEL_DIR"/hierachain-*.whl 2>/dev/null | head -1)
-  if [ -n "$wheel" ] && [ "$wheel" -nt pyproject.toml ]; then
+  if [ -n "$wheel" ] \
+    && [ "$wheel" -nt pyproject.toml ] \
+    && ! find hierachain -type f -newer "$wheel" -print -quit | grep -q .; then
     echo "  Wheel up-to-date: $(basename "$wheel")"
     return
   fi
@@ -116,7 +118,7 @@ generate_identities() {
 build_image() {
   build_wheel
   echo ""; echo "[2/6] Building image..."
-  $ENGINE build -t "$IMAGE_NAME" -f docker/Dockerfile .
+  $ENGINE build --target production -t "$IMAGE_NAME" -f docker/Dockerfile .
   sleep 5
 }
 

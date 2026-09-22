@@ -53,7 +53,7 @@ services:
       - HRC_P2P_PORT=5001
       - HRC_AUTH_ENABLED=false
       - LOG_LEVEL=WARNING
-      - DATABASE_PATH=/app/data/hierachain.db
+      - HRC_STORAGE_BACKEND=postgres
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
       - HRC_ENV=product
@@ -64,7 +64,7 @@ services:
       - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
-      - HRC_JOURNAL_FSYNC=false
+      - HRC_JOURNAL_FSYNC=${HRC_JOURNAL_FSYNC:-true}
       - HRC_BLOCK_INTERVAL=1
       - HRC_IPFS_ENABLED=true
       - HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
@@ -72,6 +72,7 @@ services:
       - HRC_IPFS_AUTO_PIN=true
       - HRC_IPFS_TIMEOUT=120
       - DATABASE_URL=postgresql://hiera:hiera_password@postgres-node1:5432/hierachain
+      - HRC_DATABASE_URL=postgresql://hiera:hiera_password@postgres-node1:5432/hierachain
     networks:
       region-us:
         ipv4_address: 172.28.1.10
@@ -118,7 +119,7 @@ services:
       - HRC_P2P_PORT=5002
       - HRC_AUTH_ENABLED=false
       - LOG_LEVEL=WARNING
-      - DATABASE_PATH=/app/data/hierachain.db
+      - HRC_STORAGE_BACKEND=postgres
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
       - HRC_ENV=product
@@ -129,7 +130,7 @@ services:
       - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
-      - HRC_JOURNAL_FSYNC=false
+      - HRC_JOURNAL_FSYNC=${HRC_JOURNAL_FSYNC:-true}
       - HRC_BLOCK_INTERVAL=1
       - HRC_IPFS_ENABLED=true
       - HRC_IPFS_HOST=/dns4/ipfs-node2/tcp/5001
@@ -137,6 +138,7 @@ services:
       - HRC_IPFS_AUTO_PIN=true
       - HRC_IPFS_TIMEOUT=120
       - DATABASE_URL=postgresql://hiera:hiera_password@postgres-node2:5432/hierachain
+      - HRC_DATABASE_URL=postgresql://hiera:hiera_password@postgres-node2:5432/hierachain
     networks:
       region-eu:
         ipv4_address: 172.28.2.10
@@ -183,7 +185,7 @@ services:
       - HRC_P2P_PORT=5003
       - HRC_AUTH_ENABLED=false
       - LOG_LEVEL=WARNING
-      - DATABASE_PATH=/app/data/hierachain.db
+      - HRC_STORAGE_BACKEND=postgres
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
       - HRC_ENV=product
@@ -194,7 +196,7 @@ services:
       - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
-      - HRC_JOURNAL_FSYNC=false
+      - HRC_JOURNAL_FSYNC=${HRC_JOURNAL_FSYNC:-true}
       - HRC_BLOCK_INTERVAL=1
       - HRC_IPFS_ENABLED=true
       - HRC_IPFS_HOST=/dns4/ipfs-node3/tcp/5001
@@ -202,6 +204,7 @@ services:
       - HRC_IPFS_AUTO_PIN=true
       - HRC_IPFS_TIMEOUT=120
       - DATABASE_URL=postgresql://hiera:hiera_password@postgres-node3:5432/hierachain
+      - HRC_DATABASE_URL=postgresql://hiera:hiera_password@postgres-node3:5432/hierachain
     networks:
       region-asia:
         ipv4_address: 172.28.3.10
@@ -248,7 +251,7 @@ services:
       - HRC_P2P_PORT=5004
       - HRC_AUTH_ENABLED=false
       - LOG_LEVEL=WARNING
-      - DATABASE_PATH=/app/data/hierachain.db
+      - HRC_STORAGE_BACKEND=postgres
       - HRC_API_HOST=0.0.0.0
       - HRC_VALIDATOR_IDENTITY=/app/config/identity/identity.json
       - HRC_ENV=product
@@ -259,7 +262,7 @@ services:
       - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
-      - HRC_JOURNAL_FSYNC=false
+      - HRC_JOURNAL_FSYNC=${HRC_JOURNAL_FSYNC:-true}
       - HRC_BLOCK_INTERVAL=1
       - HRC_IPFS_ENABLED=true
       - HRC_IPFS_HOST=/dns4/ipfs-node4/tcp/5001
@@ -267,6 +270,7 @@ services:
       - HRC_IPFS_AUTO_PIN=true
       - HRC_IPFS_TIMEOUT=120
       - DATABASE_URL=postgresql://hiera:hiera_password@postgres-node4:5432/hierachain
+      - HRC_DATABASE_URL=postgresql://hiera:hiera_password@postgres-node4:5432/hierachain
     networks:
       region-asia:
         ipv4_address: 172.28.3.11

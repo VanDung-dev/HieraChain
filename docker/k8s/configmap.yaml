@@ -14,9 +14,6 @@ data:
   HRC_API_HOST: "0.0.0.0"
   HRC_API_PORT: "2661"
 
-  # Storage configuration
-  DATABASE_PATH: "/app/data/hierachain.db"
-
   # Stress test configuration
   HRC_STORAGE_BACKEND: "redis"
   HRC_REDIS_HOST: "hierachain-redis"
