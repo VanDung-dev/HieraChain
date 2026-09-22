@@ -8,12 +8,13 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (11)"
+??? warning "Breaking Changes (12)"
 
     * 2026-09-22
 
         * **Giảm thiểu Lỗi (Validators)**: Loại bỏ `APIValidator` (kèm entry `"api"` trong factory `create_validator` và logic kiểm tra thuật ngữ cấm trên Arrow/legacy) khỏi `hierachain/error_mitigation/validator.py` và các export của package (`hierachain/error_mitigation/__init__.py`); đồng thời chỉnh đường dẫn import `ConsensusValidator` sang `hierachain/error_mitigation/consensus_validator.py` trong `hierachain/consensus/bft/helpers.py`.
         * **Giám sát (Monitoring)**: Loại bỏ singleton toàn cục `alert_manager` và export khỏi `hierachain/monitoring/__init__.py` (các lớp `AlertManager`/`PerformanceMonitor` vẫn khả dụng).
+        * **Config (Storage Backend)**: Đổi backend lưu trữ mặc định từ `sqlite` sang `postgres` trong `hierachain/config/settings.py` (`DEFAULT_STORAGE_BACKEND`, `DATABASE_URL` mặc định nay là `postgresql://hiera:hiera@localhost:5432/hierachain`, hỗ trợ `HRC_DATABASE_URL` với xử lý tường minh `sqlite://`) và `hierachain/config/product_config_template.py` (`HRC_STORAGE_BACKEND=postgres` kèm `DATABASE_URL`/`HRC_DATABASE_URL` theo từng node); `ProductionSettings.DEFAULT_STORAGE_BACKEND` chuyển từ `redis` sang `postgres`.
 
     * 2026-09-21
 
@@ -36,12 +37,14 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (4)"
+??? note "Improvements (6)"
 
     * 2026-09-22
 
         * **Journal (Giảm thiểu Lỗi & Ordering)**: Chuyển `TransactionJournal` (`hierachain/error_mitigation/journal.py`) từ `ParquetWriter` sang ghi nối tiếp Arrow IPC (đóng khung `RecordBatch` kèm tiền tố độ dài qua `_serialize_arrow_batch`, đảm bảo bền dữ liệu bằng `os.fsync`, replay nhiều dòng/batch với fallback stream cũ); đổi tên file log active mặc định `current.parquet` thành `current.arrow` (file xoay vòng `*_*.parquet` thành `*_*.arrow`, tương tự `node_{id}_journal.parquet` thành `.arrow` của `OrderingService` trong `hierachain/consensus/ordering/service.py`) đồng thời vẫn replay được file Parquet legacy (tự đổi tên file active cũ sang `*_legacy_*.parquet` qua guard `_is_parquet_file`).
         * **Hierarchical (SubChain Proof & Events)**: Tinh gọn `SubChain.add_event()` (`hierachain/hierarchical/sub_chain/base.py`) để trả về `event_id` có thẩm quyền từ `ordering_service.receive_event()` thay vì digest tổng hợp `orjson`+SHA-256 (loại bỏ import `hashlib`/`orjson`); chuyển `should_submit_proof()` sang theo dõi theo chỉ số block qua `last_proof_block_index` mới (cập nhật trong `hierachain/hierarchical/sub_chain/proof.py`) thay vì kiểm tra pending events; củng cố `_process_and_finalize_single_block` (`hierachain/hierarchical/sub_chain/block.py`) để log lỗi persist ở mức `error` và trả `False` mà không append block vào bộ nhớ.
+        * **Database (PostgreSQL Adapter)**: Củng cố `PostgresAdapter` (`hierachain/adapters/database/postgres_adapter.py`) với `connect_timeout: 3` khi khởi tạo pool, parse động `data` event thô bằng `orjson` trong `_execute_fetch_block_events`, `_execute_save_block` tự khép kín bắt buộc `chain_name` (tự chèn dòng `chains` còn thiếu, chấp nhận fallback `metadata`/`merkle_root`), và các hàm fetch block trả về dict block đầy đủ với `chain_name` tùy chọn (`_execute_get_block_by_index`/`_execute_get_latest_block` chuyển thành instance methods).
+        * **Hierarchical (Storage Fallback)**: Tăng khả năng chống lỗi cho `HierarchyManager._create_storage()` (`hierachain/hierarchical/hierarchy_manager/base.py`) bằng cách kiểm tra PostgreSQL (`SELECT 1 FROM chains LIMIT 0`) và fallback về `SQLiteAdapter` kèm warning khi PostgreSQL không khả dụng.
 
     * 2026-09-18
 

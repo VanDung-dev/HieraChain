@@ -8,12 +8,13 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (11)"
+??? warning "Breaking Changes (12)"
 
     * 2026-09-22
 
         * **Error Mitigation (Validators)**: Removed `APIValidator` (including the `"api"` entry of the `create_validator` factory and forbidden-term Arrow/legacy validation) from `hierachain/error_mitigation/validator.py` and package exports (`hierachain/error_mitigation/__init__.py`); corrected the `ConsensusValidator` import path to `hierachain/error_mitigation/consensus_validator.py` in `hierachain/consensus/bft/helpers.py`.
         * **Monitoring**: Removed the `alert_manager` global singleton instance and export from `hierachain/monitoring/__init__.py` (the `AlertManager`/`PerformanceMonitor` classes remain available).
+        * **Config (Storage Backend)**: Changed the default storage backend from `sqlite` to `postgres` in `hierachain/config/settings.py` (`DEFAULT_STORAGE_BACKEND`, default `DATABASE_URL` now `postgresql://hiera:hiera@localhost:5432/hierachain`, `HRC_DATABASE_URL` support with explicit `sqlite://` handling) and `hierachain/config/product_config_template.py` (`HRC_STORAGE_BACKEND=postgres` with per-node `DATABASE_URL`/`HRC_DATABASE_URL`); `ProductionSettings.DEFAULT_STORAGE_BACKEND` switched from `redis` to `postgres`.
 
     * 2026-09-21
 
@@ -36,12 +37,14 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (4)"
+??? note "Improvements (6)"
 
     * 2026-09-22
 
         * **Journal (Error Mitigation & Ordering)**: Migrated `TransactionJournal` (`hierachain/error_mitigation/journal.py`) from `ParquetWriter` to append-only Arrow IPC framing (length-prefixed `RecordBatch` streams via `_serialize_arrow_batch`, `os.fsync` durability, multi-row batch replay with legacy stream fallback); renamed the default active log `current.parquet` to `current.arrow` (rotation files `*_*.parquet` to `*_*.arrow`, likewise `node_{id}_journal.parquet` to `.arrow` for `OrderingService` in `hierachain/consensus/ordering/service.py`) while preserving replay of legacy Parquet files (active legacy file auto-renamed to `*_legacy_*.parquet` via the `_is_parquet_file` guard).
         * **Hierarchical (SubChain Proof & Events)**: Streamlined `SubChain.add_event()` (`hierachain/hierarchical/sub_chain/base.py`) to return the authoritative `event_id` from `ordering_service.receive_event()` instead of a synthetic `orjson`+SHA-256 digest (dropping the `hashlib`/`orjson` imports); switched `should_submit_proof()` to block-index tracking via the new `last_proof_block_index` (updated in `hierachain/hierarchical/sub_chain/proof.py`) instead of pending-event checks; hardened `_process_and_finalize_single_block` (`hierachain/hierarchical/sub_chain/block.py`) to log persistence failures at `error` level and return `False` without appending the block in memory.
+        * **Database (PostgreSQL Adapter)**: Hardened `PostgresAdapter` (`hierachain/adapters/database/postgres_adapter.py`) with `connect_timeout: 3` on pool initialization, dynamic `orjson` parsing of raw event `data` in `_execute_fetch_block_events`, self-contained `_execute_save_block` requiring `chain_name` (auto-inserts a missing `chains` row, accepts `metadata`/`merkle_root` fallback), and graceful block fetchers returning hydrated block dicts with optional `chain_name` (`_execute_get_block_by_index`/`_execute_get_latest_block` converted to instance methods).
+        * **Hierarchical (Storage Fallback)**: Made `HierarchyManager._create_storage()` (`hierachain/hierarchical/hierarchy_manager/base.py`) resilient by probing PostgreSQL (`SELECT 1 FROM chains LIMIT 0`) and falling back to `SQLiteAdapter` with a warning when PostgreSQL is unavailable.
 
     * 2026-09-18
 
