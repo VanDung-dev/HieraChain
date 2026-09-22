@@ -410,15 +410,32 @@ class HierarchyManager:
     def _create_storage() -> Any | None:
         backend = getattr(settings, "STORAGE_BACKEND", settings.DEFAULT_STORAGE_BACKEND)
 
-        if backend == "sqlite":
+        def create_sqlite_storage() -> SQLiteAdapter:
             db_path = "hierachain.db"
             if settings.DATABASE_URL.startswith("sqlite:///"):
                 db_path = settings.DATABASE_URL.replace("sqlite:///", "")
             return SQLiteAdapter(database_path=db_path)
 
+        if backend == "sqlite":
+            return create_sqlite_storage()
+
         if backend in ("postgres", "postgresql"):
-            from hierachain.adapters.database.postgres_adapter import PostgresAdapter
-            return PostgresAdapter(database_url=settings.DATABASE_URL)
+            postgres = None
+            try:
+                from hierachain.adapters.database.postgres_adapter import PostgresAdapter
+
+                postgres = PostgresAdapter(database_url=settings.DATABASE_URL)
+                with postgres._get_connection() as connection:
+                    connection.cursor().execute("SELECT 1 FROM chains LIMIT 0")
+                return postgres
+            except Exception as exc:
+                if postgres is not None:
+                    postgres.close()
+                logger.warning(
+                    "PostgreSQL unavailable; falling back to SQLite (%s)",
+                    type(exc).__name__,
+                )
+                return create_sqlite_storage()
 
         if backend == "redis":
             return RedisStorageAdapter()
