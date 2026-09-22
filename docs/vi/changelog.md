@@ -8,7 +8,12 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (9)"
+??? warning "Breaking Changes (11)"
+
+    * 2026-09-22
+
+        * **Giảm thiểu Lỗi (Validators)**: Loại bỏ `APIValidator` (kèm entry `"api"` trong factory `create_validator` và logic kiểm tra thuật ngữ cấm trên Arrow/legacy) khỏi `hierachain/error_mitigation/validator.py` và các export của package (`hierachain/error_mitigation/__init__.py`); đồng thời chỉnh đường dẫn import `ConsensusValidator` sang `hierachain/error_mitigation/consensus_validator.py` trong `hierachain/consensus/bft/helpers.py`.
+        * **Giám sát (Monitoring)**: Loại bỏ singleton toàn cục `alert_manager` và export khỏi `hierachain/monitoring/__init__.py` (các lớp `AlertManager`/`PerformanceMonitor` vẫn khả dụng).
 
     * 2026-09-21
 
@@ -31,7 +36,12 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (2)"
+??? note "Improvements (4)"
+
+    * 2026-09-22
+
+        * **Journal (Giảm thiểu Lỗi & Ordering)**: Chuyển `TransactionJournal` (`hierachain/error_mitigation/journal.py`) từ `ParquetWriter` sang ghi nối tiếp Arrow IPC (đóng khung `RecordBatch` kèm tiền tố độ dài qua `_serialize_arrow_batch`, đảm bảo bền dữ liệu bằng `os.fsync`, replay nhiều dòng/batch với fallback stream cũ); đổi tên file log active mặc định `current.parquet` thành `current.arrow` (file xoay vòng `*_*.parquet` thành `*_*.arrow`, tương tự `node_{id}_journal.parquet` thành `.arrow` của `OrderingService` trong `hierachain/consensus/ordering/service.py`) đồng thời vẫn replay được file Parquet legacy (tự đổi tên file active cũ sang `*_legacy_*.parquet` qua guard `_is_parquet_file`).
+        * **Hierarchical (SubChain Proof & Events)**: Tinh gọn `SubChain.add_event()` (`hierachain/hierarchical/sub_chain/base.py`) để trả về `event_id` có thẩm quyền từ `ordering_service.receive_event()` thay vì digest tổng hợp `orjson`+SHA-256 (loại bỏ import `hashlib`/`orjson`); chuyển `should_submit_proof()` sang theo dõi theo chỉ số block qua `last_proof_block_index` mới (cập nhật trong `hierachain/hierarchical/sub_chain/proof.py`) thay vì kiểm tra pending events; củng cố `_process_and_finalize_single_block` (`hierachain/hierarchical/sub_chain/block.py`) để log lỗi persist ở mức `error` và trả `False` mà không append block vào bộ nhớ.
 
     * 2026-09-18
 

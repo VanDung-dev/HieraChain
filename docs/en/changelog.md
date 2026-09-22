@@ -8,7 +8,12 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (9)"
+??? warning "Breaking Changes (11)"
+
+    * 2026-09-22
+
+        * **Error Mitigation (Validators)**: Removed `APIValidator` (including the `"api"` entry of the `create_validator` factory and forbidden-term Arrow/legacy validation) from `hierachain/error_mitigation/validator.py` and package exports (`hierachain/error_mitigation/__init__.py`); corrected the `ConsensusValidator` import path to `hierachain/error_mitigation/consensus_validator.py` in `hierachain/consensus/bft/helpers.py`.
+        * **Monitoring**: Removed the `alert_manager` global singleton instance and export from `hierachain/monitoring/__init__.py` (the `AlertManager`/`PerformanceMonitor` classes remain available).
 
     * 2026-09-21
 
@@ -31,7 +36,12 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (2)"
+??? note "Improvements (4)"
+
+    * 2026-09-22
+
+        * **Journal (Error Mitigation & Ordering)**: Migrated `TransactionJournal` (`hierachain/error_mitigation/journal.py`) from `ParquetWriter` to append-only Arrow IPC framing (length-prefixed `RecordBatch` streams via `_serialize_arrow_batch`, `os.fsync` durability, multi-row batch replay with legacy stream fallback); renamed the default active log `current.parquet` to `current.arrow` (rotation files `*_*.parquet` to `*_*.arrow`, likewise `node_{id}_journal.parquet` to `.arrow` for `OrderingService` in `hierachain/consensus/ordering/service.py`) while preserving replay of legacy Parquet files (active legacy file auto-renamed to `*_legacy_*.parquet` via the `_is_parquet_file` guard).
+        * **Hierarchical (SubChain Proof & Events)**: Streamlined `SubChain.add_event()` (`hierachain/hierarchical/sub_chain/base.py`) to return the authoritative `event_id` from `ordering_service.receive_event()` instead of a synthetic `orjson`+SHA-256 digest (dropping the `hashlib`/`orjson` imports); switched `should_submit_proof()` to block-index tracking via the new `last_proof_block_index` (updated in `hierachain/hierarchical/sub_chain/proof.py`) instead of pending-event checks; hardened `_process_and_finalize_single_block` (`hierachain/hierarchical/sub_chain/block.py`) to log persistence failures at `error` level and return `False` without appending the block in memory.
 
     * 2026-09-18
 
