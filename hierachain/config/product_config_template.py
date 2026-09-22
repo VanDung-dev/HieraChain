@@ -19,18 +19,15 @@ HRC_API_PORT=2661
 
 # ==================== DATABASE CONFIGURATION ====================
 # Supported backends: sqlite, postgres, redis, memory, parquet_only
-# Default: sqlite (for standalone development)
-# For cluster/consortium production: postgres
+# PostgreSQL is required for product/cluster deployments.
 # Note: In docker-compose, node1..node4 automatically connect to their
 # respective postgres-node1..node4 sidecars via container environment.
 
 # Database Backend & Connection URL
-# HRC_STORAGE_BACKEND=postgres
-# DATABASE_URL=postgresql://hiera:hiera_password@localhost:5432/hierachain
-
-# Default fallback (SQLite for standalone development)
-HRC_STORAGE_BACKEND=sqlite
-DATABASE_URL=sqlite:///hierachain.db
+# Compose overrides these URLs per node (postgres-node1..postgres-node4).
+HRC_STORAGE_BACKEND=postgres
+DATABASE_URL=postgresql://hiera:hiera_password@postgres-node1:5432/hierachain
+HRC_DATABASE_URL=postgresql://hiera:hiera_password@postgres-node1:5432/hierachain
 # ==================== END DATABASE CONFIGURATION ====================
 
 # Security - Authentication (MANDATORY in production)

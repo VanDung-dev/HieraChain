@@ -29,8 +29,7 @@ HRC_PREFIX = "HRC_"
 _WARNING_ENV_VAR = "HRC_WARNING_SHOWN"
 
 # Default Product configuration - loaded from .env.HRC.example file
-# NOTE: SQLite is used as default for development ease.
-# For production, consider using PostgreSQL, MySQL, or other supported databases.
+# PostgreSQL is the default; startup falls back to SQLite when it is unavailable.
 # See hierachain/adapters/database/ for available adapters.
 
 

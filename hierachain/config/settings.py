@@ -79,12 +79,14 @@ class Settings:
         backend = os.getenv("HRC_STORAGE_BACKEND")
         if backend:
             return backend.lower()
-        db_url = os.getenv("DATABASE_URL", "")
+        db_url = os.getenv("DATABASE_URL") or os.getenv("HRC_DATABASE_URL", "")
+        if db_url.startswith(("sqlite://", "sqlite3://")):
+            return "sqlite"
         if db_url.startswith(("postgres://", "postgresql://", "postgresql+psycopg://")):
             return "postgres"
-        return "sqlite"
+        return self.DEFAULT_STORAGE_BACKEND
 
-    DEFAULT_STORAGE_BACKEND = os.getenv("HRC_STORAGE_BACKEND", "sqlite")
+    DEFAULT_STORAGE_BACKEND = "postgres"
     
     # Advanced Caching settings
     ADVANCED_CACHING_ENABLED = True
@@ -199,7 +201,8 @@ class Settings:
     
     # Database settings (if using database storage)
     DATABASE_URL = os.getenv(
-        "DATABASE_URL", os.getenv("HRC_DATABASE_URL", "sqlite:///hierachain.db")
+        "DATABASE_URL",
+        os.getenv("HRC_DATABASE_URL", "postgresql://hiera:hiera@localhost:5432/hierachain"),
     )
     
     # Redis settings (if using Redis storage)
@@ -350,9 +353,9 @@ class Settings:
         if cls.VALIDATOR_TIMEOUT <= 0:
             errors.append("VALIDATOR_TIMEOUT must be positive")
 
-        if cls.DEFAULT_STORAGE_BACKEND not in ["memory", "redis", "sqlite"]:
+        if cls.DEFAULT_STORAGE_BACKEND not in ["memory", "redis", "sqlite", "postgres"]:
             errors.append(
-                "DEFAULT_STORAGE_BACKEND must be one of: memory, redis, sqlite"
+                "DEFAULT_STORAGE_BACKEND must be one of: memory, redis, sqlite, postgres"
             )
 
         if cls.API_PORT <= 0 or cls.API_PORT > 65535:
@@ -377,8 +380,8 @@ class ProductionSettings(Settings):
     # API - default to explicit localhost, but allow 0.0.0.0 via env for containers
     API_HOST = os.getenv("HRC_API_HOST", "127.0.0.1")  # nosec
     
-    # Storage - use persistent storage
-    DEFAULT_STORAGE_BACKEND = "redis"
+    # Storage - use persistent PostgreSQL storage
+    DEFAULT_STORAGE_BACKEND = "postgres"
     
     # === SECURITY: Auto-enabled in production ===
     # Authentication is MANDATORY in production
