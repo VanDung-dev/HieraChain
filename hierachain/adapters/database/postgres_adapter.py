@@ -46,7 +46,7 @@ class PostgresAdapter(SQLBase):
                 conninfo=self.database_url,
                 min_size=self.pool_min,
                 max_size=self.pool_max,
-                kwargs={"row_factory": dict_row},
+                kwargs={"row_factory": dict_row, "connect_timeout": 3},
                 open=True,
             )
             logger.info("Initialized psycopg3 connection pool for PostgreSQL")
@@ -137,7 +137,22 @@ class PostgresAdapter(SQLBase):
             "SELECT * FROM events WHERE block_hash = %s ORDER BY id ASC",
             (block_hash,)
         )
-        return [self._create_event_from_row(row) for row in cursor.fetchall()]
+        events = []
+        for row in cursor.fetchall():
+            raw_data = row["data"]
+            data = (
+                orjson.loads(raw_data)
+                if isinstance(raw_data, (str, bytes, bytearray))
+                else raw_data or {}
+            )
+            events.append({
+                "chain_name": row["chain_name"],
+                "entity_id": row["entity_id"],
+                "event": row["event_type"],
+                "timestamp": row["timestamp"],
+                "data": data,
+            })
+        return events
 
     def _execute_query_events_filter(
         self,
@@ -248,11 +263,23 @@ class PostgresAdapter(SQLBase):
 
     def _execute_save_block(self, conn: Any, block_data: dict[str, Any]) -> bool:
         cursor = conn.cursor()
-        meta_json = (
-            orjson.dumps(block_data.get("metadata_json")).decode()
-            if block_data.get("metadata_json")
-            else None
+        chain_name = block_data.get("chain_name")
+        if not chain_name:
+            raise ValueError("chain_name is required when saving a PostgreSQL block")
+
+        # Keep block inserts self-contained, matching SQLiteAdapter and the FK.
+        cursor.execute(
+            """
+            INSERT INTO chains (name, chain_type, created_at, updated_at)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (name) DO NOTHING
+            """,
+            (chain_name, "sub", time.time(), time.time()),
         )
+        metadata = block_data.get("metadata_json") or block_data.get("metadata")
+        if not metadata and block_data.get("merkle_root"):
+            metadata = {"merkle_root": block_data["merkle_root"]}
+        meta_json = orjson.dumps(metadata).decode() if metadata else None
         cursor.execute(
             """
             INSERT INTO blocks
@@ -261,7 +288,7 @@ class PostgresAdapter(SQLBase):
             ON CONFLICT (hash) DO NOTHING
             """,
             (
-                block_data["chain_name"],
+                chain_name,
                 block_data["index"],
                 block_data["hash"],
                 block_data["previous_hash"],
@@ -286,7 +313,7 @@ class PostgresAdapter(SQLBase):
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
-                    block_data["chain_name"],
+                    chain_name,
                     block_data["hash"],
                     event.get("event_id") or event.get("id"),
                     event.get("entity_id"),
@@ -300,21 +327,36 @@ class PostgresAdapter(SQLBase):
         conn.commit()
         return True
 
-    @staticmethod
-    def _execute_get_block_by_index(cursor: Any, chain_name: str, index: int) -> Any | None:
+    def _execute_get_block_by_index(
+        self, cursor: Any, index: int, chain_name: str | None,
+    ) -> dict[str, Any] | None:
         cursor.execute(
-            "SELECT * FROM blocks WHERE chain_name = %s AND \"index\" = %s",
-            (chain_name, index),
+            "SELECT * FROM blocks WHERE \"index\" = %s AND chain_name = %s",
+            (index, chain_name),
         )
-        return cursor.fetchone()
+        row = cursor.fetchone()
+        if not row:
+            return None
+        events = self._execute_fetch_block_events(cursor, row["hash"])
+        return self._create_block_data(row, events)
 
-    @staticmethod
-    def _execute_get_latest_block(cursor: Any, chain_name: str) -> Any | None:
-        cursor.execute(
-            "SELECT * FROM blocks WHERE chain_name = %s ORDER BY \"index\" DESC LIMIT 1",
-            (chain_name,),
-        )
-        return cursor.fetchone()
+    def _execute_get_latest_block(
+        self, cursor: Any, chain_name: str | None,
+    ) -> dict[str, Any] | None:
+        if chain_name:
+            cursor.execute(
+                "SELECT * FROM blocks WHERE chain_name = %s ORDER BY \"index\" DESC LIMIT 1",
+                (chain_name,),
+            )
+        else:
+            cursor.execute(
+                "SELECT * FROM blocks ORDER BY \"index\" DESC LIMIT 1"
+            )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        events = self._execute_fetch_block_events(cursor, row["hash"])
+        return self._create_block_data(row, events)
 
     @staticmethod
     def _execute_get_event_by_id(cursor: Any, event_id: str) -> dict[str, Any] | None:
