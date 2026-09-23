@@ -37,7 +37,12 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (6)"
+??? note "Improvements (8)"
+
+    * 2026-09-23
+
+        * **Database (PostgreSQL Adapter)**: Gom các lệnh insert event trong `_execute_save_block` (`hierachain/adapters/database/postgres_adapter.py`) thành một lượt `cursor.executemany()` trên `event_rows` đã thu thập thay vì `cursor.execute()` từng event, giảm số round-trip khi persist block nhiều event.
+        * **Đồng thuận (Ordering Service)**: Đơn giản hóa khởi động `OrderingService` (`hierachain/consensus/ordering/service.py`) bằng cách loại bỏ lượt đếm-and-log trùng lặp `_recover_pending_events_from_journal()` và giao toàn bộ replay journal cho processor (`recover_state_async()`); tách helper dùng chung `_start_processing_thread()` cho cả `__init__` và `start()`.
 
     * 2026-09-22
 
@@ -50,6 +55,12 @@ icon: material/history
 
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
+
+??? warning "Fix (1)"
+
+    * 2026-09-23
+
+        * **API (Admin Secure Event)**: Sửa `add_secure_event` (`hierachain/api/admin/endpoints.py`) để gọi `request.model_dump(exclude_unset=True)`, tránh chuyển các trường tùy chọn chưa thiết lập (`nonce`/`timestamp`/`chain_id`) thành `None` khi thêm event vào chain.
 
 ## v0.2.0 (2026-09-12)
 

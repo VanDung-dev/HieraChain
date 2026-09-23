@@ -37,7 +37,12 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (6)"
+??? note "Improvements (8)"
+
+    * 2026-09-23
+
+        * **Database (PostgreSQL Adapter)**: Batched event inserts in `_execute_save_block` (`hierachain/adapters/database/postgres_adapter.py`) via a single `cursor.executemany()` over collected `event_rows` instead of per-event `cursor.execute()`, reducing round-trips when persisting multi-event blocks.
+        * **Consensus (Ordering Service)**: Simplified `OrderingService` startup (`hierachain/consensus/ordering/service.py`) by removing the duplicate `_recover_pending_events_from_journal()` count-and-log pass and delegating journal replay entirely to the processor (`recover_state_async()`); extracted the shared `_start_processing_thread()` helper reused by `__init__` and `start()`.
 
     * 2026-09-22
 
@@ -50,6 +55,12 @@ icon: material/history
 
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
+
+??? warning "Fix (1)"
+
+    * 2026-09-23
+
+        * **API (Admin Secure Event)**: Fixed `add_secure_event` (`hierachain/api/admin/endpoints.py`) to call `request.model_dump(exclude_unset=True)` so unset optional fields (`nonce`/`timestamp`/`chain_id`) are no longer forwarded as `None` when adding chain events.
 
 ## v0.2.0 (2026-09-12)
 
