@@ -72,14 +72,24 @@ def test_save_block_with_mock_conn():
                 "timestamp": 1234567890.0,
                 "data": {"key": "val"},
                 "sender_id": "user-1",
-            }
+            },
+            {
+                "event_id": "ev-2",
+                "entity_id": "ent-2",
+                "event": "update",
+                "timestamp": 1234567891.0,
+                "data": {"status": "ok"},
+                "sender_id": "user-2",
+            },
         ],
         "metadata": {"merkle_root": "mrk_123"},
     }
 
     result = adapter._execute_save_block(mock_conn, block_data)
     assert result is True
-    assert mock_cursor.execute.call_count == 3
+    assert mock_cursor.execute.call_count == 2
+    mock_cursor.executemany.assert_called_once()
+    assert len(mock_cursor.executemany.call_args.args[1]) == 2
     assert mock_cursor.execute.call_args_list[1].args[1][7] == '{"merkle_root":"mrk_123"}'
     mock_conn.commit.assert_called_once()
 
