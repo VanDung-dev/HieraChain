@@ -144,7 +144,7 @@ async def add_secure_event(
             raise HTTPException(status_code=404, detail=f"Chain '{chain_name}' not found")
         
         # Add event to chain
-        event_data = request.model_dump()
+        event_data = request.model_dump(exclude_unset=True)
 
         target_chain_id = request.chain_id
         if target_chain_id is not None and target_chain_id != chain_name:
