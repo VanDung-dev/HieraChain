@@ -309,6 +309,7 @@ run_tests() {
       export TARGET_NODES='${TARGET_NODES}'
       export TEST_DURATION='${DURATION:-60}'
       export REAL_REQUESTS='true'
+      export HRC_STRESS_ENV='${ENV}'
       export HRC_IPFS_ENABLED=true
       export HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
       export HRC_IPFS_ENCRYPTION_KEY='${IPFS_ENCRYPTION_KEY}'

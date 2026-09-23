@@ -86,10 +86,7 @@ def _collect_worker_results(futures: list) -> None:
         futures: List of futures from thread pool.
     """
     for future in as_completed(futures):
-        try:
-            future.result()
-        except Exception as e:
-            logger.error("Worker error: %s", e)
+        future.result()
 
 
 class RealStressClient:
@@ -569,22 +566,17 @@ def run_real_stress_test(
     # Wait for nodes to be healthy
     logger.info("Waiting for nodes to become healthy...")
     if not client.wait_for_nodes(timeout=60):
-        logger.warning("Not all nodes are healthy, proceeding anyway")
+        raise RuntimeError("Real stress test requires all configured nodes to be healthy")
 
     # Check if any nodes are healthy - if not, skip the test
     healthy_nodes = [nid for nid, status in client.node_status.items() if status.is_healthy]
     if not healthy_nodes:
-        logger.warning("No healthy nodes available - skipping stress test")
-        # Return empty results to indicate no test was run
-        return StressTestResult()
+        raise RuntimeError("Real stress test found no healthy nodes")
 
     # Create chain on healthy nodes for stress testing
     logger.info("Creating stress test chain on healthy nodes...")
     if not client.create_chains_on_nodes():
-        # Check again if any chain was created on any node
-        # In some cases, nodes might be reachable but chain creation fails due to other issues
-        # In that case, we still try to run the test as nodes are reachable
-        logger.warning("Could not create chain on nodes, but nodes are reachable - proceeding anyway")
+        raise RuntimeError("Could not create or verify the stress test chain on live nodes")
 
     # Run test
     _results = client.run_flood_test(
@@ -592,6 +584,10 @@ def run_real_stress_test(
         events_per_second=events_per_second,
         workers=workers,
     )
+    if _results.total_requests == 0:
+        raise RuntimeError("Real stress test generated no live event requests")
+    if _results.successful_requests + _results.failed_requests != _results.total_requests:
+        raise RuntimeError("Real stress test request counters do not reconcile")
 
     client.print_results()
     return _results

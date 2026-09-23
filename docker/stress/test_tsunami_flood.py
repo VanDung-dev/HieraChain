@@ -68,21 +68,18 @@ class TsunamiFloodTest:
         """Process a single event returning True on success."""
         from docker.stress.real_stress_client import REAL_REQUESTS
 
-        if REAL_REQUESTS and self.client:
-            return self.client.submit_event(node_id, event)
-        try:
-            ok = random.random() > 0.01
-            time.sleep(0.001)
-            return ok
-        except Exception:
-            return False
+        if not REAL_REQUESTS or self.client is None:
+            raise RuntimeError("Tsunami flood requires a live RealStressClient")
+        return self.client.submit_event(node_id, event)
 
     def send_event_batch(self, node_url: str, batch: list[dict]) -> dict:
         """
         Send a batch of events to a node.
         """
         from docker.stress.real_stress_client import REAL_REQUESTS
-        node_id = node_url.split(":")[0] if (REAL_REQUESTS and self.client) else ""
+        if not REAL_REQUESTS or self.client is None:
+            raise RuntimeError("Tsunami flood requires REAL_REQUESTS=true")
+        node_id = node_url.split(":")[0]
 
         start_time = time.time()
         success_count = 0
@@ -108,19 +105,15 @@ class TsunamiFloodTest:
     def _ensure_nodes_ready(self) -> None:
         from docker.stress.real_stress_client import REAL_REQUESTS
         if not REAL_REQUESTS or not self.client:
-            return
+            raise RuntimeError("Tsunami flood requires REAL_REQUESTS=true and a live client")
         # Increased node waiting timeout to 120s for Docker cold start
         if not self.client.wait_for_nodes(timeout=120):
-            logger.warning("No healthy nodes — falling back to simulation")
-            self.client = None
-            return
+            raise RuntimeError("No healthy Docker nodes; refusing to simulate flood results")
         healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
         if not healthy:
-            logger.warning("No healthy nodes — falling back to simulation")
-            self.client = None
-        elif not self.client.create_chains_on_nodes():
-            logger.warning("Chain creation failed on healthy nodes — falling back to simulation")
-            self.client = None
+            raise RuntimeError("No healthy Docker nodes; refusing to simulate flood results")
+        if not self.client.create_chains_on_nodes():
+            raise RuntimeError("Could not create the stress chain on live Docker nodes")
 
     def _execute_batches(self, batches: list, concurrent: int, nodes: list) -> None:
         with ThreadPoolExecutor(max_workers=concurrent) as executor:
@@ -129,14 +122,11 @@ class TsunamiFloodTest:
                 for i, batch in enumerate(batches)
             ]
             for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    self.results.append(result)
-                    with self.lock:
-                        self.sent_count += result["success"]
-                        self.failed_count += result["failed"]
-                except Exception as e:
-                    logger.error(f"Batch failed: {e}")
+                result = future.result()
+                self.results.append(result)
+                with self.lock:
+                    self.sent_count += result["success"]
+                    self.failed_count += result["failed"]
 
     def _build_results(self, num_events: int, elapsed: float, nodes: list, concurrent: int) -> dict:
         return {
@@ -166,15 +156,20 @@ class TsunamiFloodTest:
         num_events = self.config["num_events"]
         batch_size = self.config["batch_size"]
         nodes = self.config["target_nodes"]
+        # The gateway is not represented in RealStressClient.node_status; submit
+        # directly to API nodes so every counted event is an actual HTTP attempt.
+        nodes = [node for node in nodes if int(node.rsplit(":", 1)[-1]) != 80]
+        if not nodes:
+            raise RuntimeError("Tsunami flood has no API nodes to target")
         concurrent = self.config["concurrent_senders"]
 
-        start_time = time.time()
         self._ensure_nodes_ready()
 
         events = [generate_random_event(self.config["event_size_bytes"]) for _ in range(num_events)]
         batches = [events[i:i + batch_size] for i in range(0, len(events), batch_size)]
         logger.info(f"Created {len(batches)} batches of {batch_size} events")
 
+        start_time = time.time()
         self._execute_batches(batches, concurrent, nodes)
         return self._build_results(num_events, time.time() - start_time, nodes, concurrent)
 
@@ -210,6 +205,7 @@ class TestTsunamiFlood:
         result = test.run_flood()
         
         assert result["status"] == "completed"
+        assert result["sent_success"] + result["sent_failed"] == result["total_events"]
         assert result["success_rate"] >= 0.8  # Upgraded for optimized performance
 
     def test_flood_throughput(self, small_config):
@@ -224,6 +220,7 @@ class TestTsunamiFlood:
         
         # ponytail: k8s out-of-cluster compose has higher latency (host.docker.internal + 30s node wait)
         threshold = 3.0 if os.getenv("K8S_NAMESPACE") else 10.0
+        assert result["sent_success"] + result["sent_failed"] == result["total_events"]
         assert result["events_per_second"] >= threshold, f"Expected {threshold} eps, got {result['events_per_second']}"
 
     @pytest.mark.stress
@@ -233,6 +230,7 @@ class TestTsunamiFlood:
         result = test.run_flood()
 
         assert result["status"] == "completed"
+        assert result["sent_success"] + result["sent_failed"] == result["total_events"]
         assert result["success_rate"] >= 0.8  # Upgraded success rate threshold
 
 

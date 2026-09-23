@@ -9,9 +9,9 @@ import time
 import logging
 import threading
 import random
+import json
 import requests
 from requests.adapters import HTTPAdapter
-from concurrent.futures import as_completed
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 from docker.stress.real_stress_client import NodeStatus
@@ -36,7 +36,7 @@ class ResourceMetrics:
     node_id: str
     cpu_usage: float = 0.0  # %
     memory_usage: float = 0.0  # MB
-    disk_usage: float = 0.0  # MB
+    disk_usage: float = 0.0  # block I/O MB/s
     network_io: float = 0.0  # MB/s
     timestamp: float = field(default_factory=time.time)
     
@@ -103,7 +103,12 @@ class ResourceMonitoringResult:
         print()
         print("--- Resource Metrics ---")
         for metric in self.metrics_history:
-            print(f"  {metric.node_id}: {metric.cpu_usage:.1f}% CPU, {metric.memory_usage:.1f}MB RAM, {metric.disk_usage:.1f}MB DISK, {metric.network_io:.1f}MB/s IO")
+            print(
+                f"  {metric.node_id}: {metric.cpu_usage:.1f}% CPU, "
+                f"{metric.memory_usage:.1f}MB RAM, "
+                f"{metric.disk_usage:.3f}MB/s block I/O, "
+                f"{metric.network_io:.3f}MB/s network I/O"
+            )
         print("=" * 60)
 
 class ResourceMonitor:
@@ -114,75 +119,79 @@ class ResourceMonitor:
         self.metrics: Dict[str, ResourceMetrics] = {}
         self.running = False
         self.thread = None
-        self.session = self._setup_session()
-        
-    def _setup_session(self) -> requests.Session:
-        """Setup requests session with retry and backoff."""
-        session = requests.Session()
-        
-        # Increase connection pool for concurrent workers
-        adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=5)
-        session.mount("http://", adapter)
-        session.mount("https://", adapter)
-        
-        # Set default headers
-        session.headers.update({
-            "User-Agent": "HieraChain-Stress-Tester/1.0",
-            "Content-Type": "application/json",
-        })
-        
-        # Add API Key if provided in environment
-        api_key = os.getenv("HRC_API_KEY")
-        if api_key:
-            key_name = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
-            session.headers.update({key_name: api_key})
-        
-        return session
+        self.errors: list[str] = []
+        self.previous_io: dict[str, tuple[float, int, int]] = {}
     
     def _collect_metrics(self) -> None:
         """Collect metrics from all nodes."""
         while self.running:
             for node in self.nodes:
-                parts = node.split(":")
-                node_id = parts[0]
-                
-                # Simulate metric collection
-                metric = self._get_simulated_metrics(node_id)
-                
-                # Store metric
-                self.metrics[node_id] = metric
-                
-                # Add to result
+                try:
+                    metric = self._get_container_metrics(node)
+                except Exception as exc:
+                    self.errors.append(str(exc))
+                    logger.exception("Failed to collect live Docker metrics for %s", node)
+                    self.running = False
+                    return
+
+                self.metrics[node] = metric
                 self.result.add_metric(metric)
             
             # Wait for next interval
             time.sleep(self.interval)
     
-    def _get_simulated_metrics(self, node_id: str) -> ResourceMetrics:
-        """Get simulated metrics for a node."""
-        # Simulate metrics via API
-        try:
-            # Use correct API endpoint
-            url = f"http://{node_id}:2661/metrics"
-            response = self.session.get(url, timeout=15)
-            
-            # Parse response
-            if response.status_code == 200:
-                data = response.json()
-                return ResourceMetrics(
-                    node_id=node_id,
-                    cpu_usage=data.get("cpu", 0.0),
-                    memory_usage=data.get("memory", 0.0),
-                    disk_usage=data.get("disk", 0.0),
-                    network_io=data.get("network", 0.0),
-                    timestamp=time.time()
-                )
-            
-        except requests.RequestException as e:
-            logger.debug(f"Failed to get metrics from {node_id}: {e}")
-            
-        # Return default metrics on failure
-        return ResourceMetrics(node_id=node_id)
+    def _get_container_metrics(self, node_id: str) -> ResourceMetrics:
+        """Read actual per-container metrics from the mounted Docker Engine socket."""
+        from docker.stress.docker_helper import get_docker_client
+
+        container = f"hierachain-{node_id}"
+        status, payload = get_docker_client().request(
+            "GET", f"/v1.41/containers/{container}/stats?stream=false"
+        )
+        if status != 200:
+            raise RuntimeError(f"Docker stats for {container} returned HTTP {status}: {payload}")
+
+        stats = json.loads(payload)
+        cpu = stats["cpu_stats"]
+        previous_cpu = stats["precpu_stats"]
+        cpu_delta = cpu["cpu_usage"]["total_usage"] - previous_cpu["cpu_usage"]["total_usage"]
+        system_delta = cpu["system_cpu_usage"] - previous_cpu["system_cpu_usage"]
+        if cpu_delta < 0 or system_delta <= 0:
+            raise RuntimeError(f"Docker returned an invalid CPU sample for {container}")
+        cpu_count = cpu.get("online_cpus") or len(cpu["cpu_usage"].get("percpu_usage", [])) or 1
+        cpu_usage = cpu_delta / system_delta * cpu_count * 100
+
+        memory_usage = stats["memory_stats"]["usage"] / (1024 * 1024)
+        networks = stats.get("networks")
+        if not networks:
+            raise RuntimeError(f"Docker returned no network counters for {container}")
+        received = sum(interface["rx_bytes"] for interface in networks.values())
+        transmitted = sum(interface["tx_bytes"] for interface in networks.values())
+        block_io = stats["blkio_stats"].get("io_service_bytes_recursive")
+        if block_io is None:
+            raise RuntimeError(f"Docker returned no block I/O counters for {container}")
+        disk_bytes = sum(item["value"] for item in block_io if item["op"].lower() in {"read", "write"})
+
+        now = time.monotonic()
+        previous = self.previous_io.get(node_id)
+        network_rate = disk_rate = 0.0
+        if previous:
+            previous_time, previous_network, previous_disk = previous
+            elapsed = now - previous_time
+            if elapsed <= 0:
+                raise RuntimeError(f"Invalid Docker sampling interval for {container}")
+            network_rate = max(0, received + transmitted - previous_network) / (1024 * 1024 * elapsed)
+            disk_rate = max(0, disk_bytes - previous_disk) / (1024 * 1024 * elapsed)
+        self.previous_io[node_id] = (now, received + transmitted, disk_bytes)
+
+        return ResourceMetrics(
+            node_id=node_id,
+            cpu_usage=cpu_usage,
+            memory_usage=memory_usage,
+            disk_usage=disk_rate,
+            network_io=network_rate,
+            timestamp=time.time(),
+        )
 
     def start(self) -> None:
         """Start resource monitoring."""
@@ -194,7 +203,7 @@ class ResourceMonitor:
         """Stop resource monitoring."""
         self.running = False
         if self.thread:
-            self.thread.join(timeout=5.0)
+            self.thread.join(timeout=10 * len(self.nodes) + self.interval + 1)
             self.thread = None
 
 @dataclass
@@ -208,6 +217,8 @@ class ResourceStressTester:
     
     def __post_init__(self) -> None:
         """Initialize stress tester with resource monitor."""
+        if not REAL_REQUESTS:
+            raise RuntimeError("Docker resource stress requires REAL_REQUESTS=true")
         self.session = self._setup_session()
         self.node_status = {}
         for node in self.nodes:
@@ -217,8 +228,7 @@ class ResourceStressTester:
                 continue
             node_id = parts[0]
             self.node_status[node_id] = NodeStatus(node_id=node_id, url=f"http://{node}")
-        self.monitor = ResourceMonitor(self.nodes, self.result)
-        self.monitor.start()
+        self.monitor = ResourceMonitor(list(self.node_status), self.result)
     
     def _setup_session(self) -> requests.Session:
         """Setup requests session with retry and backoff."""
@@ -245,6 +255,8 @@ class ResourceStressTester:
     
     def _send_request(self, node_id: str) -> None:
         """Send a request to a node."""
+        status = self.node_status[node_id]
+        started = time.monotonic()
         try:
             # Randomly select an endpoint
             endpoints = ["/api/ledger/health", "/api/admin/status", "/"]
@@ -261,42 +273,40 @@ class ResourceStressTester:
                 
         except requests.RequestException as e:
             self.result.failed_requests += 1
-            
+        finally:
+            status.response_times.append(time.monotonic() - started)
+
         # Update result
         self.result.total_requests += 1
         
-    def _collect_worker_results(self, futures: list) -> None:
-        """Collect results from all worker futures."""
-        for future in as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                logger.error("Worker error: %s", e)
-
     def run_resource_stress_test(self, duration: float = 60.0) -> ResourceMonitoringResult:
         """Run resource stress test with monitoring."""
         logger.info("Starting resource stress test...")
         logger.info(f"Test duration: {duration}s")
         
-        start_time = time.time()
-        
-        # Wait for nodes to be healthy
-        logger.info("Waiting for nodes to become healthy...")
-        if not self._wait_for_nodes(timeout=60):
-            logger.warning("Not all nodes are healthy, proceeding anyway")
-        
-        # Run test for the duration
-        logger.info("Running test for %d seconds...", duration)
-        while time.time() - start_time < duration:
-            # Send requests to all nodes
-            for node_id in self.node_status:
-                self._send_request(node_id)
-            
-            # Wait for next interval
-            time.sleep(0.1)
-        
-        # Stop resource monitoring
-        self.monitor.stop()
+        try:
+            logger.info("Waiting for nodes to become healthy...")
+            if not self._wait_for_nodes(timeout=60):
+                raise RuntimeError("Docker resource stress requires all configured nodes to be healthy")
+
+            self.monitor.start()
+            start_time = time.time()
+            logger.info("Running test for %d seconds...", duration)
+            while time.time() - start_time < duration:
+                if self.monitor.errors:
+                    raise RuntimeError(self.monitor.errors[0])
+                for node_id in self.node_status:
+                    self._send_request(node_id)
+                time.sleep(0.1)
+        finally:
+            self.monitor.stop()
+
+        if self.monitor.errors:
+            raise RuntimeError(self.monitor.errors[0])
+        if self.result.total_requests == 0 or self.result.successful_requests == 0:
+            raise RuntimeError("Resource stress generated no successful live HTTP requests")
+        if self.result.successful_requests + self.result.failed_requests != self.result.total_requests:
+            raise RuntimeError("Resource stress request counters do not reconcile")
         
         # Calculate averages
         self.result.duration = time.time() - start_time
@@ -306,9 +316,14 @@ class ResourceStressTester:
     
     def _calculate_avg_response_time(self) -> float:
         """Calculate average response time from all requests."""
-        if self.result.total_requests == 0:
+        response_times = [
+            elapsed
+            for status in self.node_status.values()
+            for elapsed in status.response_times
+        ]
+        if not response_times:
             return 0.0
-        return (self.result.avg_response_time * self.result.total_requests) / self.result.total_requests
+        return sum(response_times) / len(response_times)
 
     def _wait_for_nodes(self, timeout: float = 30.0, min_healthy: int | None = None) -> bool:
         """

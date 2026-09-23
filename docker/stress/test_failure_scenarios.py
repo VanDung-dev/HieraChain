@@ -1,8 +1,4 @@
-"""
-Network Failure Scenarios Stress Tests.
-Applies sequential failure scenarios (packet loss, congestion, latency spikes) 
-to observe client-side fallback resilience and error recovery on HieraChain nodes.
-"""
+"""Live HTTP tests with explicitly simulated application-level failures."""
 
 import os
 import time
@@ -93,10 +89,19 @@ class NetworkFailureTestResult:
             
     def _calculate_avg_response_time(self) -> float:
         """Calculate average response time."""
-        return self.avg_response_time
+        response_times = [
+            elapsed
+            for status in self.nodes.values()
+            for elapsed in status.response_times
+        ]
+        return sum(response_times) / len(response_times) if response_times else 0.0
 
     def run_scenarios(self) -> None:
         """Run all failure scenarios."""
+        if not REAL_REQUESTS:
+            raise RuntimeError("Failure scenarios require REAL_REQUESTS=true")
+        if not self.nodes or not self._wait_for_nodes(timeout=60):
+            raise RuntimeError("Failure scenarios require healthy live nodes")
         for scenario in self.scenarios:
             logger.info("Running scenario: %s (%s)", scenario.scenario_type, scenario.description)
             
@@ -122,6 +127,10 @@ class NetworkFailureTestResult:
             
     def _send_request(self, node_id: str) -> None:
         """Send a request to a node."""
+        status = self.nodes.get(node_id)
+        if not status:
+            raise RuntimeError(f"Unknown failure-scenario node: {node_id}")
+        request_started = time.monotonic()
         # Simulate network packet loss / congestion / bandwidth failures
         if self.condition_type == "packet_loss":
             loss_rate = self.condition_config.get("loss_rate", 5)
@@ -151,8 +160,8 @@ class NetworkFailureTestResult:
             endpoint = random.choice(endpoints)
             
             # Send request
-            url = f"http://{node_id}:2661{endpoint}"
-            response = self.session.get(url, timeout=15)
+            response = self.session.get(f"{status.url}{endpoint}", timeout=15)
+            status.response_times.append(time.monotonic() - request_started)
             
             # Update counts
             if response.status_code in (200, 201, 202):
@@ -162,6 +171,7 @@ class NetworkFailureTestResult:
                 
         except requests.RequestException as e:
             self.failed_requests += 1
+            status.response_times.append(time.monotonic() - request_started)
             
         # Update total
         self.total_requests += 1
@@ -252,8 +262,9 @@ class TestFailureScenarios:
                    (failure_test.successful_requests / failure_test.total_requests * 100) if failure_test.total_requests > 0 else 0,
                    avg_response_time * 1000)
         
-        # This is a failure scenario test, not a pass/fail test
-        assert True
+        assert failure_test.total_requests > 0
+        assert failure_test.successful_requests + failure_test.failed_requests == failure_test.total_requests
+        assert failure_test.successful_requests > 0, "No live API request succeeded during failure scenarios"
     
     def _initialize_node_status(self) -> Dict[str, NodeStatus]:
         """Initialize node status for failure scenarios."""
@@ -267,7 +278,7 @@ class TestFailureScenarios:
                 continue
             nodes[node_id] = NodeStatus(
                 node_id=node_id,
-                url=f"http://{node}:{port}"
+                url=f"http://{node_id}:{port}"
             )
             
         return nodes

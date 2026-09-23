@@ -1,7 +1,6 @@
-"""
-Network Conditions Stress Tests.
-Simulates network degradation (latency, jitter, packet loss, congestion, bandwidth limits)
-on HieraChain API endpoints and measures success rates and response times.
+"""Live HTTP stress with application-level latency and failure injection.
+
+Injected drops/delays do not change Docker's network configuration.
 """
 
 import os
@@ -53,7 +52,7 @@ class NetworkCondition:
         elif self.condition_type == "bandwidth":
             client.simulate_bandwidth(self.config)
         else:
-            logger.warning(f"Unknown network condition: {self.condition_type}")
+            raise ValueError(f"Unknown network condition: {self.condition_type}")
 
 @dataclass
 class NetworkStressTestResult:
@@ -178,19 +177,20 @@ class NetworkStressTester:
     
     def run_network_stress_test(self, condition: NetworkCondition) -> NetworkStressTestResult:
         """Run network stress test with a specific condition."""
+        if not REAL_REQUESTS:
+            raise RuntimeError("Docker network stress requires REAL_REQUESTS=true")
         logger.info("Starting network stress test...")
         logger.info(f"Network condition: {condition.condition_type} {condition.config}")
-        
-        start_time = time.time()
         
         # Wait for nodes to be healthy
         logger.info("Waiting for nodes to become healthy...")
         if not self._wait_for_nodes(timeout=60):
-            logger.warning("Not all nodes are healthy, proceeding anyway")
+            raise RuntimeError("Docker network stress requires all configured nodes to be healthy")
         
         # Apply network condition
         self.apply_network_condition(condition)
-        
+        start_time = time.time()
+
         # Run test for the duration
         while time.time() - start_time < TEST_DURATION:
             # Send requests to all nodes
@@ -213,25 +213,29 @@ class NetworkStressTester:
         """Send a request to a node."""
         status = self.node_status.get(node_id)
         if not status:
-            return
+            raise RuntimeError(f"Unknown network stress node: {node_id}")
+        request_started = time.time()
         
         # Simulate packet loss / congestion / bandwidth failures
         if self.packet_loss_rate > 0 and random.randint(1, 100) <= self.packet_loss_rate:
             with self.lock:
                 status.error_count += 1
                 status.last_error = "Simulated packet loss"
+                self.results.total_requests += 1
                 self.results.failed_requests += 1
             return
         if self.congestion_rate > 0 and random.randint(1, 100) <= self.congestion_rate:
             with self.lock:
                 status.error_count += 1
                 status.last_error = "Simulated network congestion"
+                self.results.total_requests += 1
                 self.results.failed_requests += 1
             return
         if self.bandwidth_limit_rate > 0 and random.randint(1, 100) <= self.bandwidth_limit_rate:
             with self.lock:
                 status.error_count += 1
                 status.last_error = "Simulated network bandwidth limit"
+                self.results.total_requests += 1
                 self.results.failed_requests += 1
             return
 
@@ -245,11 +249,11 @@ class NetworkStressTester:
         endpoint = random.choice(endpoints)
         
         try:
-            start = time.time()
             response = self.session.get(f"{status.url}{endpoint}", timeout=self.timeout)
-            elapsed = time.time() - start
+            elapsed = time.time() - request_started
             
             with self.lock:
+                self.results.total_requests += 1
                 status.response_times.append(elapsed)
                 if response.status_code in (200, 201, 202):
                     status.success_count += 1
@@ -261,6 +265,7 @@ class NetworkStressTester:
                     
         except requests.RequestException as e:
             with self.lock:
+                self.results.total_requests += 1
                 status.error_count += 1
                 status.last_error = str(e)
                 self.results.failed_requests += 1
@@ -360,15 +365,16 @@ def test_network_stress():
         logger.info("Failed: %d (%.1f%%)", results.failed_requests, (results.failed_requests / results.total_requests * 100) if results.total_requests > 0 else 0)
         
         # Validate minimum success rate
-        if results.total_requests > 0:
-            success_rate = results.successful_requests / results.total_requests
-            logger.info("Success rate: %.1f%%", success_rate * 100)
-            
-            # Allow lower success rate for stress tests
-            if test_config.condition_type in ("latency", "congestion", "bandwidth"):
-                assert success_rate >= 0.5, f"Too many failures: {success_rate*100:.1f}% success"
-            else:
-                assert success_rate >= 0.8, f"Too many failures: {success_rate*100:.1f}% success"
+        assert results.total_requests > 0, "Network stress sent no requests"
+        assert results.successful_requests + results.failed_requests == results.total_requests
+        success_rate = results.successful_requests / results.total_requests
+        logger.info("Success rate: %.1f%%", success_rate * 100)
+
+        # Allow lower success rate for stress tests
+        if test_config.condition_type in ("latency", "congestion", "bandwidth"):
+            assert success_rate >= 0.5, f"Too many failures: {success_rate*100:.1f}% success"
+        else:
+            assert success_rate >= 0.8, f"Too many failures: {success_rate*100:.1f}% success"
         
         # Print detailed results
         tester.print_results()

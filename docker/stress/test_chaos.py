@@ -43,7 +43,9 @@ def _run_cmd(cmd: list[str], timeout: int = 15) -> tuple[str, str]:
     """Run command, return (stdout, stderr)."""
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-        return result.stdout, result.stderr
+        if result.returncode != 0:
+            return result.stdout, result.stderr or f"command exited with status {result.returncode}"
+        return result.stdout, ""
     except Exception as e:
         return "", str(e)
 
@@ -61,6 +63,13 @@ def _node_pod(node_id: str) -> str:
         return f"hierachain-node-{n}"
     except ValueError:
         return node_id
+
+
+def _ensure_chaos_chain(client: RealStressClient, node_ids: list[str]) -> None:
+    for node_id in node_ids:
+        created = client.create_chain(node_id, CHAOS_CHAIN)
+        if not created and not client.verify_chain_exists(node_id, CHAOS_CHAIN):
+            pytest.fail(f"Could not prepare live test chain {CHAOS_CHAIN!r} on {node_id}")
 
 
 def _is_k8s() -> bool:
@@ -101,11 +110,16 @@ def _do(node_id: str, action: str, **kwargs):
     if _is_k8s():
         fn = K8S_ACTIONS.get(action)
         if fn:
-            fn(os.environ["K8S_NAMESPACE"], _node_pod(node_id), **kwargs)
+            result = fn(os.environ["K8S_NAMESPACE"], _node_pod(node_id), **kwargs)
     else:
         fn = DOCKER_ACTIONS.get(action)
         if fn:
-            fn(_node_container(node_id), **kwargs)
+            result = fn(_node_container(node_id), **kwargs)
+    if not fn:
+        raise RuntimeError(f"Unsupported chaos action: {action}")
+    if isinstance(result, tuple) and result[1]:
+        raise RuntimeError(f"Chaos action {action} failed on {node_id}: {result[1]}")
+    return result
 
 
 class TestRandomNodeKill:
@@ -116,6 +130,8 @@ class TestRandomNodeKill:
         self.client = RealStressClient()
         if not self.client.wait_for_nodes(timeout=30, min_healthy=3):
             pytest.skip("Need at least 3 nodes")
+        healthy = [nid for nid, status in self.client.node_status.items() if status.is_healthy]
+        _ensure_chaos_chain(self.client, healthy)
 
     def _submit_events(self, node_ids: list[str], count: int) -> int:
         ok = 0
@@ -135,20 +151,21 @@ class TestRandomNodeKill:
 
         logger.info("Killing random node: %s", target)
 
-        self._submit_events(survivors, 10)
-        _do(target, "stop")
+        assert self._submit_events(survivors, 10) > 0, "No baseline live events were accepted"
         kill_time = time.time()
-        time.sleep(5)
+        try:
+            _do(target, "stop")
+            time.sleep(5)
+            for nid in survivors:
+                ok = self.client.check_health(nid)
+                logger.info("Survivor %s: %s", nid, "alive" if ok else "dead")
 
-        for nid in survivors:
-            ok = self.client.check_health(nid)
-            logger.info("Survivor %s: %s", nid, "alive" if ok else "dead")
-
-        post_kill_ok = self._submit_events(survivors, 20)
-        logger.info("Events submitted during kill: %d", post_kill_ok)
-
-        _do(target, "start")
-        self.client.wait_for_nodes(timeout=60)
+            post_kill_ok = self._submit_events(survivors, 20)
+            assert post_kill_ok > 0, "Cluster accepted no events while a node was stopped"
+            logger.info("Events submitted during kill: %d", post_kill_ok)
+        finally:
+            _do(target, "start")
+        assert self.client.wait_for_nodes(timeout=60), "Cluster did not recover after restarting node"
         logger.info("Total recovery time: %.2fs", time.time() - kill_time)
 
 
@@ -160,6 +177,8 @@ class TestNetworkPartition:
         self.client = RealStressClient()
         if not self.client.wait_for_nodes(timeout=30, min_healthy=3):
             pytest.skip("Need at least 3 nodes")
+        healthy = [nid for nid, status in self.client.node_status.items() if status.is_healthy]
+        _ensure_chaos_chain(self.client, healthy)
 
     def test_network_partition_then_heal(self):
         """Cut network of 1 node, run events, restore network."""
@@ -170,24 +189,24 @@ class TestNetworkPartition:
         survivors = [n for n in healthy if n != target]
 
         # Send baseline events
-        for _ in range(5):
+        baseline_ok = sum(
             self.client.submit_event(target, generate_event(), chain_name=CHAOS_CHAIN)
+            for _ in range(5)
+        )
+        assert baseline_ok > 0, "No baseline live events were accepted"
 
-        # Cut network (100% loss)
-        _do(target, "network_cut")
-        time.sleep(3)
-
-        # Send events during partition
         isolated_ok = 0
-        for _ in range(10):
-            for nid in survivors:
-                if self.client.submit_event(nid, generate_event(), chain_name=CHAOS_CHAIN):
-                    isolated_ok += 1
-
-        logger.info("Events during partition: %d", isolated_ok)
-
-        # Restore network
-        _do(target, "network_reset")
+        try:
+            _do(target, "network_cut")
+            time.sleep(3)
+            for _ in range(10):
+                for nid in survivors:
+                    if self.client.submit_event(nid, generate_event(), chain_name=CHAOS_CHAIN):
+                        isolated_ok += 1
+            assert isolated_ok > 0, "Surviving nodes accepted no live events during network partition"
+            logger.info("Events during partition: %d", isolated_ok)
+        finally:
+            _do(target, "network_reset")
         time.sleep(5)
 
         # Verify
@@ -210,6 +229,9 @@ class TestCPUThrottle:
         self.client = RealStressClient()
         if not self.client.wait_for_nodes(timeout=30, min_healthy=2):
             pytest.skip("Need at least 2 nodes")
+        healthy = [nid for nid, status in self.client.node_status.items() if status.is_healthy]
+        target = healthy[1]
+        _ensure_chaos_chain(self.client, [target])
 
     def test_cpu_throttle_impact(self):
         """Limit CPU to 0.1, measure throughput degradation."""
@@ -220,27 +242,31 @@ class TestCPUThrottle:
 
         # Baseline
         baseline_ok = 0
+        baseline_start = time.time()
         for _ in range(30):
             if self.client.submit_event(target, generate_event(), chain_name=CHAOS_CHAIN):
                 baseline_ok += 1
+        assert baseline_ok > 0, "Baseline produced no successful live event submissions"
 
-        baseline_rate = baseline_ok / 5  # ~5s
+        baseline_elapsed = time.time() - baseline_start
+        baseline_rate = baseline_ok / baseline_elapsed if baseline_elapsed else 0
         logger.info("Baseline throughput: ~%.1f eps", baseline_rate)
 
         # Throttle CPU to 0.1
-        _do(target, "cpu_throttle", cpus="0.1")
-        time.sleep(5)
+        try:
+            _do(target, "cpu_throttle", cpus="0.1")
+            time.sleep(5)
 
-        # Under throttle
-        throttle_ok = 0
-        start = time.time()
-        for _ in range(30):
-            if self.client.submit_event(target, generate_event(), chain_name=CHAOS_CHAIN):
-                throttle_ok += 1
-        throttle_elapsed = time.time() - start
-
-        # Restore CPU
-        _do(target, "cpu_unthrottle")
+            # Under throttle
+            throttle_ok = 0
+            start = time.time()
+            for _ in range(30):
+                if self.client.submit_event(target, generate_event(), chain_name=CHAOS_CHAIN):
+                    throttle_ok += 1
+            throttle_elapsed = time.time() - start
+            assert throttle_ok > 0, "Throttled phase produced no successful live event submissions"
+        finally:
+            _do(target, "cpu_unthrottle")
 
         throttle_rate = throttle_ok / throttle_elapsed if throttle_elapsed else 0
         logger.info("Under 0.1 CPU: ~%.1f eps (baseline: ~%.1f eps)",
@@ -259,6 +285,7 @@ class TestMultipleFailure:
         self.client = RealStressClient()
         if not self.client.wait_for_nodes(timeout=30, min_healthy=4):
             pytest.skip("Need all 4 nodes")
+        _ensure_chaos_chain(self.client, list(self.client.node_status))
 
     def test_kill_and_partition_simultaneously(self):
         """Kill 1 node + network partition 1 node simultaneously."""
@@ -273,18 +300,22 @@ class TestMultipleFailure:
 
         logger.info("Killing %s, cutting network on %s", to_kill, to_cut)
 
-        _do(to_kill, "stop")
-        _do(to_cut, "network_cut")
-        time.sleep(5)
+        try:
+            _do(to_kill, "stop")
+            _do(to_cut, "network_cut")
+            time.sleep(5)
+            assert any(self.client.check_health(nid) for nid in remaining), "No survivor stayed healthy"
+            accepted = sum(
+                self.client.submit_event(nid, generate_event(), chain_name=CHAOS_CHAIN)
+                for _ in range(10)
+                for nid in remaining
+            )
+            assert accepted > 0, "No surviving node accepted live events"
+        finally:
+            try:
+                _do(to_kill, "start")
+            finally:
+                _do(to_cut, "network_reset")
 
-        # Verify remaining nodes survive
-        for nid in remaining:
-            ok = self.client.check_health(nid)
-            logger.info("%s: %s", nid, "alive" if ok else "dead")
-
-        # Recovery
-        _do(to_kill, "start")
-        _do(to_cut, "network_reset")
-
-        self.client.wait_for_nodes(timeout=60)
+        assert self.client.wait_for_nodes(timeout=60), "Cluster did not recover after combined failures"
         logger.info("All nodes recovered after combined failures")

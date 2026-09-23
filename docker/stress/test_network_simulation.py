@@ -1,7 +1,6 @@
-"""
-Network Simulation Stress Tests.
-Simulates real-world network profiles (latency, jitter, packet loss) across HieraChain nodes
-to evaluate API robustness and consensus stability under adverse conditions.
+"""Live HTTP stress tests with application-level latency and failure injection.
+
+These scenarios do not modify Docker's network or emulate packet-level behavior.
 """
 
 import os
@@ -143,94 +142,13 @@ class NetworkSimulator:
         return _results
 
     def simulate_network_conditions(self, network_type: str, config: Dict[str, Any]) -> None:
-        """Simulate network conditions like latency, packet loss, jitter."""
+        """Configure application-level fault injection; Docker networking is unchanged."""
+        if network_type not in {"latency", "packet_loss", "jitter", "congestion", "bandwidth"}:
+            raise ValueError(f"Unknown network simulation type: {network_type}")
         self.results.network_type = network_type
         self.results.network_config = config
-        
-        # Simulate network conditions
-        if network_type == "latency":
-            self._simulate_latency(config)
-        elif network_type == "packet_loss":
-            self._simulate_packet_loss(config)
-        elif network_type == "jitter":
-            self._simulate_jitter(config)
-        elif network_type == "congestion":
-            self._simulate_congestion(config)
-        elif network_type == "bandwidth":
-            self._simulate_bandwidth(config)
-        else:
-            logger.warning(f"Unknown network simulation type: {network_type}")
-
-    def _simulate_latency(self, config: Dict[str, Any]) -> None:
-        """Simulate network latency."""
-        base_latency = config.get("base_latency", 100)  # ms
-        extra_latency = config.get("extra_latency", 200)  # ms
-        
-        # Apply latency to all nodes
-        for node_id, status in self.node_status.items():
-            # Apply random latency between base and base+extra
-            applied_latency = base_latency + random.randint(0, extra_latency)
-            logger.info(f"Applying {applied_latency}ms latency to {node_id}")
-            status.response_times.append(applied_latency / 1000.0)  # seconds
-
-    def _simulate_packet_loss(self, config: Dict[str, Any]) -> None:
-        """Simulate packet loss."""
-        loss_rate = config.get("loss_rate", 5)  # %
-        self.results.packet_loss_rate = loss_rate
-        
-        for node_id, status in self.node_status.items():
-            # Simulate packet loss by occasionally failing requests
-            if random.randint(1, 100) <= loss_rate:
-                logger.warning(f"Packet loss simulated on {node_id}")
-                status.error_count += 1
-                status.last_error = "Simulated packet loss"
-                self.results.failed_requests += 1
-            else:
-                status.success_count += 1
-                self.results.successful_requests += 1
-
-    def _simulate_jitter(self, config: Dict[str, Any]) -> None:
-        """Simulate network jitter."""
-        base_jitter = config.get("base_jitter", 50)  # ms
-        extra_jitter = config.get("extra_jitter", 100)  # ms
-        
-        for node_id, status in self.node_status.items():
-            # Apply random jitter between base and base+extra
-            applied_jitter = base_jitter + random.randint(0, extra_jitter)
-            logger.info(f"Applying {applied_jitter}ms jitter to {node_id}")
-            status.response_times.append(applied_jitter / 1000.0)  # seconds
-
-    def _simulate_congestion(self, config: Dict[str, Any]) -> None:
-        """Simulate network congestion."""
-        base_congestion = config.get("base_congestion", 50)  # %
-        extra_congestion = config.get("extra_congestion", 100)  # %
-        
-        for node_id, status in self.node_status.items():
-            # Simulate congestion by occasionally failing requests
-            if random.randint(1, 100) <= base_congestion + random.randint(0, extra_congestion):
-                logger.warning(f"Network congestion simulated on {node_id}")
-                status.error_count += 1
-                status.last_error = "Simulated network congestion"
-                self.results.failed_requests += 1
-            else:
-                status.success_count += 1
-                self.results.successful_requests += 1
-
-    def _simulate_bandwidth(self, config: Dict[str, Any]) -> None:
-        """Simulate bandwidth limitations."""
-        base_bandwidth = config.get("base_bandwidth", 1)  # Mbps
-        extra_bandwidth = config.get("extra_bandwidth", 2)  # Mbps
-        
-        for node_id, status in self.node_status.items():
-            # Simulate bandwidth by occasionally failing requests
-            if random.randint(1, 100) <= base_bandwidth + random.randint(0, extra_bandwidth):
-                logger.warning(f"Network bandwidth simulated on {node_id}")
-                status.error_count += 1
-                status.last_error = "Simulated network bandwidth"
-                self.results.failed_requests += 1
-            else:
-                status.success_count += 1
-                self.results.successful_requests += 1
+        if network_type == "packet_loss":
+            self.results.packet_loss_rate = config.get("loss_rate", 5)
 
     def run_network_simulation_test(self, network_type: str, config: Dict[str, Any], duration: float = 30.0) -> NetworkSimulationResult:
         """
@@ -244,19 +162,20 @@ class NetworkSimulator:
         Returns:
             NetworkSimulationResult with metrics.
         """
+        if not REAL_REQUESTS:
+            raise RuntimeError("Network simulation requires REAL_REQUESTS=true for live HTTP traffic")
         logger.info("Starting network simulation test...")
         logger.info(f"Network simulation: {network_type} {config}")
-        
-        start_time = time.time()
         
         # Wait for nodes to be healthy
         logger.info("Waiting for nodes to become healthy...")
         if not self._wait_for_nodes(timeout=60):
-            logger.warning("Not all nodes are healthy, proceeding anyway")
+            raise RuntimeError("Network simulation requires all configured nodes to be healthy")
         
         # Run network simulation
         self.simulate_network_conditions(network_type, config)
-        
+        start_time = time.time()
+
         # Run test for the duration
         while time.time() - start_time < duration:
             # Send requests to all nodes
@@ -278,18 +197,51 @@ class NetworkSimulator:
         """Send a request to a node."""
         status = self.node_status.get(node_id)
         if not status:
+            raise RuntimeError(f"Unknown network simulation node: {node_id}")
+        request_started = time.time()
+
+        network_type = self.results.network_type
+        config = self.results.network_config
+        failure_rate = 0
+        if network_type == "packet_loss":
+            failure_rate = config.get("loss_rate", 5)
+        elif network_type == "congestion":
+            failure_rate = config.get("base_congestion", 50) + random.randint(
+                0, config.get("extra_congestion", 100)
+            )
+        elif network_type == "bandwidth":
+            failure_rate = config.get("base_bandwidth", 1) + random.randint(
+                0, config.get("extra_bandwidth", 2)
+            )
+        if failure_rate and random.randint(1, 100) <= min(failure_rate, 100):
+            with self.lock:
+                status.error_count += 1
+                status.last_error = f"Simulated {network_type} failure"
+                self.results.total_requests += 1
+                self.results.failed_requests += 1
             return
+
+        if network_type == "latency":
+            delay_ms = config.get("base_latency", 100) + random.randint(
+                0, config.get("extra_latency", 200)
+            )
+            time.sleep(delay_ms / 1000)
+        elif network_type == "jitter":
+            delay_ms = config.get("base_jitter", 50) + random.randint(
+                0, config.get("extra_jitter", 100)
+            )
+            time.sleep(delay_ms / 1000)
         
         # Randomly select an endpoint
         endpoints = ["/api/ledger/health", "/api/admin/status", "/"]
         endpoint = random.choice(endpoints)
         
         try:
-            start = time.time()
             response = self.session.get(f"{status.url}{endpoint}", timeout=self.timeout)
-            elapsed = time.time() - start
+            elapsed = time.time() - request_started
             
             with self.lock:
+                self.results.total_requests += 1
                 status.response_times.append(elapsed)
                 if response.status_code in (200, 201, 202):
                     status.success_count += 1
@@ -301,6 +253,7 @@ class NetworkSimulator:
                     
         except requests.RequestException as e:
             with self.lock:
+                self.results.total_requests += 1
                 status.error_count += 1
                 status.last_error = str(e)
                 self.results.failed_requests += 1
@@ -405,15 +358,16 @@ def test_network_simulation():
         logger.info("Failed: %d (%.1f%%)", results.failed_requests, (results.failed_requests / results.total_requests * 100) if results.total_requests > 0 else 0)
         
         # Validate minimum success rate
-        if results.total_requests > 0:
-            success_rate = results.successful_requests / results.total_requests
-            logger.info("Success rate: %.1f%%", success_rate * 100)
-            
-            # Allow lower success rate for stress tests
-            if network_type in ("latency", "congestion", "bandwidth"):
-                assert success_rate >= 0.5, f"Too many failures: {success_rate*100:.1f}% success"
-            else:
-                assert success_rate >= 0.8, f"Too many failures: {success_rate*100:.1f}% success"
+        assert results.total_requests > 0, "Network simulation sent no requests"
+        assert results.successful_requests + results.failed_requests == results.total_requests
+        success_rate = results.successful_requests / results.total_requests
+        logger.info("Success rate: %.1f%%", success_rate * 100)
+
+        # Allow lower success rate for stress tests
+        if network_type in ("latency", "congestion", "bandwidth"):
+            assert success_rate >= 0.5, f"Too many failures: {success_rate*100:.1f}% success"
+        else:
+            assert success_rate >= 0.8, f"Too many failures: {success_rate*100:.1f}% success"
         
         # Print detailed results
         simulator.print_results()
