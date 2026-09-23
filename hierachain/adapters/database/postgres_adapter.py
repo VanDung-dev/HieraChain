@@ -300,18 +300,14 @@ class PostgresAdapter(SQLBase):
             ),
         )
 
+        event_rows = []
         for event in block_data.get("events", []):
             data_json = (
                 orjson.dumps(event.get("data", {})).decode()
                 if isinstance(event.get("data"), (dict, list))
                 else event.get("data")
             )
-            cursor.execute(
-                """
-                INSERT INTO events
-                (chain_name, block_hash, event_id, entity_id, event_type, timestamp, data, sender_id, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
+            event_rows.append(
                 (
                     chain_name,
                     block_data["hash"],
@@ -322,7 +318,17 @@ class PostgresAdapter(SQLBase):
                     data_json,
                     event.get("sender_id"),
                     time.time(),
-                ),
+                )
+            )
+
+        if event_rows:
+            cursor.executemany(
+                """
+                INSERT INTO events
+                (chain_name, block_hash, event_id, entity_id, event_type, timestamp, data, sender_id, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                event_rows,
             )
         conn.commit()
         return True
