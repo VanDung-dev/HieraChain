@@ -6,7 +6,7 @@ import time
 import os
 import tempfile
 import shutil
-from typing import Any
+from typing import Any, Generator
 from unittest.mock import patch
 
 import pytest
@@ -14,6 +14,7 @@ import pytest
 from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
 from hierachain.config import Settings
 from hierachain.core import Block
+from hierachain.error_mitigation.journal import TransactionJournal
 from hierachain.error_mitigation import (
     ErrorClassifier,
     PriorityLevel,
@@ -66,13 +67,23 @@ def test_init_with_defaults():
     """Test initialization with default parameters"""
     temp_dir = create_test_temp_dir()
     service = None
+    replay_count = 0
+    original_replay = TransactionJournal.replay
+
+    def counted_replay(journal: TransactionJournal) -> Generator[dict[str, Any], None, None]:
+        nonlocal replay_count
+        replay_count += 1
+        yield from original_replay(journal)
+
     try:
         config = get_test_config(temp_dir)
-        service = OrderingService(nodes=[node], config=config)
-        assert service is not None
-        # Wait for service to become active
-        assert service.wait_for_active(timeout=5.0), "Service did not become active"
-        assert service.get_service_status()["status"] == "active"
+        with patch.object(TransactionJournal, "replay", counted_replay):
+            service = OrderingService(nodes=[node], config=config)
+            assert service is not None
+            # Wait for service to become active
+            assert service.wait_for_active(timeout=5.0), "Service did not become active"
+            assert replay_count == 1
+            assert service.get_service_status()["status"] == "active"
     finally:
         if service:
             service.shutdown()
