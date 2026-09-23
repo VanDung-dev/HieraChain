@@ -85,20 +85,11 @@ class OrderingService:
         self.processor = OrderingProcessor(self)
         self.maintenance = OrderingMaintenance(self)
 
-        # Lightweight recovery: just logs, no raise — ordering recovery
-        # re-plays journal events properly in recover_state_async() later.
-        self._recover_pending_events_from_journal()
+        # The processor replays the journal in recover_state_async().
+        self._start_processing_thread()
 
-    def _recover_pending_events_from_journal(self) -> None:
-        """Count uncommitted journal entries (recovery handled by OrderingRecovery)."""
-        try:
-            count = sum(1 for _ in self.journal.replay())
-            if count:
-                logger.info("Journal has %d uncommitted events for processor recovery.", count)
-        except Exception as e:
-            logger.error("Failed to read journal: %s", e)
-
-        # Thread Management
+    def _start_processing_thread(self) -> None:
+        """Start the processor, which replays the journal before accepting events."""
         thread = threading.Thread(
             target=self._init_processing_thread,
             daemon=True,
@@ -331,13 +322,7 @@ class OrderingService:
 
         # Start a new processing thread
         if self.processing_thread is None or not self.processing_thread.is_alive():
-            thread = threading.Thread(
-                target=self._init_processing_thread,
-                daemon=True,
-                name="OrderingProcessor"
-            )
-            self.processing_thread = thread
-            thread.start()
+            self._start_processing_thread()
         logger.info("Ordering service started")
 
     def shutdown(self):
