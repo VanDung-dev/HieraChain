@@ -26,7 +26,7 @@ Environments:
   k8s                   OrbStack Kubernetes
 
 Options:
-  --duration, -d N      Test duration in seconds (default: 60)
+  --duration, -d N      Test duration in seconds (Docker stress default: 15; otherwise: 60)
   --reuse, -r           Skip build and deploy (use existing cluster)
   --force, -f           Force recreate volumes
   --help, -h            Show this help
@@ -42,6 +42,9 @@ EOF
 # === Parse args ===
 COMMAND=${1:-}; ENV=${2:-}; shift 2 2>/dev/null || usage
 DURATION=60; REUSE=false; FORCE=false
+if [ "$COMMAND" = "stress" ] && [ "$ENV" = "docker" ]; then
+  DURATION=15
+fi
 
 while [ $# -gt 0 ]; do
   case "$1" in

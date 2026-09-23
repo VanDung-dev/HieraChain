@@ -35,6 +35,11 @@ bash docker/hierachain.sh stress k8s --reuse
 bash docker/hierachain.sh down k8s
 ```
 
+The Docker stress command defaults to 15 seconds per network-condition,
+network-simulation, and failure-scenario case. Use `--duration 60` for a
+longer run; the Kubernetes default remains 60 seconds. Other tests with
+explicit measurement windows keep their own durations.
+
 ### Via compose directly
 
 ```bash

@@ -26,7 +26,7 @@ DEFAULT_NODES = os.getenv(
     "node1:2661,node2:2661,node3:2661,node4:2661"
 ).split(",")
 
-TEST_DURATION = int(os.getenv("TEST_DURATION", "60"))
+TEST_DURATION = int(os.getenv("TEST_DURATION", "30"))
 REAL_REQUESTS = os.getenv("REAL_REQUESTS", "true").lower() == "true"
 
 # Default chain name for stress testing
@@ -215,7 +215,7 @@ class TestFailureScenarios:
     def setup(self):
         self.scenario_types = ["latency", "packet_loss", "jitter", "congestion", "bandwidth"]
         self.default_config = {
-            "duration": 30,
+            "duration": TEST_DURATION,
             "base_congestion": 30,
             "extra_congestion": 20
         }

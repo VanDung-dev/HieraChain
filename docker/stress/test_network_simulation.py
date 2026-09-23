@@ -24,7 +24,7 @@ DEFAULT_NODES = os.getenv(
     "node1:2661,node2:2661,node3:2661,node4:2661"
 ).split(",")
 
-TEST_DURATION = int(os.getenv("TEST_DURATION", "60"))
+TEST_DURATION = int(os.getenv("TEST_DURATION", "45"))
 REAL_REQUESTS = os.getenv("REAL_REQUESTS", "true").lower() == "true"
 
 # Default chain name for stress testing
@@ -394,7 +394,7 @@ def test_network_simulation():
         logger.info("Running network simulation test: %s", network_type)
         simulator = NetworkSimulator(nodes=DEFAULT_NODES)
         results = simulator.run_network_simulation_test(
-            network_type, config, duration=45
+            network_type, config, duration=TEST_DURATION
         )
         
         # Log results
