@@ -37,7 +37,12 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (8)"
+??? note "Improvements (10)"
+
+    * 2026-09-24
+
+        * **API (Server Auth)**: Widened `auth_dependency` (`hierachain/api/server.py`) from `Request` to `HTTPConnection` with a `verifier is None` guard, and exposed the verifier as `fast_app.state.auth_verifier` for shared access.
+        * **Security (API Key Verifier)**: Made `APIKeyVerifier` (`hierachain/security/verify/api_key_verifier.py`) `HTTPConnection`-compatible (`_extract_client_ip`/`__call__`/`_extract_api_key`); added centralized `KeyManager.get_permissions()` (`hierachain/security/key_manager.py`) with the verified auth context now carrying top-level `permissions` (`ResourcePermissionChecker` falls back to `app_details`); `_get_active_verifier(connection)` resolves the verifier from application state.
 
     * 2026-09-23
 
@@ -56,7 +61,12 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (1)"
+??? warning "Fix (3)"
+
+    * 2026-09-24
+
+        * **Database (PostgreSQL Adapter)**: Hardened `_execute_save_block` (`hierachain/adapters/database/postgres_adapter.py`) to delete stale `events` rows for the overwritten `(chain_name, index)` before inserting, and to upsert blocks via `ON CONFLICT (chain_name, "index") DO UPDATE` instead of `ON CONFLICT (hash) DO NOTHING`, keeping block overwrites consistent with their events.
+        * **Consensus (Ordering Service & Storage)**: Made `submit_event` (`hierachain/consensus/ordering/service.py`) raise `RuntimeError` when `journal.log_event()` fails instead of silently queueing an unpersisted event, and made `OrderingStorageHandler.save_block` (`hierachain/consensus/ordering/storage.py`) raise on storage-adapter rejection with idempotent `block_history`/`last_block` updates (replace on same index, append only when advancing).
 
     * 2026-09-23
 

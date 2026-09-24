@@ -37,7 +37,12 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (8)"
+??? note "Improvements (10)"
+
+    * 2026-09-24
+
+        * **API (Xác thực Server)**: Nới `auth_dependency` (`hierachain/api/server.py`) từ `Request` sang `HTTPConnection` kèm guard `verifier is None`, đồng thời expose verifier qua `fast_app.state.auth_verifier` để dùng chung.
+        * **Bảo mật (Xác minh API Key)**: Chuyển `APIKeyVerifier` (`hierachain/security/verify/api_key_verifier.py`) sang tương thích `HTTPConnection` (`_extract_client_ip`/`__call__`/`_extract_api_key`); bổ sung `KeyManager.get_permissions()` tập trung (`hierachain/security/key_manager.py`), context xác thực nay mang `permissions` ở top-level (`ResourcePermissionChecker` fallback về `app_details`); `_get_active_verifier(connection)` lấy verifier từ application state.
 
     * 2026-09-23
 
@@ -56,7 +61,12 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (1)"
+??? warning "Fix (3)"
+
+    * 2026-09-24
+
+        * **Database (PostgreSQL Adapter)**: Củng cố `_execute_save_block` (`hierachain/adapters/database/postgres_adapter.py`) xóa các dòng `events` cũ của `(chain_name, index)` trước khi insert, và upsert block bằng `ON CONFLICT (chain_name, "index") DO UPDATE` thay vì `ON CONFLICT (hash) DO NOTHING`, giữ ghi đè block nhất quán với events của nó.
+        * **Đồng thuận (Ordering Service & Storage)**: `submit_event` (`hierachain/consensus/ordering/service.py`) nay raise `RuntimeError` khi `journal.log_event()` thất bại thay vì âm thầm queue event chưa persist, và `OrderingStorageHandler.save_block` (`hierachain/consensus/ordering/storage.py`) raise khi storage adapter từ chối kèm cập nhật `block_history`/`last_block` idempotent (thay thế khi trùng index, chỉ append khi tiến lên).
 
     * 2026-09-23
 
