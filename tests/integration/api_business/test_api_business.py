@@ -7,11 +7,9 @@ private data handling, contract operations, and organization registration.
 """
 
 import pytest
-from unittest.mock import patch
 from fastapi.testclient import TestClient
 
-from hierachain.api import app
-from hierachain.config import Settings
+from hierachain.api import app, server
 
 
 @pytest.fixture
@@ -152,11 +150,24 @@ def test_register_organization(client, auth_headers):
     # Since the modules are not actually implemented, we expect a 501 error
     assert response.status_code == 501 or response.status_code == 200
 
-def test_rbac_forbidden_without_auth(client):
+def test_rbac_forbidden_without_auth(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that requests fail with 401 when missing auth"""
-    with patch.object(Settings, 'AUTH_ENABLED', True):
-        response = client.post("/api/business/channels", json={"channel_id": "test", "organizations": [], "policy": {}})
+    settings = server.get_settings()
+    monkeypatch.setattr(settings, "AUTH_ENABLED", True)
+    monkeypatch.setattr(settings, "get_auth_config", lambda: {"enabled": True})
+    monkeypatch.setattr(server, "get_settings", lambda: settings)
+    auth_client = TestClient(server.create_app())
+    try:
+        response = auth_client.post(
+            "/api/business/channels",
+            json={"channel_id": "test", "organizations": [], "policy": {}},
+        )
         assert response.status_code == 401
         
-        response = client.post("/api/business/contracts", json={"contract_id": "test", "version": "1", "implementation": ""})
+        response = auth_client.post(
+            "/api/business/contracts",
+            json={"contract_id": "test", "version": "1", "implementation": ""},
+        )
         assert response.status_code == 401
+    finally:
+        auth_client.close()

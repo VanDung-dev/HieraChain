@@ -87,10 +87,16 @@ def test_save_block_with_mock_conn():
 
     result = adapter._execute_save_block(mock_conn, block_data)
     assert result is True
-    assert mock_cursor.execute.call_count == 2
+    assert mock_cursor.execute.call_count == 3
+    assert mock_cursor.execute.call_args_list[1].args[0].lstrip().startswith(
+        "DELETE FROM events"
+    )
+    assert 'ON CONFLICT (chain_name, "index") DO UPDATE' in (
+        mock_cursor.execute.call_args_list[2].args[0]
+    )
     mock_cursor.executemany.assert_called_once()
     assert len(mock_cursor.executemany.call_args.args[1]) == 2
-    assert mock_cursor.execute.call_args_list[1].args[1][7] == '{"merkle_root":"mrk_123"}'
+    assert mock_cursor.execute.call_args_list[2].args[1][7] == '{"merkle_root":"mrk_123"}'
     mock_conn.commit.assert_called_once()
 
 

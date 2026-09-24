@@ -3,43 +3,47 @@ Integration tests for API Ledger endpoints
 """
 
 import pytest
-from unittest.mock import patch
 from fastapi.testclient import TestClient
-from hierachain.api import app
-from hierachain.config import Settings
 
-@pytest.fixture
-def client():
-    """Create a test client for the API"""
-    return TestClient(app)
+from hierachain.api import server
 
-@pytest.fixture
-def auth_headers():
-    """Return headers with a valid API key"""
-    return {"x-api-key": "test_integration_key"}
 
-def test_rbac_forbidden_without_auth(client):
-    """
-    Test that API Ledger endpoints fail with 401 when missing auth
-    (since it's not configured yet, testing 403 won't work perfectly if not mocked)
-    """
-    with patch.object(Settings, 'AUTH_ENABLED', True):
-        response = client.get("/api/ledger/chains")
+def test_rbac_forbidden_without_auth(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test protected ledger routes reject requests without an API key."""
+    settings = server.get_settings()
+    monkeypatch.setattr(settings, "AUTH_ENABLED", True)
+    monkeypatch.setattr(settings, "get_auth_config", lambda: {"enabled": True})
+    monkeypatch.setattr(server, "get_settings", lambda: settings)
+    auth_client = TestClient(server.create_app())
+    try:
+        response = auth_client.get("/api/ledger/chains")
         assert response.status_code == 401
         
-        response = client.post("/api/ledger/chains/test_chain/events", json={"entity_id": "test", "event_type": "test"})
+        response = auth_client.post(
+            "/api/ledger/chains/test_chain/events",
+            json={"entity_id": "test", "event_type": "test"},
+        )
         assert response.status_code == 401
         
-        response = client.post("/api/ledger/chains/test_chain/submit-proof")
+        response = auth_client.post("/api/ledger/chains/test_chain/submit-proof")
         assert response.status_code == 401
+    finally:
+        auth_client.close()
 
 
-def test_rbac_forbidden_without_permission(client, auth_headers):
+def test_rbac_forbidden_without_permission(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that API ledger endpoints return 403 when API key lacks permissions"""
-    dummy_context = {
-        "user_id": "test_user",
-        "app_details": {"permissions": []},
-    }
-    with patch("hierachain.security.verify.api_key_verifier.get_auth_dependency", return_value=dummy_context):
-        response = client.get("/api/ledger/chains", headers=auth_headers)
+    settings = server.get_settings()
+    monkeypatch.setattr(settings, "AUTH_ENABLED", True)
+    monkeypatch.setattr(settings, "get_auth_config", lambda: {"enabled": True})
+    monkeypatch.setattr(server, "get_settings", lambda: settings)
+    auth_client = TestClient(server.create_app())
+    verifier = auth_client.app.state.auth_verifier
+    api_key = verifier.key_manager.create_key("test_user", [])
+    try:
+        response = auth_client.get(
+            "/api/ledger/chains", headers={"x-api-key": api_key}
+        )
         assert response.status_code == 403
+    finally:
+        auth_client.close()
