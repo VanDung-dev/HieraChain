@@ -308,7 +308,7 @@ services:
       - ./default.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ./status.html:/usr/share/nginx/html/status.html:ro
     ports:
-      - "0.0.0.0:2660:80"
+      - "127.0.0.1:2660:80"
     networks:
       region-us:
         ipv4_address: 172.28.1.5
