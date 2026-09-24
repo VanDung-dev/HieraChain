@@ -82,7 +82,7 @@ class OrderingStorageHandler:
         self.processed_events: dict[str, PendingEvent] = {}
         self.chain_name = config.get("chain_name")
 
-    def save_block(self, block: Block, chain_name: str | None):
+    def save_block(self, block: Block, chain_name: str | None) -> tuple[int, float]:
         block_data = {
             "index": block.index,
             "hash": block.hash,
@@ -93,9 +93,20 @@ class OrderingStorageHandler:
             "merkle_root": block.merkle_root,
             "chain_name": chain_name
         }
-        self.storage.save_block(block_data)
-        self.block_history.append(block)
-        self.last_block = block
+        if not self.storage.save_block(block_data):
+            raise RuntimeError(
+                f"Storage adapter rejected block {block.index} for chain {chain_name}"
+            )
+
+        for cached_index, cached_block in enumerate(self.block_history):
+            if cached_block.index == block.index:
+                self.block_history[cached_index] = block
+                break
+        else:
+            if not self.block_history or block.index > self.block_history[-1].index:
+                self.block_history.append(block)
+        if self.last_block is None or block.index >= self.last_block.index:
+            self.last_block = block
         
         # Calculate block latency for metrics before clearing
         current_time = time.time()

@@ -151,7 +151,8 @@ class OrderingService:
         )
 
         logged_data = {**enriched_data, "channel_id": channel_id}
-        self.journal.log_event(logged_data)
+        if not self.journal.log_event(logged_data):
+            raise RuntimeError(f"Failed to persist event {event_id} to the journal")
         self.pending_events[event_id] = pending_event
         self.event_pool.put(pending_event)
 
