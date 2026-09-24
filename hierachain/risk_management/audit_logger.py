@@ -118,26 +118,26 @@ class ArrowAuditStorage(AuditStorage):
         self._schema = _AUDIT_SCHEMA
         self._lock = threading.Lock()
         self._pq_writer: pq.ParquetWriter | None = None
+        self._active_event_count: int | None = None
         self._open()
 
     def _open(self):
         try:
-            existing = None
-            if self.active_log_file.exists() and self.active_log_file.stat().st_size > 0:
-                try:
-                    existing = pq.read_table(self.active_log_file, schema=self._schema)
-                except Exception:
-                    existing = None
-                    try:
-                        self.active_log_file.unlink()
-                    except Exception as e:
-                        logging.debug("Could not unlink corrupted audit file: %s", e)
+            self._archive_active_file()
             self._pq_writer = pq.ParquetWriter(self.active_log_file, self._schema)
-            if existing is not None and existing.num_rows > 0:
-                self._pq_writer.write_table(existing)
+            self._active_event_count = 0
         except OSError as e:
             logging.error("Failed to open audit journal: %s", e)
             raise
+
+    def _archive_active_file(self):
+        if not self.active_log_file.exists():
+            return
+        if self._active_event_count == 0 or self.active_log_file.stat().st_size == 0:
+            self.active_log_file.unlink()
+            return
+        rotated = self.audit_directory / f"audit_{time.time_ns()}_{uuid.uuid4().hex}.parquet"
+        self.active_log_file.rename(rotated)
 
     def _close_writer(self):
         if self._pq_writer is not None:
@@ -158,9 +158,7 @@ class ArrowAuditStorage(AuditStorage):
             return
         try:
             self._close_writer()
-            ts = time.time_ns()
-            rotated = self.audit_directory / f"audit_{ts}.parquet"
-            self.active_log_file.rename(rotated)
+            self._archive_active_file()
             self._open()
         except OSError as e:
             logging.error("Audit rotation failed: %s", e)
@@ -171,11 +169,11 @@ class ArrowAuditStorage(AuditStorage):
                     logging.debug("Error reopening audit writer after rotation failure: %s", ex)
 
     def _get_files(self) -> list[Path]:
-        files = sorted(self.audit_directory.glob("audit_*.parquet"))
+        files = sorted(path for path in self.audit_directory.glob("audit_*.parquet") if path != self.active_log_file)
         files += sorted(self.audit_directory.glob("audit_*.arrow"))
         files += sorted(self.audit_directory.glob("audit_*.log"))
         files += sorted(self.audit_directory.glob("audit_*.jsonl"))
-        if self.active_log_file.exists() and self.active_log_file not in files:
+        if self._active_event_count and self.active_log_file.exists() and self.active_log_file not in files:
             files.append(self.active_log_file)
         return sorted(set(files))
 
@@ -223,6 +221,7 @@ class ArrowAuditStorage(AuditStorage):
                 batch = pa.record_batch(pydict, schema=self._schema)
                 table = pa.Table.from_batches([batch])
                 self._pq_writer.write_table(table)
+                self._active_event_count = (self._active_event_count or 0) + 1
                 return True
         except Exception as e:
             logging.error("Failed to store audit event (parquet): %s", e)
@@ -232,11 +231,9 @@ class ArrowAuditStorage(AuditStorage):
         events: list[AuditEvent] = []
         try:
             with self._lock:
-                if self._pq_writer is not None:
-                    try:
-                        self._close_writer()
-                    except Exception as ex:
-                        logging.debug("Error closing writer on retrieve: %s", ex)
+                self._close_writer()
+                self._archive_active_file()
+                self._open()
             for jf in reversed(self._get_files()):
                 try:
                     if jf.suffix == ".jsonl":
@@ -253,12 +250,6 @@ class ArrowAuditStorage(AuditStorage):
                                     return events
                 except OSError:
                     continue
-            with self._lock:
-                try:
-                    if self._pq_writer is None:
-                        self._open()
-                except Exception as ex:
-                    logging.debug("Error reopening writer after retrieve: %s", ex)
             return events
         except Exception as e:
             logging.error("Failed to retrieve audit events (parquet): %s", e)
