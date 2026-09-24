@@ -78,6 +78,7 @@ dev = [
     "bandit>=1.9.4",
     "pip-audit>=2.10.1",
     "semgrep>=1.175.0",
+    "ruff>=0.16.8",
 ]
 
 [project.scripts]
