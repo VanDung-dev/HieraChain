@@ -6,10 +6,11 @@ Validates system resource usage and thresholds.
 
 from __future__ import annotations
 
-import orjson
-import time
 import logging
+import time
 from typing import Any, cast
+
+import orjson
 
 logger = logging.getLogger(__name__)
 

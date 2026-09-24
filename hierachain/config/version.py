@@ -2,9 +2,8 @@
 Version management for HieraChain Ledger.
 """
 
-from typing import Tuple
 
-VERSION: Tuple[int, int, int, str, int] = (0, 2, 0, "final", 0)
+VERSION: tuple[int, int, int, str, int] = (0, 2, 0, "final", 0)
 
 
 def _format_base_version(major: int, minor: int, micro: int | None) -> str:
@@ -23,7 +22,7 @@ def _format_release_suffix(releaselevel: str, serial: int) -> str:
     return f"{prefix}{serial}" if serial > 0 else prefix
 
 
-def get_version(version: Tuple[int, int, int, str, int] | None = None) -> str:
+def get_version(version: tuple[int, int, int, str, int] | None = None) -> str:
     v = version if version is not None else VERSION
     major, minor, micro, releaselevel, serial = v
     base = _format_base_version(major, minor, micro)

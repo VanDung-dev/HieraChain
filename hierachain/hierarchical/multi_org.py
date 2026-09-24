@@ -6,12 +6,16 @@ designed for enterprise applications. Provides support for multiple organization
 affiliation hierarchies, and channel management across organizational boundaries.
 """
 
-import time
 import threading
-from typing import Any
+import time
 from dataclasses import dataclass, field
+from typing import Any
 
-from hierachain.hierarchical.types import OrganizationError, NetworkError, ConsensusError
+from hierachain.hierarchical.types import (
+    ConsensusError,
+    NetworkError,
+    OrganizationError,
+)
 
 # Backward-compat re-exports
 OrganizationError = OrganizationError

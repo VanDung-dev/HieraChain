@@ -9,7 +9,6 @@ backward compatibility handling.
 import re
 from typing import Any
 
-
 # CID Patterns
 CID_V0_PATTERN = re.compile(r'^Qm[1-9A-HJ-NP-Za-km-z]{44,}$')
 CID_V1_PATTERN = re.compile(r'^b[a-z2-7]{58,}$')
@@ -77,7 +76,7 @@ def _has_any_cid_field(data: dict[str, Any], cid_field: str) -> bool:
     """Check if the data contains any valid CID fields."""
     if cid_field in data and is_cid_string(data[cid_field]):
         return True
-    cid_fields = [k for k in data.keys() if k.endswith('_cid')]
+    cid_fields = [k for k in data if k.endswith('_cid')]
     return bool(cid_fields and any(is_cid_string(data[f]) for f in cid_fields))
 
 
@@ -88,7 +87,7 @@ def _has_onchain_fields(data: dict[str, Any], cid_field: str) -> bool:
         'creator_id', 'signature', 'index', 'hash', 'merkle_root'
     }
     data_fields = [
-        k for k in data.keys()
+        k for k in data
         if k != cid_field
         and not k.endswith(('_cid', '_nonce', '_metadata'))
         and k not in standard_fields

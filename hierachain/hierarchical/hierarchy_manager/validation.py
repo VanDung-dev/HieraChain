@@ -2,8 +2,8 @@
 Validation and reporting functions for HierarchyManager.
 """
 
-import time
 import logging
+import time
 from typing import Any
 
 from hierachain.security.verify.block_verifier import get_block_verifier

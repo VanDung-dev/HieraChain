@@ -7,17 +7,17 @@ priority matrix and predefined error patterns.
 
 from __future__ import annotations
 
-import time
-import logging
 import hashlib
+import logging
+import time
 from typing import Any
 
 from hierachain.error_mitigation.classifier_types import (
-    PriorityLevel,
     ErrorCategory,
+    ErrorInfo,
     ImpactLevel,
     LikelihoodLevel,
-    ErrorInfo,
+    PriorityLevel,
 )
 from hierachain.error_mitigation.risk_matrix import RiskPriorityMatrix
 
@@ -211,7 +211,7 @@ def _log_classification(error_info: ErrorInfo) -> None:
     try:
         from hierachain.core.parquet_log import write_parquet_log
         write_parquet_log("log/error_mitigation/error_classifications.parquet", log_entry)
-    except (IOError, OSError) as e:
+    except OSError as e:
         logger.error("Failed to log error classification: %s", e)
 
 

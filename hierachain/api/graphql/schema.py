@@ -10,15 +10,20 @@ IPFS Integration:
 """
 
 import graphene
-from graphene import ObjectType, List, Field, String, Int, Float
+from graphene import Field, Float, Int, List, ObjectType, String
 
-from hierachain.api.graphql.types import (
-    EventType, BlockType, ChainStatusType,
-)
 from hierachain.api.graphql.resolvers import (
-    resolve_block, resolve_blocks, resolve_events,
-    resolve_chain_status, resolve_all_chains,
     Mutations,
+    resolve_all_chains,
+    resolve_block,
+    resolve_blocks,
+    resolve_chain_status,
+    resolve_events,
+)
+from hierachain.api.graphql.types import (
+    BlockType,
+    ChainStatusType,
+    EventType,
 )
 
 

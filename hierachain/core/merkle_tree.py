@@ -6,8 +6,9 @@ picklable hash functions for multiprocessing support.
 """
 
 import hashlib
-import orjson
 from typing import Any
+
+import orjson
 
 
 def compute_hash_standalone(data_string: str) -> str:

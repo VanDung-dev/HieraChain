@@ -2,16 +2,18 @@
 Event certification and validation for the HieraChain ordering service.
 """
 
-import time
 import logging
-from typing import Any, Callable
+import time
+from collections.abc import Callable
+from typing import Any
+
 import pyarrow as pa
 
 from hierachain.config.settings import settings
-from hierachain.core.block import EVENT_SCHEMA as _EVENT_SCHEMA
-from hierachain.security.verify.zk_verifier import ZKVerifier
 from hierachain.consensus.ordering.types import PendingEvent
 from hierachain.consensus.ordering.utils import verify_event_signature
+from hierachain.core.block import EVENT_SCHEMA as _EVENT_SCHEMA
+from hierachain.security.verify.zk_verifier import ZKVerifier
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +53,7 @@ def _verify_zk_proof(event: PendingEvent) -> dict[str, Any]:
         result["verified"] = verified
         result["reason"] = "ZK proof valid" if verified else "ZK proof invalid"
     except Exception as e:
-        result["reason"] = f"ZK verification error: {str(e)}"
+        result["reason"] = f"ZK verification error: {e!s}"
 
     return result
 
@@ -91,7 +93,7 @@ def _run_custom_rules(
         except Exception as e:
             certification["valid"] = False
             certification["validation_errors"].append(
-                f"Validation error: {str(e)}"
+                f"Validation error: {e!s}"
             )
 
 

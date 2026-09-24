@@ -4,13 +4,13 @@ HierarchyManager class — coordinates Main Chain and Sub-Chains.
 
 from __future__ import annotations
 
-import time
 import logging
 import os
+import time
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator
-
+from typing import TYPE_CHECKING, Any
 
 _SHARED_POOL = ThreadPoolExecutor(max_workers=os.cpu_count() or 4)
 
@@ -23,33 +23,32 @@ def _shared_pool(max_workers: int | None = None) -> Iterator[ThreadPoolExecutor]
     else:
         yield _SHARED_POOL
 
+from hierachain.hierarchical.channel import Channel
 from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.multi_org import MultiOrgNetwork
-from hierachain.hierarchical.channel import Channel
 from hierachain.hierarchical.private_data import PrivateCollection
 
 if TYPE_CHECKING:
     from hierachain.domains.chains.domain_chain import DomainChain
-from hierachain.hierarchical.transaction_manager import CrossChainTransactionManager
-from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 from hierachain.adapters.database.redis_adapter import RedisStorageAdapter
-from hierachain.config.settings import settings
+from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 from hierachain.cluster.cross_level_sync import CrossLevelSyncManager
 from hierachain.cluster.cross_level_sync_types import (
     ConflictResolutionStrategy,
 )
-
-from hierachain.hierarchical.hierarchy_manager.validation import (
-    _compute_system_integrity_report,
-    _validate_cross_chain_consistency,
-    _compute_proof_consistency,
-)
+from hierachain.config.settings import settings
 from hierachain.hierarchical.hierarchy_manager.organization import (
-    _trace_entity_history,
-    _init_organization_msp,
     _build_channel_orgs,
     _build_collection_orgs,
+    _init_organization_msp,
+    _trace_entity_history,
 )
+from hierachain.hierarchical.hierarchy_manager.validation import (
+    _compute_proof_consistency,
+    _compute_system_integrity_report,
+    _validate_cross_chain_consistency,
+)
+from hierachain.hierarchical.transaction_manager import CrossChainTransactionManager
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +108,7 @@ class HierarchyManager:
             self.storage = self._create_storage()
             if self.storage is not None:
                 self.storage.store_chain(self.main_chain)
-        except (IOError, ValueError, RuntimeError) as e:
+        except (OSError, ValueError, RuntimeError) as e:
             logger.error("Failed to initialize storage: %s", e)
 
     def create_sub_chain(
@@ -422,7 +421,9 @@ class HierarchyManager:
         if backend in ("postgres", "postgresql"):
             postgres = None
             try:
-                from hierachain.adapters.database.postgres_adapter import PostgresAdapter
+                from hierachain.adapters.database.postgres_adapter import (
+                    PostgresAdapter,
+                )
 
                 postgres = PostgresAdapter(database_url=settings.DATABASE_URL)
                 with postgres._get_connection() as connection:

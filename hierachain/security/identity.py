@@ -8,17 +8,17 @@ identity validation for enterprise applications.
 
 import time
 from typing import Any
+
 from nacl.encoding import HexEncoder
 
-from hierachain.security.security_utils import verify_signature
 from hierachain.security.secure_logging import SecureLogger
+from hierachain.security.security_utils import verify_signature
 
 logger = SecureLogger("hierachain.security.identity")
 
 
 class IdentityError(Exception):
     """Exception raised for identity-related errors"""
-    pass
 
 
 class IdentityManager:

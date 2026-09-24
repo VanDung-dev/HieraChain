@@ -4,7 +4,9 @@ Registry, statistics, and integrity report helpers for Main Chain.
 
 from typing import Any
 
-from hierachain.hierarchical.main_chain.proofs import _get_proofs_by_sub_chain_from_main_chain
+from hierachain.hierarchical.main_chain.proofs import (
+    _get_proofs_by_sub_chain_from_main_chain,
+)
 
 
 def _get_sub_chain_summary_from_main_chain(

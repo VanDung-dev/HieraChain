@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from hierachain.error_mitigation.validator_exceptions import ValidationError, SecurityError
+from hierachain.error_mitigation.validator_exceptions import SecurityError
+from hierachain.error_mitigation.validator_exceptions import (
+    ValidationError as ValidationError,
+)
 
 
 def validate_certificate(certificate: Any) -> None:

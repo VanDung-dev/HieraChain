@@ -6,14 +6,15 @@ for domain-specific chain implementations. It extends the SubChain class
 with domain-specific functionality while maintaining Ledger guidelines.
 """
 
-import time
 import logging
-from typing import Any, Callable
+import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import Any
 
-from hierachain.hierarchical.sub_chain import SubChain
-from hierachain.domains.events.base_event import BaseEvent
 from hierachain.core.utils import get_block_events as _get_block_events
+from hierachain.domains.events.base_event import BaseEvent
+from hierachain.hierarchical.sub_chain import SubChain
 
 logger = logging.getLogger(__name__)
 

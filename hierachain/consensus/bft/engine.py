@@ -6,19 +6,19 @@ import logging
 from typing import Any
 
 from hierachain.config.settings import settings
-from hierachain.consensus.bft.types import ConsensusState, MessageType, BFTMessage
 from hierachain.consensus.bft.helpers import (
-    verify_operation_zk_proof,
-    _create_signed_bft_message,
     _add_to_votes,
-    _validate_prepare_msg,
+    _cleanup_messages,
+    _create_signed_bft_message,
+    _execute_consensus_operation,
+    _process_commit_quorum_logic,
+    _process_prepare_quorum_logic,
     _validate_commit_msg,
     _validate_pre_prep_basic,
-    _process_prepare_quorum_logic,
-    _process_commit_quorum_logic,
-    _execute_consensus_operation,
-    _cleanup_messages,
+    _validate_prepare_msg,
+    verify_operation_zk_proof,
 )
+from hierachain.consensus.bft.types import BFTMessage, ConsensusState, MessageType
 
 logger = logging.getLogger(__name__)
 

@@ -7,24 +7,25 @@ system activities, risk events, and mitigation actions.
 
 from __future__ import annotations
 
-import time
+import logging
 import sqlite3
 import struct
-import orjson
-import logging
 import threading
+import time
 import uuid
-from typing import Any, Callable, cast
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, cast
 
+import orjson
 import pyarrow as pa
 import pyarrow.parquet as pq
 
 from hierachain.risk_management.types import (
     AuditEvent,
     AuditEventType,
-    AuditSeverity,
     AuditFilter,
+    AuditSeverity,
 )
 
 _AUDIT_SCHEMA = pa.schema([
@@ -47,15 +48,15 @@ _AUDIT_MAX_FILE_SIZE = 100 * 1024 * 1024
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    "ArrowAuditStorage",
     "AuditEvent",
     "AuditEventType",
-    "AuditSeverity",
     "AuditFilter",
     "AuditLogger",
+    "AuditSeverity",
     "AuditStorage",
-    "ArrowAuditStorage",
-    "FileAuditStorage",
     "DatabaseAuditStorage",
+    "FileAuditStorage",
     "verify_integrity",
 ]
 
@@ -134,7 +135,7 @@ class ArrowAuditStorage(AuditStorage):
             self._pq_writer = pq.ParquetWriter(self.active_log_file, self._schema)
             if existing is not None and existing.num_rows > 0:
                 self._pq_writer.write_table(existing)
-        except (OSError, IOError) as e:
+        except OSError as e:
             logging.error("Failed to open audit journal: %s", e)
             raise
 
@@ -161,7 +162,7 @@ class ArrowAuditStorage(AuditStorage):
             rotated = self.audit_directory / f"audit_{ts}.parquet"
             self.active_log_file.rename(rotated)
             self._open()
-        except (OSError, IOError) as e:
+        except OSError as e:
             logging.error("Audit rotation failed: %s", e)
             if self._pq_writer is None:
                 try:
@@ -250,7 +251,7 @@ class ArrowAuditStorage(AuditStorage):
                                 events.append(ev)
                                 if limit and len(events) >= limit:
                                     return events
-                except (OSError, IOError):
+                except OSError:
                     continue
             with self._lock:
                 try:
@@ -755,7 +756,7 @@ class AuditLogger:
                 try:
                     handler(event)
                 except Exception as e:
-                    self.logger.error(f"Alert handler failed: {str(e)}")
+                    self.logger.error(f"Alert handler failed: {e!s}")
 
     def query_events(
         self, filter_criteria: AuditFilter, limit: int | None = None

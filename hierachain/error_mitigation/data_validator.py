@@ -5,13 +5,14 @@ This module provides data validation utilities for Arrow tables and events,
 ensuring data integrity and schema compliance.
 """
 
-import time
-import orjson
 import logging
-from enum import Enum
-from typing import Any, Callable, Tuple
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any
 
+import orjson
 import pyarrow as pa
 
 logger = logging.getLogger(__name__)
@@ -97,7 +98,7 @@ class DataValidator:
     
     def validate_event(
         self, event: dict[str, Any], index: int = 0
-    ) -> Tuple[ValidationResult, dict[str, Any]]:
+    ) -> tuple[ValidationResult, dict[str, Any]]:
         """
         Validate a single event dict.
         
@@ -215,7 +216,7 @@ class DataValidator:
     def validate_events_batch(
         self,
         events: list[dict[str, Any]]
-    ) -> Tuple[ValidationResult, list[dict[str, Any]]]:
+    ) -> tuple[ValidationResult, list[dict[str, Any]]]:
         """
         Validate a batch of events.
         
@@ -367,7 +368,7 @@ def create_lenient_validator(auto_fix: bool = True) -> DataValidator:
 
 def validate_and_fix_events(
     events: list[dict[str, Any]]
-) -> Tuple[list[dict[str, Any]], ValidationResult]:
+) -> tuple[list[dict[str, Any]], ValidationResult]:
     """
     Convenience function to validate and auto-fix events.
     

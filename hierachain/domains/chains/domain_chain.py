@@ -8,18 +8,16 @@ custom domain-specific chains.
 
 from typing import Any
 
-from hierachain.domains.chains.base_chain import BaseChain
 from hierachain.core.utils import get_block_events as _get_block_events
-from hierachain.domains.events.event_creators import (
-    create_resource_allocation,
-    create_quality_check,
-    create_status_update,
-    create_approval,
-)
-
+from hierachain.domains.chains.base_chain import BaseChain
 from hierachain.domains.chains.metrics import OperationMetricsTracker
 from hierachain.domains.chains.tx_manager import TransactionManager
-
+from hierachain.domains.events.event_creators import (
+    create_approval,
+    create_quality_check,
+    create_resource_allocation,
+    create_status_update,
+)
 
 # Required fields per operation type
 _OPERATION_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {

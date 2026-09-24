@@ -2,13 +2,14 @@
 Concurrent scheduler for ERP Integration sync tasks.
 """
 
-import time
-import threading
 import logging
-from typing import Any, Callable
+import threading
+import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
-from hierachain.integration.types import IntegrationError, SyncStatus, SyncResult
+from hierachain.integration.types import IntegrationError, SyncResult, SyncStatus
 
 logger = logging.getLogger(__name__)
 

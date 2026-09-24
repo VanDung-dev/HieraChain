@@ -8,9 +8,9 @@ hierarchical structure where sub-chain events are later summarized on the
 main chain.
 """
 
+import logging
 import os
 import time
-import logging
 from typing import Any
 
 from hierachain.integration.types import IntegrationError

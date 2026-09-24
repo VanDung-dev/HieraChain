@@ -3,9 +3,11 @@ Compliance checker for HieraChain domains.
 """
 
 import time
-from typing import Any, Callable
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
+from collections.abc import Callable
+from typing import Any
+
 from hierachain.core.utils import get_block_events as _get_block_events
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 
 
 class ComplianceChecker:

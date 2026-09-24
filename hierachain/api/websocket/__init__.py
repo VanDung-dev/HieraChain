@@ -3,11 +3,24 @@ This module provides WebSocket API endpoints for real-time communication with Hi
 """
 
 # Re-export from managers for backward compatibility
+# Re-export message types and builders
+from .builders import (
+    WebSocketMessageBuilder,
+    WebSocketMessageType,
+    build_block_added,
+    build_event_message,
+)
+
+# Re-export handlers
+from .handlers import (
+    ConnectionHealthHandler,
+    PingLoopRunner,
+)
 from .manager import (
-    WebSocketManager,
     WebSocketConnection,
-    WebSocketSubscription,
+    WebSocketManager,
     WebSocketMessage,
+    WebSocketSubscription,
     ws_manager,
 )
 
@@ -21,20 +34,6 @@ from .registry import (
 from .subscriptions import (
     SubscriptionManager,
     reset_subscription,
-)
-
-# Re-export message types and builders
-from .builders import (
-    WebSocketMessageType,
-    WebSocketMessageBuilder,
-    build_block_added,
-    build_event_message,
-)
-
-# Re-export handlers
-from .handlers import (
-    ConnectionHealthHandler,
-    PingLoopRunner,
 )
 
 __all__ = [

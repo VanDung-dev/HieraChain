@@ -7,10 +7,10 @@ including ping/pong handling and dead connection detection.
 
 import asyncio
 import logging
-import orjson
-from typing import Callable, Awaitable
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 
+import orjson
 
 logger = logging.getLogger(__name__)
 

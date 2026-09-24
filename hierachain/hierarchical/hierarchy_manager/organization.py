@@ -4,8 +4,8 @@ Organization and channel helpers for HierarchyManager.
 
 from typing import Any
 
-from hierachain.hierarchical.multi_org import create_organization
 from hierachain.hierarchical.channel import Organization as ChannelOrganization
+from hierachain.hierarchical.multi_org import create_organization
 
 
 def _trace_entity_history(

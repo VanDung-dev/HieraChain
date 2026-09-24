@@ -5,26 +5,27 @@ Alert System for HieraChain Ledger.
 
 from __future__ import annotations
 
-import time
+import logging
 import os
 import smtplib
-import logging
-import threading
-import orjson
 import statistics
-import httpx
-from collections import deque, defaultdict
+import threading
+import time
+from collections import defaultdict, deque
 from datetime import datetime
-from typing import Any, cast
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Any, cast
+
+import httpx
+import orjson
 
 from hierachain.monitoring.types import (
+    Alert,
+    AlertCategory,
+    AlertRule,
     AlertSeverity,
     AlertStatus,
-    AlertCategory,
-    Alert,
-    AlertRule,
 )
 
 logger = logging.getLogger(__name__)
@@ -495,7 +496,7 @@ def _send_to_notifier(
         return notifier.send_alert(alert)
     except Exception as notify_ex:
         manager.logger.error(
-            f"Notification failed for {type(notifier).__name__}: {str(notify_ex)}"
+            f"Notification failed for {type(notifier).__name__}: {notify_ex!s}"
         )
         return False
 

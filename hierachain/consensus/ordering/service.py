@@ -5,26 +5,29 @@ Coordinates between specialized components to provide ordering functionality.
 
 from __future__ import annotations
 
-import threading
-import logging
-import time
 import asyncio
-from queue import Queue, Empty
-from typing import Any, Callable
+import logging
+import threading
+import time
+from collections.abc import Callable
+from queue import Empty, Queue
+from typing import Any
 
-from hierachain.core.block import Block
 from hierachain.config.settings import Settings
-from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.consensus.ordering.block_builder import BlockBuilder
+from hierachain.consensus.ordering.certifier import EventCertifier
+from hierachain.consensus.ordering.maintenance import OrderingMaintenance
+from hierachain.consensus.ordering.metrics import OrderingMetrics
+from hierachain.consensus.ordering.processor import OrderingProcessor
+from hierachain.consensus.ordering.storage import OrderingStorageHandler
 from hierachain.consensus.ordering.types import (
-    PendingEvent, EventStatus, OrderingStatus
+    EventStatus,
+    OrderingStatus,
+    PendingEvent,
 )
 from hierachain.consensus.ordering.utils import generate_event_id
-from hierachain.consensus.ordering.metrics import OrderingMetrics
-from hierachain.consensus.ordering.storage import OrderingStorageHandler
-from hierachain.consensus.ordering.certifier import EventCertifier
-from hierachain.consensus.ordering.block_builder import BlockBuilder
-from hierachain.consensus.ordering.processor import OrderingProcessor
-from hierachain.consensus.ordering.maintenance import OrderingMaintenance
+from hierachain.core.block import Block
+from hierachain.error_mitigation.journal import TransactionJournal
 
 logger = logging.getLogger(__name__)
 
@@ -126,11 +129,13 @@ class OrderingService:
 
         if self.status != OrderingStatus.ACTIVE:
             status_str = self.status.value
-            raise Exception(f"Ordering service is in {status_str} mode")
+            raise RuntimeError(f"Ordering service is in {status_str} mode")
 
         # Validate event_data is a dictionary
         if not isinstance(event_data, dict):
-            raise ValueError(f"event_data must be a dictionary, got {type(event_data).__name__}")
+            raise ValueError(  # noqa: TRY004 - preserve the existing API error contract
+                f"event_data must be a dictionary, got {type(event_data).__name__}"
+            )
 
         self.metrics.record_received()
         event_id = generate_event_id(event_data, channel_id)
@@ -212,7 +217,7 @@ class OrderingService:
                 self.commit_queue.qsize(),
                 self.blocks_created
             )
-        except Exception as e:
+        except TimeoutError as e:
             logger.error(f"Error forcing block creation: {e}")
 
     def lockdown(self, reason: str = "Manual lockdown") -> bool:

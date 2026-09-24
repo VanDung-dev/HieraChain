@@ -2,38 +2,38 @@
 SubChain class — domain-specific blockchain for HieraChain.
 """
 
-import time
-import threading
 import logging
-import re
 import os
-from typing import Any, Callable
+import re
+import threading
+import time
+from collections.abc import Callable
+from typing import Any
 
-from hierachain.core.blockchain import Blockchain
+from hierachain.config.settings import settings
+from hierachain.consensus import OrderingNode, OrderingService, OrderingStatus
 from hierachain.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.consensus.proof_of_federation import ProofOfFederation
-from hierachain.config.settings import settings
+from hierachain.core.blockchain import Blockchain
 from hierachain.core.utils import create_event
-from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
-from hierachain.state.world_state import WorldState
-
-from hierachain.hierarchical.sub_chain.proof import (
-    _submit_proof_for_sub_chain,
-    _connect_sub_chain_to_main,
-)
 from hierachain.hierarchical.sub_chain.block import (
-    _finalize_sub_chain_block_for_chain,
-    _process_and_finalize_single_block,
-    _flush_pending_and_finalize_for_sub_chain,
     _consumer_loop,
+    _finalize_sub_chain_block_for_chain,
+    _flush_pending_and_finalize_for_sub_chain,
     _force_block_creation,
+    _process_and_finalize_single_block,
 )
 from hierachain.hierarchical.sub_chain.ordering import (
     _sync_chain_for_sub_chain,
 )
+from hierachain.hierarchical.sub_chain.proof import (
+    _connect_sub_chain_to_main,
+    _submit_proof_for_sub_chain,
+)
 from hierachain.hierarchical.sub_chain.stats import (
     _get_domain_stats_summary,
 )
+from hierachain.state.world_state import WorldState
 
 logger = logging.getLogger(__name__)
 
@@ -49,13 +49,22 @@ class SubChain(Blockchain):
     - Use entity_id as metadata field within events (not as block identifier)
     """
     __slots__ = (
-        'domain_type', 'custom_config', 'node_identity',
-        'consensus', 'main_chain_connection',
-        'proof_submission_interval', 'last_proof_submission',
+        '_async_sync_lock',
+        '_block_processing_lock',
+        '_shutdown_event',
+        'completed_operations',
+        'consensus',
+        'consumer_thread',
+        'custom_config',
+        'domain_type',
         'last_proof_block_index',
-        'completed_operations', 'ordering_service', 'world_state',
-        '_block_processing_lock', '_async_sync_lock', 'running',
-        '_shutdown_event', 'consumer_thread',
+        'last_proof_submission',
+        'main_chain_connection',
+        'node_identity',
+        'ordering_service',
+        'proof_submission_interval',
+        'running',
+        'world_state',
     )
 
     def __init__(

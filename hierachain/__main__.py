@@ -5,8 +5,8 @@ This module allows running the HieraChain Ledger
 as a module with `python -m hierachain`.
 """
 
-from hierachain.config.env_manager import init_env_config
 from hierachain.api.server import run_server
+from hierachain.config.env_manager import init_env_config
 
 
 def main():

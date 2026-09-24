@@ -2,14 +2,14 @@
 Ordering storage handler for the HieraChain ordering service.
 """
 
-import time
 import logging
+import time
 from collections import deque
 from typing import Any
-from hierachain.core.block import Block, convert_events_to_arrow
+
 from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 from hierachain.consensus.ordering.types import PendingEvent
-
+from hierachain.core.block import Block, convert_events_to_arrow
 
 logger = logging.getLogger(__name__)
 
@@ -118,8 +118,7 @@ class OrderingStorageHandler:
         return event_count, block_latency
 
     def get_blocks(self, start_index: int) -> list[Block]:
-        if start_index < 0:
-            start_index = 0
+        start_index = max(start_index, 0)
         if self.block_history and start_index >= self.block_history[0].index:
             offset = start_index - self.block_history[0].index
             return list(self.block_history)[offset:]
@@ -153,8 +152,7 @@ class OrderingStorageHandler:
         Used during rehydration to ensure we get the persisted state
         rather than any in-memory blocks that may have diverged.
         """
-        if start_index < 0:
-            start_index = 0
+        start_index = max(start_index, 0)
         return self._load_from_db(start_index)
 
     def get_latest_block_from_db(self) -> Block | None:

@@ -10,9 +10,10 @@ Supports two modes:
 """
 
 import hashlib
-import orjson
-from typing import Any
 from dataclasses import dataclass
+from typing import Any
+
+import orjson
 
 from hierachain.config.settings import settings
 from hierachain.security.secure_logging import get_security_logger
@@ -58,7 +59,6 @@ class ZKPublicInputs:
 
 class ZKVerificationError(Exception):
     """Exception raised when ZK proof verification fails."""
-    pass
 
 
 def _verify_mock(proof: bytes, public_inputs: ZKPublicInputs) -> bool:

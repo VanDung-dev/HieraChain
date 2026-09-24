@@ -6,11 +6,12 @@ Validates encryption configurations and algorithms.
 
 from __future__ import annotations
 
-import os
-import orjson
-import time
 import logging
+import os
+import time
 from typing import Any, cast
+
+import orjson
 
 from hierachain.error_mitigation.validator_exceptions import SecurityError
 
@@ -40,8 +41,8 @@ class EncryptionValidator:
     def encrypt_data(self, data: str) -> dict[str, Any]:
         self.validate_config()
         try:
-            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
             from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
             key = os.urandom(32)
             iv = os.urandom(12)
             encryptor = Cipher(algorithms.AES(key), modes.GCM(iv), backend=default_backend()).encryptor()
@@ -56,7 +57,7 @@ class EncryptionValidator:
             logger.info("Data encrypted successfully")
             return result
         except Exception as ex:
-            error_msg = f"Encryption failed: {str(ex)}"
+            error_msg = f"Encryption failed: {ex!s}"
             logger.error(error_msg)
             raise SecurityError(error_msg)
 

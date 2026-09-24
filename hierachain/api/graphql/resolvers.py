@@ -1,12 +1,17 @@
 import time
-import orjson
+
 import graphene
+import orjson
 from graphene import ObjectType
 
-from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.api.graphql.types import (
-    EventType, BlockType, BlockMetadataType, ChainStatusType, AddEventInput
+    AddEventInput,
+    BlockMetadataType,
+    BlockType,
+    ChainStatusType,
+    EventType,
 )
+from hierachain.api.ledger.depds import get_hierarchy_manager
 
 
 def _get_chain_for_name(chain_name):

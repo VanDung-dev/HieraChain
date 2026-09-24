@@ -2,8 +2,9 @@
 Event management commands.
 """
 
-import click
 import time
+
+import click
 import orjson
 
 from hierachain.cli.store import get_sub_chain, save_chains_to_file
@@ -12,7 +13,6 @@ from hierachain.cli.store import get_sub_chain, save_chains_to_file
 @click.group()
 def event_group():
     """Event management commands."""
-    pass
 
 
 @event_group.command(name="add")

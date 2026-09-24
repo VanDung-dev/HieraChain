@@ -5,17 +5,20 @@ Create and execute smart contracts with optional off-chain
 """
 
 import time
-from fastapi import APIRouter, HTTPException, status, Depends, BackgroundTasks
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 
 from hierachain.api.business.schemas import (
-    ContractCreateRequest, ContractExecuteRequest, ContractResponse,
+    ContractCreateRequest,
+    ContractExecuteRequest,
+    ContractResponse,
 )
-from hierachain.security.sanitization import sanitize_string, sanitize_for_output
-from hierachain.security.verify.api_key_verifier import require_chain_access
-from hierachain.security.secure_logging import SecureLogger
-from hierachain.api.storage.endpoint_helpers import process_contract_implementation
-from hierachain.api.storage import IPFSError
 from hierachain.api.business.state import _contracts
+from hierachain.api.storage import IPFSError
+from hierachain.api.storage.endpoint_helpers import process_contract_implementation
+from hierachain.security.sanitization import sanitize_for_output, sanitize_string
+from hierachain.security.secure_logging import SecureLogger
+from hierachain.security.verify.api_key_verifier import require_chain_access
 
 router = APIRouter(tags=["HieraChain-business"])
 api_logger = SecureLogger("hierachain.api.business")
@@ -97,7 +100,7 @@ async def create_contract(
         )
         raise HTTPException(
             status_code=503,
-            detail=f"IPFS storage error: {str(e)}"
+            detail=f"IPFS storage error: {e!s}"
         ) from e
     except Exception as e:
         api_logger.error(

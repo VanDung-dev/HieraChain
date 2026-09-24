@@ -18,10 +18,11 @@ Usage::
 
 import logging
 import os
-import hvac
-import boto3
-from botocore.exceptions import ClientError
 from typing import Any
+
+import boto3
+import hvac
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,7 @@ def _get_from_aws(secret_name: str, region: str) -> str | None:
         client = boto3.client("secretsmanager", region_name=region)
         response = client.get_secret_value(SecretId=secret_name)
         return response.get("SecretString")
-    except ClientError as exc:  # noqa: BLE001
+    except ClientError as exc:
         logger.error("AWS KMS/SM service error: %s", type(exc).__name__)  # nosemgrep: python-logger-credential-disclosure
         return None
     except Exception as exc:  # noqa: BLE001

@@ -2,22 +2,25 @@
 API admin endpoints for System Management
 """
 
-import time
 import os
-from fastapi import (
-    APIRouter, HTTPException, status, Depends
-)
+import time
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
 from hierachain.api.admin.schemas import (
-    VerifyIdentityRequest, VerifyIdentityResponse, NodeStatusResponse,
-    SecureEventRequest, SecureEventResponse
+    NodeStatusResponse,
+    SecureEventRequest,
+    SecureEventResponse,
+    VerifyIdentityRequest,
+    VerifyIdentityResponse,
 )
+from hierachain.api.ledger.depds import get_hierarchy_manager
+from hierachain.config.settings import get_settings
 from hierachain.config.version import get_version
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.api.ledger.depds import get_hierarchy_manager
-from hierachain.security.verify.api_key_verifier import require_chain_access
-from hierachain.config.settings import get_settings
-from hierachain.security.key_provider import LocalKeyProvider, CryptoError
+from hierachain.security.key_provider import CryptoError, LocalKeyProvider
 from hierachain.security.secure_logging import SecureLogger
+from hierachain.security.verify.api_key_verifier import require_chain_access
 from hierachain.security.verify.signature_verifier import SignatureVerifier
 
 logger = SecureLogger("hierachain.api.admin")
@@ -53,7 +56,7 @@ def get_current_key_provider() -> LocalKeyProvider:
         logger.error("Failed to load node identity", error=str(e))
         raise HTTPException(
             status_code=401,
-            detail=f"Failed to load node identity: {str(e)}"
+            detail=f"Failed to load node identity: {e!s}"
         )
 
 

@@ -2,8 +2,9 @@
 Node management commands.
 """
 
-import click
 import os
+
+import click
 import uvicorn
 
 from hierachain.config.settings import settings
@@ -12,7 +13,6 @@ from hierachain.config.settings import settings
 @click.group(name="node")
 def node_group() -> None:
     """Node management commands."""
-    pass
 
 
 @node_group.command(name="start")

@@ -6,15 +6,16 @@ with optional off-chain (IPFS) storage.
 
 import time
 from typing import Any
-from fastapi import APIRouter, HTTPException, status, Depends, BackgroundTasks
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 
 from hierachain.api.business.schemas import PrivateDataRequest, PrivateDataResponse
 from hierachain.api.business.state import _private_collections
-from hierachain.security.sanitization import sanitize_string
-from hierachain.security.verify.api_key_verifier import require_chain_access
-from hierachain.security.secure_logging import SecureLogger
-from hierachain.api.storage.endpoint_helpers import process_private_data_value
 from hierachain.api.storage import IPFSError
+from hierachain.api.storage.endpoint_helpers import process_private_data_value
+from hierachain.security.sanitization import sanitize_string
+from hierachain.security.secure_logging import SecureLogger
+from hierachain.security.verify.api_key_verifier import require_chain_access
 
 router = APIRouter(tags=["HieraChain-business"])
 api_logger = SecureLogger("hierachain.api.business")
@@ -91,7 +92,7 @@ async def add_private_data(
         )
         raise HTTPException(
             status_code=503,
-            detail=f"IPFS storage error: {str(e)}"
+            detail=f"IPFS storage error: {e!s}"
         ) from e
     except Exception as e:
         api_logger.error(

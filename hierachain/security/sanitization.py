@@ -9,11 +9,11 @@ and sanitize output before returning to clients to prevent:
 - JSON Injection / Prototype Pollution
 """
 
-import re
 import html
+import logging
+import re
 import time
 from typing import Any
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -244,13 +244,12 @@ def safe_format(template: str, **kwargs: Any) -> str:
 
 class ValidationError(ValueError):
     """Custom exception for validation failures."""
-    pass
 
 
 def validate_numeric_bounds(
-    value: int | float,
-    min_val: int | float | None = None,
-    max_val: int | float | None = None,
+    value: float,
+    min_val: float | None = None,
+    max_val: float | None = None,
     field_name: str = "value"
 ) -> int | float:
     """
@@ -345,7 +344,7 @@ def validate_block_index(block_index: int, max_index: int | None = None) -> int:
 
 
 def validate_amount(
-    amount: int | float,
+    amount: float,
     min_amount: float = 0.0,
     max_amount: float | None = None
 ) -> int | float:

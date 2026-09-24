@@ -2,10 +2,11 @@
 Mapping engine and event translation helper functions for ERP Integration.
 """
 
-import time
 import logging
 import threading
-from typing import Any, Callable
+import time
+from collections.abc import Callable
+from typing import Any
 
 from hierachain.integration.types import MappingError
 

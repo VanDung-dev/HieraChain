@@ -5,12 +5,12 @@ This module provides connection registry for tracking WebSocket connections.
 """
 
 import asyncio
-import orjson
 import logging
-from typing import Any
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
+import orjson
 
 logger = logging.getLogger(__name__)
 

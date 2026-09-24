@@ -8,12 +8,13 @@ the event-based model and hierarchical structure principles.
 
 import logging
 import re
-import pyarrow as pa
 from abc import ABC, abstractmethod
 from typing import Any
 
-from hierachain.core.block import Block
+import pyarrow as pa
+
 from hierachain.config.settings import settings
+from hierachain.core.block import Block
 from hierachain.security.verify.zk_verifier import get_zk_verifier
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ class BaseConsensus(ABC):
     in the HieraChain Ledger. It ensures that consensus algorithms
     work with the event-based model and support the hierarchical structure.
     """
-    __slots__ = ('name', 'config')
+    __slots__ = ('config', 'name')
 
     # Terms that should not appear in non-technical event fields
     FORBIDDEN_TERMS = ["transaction", "mining", "coin", "token", "wallet", "fee"]

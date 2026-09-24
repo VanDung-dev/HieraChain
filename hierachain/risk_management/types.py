@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import orjson
 import hashlib
-from typing import Any
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from enum import Enum
+from typing import Any
+
+import orjson
 
 
 class AuditEventType(Enum):
@@ -71,7 +72,7 @@ class AuditEvent:
         return orjson.dumps(self.to_dict(), default=str).decode()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'AuditEvent':
+    def from_dict(cls, data: dict[str, Any]) -> AuditEvent:
         return cls(
             event_id=data['event_id'],
             event_type=AuditEventType(data['event_type']),

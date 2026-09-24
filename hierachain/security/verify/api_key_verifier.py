@@ -10,7 +10,7 @@ protected resources.
 import sys
 import time
 from pathlib import Path
-from typing import Any, Union, cast
+from typing import Any, cast
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import APIKeyHeader, APIKeyQuery
@@ -258,7 +258,7 @@ class APIKeyVerifier:
         Returns:
             Decorator function that checks permissions
         """
-        def permission_dependency(context: dict = Depends(self)) -> dict:
+        def permission_dependency(context: dict = Depends(self)) -> dict:  # noqa: B008
             # Extract API key from context
             api_key = context.get('_api_key')
             
@@ -311,7 +311,7 @@ def _get_active_verifier(connection: HTTPConnection) -> APIKeyVerifier | None:
 
 async def require_event_access(
     request: Request,
-    context: Union[dict, APIKeyVerifier, None] = Depends(_get_active_verifier)
+    context: dict | APIKeyVerifier | None = Depends(_get_active_verifier),  # noqa: B008
 ) -> dict:
     """
     Require permission to access event-related endpoints.
@@ -335,7 +335,7 @@ async def require_event_access(
 
 async def require_chain_access(
     request: Request,
-    context: Union[dict, APIKeyVerifier, None] = Depends(_get_active_verifier)
+    context: dict | APIKeyVerifier | None = Depends(_get_active_verifier),  # noqa: B008
 ) -> dict:
     """
     Require permission to access chain-related endpoints.
@@ -359,7 +359,7 @@ async def require_chain_access(
 
 async def require_proof_access(
     request: Request,
-    context: Union[dict, APIKeyVerifier, None] = Depends(_get_active_verifier)
+    context: dict | APIKeyVerifier | None = Depends(_get_active_verifier),  # noqa: B008
 ) -> dict:
     """
     Require permission to access proof submission endpoints.

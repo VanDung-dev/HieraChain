@@ -7,16 +7,18 @@ This protects against data loss during power failures, system crashes, or
 rapid shutdowns.
 """
 
-import os
-import re
-import time
 import logging
-import struct
-import orjson
+import os
 import queue
+import re
+import struct
 import threading
-from typing import Any, Generator, BinaryIO
+import time
+from collections.abc import Generator
 from pathlib import Path
+from typing import Any, BinaryIO
+
+import orjson
 import pyarrow as pa
 import pyarrow.parquet as pq
 
@@ -137,7 +139,7 @@ def _process_details_field(ev: dict[str, Any]) -> None:
 
 def _pack_extra_fields(ev: dict[str, Any], raw_data: dict[str, Any]) -> None:
     """Pack fields not in schema into 'data' JSON field."""
-    if "data" in ev and ev["data"]:
+    if ev.get("data"):
         return
 
     clean_event = {}
@@ -377,7 +379,7 @@ class TransactionJournal:
                 )
                 self.active_log_file.rename(legacy_file)
             self._journal_file = self.active_log_file.open("ab", buffering=0)
-        except (OSError, IOError) as e:
+        except OSError as e:
             logger.critical("Failed to open transaction journal: %s", e)
             raise
 
@@ -404,7 +406,7 @@ class TransactionJournal:
             rotated = self.storage_path / f"{self.active_log_file.stem}_{ts}.arrow"
             self.active_log_file.rename(rotated)
             self._open_journal()
-        except (OSError, IOError) as e:
+        except OSError as e:
             logger.error("Journal rotation failed: %s", e)
             if self._journal_file is None:
                 try:
@@ -466,7 +468,7 @@ class TransactionJournal:
                 if get_settings().JOURNAL_FSYNC:
                     os.fsync(self._journal_file.fileno())
                 return True
-            except (OSError, IOError, pa.ArrowException) as e:
+            except (OSError, pa.ArrowException) as e:
                 logger.critical("CRITICAL: Failed to write to transaction journal: %s", e)
                 return False
 
@@ -572,5 +574,5 @@ class TransactionJournal:
                 )
                 self._writer_thread.start()
             logger.info("Transaction journal cleared (Arrow format).")
-        except (OSError, IOError) as e:
+        except OSError as e:
             logger.error("Failed to clear journal: %s", e)

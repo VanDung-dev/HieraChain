@@ -5,16 +5,18 @@ Performance Monitoring Module for HieraChain Ledger.
 
 from __future__ import annotations
 
-import time
-import threading
 import logging
 import statistics
+import threading
+import time
+from collections import defaultdict, deque
+from collections.abc import Callable
+from dataclasses import asdict
+from datetime import datetime
+from typing import Any
+
 import orjson
 import psutil
-from typing import Any, Callable
-from dataclasses import asdict
-from collections import deque, defaultdict
-from datetime import datetime
 
 from hierachain.monitoring.types import (
     MetricType,
@@ -111,7 +113,7 @@ class BlockchainMetricsCollector:
             self.last_collection_time = current_time
             return metrics
         except Exception as e:
-            self.logger.error(f"Error collecting blockchain metrics: {str(e)}")
+            self.logger.error(f"Error collecting blockchain metrics: {e!s}")
             return {}
 
 

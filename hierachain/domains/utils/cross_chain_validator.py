@@ -7,11 +7,12 @@ and Sub-Chains while maintaining Ledger guidelines.
 """
 
 import time
-from typing import Any, Callable, cast
+from collections.abc import Callable
+from typing import Any, cast
 
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
-from hierachain.domains.utils.entity_tracer import EntityTracer
 from hierachain.domains.utils.compliance_checker import ComplianceChecker
+from hierachain.domains.utils.entity_tracer import EntityTracer
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 
 
 def _check_operation_consistency(

@@ -7,12 +7,12 @@ Only authorized nodes with the correct encryption keys can decrypt the data.
 """
 
 import os
+
 import orjson
-from typing import Tuple
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from hierachain.security.secure_logging import SecureLogger
 
@@ -21,7 +21,6 @@ logger = SecureLogger("hierachain.storage.encryption")
 
 class EncryptionError(Exception):
     """Base exception for encryption-related errors."""
-    pass
 
 
 class AESEncryption:
@@ -100,7 +99,7 @@ class AESEncryption:
         self,
         plaintext: bytes,
         associated_data: bytes | None = None
-    ) -> Tuple[bytes, bytes]:
+    ) -> tuple[bytes, bytes]:
         """
         Encrypt plaintext using AES-256-GCM.
 
@@ -135,7 +134,7 @@ class AESEncryption:
 
         except Exception as e:
             logger.error("Encryption failed", error=str(e))
-            raise EncryptionError(f"Encryption failed: {str(e)}")
+            raise EncryptionError(f"Encryption failed: {e!s}")
 
     def decrypt(
         self,
@@ -170,9 +169,9 @@ class AESEncryption:
 
         except Exception as e:
             logger.error("Decryption failed", error=str(e))
-            raise EncryptionError(f"Decryption failed (data may be tampered): {str(e)}")
+            raise EncryptionError(f"Decryption failed (data may be tampered): {e!s}")
 
-    def encrypt_json(self, data: dict, associated_data: bytes | None = None) -> Tuple[bytes, bytes]:
+    def encrypt_json(self, data: dict, associated_data: bytes | None = None) -> tuple[bytes, bytes]:
         """
         Convenience method to encrypt JSON-serializable data.
 
@@ -187,7 +186,7 @@ class AESEncryption:
             plaintext = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
             return self.encrypt(plaintext, associated_data)
         except (TypeError, ValueError) as e:
-            raise EncryptionError(f"JSON serialization failed: {str(e)}")
+            raise EncryptionError(f"JSON serialization failed: {e!s}")
 
     def decrypt_json(
         self,
@@ -210,7 +209,7 @@ class AESEncryption:
         try:
             return orjson.loads(plaintext)
         except (orjson.JSONDecodeError, UnicodeDecodeError) as e:
-            raise EncryptionError(f"JSON deserialization failed: {str(e)}")
+            raise EncryptionError(f"JSON deserialization failed: {e!s}")
 
     @staticmethod
     def generate_key() -> bytes:
@@ -223,4 +222,4 @@ class AESEncryption:
         return AESGCM.generate_key(bit_length=256)
 
     def __repr__(self) -> str:
-        return f"<AESEncryption key_length=256bits>"
+        return "<AESEncryption key_length=256bits>"

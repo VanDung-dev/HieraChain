@@ -9,42 +9,42 @@ This module provides the runtime error mitigation primitives used by HieraChain:
 """
 
 # Data validation
+from hierachain.error_mitigation.classifier_types import (
+    ErrorCategory,
+    ErrorInfo,
+    ImpactLevel,
+    LikelihoodLevel,
+    PriorityLevel,
+)
+
+# Validators
+from hierachain.error_mitigation.consensus_validator import ConsensusValidator
 from hierachain.error_mitigation.data_validator import (
     DataValidator,
     ValidationLevel,
     ValidationResult,
-    validate_consistency,
-    validate_and_fix_events,
-    create_strict_validator,
     create_lenient_validator,
+    create_strict_validator,
+    validate_and_fix_events,
+    validate_consistency,
 )
+from hierachain.error_mitigation.encryption_validator import EncryptionValidator
 
 # Error classification
 from hierachain.error_mitigation.error_classifier import (
     ErrorClassifier,
-    get_priority_score,
     classify_error_quick,
+    get_priority_score,
     get_priority_threshold,
 )
-from hierachain.error_mitigation.classifier_types import (
-    ErrorCategory,
-    PriorityLevel,
-    ImpactLevel,
-    LikelihoodLevel,
-    ErrorInfo,
-)
-from hierachain.error_mitigation.risk_matrix import RiskPriorityMatrix
 
 # Transaction journal
 from hierachain.error_mitigation.journal import TransactionJournal
-
-# Validators
-from hierachain.error_mitigation.consensus_validator import ConsensusValidator
-from hierachain.error_mitigation.encryption_validator import EncryptionValidator
 from hierachain.error_mitigation.resource_validator import ResourceValidator
+from hierachain.error_mitigation.risk_matrix import RiskPriorityMatrix
 from hierachain.error_mitigation.validator import (
-    ValidationError,
     SecurityError,
+    ValidationError,
     validate_certificate,
 )
 

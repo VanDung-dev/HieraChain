@@ -6,17 +6,22 @@ bidirectional communication with HieraChain clients.
 """
 
 import asyncio
-import orjson
 import logging
-from typing import Any, cast
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any, cast
 
-from .registry import ConnectionRegistry, WebSocketConnection, WebSocketSubscription, create_connection
-from .subscriptions import SubscriptionManager, reset_subscription
-from .builders import build_block_added, build_event_message
+import orjson
+
+from .builders import WebSocketMessageType, build_block_added, build_event_message
 from .handlers import ConnectionHealthHandler, PingLoopRunner
-from .builders import WebSocketMessageType
+from .registry import (
+    ConnectionRegistry,
+    WebSocketConnection,
+    WebSocketSubscription,
+    create_connection,
+)
+from .subscriptions import SubscriptionManager, reset_subscription
 
 logger = logging.getLogger(__name__)
 
@@ -327,10 +332,10 @@ ws_manager = WebSocketManager()
 
 # Backward compatibility exports
 __all__ = [
-    'WebSocketManager',
     'WebSocketConnection',
-    'WebSocketSubscription',
+    'WebSocketManager',
     'WebSocketMessage',
     'WebSocketMessageType',
+    'WebSocketSubscription',
     'ws_manager',
 ]

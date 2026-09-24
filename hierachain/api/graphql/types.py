@@ -5,12 +5,19 @@ GraphQL types for Hierachain API
 
 import orjson
 from graphene import (
-    ObjectType, String, Int, Float, List, Boolean, Field,
-    InputObjectType
+    Boolean,
+    Field,
+    Float,
+    InputObjectType,
+    Int,
+    List,
+    ObjectType,
+    String,
 )
 
 from hierachain.api.storage.endpoint_helpers import (
-    is_ipfs_enabled, resolve_event_details
+    is_ipfs_enabled,
+    resolve_event_details,
 )
 from hierachain.api.storage.utils import is_cid_string
 
@@ -61,7 +68,7 @@ class EventType(ObjectType):
             if 'details' in resolved:
                 return orjson.dumps(resolved['details']).decode()
         except Exception as e:
-            return orjson.dumps({"error": f"Failed to resolve CID: {str(e)}", "cid": self.details_cid}).decode()
+            return orjson.dumps({"error": f"Failed to resolve CID: {e!s}", "cid": self.details_cid}).decode()
 
         return None
 

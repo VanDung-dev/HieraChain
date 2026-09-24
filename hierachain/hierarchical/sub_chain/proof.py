@@ -2,9 +2,10 @@
 Proof submission and ZK proof functions for Sub-Chain.
 """
 
-import time
 import logging
-from typing import Any, Callable, cast
+import time
+from collections.abc import Callable
+from typing import Any, cast
 
 from hierachain.config.settings import settings
 from hierachain.core.utils import sanitize_metadata_for_main_chain

@@ -6,12 +6,13 @@ sensitive data within a channel while keeping it hidden from other channel parti
 This significantly enhances data privacy in enterprise collaborations.
 """
 
-import time
 import hashlib
-import orjson
-from typing import Any, cast
+import time
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, cast
+
+import orjson
 from cryptography.fernet import Fernet, InvalidToken
 
 
@@ -164,7 +165,7 @@ class PrivateCollection:
         # Statistics
         self.statistics: dict[str, Any] = {
             "total_entries": 0,
-            "entries_by_org": {org_id: 0 for org_id in organizations.keys()},
+            "entries_by_org": {org_id: 0 for org_id in organizations},
             "purged_entries": 0,
             "failed_endorsements": 0
         }
@@ -233,7 +234,7 @@ class PrivateCollection:
 
         except Exception as e:
             # Log error but don't expose details
-            print(f"Failed to add private data: {str(e)}")
+            print(f"Failed to add private data: {e!s}")
             return False
 
     def get_data(self, key: str, requester_org_id: str) -> Any | None:

@@ -2,12 +2,14 @@
 Module for loading and managing node identity and peer public keys.
 """
 
-import os
-import orjson
 import logging
+import os
 from typing import Any
-from hierachain.security.security_utils import KeyPair
+
+import orjson
+
 from hierachain.config.settings import settings
+from hierachain.security.security_utils import KeyPair
 
 logger = logging.getLogger(__name__)
 

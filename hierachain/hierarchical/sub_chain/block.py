@@ -2,8 +2,8 @@
 Block processing functions for Sub-Chain.
 """
 
-import time
 import logging
+import time
 from typing import Any
 
 logger = logging.getLogger(__name__)

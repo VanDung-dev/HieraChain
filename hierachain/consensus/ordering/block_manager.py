@@ -2,15 +2,18 @@
 Block builder for the HieraChain ordering service.
 """
 
-import time
+import asyncio
 import logging
 import threading
-import asyncio
+import time
 from typing import Any
 
-from hierachain.core.block import Block
-from hierachain.core.merkle_tree import compute_leaves_from_events_standalone, MerkleTree
 from hierachain.consensus.ordering.types import OrderingStatus
+from hierachain.core.block import Block
+from hierachain.core.merkle_tree import (
+    MerkleTree,
+    compute_leaves_from_events_standalone,
+)
 
 logger = logging.getLogger(__name__)
 

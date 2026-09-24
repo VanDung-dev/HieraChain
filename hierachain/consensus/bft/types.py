@@ -3,9 +3,9 @@ Core types and message definitions for BFT consensus.
 """
 
 import uuid
-from typing import Any
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class ConsensusState(Enum):

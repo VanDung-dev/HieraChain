@@ -2,18 +2,20 @@
 Ordering processor for the HieraChain ordering service.
 """
 
-import time
-import logging
 import asyncio
-from typing import Any
+import logging
+import time
 from queue import Empty
+from typing import Any
 
-from hierachain.security.security_utils import verify_batch_signatures
-from hierachain.consensus.ordering.types import (
-    PendingEvent, EventStatus, OrderingStatus
-)
 from hierachain.consensus.ordering.block_manager import OrderingBlockManager
 from hierachain.consensus.ordering.recovery import OrderingRecovery
+from hierachain.consensus.ordering.types import (
+    EventStatus,
+    OrderingStatus,
+    PendingEvent,
+)
+from hierachain.security.security_utils import verify_batch_signatures
 
 logger = logging.getLogger(__name__)
 

@@ -7,47 +7,46 @@ backoff, and circuit breaker pattern.
 
 from __future__ import annotations
 
-import time
 import logging
-from typing import Any
+import time
 from http import HTTPStatus
+from typing import Any
 
 import requests
 
-from hierachain.sdk.types import (
-    HieraChainClientConfig,
-    CircuitBreaker,
-    CircuitState,
-    EventResult,
-    NodeStatus,
-    ChainStats,
-    EntityTrace,
-)
+# Backward-compat re-export — docs reference this symbol from client.py
+from hierachain.sdk.async_client import HieraChainAsyncClient  # noqa: F401
 from hierachain.sdk.exceptions import (
     CircuitOpenError,
     HieraChainAPIError,
-    ServiceUnavailableError,
     LockdownError,
+    ServiceUnavailableError,
 )
-
-# Backward-compat re-export — docs reference this symbol from client.py
-from hierachain.sdk.async_client import HieraChainAsyncClient  # noqa: F401
+from hierachain.sdk.types import (
+    ChainStats,
+    CircuitBreaker,
+    CircuitState,
+    EntityTrace,
+    EventResult,
+    HieraChainClientConfig,
+    NodeStatus,
+)
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    "HieraChainClientConfig",
-    "CircuitBreaker",
-    "CircuitState",
-    "CircuitOpenError",
-    "HieraChainAPIError",
-    "ServiceUnavailableError",
-    "LockdownError",
-    "EventResult",
-    "NodeStatus",
     "ChainStats",
+    "CircuitBreaker",
+    "CircuitOpenError",
+    "CircuitState",
     "EntityTrace",
+    "EventResult",
+    "HieraChainAPIError",
     "HieraChainClient",
+    "HieraChainClientConfig",
+    "LockdownError",
+    "NodeStatus",
+    "ServiceUnavailableError",
 ]
 
 
@@ -233,8 +232,8 @@ class HieraChainClient:
             self._session.close()
             self._session = None
 
-    def __enter__(self) -> "HieraChainClient":
+    def __enter__(self) -> HieraChainClient:
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         self.close()

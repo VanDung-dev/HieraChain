@@ -2,8 +2,8 @@
 Change detector and state comparison for ERP Integration.
 """
 
-import threading
 import logging
+import threading
 from typing import Any
 
 logger = logging.getLogger(__name__)

@@ -3,8 +3,9 @@ Pydantic schemas for API admin requests and responses (System Management)
 """
 
 from typing import Any
+
 import orjson
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class VerifyIdentityRequest(BaseModel):

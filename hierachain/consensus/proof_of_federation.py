@@ -12,15 +12,13 @@ Enhanced with ZK Proof verification for trustless block validation.
 import time
 from typing import Any
 
-from nacl.signing import SigningKey
 from nacl.encoding import HexEncoder
+from nacl.signing import SigningKey
 
-from hierachain.consensus.base_consensus import (
-    BaseConsensus, _verify_block_zk_proof
-)
+from hierachain.consensus.base_consensus import BaseConsensus, _verify_block_zk_proof
 from hierachain.core.block import Block
-from hierachain.security.security_utils import verify_signature
 from hierachain.security.secure_logging import get_security_logger
+from hierachain.security.security_utils import verify_signature
 
 logger = get_security_logger()
 
@@ -37,7 +35,7 @@ class ProofOfFederation(BaseConsensus):
     - Fault Tolerance: If a leader misses their turn, the protocol can skip to the next
     (implementation handled via timeout/view-change logic in higher layers).
     """
-    __slots__ = ('validators', 'validator_metadata', '_signing_key')
+    __slots__ = ('_signing_key', 'validator_metadata', 'validators')
 
     def __init__(self, name: str = "ProofOfFederation",
                  signing_key_hex: str | None = None):

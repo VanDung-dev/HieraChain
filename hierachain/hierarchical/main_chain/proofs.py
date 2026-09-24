@@ -2,12 +2,12 @@
 Proof helper functions for Main Chain.
 """
 
-import time
 import logging
+import time
 from typing import Any
 
-from hierachain.core.block import table_to_list_of_dicts
 from hierachain.config.settings import settings
+from hierachain.core.block import table_to_list_of_dicts
 from hierachain.security.verify.zk_verifier import ZKVerificationError
 
 logger = logging.getLogger(__name__)

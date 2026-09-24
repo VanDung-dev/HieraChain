@@ -152,7 +152,7 @@ def _check_cors_config(settings) -> None:
 def register_exception_handlers(fast_app: FastAPI, settings) -> None:
     @fast_app.exception_handler(Exception)
     async def global_exception_handler(_request, exc):
-        logger.error(f"Unhandled exception: {str(exc)}")
+        logger.error(f"Unhandled exception: {exc!s}")
         is_debug = (
             settings.LOG_LEVEL == "DEBUG" and
             getattr(settings, "ENV", "dev") != "product"
@@ -206,7 +206,7 @@ def _register_websocket_router(fast_app: FastAPI):
         from hierachain.api.websocket.endpoints import router as ws_router
         fast_app.include_router(ws_router)
         logger.info("WebSocket router registered at /ws")
-    except Exception as exc:
+    except ImportError as exc:
         logger.error("WebSocket router registration FAILED: %s\n%s", exc, traceback.format_exc())
 
 
@@ -222,7 +222,6 @@ def _register_root_endpoint(fast_app: FastAPI):
 
 def _register_metrics_endpoint(fast_app: FastAPI) -> None:
     try:
-        import prometheus_client
         from fastapi import Response
         from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 

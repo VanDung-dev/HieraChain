@@ -6,8 +6,8 @@ Validates BFT consensus requirements including node count and health.
 
 from __future__ import annotations
 
-import time
 import logging
+import time
 from typing import Any
 
 from hierachain.error_mitigation.validator_exceptions import ValidationError

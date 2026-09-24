@@ -3,19 +3,20 @@ BFT consensus helpers — cryptographic, network, view-change, and
 consensus-phase logic extracted to reduce class complexity.
 """
 
-import time
+import asyncio
 import hashlib
 import logging
-import asyncio
 import threading
-from typing import Any, Callable
+import time
+from collections.abc import Callable
+from typing import Any
 
 from hierachain.config.settings import settings
-from hierachain.security.security_utils import verify_signature
-from hierachain.security.verify.zk_verifier import ZKVerifier
+from hierachain.consensus.bft.types import BFTMessage, ConsensusState, MessageType
 from hierachain.error_mitigation.consensus_validator import ConsensusValidator
 from hierachain.error_mitigation.error_classifier import ErrorClassifier
-from hierachain.consensus.bft.types import BFTMessage, MessageType, ConsensusState
+from hierachain.security.security_utils import verify_signature
+from hierachain.security.verify.zk_verifier import ZKVerifier
 
 logger = logging.getLogger(__name__)
 

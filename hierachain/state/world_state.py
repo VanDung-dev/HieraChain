@@ -5,8 +5,8 @@ Tracks current entity states by ingesting finalized blocks.
 Provides get_entity_state() for queries and get_state_root() for proof generation.
 """
 
-import threading
 import logging
+import threading
 from typing import Any
 
 from hierachain.core.block import Block

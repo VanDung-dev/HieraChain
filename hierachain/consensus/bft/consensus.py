@@ -2,28 +2,32 @@
 Byzantine Fault Tolerance Consensus Implementation
 """
 
-import time
-import threading
 import logging
-from typing import Any, Callable, cast
+import threading
+import time
+from collections.abc import Callable
+from typing import Any, cast
 
-from hierachain.security.security_utils import KeyPair
-from hierachain.security.key_provider import LocalKeyProvider
-from hierachain.network.zmq_transport import ZmqNode
-from hierachain.consensus.bft.types import (
-    ConsensusState, MessageType, BFTMessage, ConsensusError
-)
-from hierachain.consensus.bft.helpers import (
-    hash_request,
-    forward_to_primary,
-    _log_behavior,
-    _validate_consensus_message,
-    _create_signed_bft_message,
-    _init_bft_mitigation_data,
-)
-from hierachain.consensus.bft.view_change import BFTViewChangeManager
 from hierachain.consensus.bft.dispatcher import BFTMessageDispatcher
 from hierachain.consensus.bft.engine import BFTConsensusEngine
+from hierachain.consensus.bft.helpers import (
+    _create_signed_bft_message,
+    _init_bft_mitigation_data,
+    _log_behavior,
+    _validate_consensus_message,
+    forward_to_primary,
+    hash_request,
+)
+from hierachain.consensus.bft.types import (
+    BFTMessage,
+    ConsensusError,
+    ConsensusState,
+    MessageType,
+)
+from hierachain.consensus.bft.view_change import BFTViewChangeManager
+from hierachain.network.zmq_transport import ZmqNode
+from hierachain.security.key_provider import LocalKeyProvider
+from hierachain.security.security_utils import KeyPair
 
 logger = logging.getLogger(__name__)
 

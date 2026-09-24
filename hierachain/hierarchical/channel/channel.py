@@ -6,13 +6,13 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any, cast
 
-from hierachain.hierarchical.channel.types import ChannelStatus, Organization
-from hierachain.hierarchical.channel.policy import ChannelPolicy
 from hierachain.hierarchical.channel.ledger import ChannelLedger
+from hierachain.hierarchical.channel.policy import ChannelPolicy
 from hierachain.hierarchical.channel.query import (
     _build_query_expression,
     _create_query_filter,
 )
+from hierachain.hierarchical.channel.types import ChannelStatus, Organization
 
 if TYPE_CHECKING:
     from hierachain.hierarchical.private_data import PrivateCollection

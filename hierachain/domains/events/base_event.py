@@ -7,8 +7,8 @@ It ensures proper event structure following Ledger guidelines.
 """
 
 import time
-from typing import Any
 from abc import ABC, abstractmethod
+from typing import Any
 
 from hierachain.core.utils import validate_event_structure
 

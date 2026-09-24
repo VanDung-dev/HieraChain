@@ -7,26 +7,26 @@ backoff, circuit breaker pattern, and aiohttp transport.
 
 from __future__ import annotations
 
-import logging
 import asyncio
-from typing import Any
+import logging
 from http import HTTPStatus
+from typing import Any
 
 import aiohttp
 
-from hierachain.sdk.types import (
-    HieraChainClientConfig,
-    CircuitBreaker,
-    EventResult,
-    NodeStatus,
-    ChainStats,
-    EntityTrace,
-)
 from hierachain.sdk.exceptions import (
     CircuitOpenError,
     HieraChainAPIError,
-    ServiceUnavailableError,
     LockdownError,
+    ServiceUnavailableError,
+)
+from hierachain.sdk.types import (
+    ChainStats,
+    CircuitBreaker,
+    EntityTrace,
+    EventResult,
+    HieraChainClientConfig,
+    NodeStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -209,8 +209,8 @@ class HieraChainAsyncClient:
             await self._session.close()
             self._session = None
 
-    async def __aenter__(self) -> "HieraChainAsyncClient":
+    async def __aenter__(self) -> HieraChainAsyncClient:
         return self
 
-    async def __aexit__(self, *args: Any) -> None:
+    async def __aexit__(self, *args: object) -> None:
         await self.close()

@@ -6,11 +6,11 @@ by sanitizing user input before logging and using structured log formats.
 """
 
 import logging
-import orjson
 import re
-from typing import Any
 from datetime import datetime, timezone
+from typing import Any
 
+import orjson
 
 # Characters that can be used for log injection
 LOG_INJECTION_CHARS = {

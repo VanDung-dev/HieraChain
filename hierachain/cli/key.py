@@ -2,17 +2,16 @@
 Key management commands.
 """
 
-import click
-import orjson
 import os
 
+import click
+import orjson
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 
 @click.group()
 def key_group():
     """Key management commands."""
-    pass
 
 
 @key_group.command()

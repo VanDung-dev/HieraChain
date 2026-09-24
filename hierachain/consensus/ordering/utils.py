@@ -2,12 +2,13 @@
 Ordering storage handler for the HieraChain ordering service.
 """
 
-import time
 import hashlib
 import logging
 import struct
-from typing import Any
+import time
 from queue import Queue
+from typing import Any
+
 import orjson
 
 from hierachain.consensus.ordering.types import PendingEvent

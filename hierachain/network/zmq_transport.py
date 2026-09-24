@@ -8,21 +8,22 @@ It provides a `ZmqNode` class that handles:
 - Serialization of messages (JSON by default, extensible).
 """
 
-import zmq
-import zmq.asyncio
-import orjson
 import asyncio
 import inspect
-import time
 import logging
-from typing import Any, Callable, cast
+import time
+from collections.abc import Callable
+from typing import Any, cast
+
+import orjson
+import zmq
+import zmq.asyncio
 
 logger = logging.getLogger(__name__)
 
 
 class NetworkError(Exception):
     """Base exception for network errors."""
-    pass
 
 
 class ZmqNode:

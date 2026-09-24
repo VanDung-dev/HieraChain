@@ -5,12 +5,13 @@ This module handles API key management for the HieraChain Ledger,
 ensuring secure access control without cryptocurrency concepts.
 """
 
-import os
-import time
-import orjson
 import hashlib
+import os
 import secrets
+import time
 import warnings
+
+import orjson
 
 from hierachain.core.cache import AdvancedCache
 from hierachain.security.secure_logging import SecureLogger
@@ -50,7 +51,8 @@ class KeyStorage:
         except (orjson.JSONDecodeError, TypeError) as e:
             logger.error("Error decoding key data from storage", error=str(e))
             return None
-        except Exception as e:
+        # The Redis-like storage protocol does not define a shared error type.
+        except Exception as e:  # noqa: BLE001
             logger.error("Error retrieving key from storage", error=str(e))
             return None
 
@@ -66,7 +68,8 @@ class KeyStorage:
             # Redis-like storage
             try:
                 self.km.storage.set(f"api_key:{api_key}", orjson.dumps(data).decode())
-            except Exception as e:
+            # Keep the in-memory fallback for backend-specific storage errors.
+            except Exception as e:  # noqa: BLE001
                 logger.error("Error storing key to storage", error=str(e))
                 # Fallback to memory
                 self.km.storage[api_key] = data
@@ -426,10 +429,14 @@ class KeyManager:
 def initialize_default_keys():
     """Initialize some default API keys for testing and development only."""
     import sys
-    if os.environ.get("PYTEST_CURRENT_TEST") is None and "pytest" not in sys.modules:
-        if os.environ.get("HRC_ENV", "dev").lower() in ["production", "prod", "product"]:
-            logger.critical("Attempted to create default API keys in production environment!")
-            raise RuntimeError("Default keys cannot be created in production environment")
+    if (
+        os.environ.get("PYTEST_CURRENT_TEST") is None
+        and "pytest" not in sys.modules
+        and os.environ.get("HRC_ENV", "dev").lower()
+        in {"production", "prod", "product"}
+    ):
+        logger.critical("Attempted to create default API keys in production environment!")
+        raise RuntimeError("Default keys cannot be created in production environment")
         
     key_manager = KeyManager()
     

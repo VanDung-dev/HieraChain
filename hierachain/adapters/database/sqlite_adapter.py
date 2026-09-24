@@ -9,8 +9,8 @@ import sqlite3
 from contextlib import contextmanager
 
 from hierachain.adapters.database.base.sql_adapter import SQLBase
-from hierachain.security.secure_logging import get_storage_logger
 from hierachain.adapters.database.sqlite_schema import init_database_schema
+from hierachain.security.secure_logging import get_storage_logger
 
 logger = get_storage_logger()
 

@@ -6,15 +6,16 @@ for different storage backends (Local Memory, File Vault, HSM, KMS) without
 changing the core consensus logic.
 """
 
-import orjson
 import base64
 import os
 from abc import ABC, abstractmethod
+
+import orjson
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from hierachain.security.security_utils import KeyPair, CryptoError
+from hierachain.security.security_utils import CryptoError, KeyPair
 
 
 class KeyProvider(ABC):
@@ -27,7 +28,6 @@ class KeyProvider(ABC):
     @abstractmethod
     def public_key_hex(self) -> str:
         """Return the public key in hex format."""
-        pass
         
     @abstractmethod
     def sign(self, data: bytes) -> str:
@@ -40,7 +40,6 @@ class KeyProvider(ABC):
         Returns:
             Hex-encoded signature.
         """
-        pass
 
 
 class LocalKeyProvider(KeyProvider):
@@ -91,7 +90,7 @@ class LocalKeyProvider(KeyProvider):
         except orjson.JSONDecodeError:
             raise CryptoError(f"Invalid JSON format in {path}")
         except Exception as e:
-            raise CryptoError(f"Failed to load identity from {path}: {str(e)}")
+            raise CryptoError(f"Failed to load identity from {path}: {e!s}")
 
 
 class FileVaultProvider(KeyProvider):

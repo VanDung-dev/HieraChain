@@ -6,11 +6,11 @@ Dataclasses and enums used by both sync and async clients.
 
 from __future__ import annotations
 
-import time
 import logging
+import time
 from dataclasses import dataclass, field
-from typing import Any
 from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

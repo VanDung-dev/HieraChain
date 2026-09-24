@@ -13,15 +13,17 @@ Template method pattern:
 - Override specific _execute_* methods for other DB dialects (MySQL, PostgreSQL, etc.)
 """
 
-from abc import ABC, abstractmethod
-import orjson
 import time
-from typing import Any, Callable
+from abc import ABC, abstractmethod
+from collections.abc import Callable
 from contextlib import contextmanager
+from typing import Any
 
+import orjson
+
+from hierachain.config.settings import settings
 from hierachain.core.blockchain import Blockchain
 from hierachain.security.secure_logging import get_storage_logger
-from hierachain.config.settings import settings
 
 
 class SQLBase(ABC):

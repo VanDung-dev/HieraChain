@@ -6,7 +6,11 @@ Uses impact vs likelihood matrix to determine priority levels.
 
 import logging
 
-from hierachain.error_mitigation.classifier_types import PriorityLevel, ImpactLevel, LikelihoodLevel
+from hierachain.error_mitigation.classifier_types import (
+    ImpactLevel,
+    LikelihoodLevel,
+    PriorityLevel,
+)
 
 logger = logging.getLogger(__name__)
 

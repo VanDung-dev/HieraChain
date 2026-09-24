@@ -15,17 +15,14 @@ from typing import Any
 
 class OrganizationError(Exception):
     """Exception raised for organization-related errors"""
-    pass
 
 
 class NetworkError(Exception):
     """Exception raised for network-related errors"""
-    pass
 
 
 class ConsensusError(Exception):
     """Exception raised for consensus-related errors"""
-    pass
 
 
 class TransactionState(str, Enum):

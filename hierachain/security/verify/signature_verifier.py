@@ -5,12 +5,13 @@ Provides robust signature verification for Events,
 supporting Ed25519 (via PyNaCl) and ECDSA (via cryptography).
 """
 
-import orjson
 import unicodedata
 from typing import Any
 
-from hierachain.security.security_utils import verify_signature, verify_batch_signatures
+import orjson
+
 from hierachain.security.secure_logging import get_security_logger
+from hierachain.security.security_utils import verify_batch_signatures, verify_signature
 
 logger = get_security_logger()
 
@@ -134,10 +135,8 @@ class SignatureVerifier:
         Attempts Ed25519 first (default standard).
         """
         # Strip 0x prefix if present (cryptographic libraries expect pure hex)
-        if public_key.startswith("0x"):
-            public_key = public_key[2:]
-        if signature.startswith("0x"):
-            signature = signature[2:]
+        public_key = public_key.removeprefix("0x")
+        signature = signature.removeprefix("0x")
 
         # 1. Try Ed25519 (PyNaCl) - Fast and standard for HieraChain
         if verify_signature(public_key, message, signature):
@@ -157,19 +156,17 @@ class SignatureVerifier:
         Supports secp256k1 and other common curves if cryptography library is present.
         """
         try:
+            from cryptography.exceptions import InvalidSignature
             from cryptography.hazmat.primitives import hashes, serialization
             from cryptography.hazmat.primitives.asymmetric import ec
-            from cryptography.exceptions import InvalidSignature
         except ImportError:
             logger.warning("cryptography library not available for ECDSA verification")
             return False
 
         try:
             # Strip 0x prefix if present
-            if public_key_hex.startswith("0x"):
-                public_key_hex = public_key_hex[2:]
-            if signature_hex.startswith("0x"):
-                signature_hex = signature_hex[2:]
+            public_key_hex = public_key_hex.removeprefix("0x")
+            signature_hex = signature_hex.removeprefix("0x")
 
             # Decode hex strings
             pub_key_bytes = bytes.fromhex(public_key_hex)

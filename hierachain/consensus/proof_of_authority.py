@@ -6,19 +6,21 @@ for the HieraChain Ledger where specific authorities (Main Chain,
 Sub-Chains) have designated roles and permissions for block creation.
 """
 
+import hashlib
+import logging
 import os
 import sys
 import time
-import hashlib
-import logging
 from typing import Any
+
 import pyarrow as pa
 
-from hierachain.consensus.base_consensus import (
-    BaseConsensus, _verify_block_zk_proof
-)
+from hierachain.consensus.base_consensus import BaseConsensus, _verify_block_zk_proof
 from hierachain.core.block import (
-    Block, convert_events_to_arrow, calculate_merkle_from_list, table_to_list_of_dicts
+    Block,
+    calculate_merkle_from_list,
+    convert_events_to_arrow,
+    table_to_list_of_dicts,
 )
 from hierachain.core.utils import generate_hash
 from hierachain.security.security_utils import KeyPair

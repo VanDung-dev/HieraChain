@@ -2,13 +2,15 @@
 Verification tools for blockchain integrity.
 """
 
-import click
 import logging
+
+import click
+
 from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
+from hierachain.config.settings import settings
 from hierachain.core.block import Block
 from hierachain.security.verify.block_verifier import BlockVerifier
 from hierachain.security.verify.signature_verifier import SignatureVerifier
-from hierachain.config.settings import settings
 
 # Setup logging for CLI
 logger = logging.getLogger("hrc.verify")
@@ -27,7 +29,6 @@ def _db_url_to_path(url: str | None) -> str:
 @click.group(name="verify")
 def verify_group():
     """Verification tools for blockchain integrity."""
-    pass
 
 
 @verify_group.command(name="chain")

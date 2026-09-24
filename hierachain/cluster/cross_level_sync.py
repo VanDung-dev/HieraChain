@@ -8,13 +8,14 @@ enabling gap-fill data sync with proof verification across hierarchy levels.
 import hashlib
 import logging
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from hierachain.cluster.cross_level_sync_types import (
-    CrossLevelSyncStatus,
     ConflictResolutionStrategy,
-    SyncConflict,
     CrossLevelSyncRequest,
+    CrossLevelSyncStatus,
+    SyncConflict,
     SyncResult,
 )
 

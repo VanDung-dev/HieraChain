@@ -2,12 +2,16 @@
 Chain management commands.
 """
 
-import click
 import time
 
+import click
+
 from hierachain.cli.store import (
-    get_main_chain, get_sub_chain, save_chain_to_memory,
-    save_chains_to_file, get_all_chains
+    get_all_chains,
+    get_main_chain,
+    get_sub_chain,
+    save_chain_to_memory,
+    save_chains_to_file,
 )
 from hierachain.domains.chains.domain_chain import DomainChain
 
@@ -15,7 +19,6 @@ from hierachain.domains.chains.domain_chain import DomainChain
 @click.group()
 def chain_group():
     """Chain management commands."""
-    pass
 
 
 @chain_group.command()

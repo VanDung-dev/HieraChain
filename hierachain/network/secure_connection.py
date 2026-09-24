@@ -9,22 +9,23 @@ and the network transport (ZeroMQ). It handles:
 4. Connection Lifecycle Management
 """
 
-import zmq
-import zmq.auth
 import logging
 from typing import Any, cast
 
+import zmq
+import zmq.auth
+
 from hierachain.config.settings import get_settings
-from hierachain.network.zmq_transport import ZmqNode
-from hierachain.network.peer_trust_manager import PeerTrustManager
 from hierachain.network.message_cryptographic import (
-    sign_message,
-    verify_message,
     sign_handshake_payload,
+    sign_message,
     verify_handshake_signature,
+    verify_message,
 )
-from hierachain.security.msp import HierarchicalMSP
+from hierachain.network.peer_trust_manager import PeerTrustManager
+from hierachain.network.zmq_transport import ZmqNode
 from hierachain.security.identity import IdentityManager
+from hierachain.security.msp import HierarchicalMSP
 from hierachain.security.security_utils import KeyPair
 
 logger = logging.getLogger(__name__)

@@ -5,9 +5,9 @@ Defines enums, dataclasses, and helper functions for policy definitions.
 """
 
 import re
-from typing import Any
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class PolicyType(Enum):
@@ -122,7 +122,7 @@ class PolicyCondition:
             ComparisonOperator.NOT_MATCHES: self._evaluate_not_matches,
         }
 
-        from typing import Callable
+        from collections.abc import Callable
         evaluator: Callable[[Any], bool] | None = evaluator_map.get(self.operator)
         if not evaluator:
             return False

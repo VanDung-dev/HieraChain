@@ -8,11 +8,11 @@ The client is designed to work with local IPFS daemons running in a private netw
 ensuring that all data stored remains within the enterprise boundary.
 """
 
-import orjson
 import os
 from typing import Any
 
 import httpx
+import orjson
 
 from hierachain.api.storage.encryption import AESEncryption, EncryptionError
 from hierachain.security.secure_logging import SecureLogger
@@ -23,7 +23,6 @@ logger = SecureLogger("hierachain.storage.ipfs_client")
 class IPFSError(Exception):
     """Base exception for IPFS-related errors."""
 
-    pass
 
 
 def _parse_multiaddr(addr: str) -> tuple[str, int]:
@@ -115,7 +114,7 @@ class IPFSClient:
                 logger.info("Connected to IPFS daemon", host=self._host)
             except httpx.HTTPError as e:
                 logger.error("Failed to connect to IPFS daemon", error=str(e))
-                raise IPFSError(f"Failed to connect to IPFS daemon: {str(e)}")
+                raise IPFSError(f"Failed to connect to IPFS daemon: {e!s}")
         
         # Explicit type check for linters
         if self._client is None:
@@ -213,7 +212,7 @@ class IPFSClient:
             raise
         except (httpx.HTTPError, KeyError) as e:
             logger.error("Failed to upload data to IPFS", error=str(e))
-            raise IPFSError(f"Failed to upload data: {str(e)}")
+            raise IPFSError(f"Failed to upload data: {e!s}")
 
     def download_bytes(
         self,
@@ -285,7 +284,7 @@ class IPFSClient:
             raise
         except (httpx.HTTPError, ValueError) as e:
             logger.error("Failed to download data from IPFS", cid=cid, error=str(e))
-            raise IPFSError(f"Failed to download data from CID {cid}: {str(e)}")
+            raise IPFSError(f"Failed to download data from CID {cid}: {e!s}")
 
     def upload_json(
         self, data: dict, encrypt: bool = True, metadata: dict[str, Any] | None = None
@@ -305,7 +304,7 @@ class IPFSClient:
             json_bytes = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
             return self.upload_bytes(json_bytes, encrypt=encrypt, metadata=metadata)
         except (TypeError, ValueError) as e:
-            raise IPFSError(f"JSON serialization failed: {str(e)}")
+            raise IPFSError(f"JSON serialization failed: {e!s}")
 
     def download_json(
         self,
@@ -332,7 +331,7 @@ class IPFSClient:
             )
             return orjson.loads(json_bytes)
         except (orjson.JSONDecodeError, UnicodeDecodeError) as e:
-            raise IPFSError(f"JSON deserialization failed: {str(e)}")
+            raise IPFSError(f"JSON deserialization failed: {e!s}")
 
     # ---- Pin Management ----
 
@@ -359,7 +358,7 @@ class IPFSClient:
 
         except httpx.HTTPError as e:
             logger.error("Failed to pin content", cid=cid, error=str(e))
-            raise IPFSError(f"Failed to pin CID {cid}: {str(e)}")
+            raise IPFSError(f"Failed to pin CID {cid}: {e!s}")
 
     def unpin(self, cid: str) -> bool:
         """
@@ -384,7 +383,7 @@ class IPFSClient:
 
         except httpx.HTTPError as e:
             logger.error("Failed to unpin content", cid=cid, error=str(e))
-            raise IPFSError(f"Failed to unpin CID {cid}: {str(e)}")
+            raise IPFSError(f"Failed to unpin CID {cid}: {e!s}")
 
     def list_pins(self) -> list[str]:
         """
@@ -410,7 +409,7 @@ class IPFSClient:
 
         except (httpx.HTTPError, KeyError) as e:
             logger.error("Failed to list pins", error=str(e))
-            raise IPFSError(f"Failed to list pins: {str(e)}")
+            raise IPFSError(f"Failed to list pins: {e!s}")
 
     # ---- Misc ----
 
@@ -437,7 +436,7 @@ class IPFSClient:
 
         except httpx.HTTPError as e:
             logger.error("Failed to get stats", cid=cid, error=str(e))
-            raise IPFSError(f"Failed to get stats for CID {cid}: {str(e)}")
+            raise IPFSError(f"Failed to get stats for CID {cid}: {e!s}")
 
     def is_available(self, cid: str) -> bool:
         """
@@ -482,7 +481,7 @@ class IPFSClient:
 
         except (httpx.HTTPError, KeyError) as e:
             logger.error("Failed to get daemon version", error=str(e))
-            raise IPFSError(f"Failed to get daemon version: {str(e)}")
+            raise IPFSError(f"Failed to get daemon version: {e!s}")
 
     def close(self):
         """Close the IPFS client connection."""

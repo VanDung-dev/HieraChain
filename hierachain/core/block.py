@@ -7,17 +7,17 @@ This module implements the Block class following the Ledger guidelines:
 - Events are domain-specific operations with metadata
 """
 
-import time
 import hashlib
 import logging
+import time
 from typing import Any
+
+import orjson
 import pyarrow as pa
 import pyarrow.compute as pc
-import orjson
 
-from hierachain.core.utils import generate_hash
 from hierachain.core.merkle_tree import MerkleTree
-
+from hierachain.core.utils import generate_hash
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +32,16 @@ class Block:
     - Hashing uses strict JSON canonicalization.
     """
     __slots__ = (
-        'index', 'timestamp', 'previous_hash', 'nonce',
-        'merkle_root', 'creator_id', 'signature', '_events', 'hash',
         '_cached_events',
+        '_events',
+        'creator_id',
+        'hash',
+        'index',
+        'merkle_root',
+        'nonce',
+        'previous_hash',
+        'signature',
+        'timestamp',
     )
     _events: pa.Table
     _cached_events: list[dict[str, Any]] | None

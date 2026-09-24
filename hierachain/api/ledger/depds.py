@@ -6,8 +6,8 @@ across all Ledger endpoint modules.
 
 from fastapi import Depends
 
-from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.domains.utils.entity_tracer import EntityTracer
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.identity_loader import load_node_identity
 
 _hierarchy_manager: HierarchyManager | None = None

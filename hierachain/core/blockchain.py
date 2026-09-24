@@ -8,12 +8,14 @@ for both Main Chain and Sub-Chain implementations, following Ledger guidelines:
 - Proper chain validation and integrity
 """
 
-import time
+import hashlib
 import logging
 import threading
-import hashlib
+import time
+from collections.abc import Callable
+from typing import Any, cast
+
 import orjson
-from typing import Any, Callable, cast
 
 from hierachain.core.block import Block
 from hierachain.security.verify.block_verifier import get_block_verifier
@@ -46,10 +48,15 @@ class Blockchain:
     events per block.
     """
     __slots__ = (
-        'name', 'lock',
-        'chain', 'pending_events', 'total_events',
-        'event_type_counts', 'event_type_index',
-        'entity_event_index', 'query_engine',
+        'chain',
+        'entity_event_index',
+        'event_type_counts',
+        'event_type_index',
+        'lock',
+        'name',
+        'pending_events',
+        'query_engine',
+        'total_events',
     )
 
     def __init__(self, name: str = "Blockchain") -> None:

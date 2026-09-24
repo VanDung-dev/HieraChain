@@ -3,10 +3,11 @@ Ordering state recovery from the transaction journal for the HieraChain
 ordering service.
 """
 
-import time
 import logging
-from hierachain.consensus.ordering.types import PendingEvent, EventStatus
-from hierachain.consensus.ordering.utils import make_serializable, generate_event_id
+import time
+
+from hierachain.consensus.ordering.types import EventStatus, PendingEvent
+from hierachain.consensus.ordering.utils import generate_event_id, make_serializable
 
 logger = logging.getLogger(__name__)
 

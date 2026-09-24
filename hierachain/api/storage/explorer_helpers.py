@@ -5,15 +5,15 @@ This module provides utilities for displaying and resolving CIDs
 in the Blockchain Explorer UI.
 """
 
-import orjson
 from typing import Any
 
+import orjson
+
 from hierachain.api.storage.endpoint_helpers import (
-    is_ipfs_enabled, resolve_event_details
+    is_ipfs_enabled,
+    resolve_event_details,
 )
-from hierachain.api.storage.utils import (
-    format_cid_display, detect_data_location
-)
+from hierachain.api.storage.utils import detect_data_location, format_cid_display
 
 
 def format_event_for_display(event: dict[str, Any], resolve_cid: bool = False) -> dict[str, Any]:

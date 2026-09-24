@@ -15,10 +15,8 @@ Usage:
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 from dotenv import load_dotenv
-
 
 # Constants
 ENV_FILE = Path(".env")
@@ -51,7 +49,7 @@ def get_product_config_template() -> str:
         raise FileNotFoundError("Could not find Product config template module")
 
 
-def has_hierachain_config(env_file: Optional[Path] = ENV_FILE) -> bool:
+def has_hierachain_config(env_file: Path | None = ENV_FILE) -> bool:
     """
     Check if .env file has any HieraChain configuration.
     
@@ -77,7 +75,7 @@ def has_hierachain_config(env_file: Optional[Path] = ENV_FILE) -> bool:
     return False
 
 
-def get_current_env(env_file: Optional[Path] = ENV_FILE) -> Optional[str]:
+def get_current_env(env_file: Path | None = ENV_FILE) -> str | None:
     """
     Get current HRC_ENV value from .env file.
     
@@ -96,7 +94,7 @@ def get_current_env(env_file: Optional[Path] = ENV_FILE) -> Optional[str]:
         return match.split('=', 1)[1].strip() if match else None
 
 
-def get_current_env_from_os() -> Optional[str]:
+def get_current_env_from_os() -> str | None:
     """
     Get current HRC_ENV value from os.environ.
     
@@ -123,7 +121,7 @@ def validate_no_conflict(env_file: Path) -> list[str]:
     return warnings
 
 
-def ensure_product_example(env_example_file: Optional[Path] = ENV_EXAMPLE_FILE) -> bool:
+def ensure_product_example(env_example_file: Path | None = ENV_EXAMPLE_FILE) -> bool:
     """
     Ensure .env.HRC.example file exists with Product configuration.
     
@@ -151,7 +149,7 @@ def ensure_product_example(env_example_file: Optional[Path] = ENV_EXAMPLE_FILE) 
     return True
 
 
-def load_env(env_file: Optional[Path] = ENV_FILE) -> bool:
+def load_env(env_file: Path | None = ENV_FILE) -> bool:
     """
     Load .env file into os.environ.
     
@@ -216,9 +214,9 @@ def print_missing_config_warning():
 
 
 def init_env_config(
-    env_file: Optional[Path] = None,
-    env_example_file: Optional[Path] = None,
-    auto_config: Optional[bool] = None,
+    env_file: Path | None = None,
+    env_example_file: Path | None = None,
+    auto_config: bool | None = None,
     warn_only: bool = True
 ) -> bool:
     """

@@ -4,6 +4,7 @@ Block builder for the HieraChain ordering service.
 
 import time
 from typing import Any
+
 from hierachain.consensus.ordering.types import PendingEvent
 
 

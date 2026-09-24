@@ -8,9 +8,10 @@ Supports two output formats, selected via the ``HRC_LOG_FORMAT`` environment var
                        Cloud Logging aggregators.
 """
 
-import orjson
 import logging
 import os
+
+import orjson
 
 
 class _JsonFormatter(logging.Formatter):
@@ -42,7 +43,7 @@ class _JsonFormatter(logging.Formatter):
             "message": record.getMessage(),
         }
         if hasattr(record, "request_id"):
-            payload["request_id"] = getattr(record, "request_id")
+            payload["request_id"] = record.request_id
         return payload
 
     def _add_extra_fields(self, record: logging.LogRecord, payload: dict) -> None:

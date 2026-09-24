@@ -8,14 +8,15 @@ Supports psycopg v3 ConnectionPool / psycopg2 / SQLAlchemy connection pooling wi
 from __future__ import annotations
 
 import time
-from typing import Any
 from contextlib import contextmanager
+from typing import Any
 
 import orjson
+
 from hierachain.adapters.database.base.sql_adapter import SQLBase
-from hierachain.security.secure_logging import get_storage_logger
-from hierachain.core.blockchain import Blockchain
 from hierachain.adapters.database.postgres_schema import init_database_schema
+from hierachain.core.blockchain import Blockchain
+from hierachain.security.secure_logging import get_storage_logger
 
 logger = get_storage_logger()
 
@@ -38,9 +39,8 @@ class PostgresAdapter(SQLBase):
     def _init_pool(self) -> None:
         """Initialize connection pool depending on available drivers."""
         try:
-            import psycopg
-            from psycopg_pool import ConnectionPool
             from psycopg.rows import dict_row
+            from psycopg_pool import ConnectionPool
 
             self._pool = ConnectionPool(
                 conninfo=self.database_url,
@@ -52,9 +52,8 @@ class PostgresAdapter(SQLBase):
             logger.info("Initialized psycopg3 connection pool for PostgreSQL")
         except ImportError:
             try:
-                import psycopg2
-                from psycopg2.pool import ThreadedConnectionPool
                 from psycopg2.extras import RealDictCursor
+                from psycopg2.pool import ThreadedConnectionPool
 
                 self._pool = ThreadedConnectionPool(
                     minconn=self.pool_min,
@@ -97,7 +96,8 @@ class PostgresAdapter(SQLBase):
             with self._get_connection() as conn:
                 init_database_schema(conn.cursor())
                 conn.commit()
-        except Exception as e:
+        # Optional PostgreSQL drivers expose different backend exception types.
+        except Exception as e:  # noqa: BLE001
             logger.warning("PostgreSQL schema initialization deferred or failed: %s", e)
 
     def _execute_store_chain(self, conn: Any, chain: Blockchain) -> bool:

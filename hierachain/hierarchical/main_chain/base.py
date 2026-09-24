@@ -2,32 +2,32 @@
 Main Chain class implementation for HieraChain Ledger.
 """
 
-import time
 import logging
+import time
 from typing import Any
 
-from hierachain.core.blockchain import Blockchain
+from hierachain.config.settings import settings
 from hierachain.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.consensus.proof_of_federation import ProofOfFederation
-from hierachain.core.utils import (
-    sanitize_metadata_for_main_chain, validate_proof_metadata,
-)
 from hierachain.core.block import Block
-from hierachain.config.settings import settings
-from hierachain.security.verify.zk_verifier import ZKVerifier
-
+from hierachain.core.blockchain import Blockchain
+from hierachain.core.utils import (
+    sanitize_metadata_for_main_chain,
+    validate_proof_metadata,
+)
 from hierachain.hierarchical.main_chain.proofs import (
+    _get_proofs_by_sub_chain_from_main_chain,
     _is_valid_hash_format,
     _record_proof_on_main_chain,
     _verify_proof_in_main_chain,
-    _get_proofs_by_sub_chain_from_main_chain,
     _verify_zk_proof_helper,
 )
 from hierachain.hierarchical.main_chain.registry import (
-    _get_sub_chain_summary_from_main_chain,
-    _get_main_chain_stats_for_chain,
     _get_hierarchical_integrity_report_for_chain,
+    _get_main_chain_stats_for_chain,
+    _get_sub_chain_summary_from_main_chain,
 )
+from hierachain.security.verify.zk_verifier import ZKVerifier
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +43,14 @@ class MainChain(Blockchain):
     - Uses Proof of Authority consensus suitable for business applications
     """
     __slots__ = (
-        'consensus', 'registered_sub_chains', 'sub_chain_metadata',
-        'proof_count', 'latest_proofs', 'recent_proofs',
-        'proof_index', 'zk_verifier',
+        'consensus',
+        'latest_proofs',
+        'proof_count',
+        'proof_index',
+        'recent_proofs',
+        'registered_sub_chains',
+        'sub_chain_metadata',
+        'zk_verifier',
     )
 
     def __init__(self, name: str = "MainChain", consensus_type: str | None = None):

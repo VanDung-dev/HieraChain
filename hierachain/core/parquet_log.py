@@ -1,7 +1,8 @@
-import time
-import threading
 import logging
+import threading
+import time
 from pathlib import Path
+
 import orjson
 import pyarrow as pa
 import pyarrow.parquet as pq

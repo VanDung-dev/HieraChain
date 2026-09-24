@@ -10,9 +10,9 @@ This module implements comprehensive block verification including:
 These checks ensure blockchain integrity and prevent tampering.
 """
 
-from typing import Any
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 from hierachain.security.secure_logging import get_security_logger
 
@@ -68,9 +68,15 @@ def _verify_signature_format(signature: str) -> bool:
 def _verify_signature(message: bytes, signature: str, public_key: bytes) -> bool:
     """Verify signature using cryptography library."""
     try:
-        from cryptography.hazmat.primitives import hashes, serialization
-        from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa, ed25519, ed448
         from cryptography.exceptions import InvalidSignature
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import (
+            ec,
+            ed448,
+            ed25519,
+            padding,
+            rsa,
+        )
     except ImportError:
         logger.warning("cryptography library not available for signature verification")
         return False
@@ -87,9 +93,7 @@ def _verify_signature(message: bytes, signature: str, public_key: bytes) -> bool
             pub_key.verify(sig_bytes, message, ec.ECDSA(hashes.SHA256()))
         elif isinstance(pub_key, rsa.RSAPublicKey):
             pub_key.verify(sig_bytes, message, padding.PKCS1v15(), hashes.SHA256())
-        elif isinstance(pub_key, ed25519.Ed25519PublicKey):
-            pub_key.verify(sig_bytes, message)
-        elif isinstance(pub_key, ed448.Ed448PublicKey):
+        elif isinstance(pub_key, ed25519.Ed25519PublicKey) or isinstance(pub_key, ed448.Ed448PublicKey):
             pub_key.verify(sig_bytes, message)
         else:
             logger.error("Unsupported public key type for block verification: %s", type(pub_key))

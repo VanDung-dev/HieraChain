@@ -5,15 +5,13 @@ This module provides FastAPI WebSocket endpoints for real-time
 bidirectional communication with HieraChain clients.
 """
 
-import orjson
 import logging
 import uuid
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+import orjson
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
-from hierachain.api.websocket.manager import (
-    ws_manager, WebSocketMessageType
-)
+from hierachain.api.websocket.manager import WebSocketMessageType, ws_manager
 
 logger = logging.getLogger(__name__)
 
