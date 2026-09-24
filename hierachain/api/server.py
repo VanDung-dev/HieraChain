@@ -9,33 +9,33 @@ The server uses FastAPI for high performance and includes proper
 error handling, CORS support, and comprehensive logging.
 """
 
-import os
 import logging
+import os
 import traceback
-from typing import Any, cast
-from fastapi import (
-    FastAPI, HTTPException, Depends, Request
-)
-from fastapi.middleware.cors import CORSMiddleware
 import warnings
 from contextlib import asynccontextmanager
+from typing import Any, cast
 
-from hierachain.config.logging import LOGGING_CONFIG
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.requests import HTTPConnection
 
-from hierachain.api.ledger.router import ledger_router
-from hierachain.api.business.router import business_router
 from hierachain.api.admin.endpoints import router as admin_router
-from hierachain.api.websocket.manager import ws_manager
-from hierachain.api.middleware import (
-    add_security_headers, add_payload_limit, add_rate_limit,
-    add_request_logging,
-)
+from hierachain.api.business.router import business_router
+from hierachain.api.context import get_p2p_client, set_p2p_client
 from hierachain.api.graphql_handler import _register_graphql_router
+from hierachain.api.ledger.router import ledger_router
+from hierachain.api.middleware import (
+    add_payload_limit,
+    add_rate_limit,
+    add_request_logging,
+    add_security_headers,
+)
+from hierachain.api.websocket.manager import ws_manager
+from hierachain.config.logging import LOGGING_CONFIG
 from hierachain.config.settings import get_settings
-from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 from hierachain.network.network_client import NetworkClient, NetworkClientConfig
-
-from hierachain.api.context import set_p2p_client, get_p2p_client
+from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
 logger = logging.getLogger(__name__)
 
@@ -223,8 +223,8 @@ def _register_root_endpoint(fast_app: FastAPI):
 def _register_metrics_endpoint(fast_app: FastAPI) -> None:
     try:
         import prometheus_client
-        from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
         from fastapi import Response
+        from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
         @fast_app.get("/metrics", include_in_schema=False)
         async def metrics_endpoint() -> Response:
@@ -267,12 +267,14 @@ def create_app() -> FastAPI:
 
     verifier = APIKeyVerifier(settings.get_auth_config()) if settings.AUTH_ENABLED else None
 
-    async def auth_dependency(request: Request):
+    async def auth_dependency(connection: HTTPConnection):
         if not settings.AUTH_ENABLED:
             return None
-        if request.url.path in EXEMPT_PATHS:
+        if connection.url.path in EXEMPT_PATHS:
             return {"user_id": "system", "app_details": {"name": "Exempt"}}
-        return await verifier(request)  # type: ignore
+        if verifier is None:
+            return None
+        return await verifier(connection)
 
     dependencies = [Depends(auth_dependency)] if settings.AUTH_ENABLED else []
 
@@ -289,6 +291,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
         dependencies=dependencies,
     )
+    fast_app.state.auth_verifier = verifier
 
     cors_config = settings.get_cors_config()
     _add_cors_middleware(fast_app, cors_config)
