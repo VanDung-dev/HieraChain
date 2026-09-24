@@ -7,16 +7,18 @@ Ensures only authorized clients with valid, non-revoked API keys can access
 protected resources.
 """
 
-import time
 import sys
+import time
+from pathlib import Path
+from typing import Any, Union, cast
+
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import APIKeyHeader, APIKeyQuery
-from typing import Any, cast, Union
-from pathlib import Path
+from starlette.requests import HTTPConnection
 
-from hierachain.security.secure_logging import get_security_logger
-from hierachain.security.brute_force_protector import BruteForceProtector
 from hierachain.config.settings import get_settings
+from hierachain.security.brute_force_protector import BruteForceProtector
+from hierachain.security.secure_logging import get_security_logger
 
 # Add the project root to the path for imports
 _file_path = __file__
@@ -40,7 +42,7 @@ def _get_system_context() -> dict:
     }
 
 
-def _extract_client_ip(request: Request) -> str:
+def _extract_client_ip(request: HTTPConnection) -> str:
     """Extract client IP from request for brute-force tracking."""
     client = request.client if request else None
     if client is not None:
@@ -101,7 +103,7 @@ class APIKeyVerifier:
         bf_config = config.get('brute_force', {})
         self.brute_force_protector = BruteForceProtector(bf_config)
     
-    async def __call__(self, request: Request, api_key: str | None = None) -> dict:
+    async def __call__(self, request: HTTPConnection, api_key: str | None = None) -> dict:
         """
         Verify API key from the incoming request.
         
@@ -153,7 +155,7 @@ class APIKeyVerifier:
         )
 
     async def _extract_api_key(
-        self, request: Request, api_key: str | None
+        self, request: HTTPConnection, api_key: str | None
     ) -> str | None:
         """Extract API key from request if not provided directly."""
         if api_key or not request:
@@ -217,6 +219,7 @@ class APIKeyVerifier:
         context = {
             "user_id": user_id,
             "app_details": app_details,
+            "permissions": self.key_manager.get_permissions(api_key),
             "api_key_prefix": key_prefix,
             "verified_at": time.time(),
             "_api_key": api_key
@@ -301,9 +304,9 @@ def get_auth_dependency() -> Any:
     return None
 
 
-def _get_active_verifier() -> Any:
-    """Helper to get an instance for Depends"""
-    return get_auth_dependency()
+def _get_active_verifier(connection: HTTPConnection) -> APIKeyVerifier | None:
+    """Get the verifier owned by the current application."""
+    return getattr(connection.app.state, "auth_verifier", None)
 
 
 async def require_event_access(
@@ -412,7 +415,9 @@ class ResourcePermissionChecker:
             bool: True if context has the required permission, False otherwise
         """
         app_details = context.get('app_details', {})
-        permissions = app_details.get('permissions', [])
+        permissions = context.get('permissions')
+        if permissions is None:
+            permissions = app_details.get('permissions', [])
         return permission_type in permissions or 'all' in permissions
 
     @staticmethod

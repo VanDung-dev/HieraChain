@@ -306,7 +306,13 @@ class KeyManager:
         """
         key_data = self._get_key_data(api_key)
         return key_data.get('user_id') if key_data else None
-    
+
+    def get_permissions(self, api_key: str) -> list[str]:
+        """Return the permissions assigned to an API key."""
+        key_data = self._get_key_data(api_key)
+        permissions = key_data.get('permissions', []) if key_data else []
+        return permissions.copy() if isinstance(permissions, list) else []
+
     def get_app_details(self, api_key: str) -> dict | None:
         """
         Get application details associated with API key.
