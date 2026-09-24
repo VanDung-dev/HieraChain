@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (12)"
+??? warning "Breaking Changes (13)"
+
+    * 2026-09-24
+
+        * **Core (Parquet Logs)**: `write_parquet_log()` hiện ghi các segment bất biến tối đa 1.024 bản ghi trong `<path>.segments`; `read_parquet_log()` đọc các segment và cả log một tệp legacy. Bên dùng đang đọc trực tiếp `<path>` cần chuyển sang helper này.
 
     * 2026-09-22
 

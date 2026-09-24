@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (12)"
+??? warning "Breaking Changes (13)"
+
+    * 2026-09-24
+
+        * **Core (Parquet Logs)**: `write_parquet_log()` now writes immutable segments of up to 1,024 records under `<path>.segments`; `read_parquet_log()` reads the segments and legacy single-file logs. Consumers that read `<path>` directly must switch to the helper.
 
     * 2026-09-22
 
