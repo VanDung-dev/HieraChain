@@ -282,10 +282,26 @@ class PostgresAdapter(SQLBase):
         meta_json = orjson.dumps(metadata).decode() if metadata else None
         cursor.execute(
             """
+            DELETE FROM events
+            WHERE chain_name = %s AND block_hash IN (
+                SELECT hash FROM blocks WHERE chain_name = %s AND "index" = %s
+            )
+            """,
+            (chain_name, chain_name, block_data["index"]),
+        )
+        cursor.execute(
+            """
             INSERT INTO blocks
             (chain_name, "index", hash, previous_hash, timestamp, nonce, events_count, metadata_json, created_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (hash) DO NOTHING
+            ON CONFLICT (chain_name, "index") DO UPDATE SET
+                hash = EXCLUDED.hash,
+                previous_hash = EXCLUDED.previous_hash,
+                timestamp = EXCLUDED.timestamp,
+                nonce = EXCLUDED.nonce,
+                events_count = EXCLUDED.events_count,
+                metadata_json = EXCLUDED.metadata_json,
+                created_at = EXCLUDED.created_at
             """,
             (
                 chain_name,
