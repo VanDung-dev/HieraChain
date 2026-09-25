@@ -65,7 +65,12 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (3)"
+??? warning "Fix (5)"
+
+    * 2026-09-25
+
+        * **Journal (Giảm thiểu Lỗi)**: Chuyển `TransactionJournal.log_event()` (`hierachain/error_mitigation/journal.py`) sang fail-closed cho ghi async bằng cách chờ `Future` theo từng event do background writer hoàn tất thay vì ack ngay khi enqueue; nhánh queue đầy vẫn fallback sang ghi đồng bộ.
+        * **Đồng thuận (Phục hồi Ordering)**: Đặt `OrderingStatus.MAINTENANCE` ngay đầu `_initialize_service` (`hierachain/consensus/ordering/processor.py`) để service không bao giờ ở trạng thái `ACTIVE` trong lúc replay, và buộc `OrderingRecovery` (`hierachain/consensus/ordering/recovery.py`) raise `RuntimeError` khi gặp entry journal `error` thay vì âm thầm bỏ qua.
 
     * 2026-09-24
 

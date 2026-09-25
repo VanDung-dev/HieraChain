@@ -65,7 +65,12 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (3)"
+??? warning "Fix (5)"
+
+    * 2026-09-25
+
+        * **Journal (Error Mitigation)**: Made `TransactionJournal.log_event()` (`hierachain/error_mitigation/journal.py`) fail-closed for async writes by waiting on the per-event `Future` completed by the background writer instead of acknowledging on enqueue; the queue-full path still falls back to a synchronous write.
+        * **Consensus (Ordering Recovery)**: Set `OrderingStatus.MAINTENANCE` at the start of `_initialize_service` (`hierachain/consensus/ordering/processor.py`) so the service never exposes `ACTIVE` during replay, and made `OrderingRecovery` (`hierachain/consensus/ordering/recovery.py`) raise `RuntimeError` on journal `error` entries instead of silently skipping them.
 
     * 2026-09-24
 
