@@ -75,7 +75,16 @@ class OrderingRecovery:
                 count += 1
             elif result == "skipped":
                 skipped_events += 1
-                
+            elif result == "error":
+                event_id = (
+                    event_data.get("event_id", "unknown")
+                    if event_data
+                    else "unknown"
+                )
+                raise RuntimeError(
+                    f"Journal recovery failed for event {event_id}"
+                )
+
         return count, skipped_events
 
     async def _process_single_journal_entry(self, event_data: dict | None) -> str:

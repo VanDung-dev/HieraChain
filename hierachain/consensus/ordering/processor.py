@@ -142,6 +142,7 @@ class OrderingProcessor:
 
     async def _initialize_service(self):
         """Perform service initialization and state recovery"""
+        self.service.status = OrderingStatus.MAINTENANCE
         await self.recovery.recover_state_async()
         self.service.status = OrderingStatus.ACTIVE
         logger.info("Ordering Service is now ACTIVE")
