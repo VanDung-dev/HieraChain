@@ -15,6 +15,7 @@ import struct
 import threading
 import time
 from collections.abc import Generator
+from concurrent.futures import Future
 from pathlib import Path
 from typing import Any, BinaryIO
 
@@ -348,7 +349,9 @@ class TransactionJournal:
         self._schema = _EVENT_SCHEMA
         self._lock = threading.Lock()
         self._async_write = not get_settings().JOURNAL_FSYNC
-        self._write_queue = None
+        self._write_queue: queue.Queue[
+            tuple[dict[str, Any], Future[bool]]
+        ] | None = None
         self._writer_thread = None
         self._stop_writer = None
 
@@ -441,13 +444,20 @@ class TransactionJournal:
         while not self._stop_writer.is_set() or not self._write_queue.empty():
             try:
                 # Use a short timeout so we can periodically check self._stop_writer
-                event_data = self._write_queue.get(timeout=0.05)
-                self._write_event_to_file(event_data)
-                self._write_queue.task_done()
+                event_data, result = self._write_queue.get(timeout=0.05)
             except queue.Empty:
                 continue
+
+            written = False
+            try:
+                written = self._write_event_to_file(event_data)
             except Exception as e:
                 logger.error("Error in background journal writer: %s", e)
+            finally:
+                try:
+                    result.set_result(written)
+                finally:
+                    self._write_queue.task_done()
 
     def _write_event_to_file(self, event_data: dict[str, Any]) -> bool:
         """Perform actual file write operations."""
@@ -486,13 +496,15 @@ class TransactionJournal:
                     logger.debug("Error flushing journal on flush: %s", ex)
 
     def log_event(self, event_data: dict[str, Any]) -> bool:
-        """Durably log an event to the journal using Arrow format."""
+        """Write an event and return whether the journal write completed."""
         if self._async_write and self._write_queue is not None:
+            result: Future[bool] = Future()
             try:
-                self._write_queue.put_nowait(event_data)
-                return True
+                self._write_queue.put_nowait((event_data, result))
             except queue.Full:
                 return self._write_event_to_file(event_data)
+            # ponytail: per-event wait; batch writes if measured throughput needs it.
+            return result.result()
         return self._write_event_to_file(event_data)
 
     def _get_journal_files(self) -> list[Path]:
