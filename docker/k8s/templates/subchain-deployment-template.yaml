@@ -79,7 +79,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /api/ledger/health
+              path: /api/ledger/ready
               port: api-port
             initialDelaySeconds: 5
             periodSeconds: 5
