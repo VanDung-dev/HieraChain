@@ -26,6 +26,8 @@ from hierachain.core.block import EVENT_SCHEMA as _EVENT_SCHEMA
 logger = logging.getLogger(__name__)
 
 _JOURNAL_MAX_FILE_SIZE = 100 * 1024 * 1024
+_JOURNAL_MAX_FRAME_SIZE = _JOURNAL_MAX_FILE_SIZE
+_JOURNAL_DATA_MARKER = "__hrc_journal_v1__"
 
 
 def _validate_path_component(comp: str) -> None:
@@ -135,25 +137,36 @@ def _process_details_field(ev: dict[str, Any]) -> None:
 
 
 def _pack_extra_fields(ev: dict[str, Any], raw_data: dict[str, Any]) -> None:
-    """Pack fields not in schema into 'data' JSON field."""
-    if ev.get("data"):
+    """Pack fields outside the Arrow schema alongside the original data value."""
+    schema_fields = ["entity_id", "event", "timestamp", "data", "details"]
+    extra_fields = {
+        key: value
+        for key, value in raw_data.items()
+        if key not in schema_fields and not isinstance(value, bytes)
+    }
+    if not extra_fields:
         return
 
-    clean_event = {}
-    schema_fields = ["entity_id", "event", "timestamp", "data", "details"]
-    for k, v in raw_data.items():
-        if k not in schema_fields and not isinstance(v, bytes):
-            clean_event[k] = v
+    data_value = ev.get("data")
+    if isinstance(data_value, bytes):
+        try:
+            data_value = orjson.loads(data_value)
+        except orjson.JSONDecodeError:
+            data_value = {"$binary": data_value.hex()}
 
-    if clean_event:
-        ev["data"] = orjson.dumps(clean_event)
+    envelope = {_JOURNAL_DATA_MARKER: {"data": data_value, "extra": extra_fields}}
+    try:
+        ev["data"] = orjson.dumps(envelope)
+    except (TypeError, ValueError):
+        envelope[_JOURNAL_DATA_MARKER]["data"] = str(data_value)
+        ev["data"] = orjson.dumps(envelope)
 
 
 def _serialize_data_field(ev: dict[str, Any]) -> None:
     """Ensure 'data' is bytes, serializing if necessary."""
     data = ev.get("data")
     if data is None:
-        ev["data"] = b""
+        ev["data"] = b"null"
         return
 
     if not isinstance(data, bytes):
@@ -174,17 +187,43 @@ def _read_next_batch(f: BinaryIO) -> bytes | None:
         return None
 
     if len(len_bytes) < 4:
-        logger.warning("Truncated journal file (incomplete length prefix).")
-        return None
+        raise ValueError("Truncated journal file (incomplete length prefix)")
 
     msg_len = struct.unpack("<I", len_bytes)[0]
+    if msg_len > _JOURNAL_MAX_FRAME_SIZE:
+        raise ValueError(f"Journal frame length {msg_len} exceeds maximum")
     batch_data = f.read(msg_len)
 
     if len(batch_data) < msg_len:
-        logger.warning("Truncated journal file (incomplete batch data).")
-        return None
+        raise ValueError("Truncated journal file (incomplete batch data)")
 
     return batch_data
+
+
+def _repair_truncated_active_file(path: Path) -> None:
+    """Discard an incomplete final frame before the active file is opened for append."""
+    file_size = path.stat().st_size
+    valid_end = 0
+    with path.open("r+b", buffering=0) as handle:
+        while valid_end < file_size:
+            handle.seek(valid_end)
+            length_bytes = handle.read(4)
+            if len(length_bytes) < 4:
+                break
+
+            frame_length = struct.unpack("<I", length_bytes)[0]
+            if frame_length > _JOURNAL_MAX_FRAME_SIZE:
+                raise ValueError(f"Journal frame length {frame_length} exceeds maximum")
+
+            payload_start = valid_end + 4
+            if frame_length > file_size - payload_start:
+                break
+            valid_end = payload_start + frame_length
+
+        if valid_end != file_size:
+            handle.truncate(valid_end)
+            handle.flush()
+            os.fsync(handle.fileno())
 
 
 def _serialize_arrow_batch(batch: pa.RecordBatch) -> bytes:
@@ -196,14 +235,11 @@ def _serialize_arrow_batch(batch: pa.RecordBatch) -> bytes:
 
 
 def _is_parquet_file(path: Path) -> bool:
-    """Identify a legacy Parquet file before reusing its active path."""
+    """Identify legacy Parquet by its leading magic, even when its footer is damaged."""
     try:
         with path.open("rb") as handle:
-            if handle.read(4) != b"PAR1":
-                return False
-            handle.seek(-4, os.SEEK_END)
             return handle.read(4) == b"PAR1"
-    except (OSError, ValueError):
+    except OSError:
         return False
 
 
@@ -215,15 +251,30 @@ def _apply_extra_fields(row: dict[str, Any], extra_data: dict[str, Any]) -> None
 
 
 def _unpack_extra_field_content(row: dict[str, Any], data_content: Any) -> None:
-    """Unpack JSON data field into the row dictionary."""
+    """Restore data and extra fields from the journal's binary JSON column."""
     if not data_content:
+        row["data"] = None
         return
     try:
-        extra_data = orjson.loads(data_content)
-        if isinstance(extra_data, dict):
-            _apply_extra_fields(row, extra_data)
+        decoded = orjson.loads(data_content)
     except (orjson.JSONDecodeError, TypeError):
-        pass
+        row["data"] = {"$binary": bytes(data_content).hex()}
+        return
+
+    if isinstance(decoded, dict):
+        envelope = decoded.get(_JOURNAL_DATA_MARKER)
+        if (
+            isinstance(envelope, dict)
+            and set(envelope) == {"data", "extra"}
+            and isinstance(envelope["extra"], dict)
+        ):
+            row["data"] = envelope["data"]
+            _apply_extra_fields(row, envelope["extra"])
+            return
+
+        # Old journal frames stored only the packed extra-field object in this column.
+        _apply_extra_fields(row, decoded)
+    row["data"] = decoded
 
 
 def _unpack_row_data(row: dict[str, Any]) -> dict[str, Any]:
@@ -256,7 +307,7 @@ def _iterate_journal_batches(
             for row in batch.to_pylist():
                 yield _unpack_row_data(row)
         except (OSError, pa.ArrowException, StopIteration, ValueError) as arrow_err:
-            logger.error("Corrupted Arrow batch in journal: %s", arrow_err)
+            raise ValueError(f"Corrupt Arrow batch in journal: {arrow_err}") from arrow_err
 
 
 class TransactionJournal:
@@ -359,6 +410,8 @@ class TransactionJournal:
                     f"{self.active_log_file.stem}_legacy_{time.time_ns()}.parquet"
                 )
                 self.active_log_file.rename(legacy_file)
+            if self.active_log_file.exists():
+                _repair_truncated_active_file(self.active_log_file)
             self._journal_file = self.active_log_file.open("ab", buffering=0)
         except OSError as e:
             logger.critical("Failed to open transaction journal: %s", e)
@@ -428,8 +481,17 @@ class TransactionJournal:
             try:
                 batch = self._dict_to_arrow_batch(event_data)
                 payload = _serialize_arrow_batch(batch)
-                self._journal_file.write(struct.pack("<I", len(payload)))
-                self._journal_file.write(payload)
+                if len(payload) > _JOURNAL_MAX_FRAME_SIZE:
+                    raise OSError(
+                        f"Serialized journal frame exceeds {_JOURNAL_MAX_FRAME_SIZE} bytes"
+                    )
+                for chunk in (struct.pack("<I", len(payload)), payload):
+                    remaining = memoryview(chunk)
+                    while remaining:
+                        written = self._journal_file.write(remaining)
+                        if written is None or written <= 0:
+                            raise OSError("Journal write made no progress")
+                        remaining = remaining[written:]
                 self._journal_file.flush()
                 os.fsync(self._journal_file.fileno())
                 return True
@@ -463,19 +525,18 @@ class TransactionJournal:
         return files
 
     def _iter_parquet_file(self, path: Path) -> Generator[dict[str, Any], None, None]:
-        try:
-            table = pq.read_table(path, schema=self._schema)
-            for batch in table.to_batches():
-                for row in batch.to_pylist():
-                    yield _unpack_row_data(row)
-        except Exception as e:
-            if path.suffix == ".parquet":
-                logger.error("Error replaying parquet journal %s: %s", path, e)
+        if path.suffix == ".parquet":
             try:
-                with open(path, "rb") as f:
-                    yield from _iterate_journal_batches(f, self._schema)
-            except Exception as e2:
-                logger.error("Error replaying journal %s: %s", path, e2)
+                table = pq.read_table(path, schema=self._schema)
+                for batch in table.to_batches():
+                    for row in batch.to_pylist():
+                        yield _unpack_row_data(row)
+            except Exception as exc:
+                raise ValueError(f"Could not replay legacy Parquet journal {path}: {exc}") from exc
+            return
+
+        with path.open("rb") as handle:
+            yield from _iterate_journal_batches(handle, self._schema)
 
     def replay(self) -> Generator[dict[str, Any], None, None]:
         """
@@ -486,20 +547,12 @@ class TransactionJournal:
         with self._lock:
             self._close_writer()
         files = self._get_journal_files()
-        if not files:
+        try:
+            for jf in files:
+                yield from self._iter_parquet_file(jf)
+        finally:
             with self._lock:
-                try:
-                    self._open_journal()
-                except Exception as ex:
-                    logger.debug("Error reopening journal on replay: %s", ex)
-            return
-        for jf in files:
-            yield from self._iter_parquet_file(jf)
-        with self._lock:
-            try:
                 self._open_journal()
-            except Exception as ex:
-                logger.debug("Error reopening journal after replay: %s", ex)
 
     def close(self):
         """Close the journal file handle."""
