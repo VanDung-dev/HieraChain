@@ -5,6 +5,7 @@ This module provides utilities for handling IPFS upload/download
 in FastAPI endpoints with BackgroundTasks support.
 """
 
+import asyncio
 from typing import Any
 
 from fastapi import BackgroundTasks
@@ -77,8 +78,9 @@ async def upload_to_ipfs_background(
 
     client = get_ipfs_client()
 
-    # Upload synchronously (encryption is fast)
-    result = client.upload_json(data, encrypt=True, metadata=metadata)
+    result = await asyncio.to_thread(
+        client.upload_json, data, encrypt=True, metadata=metadata
+    )
 
     if background_tasks:
         # Asynchronously log security event using background task
@@ -129,11 +131,12 @@ async def download_from_ipfs(
 
     client = get_ipfs_client()
 
-    data = client.download_json(
+    data = await asyncio.to_thread(
+        client.download_json,
         cid=cid,
         encrypted=True,
         nonce=nonce,
-        metadata=metadata
+        metadata=metadata,
     )
 
     logger.debug("Data downloaded from IPFS", cid=cid)
@@ -298,8 +301,7 @@ async def resolve_cid_field(
             cid=data.get(cid_field),
             error=str(e)
         )
-        # Return original data if resolution fails
-        return data
+        raise
 
 
 async def resolve_event_details(

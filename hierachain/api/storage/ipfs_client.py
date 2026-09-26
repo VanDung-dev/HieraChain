@@ -176,16 +176,13 @@ class IPFSClient:
             self._ensure_connected()
             resp = self.client.post(
                 "/api/v0/add",
+                params={"pin": str(self._auto_pin).lower()},
                 files={"file": ("data", upload_data)},
             )
             resp.raise_for_status()
             # Kubo returns NDJSON; first line has the Hash
             result = resp.json()
             cid = result["Hash"]
-
-            # Auto-pin if enabled
-            if self._auto_pin:
-                self.pin(cid)
 
             response = {
                 "cid": cid,
@@ -523,22 +520,18 @@ def create_ipfs_client_from_env() -> IPFSClient:
     auto_pin = os.getenv("HRC_IPFS_AUTO_PIN", "true").lower() == "true"
     timeout = int(os.getenv("HRC_IPFS_TIMEOUT", "120"))
 
-    # Get or generate encryption key
+    # Require a stable key so existing IPFS payloads remain decryptable.
     key_hex = os.getenv("HRC_IPFS_ENCRYPTION_KEY")
-    if key_hex:
-        try:
-            encryption_key = bytes.fromhex(key_hex)
-            logger.info("Using encryption key from environment variable")
-        except ValueError:
-            logger.warning("Invalid encryption key in environment, generating new key")
-            encryption_key = None
-    else:
-        logger.warning(
-            "No encryption key in environment (HRC_IPFS_ENCRYPTION_KEY), "
-            "generating new key. This key should be securely stored and shared "
-            "across nodes in the same channel/organization."
+    if key_hex is None or len(key_hex) != 64 or any(
+        char not in "0123456789abcdefABCDEF" for char in key_hex
+    ):
+        raise IPFSError(
+            "HRC_IPFS_ENCRYPTION_KEY is required and must contain exactly "
+            "64 hexadecimal characters (32 bytes)"
         )
-        encryption_key = None
+
+    encryption_key = bytes.fromhex(key_hex)
+    logger.info("Using encryption key from environment variable")
 
     return IPFSClient(
         ipfs_host=ipfs_host,
