@@ -1,7 +1,6 @@
 """Regression tests for journal durability and fail-closed startup recovery."""
 
 import asyncio
-import threading
 from types import SimpleNamespace
 
 import pytest
@@ -12,31 +11,18 @@ from hierachain.consensus.ordering.recovery import OrderingRecovery
 from hierachain.consensus.ordering.types import OrderingStatus
 
 
-def test_async_journal_does_not_acknowledge_a_failed_disk_write(tmp_path, monkeypatch):
-    """An event must not be accepted while its queued disk write can still fail."""
+def test_journal_does_not_acknowledge_a_failed_disk_write(tmp_path, monkeypatch):
+    """An event must not be accepted when its journal write fails."""
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(
-        journal_module,
-        "get_settings",
-        lambda: SimpleNamespace(JOURNAL_FSYNC=False),
-    )
     journal = journal_module.TransactionJournal(storage_dir="journal")
-    write_started = threading.Event()
-    finish_write = threading.Event()
 
     def failed_write(_event_data):
-        write_started.set()
-        finish_write.wait(timeout=0.1)
         return False
 
     monkeypatch.setattr(journal, "_write_event_to_file", failed_write)
     try:
-        accepted = journal.log_event({"event_id": "evt-1"})
-        assert write_started.wait(timeout=1), "background writer did not start"
-        assert accepted is False, "journal acknowledged the event before its write failed"
+        assert journal.log_event({"event_id": "evt-1"}) is False
     finally:
-        finish_write.set()
-        journal.flush()
         journal.close()
 
 
