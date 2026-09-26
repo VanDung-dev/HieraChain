@@ -51,8 +51,16 @@ def _block_from_dict(data: dict[str, Any]) -> Block:
     block._events = convert_events_to_arrow(data["events"])
     block._cached_events = None
 
+    calculated_merkle_root = block.calculate_merkle_root()
+    if block.merkle_root != calculated_merkle_root:
+        raise ValueError(
+            f"Block Merkle root MISMATCH! block={block.index} "
+            f"stored={block.merkle_root[:16]} "
+            f"computed={calculated_merkle_root[:16]}"
+        )
+
     # Recompute hash and compare with stored hash.
-    # Hash includes merkle_root, so verifying hash also protects event integrity.
+    # Verify the header only after checking the events against their Merkle root.
     stored_hash = data["hash"]
     computed_hash = block.calculate_hash()
     if stored_hash != computed_hash:
@@ -133,7 +141,7 @@ class OrderingStorageHandler:
             data = self.storage.get_block_by_index(
                 current_index, chain_name=self.chain_name
             )
-            if not data:
+            if data is None:
                 break
             # Create block directly to avoid recalculating hash
             blocks.append(_block_from_dict(data))

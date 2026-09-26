@@ -37,21 +37,18 @@ class OrderingBlockManager:
         if not events:
             return
 
-        try:
-            merkle_leaves = await asyncio.to_thread(
-                compute_leaves_from_events_standalone, events
-            )
-            merkle_tree = MerkleTree(leaves=merkle_leaves)
-            
-            block = Block(
-                index=0,
-                events=events,
-                previous_hash="",
-                merkle_root=merkle_tree.root
-            )
-            self.commit_block(block)
-        except Exception as e:
-            logger.error("Error creating block asynchronously: %s", e)
+        merkle_leaves = await asyncio.to_thread(
+            compute_leaves_from_events_standalone, events
+        )
+        merkle_tree = MerkleTree(leaves=merkle_leaves)
+
+        block = Block(
+            index=0,
+            events=events,
+            previous_hash="",
+            merkle_root=merkle_tree.root
+        )
+        self.commit_block(block)
 
     def commit_block(self, block: Block) -> None:
         """Commit a completed block to the commit queue and persistent storage"""
@@ -87,6 +84,7 @@ class OrderingBlockManager:
             except Exception as e:
                 logger.error("Failed to commit block #%d: %s", block.index, e)
                 self.service.status = OrderingStatus.MAINTENANCE
+                raise
 
     async def check_timeout_block_creation(self, force: bool = False) -> None:
         """Check if block needs to be created due to timeout or forced"""

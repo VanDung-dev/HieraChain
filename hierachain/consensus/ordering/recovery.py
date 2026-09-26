@@ -57,7 +57,7 @@ class OrderingRecovery:
         count, skipped_events = await self._replay_journal_events()
         
         # Finalize recovery
-        await self.block_manager.check_timeout_block_creation()
+        await self.block_manager.check_timeout_block_creation(force=True)
         logger.info(
             "Journal recovery complete. Restored %s events, "
             "skipped %s already committed.",
@@ -75,30 +75,19 @@ class OrderingRecovery:
                 count += 1
             elif result == "skipped":
                 skipped_events += 1
-            elif result == "error":
-                event_id = (
-                    event_data.get("event_id", "unknown")
-                    if event_data
-                    else "unknown"
-                )
-                raise RuntimeError(
-                    f"Journal recovery failed for event {event_id}"
-                )
 
         return count, skipped_events
 
     async def _process_single_journal_entry(self, event_data: dict | None) -> str:
         """
         Process a single journal entry.
-        Returns: "restored", "skipped", or "error"
+        Returns: "restored" or "skipped"; failures raise with event context.
         """
-        # Validate event data early
-        if event_data is None:
-            logger.warning("Skipping null event in journal")
-            return "skipped"
-        
         event_id = "unknown"
         try:
+            if event_data is None:
+                raise ValueError("Null event entry in journal")
+
             event_data = make_serializable(event_data)
             event_id = event_data.get("event_id") or _get_event_id(event_data)
             
@@ -117,7 +106,9 @@ class OrderingRecovery:
             
         except Exception as e:
             logger.error("Failed to recover event %s: %s", event_id, e)
-            return "error"
+            raise RuntimeError(
+                f"Journal recovery failed for event {event_id}"
+            ) from e
 
     def _is_event_already_stored(self, event_id: str) -> bool:
         """Check if event already exists in storage"""
@@ -135,7 +126,7 @@ class OrderingRecovery:
             received_at=time.time(),
             status=EventStatus.PENDING
         )
-        await self.processor.process_single_event(pending_event)
+        await self.processor.process_replayed_event(pending_event)
 
     async def _handle_block_cut_marker_async(self, event_data: dict) -> None:
         """Handle block cut markers during recovery"""

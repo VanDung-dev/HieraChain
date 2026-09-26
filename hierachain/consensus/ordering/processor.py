@@ -137,8 +137,9 @@ class OrderingProcessor:
                     self.batch_size,
                 )
             except Exception as e:
-                logger.error(f"Error in processor loop: {e}")
-                await asyncio.sleep(0.1)
+                logger.error("Error in processor loop; stopping in MAINTENANCE: %s", e)
+                self.service.status = OrderingStatus.MAINTENANCE
+                raise
 
     async def _initialize_service(self):
         """Perform service initialization and state recovery"""
@@ -222,6 +223,14 @@ class OrderingProcessor:
         """Delegate to the executor's process_single_event."""
         await self.executor.process_single_event(pending_event)
 
+    async def process_replayed_event(self, pending_event: PendingEvent) -> None:
+        """Process a journal event while retaining non-freshness certification."""
+        await self.executor.process_single_event(
+            pending_event, allow_stale_timestamp=True
+        )
+        if pending_event.status is EventStatus.REJECTED:
+            raise ValueError(f"Replay rejected event {pending_event.event_id}")
+
     async def force_process_batch_async(self) -> None:
         """Force immediate processing of current batch and block creation"""
         self.force_process.set()
@@ -292,11 +301,19 @@ class OrderingExecutor:
         if tasks:
             await asyncio.gather(*tasks)
 
-    async def process_single_event(self, pending_event: PendingEvent) -> None:
+    async def process_single_event(
+        self,
+        pending_event: PendingEvent,
+        *,
+        allow_stale_timestamp: bool = False,
+    ) -> None:
         """Process a single event through certification and ordering"""
         try:
             pending_event.status = EventStatus.PROCESSING
-            certification_result = self.certifier.validate(pending_event)
+            certification_result = self.certifier.validate(
+                pending_event,
+                allow_stale_timestamp=allow_stale_timestamp,
+            )
             pending_event.certification_result = certification_result
 
             if certification_result["valid"]:
@@ -314,3 +331,5 @@ class OrderingExecutor:
 
         except Exception as e:
             logger.error("Error processing event %s: %s", pending_event.event_id, e)
+            self.processor.service.status = OrderingStatus.MAINTENANCE
+            raise

@@ -37,7 +37,13 @@ class OrderingService:
     Facade for the Ordering Service package.
     Coordinates between specialized components to provide ordering functionality.
     """
-    def __init__(self, config: dict[str, Any], nodes: list[Any] | None = None, node_identity: Any | None = None):
+    def __init__(
+        self,
+        config: dict[str, Any],
+        nodes: list[Any] | None = None,
+        node_identity: Any | None = None,
+        genesis_block: Block | None = None,
+    ):
         self.config = config
         self.nodes = nodes or []
         self.node_identity = node_identity
@@ -56,6 +62,11 @@ class OrderingService:
 
         # Initialize blocks_created from DB to ensure continuity after restart
         latest_block = self.storage_handler.get_latest_block_from_db()
+        if latest_block is None and genesis_block is not None:
+            self.storage_handler.save_block(
+                genesis_block, self.storage_handler.chain_name
+            )
+            latest_block = genesis_block
         if latest_block:
             self.storage_handler.last_block = latest_block
         self.blocks_created = (latest_block.index + 1) if latest_block else 0

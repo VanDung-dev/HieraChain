@@ -3,6 +3,7 @@ Event certification and validation for the HieraChain ordering service.
 """
 
 import logging
+import math
 import time
 from collections.abc import Callable
 from typing import Any
@@ -58,7 +59,9 @@ def _verify_zk_proof(event: PendingEvent) -> dict[str, Any]:
     return result
 
 
-def _validate_structure(event_data: Any) -> bool:
+def _validate_structure(
+    event_data: Any, *, allow_stale_timestamp: bool = False
+) -> bool:
     """Validate basic event structure"""
     if isinstance(event_data, (pa.Table, pa.RecordBatch)):
         return event_data.schema.equals(_EVENT_SCHEMA)
@@ -66,9 +69,18 @@ def _validate_structure(event_data: Any) -> bool:
     if not isinstance(event_data, dict):
         return False
 
-    timestamp = event_data.get("timestamp", 0)
-    current_time = time.time()
-    if abs(timestamp - current_time) > 300:
+    timestamp = event_data.get("timestamp")
+    if isinstance(timestamp, bool) or not isinstance(timestamp, (int, float)):
+        return False
+    try:
+        timestamp_seconds = float(timestamp)
+    except OverflowError:
+        return False
+    if not math.isfinite(timestamp_seconds):
+        return False
+
+    age = time.time() - timestamp_seconds
+    if age < -300 or (not allow_stale_timestamp and age > 300):
         return False
 
     return True
@@ -99,12 +111,15 @@ def _run_custom_rules(
 
 def _check_structure_and_fields(
     event_data: dict[str, Any], certification: dict[str, Any],
+    *, allow_stale_timestamp: bool = False,
 ) -> None:
     """Validate event structure and required fields."""
     if not certification["valid"]:
         return
 
-    if not _validate_structure(event_data):
+    if not _validate_structure(
+        event_data, allow_stale_timestamp=allow_stale_timestamp
+    ):
         certification["valid"] = False
         certification["validation_errors"].append(
             "Invalid event structure"
@@ -165,7 +180,9 @@ class EventCertifier:
         """Add a validation rule for events"""
         self.validation_rules.append(rule)
         
-    def validate(self, event: PendingEvent) -> dict[str, Any]:
+    def validate(
+        self, event: PendingEvent, *, allow_stale_timestamp: bool = False
+    ) -> dict[str, Any]:
         """Validate and certify an event."""
         certification: dict[str, Any] = {
             "event_id": event.event_id,
@@ -180,7 +197,11 @@ class EventCertifier:
         _run_custom_rules(self.validation_rules, event.event_data, certification)
 
         # 2. Structure + required fields
-        _check_structure_and_fields(event.event_data, certification)
+        _check_structure_and_fields(
+            event.event_data,
+            certification,
+            allow_stale_timestamp=allow_stale_timestamp,
+        )
 
         # 3. Signature verification
         if certification["valid"]:
