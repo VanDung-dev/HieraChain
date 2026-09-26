@@ -131,6 +131,7 @@ logs/
 docker/nodes/*/identity.json
 docker/nodes/*/peers.env
 docker/ipfs/swarm.key
+docker/ipfs/encryption.key
 docker/nodes/peers.json
 docker/nodes/*/wg0.conf
 !docker/nodes/README.md
