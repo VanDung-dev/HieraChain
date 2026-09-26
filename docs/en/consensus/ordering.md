@@ -46,12 +46,12 @@ graph TD
 ## Core Features
 
 ### 1. Persistence & Durability
-Before entering the processing queue, every event is written to the **Event Journal**. If the service stops unexpectedly, the `Recovery` module reads the Journal to reconstruct state, ensuring no data is lost.
+Accepted events are written to the **Event Journal** before processing. `HRC_JOURNAL_FSYNC` enables fsync by default; disabling it weakens durability during a sudden power loss. On restart, `Recovery` replays the journal to restore pending state. An unreadable or invalid entry can stop recovery and leave the service in maintenance, where it rejects new events.
 
 ### 2. Batching Strategy
 To optimize performance, Ordering Service does not create a block for each individual event but uses batching:
-*   `batch_size`: Maximum events per block (Default: 100).
-*   `batch_timeout`: Maximum wait time before forcing block creation (Default: 2.0 seconds).
+*   A directly initialized `OrderingService` uses `batch_size=100` and `batch_timeout=2.0` seconds by default.
+*   Sub-Chain defaults are `block_size=50` and `batch_timeout=1.0` second.
 
 ### 3. Event Certification
 The `Certifier` module integrates closely with the **Security** system to check:
@@ -75,7 +75,7 @@ config = {
 
 service = OrderingService(config=config)
 
-# Submit event to queue
+# Submit event; the returned ID acknowledges journaling and enqueueing, not block finality
 event_id = service.receive_event(
     event_data={"item": "container_45", "status": "shipped"},
     channel_id="logistics_chain",

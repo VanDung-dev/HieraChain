@@ -49,9 +49,8 @@ print(settings.AUTH_ENABLED)
 
 ### Storage and cache
 
-* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (defaults: `postgres` in development and production, `memory` in tests; values: `sqlite`, `postgres`, `redis`, `memory`, `parquet_only`)
+* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (defaults: `postgres` in development and production, `memory` in tests; supported values: `sqlite`, `postgres`, `redis`, `memory`)
 * If PostgreSQL is unavailable, startup falls back to SQLite. Set `HRC_STORAGE_BACKEND=sqlite` to select SQLite explicitly.
-* `WORLD_STATE_CACHE_SIZE` (default: `1000`)
 * Advanced caching: `ADVANCED_CACHING_ENABLED` (default: `True`)
 * `BLOCK_CACHE_SIZE` (default: `5000`), `EVENT_CACHE_SIZE` (`20000`), `ENTITY_CACHE_SIZE` (`10000`)
 * Cache policies: `BLOCK_CACHE_POLICY` (`lru`), `EVENT_CACHE_POLICY` (`ttl`), `ENTITY_CACHE_POLICY` (`lfu`)
@@ -69,12 +68,11 @@ print(settings.AUTH_ENABLED)
 
 ### Parallel processing and resources
 
-* `PARALLEL_PROCESSING_ENABLED` (`True`), `MAX_WORKERS` (`None` means auto at 50% of CPU cores), `PROCESSING_CHUNK_SIZE` (`100`)
 * DoS protection: `HRC_EVENT_POOL_MAX_SIZE` (default: `10000`), `HRC_RAM_CRITICAL_THRESHOLD` (`95.0` %)
 
 ### Security and authentication
 
-* Authentication: `HRC_AUTH_ENABLED` (`false` in dev/test; `True` enforced in production)
+* Authentication: `HRC_AUTH_ENABLED` (default `false` in dev/test and `true` in production; explicitly setting it to `false` also disables authentication in production)
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
 * Secret backend: `HRC_SECRET_BACKEND` (values: `env`, `vault`, `aws`). Default is `env`.
 * Master key: `HRC_MASTER_KEY_SOURCE` (`auto` in dev/test, `env` in production), `HRC_MASTER_KEY_FILE` (default: `config/master_backup_key.key`)
@@ -140,10 +138,10 @@ print(settings.AUTH_ENABLED)
 
 ### Logging
 
-* `LOG_LEVEL` (default: `INFO` in dev, `DEBUG` in test, `WARNING` in production)
+* `LOG_LEVEL` (default: `DEBUG` in dev, `DEBUG` in test, `WARNING` in production)
 * `LOG_FORMAT` (standard Python logging format string).
 * `HRC_LOG_FORMAT`: `text` (default) or `json` (for centralized logging like ELK/Loki).
-* `HRC_LOG_SQL_DETAIL` (default: `true` in dev, `false` in production)
+* `HRC_LOG_SQL_DETAIL` (default: `false`)
 
 ### CLI
 
@@ -173,7 +171,7 @@ HRC_CORS_ALLOW_ALL=false
 HRC_CORS_ORIGINS=https://portal.example.com
 HRC_RATE_LIMIT=true
 DATABASE_URL=postgresql+psycopg://user:pass@db:5432/hierachain
-DEFAULT_STORAGE_BACKEND=redis
+HRC_STORAGE_BACKEND=redis
 REDIS_HOST=redis
 REDIS_PORT=6379
 HRC_IPFS_ENABLED=true

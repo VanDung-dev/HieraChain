@@ -1,6 +1,6 @@
 ---
 title: "BFT Consensus"
-description: "Đồng thuận chịu lỗi Byzantine (PBFT): An toàn tuyệt đối, Chống tấn công giả mạo và Cơ chế View Change tự động."
+description: "Đồng thuận PBFT chịu lỗi Byzantine với cơ chế View Change."
 icon: material/shield-key
 ---
 
@@ -8,13 +8,13 @@ icon: material/shield-key
 
 ## Tổng quan
 
-**BFT Consensus** là cơ chế đồng thuận chịu lỗi Byzantine cao cấp của HieraChain, cho phép hệ thống duy trì tính nhất quán ngay cả khi một phần các nút (`f`) bị lỗi hoặc có hành vi độc hại (phá hoại dữ liệu, từ chối dịch vụ). Hệ thống tuân thủ công thức `n >= 3f + 1`, đảm bảo an ninh tối đa cho các chuỗi Main Chain hoặc các liên minh doanh nghiệp (Consortium).
+**BFT Consensus** là cơ chế đồng thuận chịu lỗi Byzantine của HieraChain. Giao thức dùng công thức `n >= 3f + 1` để chịu được tối đa `f` nút lỗi hoặc có hành vi độc hại như làm sai lệch dữ liệu hay từ chối dịch vụ. Triển khai này tách khỏi luồng runtime của MainChain và SubChain.
 
 ---
 
 ## Kiến trúc Module BFT
 
-Hệ thống được chia nhỏ thành các thành phần chuyên biệt để đảm bảo tính module hóa và dễ bảo trì:
+Module gồm các thành phần sau:
 
 <div class="grid cards" markdown>
 
@@ -32,7 +32,7 @@ Hệ thống được chia nhỏ thành các thành phần chuyên biệt để 
 
     __File__: `view_manager.py`
 
-    Tự động phát hiện lỗi của nút Primary và kích hoạt quy trình **View Change** để bầu chọn Leader mới, đảm bảo hệ thống không bị dừng.
+    Phát hiện khi nút Primary không phản hồi và kích hoạt **View Change** để bầu chọn Leader mới.
 
 *   :material-swap-horizontal-bold:{ .lg .middle } __BFT Network__
 
@@ -40,7 +40,7 @@ Hệ thống được chia nhỏ thành các thành phần chuyên biệt để 
 
     __File__: `network.py`
 
-    Lớp truyền thông chuyên biệt sử dụng **ZeroMQ**, hỗ trợ quảng bá (Broadcast) và định tuyến thông điệp đồng thuận với độ trễ cực thấp.
+    Dùng **ZeroMQ** để quảng bá và định tuyến thông điệp đồng thuận.
 
 *   :material-key-variant:{ .lg .middle } __BFT Crypto__
 

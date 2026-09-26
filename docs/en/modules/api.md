@@ -112,7 +112,7 @@ query {
 
 ## WebSocket (real-time streaming)
 
-Endpoint: `/ws`
+Connect to `/ws`. To select a chain when connecting, pass `chain_name`, for example `/ws?chain_name=supply_chain`.
 
 The server pushes data as soon as a block is committed or an event arrives.
 

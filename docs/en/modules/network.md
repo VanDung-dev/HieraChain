@@ -8,13 +8,13 @@ icon: material/access-point-network
 
 ## Overview
 
-The **Network** module is the backbone that allows nodes in the HieraChain network to communicate with each other. Designed with a "Defense-in-Depth" philosophy, this module combines the transmission power of **ZeroMQ** with modern cryptographic algorithms to ensure every message is encrypted, authenticated, and tamper-proof.
+The **Network** module handles communication between HieraChain nodes over **ZeroMQ**. It uses cryptographic checks to encrypt and authenticate network messages.
 
 ---
 
 ## Layered Security Architecture
 
-HieraChain does not rely on a single security layer but combines three independent protection layers:
+HieraChain uses three independent security layers for network communication:
 
 <div class="grid cards" markdown>
 

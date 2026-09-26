@@ -21,18 +21,17 @@ icon: material/speedometer
 * `ADVANCED_CACHING_ENABLED`: bật cache nâng cao.
 * `BLOCK_CACHE_SIZE`, `EVENT_CACHE_SIZE`, `ENTITY_CACHE_SIZE`: kích thước cache.
 * Chính sách: `BLOCK_CACHE_POLICY` (lru/lfu/fifo/ttl), `EVENT_CACHE_POLICY`, `ENTITY_CACHE_POLICY`.
-* Xử lý song song: `PARALLEL_PROCESSING_ENABLED`, `MAX_WORKERS`, `PROCESSING_CHUNK_SIZE`.
+* Ordering batches: `OrderingService` khởi tạo trực tiếp mặc định 100 event và 2.0 giây; cấu hình SubChain mặc định dùng 50 event và 1.0 giây.
 
 ## Khuyến nghị
 
-* Điều chỉnh batch size theo tải thật (ví dụ 100-1000 sự kiện/batch).
-* Bật `PARALLEL_PROCESSING_ENABLED` khi có nhiều CPU; để `MAX_WORKERS=None` để tự chọn theo 50% số lõi.
+* Điều chỉnh `batch_size` hoặc `block_size` và `batch_timeout` theo tải đo được và cấu hình service đang dùng.
 * Dùng Arrow để giảm overhead chuyển đổi; tránh chuyển đổi qua lại nhiều lần.
 
 ## Benchmark tối thiểu
 
 1. **Ghi 10k sự kiện và đo thời gian**: Chạy thử nghiệm tải cơ bản.
-2. **Điều chỉnh cấu hình**: Thử thay đổi các tham số `PROCESSING_CHUNK_SIZE`, `EVENT_CACHE_POLICY`.
+2. **Điều chỉnh cấu hình**: Thử thay đổi các thiết lập batch của Ordering và `EVENT_CACHE_POLICY`.
 3. **So sánh kết quả**: Đo lường throughput (events/sec) và độ trễ (latencies p50/p95).
 
 ## Quan sát hệ thống

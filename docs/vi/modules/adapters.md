@@ -24,7 +24,7 @@ Toàn bộ adapter lưu trữ nằm tại `hierachain/adapters/database/`.
 
 Adapter fallback khi PostgreSQL không khả dụng, đồng thời là lựa chọn tường minh cho thiết lập một node nhẹ.
 
-* Công nghệ: SQLite3 qua `sqlite3` và `hierachain/adapters/database/base/sql_base.py`.
+* Công nghệ: SQLite3 qua `sqlite3` và `hierachain/adapters/database/base/sql_adapter.py` (`SQLBase`).
 * Lược đồ dữ liệu: Khởi tạo qua `sqlite_schema.py`, tạo các bảng `chains`, `blocks`, `events`, `proofs` và `chain_state`.
 * Điểm mạnh: Không phụ thuộc dịch vụ ngoài, đảm bảo ACID, sao lưu dễ dàng bằng file đơn.
 * Chỉ mục: Tạo sẵn trên `entity_id`, `event_type`, `block_number` và `timestamp`.

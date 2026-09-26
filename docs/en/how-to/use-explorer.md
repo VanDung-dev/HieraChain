@@ -8,30 +8,30 @@ icon: material/monitor-dashboard
 
 ## Chain Explorer
 
-Unlike peripheral Web applications, HieraChain provides a core, in-depth visual API Dashboard directly within the core (`hierachain/api/blockchain_explorer.py`). Through the JSON structure returned by the `render` module, any web-view can realize it into a real-time audit Dashboard.
+`BlockchainExplorer` in `hierachain/api/blockchain_explorer.py` returns dashboard data as JSON. A web view can use this data to display chain activity and verification results.
 
 ### 1. Explorer Components
 
-The interface (or API Render format) includes 4 main components:
+The rendered data can include these four components:
 
-* **Chain Overview Component (`chain_overview`)**: Displays a summary table of the structure. Shows overall metrics such as Block height, Event count across the Main-chain and Sub-chains, as well as recent activity.
-* **Entity Tracer Component (`entity_tracer`)**: A tracing tool. Enter an Entity's ID or any specification to globally search which Blocks and Events are governing that entity, supporting tracing of every asset link.
-* **Event Analytics Component (`event_analytics`)**: Outputs a historical Timeline of event volume distributed across Blocks (e.g., bucketed by the last 24 hours) or draws event distribution charts. Serves as high-load activity monitoring.
-* **Proof Visualizer Component (`proof_visualizer`)**: A hierarchical diagram view. Shows the success rate of ZK Proofs, highlighting which chains are stuck in Mock mode versus Production verification mode.
+* **Chain Overview Component (`chain_overview`)**: Displays block height, event counts across Main-Chain and Sub-Chains, and recent activity.
+* **Entity Tracer Component (`entity_tracer`)**: Searches for an entity ID and shows related blocks and events.
+* **Event Analytics Component (`event_analytics`)**: Shows event counts by type, an hourly timeline for the last 24 hours based on Main-Chain blocks, and total event counts by chain.
+* **Proof Visualizer Component (`proof_visualizer`)**: Shows recent proof submissions, a validation summary, and the block hierarchy for Main-Chain and Sub-Chains.
 
 ### IPFS Features in the Explorer
 
 The Explorer supports visualizing data stored off-chain:
 
-* **Data Detection**: Automatically displays Badges for events stored on IPFS.
+* **Data Detection**: Displays badges for events stored on IPFS.
 
     * **Yellow**: Unresolved CID data.
     * **Green**: Data has been fetched and decrypted (Resolved).
 
-* **Instant Data Loading**: Provides a **"Load Details"** button to fetch data from IPFS via the API Server without reloading the page.
-* **Security**: Data is securely decrypted on the Server before being displayed in the user interface.
+* **Data Loading**: The **"Load Details"** button fetches data from IPFS through the API Server without reloading the page.
+* **Decryption**: The Server decrypts data before displaying it in the user interface.
 
-### 2. How to Invoke the Dashboard via API
+### 2. Render the Dashboard via API
 
 Developers can integrate the Dashboard directly into their Server-side Rendering:
 
@@ -48,4 +48,4 @@ dashboard_data = explorer.render()
 tracer_form_ui = explorer.render(component_id="entity_tracer")
 ```
 
-With a highly logical JSON structure, Front-end developers (React/Vue/HTML5) can easily render card displays showing metrics and corresponding blocks without having to manually construct queries.
+The returned JSON lets front-end developers (React/Vue/HTML5) render cards with metrics and related blocks.

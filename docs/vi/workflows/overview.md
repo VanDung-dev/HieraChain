@@ -33,16 +33,16 @@ Bảng này liệt kê tất cả luồng để tra cứu nhanh:
 
 | Luồng công việc | Nhóm | Kích hoạt | Kết quả | Mô-đun chính |
 |:---------|:------|:--------|:-------|:-----------|
-| [Gửi Sự kiện](./event-submission.md) | A | `POST /api/ledger/chains/{name}/events` | Khối được thêm vào Sub-Chain | `hierarchical/sub_chain/base.py` (`SubChain.add_event`) |
+| [Gửi Sự kiện](./event-submission.md) | A | `POST /api/ledger/chains/{chain_name}/events` | API trả `event_id`; block được tạo và finalize ở xử lý nền | `hierarchical/sub_chain/base.py` (`SubChain.add_event`) |
 | [Neo giữ Bằng chứng](./proof-anchoring.md) | A | Khối được hoàn thiện trên Sub-Chain | Mã băm bằng chứng trên Main Chain | `hierarchical/main_chain/base.py` + `hierarchical/sub_chain/proof.py` |
 | [Giao dịch Liên chuỗi 2PC](./cross-chain-2pc.md) | A | `HierarchyManager.transaction_manager` | `COMMITTED` hoặc `ROLLED_BACK` | `hierarchical/hierarchy_manager/base.py` + `hierarchical/transaction_manager.py` |
-| [Đồng thuận BFT](./bft-consensus.md) | B | `HRC_MAINCHAIN_CONSENSUS` / `HRC_CONSENSUS_TYPE` | Khối được xác nhận bởi 2f+1 validator | `consensus/bft/consensus.py` |
+| [Đồng thuận BFT](./bft-consensus.md) | B | Thành phần consensus BFT được sử dụng tường minh; không được chọn qua biến cấu hình MainChain/SubChain | Quy trình đồng thuận BFT riêng | `consensus/bft/consensus.py` |
 | [Giảm thiểu Lỗi & Phục hồi](./error-recovery.md) | C | Lỗi xác thực / hết hạn leader / sự kiện bị gián đoạn | Lỗi được phân loại, replay journal hoặc BFT view change | `error_mitigation/error_classifier.py` + `journal.py` + `consensus/bft/view_change.py` |
 | [Truy vết Thực thể](./entity-tracing.md) | D | `EntityTracer.trace_entity()` | Dấu vết kiểm toán liên chuỗi đầy đủ | `domains/utils/entity_tracer.py` |
 | [Nạp lại Trạng thái Chuỗi](./chain-rehydration.md) | D | Khởi động lại node hoặc lệch mã băm | Chuỗi trong bộ nhớ đồng bộ với DB | `hierarchical/sub_chain/base.py` + `hierarchical/sub_chain/ordering.py` |
 | [Xác thực Tính toàn vẹn](./integrity-validation.md) | D | Định kỳ / thủ công / bất thường Risk Alerts | `IntegrityReport` (HEALTHY / DEGRADED) | `security/verify/block_verifier.py` |
 | [Thực thi Chính sách](./policy-enforcement.md) | E | Mọi thao tác nhạy cảm về quyền | `allow` hoặc `deny` kèm đường dẫn quyết định | `security/policy_engine.py` |
-| [Luồng dữ liệu WebSocket](./websocket-streaming.md) | E | Client kết nối tới `/ws/{chain_name}` | Đẩy khối/sự kiện thời gian thực | `api/websocket/manager.py` |
+| [Luồng dữ liệu WebSocket](./websocket-streaming.md) | E | Client kết nối tới `/ws`, có thể truyền `chain_name` qua query | Đẩy khối/sự kiện thời gian thực | `api/websocket/manager.py` |
 | [Lưu trữ Mã hóa IPFS](./ipfs-storage.md) | E | `IPFSClient.upload_json()` | Trả về CID; bản mã trên IPFS | `api/storage/ipfs_client.py` |
 | [Cảnh báo Rủi ro](./risk-alerts.md) | E | Lịch `PerformanceMonitor` | Cảnh báo được gửi; leo thang nếu không xác nhận | `monitoring/alert_system.py` |
 | [Đồng bộ Tích hợp ERP](./erp-integration.md) | E | Timer `SyncScheduler` | Sự kiện ERP được gửi tới Sub-Chain | `integration/erp_ledger.py` |
@@ -139,7 +139,7 @@ flowchart TD
     WF1 -->|upload large data| WF12["🗄️ IPFS Storage"]
 
     WF1 -->|cross-chain op| WF3["2PC Cross-Chain"]
-    WF1 -->|BFT mode| WF4["👑 BFT Consensus"]
+    WF4["👑 BFT Consensus"] -. Separate component .-> WF1
 
     WF9["🔍 Integrity Scan"] -->|DEGRADED| WF13["🚨 Risk & Alerts"]
     WF13 -->|critical alert| WF6["🔧 Error Recovery"]

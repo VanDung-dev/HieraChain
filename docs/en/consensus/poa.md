@@ -1,6 +1,6 @@
 ---
 title: "Proof of Authority (PoA)"
-description: "Authority-based consensus protocol: Maximum performance, Node identity, and Round-Robin rotation."
+description: "Authority-based consensus protocol with node identities, block signatures, and round-robin rotation."
 icon: material/account-check-outline
 ---
 
@@ -8,7 +8,7 @@ icon: material/account-check-outline
 
 ## Overview
 
-**Proof of Authority (PoA)** is an identity-based consensus protocol optimized for **Intra-Organization enterprise networks** (single MainChain managing internal domain Sub-Chains). In HieraChain's two-tiered consensus architecture, `SubChain` instances **always default to PoA** for processing internal domain events at ultra-fast speeds (~0ms base latency) without requiring cross-organizational roundtrips.
+**Proof of Authority (PoA)** is an identity-based consensus protocol for **intra-organization enterprise networks**, where one MainChain manages internal domain Sub-Chains. In HieraChain's two-tiered consensus architecture, `SubChain` instances default to PoA for internal events without requiring consensus between organizations.
 
 For cross-organizational inter-MainChain consensus between independent enterprises, see [Proof of Federation (PoF)](./pof.md).
 
@@ -27,23 +27,23 @@ The protocol operates based on trust in the identity of participating nodes:
 
 <div class="grid cards" markdown>
 
-*   :material-lightning-bolt:{ .lg .middle } __Breakthrough Performance__
+*   :material-lightning-bolt:{ .lg .middle } __Timing Validation__
 
     ---
 
-    Blocks are created instantly according to the configured cycle (`block_interval`), suitable for real-time response applications.
+    The validator requires consecutive block timestamps to be at least half the configured `block_interval` apart.
 
 *   :material-account-multiple-check:{ .lg .middle } __Identity Management__
 
     ---
 
-    Supports flexible addition/removal of Authorities through the API, allowing network configuration changes without system downtime.
+    The `ProofOfAuthority` class provides `add_authority()` and `remove_authority()` methods.
 
-*   :material-shield-sync:{ .lg .middle } __Absolute Integrity__
+*   :material-shield-sync:{ .lg .middle } __Block Signatures__
 
     ---
 
-    Every block carries the digital signature of a verified organization, completely eliminating risks from anonymous or spoofed nodes.
+    Each block is signed by its designated Authority. Other nodes verify the signature before accepting the block.
 
 </div>
 
@@ -53,7 +53,7 @@ The protocol operates based on trust in the identity of participating nodes:
 
 | Parameter | Description | Default |
 | :--- | :--- | :--- |
-| `block_interval` | Minimum time between two blocks. | `10.0` seconds |
+| `block_interval` | Time value used for the minimum-spacing check; the validator threshold is half this value. | `10.0` seconds |
 | `max_authorities` | Maximum number of Authority nodes in the network. | `100` |
 | `require_signature` | Mandatory valid signature to accept a block. | `True` |
 

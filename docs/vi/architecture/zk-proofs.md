@@ -39,7 +39,7 @@ Zero-Knowledge Proofs trong HieraChain hỗ trợ hai mode chạy tùy theo môi
 
 * Đây là chế độ vận hành sản xuất thực tế trên môi trường Mainnet/Enterprise.
 * Đòi hỏi thư mục khóa chứng minh ở biến `ZK_PROVING_KEY_PATH` và khóa xác minh ở `ZK_VERIFICATION_KEY_PATH`.
-* Proof được sinh ra qua một External Service (như ZoKrates) chứa những phương trình tính toán hàm bậc cao SNARKs vô cùng an toàn và khó giả mạo.
+* External Service như ZoKrates tạo proof bằng circuit SNARK đã cấu hình.
 
 ### 3. Public Inputs (Đầu vào Công khai)
 

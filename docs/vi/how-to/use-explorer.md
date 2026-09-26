@@ -8,30 +8,30 @@ icon: material/monitor-dashboard
 
 ## Trình Khám phá Chuỗi
 
-Khác với các ứng dụng Web ngoài lề, HieraChain cung cấp lõi API Dashboard trực quan chuyên sâu ngay trong core (`hierachain/api/blockchain_explorer.py`). Qua cấu trúc JSON trả về với mô đun `render`, bất kỳ web-view nào cũng có thể hiện thực hóa thành Dashboard kiểm toán theo thời gian thực (Real-time).
+`BlockchainExplorer` trong `hierachain/api/blockchain_explorer.py` trả dữ liệu dashboard dưới dạng JSON. Web view có thể dùng dữ liệu này để hiển thị hoạt động của chain và kết quả xác minh.
 
 ### 1. Thành phần của Explorer
 
-Giao diện (hoặc Render format từ API) sẽ bao gồm 4 khối chủ lực (Components):
+Dữ liệu render có thể gồm bốn thành phần sau:
 
-* **Chain Overview Component (`chain_overview`)**: Hiển thị bảng tóm tắt cấu trúc. Số liệu tổng quan độ cao Block, lượng Event trên cả Main-chain và dải Sub-chains cũng như các hoạt động mới nhất.
-* **Entity Tracer Component (`entity_tracer`)**: Thanh công cụ dò vết. Nhập thông tin ID hoặc bất kì đặc tả nào của Entity để tìm toàn cục xem Block và Event nào đang giao quyền kiểm soát cho đối tượng đó, hỗ trợ tracing mọi mắt xích tài sản.
-* **Event Analytics Component (`event_analytics`)**: Đổ ra Timeline lịch sử hoạt động lượng event rải trên Block (ví dụ tính mốc bucket 24 tiếng gần nhất) hoặc vẽ biểu đồ sự kiện (Chart Distribution). Đóng vai trò giám sát hoạt động tải cao (High-load monitoring).
-* **Proof Visualizer Component (`proof_visualizer`)**: Bản vẽ cây sơ đồ đệ quy (Hierarchy view). Thể hiện tỷ lệ thành công của Proof ZK, chỉ ra những chuỗi đang vướng mắc cơ chế Mock hay Production Mode xác minh.
+* **Chain Overview Component (`chain_overview`)**: Hiển thị độ cao block, số event trên Main-Chain và Sub-Chains, cùng hoạt động gần đây.
+* **Entity Tracer Component (`entity_tracer`)**: Tìm theo entity ID và hiển thị các block, event liên quan.
+* **Event Analytics Component (`event_analytics`)**: Hiển thị số event theo loại, timeline theo giờ trong 24 giờ gần nhất dựa trên block của Main-Chain, và tổng số event trên từng chain.
+* **Proof Visualizer Component (`proof_visualizer`)**: Hiển thị proof gần đây, tóm tắt trạng thái xác minh và cấu trúc block của Main-Chain, Sub-Chains.
 
 ### Tính năng IPFS trong Explorer
 
 Explorer hỗ trợ trực quan hóa dữ liệu được lưu trữ ngoài chuỗi (Off-chain):
 
-* **Nhận diện dữ liệu**: Tự động hiển thị Huy hiệu (Badge) cho các sự kiện lưu trên IPFS.
+* **Nhận diện dữ liệu**: Hiển thị huy hiệu cho các event lưu trên IPFS.
 
     * 📦 **Màu vàng**: Dữ liệu CID chưa tải (Unresolved).
     * ✓ **Màu xanh**: Dữ liệu đã được tải và giải mã (Resolved).
 
-* **Tải dữ liệu tức thời**: Cung cấp nút **"Load Details"** để fetch dữ liệu từ IPFS qua API Server mà không cần load lại trang.
-* **Bảo mật**: Dữ liệu được giải mã an toàn tại Server trước khi hiển thị trên giao diện người dùng.
+* **Tải dữ liệu**: Nút **"Load Details"** tải dữ liệu từ IPFS qua API Server mà không cần tải lại trang.
+* **Giải mã**: Server giải mã dữ liệu trước khi hiển thị trên giao diện.
 
-### 2. Cách triệu hồi Dashboard qua API
+### 2. Render Dashboard qua API
 
 Lập trình viên tích hợp Dashboard ngay trên Server-side Rendering của họ:
 
@@ -48,4 +48,4 @@ dashboard_data = explorer.render()
 tracer_form_ui = explorer.render(component_id="entity_tracer")
 ```
 
-Với cấu trúc JSON cực kì logic, nhà lập trình Front-end (React/Vue/HTML5) dễ dàng "xào nấu" render ra các ô card hiển thị số dư, block tương ứng mà không phải tốn sức ghép truy vấn tay.
+Dữ liệu JSON trả về cho phép lập trình viên front-end (React/Vue/HTML5) tạo các card hiển thị chỉ số và block liên quan.

@@ -14,7 +14,7 @@ The **Consensus** module is responsible for ensuring consistency and determinist
 
 ## Supported Consensus Protocols
 
-HieraChain natively integrates 3 main protocols, configurable via `HRC_CONSENSUS_TYPE`:
+The Ordering Service batches events, while PoA and PoF finalize Sub-Chain blocks. The repository also contains a separate BFT component. `HRC_CONSENSUS_TYPE` selects `proof_of_authority` or `proof_of_federation`; it does not select BFT:
 
 <div class="grid cards" markdown>
 
@@ -52,15 +52,12 @@ HieraChain natively integrates 3 main protocols, configurable via `HRC_CONSENSUS
 
 ```mermaid
 graph TD
-    A[Event Submission] --> B{Consensus Engine}
-    B -- Config: ordering --> C[Ordering Service]
-    B -- Config: bft --> D[BFT Consensus]
-    
-    C --> E[Block Building]
-    D --> E
-    
-    E --> F[Storage Commitment]
-    F --> G[(Ledger Persistence)]
+    A[Event Submission] --> B[Ordering Service]
+    B --> C[Block Building]
+    C --> D[Sub-Chain finalization: PoA or PoF]
+    D --> E[Storage Commitment]
+    E --> F[(Ledger Persistence)]
+    G[BFT Consensus component] -. separate component .-> H[Consensus workflows]
 ```
 
 ---
@@ -69,8 +66,8 @@ graph TD
 
 In HieraChain's hierarchical model:
 
-1.  **Main Chain**: Typically uses **BFT Consensus** for maximum system-wide security.
-2.  **Sub-Chains**: Can use **Ordering Service** or **PoA** for high transaction processing speed, then periodically submit Proofs to the Main Chain.
+1.  **Main Chain**: Uses **PoA** by default and can be configured for **PoF** through `HRC_MAINCHAIN_CONSENSUS`. The BFT implementation is a separate consensus component; `MainChain` does not select it as its default.
+2.  **Sub-Chains**: Use the **Ordering Service** for batching and can finalize blocks with the configured Sub-Chain consensus (PoA by default). Proofs can then be submitted to the Main Chain.
 
 ---
 

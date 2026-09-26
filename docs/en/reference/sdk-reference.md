@@ -6,7 +6,7 @@ icon: material/language-python
 
 # Python SDK Reference
 
-The HieraChain Python SDK library is designed as a powerful module to help Developers push transactions and read data quickly and efficiently in Python environments. Source code located at: `hierachain/sdk/client.py`.
+The HieraChain Python SDK provides synchronous and asynchronous clients for submitting events and reading data. Source: `hierachain/sdk/client.py`.
 
 ### 1. Client Initialization
 
@@ -84,13 +84,15 @@ except LockdownError:
     pass
 ```
 
-# Run as context manager
+For synchronous code, open the client with a context manager:
+
+```python
 with HieraChainClient(config) as client:
     health = client.health_check()
     print("Healthy:", health)
 ```
 
-**Using Async (Suitable for Web Server/FastAPI):**
+For a web server or FastAPI application, use the async client:
 ```python
 from hierachain.sdk.client import HieraChainAsyncClient
 
@@ -101,10 +103,10 @@ async with HieraChainAsyncClient(config) as async_client:
 
 ### 2. Core Network Resilience Features
 
-The SDK is equipped with recovery and throughput assurance mechanisms to prevent spam / Node server overload:
+The SDK retries network failures and uses a circuit breaker to limit requests when the API is unavailable:
 
 #### a. Auto-retry (Exponential Backoff)
-If a network drop occurs, the SDK automatically calculates a pause interval `initial_delay * (backoff_multiplier ^ attempt)`. Instead of crashing the whole system, queries are continuously retried (default `max_retries = 5`).
+If a request fails, the SDK waits for `initial_delay * (backoff_multiplier ^ attempt)` before retrying. By default, it retries up to `max_retries = 5` times after the initial request.
 
 #### b. Circuit Breaker
 Fail-fast operation (prioritizes early error reporting):
@@ -113,7 +115,7 @@ Fail-fast operation (prioritizes early error reporting):
 - **HALF_OPEN**: After the cooldown period, it self-tests one packet. If it fails, it re-opens; if successful, it recovers to Closed.
 
 #### c. Lockdown & 503 Handling
-If the Node server returns a `X-Lockdown-Mode: true` header (System under DDoS attack / manual maintenance) or an HTTP `503 Service Unavailable`, the SDK will not spam retries (causing overload). Errors are exposed via dedicated Exception classes `LockdownError` and `ServiceUnavailableError`. 
+If the Node server returns the `X-Lockdown-Mode: true` header or HTTP `503 Service Unavailable`, the SDK raises `LockdownError` or `ServiceUnavailableError` after the configured retries.
 
 ### 3. Data Interaction
 
@@ -123,7 +125,7 @@ result = client.submit_event("main_chain", {
     "entity_id": "user_sysadmin",
     "event": "update_config"
 })
-print("Successfully pushed to block, Message ID:", result.event_id)
+print("Event accepted, event_id:", result.event_id)
 
 # Get Block by hash
 block = client.get_block(block_id="8f2a9d...")

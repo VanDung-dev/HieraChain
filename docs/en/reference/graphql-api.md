@@ -6,17 +6,15 @@ icon: material/graphql
 
 # GraphQL API Reference
 
-## GraphQL API Reference
-
-The system allows direct interaction via the **GraphQL Endpoint**. Core configuration directory: `hierachain/api/graphql/schema.py`. The GraphQL structure is optimized for selective multi-data queries without excessive network resource usage like REST.
+The GraphQL endpoint exposes the Query and Mutation fields defined in `hierachain/api/graphql/schema.py`. Clients can request selected fields across Main-Chain and Sub-Chains.
 
 ### 1. Queries
 
-The GraphQL Schema interface supports powerful hierarchical extraction across Main-Chain and Sub-Chains.
+Use these queries to read blocks, events, and chain status across Main-Chain and Sub-Chains.
 
 **Get a single Block:**
 
-Query a single Block function locally by chain name and `index`.
+Retrieve a block by chain name and `index`.
 
 ```graphql
 query GetSingleBlock {
@@ -25,7 +23,7 @@ query GetSingleBlock {
     hash
     timestamp
     events {
-      eventId
+      entityId
       eventType
     }
   }
@@ -34,7 +32,7 @@ query GetSingleBlock {
 
 **Filter Events with parameters:**
 
-Quick filtering capabilities.
+Filter events by chain name, event type, and result limit.
 
 ```graphql
 query FilterEvents {
@@ -52,7 +50,7 @@ query FilterEvents {
 
 **Blockchain Status:**
 
-Provides a comprehensive view with `chainStatus` (check a single chain) or `allChains` (network dashboard mirror).
+Use `chainStatus` to check one chain or `allChains` to retrieve status for every chain.
 
 ```graphql
 query OverallSystem {

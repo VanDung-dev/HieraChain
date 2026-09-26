@@ -8,7 +8,7 @@ icon: material/console
 
 ## Tổng quan
 
-Module **CLI** cung cấp công cụ dòng lệnh mạnh mẽ mang tên `hrc`, giúp các nhà vận hành và phát triển tương tác nhanh chóng với hệ thống HieraChain mà không cần qua giao diện web hoặc gọi API thủ công. 
+CLI `hrc` cho phép nhà vận hành và lập trình viên quản lý HieraChain từ terminal.
 
 Công cụ được xây dựng trên thư viện **Click**, hỗ trợ phân nhóm lệnh logic, gợi ý lệnh (tab-completion) và xử lý tham số chặt chẽ.
 

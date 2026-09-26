@@ -112,7 +112,7 @@ query {
 
 ## WebSocket (real-time streaming)
 
-Endpoint: `/ws`
+Kết nối tới `/ws`. Để chọn chuỗi ngay khi kết nối, truyền `chain_name`, ví dụ `/ws?chain_name=supply_chain`.
 
 Server đẩy dữ liệu ngay khi block được commit hoặc có event mới.
 

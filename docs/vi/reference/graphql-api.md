@@ -6,17 +6,15 @@ icon: material/graphql
 
 # GraphQL API Reference
 
-## Tham chiếu GraphQL API
-
-Hệ thống cho phép tương tác trực tiếp qua cổng **GraphQL Endpoint**. Thư mục chứa cấu hình lõi: `hierachain/api/graphql/schema.py`. Cấu trúc GraphQL tối ưu cho việc truy vấn (query) chọn lọc đa dữ liệu mà không gọi quá nhiều tài nguyên mạng như REST.
+GraphQL endpoint cung cấp các trường Query và Mutation được định nghĩa trong `hierachain/api/graphql/schema.py`. Client có thể chọn trường cần đọc trên Main-Chain và Sub-Chains.
 
 ### 1. Truy vấn (Queries)
 
-Giao diện GraphQL Schema hỗ trợ trích xuất mạnh mẽ theo phân cấp Main-Chain và Sub-Chains.
+Dùng các truy vấn sau để đọc block, event và trạng thái chain trên Main-Chain và Sub-Chains.
 
 **Lấy dữ liệu Block đơn lẻ:**
 
-Truy vấn cục bộ một hàm Block duy nhất qua tên chuỗi và số `index`.
+Lấy block theo tên chain và `index`.
 
 ```graphql
 query GetSingleBlock {
@@ -25,7 +23,7 @@ query GetSingleBlock {
     hash
     timestamp
     events {
-      eventId
+      entityId
       eventType
     }
   }
@@ -34,7 +32,7 @@ query GetSingleBlock {
 
 **Lọc các đối tượng Lịch sử Sự kiện (Events) bằng tham số:**
 
-Có thể filter nhanh gọn.
+Lọc event theo tên chain, loại event và giới hạn kết quả.
 
 ```graphql
 query FilterEvents {
@@ -52,7 +50,7 @@ query FilterEvents {
 
 **Trạng thái Blockchain:**
 
-Cung cấp cái nhìn toàn vẹn với `chainStatus` (kiểm tra một chain) hoặc `allChains` (phản chiếu dashboard của mạng lưới).
+Dùng `chainStatus` để xem một chain hoặc `allChains` để lấy trạng thái của mọi chain.
 
 ```graphql
 query OverallSystem {

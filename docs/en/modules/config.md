@@ -8,7 +8,7 @@ icon: material/cog
 
 ## Overview
 
-The **Config** module is the control center of HieraChain, responsible for managing hundreds of operational parameters, ensuring the security of secret keys, and providing a standardized logging mechanism for both development and production environments.
+The **Config** module manages HieraChain's operational settings, secret keys, and logging configuration for development and production.
 
 ---
 

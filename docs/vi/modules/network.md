@@ -8,13 +8,13 @@ icon: material/access-point-network
 
 ## Tổng quan
 
-Module **Network** là lớp xương sống cho phép các nút (Nodes) trong mạng lưới HieraChain giao tiếp với nhau. Được thiết kế với triết lý "Bảo mật đa tầng" (Defense-in-Depth), module này kết hợp sức mạnh truyền tải của **ZeroMQ** với các thuật toán mật mã hiện đại để đảm bảo mọi thông điệp đều được mã hóa, xác thực và chống giả mạo.
+Module **Network** quản lý giao tiếp giữa các node HieraChain qua **ZeroMQ**. Module dùng các cơ chế mật mã để mã hóa và xác thực thông điệp.
 
 ---
 
 ## Kiến trúc Bảo mật Đa tầng (Layered Security)
 
-HieraChain không chỉ dựa vào một lớp bảo mật duy nhất mà kết hợp ba lớp bảo vệ độc lập:
+HieraChain dùng ba lớp bảo vệ độc lập cho giao tiếp mạng:
 
 <div class="grid cards" markdown>
 

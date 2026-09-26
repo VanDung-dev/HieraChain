@@ -75,7 +75,7 @@ Không có `models.py` hay `BlockModel`/`EventModel` kiểu SQLAlchemy. Bảng �
 
 | Environment Variable | Meaning | Available Values |
 | :--- | :--- | :--- |
-| `HRC_STORAGE_BACKEND` / `DATABASE_URL`+`HRC_DATABASE_URL` | Storage backend / DB URL | `sqlite`, `postgres` (auto-detected from `postgres://`), `redis`, `memory`, `parquet_only` (via `HRC_STORAGE_BACKEND`/`DATABASE_URL` handling in `config/settings.py:78`) |
+| `HRC_STORAGE_BACKEND` / `DATABASE_URL`+`HRC_DATABASE_URL` | Storage backend / DB URL | `sqlite`, `postgres` (auto-detected from `postgres://`), `redis`, `memory` (via `HRC_STORAGE_BACKEND`/`DATABASE_URL` handling in `hierachain/config/settings.py`) |
 | `HRC_LOG_SQL_DETAIL` / `HRC_LOG_FORMAT` | SQL detail / log format | `true/false`, `text/json` |
 
 ---

@@ -73,18 +73,18 @@ curl -s http://localhost:2661/api/business/health
 # Create channel
 curl -s -X POST http://localhost:2661/api/business/channels \
   -H 'Content-Type: application/json' \
-  -d '{"name": "test_channel"}'
+  -d '{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "ADMIN || MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'
 
 # Create private collection for channel
 curl -s -X POST \
   http://localhost:2661/api/business/channels/test_channel/private-collections \
   -H 'Content-Type: application/json' \
-  -d '{"collection": "sensitive_docs"}'
+  -d '{"name": "sensitive_docs", "members": ["orgA"], "config": {"block_to_purge": 1000, "endorsement_policy": "MAJORITY"}}'
 
 # Write private data
 curl -s -X POST http://localhost:2661/api/business/private-data \
   -H 'Content-Type: application/json' \
-  -d '{"channel": "test_channel", "collection": "sensitive_docs", "key": "doc-001", "value": "..."}'
+  -d '{"collection": "sensitive_docs", "key": "doc-001", "value": {"text": "..."}, "event_metadata": {"entity_id": "DOC-001", "event": "document_created", "timestamp": 1714000000.0}}'
 
 # Register & execute domain contract
 curl -s -X POST http://localhost:2661/api/business/contracts \
@@ -105,7 +105,7 @@ curl -s -X POST http://localhost:2661/api/business/contracts/execute \
       }'
 
 # Organization
-curl -s -X POST http://localhost:2661/api/business/organizations -H 'Content-Type: application/json' -d '{"org_id": "orgA", "name": "Org A"}'
+curl -s -X POST http://localhost:2661/api/business/organizations -H 'Content-Type: application/json' -d '{"org_id": "orgA", "ca_config": {}}'
 ```
 
 If API key authentication is enabled (production), add the header per `settings.API_KEY_NAME` (default `X-API-Key`).

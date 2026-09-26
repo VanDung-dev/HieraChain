@@ -6,7 +6,7 @@ icon: material/language-python
 
 # Python SDK Reference
 
-Thư viện Python SDK của HieraChain thiết kế mô-đun mạnh mẽ giúp các Developer đẩy giao dịch cũng như thực hiện đọc dữ liệu vô cùng nhanh gọn trong môi trường Python. Mã nguồn đặt tại: `hierachain/sdk/client.py`.
+Python SDK của HieraChain cung cấp client đồng bộ và bất đồng bộ để gửi event và đọc dữ liệu. Mã nguồn: `hierachain/sdk/client.py`.
 
 ### 1. Khởi tạo Client
 
@@ -84,13 +84,15 @@ except LockdownError:
     pass
 ```
 
-# Chạy dạng context manager
+Với đoạn xử lý đồng bộ, mở client bằng context manager:
+
+```python
 with HieraChainClient(config) as client:
     health = client.health_check()
     print("Healthy:", health)
 ```
 
-**Sử dụng Async (Phù hợp Web Server/FastAPI):**
+Với web server hoặc ứng dụng FastAPI, dùng client bất đồng bộ:
 ```python
 from hierachain.sdk.client import HieraChainAsyncClient
 
@@ -101,10 +103,10 @@ async with HieraChainAsyncClient(config) as async_client:
 
 ### 2. Các tính năng Mạng lưới cốt lõi (Resilience)
 
-SDK được trang bị tận răng các cơ chế phục hồi và đảm bảo thông lượng để chống spam / quá tải máy chủ Node:
+SDK thử lại khi gặp lỗi mạng và dùng circuit breaker để giới hạn request khi API không khả dụng:
 
 #### a. Tự động phục hồi (Exponential Backoff Retry)
-Nếu xảy ra rớt mạng, SDK tự tính toán khoảng dừng nghỉ `initial_delay * (backoff_multiplier ^ attempt)`. Thay vì sập toàn hệ thống, truy vấn sẽ liên tục được lặp lại (theo mặc định cấu hình `max_retries = 5`).
+Khi request thất bại, SDK chờ `initial_delay * (backoff_multiplier ^ attempt)` rồi thử lại. Mặc định SDK thử lại tối đa `max_retries = 5` lần sau request đầu tiên.
 
 #### b. Chốt kiểm tra mạch (Circuit Breaker)
 Hoạt động fail-fast (ưu tiên báo lỗi sớm):
@@ -113,7 +115,7 @@ Hoạt động fail-fast (ưu tiên báo lỗi sớm):
 - **HALF_OPEN**: Khi đủ thời gian làm mát, nó tự test một packet. Nếu lỗi sẽ Open lại, nếu tốt sẽ phục hồi đóng mạch về Closed.
 
 #### c. Quản lý trạng thái kẹt (Lockdown & 503)
-Nếu Node server báo trả về Header `X-Lockdown-Mode: true` (Hệ thống đang bị tấn công DDoD / bảo trì thủ công) hoặc nhận HTTP `503 Service Unavailable`, SDK sẽ không loay hoay Spam Retries (gây quá tải). Mã lỗi sẽ tự phơi bày qua Class Exception định danh riêng biệt `LockdownError` và `ServiceUnavailableError`. 
+Nếu Node server trả header `X-Lockdown-Mode: true` hoặc HTTP `503 Service Unavailable`, SDK phát sinh `LockdownError` hoặc `ServiceUnavailableError` sau số lần thử lại đã cấu hình.
 
 ### 3. Tương tác Dữ liệu
 
@@ -123,7 +125,7 @@ result = client.submit_event("main_chain", {
     "entity_id": "user_sysadmin",
     "event": "update_config"
 })
-print("Đẩy thành công vào block, Message ID:", result.event_id)
+print("Đã tiếp nhận sự kiện, event_id:", result.event_id)
 
 # Lấy Block bằng hash
 block = client.get_block(block_id="8f2a9d...")

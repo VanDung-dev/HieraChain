@@ -39,7 +39,7 @@ Zero-Knowledge Proofs in HieraChain support two running modes depending on the a
 
 * This is the actual production operation mode for Mainnet/Enterprise environments.
 * Requires the proving key directory at `ZK_PROVING_KEY_PATH` and verification key at `ZK_VERIFICATION_KEY_PATH`.
-* Proofs are generated via an External Service (like ZoKrates) containing high-order SNARK mathematical equations that are extremely secure and hard to forge.
+* An external service such as ZoKrates generates proofs using the configured SNARK circuit.
 
 ### 3. Public Inputs
 

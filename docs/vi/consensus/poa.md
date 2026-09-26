@@ -1,6 +1,6 @@
 ---
 title: "Proof of Authority (PoA)"
-description: "Giao thức đồng thuận dựa trên thẩm quyền: Hiệu năng tối đa, Định danh nút và Luân phiên Round-Robin."
+description: "Giao thức đồng thuận dựa trên Authority, với định danh nút, chữ ký block và luân phiên Round-Robin."
 icon: material/account-check-outline
 ---
 
@@ -8,7 +8,7 @@ icon: material/account-check-outline
 
 ## Tổng quan
 
-**Proof of Authority (PoA)** là giao thức đồng thuận dựa trên định danh, được tối ưu hóa cho **nội bộ một Doanh nghiệp / Tổ chức** (1 MainChain quản lý các Sub-Chains thuộc các phân khu/tên miền nội bộ). Trong kiến trúc đồng thuận 2 tầng của HieraChain, các đối tượng `SubChain` **mặc định luôn sử dụng PoA** để xử lý các sự kiện nghiệp vụ nội bộ với tốc độ cực nhanh (~0ms latency) mà không cần chờ đợi đồng thuận liên tổ chức.
+**Proof of Authority (PoA)** là giao thức đồng thuận dựa trên định danh dành cho **mạng nội bộ doanh nghiệp hoặc tổ chức**, trong đó một MainChain quản lý các Sub-Chain nội bộ. Trong kiến trúc đồng thuận hai tầng của HieraChain, `SubChain` mặc định dùng PoA cho event nội bộ mà không cần đồng thuận giữa các tổ chức.
 
 Đối với kịch bản liên kết đồng thuận giữa các MainChain của nhiều doanh nghiệp độc lập, xem [Proof of Federation (PoF)](./pof.md).
 
@@ -27,23 +27,23 @@ Giao thức hoạt động dựa trên sự tin tưởng vào danh tính của c
 
 <div class="grid cards" markdown>
 
-*   :material-lightning-bolt:{ .lg .middle } __Hiệu năng Đột phá__
+*   :material-lightning-bolt:{ .lg .middle } __Kiểm tra thời gian block__
 
     ---
 
-    Khối được tạo ngay lập tức theo chu kỳ cấu hình (`block_interval`), phù hợp cho các ứng dụng yêu cầu phản hồi thời gian thực.
+    Validator yêu cầu timestamp của hai block liên tiếp cách nhau ít nhất bằng một nửa `block_interval` đã cấu hình.
 
 *   :material-account-multiple-check:{ .lg .middle } __Quản trị Danh tính__
 
     ---
 
-    Hỗ trợ thêm/xóa Authority linh hoạt thông qua API, cho phép thay đổi cấu hình mạng mà không cần dừng hệ thống.
+    Lớp `ProofOfAuthority` cung cấp các method `add_authority()` và `remove_authority()`.
 
-*   :material-shield-sync:{ .lg .middle } __Tính Toàn vẹn Tuyệt đối__
+*   :material-shield-sync:{ .lg .middle } __Chữ ký block__
 
     ---
 
-    Mọi khối đều mang chữ ký số của một tổ chức được xác thực, loại bỏ hoàn toàn rủi ro từ các nút vô danh hoặc giả mạo.
+    Authority được chỉ định ký từng block. Các nút khác xác minh chữ ký trước khi chấp nhận block.
 
 </div>
 
@@ -53,7 +53,7 @@ Giao thức hoạt động dựa trên sự tin tưởng vào danh tính của c
 
 | Tham số | Ý nghĩa | Mặc định |
 | :--- | :--- | :--- |
-| `block_interval` | Khoảng thời gian tối thiểu giữa hai khối. | `10.0` giây |
+| `block_interval` | Giá trị dùng để kiểm tra khoảng cách tối thiểu; ngưỡng của validator bằng một nửa giá trị này. | `10.0` giây |
 | `max_authorities` | Số lượng nút Authority tối đa trong mạng. | `100` |
 | `require_signature` | Bắt buộc phải có chữ ký hợp lệ để chấp nhận khối. | `True` |
 

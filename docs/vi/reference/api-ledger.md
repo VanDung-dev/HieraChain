@@ -23,9 +23,9 @@ curl -X POST "http://localhost:2661/api/ledger/chains/supply_chain/events" \
      -H "X-API-Key: your_api_key" \
      -d '{
        "entity_id": "CONTRACT-2024-001",
-       "event": "contract_signed",
+       "event_type": "contract_signed",
        "details_cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
-       "details_nonce": "98765"
+       "details_nonce": "a1b2c3d4e5f6789012345678"
      }'
 ```
 
@@ -40,16 +40,22 @@ sequenceDiagram
     participant Sub as Sub-Chain
     participant Main as Main Chain
 
-    Client->>API: POST /chains/create
+    Client->>API: POST /api/ledger/chains/{chain_name}/create
     API->>Sub: Khởi tạo Sub-Chain
     API-->>Client: 201 Created
 
-    Client->>API: POST /chains/events
-    API->>Sub: Ghi sự kiện (Add Event)
-    Sub->>Sub: Đóng Block
-    API-->>Client: 200 OK (Event ID)
+    Client->>API: POST /api/ledger/chains/{chain_name}/events
+    API->>Sub: add_event(event)
+    Sub->>Sub: OrderingService.receive_event()
+    Sub->>Sub: Ghi Journal và đưa sự kiện vào hàng đợi
+    API-->>Client: 200 OK (event_id; đã tiếp nhận, chưa phải block finality)
 
-    Client->>API: POST /chains/submit-proof
+    Note over Sub: Xử lý nền sau phản hồi API
+    Sub->>Sub: Gom batch và tạo block
+    Sub->>Sub: Finalize bằng consensus PoA hoặc PoF đã cấu hình
+    Sub->>Sub: Lưu block đã finalize
+
+    Client->>API: POST /api/ledger/chains/{chain_name}/submit-proof
     API->>Sub: Lấy Proof
     Sub->>Main: Gửi Proof (Neo dữ liệu)
     Main-->>Sub: Xác nhận
@@ -157,6 +163,8 @@ Phản hồi:
   "event_id": "supply_chain_1_1"
 }
 ```
+
+Phản hồi xác nhận sự kiện đã được ghi journal và đưa vào hàng đợi Ordering; tạo block và lưu block diễn ra bất đồng bộ sau đó.
 
 ### 4. Gửi proof lên Main Chain
 

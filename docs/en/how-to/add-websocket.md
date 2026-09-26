@@ -8,19 +8,22 @@ icon: material/connection
 
 ## Purpose
 
-Guide to real-time connection with HieraChain via WebSocket protocol to receive event and block notifications as soon as they are recorded on the chain.
+Connect to HieraChain over WebSocket to receive event and new block notifications.
 
 ## WebSocket Connection
 
 ### Endpoint
 
+Connect to `/ws`; optionally pass `chain_name` as a query parameter to select a chain when connecting:
+
 ```
-ws://localhost:2661/ws
+ws://localhost:2661/ws?chain_name=supply_chain
 ```
 
-With authentication (if enabled):
+Omit the query parameter to connect to all chains:
+
 ```
-ws://localhost:2661/ws?token=<your-api-key>
+ws://localhost:2661/ws
 ```
 
 ### Message Format
@@ -31,26 +34,26 @@ All messages are JSON.
 
 ```json
 // Subscribe to all events/blocks from a chain
-{"action": "subscribe", "chain_name": "supply_chain"}
+{"type": "subscribe", "chain_name": "supply_chain"}
 
 // Subscribe to specific event type
-{"action": "subscribe", "chain_name": "supply_chain", "event_type": "production_complete"}
+{"type": "subscribe", "chain_name": "supply_chain", "event_types": ["production_complete"]}
 
 // Unsubscribe
-{"action": "unsubscribe", "chain_name": "supply_chain"}
+{"type": "unsubscribe"}
 
 // Keep-alive ping
-{"action": "ping"}
+{"type": "ping", "timestamp": 1234567890}
 ```
 
 **Server → Client:**
 
 ```json
-// New block created
-{"type": "new_block", "chain_name": "supply_chain", "data": {"block_hash": "...", "height": 10}}
+// Block committed
+{"type": "block_added", "chain_name": "supply_chain", "data": {"hash": "...", "index": 10}}
 
-// New event added
-{"type": "new_event", "chain_name": "supply_chain", "data": {"entity_id": "...", "event_type": "..."}}
+// Event notification
+{"type": "event", "chain_name": "supply_chain", "data": {"entity_id": "...", "event": "production_complete"}}
 
 // Pong response
 {"type": "pong", "timestamp": 1234567890}
@@ -63,7 +66,7 @@ All messages are JSON.
 
 ```javascript
 // Connect WebSocket
-const ws = new WebSocket('ws://localhost:2661/ws');
+const ws = new WebSocket('ws://localhost:2661/ws?chain_name=supply_chain');
 
 // Handle connection
 ws.onopen = () => {
@@ -71,15 +74,15 @@ ws.onopen = () => {
   
   // Subscribe to 'supply_chain'
   ws.send(JSON.stringify({
-    action: 'subscribe',
+    type: 'subscribe',
     chain_name: 'supply_chain'
   }));
   
   // Or subscribe by event type
   ws.send(JSON.stringify({
-    action: 'subscribe',
+    type: 'subscribe',
     chain_name: 'supply_chain',
-    event_type: 'production_complete'
+    event_types: ['production_complete']
   }));
 };
 
@@ -88,11 +91,11 @@ ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
   
   switch (data.type) {
-    case 'new_block':
-      console.log('🆕 New block:', data.data.block_hash);
+    case 'block_added':
+      console.log('🆕 New block:', data.data.hash);
       break;
-    case 'new_event':
-      console.log('📝 New event:', data.data.event_type);
+    case 'event':
+      console.log('📝 New event:', data.data.event);
       break;
     case 'pong':
       console.log('💚 Pong received');
@@ -116,7 +119,7 @@ ws.onclose = () => {
 // Keep-alive: send ping every 30 seconds
 setInterval(() => {
   if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ action: 'ping' }));
+    ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
   }
 }, 30000);
 ```
@@ -129,12 +132,13 @@ import websockets
 import json
 
 async def listen():
-    uri = "ws://localhost:2661/ws"
+    uri = "ws://localhost:2661/ws?chain_name=supply_chain"
     
     async with websockets.connect(uri) as ws:
         # Subscribe to chain
         await ws.send(json.dumps({
-            "action": "subscribe",
+            "type": "subscribe",
+            "event_types": ["production_complete"],
             "chain_name": "supply_chain"
         }))
         
@@ -142,10 +146,10 @@ async def listen():
         async for message in ws:
             data = json.loads(message)
             
-            if data["type"] == "new_block":
-                print(f"🆕 New block: {data['data']['block_hash']}")
-            elif data["type"] == "new_event":
-                print(f"📝 New event: {data['data']['event_type']}")
+            if data["type"] == "block_added":
+                print(f"🆕 New block: {data['data']['hash']}")
+            elif data["type"] == "event":
+                print(f"📝 New event: {data['data']['event']}")
             elif data["type"] == "pong":
                 print("💚 Pong")
 
@@ -160,13 +164,14 @@ use futures_util::{StreamExt};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let url = "ws://localhost:2661/ws";
+    let url = "ws://localhost:2661/ws?chain_name=supply_chain";
     let (ws_stream, _) = connect_async(url).await?;
     let (mut write, mut read) = ws_stream.split();
 
     // Subscribe to chain
     let msg = serde_json::json!({
-        "action": "subscribe",
+        "type": "subscribe",
+        "event_types": ["production_complete"],
         "chain_name": "supply_chain"
     });
     write.send(Message::Text(msg.to_string())).await?;
@@ -196,10 +201,12 @@ Response:
 ```json
 {
   "total_connections": 5,
+  "max_connections": 1000,
   "chains": {
     "supply_chain": 3,
     "orders": 2
-  }
+  },
+  "event_types_count": 1
 }
 ```
 
@@ -208,7 +215,6 @@ Response:
 | Error | Cause | Solution |
 |------|-------------|------------|
 | Connection refused | Server not running | Run `python -m hierachain.api.server` |
-| 401 Unauthorized | Missing token | Add `?token=<api_key>` to URL |
 | No messages received | Not subscribed | Send subscribe message first |
 | Sudden disconnect | Server restart | Auto-reconnect in client |
 

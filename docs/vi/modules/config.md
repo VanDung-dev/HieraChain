@@ -8,7 +8,7 @@ icon: material/cog
 
 ## Tổng quan
 
-Module **Config** là trung tâm điều khiển của HieraChain, chịu trách nhiệm quản lý hàng trăm tham số vận hành, đảm bảo tính bảo mật của các khóa bí mật và cung cấp cơ chế ghi log chuẩn hóa cho cả môi trường phát triển và vận hành thực tế.
+Module **Config** quản lý các tham số vận hành, khóa bí mật và cấu hình ghi log của HieraChain.
 
 ---
 

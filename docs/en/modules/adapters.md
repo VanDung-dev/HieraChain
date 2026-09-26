@@ -24,7 +24,7 @@ All storage adapters reside in `hierachain/adapters/database/`.
 
 The fallback adapter for environments where PostgreSQL is unavailable, and the explicit choice for lightweight single-node setups.
 
-* Technology: SQLite3 via `sqlite3` and `hierachain/adapters/database/base/sql_base.py`.
+* Technology: SQLite3 via `sqlite3` and `hierachain/adapters/database/base/sql_adapter.py` (`SQLBase`).
 * Schema: Initialized through `sqlite_schema.py`, creating tables for `chains`, `blocks`, `events`, `proofs`, and `chain_state`.
 * Strengths: Zero external service dependencies, ACID guarantees, single-file backups.
 * Indexes: Built on `entity_id`, `event_type`, `block_number`, and `timestamp`.

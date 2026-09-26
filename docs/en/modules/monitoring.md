@@ -8,7 +8,7 @@ icon: material/chart-line
 
 ## Overview
 
-The **Monitoring** module provides 360-degree observability for the HieraChain system. It not only tracks traditional infrastructure metrics (CPU, RAM, Disk) but also deeply monitors blockchain-specific indicators such as event throughput, block closing time, and BFT consensus success rate.
+The **Monitoring** module tracks infrastructure metrics such as CPU, RAM, and disk use. It also records HieraChain metrics, including event throughput, block closing time, and BFT consensus success rate.
 
 ---
 

@@ -49,9 +49,8 @@ print(settings.AUTH_ENABLED)
 
 ### Lưu trữ và cache
 
-* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (mặc định: `postgres` ở development và production, `memory` ở test; giá trị: `sqlite`, `postgres`, `redis`, `memory`, `parquet_only`)
+* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (mặc định: `postgres` ở development và production, `memory` ở test; giá trị: `sqlite`, `postgres`, `redis`, `memory`)
 * Nếu PostgreSQL không khả dụng, tiến trình khởi động sẽ fallback về SQLite. Đặt `HRC_STORAGE_BACKEND=sqlite` để chọn SQLite tường minh.
-* `WORLD_STATE_CACHE_SIZE` (mặc định: `1000`)
 * Cache nâng cao: `ADVANCED_CACHING_ENABLED` (mặc định: `True`)
 * `BLOCK_CACHE_SIZE` (mặc định: `5000`), `EVENT_CACHE_SIZE` (`20000`), `ENTITY_CACHE_SIZE` (`10000`)
 * Chính sách cache: `BLOCK_CACHE_POLICY` (`lru`), `EVENT_CACHE_POLICY` (`ttl`), `ENTITY_CACHE_POLICY` (`lfu`)
@@ -69,12 +68,11 @@ print(settings.AUTH_ENABLED)
 
 ### Xử lý song song và tài nguyên
 
-* `PARALLEL_PROCESSING_ENABLED` (`True`), `MAX_WORKERS` (`None` nghĩa là tự động 50% số core CPU), `PROCESSING_CHUNK_SIZE` (`100`)
 * Bảo vệ DoS: `HRC_EVENT_POOL_MAX_SIZE` (mặc định: `10000`), `HRC_RAM_CRITICAL_THRESHOLD` (`95.0` %)
 
 ### Bảo mật và authentication
 
-* Authentication: `HRC_AUTH_ENABLED` (`false` ở dev/test; `True` cưỡng bức ở production)
+* Authentication: `HRC_AUTH_ENABLED` (mặc định `false` ở dev/test và `true` ở production; đặt tường minh thành `false` cũng sẽ tắt authentication ở production)
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
 * Secret backend: `HRC_SECRET_BACKEND` (giá trị: `env`, `vault`, `aws`). Mặc định là `env`.
 * Master key: `HRC_MASTER_KEY_SOURCE` (`auto` ở dev/test, `env` ở production), `HRC_MASTER_KEY_FILE` (mặc định: `config/master_backup_key.key`)
@@ -140,10 +138,10 @@ print(settings.AUTH_ENABLED)
 
 ### Logging
 
-* `LOG_LEVEL` (mặc định: `INFO` ở dev, `DEBUG` ở test, `WARNING` ở production)
+* `LOG_LEVEL` (mặc định: `DEBUG` ở dev/test, `WARNING` ở production)
 * `LOG_FORMAT` (chuỗi định dạng logging Python chuẩn).
 * `HRC_LOG_FORMAT`: `text` (mặc định) hoặc `json` (cho log tập trung như ELK/Loki).
-* `HRC_LOG_SQL_DETAIL` (mặc định: `true` ở dev, `false` ở production)
+* `HRC_LOG_SQL_DETAIL` (mặc định: `false`; bật tường minh qua biến môi trường nếu cần)
 
 ### CLI
 
@@ -173,7 +171,7 @@ HRC_CORS_ALLOW_ALL=false
 HRC_CORS_ORIGINS=https://portal.example.com
 HRC_RATE_LIMIT=true
 DATABASE_URL=postgresql+psycopg://user:pass@db:5432/hierachain
-DEFAULT_STORAGE_BACKEND=redis
+HRC_STORAGE_BACKEND=redis
 REDIS_HOST=redis
 REDIS_PORT=6379
 HRC_IPFS_ENABLED=true

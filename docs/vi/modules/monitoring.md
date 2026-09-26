@@ -8,7 +8,7 @@ icon: material/chart-line
 
 ## Tổng quan
 
-Module **Monitoring** cung cấp khả năng quan sát (Observability) 360 độ cho hệ thống HieraChain. Nó không chỉ theo dõi các chỉ số hạ tầng truyền thống (CPU, RAM, Disk) mà còn giám sát sâu các chỉ số đặc thù của blockchain như thông lượng sự kiện (throughput), thời gian đóng khối, và tỷ lệ thành công của đồng thuận BFT.
+Module **Monitoring** theo dõi các chỉ số hạ tầng như CPU, RAM và dung lượng đĩa. Module cũng ghi nhận chỉ số của HieraChain, gồm thông lượng event, thời gian đóng block và tỷ lệ thành công của BFT.
 
 ---
 

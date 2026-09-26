@@ -46,12 +46,12 @@ graph TD
 ## Các tính năng cốt lõi
 
 ### 1. Persistence & Durability (Tính bền vững)
-Trước khi đưa vào hàng đợi xử lý, mọi sự kiện đều được ghi vào **Event Journal**. Nếu service bị dừng đột ngột, module `Recovery` sẽ đọc lại Journal để tái thiết lập trạng thái, đảm bảo không có dữ liệu nào bị mất.
+Sự kiện được ghi vào **Event Journal** trước khi đưa vào hàng đợi. `HRC_JOURNAL_FSYNC` mặc định bật fsync; tắt biến này làm giảm độ bền dữ liệu khi mất điện. Khi khởi động lại, `Recovery` replay journal để khôi phục trạng thái chờ. Entry hỏng hoặc không đọc được có thể khiến Recovery dừng và Ordering Service giữ trạng thái `MAINTENANCE`, không nhận event mới.
 
 ### 2. Batching Strategy
 Để tối ưu hiệu năng, Ordering Service không đóng khối cho từng sự kiện đơn lẻ mà sử dụng chiến lược gom nhóm:
-*   `batch_size`: Số lượng sự kiện tối đa trong một khối (Mặc định: 100).
-*   `batch_timeout`: Thời gian tối đa chờ đợi trước khi buộc phải đóng khối (Mặc định: 2.0 giây).
+*   `OrderingService` khởi tạo trực tiếp mặc định dùng `batch_size=100` và `batch_timeout=2.0` giây.
+*   SubChain mặc định dùng `block_size=50` và `batch_timeout=1.0` giây; cấu hình riêng có thể thay đổi hai giá trị này.
 
 ### 3. Event Certification
 Module `Certifier` tích hợp chặt chẽ với hệ thống **Security** để kiểm tra:
@@ -75,7 +75,7 @@ config = {
 
 service = OrderingService(config=config)
 
-# Gửi sự kiện vào hàng đợi
+# Gửi event; ID trả về xác nhận đã ghi journal và đưa vào hàng đợi, chưa phải block finality
 event_id = service.receive_event(
     event_data={"item": "container_45", "status": "shipped"},
     channel_id="logistics_chain",

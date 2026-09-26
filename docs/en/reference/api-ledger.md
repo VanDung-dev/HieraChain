@@ -23,9 +23,9 @@ curl -X POST "http://localhost:2661/api/ledger/chains/supply_chain/events" \
      -H "X-API-Key: your_api_key" \
      -d '{
        "entity_id": "CONTRACT-2024-001",
-       "event": "contract_signed",
+       "event_type": "contract_signed",
        "details_cid": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
-       "details_nonce": "98765"
+       "details_nonce": "a1b2c3d4e5f6789012345678"
      }'
 ```
 
@@ -40,16 +40,17 @@ sequenceDiagram
     participant Sub as Sub-Chain
     participant Main as Main Chain
 
-    Client->>API: POST /chains/create
+    Client->>API: POST /api/ledger/chains/{chain_name}/create
     API->>Sub: Initialize Sub-Chain
     API-->>Client: 201 Created
 
-    Client->>API: POST /chains/events
-    API->>Sub: Add Event
-    Sub->>Sub: Close Block
-    API-->>Client: 200 OK (Event ID)
+    Client->>API: POST /api/ledger/chains/{chain_name}/events
+    API->>Sub: Add event to ordering service
+    Sub->>Sub: Journal and enqueue event
+    API-->>Client: 200 OK (Event ID accepted for ordering)
+    Note over Sub: Background batching, block finalization, and persistence happen later
 
-    Client->>API: POST /chains/submit-proof
+    Client->>API: POST /api/ledger/chains/{chain_name}/submit-proof
     API->>Sub: Get Proof
     Sub->>Main: Submit Proof (Data Anchoring)
     Main-->>Sub: Confirm
@@ -158,6 +159,8 @@ Response:
 }
 ```
 
+The response acknowledges that the event was journaled and queued for ordering; block creation and persistence happen asynchronously.
+
 ### 4. Submit proof to Main Chain
 
 ```bash
@@ -222,12 +225,12 @@ curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&off
 * 404 Not Found: Chain or sub-chain not found.
 * 500 Internal Server Error: Internal processing error (e.g., error when listing chains, adding events, submitting proofs, statistics, or retrieving blocks).
 
-## Implementation Notes (abbreviated from `endpoints.py`)
+## Implementation Notes (abbreviated from `hierachain/api/ledger/events.py`)
 
 * Lazy DI: uses lightweight singletons `get_hierarchy_manager()` and `get_entity_tracer()` for request lifecycle.
-* `POST /chains/{chain_name}/events`: server sets `timestamp = time.time()`; missing `details` defaults to `{}`.
-* `POST /chains/{chain_name}/submit-proof`: if `SubChain` has no `submit_proof_to_main`, the endpoint falls back to a mock branch to avoid crash.
-* `GET /chains/{chain_name}/blocks`: when `Block` has no `to_event_list`, there is a fallback conversion from Arrow Table (`to_pylist`) for safety.
+* `POST /api/ledger/chains/{chain_name}/events`: server sets `timestamp = time.time()`; missing `details` defaults to `{}`.
+* `POST /api/ledger/chains/{chain_name}/submit-proof`: if `SubChain` has no `submit_proof_to_main`, the endpoint falls back to a mock branch to avoid a crash.
+* `GET /api/ledger/chains/{chain_name}/blocks`: when `Block` has no `to_event_list`, there is a fallback conversion from Arrow Table (`to_pylist`) for safety.
 
 ## Related
 

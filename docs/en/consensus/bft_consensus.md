@@ -1,6 +1,6 @@
 ---
 title: "BFT Consensus"
-description: "Byzantine Fault Tolerant consensus (PBFT): Absolute security, anti-spoofing, and automatic View Change mechanism."
+description: "Byzantine fault-tolerant PBFT consensus with a View Change mechanism."
 icon: material/shield-key
 ---
 
@@ -8,13 +8,13 @@ icon: material/shield-key
 
 ## Overview
 
-**BFT Consensus** is HieraChain's advanced Byzantine fault-tolerant consensus mechanism, allowing the system to maintain consistency even when some nodes (`f`) fail or exhibit malicious behavior (data corruption, denial of service). The system follows the formula `n >= 3f + 1`, ensuring maximum security for Main Chains or enterprise consortiums.
+**BFT Consensus** is HieraChain's Byzantine fault-tolerant consensus mechanism. The protocol uses `n >= 3f + 1` to tolerate up to `f` faulty or malicious nodes, including nodes that corrupt data or deny service. This implementation is separate from the MainChain and SubChain runtime paths.
 
 ---
 
 ## BFT Module Architecture
 
-The system is divided into specialized components to ensure modularity and maintainability:
+The module contains these components:
 
 <div class="grid cards" markdown>
 
@@ -32,7 +32,7 @@ The system is divided into specialized components to ensure modularity and maint
 
     __File__: `view_manager.py`
 
-    Automatically detects Primary node failure and triggers the **View Change** process to elect a new Leader, ensuring the system does not halt.
+    Detects when the Primary node is unresponsive and triggers **View Change** to elect a new Leader.
 
 *   :material-swap-horizontal-bold:{ .lg .middle } __BFT Network__
 
@@ -40,7 +40,7 @@ The system is divided into specialized components to ensure modularity and maint
 
     __File__: `network.py`
 
-    Specialized communication layer using **ZeroMQ**, supporting broadcast and consensus message routing with ultra-low latency.
+    Uses **ZeroMQ** to broadcast and route consensus messages.
 
 *   :material-key-variant:{ .lg .middle } __BFT Crypto__
 

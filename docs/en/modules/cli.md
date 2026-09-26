@@ -8,7 +8,7 @@ icon: material/console
 
 ## Overview
 
-The **CLI** module provides a powerful command-line tool named `hrc`, enabling operators and developers to interact quickly with the HieraChain system without using the web interface or making manual API calls.
+The **CLI** module provides the `hrc` command for managing HieraChain from a terminal.
 
 The tool is built on the **Click** library, supporting logical command grouping, tab-completion, and strict parameter handling.
 
