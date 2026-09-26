@@ -112,16 +112,16 @@ class SubChain(Blockchain):
             )
 
         self._init_ordering_service()
+        try:
+            self.world_state = WorldState()
 
-        if not self.ordering_service.get_latest_block():
-            self.ordering_service.storage_handler.save_block(self.chain[0], self.name)
-            logger.info("SubChain %s: Persisted genesis block to storage.", self.name)
+            if not self.ordering_service.wait_for_active(timeout=10.0):
+                raise RuntimeError(f"Ordering recovery did not become active for {name}")
 
-        self.world_state = WorldState()
-
-        self.ordering_service.wait_for_active(timeout=10.0)
-
-        self.sync_chain()
+            self.sync_chain()
+        except Exception:
+            self.ordering_service.shutdown()
+            raise
 
         self._block_processing_lock = threading.Lock()
         self._async_sync_lock = threading.Lock()
@@ -207,7 +207,12 @@ class SubChain(Blockchain):
         if hasattr(self, "custom_config") and self.custom_config:
             config.update(self.custom_config)
 
-        self.ordering_service = OrderingService(nodes=[local_node], config=config, node_identity=self.node_identity)
+        self.ordering_service = OrderingService(
+            nodes=[local_node],
+            config=config,
+            node_identity=self.node_identity,
+            genesis_block=self.chain[0],
+        )
 
     def add_event(self, event: dict[str, Any]) -> str:
         """Add event to Sub-Chain."""

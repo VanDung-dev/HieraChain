@@ -19,6 +19,10 @@ def _process_and_finalize_single_block(sub_chain: Any, block: Any) -> bool:
         block.hash = block.calculate_hash()
         finalized_block = sub_chain.consensus.finalize_block(block, sub_chain.name)
 
+        if not sub_chain.is_valid_new_block(finalized_block):
+            logger.error("Failed to add ordered block %d", finalized_block.index)
+            return False
+
         try:
             sub_chain.ordering_service.storage_handler.save_block(
                 finalized_block, sub_chain.name

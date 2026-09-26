@@ -3,6 +3,7 @@ Ordering service rehydration and sync functions for Sub-Chain.
 """
 
 import logging
+from queue import Empty
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -71,10 +72,8 @@ def _apply_rehydrated_blocks(sub_chain: Any, all_blocks: list) -> None:
         sub_chain.ordering_service.blocks_created = all_blocks[-1].index + 1
 
     if not sub_chain.is_chain_valid():
-        logger.warning(
-            "Chain %s integrity check detected inconsistencies after rehydration. "
-            "This may indicate pending blocks in consumer thread. Will sync on next cycle.",
-            sub_chain.name
+        raise ValueError(
+            f"Chain {sub_chain.name} failed integrity validation after rehydration"
         )
 
 
@@ -106,12 +105,42 @@ def _rehydrate_chain_from_ordering_service(
 
 def _sync_chain_for_sub_chain(sub_chain: Any) -> None:
     """Synchronize local chain with Ordering Service (Rehydration)."""
-    try:
-        latest_block_os = sub_chain.ordering_service.get_latest_block()
-        _rehydrate_chain_from_ordering_service(sub_chain, latest_block_os)
-        _reset_ordering_service_state(sub_chain)
-    except Exception as e:
-        logger.error("Sync failed: %s", e)
+    latest_block_os = sub_chain.ordering_service.get_latest_block()
+    _rehydrate_chain_from_ordering_service(sub_chain, latest_block_os)
+    _reset_ordering_service_state(sub_chain)
+    _discard_rehydrated_blocks_from_queue(sub_chain)
+
+
+def _discard_rehydrated_blocks_from_queue(sub_chain: Any) -> None:
+    """Drop queued blocks already present in the rehydrated chain."""
+    # Called from SubChain.__init__ before registration or consumer startup, so
+    # no caller can submit new events while this startup queue is reconciled.
+    queue = sub_chain.ordering_service.commit_queue
+    rehydrated_hashes = {block.index: block.hash for block in sub_chain.chain}
+    pending_blocks = []
+    conflicting_indexes = []
+
+    while True:
+        try:
+            block = queue.get_nowait()
+        except Empty:
+            break
+
+        queue.task_done()
+        if block.index not in rehydrated_hashes:
+            pending_blocks.append(block)
+        elif block.hash != rehydrated_hashes[block.index]:
+            pending_blocks.append(block)
+            conflicting_indexes.append(block.index)
+
+    for block in pending_blocks:
+        queue.put(block)
+
+    if conflicting_indexes:
+        raise ValueError(
+            "Queued ordering blocks conflict with rehydrated blocks: "
+            f"{conflicting_indexes}"
+        )
 
 
 def _update_event_statistics(sub_chain: Any, block: Any) -> None:

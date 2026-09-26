@@ -104,12 +104,34 @@ class HierarchyManager:
             self.cross_level_sync = sync
 
         self.storage = None
+        self.storage = self._create_storage()
+        if self.storage is not None:
+            if not self.storage.store_chain(self.main_chain):
+                raise RuntimeError("Failed to persist main chain metadata")
+            self._restore_sub_chains()
+
+    def _restore_sub_chains(self) -> None:
+        """Recreate every persisted sub-chain before serving API requests."""
+        if self.storage is None:
+            return
+
+        from hierachain.hierarchical.sub_chain import SubChain
+
+        restored: list[SubChain] = []
         try:
-            self.storage = self._create_storage()
-            if self.storage is not None:
-                self.storage.store_chain(self.main_chain)
-        except (OSError, ValueError, RuntimeError) as e:
-            logger.error("Failed to initialize storage: %s", e)
+            for metadata in self.storage.list_chains():
+                name = metadata["name"]
+                chain = SubChain(
+                    name=name,
+                    domain_type=metadata.get("domain_type") or "generic",
+                    node_identity=self.node_identity,
+                )
+                restored.append(chain)
+                self.add_sub_chain(name, chain)
+        except Exception:
+            for chain in restored:
+                chain.shutdown()
+            raise
 
     def create_sub_chain(
         self, name: str, domain_type: str, metadata: dict[str, Any] | None = None
@@ -121,13 +143,13 @@ class HierarchyManager:
 
         sub_chain = DomainChain(name, domain_type, metadata=metadata)
 
-        if sub_chain.connect_to_main_chain(self.main_chain):
-            self.sub_chains[name] = sub_chain
-            if self.cross_level_sync:
-                self.cross_level_sync.connect_subchain(name, sub_chain)
-            return True
+        try:
+            self.add_sub_chain(name, sub_chain)
+        except Exception:
+            sub_chain.shutdown()
+            raise
 
-        return False
+        return True
 
     def get_sub_chain(self, name: str) -> DomainChain | None:
         return self.sub_chains.get(name)
@@ -432,11 +454,7 @@ class HierarchyManager:
             except Exception as exc:
                 if postgres is not None:
                     postgres.close()
-                logger.warning(
-                    "PostgreSQL unavailable; falling back to SQLite (%s)",
-                    type(exc).__name__,
-                )
-                return create_sqlite_storage()
+                raise RuntimeError("Configured PostgreSQL storage is unavailable") from exc
 
         if backend == "redis":
             return RedisStorageAdapter()
@@ -450,8 +468,13 @@ class HierarchyManager:
     def add_sub_chain(self, chain_name, sub_chain):
         if chain_name in self.sub_chains:
             raise ValueError(f"Sub-chain {chain_name} already exists")
+        if self.storage is not None and not self.storage.store_chain(sub_chain):
+            raise RuntimeError(f"Failed to persist sub-chain metadata: {chain_name}")
+        if not sub_chain.connect_to_main_chain(self.main_chain):
+            raise RuntimeError(f"Failed to connect sub-chain to main chain: {chain_name}")
         self.sub_chains[chain_name] = sub_chain
-        sub_chain.connect_to_main_chain(self.main_chain)
+        if self.cross_level_sync:
+            self.cross_level_sync.connect_subchain(chain_name, sub_chain)
 
     def __str__(self) -> str:
         return (
