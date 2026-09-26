@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (13)"
+??? warning "Breaking Changes (17)"
+
+    * 2026-09-26
+
+        * **Config (Journal Sync)**: Removed `Settings.JOURNAL_FSYNC` / `HRC_JOURNAL_FSYNC` (`hierachain/config/settings.py`); `TransactionJournal` (`hierachain/error_mitigation/journal.py`) dropped the background writer queue/thread and always writes synchronously with `os.fsync`.
+        * **Core (Merkle Payload)**: Unified event payload serialization into `serialize_event_payload()` (`hierachain/core/merkle_tree.py`) reused by `hierachain/core/block.py`; Merkle leaves now include the `data` field (previously excluded), so leaves/roots/hashes change for identical events.
+        * **Database (Fail-hard Reads & Event Envelope)**: `SQLBase.get_block_by_index`/`get_latest_block`/`get_event_by_id` (`hierachain/adapters/database/base/sql_adapter.py`) now propagate database errors instead of returning `None`; `PostgresAdapter._execute_save_block` (`hierachain/adapters/database/postgres_adapter.py`) persists the full event envelope (`orjson.dumps(event)`) with `submitted_by`/`sender_id` fallback, and fetchers decode via the shared `_create_event_from_row`/`_decode_jsonb`.
+        * **Hierarchical (Storage Fail-fast)**: `HierarchyManager._create_storage()` (`hierachain/hierarchical/hierarchy_manager/base.py`) no longer falls back to SQLite when PostgreSQL is configured but unavailable — it raises `RuntimeError` instead; `__init__`/`add_sub_chain` now persist metadata and restore via `list_chains()`, raising on failure.
 
     * 2026-09-24
 
@@ -41,7 +48,13 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (10)"
+??? note "Improvements (13)"
+
+    * 2026-09-26
+
+        * **API (Readiness)**: Added `GET /api/ledger/ready` (`hierachain/api/ledger/health.py`) reporting `ready` only when every sub-chain ordering service is `ACTIVE` (503 otherwise); exempted in `hierachain/api/server.py`; thread-safe lazy `get_hierarchy_manager()` returning 503 while recovery is not ready (`hierachain/api/ledger/depds.py`); sub-chain creation forwards `manager.node_identity` (`hierachain/api/ledger/chains.py`).
+        * **Consensus (Ordering Genesis & Replay)**: `OrderingService` accepts an optional `genesis_block` (`hierachain/consensus/ordering/service.py`) persisted when the database is empty; `EventCertifier.validate()`/`OrderingExecutor.process_single_event()` accept `allow_stale_timestamp` with strict finite numeric timestamp checks (`hierachain/consensus/ordering/certifier.py`, `hierachain/consensus/ordering/processor.py`); replayed journal events flow through `process_replayed_event()` (`hierachain/consensus/ordering/recovery.py`, `hierachain/consensus/ordering/processor.py`).
+        * **Database (Chain Listing & SQLite Memory)**: Added `list_chains()` across `SQLBase`/`RedisChainManager`/`RedisStorageAdapter` (`hierachain/adapters/database/base/sql_adapter.py`, `hierachain/adapters/database/redis_adapter.py`); `SQLiteAdapter` (`hierachain/adapters/database/sqlite_adapter.py`) supports shared-cache `:memory:` via a keeper connection; `SQLBase._create_event_from_row` returns the enriched envelope directly when columns match; `RedisChainManager.store_chain` omits `None` `domain_type`.
 
     * 2026-09-24
 
@@ -65,7 +78,13 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (5)"
+??? warning "Fix (8)"
+
+    * 2026-09-26
+
+        * **Journal (Framing & Replay)**: Added `_JOURNAL_MAX_FRAME_SIZE`/`_JOURNAL_DATA_MARKER` envelope preserving `data` versus `extra` fields, partial-write loops, torn-tail truncation repair on open, leading-magic `PAR1` detection, and fail-hard replay raising `ValueError` on corrupt/truncated frames instead of skipping (`hierachain/error_mitigation/journal.py`).
+        * **Consensus (Ordering Fail-closed)**: `OrderingBlockManager.commit_block`/processor loop/executor (`hierachain/consensus/ordering/block_manager.py`, `hierachain/consensus/ordering/processor.py`) set `MAINTENANCE` and re-raise; recovery forces block creation (`force=True`) and raises `RuntimeError` on null/corrupt entries; `_block_from_dict` (`hierachain/consensus/ordering/storage.py`) verifies the Merkle root before the hash with strict `data is None` termination.
+        * **Hierarchical (Recovery Validation)**: `SubChain` init (`hierachain/hierarchical/sub_chain/base.py`) fails fast on `wait_for_active()` timeout with ordering shutdown and delegates genesis persistence to `OrderingService`; `_process_and_finalize_single_block` (`hierachain/hierarchical/sub_chain/block.py`) validates via `is_valid_new_block`; rehydration (`hierachain/hierarchical/sub_chain/ordering.py`) raises `ValueError` on integrity/queue conflicts and discards already-rehydrated queued blocks.
 
     * 2026-09-25
 

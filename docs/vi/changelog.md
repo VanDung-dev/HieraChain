@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (13)"
+??? warning "Breaking Changes (17)"
+
+    * 2026-09-26
+
+        * **Config (Journal Sync)**: Loại bỏ `Settings.JOURNAL_FSYNC` / `HRC_JOURNAL_FSYNC` (`hierachain/config/settings.py`); `TransactionJournal` (`hierachain/error_mitigation/journal.py`) bỏ hàng đợi/luồng ghi nền và luôn ghi đồng bộ kèm `os.fsync`.
+        * **Core (Merkle Payload)**: Hợp nhất serialize payload event thành `serialize_event_payload()` (`hierachain/core/merkle_tree.py`) dùng chung cho `hierachain/core/block.py`; Merkle leaves nay bao gồm trường `data` (trước đây bị loại), nên leaves/roots/hashes thay đổi với cùng event.
+        * **Database (Fail-hard Reads & Event Envelope)**: `SQLBase.get_block_by_index`/`get_latest_block`/`get_event_by_id` (`hierachain/adapters/database/base/sql_adapter.py`) nay lan truyền lỗi database thay vì trả `None`; `PostgresAdapter._execute_save_block` (`hierachain/adapters/database/postgres_adapter.py`) persist toàn bộ event envelope (`orjson.dumps(event)`) với fallback `submitted_by`/`sender_id`, các hàm fetch giải mã qua `_create_event_from_row`/`_decode_jsonb` dùng chung.
+        * **Hierarchical (Storage Fail-fast)**: `HierarchyManager._create_storage()` (`hierachain/hierarchical/hierarchy_manager/base.py`) không còn fallback về SQLite khi PostgreSQL đã cấu hình nhưng không khả dụng — nay raise `RuntimeError`; `__init__`/`add_sub_chain` persist metadata và khôi phục qua `list_chains()`, raise khi thất bại.
 
     * 2026-09-24
 
@@ -41,7 +48,13 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (10)"
+??? note "Improvements (13)"
+
+    * 2026-09-26
+
+        * **API (Readiness)**: Thêm `GET /api/ledger/ready` (`hierachain/api/ledger/health.py`) chỉ báo `ready` khi mọi ordering service của sub-chain ở trạng thái `ACTIVE` (ngược lại 503); miễn xác thực trong `hierachain/api/server.py`; `get_hierarchy_manager()` khởi tạo lười an toàn luồng và trả 503 khi recovery chưa xong (`hierachain/api/ledger/depds.py`); tạo sub-chain chuyển tiếp `manager.node_identity` (`hierachain/api/ledger/chains.py`).
+        * **Đồng thuận (Ordering Genesis & Replay)**: `OrderingService` nhận thêm `genesis_block` tùy chọn (`hierachain/consensus/ordering/service.py`) để persist khi database rỗng; `EventCertifier.validate()`/`OrderingExecutor.process_single_event()` nhận `allow_stale_timestamp` với kiểm tra timestamp số hữu hạn nghiêm ngặt (`hierachain/consensus/ordering/certifier.py`, `hierachain/consensus/ordering/processor.py`); event journal replay đi qua `process_replayed_event()` (`hierachain/consensus/ordering/recovery.py`, `hierachain/consensus/ordering/processor.py`).
+        * **Database (Chain Listing & SQLite Memory)**: Bổ sung `list_chains()` cho `SQLBase`/`RedisChainManager`/`RedisStorageAdapter` (`hierachain/adapters/database/base/sql_adapter.py`, `hierachain/adapters/database/redis_adapter.py`); `SQLiteAdapter` (`hierachain/adapters/database/sqlite_adapter.py`) hỗ trợ `:memory:` dùng chung qua keeper connection; `SQLBase._create_event_from_row` trả trực tiếp envelope đầy đủ khi cột khớp; `RedisChainManager.store_chain` bỏ qua `domain_type` khi là `None`.
 
     * 2026-09-24
 
@@ -65,7 +78,13 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (5)"
+??? warning "Fix (8)"
+
+    * 2026-09-26
+
+        * **Journal (Framing & Replay)**: Bổ sung envelope `_JOURNAL_MAX_FRAME_SIZE`/`_JOURNAL_DATA_MARKER` tách `data` và `extra` fields, vòng lặp ghi từng phần, tự sửa đuôi file rách khi mở, nhận diện `PAR1` bằng magic đầu file, và replay fail-hard raise `ValueError` khi gặp frame hỏng/cụt thay vì bỏ qua (`hierachain/error_mitigation/journal.py`).
+        * **Đồng thuận (Ordering Fail-closed)**: `OrderingBlockManager.commit_block`/vòng lặp processor/executor (`hierachain/consensus/ordering/block_manager.py`, `hierachain/consensus/ordering/processor.py`) chuyển `MAINTENANCE` và re-raise; recovery ép tạo block (`force=True`) và raise `RuntimeError` khi gặp entry null/hỏng; `_block_from_dict` (`hierachain/consensus/ordering/storage.py`) kiểm tra Merkle root trước hash với điều kiện dừng chặt `data is None`.
+        * **Hierarchical (Recovery Validation)**: Khởi tạo `SubChain` (`hierachain/hierarchical/sub_chain/base.py`) fail-fast khi `wait_for_active()` timeout kèm shutdown ordering và giao persist genesis cho `OrderingService`; `_process_and_finalize_single_block` (`hierachain/hierarchical/sub_chain/block.py`) kiểm tra qua `is_valid_new_block`; rehydration (`hierachain/hierarchical/sub_chain/ordering.py`) raise `ValueError` khi xung đột toàn vẹn/hàng đợi và loại bỏ block đã rehydrate khỏi queue.
 
     * 2026-09-25
 
