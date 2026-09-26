@@ -46,7 +46,9 @@ graph TD
 ## Core Features
 
 ### 1. Persistence & Durability
-Accepted events are written to the **Event Journal** and fsynced before processing. Fsync is always enabled and cannot be disabled through configuration. On restart, `Recovery` replays journal entries before the ordering service becomes active. A replay error leaves it in maintenance. A truncated trailing frame is treated as end-of-file, while a corrupted Arrow batch can be skipped; startup may still activate with an event missing. The journal is reopened for append without removing a torn tail, so later entries may become unreachable during replay.
+Accepted events are synchronously written to the **Event Journal** and fsynced before they are queued. Fsync is always enabled and cannot be disabled through configuration. On restart, `Recovery` replays journal entries and commits recovered events to block storage before the ordering service becomes active. An incomplete final frame in the active journal is truncated before the file is reopened for append. A complete frame with corrupt Arrow data fails recovery, and replay, certification, or block-processing errors leave the service in `MAINTENANCE` rather than activating with events missing.
+
+The `GET /api/ledger/ready` endpoint returns HTTP 200 only when every registered Sub-Chain's Ordering Service is `ACTIVE`; it returns HTTP 503 while any service is recovering or in maintenance.
 
 ### 2. Batching Strategy
 To optimize performance, Ordering Service does not create a block for each individual event but uses batching:

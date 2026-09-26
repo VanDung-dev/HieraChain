@@ -16,8 +16,17 @@ deployment.
 service. Cơ chế này bảo vệ sự kiện khi ứng dụng crash hoặc hệ điều hành tắt đột
 ngột.
 
-Journal sử dụng định dạng ghi tiếp bền vững và cung cấp khả năng replay để xây
-dựng lại luồng sự kiện đang chờ sau khi restart.
+Mỗi event được ghi nối tiếp và fsync đồng bộ trước khi đưa vào hàng đợi. Fsync
+luôn được bật và không thể tắt qua cấu hình. Khi khởi động, recovery replay các
+entry journal và ghi event đã khôi phục vào block storage trước khi Ordering
+Service hoạt động. Frame cuối chưa hoàn chỉnh trong journal đang hoạt động sẽ
+bị cắt bỏ trước khi ghi entry mới. Frame hoàn chỉnh nhưng chứa Arrow data lỗi
+khiến recovery thất bại; lỗi replay, chứng thực hoặc xử lý block giữ Ordering
+Service ở `MAINTENANCE` cho đến khi recovery thành công.
+
+Trong lúc khởi động, kiểm tra `GET /api/ledger/ready`. Endpoint trả HTTP 200 khi
+Ordering Service của mọi Sub-Chain đã đăng ký ở trạng thái `ACTIVE`, và HTTP
+503 khi còn service đang recovery hoặc ở trạng thái maintenance.
 
 ```python
 from hierachain.error_mitigation.journal import TransactionJournal

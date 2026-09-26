@@ -15,8 +15,18 @@ deployment responsibilities.
 `TransactionJournal` records pending events before they enter the ordering
 service. This protects events from application crashes or abrupt shutdowns.
 
-The journal uses a durable append-only format and exposes replay support for
-rebuilding the pending event stream after restart.
+Each event is synchronously appended and fsynced before it is queued. Fsync is
+always enabled and cannot be disabled through configuration. On startup,
+recovery replays journal entries and commits recovered events to block storage
+before the Ordering Service becomes active. An incomplete final frame in the
+active journal is truncated before new entries are appended. A complete frame
+with corrupt Arrow data fails recovery; replay, certification, or
+block-processing errors keep the Ordering Service in `MAINTENANCE` until
+recovery succeeds.
+
+Check `GET /api/ledger/ready` during startup. It returns HTTP 200 when every
+registered Sub-Chain's Ordering Service is `ACTIVE`, and HTTP 503 while any
+service is recovering or in maintenance.
 
 ```python
 from hierachain.error_mitigation.journal import TransactionJournal
