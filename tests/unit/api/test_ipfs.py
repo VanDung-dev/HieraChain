@@ -9,6 +9,10 @@ Usage:
 """
 
 import json
+import os
+
+import pytest
+
 from hierachain.api.storage.encryption import AESEncryption, EncryptionError
 from hierachain.api.storage.ipfs_client import IPFSClient, IPFSError
 
@@ -106,15 +110,17 @@ def test_ipfs_client():
     print("Testing IPFS Client")
     print("=" * 60)
 
-    try:
+    with IPFSClient(auto_pin=True) as client:
         # Create client
         print("\n[Test 1] Creating IPFS client")
-        client = IPFSClient()
         print("  ✅ Client created")
 
         # Check daemon version
         print("\n[Test 2] Checking IPFS daemon version")
-        version = client.get_daemon_version()
+        try:
+            version = client.get_daemon_version()
+        except IPFSError as exc:
+            pytest.skip(f"IPFS daemon is unavailable: {exc}")
         print(f"  IPFS Version: {version.get('Version', 'unknown')}")
         print("  ✅ Connected to IPFS daemon")
 
@@ -189,10 +195,16 @@ def test_ipfs_client():
         # List pins
         pins = client.list_pins()
         print(f"  Total pinned items: {len(pins)}")
+        assert cid in pins, f"Auto-pinned CID missing from pin list: {cid}"
 
         # Check if available
         is_avail = client.is_available(cid)
         print(f"  CID {cid[:12]}... is available: {is_avail}")
+        assert is_avail
+
+        with IPFSClient(auto_pin=False) as no_pin_client:
+            unpinned = no_pin_client.upload_bytes(os.urandom(32), encrypt=False)
+            assert unpinned["cid"] not in no_pin_client.list_pins()
 
         print("  ✅ Pin management working")
 
@@ -204,15 +216,6 @@ def test_ipfs_client():
         print("\n" + "=" * 60)
         print("All IPFS tests passed! ✅")
         print("=" * 60)
-
-    except IPFSError as e:
-        print(f"\n❌ IPFS Error: {e}")
-        print("\nMake sure IPFS daemon is running:")
-        print("  $ ipfs daemon")
-    except Exception as e:
-        print(f"\n❌ Unexpected error: {e}")
-        import traceback
-        traceback.print_exc()
 
 
 def main():
