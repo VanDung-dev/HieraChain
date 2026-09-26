@@ -2,13 +2,16 @@
 Unit tests for PostgreSQL adapter.
 """
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
 
-from hierachain.adapters.database.postgres_adapter import PostgresAdapter
 from hierachain.adapters.database import PostgresAdapter as ExportedPostgresAdapter
+from hierachain.adapters.database.postgres_adapter import PostgresAdapter
+from hierachain.consensus.ordering.storage import _block_from_dict
 from hierachain.core import Blockchain
+from hierachain.core.block import Block
 
 
 @pytest.fixture(autouse=True)
@@ -98,6 +101,99 @@ def test_save_block_with_mock_conn():
     assert len(mock_cursor.executemany.call_args.args[1]) == 2
     assert mock_cursor.execute.call_args_list[2].args[1][7] == '{"merkle_root":"mrk_123"}'
     mock_conn.commit.assert_called_once()
+
+
+def test_block_event_round_trip_preserves_full_event_payload():
+    """PostgreSQL block recovery restores saved events and their Merkle root."""
+    adapter = PostgresAdapter(
+        database_url="postgresql://user:pass@localhost:5432/testdb"
+    )
+    cursor = MagicMock()
+    conn = MagicMock()
+    conn.cursor.return_value = cursor
+    events = [
+        {
+            "event_id": "ev-full",
+            "entity_id": "ent-full",
+            "event": "update",
+            "timestamp": 1234567890.0,
+            "data": {"version": 2},
+            "details": {"state": "ready"},
+            "details_cid": "cid:details-1",
+            "details_nonce": "nonce-1",
+            "signature": "sig-1",
+            "sender_id": "user-1",
+            "submitted_by": "service-1",
+        },
+        {
+            "event_id": "ev-legacy",
+            "entity_id": "ent-legacy",
+            "event": "create",
+            "timestamp": 1234567891.0,
+            "data": {"key": "value"},
+        },
+    ]
+    block = Block(index=1, timestamp=1234567890.0, previous_hash="prev", events=events)
+    block_data = {
+        "chain_name": "TestPGChain",
+        "index": block.index,
+        "hash": block.hash,
+        "previous_hash": block.previous_hash,
+        "timestamp": block.timestamp,
+        "nonce": block.nonce,
+        "events": block.to_event_list(),
+        "metadata": {"merkle_root": block.merkle_root},
+    }
+
+    adapter._execute_save_block(conn, block_data)
+    saved_rows = cursor.executemany.call_args.args[1]
+    assert json.loads(saved_rows[0][6]) == events[0]
+    assert saved_rows[0][7] == "service-1"
+
+    # Cover both JSONB objects and drivers that return JSON text.
+    cursor.fetchall.return_value = [
+        {
+            "chain_name": row[0],
+            "block_hash": row[1],
+            "event_id": row[2],
+            "entity_id": row[3],
+            "event_type": row[4],
+            "timestamp": row[5],
+            "data": json.loads(row[6]) if row[2] == "ev-full" else row[6],
+        }
+        for row in saved_rows
+    ]
+    cursor.fetchone.return_value = {
+        "index": 1,
+        "hash": block.hash,
+        "previous_hash": block.previous_hash,
+        "timestamp": block_data["timestamp"],
+        "nonce": block.nonce,
+        "metadata_json": {"merkle_root": block.merkle_root},
+    }
+    fetched = adapter._execute_get_block_by_index(cursor, 1, "TestPGChain")
+
+    assert fetched["events"] == events
+    restored = _block_from_dict(fetched)
+    assert restored.to_event_list() == events
+    assert restored.calculate_merkle_root() == block.merkle_root
+
+
+def test_get_event_by_id_decodes_jsonb_object():
+    cursor = MagicMock()
+    event_data = {"event_id": "ev-jsonb", "entity_id": "ent-jsonb", "event": "create"}
+    cursor.fetchone.return_value = {
+        "chain_name": "TestPGChain",
+        "entity_id": "ent-jsonb",
+        "event_type": "create",
+        "timestamp": 1234567890.0,
+        "data": event_data,
+    }
+
+    event = PostgresAdapter._execute_get_event_by_id(cursor, "ev-jsonb")
+
+    assert event is not None
+    assert event["data"] == event_data
 
 
 def test_get_block_by_index_returns_events_with_base_contract():
