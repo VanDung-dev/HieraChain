@@ -11,6 +11,21 @@ from typing import Any
 import orjson
 
 
+def serialize_event_payload(event: dict[str, Any]) -> bytes:
+    """Serialize the semantic event fields used in both storage and Merkle leaves."""
+    payload = {}
+    for key, value in event.items():
+        if isinstance(value, (bytes, bytearray)):
+            continue
+        if key == "details" and isinstance(value, list):
+            try:
+                value = dict(value)
+            except (TypeError, ValueError):
+                pass
+        payload[key] = value
+    return orjson.dumps(payload, option=orjson.OPT_SORT_KEYS)
+
+
 def compute_hash_standalone(data_string: str) -> str:
     return hashlib.sha256(data_string.encode()).hexdigest()
 
@@ -18,7 +33,7 @@ def compute_hash_standalone(data_string: str) -> str:
 def compute_leaves_from_events_standalone(events: list[dict[str, Any]]) -> list[str]:
     leaves = []
     for event in events:
-        data_bytes = orjson.dumps(event, option=orjson.OPT_SORT_KEYS)
+        data_bytes = serialize_event_payload(event)
         leaves.append(hashlib.sha256(data_bytes).hexdigest())
     return leaves
 

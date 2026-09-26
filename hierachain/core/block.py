@@ -16,7 +16,7 @@ import orjson
 import pyarrow as pa
 import pyarrow.compute as pc
 
-from hierachain.core.merkle_tree import MerkleTree
+from hierachain.core.merkle_tree import MerkleTree, serialize_event_payload
 from hierachain.core.utils import generate_hash
 
 logger = logging.getLogger(__name__)
@@ -215,31 +215,6 @@ def _process_event_details(details: Any) -> list[tuple[str, str]]:
     return []
 
 
-def _should_exclude_from_payload(key: str, value: Any) -> bool:
-    """Check if a field should be excluded from the JSON payload."""
-    return isinstance(value, (bytes, bytearray)) or key == 'data'
-
-
-def _prepare_payload_value(key: str, value: Any) -> Any:
-    """Prepare a value for JSON serialization."""
-    if key == 'details' and isinstance(value, list):
-        try:
-            return dict(value)
-        except (TypeError, ValueError):
-            return value
-    return value
-
-
-def _serialize_event_payload(event: dict[str, Any]) -> bytes:
-    """Serialize the event payload to binary JSON, cleaning binary/data fields."""
-    payload = {
-        k: _prepare_payload_value(k, v)
-        for k, v in event.items()
-        if not _should_exclude_from_payload(k, v)
-    }
-    return orjson.dumps(payload, option=orjson.OPT_SORT_KEYS)
-
-
 def _convert_events_to_arrow(events_list: list[dict[str, Any]]) -> pa.Table:
     """Convert list of dicts to Arrow Table."""
     processed, _ = _prepare_events(events_list)
@@ -258,7 +233,7 @@ def _prepare_events(events_list: list[dict[str, Any]]) -> tuple[list[dict[str, A
     for e in events_list:
         ev = e.copy()
         ev['details'] = _process_event_details(ev.get('details'))
-        data = _serialize_event_payload(e)
+        data = serialize_event_payload(e)
         ev['data'] = data
         processed.append(ev)
         data_list.append(data)
