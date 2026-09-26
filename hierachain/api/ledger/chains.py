@@ -153,7 +153,11 @@ def _register_new_sub_chain(
     manager: HierarchyManager, safe_chain_name: str, safe_chain_type: str
 ) -> JSONResponse | None:
     """Attempts to add a new sub-chain to the manager. Returns conflict response if it exists."""
-    sub_chain = SubChain(name=safe_chain_name, domain_type=safe_chain_type)
+    sub_chain = SubChain(
+        name=safe_chain_name,
+        domain_type=safe_chain_type,
+        node_identity=manager.node_identity,
+    )
     try:
         manager.add_sub_chain(safe_chain_name, sub_chain)
         return None

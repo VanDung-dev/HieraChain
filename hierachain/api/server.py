@@ -44,6 +44,7 @@ p2p_client: NetworkClient | None = None
 EXEMPT_PATHS = {
     "/",
     "/api/ledger/health",
+    "/api/ledger/ready",
     "/api/business/health",
     "/api/admin/status",
     "/api/admin/verify-identity",

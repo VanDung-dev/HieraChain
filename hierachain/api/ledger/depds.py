@@ -4,7 +4,9 @@ Lazy-initialised HierarchyManager and EntityTracer shared
 across all Ledger endpoint modules.
 """
 
-from fastapi import Depends
+import threading
+
+from fastapi import Depends, HTTPException, status
 
 from hierachain.domains.utils.entity_tracer import EntityTracer
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
@@ -12,13 +14,22 @@ from hierachain.security.identity_loader import load_node_identity
 
 _hierarchy_manager: HierarchyManager | None = None
 _entity_tracer: EntityTracer | None = None
+_hierarchy_manager_lock = threading.Lock()
 
 
 def get_hierarchy_manager() -> HierarchyManager:
     global _hierarchy_manager
     if _hierarchy_manager is None:
-        node_identity = load_node_identity()
-        _hierarchy_manager = HierarchyManager(node_identity=node_identity)
+        with _hierarchy_manager_lock:
+            if _hierarchy_manager is None:
+                try:
+                    node_identity = load_node_identity()
+                    _hierarchy_manager = HierarchyManager(node_identity=node_identity)
+                except Exception as exc:
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="Hierarchy recovery is not ready",
+                    ) from exc
     assert _hierarchy_manager is not None
     return _hierarchy_manager
 
