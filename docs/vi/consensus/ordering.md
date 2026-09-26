@@ -46,7 +46,7 @@ graph TD
 ## Các tính năng cốt lõi
 
 ### 1. Persistence & Durability (Tính bền vững)
-Sự kiện được ghi vào **Event Journal** trước khi đưa vào hàng đợi. `HRC_JOURNAL_FSYNC` mặc định bật fsync; tắt biến này làm giảm độ bền dữ liệu khi mất điện. Khi khởi động lại, `Recovery` replay journal để khôi phục trạng thái chờ. Entry hỏng hoặc không đọc được có thể khiến Recovery dừng và Ordering Service giữ trạng thái `MAINTENANCE`, không nhận event mới.
+Sự kiện được ghi vào **Event Journal** và fsync trước khi xử lý. Fsync luôn được bật và không thể tắt qua cấu hình. Khi khởi động lại, `Recovery` replay các entry journal trước khi Ordering Service hoạt động. Lỗi replay khiến service giữ trạng thái `MAINTENANCE`. Frame cuối bị cắt được xem như hết file, còn Arrow batch hỏng có thể bị bỏ qua; service vẫn có thể hoạt động dù thiếu event. Journal được mở lại ở chế độ nối thêm mà không xóa phần đuôi bị lỗi, nên các entry ghi sau đó có thể không được đọc lại khi replay.
 
 ### 2. Batching Strategy
 Để tối ưu hiệu năng, Ordering Service không đóng khối cho từng sự kiện đơn lẻ mà sử dụng chiến lược gom nhóm:

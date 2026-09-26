@@ -52,8 +52,8 @@ docker compose -f docker/docker-compose.benchmark.yml up --build --abort-on-cont
 ```
 
 Override the workload with `BENCHMARK_EVENTS`, `BENCHMARK_BATCH_SIZE`,
-`BENCHMARK_CPUS`, `BENCHMARK_MEMORY`, or set `HRC_JOURNAL_FSYNC=false` for a
-non-durable comparison. Run `down -v` before a clean-database comparison;
+`BENCHMARK_CPUS`, and `BENCHMARK_MEMORY`. Journal fsync always stays enabled.
+Run `down -v` before a clean-database comparison;
 clean any Compose leftovers with:
 
 ```bash
@@ -70,8 +70,8 @@ docker compose -f docker/docker-compose.test.yml \
   --profile docker-test run --rm docker-tests
 ```
 
-The profile starts an isolated PostgreSQL 16 service, stores the append-only
-journal under `/app/data`, and uses `HRC_JOURNAL_FSYNC=true`. Override
+The profile starts an isolated PostgreSQL 16 service and stores the append-only
+journal under `/app/data`. Journal fsync is always enabled. Override
 `DOCKER_TEST_CPUS` or
 `DOCKER_TEST_MEMORY` to change the container limit.
 

@@ -46,7 +46,7 @@ graph TD
 ## Core Features
 
 ### 1. Persistence & Durability
-Accepted events are written to the **Event Journal** before processing. `HRC_JOURNAL_FSYNC` enables fsync by default; disabling it weakens durability during a sudden power loss. On restart, `Recovery` replays the journal to restore pending state. An unreadable or invalid entry can stop recovery and leave the service in maintenance, where it rejects new events.
+Accepted events are written to the **Event Journal** and fsynced before processing. Fsync is always enabled and cannot be disabled through configuration. On restart, `Recovery` replays journal entries before the ordering service becomes active. A replay error leaves it in maintenance. A truncated trailing frame is treated as end-of-file, while a corrupted Arrow batch can be skipped; startup may still activate with an event missing. The journal is reopened for append without removing a torn tail, so later entries may become unreachable during replay.
 
 ### 2. Batching Strategy
 To optimize performance, Ordering Service does not create a block for each individual event but uses batching:

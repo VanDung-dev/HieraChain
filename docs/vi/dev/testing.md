@@ -52,8 +52,8 @@ docker compose -f docker/docker-compose.benchmark.yml up --build --abort-on-cont
 ```
 
 Có thể đổi workload bằng `BENCHMARK_EVENTS`, `BENCHMARK_BATCH_SIZE`,
-`BENCHMARK_CPUS`, `BENCHMARK_MEMORY`, hoặc đặt `HRC_JOURNAL_FSYNC=false` để
-so sánh chế độ không bền vững. Hãy chạy `down -v` trước khi cần benchmark với
+`BENCHMARK_CPUS` và `BENCHMARK_MEMORY`. Fsync journal luôn được bật.
+Hãy chạy `down -v` trước khi cần benchmark với
 database sạch; xóa phần còn lại của Compose bằng:
 
 ```bash
@@ -70,8 +70,8 @@ docker compose -f docker/docker-compose.test.yml \
   --profile docker-test run --rm docker-tests
 ```
 
-Profile này khởi động PostgreSQL 16 riêng, lưu journal append-only tại
-`/app/data` và dùng `HRC_JOURNAL_FSYNC=true`. Có thể đổi giới hạn container bằng
+Profile này khởi động PostgreSQL 16 riêng và lưu journal append-only tại
+`/app/data`. Fsync journal luôn được bật. Có thể đổi giới hạn container bằng
 `DOCKER_TEST_CPUS` hoặc `DOCKER_TEST_MEMORY`.
 
 ## Kiểm thử Áp lực (Stress Testing)
