@@ -9,13 +9,11 @@ rapid shutdowns.
 
 import logging
 import os
-import queue
 import re
 import struct
 import threading
 import time
 from collections.abc import Generator
-from concurrent.futures import Future
 from pathlib import Path
 from typing import Any, BinaryIO
 
@@ -23,13 +21,11 @@ import orjson
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from hierachain.config.settings import get_settings
 from hierachain.core.block import EVENT_SCHEMA as _EVENT_SCHEMA
 
 logger = logging.getLogger(__name__)
 
 _JOURNAL_MAX_FILE_SIZE = 100 * 1024 * 1024
-_JOURNAL_QUEUE_MAXSIZE = 10000
 
 
 def _validate_path_component(comp: str) -> None:
@@ -348,30 +344,12 @@ class TransactionJournal:
         self._journal_file: BinaryIO | None = None
         self._schema = _EVENT_SCHEMA
         self._lock = threading.Lock()
-        self._async_write = not get_settings().JOURNAL_FSYNC
-        self._write_queue: queue.Queue[
-            tuple[dict[str, Any], Future[bool]]
-        ] | None = None
-        self._writer_thread = None
-        self._stop_writer = None
-
-        if self._async_write:
-            self._write_queue = queue.Queue(maxsize=_JOURNAL_QUEUE_MAXSIZE)
-            self._stop_writer = threading.Event()
-            self._writer_thread = threading.Thread(
-                target=self._background_writer,
-                daemon=True,
-                name="HRC_JournalWriter"
-            )
 
         # Ensure directory exists
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
         # Open the active log file
         self._open_journal()
-        
-        if self._async_write and self._writer_thread:
-            self._writer_thread.start()
 
     def _open_journal(self) -> None:
         """Open the active Arrow IPC journal for append-only writes."""
@@ -437,28 +415,6 @@ class TransactionJournal:
             logger.error("Schema conversion error for event %s: %s", event_id, e)
             raise
 
-    def _background_writer(self) -> None:
-        """Background thread target to write events sequentially from the queue."""
-        if self._stop_writer is None or self._write_queue is None:
-            return
-        while not self._stop_writer.is_set() or not self._write_queue.empty():
-            try:
-                # Use a short timeout so we can periodically check self._stop_writer
-                event_data, result = self._write_queue.get(timeout=0.05)
-            except queue.Empty:
-                continue
-
-            written = False
-            try:
-                written = self._write_event_to_file(event_data)
-            except Exception as e:
-                logger.error("Error in background journal writer: %s", e)
-            finally:
-                try:
-                    result.set_result(written)
-                finally:
-                    self._write_queue.task_done()
-
     def _write_event_to_file(self, event_data: dict[str, Any]) -> bool:
         """Perform actual file write operations."""
         with self._lock:
@@ -475,36 +431,24 @@ class TransactionJournal:
                 self._journal_file.write(struct.pack("<I", len(payload)))
                 self._journal_file.write(payload)
                 self._journal_file.flush()
-                if get_settings().JOURNAL_FSYNC:
-                    os.fsync(self._journal_file.fileno())
+                os.fsync(self._journal_file.fileno())
                 return True
             except (OSError, pa.ArrowException) as e:
                 logger.critical("CRITICAL: Failed to write to transaction journal: %s", e)
                 return False
 
     def flush(self) -> None:
-        """Wait for all pending log entries in the queue to be written."""
-        if self._async_write and self._write_queue:
-            self._write_queue.join()
+        """Flush the journal file and synchronize it to disk."""
         with self._lock:
             if self._journal_file is not None:
                 try:
                     self._journal_file.flush()
-                    if get_settings().JOURNAL_FSYNC:
-                        os.fsync(self._journal_file.fileno())
+                    os.fsync(self._journal_file.fileno())
                 except Exception as ex:
                     logger.debug("Error flushing journal on flush: %s", ex)
 
     def log_event(self, event_data: dict[str, Any]) -> bool:
-        """Write an event and return whether the journal write completed."""
-        if self._async_write and self._write_queue is not None:
-            result: Future[bool] = Future()
-            try:
-                self._write_queue.put_nowait((event_data, result))
-            except queue.Full:
-                return self._write_event_to_file(event_data)
-            # ponytail: per-event wait; batch writes if measured throughput needs it.
-            return result.result()
+        """Synchronously write and fsync an event before returning."""
         return self._write_event_to_file(event_data)
 
     def _get_journal_files(self) -> list[Path]:
@@ -559,10 +503,6 @@ class TransactionJournal:
 
     def close(self):
         """Close the journal file handle."""
-        if self._async_write and self._writer_thread and self._stop_writer is not None:
-            self._stop_writer.set()
-            self._writer_thread.join(timeout=5.0)
-            self._writer_thread = None
         with self._lock:
             self._close_writer()
 
@@ -576,15 +516,6 @@ class TransactionJournal:
                 except OSError:
                     pass
             self._open_journal()
-            if self._async_write:
-                self._write_queue = queue.Queue(maxsize=_JOURNAL_QUEUE_MAXSIZE)
-                self._stop_writer = threading.Event()
-                self._writer_thread = threading.Thread(
-                    target=self._background_writer,
-                    daemon=True,
-                    name="HRC_JournalWriter"
-                )
-                self._writer_thread.start()
             logger.info("Transaction journal cleared (Arrow format).")
         except OSError as e:
             logger.error("Failed to clear journal: %s", e)

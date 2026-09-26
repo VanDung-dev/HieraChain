@@ -101,10 +101,6 @@ class Settings:
     # Hard limit for DoS protection
     EVENT_POOL_MAX_SIZE = int(os.getenv("HRC_EVENT_POOL_MAX_SIZE", "10000"))
 
-    # Whether to synchronously sync journal to disk (fsync)
-    # Recommended True for production, False for heavy stress testing on slow disks
-    JOURNAL_FSYNC = os.getenv("HRC_JOURNAL_FSYNC", "true").lower() == "true"
-
     # % RAM usage for emergency flush (e.g., 95.0 for 95%)
     RAM_CRITICAL_THRESHOLD = float(os.getenv("HRC_RAM_CRITICAL_THRESHOLD", "95.0"))
     
