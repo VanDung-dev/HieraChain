@@ -67,6 +67,33 @@ ensure_product_env() {
   fi
 }
 
+read_configured_ipfs_key() {
+  local env_file="$1" line value parsed_key="" seen=false
+  [ -f "$env_file" ] || return 1
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    [[ "$line" =~ ^[[:space:]]*(export[[:space:]]+)?IPFS_ENCRYPTION_KEY[[:space:]]*=[[:space:]]*(.*)$ ]] || continue
+    seen=true
+    value="${BASH_REMATCH[2]}"
+    value="${value%$'\r'}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+
+    if [[ "$value" =~ ^\"([[:xdigit:]]{64})\"([[:space:]]*#.*)?$ ]] \
+      || [[ "$value" =~ ^\'([[:xdigit:]]{64})\'([[:space:]]*#.*)?$ ]] \
+      || [[ "$value" =~ ^([[:xdigit:]]{64})([[:space:]]+#.*)?$ ]]; then
+      parsed_key="${BASH_REMATCH[1]}"
+    elif [[ -z "$value" || "$value" =~ ^#.*$ ]]; then
+      parsed_key=""
+    else
+      return 2
+    fi
+  done < "$env_file"
+
+  [ "$seen" = true ] || return 1
+  printf '%s' "$parsed_key"
+}
+
 ensure_keys() {
   if [ ! -f "$IPFS_DIR/swarm.key" ]; then
     mkdir -p "$IPFS_DIR"
@@ -75,10 +102,47 @@ ensure_keys() {
     echo "  swarm.key generated"
   fi
   if [ -z "${IPFS_ENCRYPTION_KEY:-}" ]; then
-    IPFS_ENCRYPTION_KEY=$(openssl rand -hex 32)
-    export IPFS_ENCRYPTION_KEY
-    echo "  IPFS_ENCRYPTION_KEY generated"
+    local configured_key configured_status env_file
+    for env_file in ".env" "docker/.env"; do
+      if [ -f "$env_file" ]; then
+        if configured_key=$(read_configured_ipfs_key "$env_file"); then
+          if [ -n "$configured_key" ]; then
+            IPFS_ENCRYPTION_KEY="$configured_key"
+            echo "  IPFS_ENCRYPTION_KEY loaded from $env_file"
+            break
+          fi
+        else
+          configured_status=$?
+          if [ "$configured_status" -eq 2 ]; then
+            echo "ERROR: IPFS_ENCRYPTION_KEY in $env_file must contain exactly 64 hexadecimal characters (32 bytes)"
+            exit 1
+          fi
+        fi
+      fi
+    done
   fi
+  if [ -z "${IPFS_ENCRYPTION_KEY:-}" ]; then
+    local encryption_key_file="$IPFS_DIR/encryption.key"
+    mkdir -p "$IPFS_DIR"
+    if [ ! -f "$encryption_key_file" ]; then
+      local generated_key
+      generated_key=$(openssl rand -hex 32)
+      # Create the secret once, without replacing a key created by a concurrent setup.
+      (umask 077; set -o noclobber; printf '%s\n' "$generated_key" > "$encryption_key_file") 2>/dev/null || true
+      if [ ! -f "$encryption_key_file" ]; then
+        echo "ERROR: could not persist IPFS encryption key to $encryption_key_file"
+        exit 1
+      fi
+    fi
+    chmod 600 "$encryption_key_file"
+    IFS= read -r IPFS_ENCRYPTION_KEY < "$encryption_key_file" || true
+    echo "  IPFS_ENCRYPTION_KEY loaded from $encryption_key_file"
+  fi
+  if [[ ! "$IPFS_ENCRYPTION_KEY" =~ ^[[:xdigit:]]{64}$ ]]; then
+    echo "ERROR: IPFS_ENCRYPTION_KEY must contain exactly 64 hexadecimal characters (32 bytes)"
+    exit 1
+  fi
+  export IPFS_ENCRYPTION_KEY
   if [ -z "${EXPLORER_TOKEN:-}" ]; then
     local tkn
     tkn=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 8 || echo "default")
@@ -368,7 +432,7 @@ print_setup_summary() {
   done
 
   echo ""
-  echo "Encryption Key: ${IPFS_ENCRYPTION_KEY:0:16}..."
+  echo "Encryption Key: configured (hidden)"
   echo ""
   echo "Next steps:"
   echo "  Stress test: bash docker/hierachain.sh stress ${ENV} --reuse"
