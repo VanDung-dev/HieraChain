@@ -64,7 +64,6 @@ services:
       - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
-      - HRC_JOURNAL_FSYNC=${HRC_JOURNAL_FSYNC:-true}
       - HRC_BLOCK_INTERVAL=1
       - HRC_IPFS_ENABLED=true
       - HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
@@ -130,7 +129,6 @@ services:
       - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
-      - HRC_JOURNAL_FSYNC=${HRC_JOURNAL_FSYNC:-true}
       - HRC_BLOCK_INTERVAL=1
       - HRC_IPFS_ENABLED=true
       - HRC_IPFS_HOST=/dns4/ipfs-node2/tcp/5001
@@ -196,7 +194,6 @@ services:
       - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
-      - HRC_JOURNAL_FSYNC=${HRC_JOURNAL_FSYNC:-true}
       - HRC_BLOCK_INTERVAL=1
       - HRC_IPFS_ENABLED=true
       - HRC_IPFS_HOST=/dns4/ipfs-node3/tcp/5001
@@ -262,7 +259,6 @@ services:
       - HRC_HSTS_ENABLED=true
       - HRC_RATE_LIMIT=false
       - HRC_RATE_LIMIT_RPM=100000
-      - HRC_JOURNAL_FSYNC=${HRC_JOURNAL_FSYNC:-true}
       - HRC_BLOCK_INTERVAL=1
       - HRC_IPFS_ENABLED=true
       - HRC_IPFS_HOST=/dns4/ipfs-node4/tcp/5001

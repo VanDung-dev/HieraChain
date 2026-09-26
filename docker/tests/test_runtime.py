@@ -20,7 +20,6 @@ def test_container_runtime_is_explicitly_configured() -> None:
     assert os.getenv("HRC_ENV") == "test"
     assert os.getenv("HRC_STORAGE_BACKEND") == "postgres"
     assert os.getenv("DATABASE_URL", "").startswith("postgresql://")
-    assert os.getenv("HRC_JOURNAL_FSYNC") == "true"
     assert Path("/app/data").is_dir()
     assert Path("/app/log").is_dir()
 

@@ -59,7 +59,7 @@ docker compose -f docker/docker-compose.test.yml \
 
 The test profile starts an isolated PostgreSQL 16 service and checks the
 PostgreSQL adapter, journal replay, and native dependencies. It keeps the
-append-only journal under `/app/data` and sets `HRC_JOURNAL_FSYNC=true`.
+append-only journal under `/app/data`; journal fsync is always enabled.
 Override `DOCKER_TEST_CPUS` or
 `DOCKER_TEST_MEMORY` to reproduce a different container limit.
 
@@ -74,15 +74,14 @@ Run the durable single-container benchmark with the current source tree:
 docker compose -f docker/docker-compose.benchmark.yml up --build --abort-on-container-exit
 ```
 
-Override the workload or durability mode when needed:
+Override the workload when needed:
 
 ```bash
 BENCHMARK_EVENTS=20000 BENCHMARK_BATCH_SIZE=500 \
 docker compose -f docker/docker-compose.benchmark.yml run --rm throughput
-
-HRC_JOURNAL_FSYNC=false \
-docker compose -f docker/docker-compose.benchmark.yml run --rm throughput
 ```
+
+Journal fsync is always enabled during the benchmark.
 
 The benchmark uses PostgreSQL 16, a 1 CPU / 1 GiB application limit, and an
 append-only journal. Remove Compose services and anonymous volumes with:

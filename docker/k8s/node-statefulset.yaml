@@ -57,11 +57,6 @@ spec:
                 secretKeyRef:
                   name: hierachain-secrets
                   key: IPFS_ENCRYPTION_KEY
-            - name: HRC_JOURNAL_FSYNC
-              valueFrom:
-                configMapKeyRef:
-                  name: hierachain-config
-                  key: HRC_JOURNAL_FSYNC
             - name: HRC_BLOCK_INTERVAL
               valueFrom:
                 configMapKeyRef:
