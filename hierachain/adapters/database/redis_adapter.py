@@ -46,15 +46,32 @@ class RedisChainManager:
             data = {
                 "name": chain.name,
                 "chain_type": chain_type,
-                "domain_type": domain_type,
                 "created_at": _now(),
                 "updated_at": _now(),
             }
+            if domain_type is not None:
+                data["domain_type"] = domain_type
             self.client.hset(_k("chain", chain.name), mapping=data)
             return True
         except redis_mod.RedisError as e:
             logger.error("Redis store_chain failed: %s", e)
             return False
+
+    def list_chains(self) -> list[dict[str, Any]]:
+        """List persisted sub-chain metadata, propagating Redis failures."""
+        chains = []
+        for key in self.client.scan_iter(match=_k("chain", "*")):
+            suffix = key.removeprefix(_k("chain", ""))
+            if ":" in suffix:
+                continue
+            data = self.client.hgetall(key)
+            if data and data.get("chain_type") == "sub":
+                chains.append({
+                    "name": data.get("name", suffix),
+                    "chain_type": data["chain_type"],
+                    "domain_type": data.get("domain_type"),
+                })
+        return sorted(chains, key=lambda chain: chain["name"])
 
     def load_chain(self, chain_name: str) -> dict[str, Any] | None:
         try:
@@ -349,6 +366,9 @@ class RedisStorageAdapter:
 
     def store_chain(self, chain: Blockchain) -> bool:
         return self._chain_mgr.store_chain(chain)
+
+    def list_chains(self) -> list[dict[str, Any]]:
+        return self._chain_mgr.list_chains()
 
     def load_chain(self, chain_name: str) -> dict[str, Any] | None:
         return self._chain_mgr.load_chain(chain_name)

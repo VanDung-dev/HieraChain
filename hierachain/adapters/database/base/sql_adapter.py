@@ -88,12 +88,26 @@ class SQLBase(ABC):
     @staticmethod
     def _create_event_from_row(row: Any) -> dict[str, Any]:
         """Create event dictionary from a database row."""
+        raw_data = row["data"]
+        if raw_data is None or raw_data == "" or raw_data == b"":
+            data = {}
+        elif isinstance(raw_data, (str, bytes, bytearray)):
+            data = orjson.loads(raw_data)
+        else:
+            data = raw_data
+        if (
+            isinstance(data, dict)
+            and data.get("entity_id") == row["entity_id"]
+            and data.get("event", data.get("event_type")) == row["event_type"]
+            and data.get("timestamp") == row["timestamp"]
+        ):
+            return data
         return {
             "chain_name": row["chain_name"],
             "entity_id": row["entity_id"],
             "event": row["event_type"],
             "timestamp": row["timestamp"],
-            "data": orjson.loads(row["data"] or "{}"),
+            "data": data,
         }
 
     def store_chain(self, chain: Blockchain) -> bool:
@@ -147,6 +161,23 @@ class SQLBase(ABC):
             if settings.LOG_SQL_DETAIL:
                 self.logger.debug("Load chain error detail", error_type=type(e).__name__)
             return None
+
+    def list_chains(self) -> list[dict[str, Any]]:
+        """List sub-chains, propagating database failures to the caller."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT name, chain_type, domain_type FROM chains "
+                "WHERE chain_type = 'sub' ORDER BY name"
+            )
+            return [
+                {
+                    "name": row["name"],
+                    "chain_type": row["chain_type"],
+                    "domain_type": row["domain_type"],
+                }
+                for row in cursor.fetchall()
+            ]
 
     @staticmethod
     def _execute_fetch_chain_info(cursor: Any, chain_name: str) -> Any | None:
@@ -585,18 +616,9 @@ class SQLBase(ABC):
         self, index: int, chain_name: str | None = None,
     ) -> dict[str, Any] | None:
         """Retrieve a block by its integer index."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                return self._execute_get_block_by_index(cursor, index, chain_name)
-        except Exception:
-            self.logger.error(
-                "Database operation failed",
-                operation="get_block_by_index",
-                index=index,
-                chain_name=chain_name,
-            )
-            return None
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            return self._execute_get_block_by_index(cursor, index, chain_name)
 
     def _execute_get_block_by_index(
         self, cursor: Any, index: int, chain_name: str | None,
@@ -619,17 +641,9 @@ class SQLBase(ABC):
         self, chain_name: str | None = None,
     ) -> dict[str, Any] | None:
         """Retrieve the block with the highest index."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                return self._execute_get_latest_block(cursor, chain_name)
-        except Exception:
-            self.logger.error(
-                "Database operation failed",
-                operation="get_latest_block",
-                chain_name=chain_name,
-            )
-            return None
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            return self._execute_get_latest_block(cursor, chain_name)
 
     def _execute_get_latest_block(
         self, cursor: Any, chain_name: str | None,
@@ -652,17 +666,9 @@ class SQLBase(ABC):
 
     def get_event_by_id(self, event_id: str) -> dict[str, Any] | None:
         """Retrieve an event by its unique ID."""
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                return self._execute_get_event_by_id(cursor, event_id)
-        except Exception:
-            self.logger.error(
-                "Database operation failed",
-                operation="get_event_by_id",
-                event_id=event_id,
-            )
-            return None
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            return self._execute_get_event_by_id(cursor, event_id)
 
     @staticmethod
     def _execute_get_event_by_id(cursor: Any, event_id: str) -> dict[str, Any] | None:

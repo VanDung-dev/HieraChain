@@ -21,6 +21,17 @@ from hierachain.security.secure_logging import get_storage_logger
 logger = get_storage_logger()
 
 
+def _decode_jsonb(value: Any, default: Any = None) -> Any:
+    if value is None:
+        return default
+    if isinstance(value, (str, bytes, bytearray)):
+        try:
+            return orjson.loads(value)
+        except orjson.JSONDecodeError:
+            return value
+    return value
+
+
 class PostgresAdapter(SQLBase):
     """
     PostgreSQL implementation of SQLBase adapter.
@@ -137,22 +148,7 @@ class PostgresAdapter(SQLBase):
             "SELECT * FROM events WHERE block_hash = %s ORDER BY id ASC",
             (block_hash,)
         )
-        events = []
-        for row in cursor.fetchall():
-            raw_data = row["data"]
-            data = (
-                orjson.loads(raw_data)
-                if isinstance(raw_data, (str, bytes, bytearray))
-                else raw_data or {}
-            )
-            events.append({
-                "chain_name": row["chain_name"],
-                "entity_id": row["entity_id"],
-                "event": row["event_type"],
-                "timestamp": row["timestamp"],
-                "data": data,
-            })
-        return events
+        return [self._create_event_from_row(row) for row in cursor.fetchall()]
 
     def _execute_query_events_filter(
         self,
@@ -318,11 +314,6 @@ class PostgresAdapter(SQLBase):
 
         event_rows = []
         for event in block_data.get("events", []):
-            data_json = (
-                orjson.dumps(event.get("data", {})).decode()
-                if isinstance(event.get("data"), (dict, list))
-                else event.get("data")
-            )
             event_rows.append(
                 (
                     chain_name,
@@ -331,8 +322,8 @@ class PostgresAdapter(SQLBase):
                     event.get("entity_id"),
                     event.get("event") or event.get("event_type", "unknown"),
                     event.get("timestamp", time.time()),
-                    data_json,
-                    event.get("sender_id"),
+                    orjson.dumps(event).decode(),
+                    event.get("submitted_by") or event.get("sender_id"),
                     time.time(),
                 )
             )
@@ -391,7 +382,7 @@ class PostgresAdapter(SQLBase):
             "entity_id": row["entity_id"],
             "event": row["event_type"],
             "timestamp": row["timestamp"],
-            "data": orjson.loads(row["data"] or "{}"),
+            "data": _decode_jsonb(row["data"], {}),
         }
 
     @staticmethod
