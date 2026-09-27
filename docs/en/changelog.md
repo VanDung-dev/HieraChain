@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (17)"
+??? warning "Breaking Changes (18)"
+
+    * 2026-09-27
+
+        * **Storage (IPFS Encryption Key)**: `create_ipfs_client_from_env()` (`hierachain/api/storage/ipfs_client.py`) now requires `HRC_IPFS_ENCRYPTION_KEY` to be exactly 64 hexadecimal characters (32 bytes) and raises `IPFSError` otherwise — it no longer falls back to generating an ephemeral key with a warning, so deployments without a stable key fail fast at startup instead of producing undecryptable payloads.
 
     * 2026-09-26
 
@@ -48,7 +52,11 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (13)"
+??? note "Improvements (14)"
+
+    * 2026-09-27
+
+        * **Storage (IPFS Async & Auto-pin)**: `upload_to_ipfs_background()`/`download_from_ipfs()` (`hierachain/api/storage/endpoint_helpers.py`) now offload blocking IPFS calls via `asyncio.to_thread` to avoid stalling the event loop; `IPFSClient` upload (`hierachain/api/storage/ipfs_client.py`) passes auto-pin as an `add` query parameter instead of a follow-up `pin()` call.
 
     * 2026-09-26
 
@@ -78,7 +86,11 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (8)"
+??? warning "Fix (9)"
+
+    * 2026-09-27
+
+        * **Storage (CID Resolution)**: `resolve_cid_field()` (`hierachain/api/storage/endpoint_helpers.py`) now re-raises CID resolution failures instead of silently returning the original unresolved data, preventing downstream consumers from operating on un-resolved payloads.
 
     * 2026-09-26
 
