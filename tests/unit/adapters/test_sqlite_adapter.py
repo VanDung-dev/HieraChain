@@ -35,6 +35,8 @@ def test_initialization(adapter):
     """Test that adapter initializes correctly."""
     assert adapter.database_path is not None
     assert adapter.database_path.endswith(".db")
+    with adapter._get_connection() as connection:
+        assert connection.execute("PRAGMA synchronous").fetchone()[0] == 2
 
 
 def test_store_and_load_chain(adapter):
@@ -84,6 +86,46 @@ def test_get_entity_events(adapter):
     events = adapter.get_entity_events("SYSTEM", chain_name)
     assert events is not None
     assert isinstance(events, list)
+
+
+def test_get_events_by_filter_uses_existing_event_columns(adapter):
+    chain_name = "event-filter-chain"
+    block = Block(
+        index=1,
+        timestamp=1234567890.0,
+        previous_hash="genesis",
+        events=[{
+            "entity_id": "entity-filter",
+            "event": "updated",
+            "timestamp": 1234567890.0,
+            "data": {"status": "ready"},
+        }],
+    )
+    assert adapter.save_block({
+        "chain_name": chain_name,
+        "index": block.index,
+        "hash": block.hash,
+        "previous_hash": block.previous_hash,
+        "timestamp": block.timestamp,
+        "nonce": block.nonce,
+        "events": block.to_event_list(),
+    })
+
+    by_entity = adapter.get_entity_events("entity-filter", chain_name)
+    by_type = adapter.get_events_by_type("updated", chain_name)
+
+    assert len(by_entity) == len(by_type) == 1
+    assert by_entity[0]["entity_id"] == "entity-filter"
+    assert by_type[0]["event"] == "updated"
+
+
+def test_get_events_by_filter_surfaces_query_errors(adapter):
+    with adapter._get_connection() as connection:
+        connection.execute("DROP TABLE events")
+        connection.commit()
+
+    with pytest.raises(RuntimeError, match="get_entity_events failed"):
+        adapter.get_entity_events("entity-filter", "missing-table-chain")
 
 
 def test_proof_storage(adapter):
@@ -161,6 +203,8 @@ def test_save_fetch_block_preserves_events_and_merkle_root(adapter) -> None:
         }
     ]
     block = Block(index=1, timestamp=1234567890.0, previous_hash="prev", events=events)
+    chain = Blockchain("round-trip-chain")
+    chain._sign_block(block)
     block_data = {
         "chain_name": "round-trip-chain",
         "index": block.index,
@@ -169,7 +213,11 @@ def test_save_fetch_block_preserves_events_and_merkle_root(adapter) -> None:
         "timestamp": block.timestamp,
         "nonce": block.nonce,
         "events": block.to_event_list(),
-        "metadata": {"merkle_root": block.merkle_root},
+        "metadata": {
+            "merkle_root": block.merkle_root,
+            "creator_id": block.creator_id,
+            "signature": block.signature,
+        },
     }
 
     assert adapter.save_block(block_data)
@@ -177,7 +225,7 @@ def test_save_fetch_block_preserves_events_and_merkle_root(adapter) -> None:
 
     assert fetched is not None
     assert fetched["events"] == events
-    restored = _block_from_dict(fetched)
+    restored = _block_from_dict(fetched, chain.trusted_public_keys)
     assert restored.to_event_list() == events
     assert restored.calculate_merkle_root() == block.merkle_root
 

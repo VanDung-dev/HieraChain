@@ -3,6 +3,7 @@ Unit tests for PostgreSQL adapter.
 """
 
 import json
+from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
@@ -134,6 +135,8 @@ def test_block_event_round_trip_preserves_full_event_payload():
         },
     ]
     block = Block(index=1, timestamp=1234567890.0, previous_hash="prev", events=events)
+    chain = Blockchain("TestPGChain")
+    chain._sign_block(block)
     block_data = {
         "chain_name": "TestPGChain",
         "index": block.index,
@@ -142,7 +145,11 @@ def test_block_event_round_trip_preserves_full_event_payload():
         "timestamp": block.timestamp,
         "nonce": block.nonce,
         "events": block.to_event_list(),
-        "metadata": {"merkle_root": block.merkle_root},
+        "metadata": {
+            "merkle_root": block.merkle_root,
+            "creator_id": block.creator_id,
+            "signature": block.signature,
+        },
     }
 
     adapter._execute_save_block(conn, block_data)
@@ -169,12 +176,12 @@ def test_block_event_round_trip_preserves_full_event_payload():
         "previous_hash": block.previous_hash,
         "timestamp": block_data["timestamp"],
         "nonce": block.nonce,
-        "metadata_json": {"merkle_root": block.merkle_root},
+        "metadata_json": block_data["metadata"],
     }
     fetched = adapter._execute_get_block_by_index(cursor, 1, "TestPGChain")
 
     assert fetched["events"] == events
-    restored = _block_from_dict(fetched)
+    restored = _block_from_dict(fetched, chain.trusted_public_keys)
     assert restored.to_event_list() == events
     assert restored.calculate_merkle_root() == block.merkle_root
 
@@ -284,10 +291,12 @@ def test_store_proof_with_mock_conn():
 
 
 def test_query_events_filter_with_mock_conn():
-    """Test querying events with dynamic filter and PostgreSQL dialect."""
+    """Inherited event filters use the PostgreSQL dialect and shared signature."""
     adapter = PostgresAdapter(database_url="postgresql://user:pass@localhost:5432/testdb")
     
     mock_cursor = MagicMock()
+    mock_conn = MagicMock()
+    mock_conn.cursor.return_value = mock_cursor
     mock_cursor.fetchall.return_value = [
         {
             "chain_name": "SubChain-1",
@@ -298,19 +307,26 @@ def test_query_events_filter_with_mock_conn():
         }
     ]
 
-    events = adapter._execute_query_events_filter(
-        mock_cursor,
-        chain_name="SubChain-1",
-        entity_id="item-100",
-        event_type="update",
-        start_time=1000.0,
-        end_time=2000.0,
-        limit=10,
-    )
+    @contextmanager
+    def connection():
+        yield mock_conn
+
+    adapter._get_connection = connection
+    events = adapter.get_entity_events("item-100", "SubChain-1")
 
     assert len(events) == 1
     assert events[0]["entity_id"] == "item-100"
     sql = mock_cursor.execute.call_args[0][0]
-    assert "chain_name = %s" in sql
     assert "entity_id = %s" in sql
-    assert "LIMIT %s" in sql
+    assert "chain_name = %s" in sql
+    assert "block_index" not in sql
+    assert "details" not in sql
+    assert mock_cursor.execute.call_args[0][1] == ("item-100", "SubChain-1")
+
+    assert adapter.get_events_by_type("update") == events
+    assert mock_cursor.execute.call_args[0][1] == ("update",)
+
+    mock_cursor.execute.side_effect = ValueError("database query failed")
+    with pytest.raises(RuntimeError, match="get_entity_events failed") as error:
+        adapter.get_entity_events("item-100", "SubChain-1")
+    assert isinstance(error.value.__cause__, ValueError)
