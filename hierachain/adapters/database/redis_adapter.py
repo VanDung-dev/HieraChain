@@ -373,6 +373,20 @@ class RedisStorageAdapter:
     def load_chain(self, chain_name: str) -> dict[str, Any] | None:
         return self._chain_mgr.load_chain(chain_name)
 
+    def save_hierarchy_registry(self, state: dict[str, Any]) -> bool:
+        """Persist access state in the configured Redis database."""
+        return bool(self.client.set("hierachain:hierarchy_registry", orjson.dumps(state)))
+
+    def load_hierarchy_registry(self) -> dict[str, Any] | None:
+        """Load access state from the configured Redis database."""
+        raw = self.client.get("hierachain:hierarchy_registry")
+        if raw is None:
+            return None
+        state = orjson.loads(raw)
+        if not isinstance(state, dict):
+            raise ValueError("Invalid hierarchy registry snapshot")
+        return state
+
     def get_entity_events(
         self, entity_id: str, chain_name: str | None = None,
     ) -> list[dict[str, Any]]:

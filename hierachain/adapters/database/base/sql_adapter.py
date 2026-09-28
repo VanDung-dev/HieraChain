@@ -83,6 +83,8 @@ class SQLBase(ABC):
             "nonce": block_row['nonce'],
             "hash": block_row['hash'],
             "merkle_root": merkle_root,
+            "creator_id": metadata.get("creator_id") if isinstance(metadata, dict) else None,
+            "signature": metadata.get("signature") if isinstance(metadata, dict) else None,
         }
 
     @staticmethod
@@ -127,9 +129,13 @@ class SQLBase(ABC):
         domain_type = getattr(chain, 'domain_type', None)
         cursor.execute(
             """
-            INSERT OR REPLACE INTO chains
+            INSERT INTO chains
             (name, chain_type, domain_type, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(name) DO UPDATE SET
+                chain_type = excluded.chain_type,
+                domain_type = excluded.domain_type,
+                updated_at = excluded.updated_at
             """,
             (chain.name, chain_type, domain_type, time.time(), time.time()),
         )
@@ -228,38 +234,38 @@ class SQLBase(ABC):
 
     _QUERIES_WITH_CHAIN: dict[str, str] = {
         "chain_name": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE chain_name = :cn AND chain_name = :fv ORDER BY timestamp"
         ),
         "event_type": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE chain_name = :cn AND event_type = :fv ORDER BY timestamp"
         ),
         "entity_id": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE chain_name = :cn AND entity_id = :fv ORDER BY timestamp"
         ),
         "timestamp": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE chain_name = :cn AND timestamp = :fv ORDER BY timestamp"
         ),
     }
 
     _QUERIES_WITHOUT_CHAIN: dict[str, str] = {
         "chain_name": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE chain_name = :fv ORDER BY timestamp"
         ),
         "event_type": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE event_type = :fv ORDER BY timestamp"
         ),
         "entity_id": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE entity_id = :fv ORDER BY timestamp"
         ),
         "timestamp": (
-            "SELECT chain_name, block_index, entity_id, event_type, timestamp, details "
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
             "FROM events WHERE timestamp = :fv ORDER BY timestamp"
         ),
     }
@@ -289,7 +295,7 @@ class SQLBase(ABC):
                 self.logger.debug(
                     "Get events by filter error detail", error_type=type(e).__name__
                 )
-            return []
+            raise RuntimeError(f"{operation_name} failed") from e
 
     def _execute_query_events_filter(
         self, cursor: Any, filter_column: str,
@@ -695,6 +701,35 @@ class SQLBase(ABC):
         self._execute_with_error_handling(
             "update_state", _op, key=key
         )
+
+    def save_hierarchy_registry(self, state: dict[str, Any]) -> bool:
+        """Persist organization and channel access state before acknowledging changes."""
+        try:
+            encoded = orjson.dumps(state).decode("utf-8")
+            with self._get_connection() as conn:
+                result = self._execute_update_state(conn, "hierarchy_registry", encoded, "")
+            return result is not False
+        except Exception:
+            self.logger.exception("Could not persist hierarchy registry")
+            return False
+
+    def load_hierarchy_registry(self) -> dict[str, Any] | None:
+        """Return the saved registry, or raise if storage cannot be read."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            self._execute_load_hierarchy_registry(cursor)
+            row = cursor.fetchone()
+        if row is None:
+            return None
+        value = row["value"]
+        state = orjson.loads(value) if isinstance(value, (str, bytes, bytearray)) else value
+        if not isinstance(state, dict):
+            raise ValueError("Invalid hierarchy registry snapshot")
+        return state
+
+    @staticmethod
+    def _execute_load_hierarchy_registry(cursor: Any) -> None:
+        cursor.execute("SELECT value FROM chain_state WHERE key = ?", ("hierarchy_registry",))
 
     @staticmethod
     def _execute_update_state(

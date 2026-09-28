@@ -153,34 +153,21 @@ class PostgresAdapter(SQLBase):
     def _execute_query_events_filter(
         self,
         cursor: Any,
+        filter_column: str,
+        filter_value: str,
         chain_name: str | None,
-        entity_id: str | None,
-        event_type: str | None,
-        start_time: float | None,
-        end_time: float | None,
-        limit: int
     ) -> list[dict[str, Any]]:
-        query = "SELECT * FROM events WHERE 1=1"
-        params: list[Any] = []
-
+        if filter_column not in self._FILTER_COLUMNS:
+            return []
+        query = (
+            "SELECT chain_name, entity_id, event_type, timestamp, data "
+            f"FROM events WHERE {self._FILTER_COLUMNS[filter_column]} = %s"
+        )
+        params: list[Any] = [filter_value]
         if chain_name:
             query += " AND chain_name = %s"
             params.append(chain_name)
-        if entity_id:
-            query += " AND entity_id = %s"
-            params.append(entity_id)
-        if event_type:
-            query += " AND event_type = %s"
-            params.append(event_type)
-        if start_time is not None:
-            query += " AND timestamp >= %s"
-            params.append(start_time)
-        if end_time is not None:
-            query += " AND timestamp <= %s"
-            params.append(end_time)
-
-        query += " ORDER BY timestamp DESC LIMIT %s"
-        params.append(limit)
+        query += " ORDER BY timestamp"
 
         cursor.execute(query, tuple(params))
         return [self._create_event_from_row(row) for row in cursor.fetchall()]
@@ -401,6 +388,10 @@ class PostgresAdapter(SQLBase):
         )
         conn.commit()
         return True
+
+    @staticmethod
+    def _execute_load_hierarchy_registry(cursor: Any) -> None:
+        cursor.execute("SELECT value FROM chain_state WHERE key = %s", ("hierarchy_registry",))
 
     @staticmethod
     def _execute_delete_chain(conn: Any, chain_name: str) -> bool:

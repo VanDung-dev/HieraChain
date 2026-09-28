@@ -49,9 +49,9 @@ class SQLiteAdapter(SQLBase):
             conn = sqlite3.connect(self._memory_uri, uri=True)
         conn.row_factory = sqlite3.Row
         try:
-            # Enable high-performance PRAGMAs
+            # FULL sync is required before acknowledging durable blocks and proofs.
             conn.execute("PRAGMA journal_mode=WAL;")
-            conn.execute("PRAGMA synchronous=NORMAL;")
+            conn.execute("PRAGMA synchronous=FULL;")
             conn.execute("PRAGMA cache_size=-64000;")  # 64MB cache size
             yield conn
         except Exception as e:
