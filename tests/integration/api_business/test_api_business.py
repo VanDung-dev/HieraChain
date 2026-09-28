@@ -33,21 +33,20 @@ def test_api_business_health_check(client, auth_headers):
     assert data["version"] == "business"
 
 
-def test_create_channel(client, auth_headers):
-    """Test creating a channel via API business"""
+def test_create_channel_requires_management_scope(client, auth_headers):
+    """A regular API key cannot provision channels."""
     channel_data = {
         "channel_id": "integration_test_channel",
         "organizations": ["org1", "org2", "org3"],
         "policy": {
-            "read": "ADMIN || MEMBER",
+            "read": "MEMBER",
             "write": "ADMIN",
             "endorsement": "MAJORITY"
         }
     }
     
     response = client.post("/api/business/channels", json=channel_data, headers=auth_headers)
-    # Since the modules are not actually implemented, we expect a 501 error
-    assert response.status_code == 501 or response.status_code == 200
+    assert response.status_code in (401, 403)
 
 
 def test_create_private_collection(client, auth_headers):
@@ -129,8 +128,8 @@ def test_execute_contract(client, auth_headers):
     assert response.status_code in [501, 404, 200]
 
 
-def test_register_organization(client, auth_headers):
-    """Test registering an organization via API business"""
+def test_register_organization_requires_management_scope(client, auth_headers):
+    """A regular API key cannot provision organizations."""
     org_data = {
         "org_id": "manufacturer_org",
         "ca_config": {
@@ -147,8 +146,7 @@ def test_register_organization(client, auth_headers):
     }
     
     response = client.post("/api/business/organizations", json=org_data, headers=auth_headers)
-    # Since the modules are not actually implemented, we expect a 501 error
-    assert response.status_code == 501 or response.status_code == 200
+    assert response.status_code in (401, 403)
 
 def test_rbac_forbidden_without_auth(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that requests fail with 401 when missing auth"""
