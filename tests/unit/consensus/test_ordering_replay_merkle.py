@@ -7,10 +7,15 @@ from typing import Any
 
 import orjson
 
+from hierachain.config.settings import settings
 from hierachain.consensus.ordering.block_builder import BlockBuilder
 from hierachain.consensus.ordering.processor import OrderingProcessor
 from hierachain.consensus.ordering.storage import _block_from_dict
 from hierachain.consensus.ordering.types import OrderingStatus
+from hierachain.security.identity_loader import (
+    load_node_identity,
+    load_trusted_block_keys,
+)
 
 
 class _Journal:
@@ -61,7 +66,7 @@ class _PostgresLikeStorage:
     def save_block(self, block: Any, _chain_name: str) -> tuple[int, float]:
         row = block.to_dict()
         row["events"] = orjson.loads(orjson.dumps(row["events"]))
-        restored = _block_from_dict(row)
+        restored = _block_from_dict(row, load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE))
         self.blocks.append(restored)
         self.last_block = restored
         return len(row["events"]), 0.0
@@ -91,6 +96,8 @@ def test_journal_replay_block_payload_round_trips_with_postgres_jsonb() -> None:
     service.commit_queue = Queue()
     service.blocks_created = 0
     service.status = OrderingStatus.MAINTENANCE
+    service.node_identity = load_node_identity()
+    assert service.node_identity is not None
 
     processor = OrderingProcessor(service)
     asyncio.run(processor.recovery.recover_state_async())

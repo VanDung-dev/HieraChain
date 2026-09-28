@@ -14,6 +14,7 @@ from hierachain.consensus.ordering.processor import OrderingProcessor
 from hierachain.consensus.ordering.recovery import OrderingRecovery
 from hierachain.consensus.ordering.types import OrderingStatus
 from hierachain.consensus.ordering.utils import make_serializable
+from hierachain.hierarchical.transaction_manager import CrossChainTransactionManager
 
 
 def _event(event_id: str) -> dict[str, Any]:
@@ -215,6 +216,43 @@ def test_corrupt_rotated_arrow_journal_raises(
         list(journal.replay())
 
     journal.close()
+
+
+def test_active_journal_replays_after_older_rotated_archive(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(journal_module, "_JOURNAL_MAX_FILE_SIZE", 1)
+    journal = journal_module.TransactionJournal(
+        storage_dir="transactions", active_log_name="cross_chain_2pc.arrow"
+    )
+    tx_id = "tx-rotation-order"
+    try:
+        assert journal.log_event({
+            "entity_id": tx_id,
+            "event": "cross_chain_2pc",
+            "timestamp": 1.0,
+            "tx_id": tx_id,
+            "phase": "begin",
+            "source_chain": "source",
+            "destination_chain": "destination",
+            "payload": {},
+        })
+        assert journal.log_event({
+            "entity_id": tx_id,
+            "event": "cross_chain_2pc",
+            "timestamp": 2.0,
+            "tx_id": tx_id,
+            "phase": "commit",
+            "source_chain": "source",
+            "destination_chain": "destination",
+            "payload": {},
+        })
+
+        manager = CrossChainTransactionManager(SimpleNamespace(), journal=journal)
+        assert manager._phases[tx_id] == "commit"
+    finally:
+        journal.close()
 
 
 def test_unreadable_legacy_parquet_raises(

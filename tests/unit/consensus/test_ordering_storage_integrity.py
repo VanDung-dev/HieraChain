@@ -30,7 +30,7 @@ def test_reconstructed_genesis_rejects_event_payload_tampering() -> None:
     data["events"][0]["details"]["value"] = "tampered"
 
     with pytest.raises(ValueError, match="Block Merkle root MISMATCH! block=0"):
-        _block_from_dict(data)
+        _block_from_dict(data, {})
 
 
 def test_rehydration_does_not_accept_an_invalid_chain() -> None:
