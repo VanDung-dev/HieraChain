@@ -3,8 +3,6 @@
 Submit cryptographic proofs from a sub-chain to the main chain.
 """
 
-import time
-
 from fastapi import APIRouter, Depends, HTTPException
 
 from hierachain.api.ledger.depds import get_hierarchy_manager
@@ -38,21 +36,7 @@ async def submit_proof(
                 status_code=500, detail="Main chain not available"
             )
 
-        metadata_filter = None
-
-        if hasattr(sub_chain, 'submit_proof_to_main'):
-            success = sub_chain.submit_proof_to_main(main_chain, metadata_filter)
-        else:
-            success = main_chain.add_proof(
-                sub_chain_name=sub_chain.name,
-                proof_hash="mock_proof_hash",
-                metadata={
-                    "proof": "mock_proof",
-                    "timestamp": time.time()
-                }
-            )
-
-        if not success:
+        if manager.submit_proof_to_main_chain(chain_name) is not True:
             raise HTTPException(
                 status_code=500, detail="Failed to submit proof to main chain"
             )
@@ -62,6 +46,8 @@ async def submit_proof(
             message=f"Proof submitted from '{chain_name}' to main chain",
             proof_id=f"{chain_name}_{len(sub_chain.chain)}" if sub_chain.chain else None
         )
+    except HTTPException:
+        raise
     except Exception as e:
         api_logger.error("Failed to submit proof", error=str(e), chain_name=chain_name)
         raise HTTPException(

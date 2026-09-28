@@ -6,6 +6,7 @@ Add business events to a sub-chain with optional off-chain
 
 import re
 import time
+from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
@@ -112,4 +113,51 @@ async def add_event(
             " (off-chain storage)" if cid_info else ""
         ),
         event_id=event_id
+    )
+
+
+@router.post(
+    "/channels/{channel_id}/organizations/{org_id}/events",
+    response_model=EventResponse,
+)
+async def add_channel_event(
+    channel_id: str,
+    org_id: str,
+    event_request: EventRequest,
+    background_tasks: BackgroundTasks,
+    auth_context: dict[str, Any] = Depends(require_event_access),
+    manager: HierarchyManager = Depends(get_hierarchy_manager),
+) -> EventResponse:
+    channel = manager.get_channel(channel_id)
+    if channel is None:
+        raise HTTPException(status_code=404, detail=f"Channel '{channel_id}' not found")
+
+    user_id = auth_context.get("user_id")
+    if not isinstance(user_id, str) or not user_id.strip():
+        raise HTTPException(status_code=403, detail="Authenticated user is not registered")
+
+    inline_details, cid_info = process_event_details(
+        event_request,
+        background_tasks=background_tasks,
+    )
+    event = _build_event_data(event_request, inline_details, cid_info)
+    event["submitted_by"] = user_id
+
+    if not channel.submit_event(event, org_id, submitter_user_id=user_id):
+        raise HTTPException(
+            status_code=403,
+            detail="User is not authorized to submit events to this channel",
+        )
+
+    api_logger.audit(
+        action="add_event",
+        resource="channel",
+        success=True,
+        channel_id=channel_id,
+        org_id=org_id,
+        entity_id=event["entity_id"],
+    )
+    return EventResponse(
+        success=True,
+        message=f"Event added to channel '{channel_id}'",
     )
