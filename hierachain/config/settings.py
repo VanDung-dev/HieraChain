@@ -15,6 +15,14 @@ from typing import Any
 from hierachain.config.version import VERSION, get_version
 
 
+def _configured_database_url() -> str:
+    """Return the first nonblank database URL explicitly set by the operator."""
+    return (
+        (os.getenv("DATABASE_URL") or "").strip()
+        or (os.getenv("HRC_DATABASE_URL") or "").strip()
+    )
+
+
 class Settings:
     """Ledger configuration settings"""
     
@@ -23,14 +31,19 @@ class Settings:
     @property
     def env(self) -> str:
         """Auto-detect environment from environment variable."""
-        env = os.getenv("HRC_ENV") or os.getenv("ENV")
-        if env in ("production", "prod"):
+        env = (
+            (os.getenv("HRC_ENV") or "").strip()
+            or (os.getenv("ENV") or "").strip()
+        ).lower()
+        if env in ("production", "prod", "product"):
             return "production"
         if env in ("development", "dev"):
             return "development"
         if env in ("test", "testing"):
             return "test"
-        return env or "development"
+        if not env:
+            return "development"
+        raise ValueError(f"Unsupported HRC_ENV/ENV value: {env!r}")
     
     # Ledger version
     VERSION = get_version(VERSION)
@@ -73,13 +86,15 @@ class Settings:
     # SQL hot data retention days (0 = infinite)
     SQL_RETENTION_DAYS = int(os.getenv("HRC_SQL_RETENTION_DAYS", "90"))
 
-    # Storage settings - memory, redis, sqlite, postgres, parquet_only
+    # Storage settings - memory, redis, sqlite, postgres (postgresql alias)
     @property
     def STORAGE_BACKEND(self) -> str:
-        backend = os.getenv("HRC_STORAGE_BACKEND")
+        backend = (os.getenv("HRC_STORAGE_BACKEND") or "").strip().lower()
         if backend:
-            return backend.lower()
-        db_url = os.getenv("DATABASE_URL") or os.getenv("HRC_DATABASE_URL", "")
+            if backend not in {"memory", "redis", "sqlite", "postgres", "postgresql"}:
+                raise ValueError(f"Unsupported HRC_STORAGE_BACKEND value: {backend!r}")
+            return backend
+        db_url = _configured_database_url()
         if db_url.startswith(("sqlite://", "sqlite3://")):
             return "sqlite"
         if db_url.startswith(("postgres://", "postgresql://", "postgresql+psycopg://")):
@@ -127,6 +142,7 @@ class Settings:
     
     # Validator Identity
     VALIDATOR_IDENTITY_PATH = os.getenv("HRC_VALIDATOR_IDENTITY", "validator_key.json")
+    BLOCK_TRUSTED_KEYS_FILE = os.getenv("HRC_BLOCK_TRUSTED_KEYS_FILE", "")
 
     # P2P Network settings
     # Enable P2P network layer
@@ -196,10 +212,7 @@ class Settings:
     CLI_LOG_LEVEL = "INFO"
     
     # Database settings (if using database storage)
-    DATABASE_URL = os.getenv(
-        "DATABASE_URL",
-        os.getenv("HRC_DATABASE_URL", "postgresql://hiera:hiera@localhost:5432/hierachain"),
-    )
+    DATABASE_URL = _configured_database_url() or "postgresql://hiera:hiera@localhost:5432/hierachain"
     
     # Redis settings (if using Redis storage)
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -379,9 +392,8 @@ class ProductionSettings(Settings):
     # Storage - use persistent PostgreSQL storage
     DEFAULT_STORAGE_BACKEND = "postgres"
     
-    # === SECURITY: Auto-enabled in production ===
-    # Authentication is MANDATORY in production
-    AUTH_ENABLED = os.getenv("HRC_AUTH_ENABLED", "true").lower() == "true"
+    # === SECURITY: Authentication is mandatory in production ===
+    AUTH_ENABLED = True
     
     # Organization validation is required
     REQUIRE_ORGANIZATION_VALIDATION = True
@@ -434,9 +446,11 @@ class TestingSettings(Settings):
 # Get settings based on environment
 def get_settings() -> Settings:
     """Get settings based on environment variable"""
-    env = os.getenv("HRC_ENV", "dev").lower()
+    env = Settings().env
     
-    if env in ("product", "production"):
+    if env == "production":
+        if os.getenv("HRC_AUTH_ENABLED", "true").strip().lower() != "true":
+            raise ValueError("Production requires HRC_AUTH_ENABLED=true")
         return ProductionSettings()
     elif env == "test":
         return TestingSettings()

@@ -18,7 +18,7 @@ HRC_API_HOST=0.0.0.0
 HRC_API_PORT=2661
 
 # ==================== DATABASE CONFIGURATION ====================
-# Supported backends: sqlite, postgres, redis, memory, parquet_only
+# Supported backends: sqlite, postgres, redis, memory
 # PostgreSQL is required for product/cluster deployments.
 # Note: In docker-compose, node1..node4 automatically connect to their
 # respective postgres-node1..node4 sidecars via container environment.
@@ -32,6 +32,9 @@ HRC_DATABASE_URL=postgresql://hiera:hiera_password@postgres-node1:5432/hierachai
 
 # Security - Authentication (MANDATORY in production)
 HRC_AUTH_ENABLED=true
+# Set HRC_API_KEYS_FILE to a mounted JSON secret before starting production.
+# Set HRC_VALIDATOR_IDENTITY to a persistent node identity JSON file.
+# Set HRC_BLOCK_TRUSTED_KEYS_FILE to an operator-approved JSON map of node IDs to public keys.
 
 # Security - CORS (Restricted in production)
 HRC_CORS_ALLOW_ALL=false
