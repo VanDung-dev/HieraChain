@@ -8,7 +8,19 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (18)"
+??? warning "Breaking Changes (27)"
+
+    * 2026-09-28
+
+        * **Core & Bảo mật (Chữ ký Block Tin cậy Bắt buộc)**: `Blockchain.__init__`/`add_block`/`is_valid_new_block`/`is_chain_valid` (`hierachain/core/blockchain.py`) nay resolve signer qua `require_block_identity()` và xác minh theo `trusted_public_keys` với `_sign_block()`/`sign_block()`; `BlockVerifier` (`hierachain/security/verify/block_verifier.py`) bắt buộc `strict_mode=True`, từ chối tuyệt đối block thiếu/chữ ký sai định dạng và chỉ xác minh với trusted key do caller cung cấp; `load_trusted_block_keys()`/`require_block_identity()` (`hierachain/security/identity_loader.py`) bắt buộc `HRC_BLOCK_TRUSTED_KEYS_FILE` (mới `Settings.BLOCK_TRUSTED_KEYS_FILE`) dạng map Ed25519 hex kèm kiểm tra khớp key của node; `initialize_default_keys()` (`hierachain/security/key_manager.py`) chặn tạo key mặc định khi `Settings().env == "production"`.
+        * **Đồng thuận & Ordering (Block Ký, Quorum & ZK)**: bổ sung `creator_id` khi dựng block với kiểm tra vị trí finalization trong `verify_quorum_signatures` (`hierachain/consensus/base_consensus.py`, `hierachain/consensus/proof_of_federation.py`); xác minh ZK proof trong quá trình verify, từ chối proof thiếu/không hợp lệ khi bắt buộc và kiểm tra cấu trúc/thứ tự/hash `consensus_finalization`; `BlockManager` ký khi tạo block, storage từ chối block thiếu/thiếu tin cậy với `reconcile_journal_event()` chống trùng khi replay (`hierachain/consensus/ordering/block_manager.py`, `hierachain/consensus/ordering/service.py`, `hierachain/consensus/ordering/storage.py`).
+        * **Hierarchical Main/Sub-Chain (Proof Bền & Ký Tin cậy)**: thay đếm proof in-memory bằng lưu trữ bền với `_refresh_durable_proofs()`/`proof_sequence`/`_durable_block_events` (`hierachain/hierarchical/main_chain/base.py`, `hierachain/hierarchical/main_chain/proofs.py`, `hierachain/hierarchical/main_chain/registry.py`); `SubChain` bắt buộc persist proof bền, chặn nộp trùng, validate metadata ZK-proof chặt hơn và ký finalization bằng trusted key theo consensus type (`hierachain/hierarchical/sub_chain/base.py`, `hierachain/hierarchical/sub_chain/block.py`, `hierachain/hierarchical/sub_chain/proof.py`).
+        * **Hierarchical Registry (Hierarchy Bền & Validate Chặt)**: `_persist_hierarchy_registry()`/`_restore_hierarchy_registry()` kèm locking (`hierachain/hierarchical/hierarchy_manager/base.py`); khôi phục hỗ trợ sub-chain placeholder với thay thế động; registry organization/channel siết kiểm tra member (`hierachain/hierarchical/hierarchy_manager/organization.py`, `hierachain/hierarchical/hierarchy_manager/validation.py`).
+        * **Channel (Chữ ký, Endorsement & Vai trò)**: finalization block xác minh chữ ký theo trusted key, đánh giá endorsement hỗ trợ tập org đủ điều kiện cấu hình được, cập nhật policy/org/status có rollback, và `submit_event`/persist registry bắt buộc validate vai trò member (`hierachain/hierarchical/channel/channel.py`, `hierachain/hierarchical/channel/ledger.py`, `hierachain/hierarchical/channel/policy.py`, `hierachain/hierarchical/channel/types.py`).
+        * **Cluster (Đồng bộ Cross-level Không Copy)**: nộp proof không còn merge history hay copy block cross-chain (`hierachain/cluster/cross_level_sync.py`); anchor persist qua `_persist_proof_anchor()` với xác minh bền dưới storage lock.
+        * **Audit (Schema & Đổi Hash)**: `AuditEvent` thêm `affected_entities` kèm migration SQLite, xử lý JSON cho field tùy chọn, và `calculate_hash()` trên toàn bộ dict sort-key (`hierachain/risk_management/types.py`, `hierachain/risk_management/audit_logger.py`) — digest đã lưu thay đổi; thêm `PostgresAuditManifest` (`hierachain/adapters/database/audit_manifest.py`) với `verify_integrity()` và validate persist chặt hơn.
+        * **Config (Env & Backend Nghiêm)**: `Settings.env` (`hierachain/config/settings.py`) raise `ValueError` với `HRC_ENV`/`ENV` không hỗ trợ (chỉ alias `production`/`prod`/`product`, `dev`, `test`), `STORAGE_BACKEND` allowlist `memory`/`redis`/`sqlite`/`postgres`/`postgresql` qua `_configured_database_url()` (`DATABASE_URL`/`HRC_DATABASE_URL`), thêm `BLOCK_TRUSTED_KEYS_FILE`, và `ProductionSettings.AUTH_ENABLED` luôn `True` kèm bắt buộc `HRC_AUTH_ENABLED=true`; `get_settings()` chỉ route theo `production`/`test` đã chuẩn hóa.
+        * **API/CLI/Business (Auth Prod & HierarchyManager)**: lifespan server bắt buộc `require_block_identity()` kèm `DATABASE_URL`/`HRC_DATABASE_URL` tường minh cho Postgres production, bắt buộc `HRC_API_KEYS_FILE` qua `_load_production_key_manager()` (key ≥32 ký tự, có `permissions`, còn hiệu lực), thay `ENV` bằng `env`, siết CORS/logging theo `production` (`hierachain/api/server.py`, `hierachain/api/graphql_handler.py`); business channels/organizations chuyển khỏi `_channels`/`_organizations` in-memory sang `HierarchyManager` với validate chặt và schema vai trò member (`hierachain/api/business/channels.py`, `hierachain/api/business/organizations.py`, `hierachain/api/business/schemas.py`, `hierachain/api/business/state.py`); nộp proof ledger ủy quyền cho `HierarchyManager` (`hierachain/api/ledger/proofs.py`); CLI `submit_proof` từ chối nộp qua registry (bắt buộc API xác thực bền) và `verify` ép validate chain theo trusted key (`hierachain/cli/chain.py`, `hierachain/cli/verify.py`).
 
     * 2026-09-27
 
@@ -52,7 +64,15 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (14)"
+??? note "Improvements (19)"
+
+    * 2026-09-28
+
+        * **Database (Hierarchy Registry & Audit Manifest)**: lưu/tải hierarchy registry trên cả PostgreSQL/SQLite/Redis, thêm `PostgresAuditManifest` quản lý digest audit, gọn lọc event/xử lý metadata, SQLite `synchronous=FULL` bền dữ liệu, và kiểm tra toàn vẹn chain-state chặt hơn (`hierachain/adapters/database/__init__.py`, `hierachain/adapters/database/audit_manifest.py`, `hierachain/adapters/database/base/sql_adapter.py`, `hierachain/adapters/database/postgres_adapter.py`, `hierachain/adapters/database/redis_adapter.py`, `hierachain/adapters/database/sqlite_adapter.py`).
+        * **Hierarchical (Journal 2PC Bền)**: journal phase bền với `_journal_record()`/`_load_journal()`, lifecycle prepare/commit/rollback có cấu trúc, validate participant và retry cho decision chưa phân giải (`hierachain/hierarchical/transaction_manager.py`, `hierachain/hierarchical/private_data.py`, `hierachain/hierarchical/types.py`).
+        * **Domains (Khôi phục Committed Transaction)**: theo dõi `committed_transactions` với `_tx_commit_lock`, nạp/đối soát marker và khôi phục sau COMMIT bền cho ack idempotent (`hierachain/domains/chains/domain_chain.py`, `hierachain/domains/chains/tx_manager.py`).
+        * **API (Nộp Event theo Channel)**: endpoint mới `POST /channels/{channel_id}/organizations/{org_id}/events` kèm xác thực và validation (`hierachain/api/ledger/events.py`).
+        * **Journal (Liệt kê File)**: gọn `_get_journal_files()` giữ thứ tự/khử trùng không sort thừa (`hierachain/error_mitigation/journal.py`).
 
     * 2026-09-27
 
@@ -86,7 +106,11 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (9)"
+??? warning "Fix (10)"
+
+    * 2026-09-28
+
+        * **Mạng (Kiểm tra Env Production)**: `SecureConnectionManager` (`hierachain/network/secure_connection.py`) kiểm tra `settings.env == "production"` thay vì `"product"` cũ, khôi phục cảnh báo P2P kém an toàn.
 
     * 2026-09-27
 

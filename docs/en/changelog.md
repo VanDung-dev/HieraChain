@@ -8,7 +8,19 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (18)"
+??? warning "Breaking Changes (27)"
+
+    * 2026-09-28
+
+        * **Core & Security (Mandatory Trusted Block Signatures)**: `Blockchain.__init__`/`add_block`/`is_valid_new_block`/`is_chain_valid` (`hierachain/core/blockchain.py`) now resolve the signer via `require_block_identity()` and verify against `trusted_public_keys` with `_sign_block()`/`sign_block()`; `BlockVerifier` (`hierachain/security/verify/block_verifier.py`) requires `strict_mode=True` and unconditionally rejects unsigned/malformed signatures, verifying only against caller-supplied trusted keys; `load_trusted_block_keys()`/`require_block_identity()` (`hierachain/security/identity_loader.py`) require `HRC_BLOCK_TRUSTED_KEYS_FILE` (new `Settings.BLOCK_TRUSTED_KEYS_FILE`) with an Ed25519 hex map and node-key alignment; `initialize_default_keys()` (`hierachain/security/key_manager.py`) now blocks defaults whenever `Settings().env == "production"`.
+        * **Consensus & Ordering (Signed Blocks, Quorum & ZK)**: `creator_id` added to block construction with finalization-position checks in `verify_quorum_signatures` (`hierachain/consensus/base_consensus.py`, `hierachain/consensus/proof_of_federation.py`); ZK proofs are validated during verification, rejecting missing/invalid proofs when required and checking `consensus_finalization` structure/order/hash; `BlockManager` signs on creation and storage rejects unsigned/untrusted blocks with `reconcile_journal_event()` dedup on replay (`hierachain/consensus/ordering/block_manager.py`, `hierachain/consensus/ordering/service.py`, `hierachain/consensus/ordering/storage.py`).
+        * **Hierarchical Main/Sub-Chain (Durable Proofs & Signing)**: replaced in-memory proof counts with durable storage plus `_refresh_durable_proofs()`/`proof_sequence`/`_durable_block_events` (`hierachain/hierarchical/main_chain/base.py`, `hierachain/hierarchical/main_chain/proofs.py`, `hierachain/hierarchical/main_chain/registry.py`); `SubChain` proof submission enforces durable storage, rejects duplicates, adds ZK-proof metadata validation, and signs finalization with trusted keys per consensus type (`hierachain/hierarchical/sub_chain/base.py`, `hierachain/hierarchical/sub_chain/block.py`, `hierachain/hierarchical/sub_chain/proof.py`).
+        * **Hierarchical Registry (Durable Hierarchy & Stricter Validation)**: `_persist_hierarchy_registry()`/`_restore_hierarchy_registry()` with locking (`hierachain/hierarchical/hierarchy_manager/base.py`); restoration supports placeholder sub-chains with dynamic replacement; organization/channel registries enforce stricter member checks (`hierachain/hierarchical/hierarchy_manager/organization.py`, `hierachain/hierarchical/hierarchy_manager/validation.py`).
+        * **Channel (Signatures, Endorsement & Roles)**: block finalization verifies signatures against trusted keys, endorsement evaluation supports configurable eligible org sets, policy/org/status updates gain rollback, and `submit_event`/registry persistence require member-role validation (`hierachain/hierarchical/channel/channel.py`, `hierachain/hierarchical/channel/ledger.py`, `hierachain/hierarchical/channel/policy.py`, `hierachain/hierarchical/channel/types.py`).
+        * **Cluster (Cross-level Sync Without Copy)**: proof submission no longer merges history or copies cross-chain blocks (`hierachain/cluster/cross_level_sync.py`); anchors persist via `_persist_proof_anchor()` with durable verification under storage locks.
+        * **Audit (Schema & Hash Change)**: `AuditEvent` gains `affected_entities` with SQLite migration, JSON optional-field handling, and `calculate_hash()` over the full sorted dict (`hierachain/risk_management/types.py`, `hierachain/risk_management/audit_logger.py`) — stored digests change; new `PostgresAuditManifest` (`hierachain/adapters/database/audit_manifest.py`) with `verify_integrity()` and stricter persistence validation.
+        * **Config (Strict Env & Backend)**: `Settings.env` (`hierachain/config/settings.py`) raises `ValueError` on unknown `HRC_ENV`/`ENV` values (only `production`/`prod`/`product`, `dev`, `test` aliases), `STORAGE_BACKEND` allowlists `memory`/`redis`/`sqlite`/`postgres`/`postgresql` via `_configured_database_url()` (`DATABASE_URL`/`HRC_DATABASE_URL`), adds `BLOCK_TRUSTED_KEYS_FILE`, and `ProductionSettings.AUTH_ENABLED` is unconditionally `True` with `HRC_AUTH_ENABLED=true` enforced; `get_settings()` routes only on normalized `production`/`test`.
+        * **API/CLI/Business (Prod Auth & HierarchyManager)**: server lifespan requires `require_block_identity()` plus explicit `DATABASE_URL`/`HRC_DATABASE_URL` for production Postgres, mandates `HRC_API_KEYS_FILE` via `_load_production_key_manager()` (≥32-char keys, `permissions`, active key), replaces `ENV` with `env`, and tightens CORS/logging to `production` (`hierachain/api/server.py`, `hierachain/api/graphql_handler.py`); business channels/organizations move off in-memory `_channels`/`_organizations` to `HierarchyManager` with stricter validation and member-role schemas (`hierachain/api/business/channels.py`, `hierachain/api/business/organizations.py`, `hierachain/api/business/schemas.py`, `hierachain/api/business/state.py`); ledger proof submission delegates to `HierarchyManager` (`hierachain/api/ledger/proofs.py`); CLI `submit_proof` rejects registry submissions (durable authenticated API required) and `verify` enforces trusted-key chain validation (`hierachain/cli/chain.py`, `hierachain/cli/verify.py`).
 
     * 2026-09-27
 
@@ -52,7 +64,15 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (14)"
+??? note "Improvements (19)"
+
+    * 2026-09-28
+
+        * **Database (Hierarchy Registry & Audit Manifest)**: save/load hierarchy registry across PostgreSQL/SQLite/Redis adapters, new `PostgresAuditManifest` for audit digests, streamlined event filtering/metadata handling, SQLite `synchronous=FULL` durability, and stricter chain-state integrity (`hierachain/adapters/database/__init__.py`, `hierachain/adapters/database/audit_manifest.py`, `hierachain/adapters/database/base/sql_adapter.py`, `hierachain/adapters/database/postgres_adapter.py`, `hierachain/adapters/database/redis_adapter.py`, `hierachain/adapters/database/sqlite_adapter.py`).
+        * **Hierarchical (Durable 2PC Journal)**: persistent phase journal with `_journal_record()`/`_load_journal()`, structured prepare/commit/rollback, participant validation, and retry for unresolved decisions (`hierachain/hierarchical/transaction_manager.py`, `hierachain/hierarchical/private_data.py`, `hierachain/hierarchical/types.py`).
+        * **Domains (Committed Transaction Recovery)**: `committed_transactions` tracking with `_tx_commit_lock`, marker load/reconcile, and post-COMMIT recovery for idempotent acknowledgments (`hierachain/domains/chains/domain_chain.py`, `hierachain/domains/chains/tx_manager.py`).
+        * **API (Channel Event Submission)**: new `POST /channels/{channel_id}/organizations/{org_id}/events` with authentication and validation (`hierachain/api/ledger/events.py`).
+        * **Journal (File Listing)**: streamlined `_get_journal_files()` ordering/dedup without redundant sorting (`hierachain/error_mitigation/journal.py`).
 
     * 2026-09-27
 
@@ -86,7 +106,11 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (9)"
+??? warning "Fix (10)"
+
+    * 2026-09-28
+
+        * **Network (Production Env Check)**: `SecureConnectionManager` (`hierachain/network/secure_connection.py`) checks `settings.env == "production"` instead of the stale `"product"`, restoring insecure-P2P warnings.
 
     * 2026-09-27
 
