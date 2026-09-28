@@ -18,24 +18,10 @@ from typing import Any, cast
 import orjson
 
 from hierachain.core.block import Block
-from hierachain.security.verify.block_verifier import get_block_verifier
+from hierachain.security.identity_loader import NodeIdentity, require_block_identity
+from hierachain.security.verify.block_verifier import get_block_verifier, sign_block
 
 logger = logging.getLogger(__name__)
-
-
-def _is_block_linked_correctly(current: Block, previous: Block) -> bool:
-    """Check if current block is correctly linked to the previous block."""
-    if not current.validate_structure():
-        return False
-    if current.calculate_merkle_root() != current.merkle_root:
-        return False
-    if current.hash != current.calculate_hash():
-        return False
-    if current.previous_hash != previous.hash:
-        return False
-    if current.index != previous.index + 1:
-        return False
-    return True
 
 
 class Blockchain:
@@ -54,12 +40,22 @@ class Blockchain:
         'event_type_index',
         'lock',
         'name',
+        'node_identity',
         'pending_events',
         'query_engine',
         'total_events',
+        'trusted_public_keys',
     )
 
-    def __init__(self, name: str = "Blockchain") -> None:
+    def __init__(
+        self,
+        name: str = "Blockchain",
+        node_identity: NodeIdentity | None = None,
+        trusted_public_keys: dict[str, bytes] | None = None,
+    ) -> None:
+        self.node_identity, self.trusted_public_keys = require_block_identity(
+            node_identity, trusted_public_keys
+        )
         self.name = name
         self.lock = threading.RLock()
         self.chain: list[Block] = []
@@ -90,9 +86,16 @@ class Blockchain:
             timestamp=time.time(),
             previous_hash="0"
         )
+        self._sign_block(genesis_block)
         
         self._index_block_events(genesis_block)
         self.chain.append(genesis_block)
+
+    def _sign_block(self, block: Block) -> None:
+        """Sign a block created by this chain with its fixed node identity."""
+        sign_block(
+            block, self.node_identity.node_id, self.node_identity.signing_keypair
+        )
 
     def _index_block_events(self, block: Block) -> None:
         """Update counters and indexing for all events in the given block."""
@@ -200,21 +203,25 @@ class Blockchain:
                 timestamp=time.time(),
                 previous_hash=latest_block.hash
             )
+            self._sign_block(new_block)
             
             return new_block
     
-    def add_block(self, block: Block) -> bool:
+    def add_block(
+        self, block: Block, public_key: bytes | None = None
+    ) -> bool:
         """
         Add a block to the blockchain after validation.
         
         Args:
             block: Block to add to the chain
+            public_key: Optional PEM key; must match the configured trusted key.
             
         Returns:
             True if block was added successfully, False otherwise
         """
         with self.lock:
-            if self.is_valid_new_block(block):
+            if self.is_valid_new_block(block, public_key=public_key):
                 self._index_block_events(block)
                 self.chain.append(block)
                 return True
@@ -238,7 +245,9 @@ class Blockchain:
                 return new_block
             return None
     
-    def is_valid_new_block(self, block: Block) -> bool:
+    def is_valid_new_block(
+        self, block: Block, public_key: bytes | None = None
+    ) -> bool:
         """
         Validate a new block before adding it to the chain.
         
@@ -246,10 +255,11 @@ class Blockchain:
         - Block hash verification
         - Merkle root verification
         - Chain link verification
-        - Block signature verification (if present)
+        - Required block signature verification
         
         Args:
             block: Block to validate
+            public_key: Optional PEM key; must match the configured trusted key.
             
         Returns:
             True if block is valid, False otherwise
@@ -257,8 +267,14 @@ class Blockchain:
         latest_block = self.get_latest_block()
         
         # Use BlockVerifier for comprehensive validation
-        verifier = get_block_verifier(strict_mode=False)
-        result = verifier.verify_block(block, latest_block)
+        verifier = get_block_verifier()
+        trusted_key = self.trusted_public_keys.get(block.creator_id)
+        if public_key is not None and public_key != trusted_key:
+            logger.warning("Block %s supplied an untrusted creator key", block.index)
+            return False
+        result = verifier.verify_block(
+            block, latest_block, public_key=trusted_key
+        )
         
         if not result.is_valid:
             logger.warning(
@@ -276,17 +292,28 @@ class Blockchain:
         logger.debug("Block %d validated successfully", block.index)
         return True
     
-    def is_chain_valid(self) -> bool:
+    def is_chain_valid(
+        self, trusted_public_keys: dict[str, bytes] | None = None
+    ) -> bool:
         """
         Validate the entire blockchain.
+
+        Args:
+            trusted_public_keys: Trusted PEM keys by creator_id for signed blocks.
 
         Returns:
             True if the entire chain is valid, False otherwise
         """
         with self.lock:
-            return all(
-                _is_block_linked_correctly(self.chain[i], self.chain[i - 1])
-                for i in range(1, len(self.chain))
+            return (
+                all(block.validate_structure() for block in self.chain[1:])
+                and get_block_verifier().verify_chain(
+                    self.chain,
+                    trusted_public_keys=(
+                        trusted_public_keys if trusted_public_keys is not None
+                        else self.trusted_public_keys
+                    ),
+                ).is_valid
             )
     
     def get_events_by_entity(self, entity_id: str) -> list[dict[str, Any]]:
@@ -338,17 +365,28 @@ class Blockchain:
         }
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'Blockchain':
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        trusted_public_keys: dict[str, bytes] | None = None,
+        node_identity: NodeIdentity | None = None,
+    ) -> 'Blockchain':
         """
         Create a Blockchain instance from dictionary data.
         
         Args:
             data: Dictionary containing blockchain data
+            trusted_public_keys: Trusted PEM keys by creator_id for signed blocks.
+            node_identity: Fixed local identity used for subsequent blocks.
             
         Returns:
             Blockchain instance
         """
-        blockchain = cls(name=data["name"])
+        blockchain = cls(
+            name=data["name"],
+            node_identity=node_identity,
+            trusted_public_keys=trusted_public_keys,
+        )
         
         # Clear genesis block and rebuild from data
         blockchain.chain.clear()
@@ -357,16 +395,13 @@ class Blockchain:
             block = Block.from_dict(block_data)
             blockchain.chain.append(block)
         
-        blockchain.pending_events = data.get("pending_events", [])
-        blockchain._rebuild_event_indexes()
-
-        # Validate chain integrity after loading
-        if not blockchain.is_chain_valid():
-            logger.error(
-                "Chain integrity check FAILED after loading '%s' from dictionary!",
-                data["name"]
+        if not blockchain.is_chain_valid(trusted_public_keys):
+            raise ValueError(
+                f"Chain integrity check failed after loading '{data['name']}'"
             )
 
+        blockchain.pending_events = data.get("pending_events", [])
+        blockchain._rebuild_event_indexes()
         return blockchain
     
     def __str__(self) -> str:
