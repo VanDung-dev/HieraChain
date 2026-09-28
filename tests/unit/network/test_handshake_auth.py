@@ -8,6 +8,8 @@ Covers:
 - Authenticated_peers flag only set when all checks pass
 """
 
+import logging
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -116,6 +118,36 @@ async def _run_signed_handshake(manager, peer_keypair):
 
 class TestSecureConnectionHandshake:
     """Test SecureConnectionManager handshake flow."""
+
+    def test_production_warns_for_insecure_p2p_settings(
+        self, msp, identity_mgr, node_keypair, caplog
+    ):
+        settings = MagicMock()
+        settings.env = "production"
+        settings.get_p2p_config.return_value = {
+            "trust_policy": "open",
+            "peer_allowlist": [],
+            "require_signatures": False,
+        }
+
+        with patch(
+            "hierachain.network.secure_connection.get_settings",
+            return_value=settings,
+        ), patch(
+            "hierachain.network.secure_connection.zmq.curve_keypair",
+            return_value=(b"fake_pub_key", b"fake_sec_key"),
+        ), patch("hierachain.network.secure_connection.ZmqNode"):
+            with caplog.at_level(logging.WARNING):
+                SecureConnectionManager(
+                    node_id="node-local",
+                    port=5000,
+                    msp=msp,
+                    identity_mgr=identity_mgr,
+                    signing_keypair=node_keypair,
+                )
+
+        assert "P2P trust_policy='open' instead of 'strict'" in caplog.text
+        assert "without P2P message signature verification" in caplog.text
 
     @pytest.fixture
     def manager(self, msp, identity_mgr, node_keypair):
