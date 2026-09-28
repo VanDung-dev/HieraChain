@@ -5,16 +5,21 @@ Ensures project root is on sys.path so test imports like `import api`, `import c
 `import hierarchical` resolve correctly during test collection.
 """
 
+import json
 import os
 
 os.environ.setdefault("HRC_ENV", "test")
 # prevent product .env from enabling auth/strict CORS in tests when .env is product
 if os.getenv("HRC_ENV", "").lower() in ("test", "testing"):
     os.environ.setdefault("HRC_AUTH_ENABLED", "false")
-import sys
 import shutil
-import pytest
+import sys
 import time
+
+import pytest
+
+from hierachain.config.settings import settings
+from hierachain.security.security_utils import KeyPair
 
 # Compute project root (parent of this tests directory)
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -52,3 +57,27 @@ def clean_journal_data():
     _remove_data_dir_with_retry()
 
 
+@pytest.fixture(autouse=True, scope="session")
+def configured_block_identity(tmp_path_factory):
+    """Give test chains a fixed signer and explicit public-key trust source."""
+    keypair = KeyPair.generate()
+    config_dir = tmp_path_factory.mktemp("block-identity")
+    identity_file = config_dir / "identity.json"
+    trust_file = config_dir / "trusted.json"
+    identity_file.write_text(json.dumps({
+        "node_id": "test-node",
+        "msp_id": "Test-MSP",
+        "signing_key": keypair.private_key,
+        "signing_public_key": keypair.public_key,
+        "transport_secret_key": "",
+        "transport_public_key": "",
+    }))
+    identity_file.chmod(0o600)
+    trust_file.write_text(json.dumps({"test-node": keypair.public_key}))
+    previous_identity = settings.VALIDATOR_IDENTITY_PATH
+    previous_trust = settings.BLOCK_TRUSTED_KEYS_FILE
+    settings.VALIDATOR_IDENTITY_PATH = str(identity_file)
+    settings.BLOCK_TRUSTED_KEYS_FILE = str(trust_file)
+    yield
+    settings.VALIDATOR_IDENTITY_PATH = previous_identity
+    settings.BLOCK_TRUSTED_KEYS_FILE = previous_trust
