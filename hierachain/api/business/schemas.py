@@ -11,7 +11,7 @@ IPFS Integration:
 - Backward compatible with existing on-chain data
 """
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -410,3 +410,24 @@ class OrganizationResponse(BaseModel):
     success: bool = Field(..., description="Whether the operation was successful")
     message: str = Field(..., description="Response message")
     org_id: str | None = Field(None, description="Organization identifier")
+
+
+class OrganizationMemberRequest(BaseModel):
+    """Request schema for an organization administrator to register a member."""
+
+    member_id: str = Field(
+        ..., min_length=1, description="User ID from the member's API key"
+    )
+    role: Literal["admin", "member"] = Field(
+        "member", description="Role granted by an existing organization administrator"
+    )
+
+
+class OrganizationMemberResponse(BaseModel):
+    """Response schema for organization member registration."""
+
+    success: bool
+    message: str
+    org_id: str
+    member_id: str
+    role: str

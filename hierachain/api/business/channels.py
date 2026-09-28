@@ -4,6 +4,7 @@ Create channels and manage private data collections within channels.
 """
 
 import time
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -12,10 +13,15 @@ from hierachain.api.business.schemas import (
     ChannelResponse,
     PrivateCollectionCreateRequest,
 )
-from hierachain.api.business.state import _channels, _private_collections
+from hierachain.api.business.state import _private_collections
+from hierachain.api.ledger.depds import get_hierarchy_manager
+from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.sanitization import sanitize_dict, sanitize_string
 from hierachain.security.secure_logging import SecureLogger
-from hierachain.security.verify.api_key_verifier import require_chain_access
+from hierachain.security.verify.api_key_verifier import (
+    ResourcePermissionChecker,
+    require_chain_access,
+)
 
 router = APIRouter(tags=["HieraChain-business"])
 api_logger = SecureLogger("hierachain.api.business")
@@ -24,24 +30,46 @@ api_logger = SecureLogger("hierachain.api.business")
 @router.post(
     "/channels",
     response_model=ChannelResponse,
-    dependencies=[Depends(require_chain_access)]
 )
-async def create_channel(channel_request: ChannelCreateRequest):
-    try:
-        channel_id = channel_request.channel_id
-        _channels[channel_id] = {
-            "id": channel_id,
-            "organizations": channel_request.organizations,
-            "policy": channel_request.policy,
-            "created_at": time.time()
-        }
+async def create_channel(
+    channel_request: ChannelCreateRequest,
+    auth_context: dict[str, Any] = Depends(require_chain_access),
+    manager: HierarchyManager = Depends(get_hierarchy_manager),
+) -> ChannelResponse:
+    if not ResourcePermissionChecker.has_permission(auth_context, "channels:manage"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Channel provisioning requires 'channels:manage' permission.",
+        )
 
+    try:
+        channel_id = sanitize_string(channel_request.channel_id)
+        org_ids = [sanitize_string(org_id) for org_id in channel_request.organizations]
+        policy = sanitize_dict(channel_request.policy)
+        if not channel_id or not org_ids or any(not org_id for org_id in org_ids):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Channel ID and at least one valid organization ID are required.",
+            )
+        if manager.get_channel(channel_id) is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Channel '{channel_id}' already exists.",
+            )
+        for org_id in org_ids:
+            if manager.get_organization(org_id) is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Organization '{org_id}' not found.",
+                )
+
+        manager.create_channel(channel_id, org_ids, policy)
         api_logger.audit(
             action="create",
             resource="channel",
             success=True,
             channel_id=channel_id,
-            org_count=len(channel_request.organizations)
+            org_count=len(org_ids)
         )
 
         return ChannelResponse(
@@ -49,6 +77,13 @@ async def create_channel(channel_request: ChannelCreateRequest):
             message=f"Channel '{channel_id}' created successfully",
             channel_id=channel_id
         )
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Channel '{channel_request.channel_id}' could not be created.",
+        ) from e
     except Exception as e:
         api_logger.error(
             "Failed to create channel",
@@ -66,8 +101,11 @@ async def create_channel(channel_request: ChannelCreateRequest):
     response_model=ChannelResponse,
     dependencies=[Depends(require_chain_access)]
 )
-async def get_channel(channel_id: str):
-    if channel_id not in _channels:
+async def get_channel(
+    channel_id: str,
+    manager: HierarchyManager = Depends(get_hierarchy_manager),
+) -> ChannelResponse:
+    if manager.get_channel(channel_id) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Channel '{channel_id}' not found"
@@ -86,9 +124,12 @@ async def get_channel(channel_id: str):
     dependencies=[Depends(require_chain_access)]
 )
 async def create_private_collection(
-    channel_id: str, collection_request: PrivateCollectionCreateRequest
-):
-    if channel_id not in _channels:
+    channel_id: str,
+    collection_request: PrivateCollectionCreateRequest,
+    manager: HierarchyManager = Depends(get_hierarchy_manager),
+) -> ChannelResponse:
+    channel = manager.get_channel(channel_id)
+    if channel is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Channel '{channel_id}' not found"
@@ -104,6 +145,11 @@ async def create_private_collection(
             sanitize_dict(collection_request.config)
             if collection_request.config else {}
         )
+        if not collection_name:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Collection name cannot be empty.",
+            )
 
         _private_collections[collection_name] = {
             "name": collection_name,
@@ -129,6 +175,8 @@ async def create_private_collection(
             ),
             channel_id=channel_id
         )
+    except HTTPException:
+        raise
     except Exception as e:
         api_logger.error(
             "Failed to create private collection",
