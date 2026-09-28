@@ -30,6 +30,7 @@ class TransactionState(str, Enum):
 
     PENDING = "pending"
     PREPARED = "prepared"
+    IN_DOUBT = "in_doubt"
     COMMITTED = "committed"
     ROLLED_BACK = "rolled_back"
     FAILED = "failed"

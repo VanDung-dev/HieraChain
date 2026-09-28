@@ -431,10 +431,12 @@ class PrivateCollection:
         Returns:
             True if endorsements are sufficient
         """
-        # Filter to only valid member endorsements
-        valid_endorsements = [
-            org_id for org_id in endorsements if org_id in self.organizations
-        ]
+        if any(
+            not isinstance(org_id, str) or org_id not in self.organizations
+            for org_id in endorsements
+        ):
+            return False
+        valid_endorsements = set(endorsements)
 
         policy = self.metadata["endorsement_policy"]
         total_members = len(self.organizations)
