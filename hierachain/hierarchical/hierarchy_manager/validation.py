@@ -40,9 +40,9 @@ def _extract_chain_health(_name: str, chain: Any) -> tuple[dict[str, Any], bool]
     return details, is_valid
 
 
-def _verify_chain_blocks(verifier: Any, _name: str, chain_data: Any) -> dict[str, Any]:
+def _verify_chain_blocks(verifier: Any, _name: str, chain: Any) -> dict[str, Any]:
     """Verify chain blocks using the provided verifier."""
-    result = verifier.verify_chain(chain_data)
+    result = verifier.verify_chain(chain.chain, chain.trusted_public_keys)
     return {"valid": result.is_valid, "message": result.message}
 
 
@@ -57,7 +57,7 @@ def _validate_all_sub_chains(
     for name, chain in sub_chains.items():
         is_valid = chain.is_chain_valid()
         sub_validation[name] = is_valid
-        sub_res = _verify_chain_blocks(verifier, name, chain.chain)
+        sub_res = _verify_chain_blocks(verifier, name, chain)
         block_verification[name] = sub_res
 
         if not is_valid or not sub_res["valid"]:
@@ -140,14 +140,14 @@ def _compute_proof_consistency(
 
 def _validate_cross_chain_consistency(manager: Any) -> dict[str, Any]:
     """Validate cross-chain consistency."""
-    verifier = get_block_verifier(strict_mode=False)
+    verifier = get_block_verifier()
     results: dict[str, Any] = {
         "timestamp": time.time(),
         "main_chain_valid": manager.main_chain.is_chain_valid(),
         "overall_consistent": True,
     }
 
-    main_res = _verify_chain_blocks(verifier, "main_chain", manager.main_chain.chain)
+    main_res = _verify_chain_blocks(verifier, "main_chain", manager.main_chain)
     results["block_verification"] = {"main_chain": main_res}
     if not main_res["valid"]:
         results["overall_consistent"] = False

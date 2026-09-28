@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 import time
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -24,8 +25,9 @@ def _shared_pool(max_workers: int | None = None) -> Iterator[ThreadPoolExecutor]
         yield _SHARED_POOL
 
 from hierachain.hierarchical.channel import Channel
+from hierachain.hierarchical.channel.types import ChannelStatus
 from hierachain.hierarchical.main_chain import MainChain
-from hierachain.hierarchical.multi_org import MultiOrgNetwork
+from hierachain.hierarchical.multi_org import MultiOrgNetwork, Organization
 from hierachain.hierarchical.private_data import PrivateCollection
 
 if TYPE_CHECKING:
@@ -66,10 +68,10 @@ class HierarchyManager:
 
     def __init__(self, name: str = "MainChain", node_identity: Any | None = None):
         """Initialize main chain."""
-        self.main_chain: MainChain = MainChain(name)
+        self.main_chain: MainChain = MainChain(name, node_identity=node_identity)
         self.sub_chains: dict[str, DomainChain] = {}
         self.system_started_at: float = time.time()
-        self.node_identity = node_identity
+        self.node_identity = self.main_chain.node_identity
 
         self.auto_proof_submission: bool = False
         self.proof_submission_interval: int = 60
@@ -84,6 +86,7 @@ class HierarchyManager:
         self.network: MultiOrgNetwork | None = None
         self.channels: dict[str, Channel] = {}
         self.private_collections: dict[str, PrivateCollection] = {}
+        self._registry_lock = threading.RLock()
 
         self.transaction_manager: CrossChainTransactionManager = (
             CrossChainTransactionManager(self)
@@ -108,7 +111,139 @@ class HierarchyManager:
         if self.storage is not None:
             if not self.storage.store_chain(self.main_chain):
                 raise RuntimeError("Failed to persist main chain metadata")
+            self.main_chain.proof_storage = self.storage
+            self._restore_main_chain()
+            if self.cross_level_sync is not None:
+                self.cross_level_sync.storage = self.storage
             self._restore_sub_chains()
+            self._restore_hierarchy_registry()
+
+    def _restore_main_chain(self) -> None:
+        """Restore and verify the signed MainChain history before accepting proofs."""
+        from hierachain.consensus.ordering.storage import (
+            _block_from_dict,
+            _verify_chain_links,
+        )
+        from hierachain.hierarchical.main_chain.proofs import _refresh_durable_proofs
+
+        saved = self.storage.load_chain(self.main_chain.name)
+        if not isinstance(saved, dict):
+            raise RuntimeError("Could not load main chain from durable storage")
+        rows = saved.get("chain", [])
+        if not rows:
+            return
+        blocks = [_block_from_dict(row, self.main_chain.trusted_public_keys) for row in rows]
+        if blocks[0].index != 0 or any(block.index != index for index, block in enumerate(blocks)):
+            raise RuntimeError("Main chain block indices are incomplete")
+        _verify_chain_links(blocks)
+        main = self.main_chain
+        main.chain = blocks
+        main._rebuild_event_indexes()
+        _refresh_durable_proofs(main)
+        main.proof_sequence = main.proof_count
+
+    def _hierarchy_registry_snapshot(self) -> dict[str, Any]:
+        for channel in self.channels.values():
+            for org_id, channel_org in channel.organizations.items():
+                organization = self.organizations.get(org_id)
+                if (
+                    organization is None
+                    or channel_org.member_registry is not organization.members
+                ):
+                    raise ValueError("Channel organization is not in the manager registry")
+        return {
+            "organizations": {
+                org_id: {
+                    "msp": {
+                        "ca_cert": org.msp.ca_cert,
+                        "tls_ca_cert": org.msp.tls_ca_cert,
+                        "admin_certs": org.msp.admin_certs,
+                    },
+                    "members": org.members,
+                }
+                for org_id, org in self.organizations.items()
+            },
+            "channels": {
+                channel_id: {
+                    "organizations": list(channel.organizations),
+                    "policy": {
+                        "read": channel.policy.read_policy,
+                        "write": channel.policy.write_policy,
+                        "endorsement": channel.policy.endorsement_policy,
+                        "admin": channel.policy.admin_policy,
+                        "lifecycle_endorsement": channel.policy.lifecycle_endorsement,
+                        "custom_policies": channel.policy.custom_policies,
+                    },
+                    "status": channel.status.value,
+                }
+                for channel_id, channel in self.channels.items()
+            },
+        }
+
+    def _persist_hierarchy_registry(self) -> bool:
+        with self._registry_lock:
+            if self.storage is None:
+                return True
+            save = getattr(self.storage, "save_hierarchy_registry", None)
+            if not callable(save):
+                return False
+            try:
+                return save(self._hierarchy_registry_snapshot()) is True
+            except Exception:
+                logger.exception("Could not persist hierarchy registry")
+                return False
+
+    def _restore_hierarchy_registry(self) -> None:
+        load = getattr(self.storage, "load_hierarchy_registry", None)
+        if not callable(load):
+            return
+        state = load()
+        if state is None:
+            return
+        if (
+            not isinstance(state, dict)
+            or not isinstance(state.get("organizations"), dict)
+            or not isinstance(state.get("channels"), dict)
+        ):
+            raise RuntimeError("Invalid hierarchy registry snapshot")
+
+        network = MultiOrgNetwork()
+        organizations: dict[str, Organization] = {}
+        for org_id, saved in state["organizations"].items():
+            if not isinstance(org_id, str) or not isinstance(saved, dict):
+                raise RuntimeError("Invalid organization in hierarchy registry")
+            msp = saved.get("msp")
+            members = saved.get("members")
+            if not isinstance(msp, dict) or not isinstance(members, dict):
+                raise RuntimeError("Invalid organization in hierarchy registry")
+            org = Organization(org_id, msp)
+            for member_id, member in members.items():
+                identity = member.get("identity") if isinstance(member, dict) else None
+                if (
+                    not isinstance(member_id, str)
+                    or not isinstance(identity, dict)
+                    or identity.get("user_id") != member_id
+                    or identity.get("org_id") != org_id
+                    or identity.get("role") != member.get("role")
+                ):
+                    raise RuntimeError("Invalid member in hierarchy registry")
+            org.members = members
+            organizations[org_id] = org
+            network.add_organization(org)
+
+        self.organizations = organizations
+        self.network = network
+        for channel_id, saved in state["channels"].items():
+            if not isinstance(channel_id, str) or not isinstance(saved, dict):
+                raise RuntimeError("Invalid channel in hierarchy registry")
+            org_ids = saved.get("organizations")
+            policy = saved.get("policy")
+            if not isinstance(org_ids, list) or not isinstance(policy, dict):
+                raise RuntimeError("Invalid channel in hierarchy registry")
+            channel = Channel(channel_id, _build_channel_orgs(org_ids, self), policy)
+            channel.status = ChannelStatus(saved.get("status"))
+            channel._persist_registry = self._persist_hierarchy_registry
+            self.channels[channel_id] = channel
 
     def _restore_sub_chains(self) -> None:
         """Recreate every persisted sub-chain before serving API requests."""
@@ -121,13 +256,19 @@ class HierarchyManager:
         try:
             for metadata in self.storage.list_chains():
                 name = metadata["name"]
-                chain = SubChain(
-                    name=name,
-                    domain_type=metadata.get("domain_type") or "generic",
-                    node_identity=self.node_identity,
-                )
+                domain_type = metadata.get("domain_type") or "generic"
+                if self.transaction_manager.requires_2pc_participant(name):
+                    from hierachain.domains.chains.domain_chain import DomainChain
+
+                    chain = DomainChain(name, domain_type)
+                else:
+                    chain = SubChain(
+                        name=name,
+                        domain_type=domain_type,
+                        node_identity=self.node_identity,
+                    )
                 restored.append(chain)
-                self.add_sub_chain(name, chain)
+                self.add_sub_chain(name, chain, persist=False)
         except Exception:
             for chain in restored:
                 chain.shutdown()
@@ -136,7 +277,11 @@ class HierarchyManager:
     def create_sub_chain(
         self, name: str, domain_type: str, metadata: dict[str, Any] | None = None
     ) -> bool:
-        if name in self.sub_chains:
+        existing = self.sub_chains.get(name)
+        if existing is not None and (
+            callable(getattr(existing, "prepare_transaction", None))
+            or getattr(existing, "domain_type", None) != domain_type
+        ):
             return False
 
         from hierachain.domains.chains.domain_chain import DomainChain
@@ -144,12 +289,33 @@ class HierarchyManager:
         sub_chain = DomainChain(name, domain_type, metadata=metadata)
 
         try:
-            self.add_sub_chain(name, sub_chain)
+            if existing is None:
+                self.add_sub_chain(name, sub_chain)
+            else:
+                self._replace_sub_chain_placeholder(name, existing, sub_chain)
         except Exception:
             sub_chain.shutdown()
             raise
 
         return True
+
+    def _replace_sub_chain_placeholder(self, name: str, placeholder: Any, chain: DomainChain) -> None:
+        """Replace a restored generic chain with its concrete DomainChain participant."""
+        # Keep the placeholder running until its replacement is connected. Rewriting
+        # existing chain metadata here could delete SQLite block rows via REPLACE.
+        if not chain.connect_to_main_chain(self.main_chain):
+            raise RuntimeError(f"Failed to connect sub-chain to main chain: {name}")
+
+        self.sub_chains[name] = chain
+        if self.cross_level_sync:
+            self.cross_level_sync.connect_subchain(name, chain)
+
+        try:
+            placeholder.shutdown()
+        except Exception:
+            logger.exception("Could not shut down replaced sub-chain placeholder %s", name)
+
+        self.transaction_manager.retry_pending()
 
     def get_sub_chain(self, name: str) -> DomainChain | None:
         return self.sub_chains.get(name)
@@ -196,9 +362,7 @@ class HierarchyManager:
         if not chain:
             return False
 
-        result = chain.submit_proof_to_main(self.main_chain)
-
-        if result and self.cross_level_sync:
+        if self.cross_level_sync:
             sync_result = self.cross_level_sync.sync_to_mainchain(
                 sub_chain_name
             )
@@ -207,8 +371,10 @@ class HierarchyManager:
                     "Cross-level sync to MainChain failed: %s",
                     sync_result.error_message,
                 )
+                return False
+            return True
 
-        return result
+        return chain.submit_proof_to_main(self.main_chain) is True
 
     def get_system_overview(self) -> dict[str, Any]:
         total_tx = 0
@@ -345,22 +511,44 @@ class HierarchyManager:
     def create_organization(
         self, org_id: str, name: str, admin_users: list[str] | None = None
     ) -> Any:
-        if org_id in self.organizations:
-            raise ValueError(f"Organization {org_id} already exists")
+        with self._registry_lock:
+            if org_id in self.organizations:
+                raise ValueError(f"Organization {org_id} already exists")
 
-        org = _init_organization_msp(org_id, name, admin_users)
-        self.organizations[org_id] = org
+            org = _init_organization_msp(org_id, name, admin_users)
+            self.organizations[org_id] = org
+            if not self._persist_hierarchy_registry():
+                del self.organizations[org_id]
+                raise RuntimeError("Failed to persist organization registry")
 
-        if self.network is None:
-            self.network = MultiOrgNetwork()
-
-        network = self.network
-        if network is not None:
-            network.add_organization(org)
-        return org
+            if self.network is None:
+                self.network = MultiOrgNetwork()
+            self.network.add_organization(org)
+            return org
 
     def get_organization(self, org_id: str) -> Any:
         return self.organizations.get(org_id)
+
+    def register_organization_member(
+        self, org_id: str, member_id: str, identity: dict[str, Any], role: str
+    ) -> str:
+        with self._registry_lock:
+            organization = self.get_organization(org_id)
+            if organization is None:
+                raise ValueError(f"Organization {org_id} not found")
+            if member_id in organization.members:
+                raise ValueError(f"Member {member_id} already exists")
+            if (
+                identity.get("user_id") != member_id
+                or identity.get("org_id") != org_id
+                or identity.get("role") != role
+            ):
+                raise ValueError("Member identity does not match registry fields")
+            organization.register_member(member_id, identity, role)
+            if not self._persist_hierarchy_registry():
+                del organization.members[member_id]
+                raise RuntimeError("Failed to persist organization member")
+            return member_id
 
     def create_channel(
         self,
@@ -368,19 +556,24 @@ class HierarchyManager:
         org_ids: list[str],
         policy_config: dict[str, Any] | None = None,
     ) -> Channel:
-        if channel_id in self.channels:
-            raise ValueError(f"Channel {channel_id} already exists")
+        with self._registry_lock:
+            if channel_id in self.channels:
+                raise ValueError(f"Channel {channel_id} already exists")
 
-        organizations = _build_channel_orgs(org_ids, self)
-        policy = policy_config or {
-            "read": "MEMBER",
-            "write": "ADMIN",
-            "endorsement": "MAJORITY",
-        }
+            organizations = _build_channel_orgs(org_ids, self)
+            policy = policy_config or {
+                "read": "MEMBER",
+                "write": "ADMIN",
+                "endorsement": "MAJORITY",
+            }
 
-        channel = Channel(channel_id, organizations, policy)
-        self.channels[channel_id] = channel
-        return channel
+            channel = Channel(channel_id, organizations, policy)
+            self.channels[channel_id] = channel
+            if not self._persist_hierarchy_registry():
+                del self.channels[channel_id]
+                raise RuntimeError("Failed to persist channel registry")
+            channel._persist_registry = self._persist_hierarchy_registry
+            return channel
 
     def get_channel(self, channel_id: str) -> Channel | None:
         return self.channels.get(channel_id)
@@ -459,22 +652,24 @@ class HierarchyManager:
         if backend == "redis":
             return RedisStorageAdapter()
 
-        logger.debug("No persistent storage backend configured (backend=%s)", backend)
-        return None
+        if backend == "memory":
+            return None
+        raise ValueError(f"Unsupported HRC_STORAGE_BACKEND value: {backend!r}")
 
     def set_main_chain(self, main_chain):
         self.main_chain = main_chain
 
-    def add_sub_chain(self, chain_name, sub_chain):
+    def add_sub_chain(self, chain_name, sub_chain, *, persist: bool = True):
         if chain_name in self.sub_chains:
             raise ValueError(f"Sub-chain {chain_name} already exists")
-        if self.storage is not None and not self.storage.store_chain(sub_chain):
+        if persist and self.storage is not None and not self.storage.store_chain(sub_chain):
             raise RuntimeError(f"Failed to persist sub-chain metadata: {chain_name}")
         if not sub_chain.connect_to_main_chain(self.main_chain):
             raise RuntimeError(f"Failed to connect sub-chain to main chain: {chain_name}")
         self.sub_chains[chain_name] = sub_chain
         if self.cross_level_sync:
             self.cross_level_sync.connect_subchain(chain_name, sub_chain)
+        self.transaction_manager.retry_pending()
 
     def __str__(self) -> str:
         return (

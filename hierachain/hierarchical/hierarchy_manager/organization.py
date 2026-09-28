@@ -38,6 +38,9 @@ def _build_channel_orgs(org_ids: list[str], manager: Any) -> list[ChannelOrganiz
         org = manager.get_organization(org_id)
         if not org:
             raise ValueError(f"Organization {org_id} not found")
+        member_registry = getattr(org, "members", None)
+        if not isinstance(member_registry, dict):
+            raise ValueError(f"Organization {org_id} has no valid member registry")
 
         organizations.append(
             ChannelOrganization(
@@ -46,7 +49,8 @@ def _build_channel_orgs(org_ids: list[str], manager: Any) -> list[ChannelOrganiz
                 msp_id=f"{org_id}-MSP",
                 endpoints=[],
                 certificates={},
-                roles={"admin", "member"},
+                roles={"member"},
+                member_registry=member_registry,
             )
         )
     return organizations
