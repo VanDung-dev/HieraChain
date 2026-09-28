@@ -7,7 +7,7 @@ import time
 from typing import Any
 
 from hierachain.config.settings import settings
-from hierachain.core.block import table_to_list_of_dicts
+from hierachain.consensus.ordering.storage import _block_from_dict
 from hierachain.security.verify.zk_verifier import ZKVerificationError
 
 logger = logging.getLogger(__name__)
@@ -58,10 +58,11 @@ def _record_proof_on_main_chain(
     proof_hash: str,
     sanitized_metadata: dict[str, Any],
     zk_verified: bool,
+    zk_proof: bytes | None,
 ) -> bool:
     """Record a proof on the Main Chain."""
     with chain.lock:
-        proof_id = f"PROOF-{chain.proof_count + 1}"
+        proof_id = f"PROOF-{chain.proof_sequence + 1}"
         current_time = time.time()
         event: dict[str, Any] = {
             "entity_id": sub_chain_name,
@@ -72,6 +73,7 @@ def _record_proof_on_main_chain(
             "proof_hash": proof_hash,
             "metadata": sanitized_metadata,
             "zk_verified": zk_verified,
+            "zk_proof": zk_proof.hex() if zk_proof is not None else None,
             "details": {
                 "sub_chain_name": sub_chain_name,
                 "proof_hash": proof_hash,
@@ -82,44 +84,43 @@ def _record_proof_on_main_chain(
         }
 
         chain.add_event(event)
-        chain.proof_count += 1
-
-        chain.latest_proofs[sub_chain_name] = {
-            "proof_hash": proof_hash,
-            "timestamp": current_time,
-            "block_index": chain.get_latest_block().index + 1,
-        }
-
-        # Update proof index for O(1) lookup
-        if sub_chain_name not in chain.proof_index:
-            chain.proof_index[sub_chain_name] = []
-        chain.proof_index[sub_chain_name].append(chain.get_latest_block().index + 1)
-
-        _update_recent_proofs_on_main_chain(
-            chain, sub_chain_name, proof_hash,
-            sanitized_metadata, current_time,
-        )
+        chain.proof_sequence += 1
         return True
 
 
-def _update_recent_proofs_on_main_chain(
-    chain: Any,
-    sub_chain_name: str,
-    proof_hash: str,
-    sanitized_metadata: dict[str, Any],
-    timestamp: float,
-) -> None:
-    """Update the recent proofs on the Main Chain."""
-    recent_proof_entry = {
-        "block_index": chain.get_latest_block().index + 1,
-        "sub_chain": sub_chain_name,
-        "proof_hash": proof_hash,
-        "metadata": sanitized_metadata,
-        "timestamp": timestamp,
-    }
-    chain.recent_proofs.append(recent_proof_entry)
-    if len(chain.recent_proofs) > 10:
-        chain.recent_proofs.pop(0)
+def _refresh_durable_proofs(chain: Any) -> None:
+    """Build public proof counters and indexes from verified stored blocks."""
+    index: dict[str, list[int]] = {}
+    latest: dict[str, dict[str, Any]] = {}
+    recent: list[dict[str, Any]] = []
+    for block in chain.chain:
+        for event in _durable_block_events(chain, block, strict=True):
+            if event.get("event") != "proof_submission":
+                continue
+            details = event.get("details", {})
+            sub_name = details.get("sub_chain_name")
+            proof_hash = details.get("proof_hash")
+            if not isinstance(sub_name, str) or not isinstance(proof_hash, str):
+                raise ValueError("Invalid durable MainChain proof")
+            block_indices = index.setdefault(sub_name, [])
+            if not block_indices or block_indices[-1] != block.index:
+                block_indices.append(block.index)
+            latest[sub_name] = {
+                "proof_hash": proof_hash,
+                "timestamp": event["timestamp"],
+                "block_index": block.index,
+            }
+            recent.append({
+                "block_index": block.index,
+                "sub_chain": sub_name,
+                "proof_hash": proof_hash,
+                "metadata": event.get("metadata", {}),
+                "timestamp": event["timestamp"],
+            })
+    chain.proof_count = len(recent)
+    chain.proof_index = index
+    chain.latest_proofs = latest
+    chain.recent_proofs = recent[-10:]
 
 
 def _verify_proof_in_main_chain(
@@ -130,25 +131,13 @@ def _verify_proof_in_main_chain(
     block_indices = chain.proof_index.get(sub_chain_name, [])
     for idx in block_indices:
         if idx < len(chain.chain):
-            block = chain.chain[idx]
-            events = (
-                block.to_event_list()
-                if hasattr(block, "to_event_list")
-                else table_to_list_of_dicts(block.events)
-            )
+            events = _durable_block_events(chain, chain.chain[idx])
             if _find_proof_in_events(events, proof_hash, sub_chain_name):
                 return True
 
-    if _find_proof_in_events(chain.pending_events, proof_hash, sub_chain_name):
-        return True
-
     # Fallback to chain scan in case proof was minted into an unindexed block
     for block in chain.chain:
-        events = (
-            block.to_event_list()
-            if hasattr(block, "to_event_list")
-            else table_to_list_of_dicts(block.events)
-        )
+        events = _durable_block_events(chain, block)
         if _find_proof_in_events(events, proof_hash, sub_chain_name):
             return True
 
@@ -165,16 +154,34 @@ def _get_proofs_by_sub_chain_from_main_chain(
     block_indices = chain.proof_index.get(sub_chain_name, [])
     for idx in block_indices:
         if idx < len(chain.chain):
-            block = chain.chain[idx]
-            events = (
-                block.to_event_list()
-                if hasattr(block, "to_event_list")
-                else table_to_list_of_dicts(block.events)
-            )
+            events = _durable_block_events(chain, chain.chain[idx])
             proofs.extend(_filter_proofs_by_sub_chain(events, sub_chain_name))
 
-    proofs.extend(_filter_proofs_by_sub_chain(chain.pending_events, sub_chain_name))
     return proofs
+
+
+def _durable_block_events(
+    chain: Any, block: Any, *, strict: bool = False
+) -> list[dict[str, Any]]:
+    """Read only signed block events confirmed in durable storage."""
+    storage = getattr(chain, "proof_storage", None)
+    if not callable(getattr(storage, "get_block_by_index", None)):
+        if strict:
+            raise RuntimeError("Durable MainChain storage is unavailable")
+        return []
+    try:
+        saved = storage.get_block_by_index(block.index, chain.name)
+        if not isinstance(saved, dict) or saved.get("hash") != block.hash:
+            if strict:
+                raise RuntimeError(f"MainChain block {block.index} is missing or inconsistent")
+            return []
+        verified = _block_from_dict(saved, chain.trusted_public_keys)
+        return verified.to_event_list()
+    except Exception:
+        if strict:
+            raise
+        logger.exception("Could not read durable MainChain block %s", block.index)
+        return []
 
 
 def _verify_zk_proof_helper(

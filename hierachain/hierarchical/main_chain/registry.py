@@ -5,6 +5,7 @@ Registry, statistics, and integrity report helpers for Main Chain.
 from typing import Any
 
 from hierachain.hierarchical.main_chain.proofs import (
+    _durable_block_events,
     _get_proofs_by_sub_chain_from_main_chain,
 )
 
@@ -33,14 +34,19 @@ def _get_sub_chain_summary_from_main_chain(
 def _get_main_chain_stats_for_chain(chain: Any) -> dict[str, Any]:
     """Get comprehensive statistics about the Main Chain."""
     base_stats = chain.get_chain_stats()
-    proof_events = chain.get_events_by_type("proof_submission")
+    # ponytail: Scan durable blocks for truthful counts; cache a verified tip if this becomes hot.
+    proof_count = sum(
+        event.get("event") == "proof_submission"
+        for block in chain.chain
+        for event in _durable_block_events(chain, block)
+    )
 
     return {
         **base_stats,
         "role": "main_chain",
         "registered_sub_chains": len(chain.registered_sub_chains),
         "sub_chains": list(chain.registered_sub_chains),
-        "total_proofs": len(proof_events),
+        "total_proofs": proof_count,
         "consensus_type": chain.consensus.name,
         "authorities": chain.consensus.get_validator_count(),
     }
