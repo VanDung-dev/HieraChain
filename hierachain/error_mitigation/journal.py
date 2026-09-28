@@ -514,15 +514,15 @@ class TransactionJournal:
         return self._write_event_to_file(event_data)
 
     def _get_journal_files(self) -> list[Path]:
-        files = sorted(self.storage_path.glob(f"{self.active_log_file.stem}_*.parquet"))
-        files += sorted(self.storage_path.glob(f"{self.active_log_file.stem}_*.arrow"))
-        files += sorted(self.storage_path.glob(f"{self.active_log_file.stem}_*.log"))
+        files = list(self.storage_path.glob(f"{self.active_log_file.stem}_*.parquet"))
+        files += list(self.storage_path.glob(f"{self.active_log_file.stem}_*.arrow"))
+        files += list(self.storage_path.glob(f"{self.active_log_file.stem}_*.log"))
         if self._legacy_active_file and self._legacy_active_file.exists():
             files.append(self._legacy_active_file)
+        ordered_files = sorted(set(files) - {self.active_log_file})
         if self.active_log_file.exists():
-            files.append(self.active_log_file)
-        files = sorted(set(files))
-        return files
+            ordered_files.append(self.active_log_file)
+        return ordered_files
 
     def _iter_parquet_file(self, path: Path) -> Generator[dict[str, Any], None, None]:
         if path.suffix == ".parquet":
