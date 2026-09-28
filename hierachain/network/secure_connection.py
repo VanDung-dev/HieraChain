@@ -252,7 +252,7 @@ class SecureConnectionManager:
         )
 
         # Warn on insecure production configuration
-        if settings.env == "product" and trust_policy != "strict":
+        if settings.env == "production" and trust_policy != "strict":
             logger.warning(
                 "SECURITY WARNING: Production environment running with "
                 "P2P trust_policy='%s' instead of 'strict'. "
@@ -261,7 +261,7 @@ class SecureConnectionManager:
                 trust_policy,
             )
 
-        if settings.env == "product" and not self.require_signatures:
+        if settings.env == "production" and not self.require_signatures:
             logger.warning(
                 "SECURITY WARNING: Production environment running without "
                 "P2P message signature verification. "
