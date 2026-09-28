@@ -2,8 +2,6 @@
 Chain management commands.
 """
 
-import time
-
 import click
 
 from hierachain.cli.store import (
@@ -61,39 +59,11 @@ def create(ctx: click.Context, chain_type, name, parent):
 
 @chain_group.command()
 @click.argument('chain_name')
-def submit_proof(chain_name):
-    """Submit proof from sub-chain to main chain"""
-    try:
-        chain = get_sub_chain(chain_name)
-        if not chain:
-            click.echo(f"Chain not found: {chain_name}")
-            return
-        
-        main_chain = get_main_chain()
-        
-        # Submit proof with metadata
-        # We assume chain has submit_proof_to_main (if it's a real class)
-        # If it's a placeholder, this might fail, so we wrap in try
-        if hasattr(chain, 'submit_proof_to_main'):
-            chain.submit_proof_to_main(main_chain, metadata_filter=lambda c: {
-                "chain_name": c.name,
-                "domain_type": getattr(c, 'domain_type', 'generic'),
-                "block_count": len(getattr(c, 'chain', [])),
-                "timestamp": time.time()
-            })
-            click.echo(
-                f"Successfully submitted proof from chain '{chain_name}' to main chain"
-            )
-        else:
-            click.echo(
-                "Chain object does not support proof submission (Mock Mode)"
-            )
-        
-        # Save to file
-        save_chains_to_file('chains.json')
-        
-    except Exception as e:
-        click.echo(f"Error submitting proof: {e}")
+def submit_proof(chain_name: str) -> None:
+    """Reject submission through the nonpersistent CLI chain registry."""
+    raise click.ClickException(
+        "CLI proof submission requires a durable HierarchyManager; use the authenticated API"
+    )
 
 
 @chain_group.command(name="list")

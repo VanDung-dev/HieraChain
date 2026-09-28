@@ -9,6 +9,7 @@ import click
 from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 from hierachain.config.settings import settings
 from hierachain.core.block import Block
+from hierachain.security.identity_loader import load_trusted_block_keys
 from hierachain.security.verify.block_verifier import BlockVerifier
 from hierachain.security.verify.signature_verifier import SignatureVerifier
 
@@ -27,7 +28,7 @@ def _db_url_to_path(url: str | None) -> str:
 
 
 @click.group(name="verify")
-def verify_group():
+def verify_group() -> None:
     """Verification tools for blockchain integrity."""
 
 
@@ -37,50 +38,70 @@ def verify_group():
     default=None,
     help='Database connection string (default: from settings)'
 )
-def verify_chain(db):
-    """Verify the structural integrity of the blockchain."""
+def verify_chain(db: str | None) -> None:
+    """Verify chain integrity and every trusted block signature."""
     db_url = db or settings.DATABASE_URL
     click.echo(f"Verifying chain integrity from: {db_url}")
+    try:
+        trusted_keys = load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
     
     try:
         backend = SQLiteAdapter(_db_url_to_path(db_url))
     except Exception as e:
-        click.echo(f"Failed to connect to storage: {e}")
-        return
+        raise click.ClickException(f"Failed to connect to storage: {e}") from e
 
     try:
-        blocks = _load_blocks_from_backend(backend)
-        if not blocks:
-            return
-        
-        verifier = BlockVerifier(strict_mode=False)
-        result = verifier.verify_chain(blocks)
-        
-        _report_verification_result(result)
+        invalid_chains = []
+        for chain_name in _get_chain_names(backend):
+            click.echo(f"Chain: {chain_name}")
+            blocks = _load_blocks_from_backend(backend, chain_name)
+            result = BlockVerifier().verify_chain(blocks, trusted_keys)
+            _report_verification_result(result)
+            if not result.is_valid:
+                invalid_chains.append(chain_name)
+        if invalid_chains:
+            raise click.ClickException(
+                f"Chain verification failed: {', '.join(invalid_chains)}"
+            )
                     
+    except click.ClickException:
+        raise
     except Exception as e:
-        click.echo(f"Error during verification: {e}")
+        raise click.ClickException(f"Error during verification: {e}") from e
     finally:
         backend.close()
 
 
-def _load_blocks_from_backend(backend):
+def _get_chain_names(backend: SQLiteAdapter) -> list[str]:
+    """Get every chain that has stored blocks; never report empty verification as success."""
+    with backend._get_connection() as connection:
+        rows = connection.execute(
+            "SELECT DISTINCT chain_name FROM blocks ORDER BY chain_name"
+        ).fetchall()
+    names = [row[0] for row in rows]
+    if not names or any(not name for name in names):
+        raise click.ClickException("No named block chains to verify")
+    return names
+
+
+def _load_blocks_from_backend(backend: SQLiteAdapter, chain_name: str) -> list[Block]:
     """Helper to load all blocks from storage with a progress bar."""
-    latest = backend.get_latest_block()
+    latest = backend.get_latest_block(chain_name=chain_name)
     if not latest:
-        click.echo("Blockchain is empty.")
-        return []
+        raise click.ClickException(f"Chain {chain_name} is empty")
         
     tip_index = latest['index']
     blocks = []
     
     with click.progressbar(range(tip_index + 1), label='Loading blocks') as bar:
         for i in bar:
-            b_data = backend.get_block_by_index(i)
+            b_data = backend.get_block_by_index(i, chain_name=chain_name)
             if b_data:
                 blocks.append(Block.from_dict(b_data))
             else:
-                click.secho(f"Warning: Missing block at index {i}", fg='yellow')
+                raise click.ClickException(f"Missing block at index {i}")
     return blocks
 
 
@@ -100,34 +121,55 @@ def _report_verification_result(result) -> None:
 @verify_group.command(name="signatures")
 @click.option('--db', default=None, help='Database connection string')
 @click.option('--limit', default=0, help='Check only last N blocks')
-def verify_signatures(db, limit):
+def verify_signatures(db: str | None, limit: int) -> None:
     """Audit cryptographic signatures of blocks and events."""
     db_url = db or settings.DATABASE_URL
     click.echo(f"Auditing signatures from: {db_url}")
+    try:
+        trusted_keys = load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
     
     try:
         backend = SQLiteAdapter(_db_url_to_path(db_url))
     except Exception as e:
-        click.echo(f"Failed to connect to storage: {e}")
-        return
+        raise click.ClickException(f"Failed to connect to storage: {e}") from e
 
     try:
-        latest = backend.get_latest_block()
-        if not latest:
-            click.echo("Blockchain is empty.")
-            return
-
-        start, tip = _get_audit_range(latest['index'], limit)
-        stats = _run_audit_loop(backend, start, tip)
+        stats = {
+            "blocks_valid": 0, "blocks_invalid": 0,
+            "events_valid": 0, "events_invalid": 0,
+        }
+        for chain_name in _get_chain_names(backend):
+            latest = backend.get_latest_block(chain_name=chain_name)
+            if latest is None:
+                raise click.ClickException(f"Chain {chain_name} is empty")
+            click.echo(f"Chain: {chain_name}")
+            start, tip = _get_audit_range(latest['index'], limit)
+            chain_stats = _run_audit_loop(
+                backend, chain_name, start, tip, trusted_keys
+            )
+            for key, value in chain_stats.items():
+                stats[key] += value
         _report_audit_stats(stats)
+        if stats["blocks_invalid"]:
+            raise click.ClickException("Block signature audit failed")
 
+    except click.ClickException:
+        raise
     except Exception as e:
-        click.echo(f"Error during audit: {e}")
+        raise click.ClickException(f"Error during audit: {e}") from e
     finally:
         backend.close()
 
 
-def _run_audit_loop(backend, start, tip):
+def _run_audit_loop(
+    backend: SQLiteAdapter,
+    chain_name: str,
+    start: int,
+    tip: int,
+    trusted_keys: dict[str, bytes],
+) -> dict[str, int]:
     """Core logic to iterate through blocks and perform signature auditing."""
     block_verifier = BlockVerifier(strict_mode=True)
     sig_verifier = SignatureVerifier()
@@ -137,12 +179,12 @@ def _run_audit_loop(backend, start, tip):
     
     with click.progressbar(range(start, tip + 1), label='Auditing') as bar:
         for i in bar:
-            b_data = backend.get_block_by_index(i)
+            b_data = backend.get_block_by_index(i, chain_name=chain_name)
             if not b_data:
-                continue
+                raise click.ClickException(f"Missing block at index {i}")
             
             block = Block.from_dict(b_data)
-            _audit_block_signature(block, block_verifier, stats)
+            _audit_block_signature(block, block_verifier, stats, trusted_keys)
             _audit_event_signatures(block, sig_verifier, stats)
     return stats
 
@@ -158,13 +200,18 @@ def _get_audit_range(tip, limit):
     return start, tip
 
 
-def _audit_block_signature(block, block_verifier, stats) -> None:
+def _audit_block_signature(
+    block: Block,
+    block_verifier: BlockVerifier,
+    stats: dict[str, int],
+    trusted_keys: dict[str, bytes],
+) -> None:
     """Helper to verify a single block's signature and update stats."""
-    if hasattr(block, 'signature') and block.signature:
-        if block_verifier.verify_block_signature(block).is_valid:
-            stats["blocks_valid"] += 1
-        else:
-            stats["blocks_invalid"] += 1
+    public_key = trusted_keys.get(block.creator_id)
+    if block_verifier.verify_block_signature(block, public_key).is_valid:
+        stats["blocks_valid"] += 1
+    else:
+        stats["blocks_invalid"] += 1
 
 
 def _audit_event_signatures(block, sig_verifier, stats) -> None:
