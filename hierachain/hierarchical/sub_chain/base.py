@@ -60,7 +60,6 @@ class SubChain(Blockchain):
         'last_proof_block_index',
         'last_proof_submission',
         'main_chain_connection',
-        'node_identity',
         'ordering_service',
         'proof_submission_interval',
         'running',
@@ -81,15 +80,21 @@ class SubChain(Blockchain):
                 "Allowed: alphanumeric, underscore, hyphen."
             )
 
-        super().__init__(name)
+        super().__init__(
+            name,
+            node_identity=node_identity,
+            trusted_public_keys=(config or {}).get("trusted_public_keys"),
+        )
         self.domain_type = domain_type
         self.custom_config = config
-        self.node_identity = node_identity
 
         # Consensus Loading: SubChain defaults to PoA for intra-organization domain events
         consensus_type = (config or {}).get("consensus_type", "proof_of_authority")
         if consensus_type == "proof_of_federation":
-            new_consensus = ProofOfFederation(f"{name}_PoF")
+            new_consensus = ProofOfFederation(
+                f"{name}_PoF",
+                signing_key_hex=self.node_identity.signing_keypair.private_key,
+            )
         else:
             new_consensus = ProofOfAuthority(f"{name}_PoA", block_interval=settings.BLOCK_INTERVAL)
         self.consensus: Any = new_consensus
@@ -108,6 +113,7 @@ class SubChain(Blockchain):
                     "domain_type": domain_type,
                     "permissions": ["domain_operations", "event_creation"],
                     "created_at": time.time(),
+                    "public_key": self.node_identity.signing_public_key,
                 },
             )
 
@@ -133,8 +139,10 @@ class SubChain(Blockchain):
         )
         self.consumer_thread.start()
 
-    def is_valid_new_block(self, block) -> bool:
-        if not super().is_valid_new_block(block):
+    def is_valid_new_block(
+        self, block: Any, public_key: bytes | None = None
+    ) -> bool:
+        if not super().is_valid_new_block(block, public_key=public_key):
             return False
         previous_block = self.get_latest_block()
         if not self.consensus.validate_block(block, previous_block):
@@ -201,6 +209,7 @@ class SubChain(Blockchain):
             "worker_threads": 2,
             "db_url": db_url,
             "chain_name": self.name,
+            "trusted_public_keys": self.trusted_public_keys,
         }
 
         config = default_config.copy()
@@ -244,6 +253,7 @@ class SubChain(Blockchain):
         entity_id: str,
         operation_type: str,
         details: dict[str, Any] | None = None,
+        transaction_id: str | None = None,
     ) -> bool:
         event = create_event(
             entity_id=entity_id,
@@ -256,6 +266,9 @@ class SubChain(Blockchain):
                 "started_at": time.time()
             }
         )
+        if transaction_id is not None:
+            event["transaction_id"] = transaction_id
+            event["transaction_step"] = "start"
 
         self.add_event(event)
         return True
@@ -265,6 +278,7 @@ class SubChain(Blockchain):
         entity_id: str,
         operation_type: str,
         result: dict[str, Any] | None = None,
+        transaction_id: str | None = None,
     ) -> bool:
         event = create_event(
             entity_id=entity_id,
@@ -277,6 +291,9 @@ class SubChain(Blockchain):
                 "completed_at": time.time()
             }
         )
+        if transaction_id is not None:
+            event["transaction_id"] = transaction_id
+            event["transaction_step"] = "complete"
 
         self.add_event(event)
         self.completed_operations += 1
@@ -301,9 +318,14 @@ class SubChain(Blockchain):
         return True
 
     def submit_proof_to_main(
-        self, main_chain: Any, metadata_filter: Callable | None = None
+        self,
+        main_chain: Any,
+        metadata_filter: Callable | None = None,
+        zk_proof: bytes | None = None,
     ) -> bool:
-        return _submit_proof_for_sub_chain(self, main_chain, metadata_filter)
+        return _submit_proof_for_sub_chain(
+            self, main_chain, metadata_filter, zk_proof
+        )
 
     def should_submit_proof(self) -> bool:
         current_time = time.time()

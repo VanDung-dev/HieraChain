@@ -6,6 +6,8 @@ import logging
 import time
 from typing import Any
 
+from hierachain.consensus.proof_of_authority import ProofOfAuthority
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,7 +19,15 @@ def _process_and_finalize_single_block(sub_chain: Any, block: Any) -> bool:
         block.index = latest_block.index + 1
         block.previous_hash = latest_block.hash
         block.hash = block.calculate_hash()
-        finalized_block = sub_chain.consensus.finalize_block(block, sub_chain.name)
+        if isinstance(sub_chain.consensus, ProofOfAuthority):
+            finalized_block = sub_chain.consensus.finalize_block(
+                block,
+                sub_chain.name,
+                private_key=sub_chain.node_identity.signing_keypair.private_key,
+            )
+        else:
+            finalized_block = sub_chain.consensus.finalize_block(block, sub_chain.name)
+        sub_chain._sign_block(finalized_block)
 
         if not sub_chain.is_valid_new_block(finalized_block):
             logger.error("Failed to add ordered block %d", finalized_block.index)

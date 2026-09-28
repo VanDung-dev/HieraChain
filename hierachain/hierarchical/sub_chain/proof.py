@@ -143,8 +143,21 @@ def _submit_proof_for_sub_chain(
     sub_chain: Any,
     main_chain: Any,
     metadata_filter: Callable | None,
+    zk_proof: bytes | None = None,
 ) -> bool:
     """Submit a cryptographic proof to the Main Chain."""
+    from hierachain.cluster.cross_level_sync import (
+        _find_anchor_block,
+        _persist_proof_anchor,
+    )
+
+    storage = getattr(main_chain, "proof_storage", None)
+    if storage is None or not all(
+        callable(getattr(storage, name, None))
+        for name in ("save_block", "get_block_by_index")
+    ):
+        logger.error("Cannot submit proof without durable MainChain storage")
+        return False
     if not sub_chain.chain or len(sub_chain.chain) <= 1:
         logger.debug("SubChain has only genesis block. Aborting proof.")
         return False
@@ -180,23 +193,53 @@ def _submit_proof_for_sub_chain(
             sub_chain.completed_operations,
         )
     )
+    if not isinstance(metadata, dict):
+        return False
+    metadata = {
+        **metadata,
+        "previous_merkle_root": _get_old_state_root(sub_chain.chain),
+        "latest_merkle_root": latest_block.merkle_root or latest_block.hash,
+        "latest_block_index": latest_block.index,
+    }
 
-    zk_proof = _generate_zk_proof(sub_chain.name, sub_chain.chain, latest_block)
+    if zk_proof is None:
+        zk_proof = _generate_zk_proof(
+            sub_chain.name, sub_chain.chain, latest_block
+        )
     if zk_proof is None and settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN:
         return False
 
-    success = main_chain.add_proof(
-        sub_chain_name=sub_chain.name,
-        proof_hash=latest_block.hash,
-        metadata=metadata,
-        zk_proof=zk_proof,
+    state_root = metadata["latest_merkle_root"]
+    already_queued = any(
+        event.get("event") == "proof_submission"
+        and event.get("details", {}).get("sub_chain_name") == sub_chain.name
+        and event.get("details", {}).get("proof_hash") == latest_block.hash
+        and event.get("metadata", {}).get("latest_merkle_root") == state_root
+        for event in main_chain.pending_events
     )
-    logger.debug("MainChain.add_proof returned: %s", success,)
+    if not already_queued and _find_anchor_block(
+        main_chain, sub_chain.name, state_root, latest_block.hash
+    ) is None:
+        if not main_chain.add_proof(
+            sub_chain_name=sub_chain.name,
+            proof_hash=latest_block.hash,
+            metadata=metadata,
+            zk_proof=zk_proof,
+        ):
+            return False
 
-    if success:
+    try:
+        durable = _persist_proof_anchor(
+            main_chain, storage, sub_chain.name, state_root, latest_block.hash
+        )
+    except Exception:
+        logger.exception("Could not verify durable proof for %s", sub_chain.name)
+        return False
+    if not durable:
+        return False
+    if sub_chain.last_proof_block_index < latest_block.index:
         _update_local_state_after_proof(sub_chain, main_chain, latest_block, zk_proof)
-
-    return success
+    return True
 
 
 def _update_local_state_after_proof(
