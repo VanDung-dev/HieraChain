@@ -1,12 +1,14 @@
 """Recovery and bootstrap contract for persisted sub-chain metadata."""
 
 from contextlib import contextmanager
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from hierachain.hierarchical.hierarchy_manager.base import HierarchyManager
 from hierachain.hierarchical.sub_chain import base as sub_chain_base
+from hierachain.security.identity_loader import load_node_identity
 
 
 class _MetadataStorage:
@@ -20,6 +22,9 @@ class _MetadataStorage:
 
     def list_chains(self) -> list[dict[str, str]]:
         return self.chains
+
+    def load_chain(self, name: str) -> dict[str, object]:
+        return {"name": name, "chain": []}
 
 
 class _CreatedSubChain:
@@ -54,7 +59,8 @@ def test_manager_restores_persisted_subchains(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(
         "hierachain.hierarchical.sub_chain.SubChain", RestoredSubChain
     )
-    identity = object()
+    identity = load_node_identity()
+    assert identity is not None
 
     manager = HierarchyManager(node_identity=identity)
 
@@ -74,6 +80,71 @@ def test_manager_accepts_empty_inventory_for_new_node(
     manager = HierarchyManager()
 
     assert manager.get_all_sub_chains() == {}
+
+
+def test_organization_channel_registry_survives_manager_restart(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
+
+    database_path = str(tmp_path / "hierarchy.db")
+    monkeypatch.setattr(
+        HierarchyManager,
+        "_create_storage",
+        staticmethod(lambda: SQLiteAdapter(database_path=database_path)),
+    )
+
+    first = HierarchyManager()
+    first.create_organization("org-a", "org-a", admin_users=["alice"])
+    first.register_organization_member(
+        "org-a",
+        "bob",
+        {"user_id": "bob", "org_id": "org-a", "role": "member"},
+        "member",
+    )
+    first.create_channel("shared", ["org-a"], {"write": "ADMIN"})
+
+    restored = HierarchyManager()
+    assert restored.get_organization("org-a").members["bob"]["role"] == "member"
+    channel = restored.get_channel("shared")
+    assert channel is not None
+    assert channel.submit_event(
+        {"entity_id": "item-1", "event": "created"},
+        "org-a",
+        submitter_user_id="bob",
+    ) is False
+    assert channel.submit_event(
+        {"entity_id": "item-1", "event": "created"},
+        "org-a",
+        submitter_user_id="alice",
+    ) is True
+
+    assert channel.update_channel_policy({"write": "MEMBER"}, ["org-a"])
+    restored_again = HierarchyManager()
+    updated_channel = restored_again.get_channel("shared")
+    assert updated_channel is not None
+    assert updated_channel.submit_event(
+        {"entity_id": "item-2", "event": "created"},
+        "org-a",
+        submitter_user_id="bob",
+    ) is True
+
+
+def test_organization_is_not_registered_when_registry_save_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FailingStorage(_MetadataStorage):
+        def save_hierarchy_registry(self, _state: dict[str, object]) -> bool:
+            return False
+
+    storage = FailingStorage([])
+    monkeypatch.setattr(HierarchyManager, "_create_storage", staticmethod(lambda: storage))
+    manager = HierarchyManager()
+
+    with pytest.raises(RuntimeError, match="Failed to persist organization registry"):
+        manager.create_organization("org-a", "org-a", admin_users=["alice"])
+
+    assert manager.get_organization("org-a") is None
 
 
 def test_create_subchain_persists_before_registration(

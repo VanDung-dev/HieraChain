@@ -5,14 +5,17 @@ The tests validate the core functionality of the HieraChain architecture
 where the main chain stores proofs from registered sub-chains.
 """
 
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
 
+from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
+from hierachain.cluster.cross_level_sync import _persist_proof_anchor
+from hierachain.config.settings import settings
 from hierachain.hierarchical import MainChain
 from hierachain.security import get_zk_prover, reset_zk_prover
 from hierachain.security.verify import get_zk_verifier, reset_zk_verifier
-from hierachain.config.settings import settings
 
 
 @pytest.fixture(autouse=True)
@@ -82,8 +85,8 @@ def test_proof_adding():
     
     result = main_chain.add_proof("TestSubChain", proof_hash, metadata)
     
-    assert result is True, f"add_proof returned False. Check logs for details"
-    assert main_chain.proof_count == 1
+    assert result is True, "add_proof returned False. Check logs for details"
+    assert main_chain.proof_count == 0
     
     # Finalize the block to move events from pending to chain
     main_chain.finalize_block()
@@ -109,7 +112,7 @@ def test_invalid_proof_adding():
     assert main_chain.proof_count == 0
 
 
-def test_proof_verification():
+def test_proof_verification(tmp_path: Path) -> None:
     """Test verifying proofs in MainChain"""
     main_chain = MainChain(name="VerificationTestMainChain")
     main_chain.consensus.config["block_interval"] = 0
@@ -119,20 +122,23 @@ def test_proof_verification():
     
     # Add a proof
     proof_hash = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
-    metadata = {"domain_type": "verification", "count": 1}
+    metadata = {"domain_type": "verification", "count": 1, "latest_merkle_root": "a" * 64}
+    storage = SQLiteAdapter(database_path=str(tmp_path / "proof.db"))
+    assert storage.store_chain(main_chain)
+    main_chain.proof_storage = storage
     
     result = main_chain.add_proof("VerificationSubChain", proof_hash, metadata)
     assert result is True, "Failed to add proof"
     
-    # Finalize the block
-    main_chain.finalize_block()
+    assert not main_chain.verify_proof(proof_hash, "VerificationSubChain")
+    assert _persist_proof_anchor(main_chain, storage, "VerificationSubChain", "a" * 64, proof_hash)
     
     # Verify the proof
     result = main_chain.verify_proof(proof_hash, "VerificationSubChain")
     assert result is True, "Failed to verify proof"
 
 
-def test_sub_chain_summary():
+def test_sub_chain_summary(tmp_path: Path) -> None:
     """Test getting Sub-Chain summaries"""
     main_chain = MainChain(name="SummaryTestMainChain")
     main_chain.consensus.config["block_interval"] = 0
@@ -140,14 +146,19 @@ def test_sub_chain_summary():
     # Register a sub-chain
     metadata = {"domain_type": "summary_test", "version": "1.0"}
     main_chain.register_sub_chain("SummarySubChain", metadata)
+    storage = SQLiteAdapter(database_path=str(tmp_path / "summary.db"))
+    assert storage.store_chain(main_chain)
+    main_chain.proof_storage = storage
     
     # Add a proof
     proof_hash = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
-    result = main_chain.add_proof("SummarySubChain", proof_hash, {"count": 1})
+    result = main_chain.add_proof(
+        "SummarySubChain", proof_hash, {"count": 1, "latest_merkle_root": "b" * 64}
+    )
     assert result is True, "Failed to add proof"
-    
-    # Finalize the block
-    main_chain.finalize_block()
+    assert main_chain.get_sub_chain_summary("SummarySubChain")["total_proofs"] == 0
+
+    assert _persist_proof_anchor(main_chain, storage, "SummarySubChain", "b" * 64, proof_hash)
     
     # Get summary
     summary = main_chain.get_sub_chain_summary("SummarySubChain")
@@ -158,19 +169,24 @@ def test_sub_chain_summary():
     assert summary["metadata"] == metadata
 
 
-def test_main_chain_stats():
+def test_main_chain_stats(tmp_path: Path) -> None:
     """Test MainChain statistics"""
     main_chain = MainChain(name="StatsTestMainChain")
     main_chain.consensus.config["block_interval"] = 0
     
     # Register a sub-chain and add proof
     main_chain.register_sub_chain("StatsSubChain", {"domain": "stats"})
+    storage = SQLiteAdapter(database_path=str(tmp_path / "stats.db"))
+    assert storage.store_chain(main_chain)
+    main_chain.proof_storage = storage
     proof_hash = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
-    result = main_chain.add_proof("StatsSubChain", proof_hash, {"count": 1})
+    result = main_chain.add_proof(
+        "StatsSubChain", proof_hash, {"count": 1, "latest_merkle_root": "c" * 64}
+    )
     assert result is True, "Failed to add proof"
     
-    # Finalize the block
-    main_chain.finalize_block()
+    assert main_chain.get_main_chain_stats()["total_proofs"] == 0
+    assert _persist_proof_anchor(main_chain, storage, "StatsSubChain", "c" * 64, proof_hash)
     
     # Get stats
     stats = main_chain.get_main_chain_stats()
@@ -266,7 +282,8 @@ def test_main_chain_performance(benchmark):
     
     # Basic assertions to ensure it worked
     assert len(chain.registered_sub_chains) == 100
-    assert chain.proof_count == 1000
+    assert chain.proof_count == 0
+    assert len(chain.get_events_by_type("proof_submission")) == 1000
 
 
 # Mock dependency tests
@@ -342,6 +359,22 @@ def test_add_proof_with_zk_mock_proof_and_wrong_state_root_rejected():
         "ZKSupplyChain", "b" * 64, metadata, zk_proof=proof.proof
     )
     assert result is False, "Tampered ZK proof should be rejected"
+
+
+def test_add_proof_rejects_missing_required_zk_proof(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "ENABLE_ZK_PROOFS", True)
+    monkeypatch.setattr(settings, "ZK_PROOF_REQUIRED_FOR_MAINCHAIN", True)
+    main_chain = MainChain(name="RequiredZKMainChain")
+    main_chain.register_sub_chain("ZKSupplyChain", {"domain": "zk_test"})
+
+    metadata = {
+        "previous_merkle_root": "a" * 64,
+        "latest_merkle_root": "b" * 64,
+        "latest_block_index": 1,
+    }
+
+    assert not main_chain.add_proof("ZKSupplyChain", "b" * 64, metadata)
+    assert main_chain.proof_count == 0
 
 
 def test_zk_verifier_rejects_fake_mock_proof_prefix():
