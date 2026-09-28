@@ -6,7 +6,10 @@ including key validation, revocation checks, permissions, and key creation.
 """
 
 import time
+import sys
 from unittest.mock import Mock
+
+import pytest
 
 from hierachain.security import (
     KeyManager, initialize_default_keys
@@ -267,6 +270,18 @@ def test_initialize_default_keys():
     assert isinstance(result["key_manager"], KeyManager)
     assert len(result["demo_key"]) > 16
     assert len(result["admin_key"]) > 16
+
+
+def test_initialize_default_keys_rejects_legacy_production_alias(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("HRC_ENV", raising=False)
+    monkeypatch.setenv("ENV", "production")
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    monkeypatch.delitem(sys.modules, "pytest", raising=False)
+
+    with pytest.raises(RuntimeError, match="Default keys cannot be created in production"):
+        initialize_default_keys()
 
 
 def test_is_valid_with_edge_cases():

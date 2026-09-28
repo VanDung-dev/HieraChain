@@ -2,9 +2,12 @@
 Test suite for the TransactionJournal class.
 """
 
-import pytest
 import time
+from pathlib import Path
 
+import pytest
+
+from hierachain.config.settings import settings
 from hierachain.error_mitigation import TransactionJournal
 from hierachain.hierarchical import SubChain
 
@@ -99,10 +102,14 @@ def test_append_only_journal_round_trip(monkeypatch, tmp_path):
         journal.close()
 
 
-def test_sub_chain_init_validation():
+def test_sub_chain_init_validation(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Verify SubChain constructor validation"""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(settings, "DATABASE_URL", "sqlite:///test.db")
+
     # Valid
-    SubChain("valid_name")
+    chain = SubChain("valid_name")
+    chain.shutdown()
 
     # Invalid
     with pytest.raises(ValueError, match="Invalid SubChain name"):
