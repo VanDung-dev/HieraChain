@@ -1,11 +1,5 @@
-"""
-Cross-Level State Synchronization Manager for HieraChain.
+"""Submit Sub-chain proofs to MainChain without merging chain histories."""
 
-Implements hierarchical state sync between MainChain and Sub-chains,
-enabling gap-fill data sync with proof verification across hierarchy levels.
-"""
-
-import hashlib
 import logging
 import time
 from collections.abc import Callable
@@ -18,6 +12,7 @@ from hierachain.cluster.cross_level_sync_types import (
     SyncConflict,
     SyncResult,
 )
+from hierachain.consensus.ordering.storage import _block_from_dict
 
 logger = logging.getLogger(__name__)
 
@@ -26,13 +21,15 @@ def _get_state_root(chain: Any) -> str:
     """Get state root from chain."""
     if hasattr(chain, "get_state_root"):
         return chain.get_state_root()
-    if hasattr(chain, "blockchain"):
-        blocks = chain.blockchain.get_chain()
-        if blocks:
-            last_block = blocks[-1]
-            if hasattr(last_block, "hash"):
-                return last_block.hash
-    return hashlib.sha256(str(time.time()).encode()).hexdigest()
+    height = _get_chain_height(chain)
+    blocks = _get_blocks(chain, height - 1, height) if height else []
+    if blocks:
+        root = getattr(blocks[-1], "merkle_root", None)
+        if root:
+            return root
+        if hasattr(blocks[-1], "hash"):
+            return blocks[-1].hash
+    raise RuntimeError("Chain does not expose a verifiable state root")
 
 
 def _get_chain_height(chain: Any) -> int:
@@ -41,7 +38,9 @@ def _get_chain_height(chain: Any) -> int:
         return chain.get_block_count()
     if hasattr(chain, "blockchain"):
         return len(chain.blockchain.get_chain())
-    return 0
+    if hasattr(chain, "chain"):
+        return len(chain.chain)
+    raise RuntimeError("Chain does not expose its block height")
 
 
 def _get_blocks(chain: Any, from_idx: int, to_idx: int) -> list[Any]:
@@ -51,65 +50,99 @@ def _get_blocks(chain: Any, from_idx: int, to_idx: int) -> list[Any]:
     if hasattr(chain, "blockchain"):
         all_blocks = chain.blockchain.get_chain()
         return all_blocks[from_idx:to_idx]
-    return []
+    if hasattr(chain, "chain"):
+        return chain.chain[from_idx:to_idx]
+    raise RuntimeError("Chain does not expose blocks for synchronization")
 
 
-def _generate_proof(chain: Any, block_height: int) -> bytes:
-    """Generate proof for chain state."""
-    if hasattr(chain, "generate_proof"):
-        return chain.generate_proof(block_height)
-    # Mock proof generation
-    data = f"{chain}:{block_height}:{time.time()}"
-    return hashlib.sha256(data.encode()).digest()
+def _find_anchor_block(
+    mainchain: Any, subchain_id: str, state_root: str, proof_hash: str | None = None
+) -> Any | None:
+    """Find a finalized in-memory block containing the requested proof."""
+    chain = getattr(mainchain, "chain", None)
+    if not isinstance(chain, list):
+        return None
+
+    # ponytail: O(chain length) proof scan; add a finalized index if this path is hot.
+    for block in chain:
+        events = (
+            block.to_event_list()
+            if hasattr(block, "to_event_list")
+            else getattr(block, "events", [])
+        )
+        for event in events:
+            details = event.get("details", {})
+            metadata = event.get("metadata", {})
+            if (
+                event.get("event") == "proof_submission"
+                and isinstance(details, dict)
+                and details.get("sub_chain_name") == subchain_id
+                and (proof_hash is None or details.get("proof_hash") == proof_hash)
+                and isinstance(metadata, dict)
+                and metadata.get("latest_merkle_root") == state_root
+            ):
+                return block
+    return None
 
 
-def _apply_block_to_chain(chain: Any, block: Any) -> bool:
-    """Apply a block to chain."""
+def _verify_anchor_exists(
+    mainchain: Any, subchain_id: str, state_root: str, proof_hash: str | None = None
+) -> bool:
+    """Verify that the anchor survives a signed durable-storage readback."""
+    block = _find_anchor_block(mainchain, subchain_id, state_root, proof_hash)
+    storage = getattr(mainchain, "proof_storage", None)
+    if block is None or not callable(getattr(storage, "get_block_by_index", None)):
+        return False
     try:
-        if hasattr(chain, "add_block"):
-            return chain.add_block(block)
+        stored = storage.get_block_by_index(block.index, mainchain.name)
+        if not isinstance(stored, dict) or stored.get("hash") != block.hash:
+            return False
+        _block_from_dict(stored, mainchain.trusted_public_keys)
         return True
-    except Exception as e:
-        logger.error(f"Failed to apply block: {e}")
+    except Exception:
+        logger.exception("Could not verify durable proof anchor for %s", subchain_id)
         return False
 
 
-def _verify_anchor_exists(mainchain: Any, subchain_id: str, state_root: str) -> bool:
-    """Verify that an anchor exists in MainChain."""
-    if hasattr(mainchain, "get_anchor"):
-        anchor = mainchain.get_anchor(subchain_id)
-        if anchor and anchor.get("state_root") == state_root:
-            return True
-    return False
+def _persist_proof_anchor(
+    mainchain: Any, storage: Any, subchain_id: str, state_root: str, proof_hash: str
+) -> bool:
+    """Finalize the proof and read back every signed block from durable storage."""
+    from hierachain.hierarchical.main_chain.proofs import _refresh_durable_proofs
 
+    if storage is None or not all(
+        callable(getattr(storage, name, None))
+        for name in ("save_block", "get_block_by_index")
+    ):
+        return False
 
-def _check_conflict(target_chain: Any, block: Any) -> SyncConflict | None:
-    """Check for conflicts when applying block."""
-    if not hasattr(block, "index"):
-        return None
+    with mainchain.lock:
+        if _find_anchor_block(mainchain, subchain_id, state_root, proof_hash) is None:
+            if mainchain.finalize_block() is None:
+                return False
+        if _find_anchor_block(mainchain, subchain_id, state_root, proof_hash) is None:
+            return False
 
-    target_blocks = _get_blocks(target_chain, block.index, block.index + 1)
-    if not target_blocks:
-        return None
+        # ponytail: Recheck the full signed history; use a verified persisted tip if proof volume grows.
+        for block in mainchain.chain:
+            stored = storage.get_block_by_index(block.index, mainchain.name)
+            if stored is None:
+                data = block.to_dict()
+                data["chain_name"] = mainchain.name
+                data["metadata"] = {
+                    "merkle_root": block.merkle_root,
+                    "creator_id": block.creator_id,
+                    "signature": block.signature,
+                }
+                if storage.save_block(data) is not True:
+                    return False
+                stored = storage.get_block_by_index(block.index, mainchain.name)
+            if not isinstance(stored, dict) or stored.get("hash") != block.hash:
+                return False
+            _block_from_dict(stored, mainchain.trusted_public_keys)
 
-    target_block = target_blocks[0]
-    target_hash = (
-        target_block.hash
-        if hasattr(target_block, "hash")
-        else str(target_block)
-    )
-    source_hash = (block.hash if hasattr(block, "hash") else str(block))
-
-    if target_hash != source_hash:
-        return SyncConflict(
-            conflict_id=f"conflict-{int(time.time() * 1000)}",
-            source_chain="mainchain",
-            target_chain="subchain",
-            block_index=block.index,
-            source_hash=source_hash,
-            target_hash=target_hash,
-        )
-    return None
+        _refresh_durable_proofs(mainchain)
+        return _verify_anchor_exists(mainchain, subchain_id, state_root, proof_hash)
 
 
 # --- Resolution strategy lookup ---
@@ -138,41 +171,14 @@ def _apply_resolution_strategy(
     return False
 
 
-def _verify_block_with(verifier: Any, block: Any) -> bool:
-    """Verify a block using a verifier instance."""
-    if not verifier:
-        return True
-    result = verifier.verify_block(block)
-    return result.is_valid() if hasattr(result, "is_valid") else result
-
-
 def _verify_proof_with(
-    verifier: Any, proof: bytes, state_root: str
+    verifier: Any, proof: bytes, public_inputs: dict[str, Any]
 ) -> bool:
     """Verify a proof using a verifier instance."""
-    if verifier:
-        return verifier.verify(proof, state_root)
-    logger.error("No proof verifier configured — rejecting proof")
-    return False
-
-
-def _submit_anchor(mainchain: Any, anchor_data: dict) -> bool:
-    """Submit anchor event to MainChain."""
-    if not mainchain:
+    if not verifier:
         return False
-
-    try:
-        if hasattr(mainchain, "receive_proof"):
-            return mainchain.receive_proof(anchor_data)
-        if hasattr(mainchain, "add_event"):
-            return mainchain.add_event({
-                "event_type": "subchain_anchor",
-                **anchor_data,
-            })
-        return True
-    except Exception as e:
-        logger.error(f"Failed to submit anchor: {e}")
-        return False
+    result = verifier.verify(proof, public_inputs)
+    return result.is_valid() if hasattr(result, "is_valid") else bool(result)
 
 
 def _get_chain_ref(
@@ -188,14 +194,8 @@ def _get_chain_ref(
 
 class CrossLevelSyncManager:
     """
-    Manages state synchronization across hierarchy levels.
-
-    Handles bidirectional sync between MainChain and Sub-chains:
-    - MainChain → Sub-chain: Push global state updates down
-    - Sub-chain → MainChain: Submit proofs and anchors up
-
-    The sync uses proof-based verification to ensure integrity
-    across hierarchy levels.
+    Records Sub-chain proofs in MainChain. MainChain and Sub-chain blocks have
+    separate histories, so raw MainChain blocks are not copied into Sub-chains.
     """
 
     def __init__(
@@ -209,6 +209,7 @@ class CrossLevelSyncManager:
         ),
         block_verifier: Any = None,
         proof_verifier: Any = None,
+        storage: Any = None,
     ):
         """
         Initialize CrossLevelSyncManager.
@@ -216,19 +217,18 @@ class CrossLevelSyncManager:
         Args:
             node_id: ID of this node.
             hierarchy_level: "mainchain" or "subchain".
-            batch_size: Max blocks per sync batch.
+            batch_size: Legacy option retained for caller compatibility.
             sync_timeout: Timeout for sync operations.
             conflict_strategy: How to resolve conflicts.
-            block_verifier: BlockVerifier for verification.
-            proof_verifier: ZKVerifier for proof verification.
+            block_verifier: Legacy option; parent blocks are not copied down.
+            proof_verifier: Optional verifier for a supplied proof.
         """
         self.node_id = node_id
         self.hierarchy_level = hierarchy_level
-        self.batch_size = batch_size
         self.sync_timeout = sync_timeout
         self.conflict_strategy = conflict_strategy
-        self._block_verifier = block_verifier
         self._proof_verifier = proof_verifier
+        self.storage = storage
 
         # State
         self._status = CrossLevelSyncStatus.IDLE
@@ -268,6 +268,8 @@ class CrossLevelSyncManager:
     def connect_mainchain(self, mainchain: Any) -> None:
         """Connect to the MainChain for sync operations."""
         self._mainchain_ref = mainchain
+        if self.storage is not None and hasattr(mainchain, "proof_storage"):
+            mainchain.proof_storage = self.storage
         logger.info("Connected to MainChain")
 
     def connect_subchain(self, subchain_id: str, subchain: Any) -> None:
@@ -287,70 +289,21 @@ class CrossLevelSyncManager:
         from_block: int = 0,
         to_block: int = -1,
     ) -> SyncResult:
-        """
-        Sync state from MainChain to a Sub-chain (gap-fill down).
-
-        Args:
-            sub_chain_id: Target sub-chain ID.
-            from_block: Starting block index.
-            to_block: Ending block index (-1 for latest).
-
-        Returns:
-            SyncResult with operation outcome.
-        """
+        """Reject copying MainChain blocks into a Sub-chain's history."""
         start_time = time.time()
         self._stats["syncs_initiated"] += 1
 
-        # Guard clauses for early exit
         validation_error = self._validate_connections(sub_chain_id)
         if validation_error:
-            return validation_error
-
-        self._status = CrossLevelSyncStatus.SYNCING_DOWN
-        subchain = self._subchains[sub_chain_id]
-
-        try:
-            state_root_before = _get_state_root(subchain)
-
-            if to_block == -1:
-                to_block = _get_chain_height(self._mainchain_ref)
-
-            # Core sync logic extracted to helper
-            blocks_synced = self._sync_batches(subchain, from_block, to_block)
-
-            # Update stats and status
-            self._stats["blocks_synced_down"] += blocks_synced
-            self._stats["syncs_completed"] += 1
-            self._status = CrossLevelSyncStatus.COMPLETE
-
-            result = SyncResult(
-                success=True,
-                blocks_synced=blocks_synced,
-                conflicts_found=len(self._conflicts),
-                conflicts_resolved=len([c for c in self._conflicts if c.resolved]),
-                duration_seconds=time.time() - start_time,
-                state_root_before=state_root_before,
-                state_root_after=_get_state_root(subchain),
+            return self._handle_sync_failure(
+                validation_error.error_message, start_time
             )
 
-            if self._on_sync_complete:
-                self._on_sync_complete(result)
-
-            logger.info(
-                "Sync from MainChain complete: %d blocks to %s",
-                blocks_synced, sub_chain_id
-            )
-            return result
-
-        except Exception as e:
-            logger.error("Sync from MainChain failed: %s", e)
-            self._stats["syncs_failed"] += 1
-            self._status = CrossLevelSyncStatus.FAILED
-            return SyncResult(
-                success=False,
-                error_message=str(e),
-                duration_seconds=time.time() - start_time,
-            )
+        return self._handle_sync_failure(
+            "Raw MainChain block sync into a Sub-chain is unsupported; "
+            "each chain has its own history and genesis.",
+            start_time,
+        )
 
     def sync_to_mainchain(
         self, sub_chain_id: str, proof: bytes | None = None
@@ -368,48 +321,70 @@ class CrossLevelSyncManager:
         start_time = time.time()
         self._stats["syncs_initiated"] += 1
 
-        # Guard clauses
         validation_error = self._validate_connections(sub_chain_id)
         if validation_error:
-            return validation_error
+            return self._handle_sync_failure(
+                validation_error.error_message, start_time
+            )
 
         self._status = CrossLevelSyncStatus.SYNCING_UP
         subchain = self._subchains[sub_chain_id]
 
         try:
             state_root = _get_state_root(subchain)
-            block_height = _get_chain_height(subchain)
-
-            # 1. Prepare and verify proof
-            if proof is None:
-                proof = _generate_proof(subchain, block_height)
-
-            if proof is None:
-                raise RuntimeError("Proof generation failed")
-
-            self._status = CrossLevelSyncStatus.VERIFYING
-            if not _verify_proof_with(self._proof_verifier, proof, state_root):
-                return self._handle_sync_failure(
-                    "Proof verification failed", start_time
-                )
-
-            self._stats["proofs_verified"] += 1
-
-            # 2. Submit anchor
-            anchor_data = {
-                "sub_chain_id": sub_chain_id,
-                "block_height": block_height,
-                "state_root": state_root,
-                "proof_hash": hashlib.sha256(proof).hexdigest(),
-                "timestamp": time.time(),
+            latest_block = subchain.get_latest_block()
+            previous_block = (
+                subchain.chain[-2] if len(subchain.chain) > 1 else None
+            )
+            public_inputs = {
+                "old_state_root": (
+                    previous_block.merkle_root if previous_block is not None else "genesis"
+                ),
+                "new_state_root": latest_block.merkle_root or latest_block.hash,
+                "block_index": latest_block.index,
+                "sub_chain_name": sub_chain_id,
             }
 
-            if not _submit_anchor(self._mainchain_ref, anchor_data):
+            if proof is not None:
+                verifier = self._proof_verifier or getattr(
+                    self._mainchain_ref, "zk_verifier", None
+                )
+                if verifier is None:
+                    return self._handle_sync_failure(
+                        "No proof verifier configured", start_time
+                    )
+                if not _verify_proof_with(verifier, proof, public_inputs):
+                    return self._handle_sync_failure(
+                        "Proof verification failed", start_time
+                    )
+                self._stats["proofs_verified"] += 1
+
+            if not callable(getattr(subchain, "submit_proof_to_main", None)):
                 return self._handle_sync_failure(
-                    "Failed to submit anchor to MainChain", start_time
+                    "Sub-chain does not support proof submission", start_time
+                )
+            if not callable(getattr(self._mainchain_ref, "add_proof", None)):
+                return self._handle_sync_failure(
+                    "MainChain does not support proof records", start_time
                 )
 
-            # 3. Handle success
+            if not subchain.submit_proof_to_main(
+                self._mainchain_ref, zk_proof=proof
+            ):
+                return self._handle_sync_failure(
+                    "MainChain rejected or could not persist the Sub-chain proof", start_time
+                )
+
+            if not _verify_anchor_exists(
+                self._mainchain_ref,
+                sub_chain_id,
+                state_root,
+                latest_block.hash,
+            ):
+                return self._handle_sync_failure(
+                    "MainChain proof could not be verified in durable storage", start_time
+                )
+
             return self._handle_sync_success(sub_chain_id, state_root, start_time)
 
         except Exception as e:
@@ -569,29 +544,3 @@ class CrossLevelSyncManager:
             )
 
         return None
-
-    def _sync_batches(self, subchain: Any, from_block: int, to_block: int) -> int:
-        """Process sync in batches and return total blocks synced."""
-        total_synced = 0
-        for batch_start in range(from_block, to_block, self.batch_size):
-            batch_end = min(batch_start + self.batch_size, to_block)
-            blocks = _get_blocks(self._mainchain_ref, batch_start, batch_end)
-
-            for block in blocks:
-                if self._process_block_sync(subchain, block):
-                    total_synced += 1
-        return total_synced
-
-    def _process_block_sync(self, subchain: Any, block: Any) -> bool:
-        """Process a single block during sync."""
-        if not _verify_block_with(self._block_verifier, block):
-            logger.warning("Block failed verification during sync")
-            return False
-
-        conflict = _check_conflict(subchain, block)
-        if conflict:
-            self._conflicts.append(conflict)
-            if not self.resolve_sync_conflict(conflict):
-                return False
-
-        return _apply_block_to_chain(subchain, block)
