@@ -89,10 +89,10 @@ class AuditEvent:
         )
 
     def calculate_hash(self) -> str:
-        content = (
-            f"{self.event_id}{self.timestamp}{self.source_component}{self.description}"
+        content = orjson.dumps(
+            self.to_dict(), option=orjson.OPT_SORT_KEYS, default=str
         )
-        return hashlib.sha256(content.encode()).hexdigest()
+        return hashlib.sha256(content).hexdigest()
 
 
 class AuditFilter:

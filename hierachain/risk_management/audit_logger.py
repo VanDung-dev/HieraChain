@@ -8,12 +8,13 @@ system activities, risk events, and mitigation actions.
 from __future__ import annotations
 
 import logging
+import os
 import sqlite3
 import struct
 import threading
 import time
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, cast
 
@@ -21,6 +22,8 @@ import orjson
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from hierachain.adapters.database.audit_manifest import PostgresAuditManifest
+from hierachain.config.settings import settings
 from hierachain.risk_management.types import (
     AuditEvent,
     AuditEventType,
@@ -83,11 +86,14 @@ def _audit_event_to_row(event: AuditEvent) -> dict[str, Any]:
         "source_component": event.source_component,
         "description": event.description,
         "details": orjson.dumps(event.details).decode() if event.details else "",
-        "user_id": event.user_id or "",
-        "session_id": event.session_id or "",
-        "ip_address": event.ip_address or "",
+        "user_id": event.user_id,
+        "session_id": event.session_id,
+        "ip_address": event.ip_address,
         "correlation_id": event.correlation_id or "",
-        "affected_entities": orjson.dumps(event.affected_entities).decode() if event.affected_entities else "",
+        "affected_entities": (
+            orjson.dumps(event.affected_entities).decode()
+            if event.affected_entities is not None else ""
+        ),
     }
 
 
@@ -102,9 +108,9 @@ def _row_to_audit_event(row: dict[str, Any]) -> AuditEvent:
         source_component=row["source_component"],
         description=row["description"],
         details=details,
-        user_id=row["user_id"] or None,
-        session_id=row["session_id"] or None,
-        ip_address=row["ip_address"] or None,
+        user_id=row["user_id"],
+        session_id=row["session_id"],
+        ip_address=row["ip_address"],
         correlation_id=row["correlation_id"] or None,
         affected_entities=affected,
     )
@@ -286,10 +292,14 @@ class DatabaseAuditStorage(AuditStorage):
                     user_id TEXT,
                     session_id TEXT,
                     ip_address TEXT,
-                    correlation_id TEXT
+                    correlation_id TEXT,
+                    affected_entities TEXT
                 )
                 """
             )
+            columns = {row[1] for row in cursor.execute("PRAGMA table_info(audit_events)")}
+            if "affected_entities" not in columns:
+                cursor.execute("ALTER TABLE audit_events ADD COLUMN affected_entities TEXT")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_events (timestamp)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_type ON audit_events (event_type)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_severity ON audit_events (severity)")
@@ -305,8 +315,8 @@ class DatabaseAuditStorage(AuditStorage):
             cursor.execute(
                 """
                 INSERT INTO audit_events 
-                (event_id, event_type, severity, timestamp, source_component, description, details, user_id, session_id, ip_address, correlation_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (event_id, event_type, severity, timestamp, source_component, description, details, user_id, session_id, ip_address, correlation_id, affected_entities)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     event.event_id,
@@ -320,6 +330,10 @@ class DatabaseAuditStorage(AuditStorage):
                     event.session_id,
                     event.ip_address,
                     event.correlation_id,
+                    (
+                        orjson.dumps(event.affected_entities).decode()
+                        if event.affected_entities is not None else None
+                    ),
                 )
             )
             conn.commit()
@@ -369,6 +383,10 @@ class DatabaseAuditStorage(AuditStorage):
                     ev_dict['details'] = orjson.loads(ev_dict['details'])
                 else:
                     ev_dict['details'] = {}
+                if ev_dict.get('affected_entities'):
+                    ev_dict['affected_entities'] = orjson.loads(ev_dict['affected_entities'])
+                else:
+                    ev_dict['affected_entities'] = None
                 # Match enum types
                 ev_dict['event_type'] = AuditEventType(ev_dict['event_type'])
                 ev_dict['severity'] = AuditSeverity(ev_dict['severity'])
@@ -518,22 +536,44 @@ class FileAuditStorage(AuditStorage):
         return len(self.retrieve_events(filter_criteria))
 
 
-def verify_integrity(events: list[AuditEvent]) -> bool:
+def verify_integrity(
+    events: list[AuditEvent],
+    expected_hashes: Mapping[str, str] | None = None,
+) -> bool:
+    """Compare events with a trusted digest manifest captured when they were written.
+
+    Missing manifests, legacy events without digests, duplicate IDs, and incomplete
+    manifests fail closed. Keep expected_hashes separate from the audit archive.
+    """
+    if expected_hashes is None or len(expected_hashes) != len(events):
+        return False
+
+    seen_ids: set[str] = set()
     for event in events:
-        expected_hash = event.calculate_hash()
-        if not expected_hash:
+        if event.event_id in seen_ids:
             return False
-    return True
+        expected_hash = expected_hashes.get(event.event_id)
+        if expected_hash != event.calculate_hash():
+            return False
+        seen_ids.add(event.event_id)
+    return seen_ids == set(expected_hashes)
 
 
 class AuditLogger:
     def __init__(
         self,
         storage: AuditStorage | None = None,
-        enable_real_time_alerts: bool = True
+        enable_real_time_alerts: bool = True,
+        integrity_digest_writer: Callable[[str, str], None] | None = None,
     ):
+        manifest_url = (os.getenv("HRC_AUDIT_MANIFEST_WRITE_URL") or "").strip()
+        if integrity_digest_writer is None and manifest_url:
+            integrity_digest_writer = PostgresAuditManifest(manifest_url).write_digest
+        if integrity_digest_writer is None and settings.env == "production":
+            raise RuntimeError("Production audit logging requires a trusted digest manifest writer")
         self.storage = storage or ArrowAuditStorage("log/risk_management/audit_logs")
         self.enable_real_time_alerts = enable_real_time_alerts
+        self.integrity_digest_writer = integrity_digest_writer
         self.logger = logging.getLogger(__name__)
         self.alert_handlers: list[Callable[[AuditEvent], None]] = []
         self.event_processors: list[Callable[[AuditEvent], AuditEvent]] = []
@@ -722,15 +762,20 @@ class AuditLogger:
             processed_event = event
             for processor in self.event_processors:
                 processed_event = processor(processed_event)
-            success = self.storage.store_event(processed_event)
-            if success:
-                self._update_stats(processed_event)
-                if self.enable_real_time_alerts:
-                    self._process_alerts(processed_event)
-            else:
-                self.logger.error("Failed to store audit event: %s", event.event_id)
+            digest = (
+                processed_event.calculate_hash()
+                if self.integrity_digest_writer is not None else None
+            )
+            if not self.storage.store_event(processed_event):
+                raise RuntimeError(f"Failed to store audit event: {event.event_id}")
+            if self.integrity_digest_writer is not None and digest is not None:
+                self.integrity_digest_writer(processed_event.event_id, digest)
         except Exception as e:
             self.logger.error("Error logging audit event: %s", str(e))
+            raise
+        self._update_stats(processed_event)
+        if self.enable_real_time_alerts:
+            self._process_alerts(processed_event)
 
     def _update_stats(self, event: AuditEvent) -> None:
         self._stats['total_events'] += 1
