@@ -11,11 +11,14 @@ error handling, CORS support, and comprehensive logging.
 
 import logging
 import os
+import time
 import traceback
 import warnings
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, cast
 
+import orjson
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import HTTPConnection
@@ -33,8 +36,9 @@ from hierachain.api.middleware import (
 )
 from hierachain.api.websocket.manager import ws_manager
 from hierachain.config.logging import LOGGING_CONFIG
-from hierachain.config.settings import get_settings
+from hierachain.config.settings import _configured_database_url, get_settings
 from hierachain.network.network_client import NetworkClient, NetworkClientConfig
+from hierachain.security.key_manager import KeyManager
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
 logger = logging.getLogger(__name__)
@@ -52,9 +56,40 @@ EXEMPT_PATHS = {
     "/docs",
     "/redoc",
     "/openapi.json",
-    "/ws",
-    "/ws/status",
 }
+
+
+def _load_production_key_manager() -> KeyManager:
+    path = os.getenv("HRC_API_KEYS_FILE", "").strip()
+    if not path:
+        raise RuntimeError("Production authentication requires HRC_API_KEYS_FILE")
+    try:
+        records = orjson.loads(Path(path).read_bytes())
+    except (OSError, orjson.JSONDecodeError) as exc:
+        raise RuntimeError("Cannot load HRC_API_KEYS_FILE") from exc
+    if not isinstance(records, dict) or not records:
+        raise RuntimeError("HRC_API_KEYS_FILE must contain a nonempty key map")
+    for api_key, details in records.items():
+        if (
+            not isinstance(api_key, str)
+            or len(api_key) < 32
+            or not isinstance(details, dict)
+            or set(details) - {"user_id", "permissions", "app_details", "created_at", "expires_at"}
+            or not isinstance(details.get("user_id"), str)
+            or not details["user_id"].strip()
+            or not isinstance(details.get("permissions"), list)
+            or not details["permissions"]
+            or not all(isinstance(scope, str) and scope for scope in details["permissions"])
+            or not isinstance(details.get("app_details", {}), dict)
+            or (details.get("expires_at") is not None and not isinstance(details["expires_at"], (int, float)))
+        ):
+            raise RuntimeError("HRC_API_KEYS_FILE contains an invalid key record")
+    if not any(
+        details.get("expires_at") is None or details["expires_at"] > time.time()
+        for details in records.values()
+    ):
+        raise RuntimeError("HRC_API_KEYS_FILE contains no active API key")
+    return KeyManager(storage_backend=records)
 
 
 async def _start_p2p_network_layer(settings) -> None:
@@ -101,10 +136,23 @@ async def _start_p2p_network_layer(settings) -> None:
 async def lifespan(_app: FastAPI):
     logger.info("Starting HieraChain API server...")
 
+    settings = get_settings()
+    from hierachain.security.identity_loader import require_block_identity
+
+    require_block_identity()
+    backend = settings.STORAGE_BACKEND
+    if (
+        settings.env == "production"
+        and backend in {"postgres", "postgresql"}
+        and not _configured_database_url()
+    ):
+        raise RuntimeError(
+            "Production PostgreSQL storage requires DATABASE_URL or HRC_DATABASE_URL"
+        )
+
     await ws_manager.start()
     logger.info("WebSocket manager started")
 
-    settings = get_settings()
     await _start_p2p_network_layer(settings)
 
     if settings.AUTH_ENABLED:
@@ -129,8 +177,7 @@ async def lifespan(_app: FastAPI):
 
 
 def _check_cors_config(settings) -> None:
-    env = getattr(settings, "ENV", "dev")
-    if env != "product":
+    if settings.env != "production":
         return
 
     if settings.CORS_ALLOW_ALL:
@@ -156,7 +203,7 @@ def register_exception_handlers(fast_app: FastAPI, settings) -> None:
         logger.error(f"Unhandled exception: {exc!s}")
         is_debug = (
             settings.LOG_LEVEL == "DEBUG" and
-            getattr(settings, "ENV", "dev") != "product"
+            settings.env != "production"
         )
         from starlette.responses import JSONResponse
         return JSONResponse(
@@ -263,9 +310,15 @@ def _add_cors_middleware(fast_app: Any, cors_config: dict[str, Any]) -> None:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    if settings.env == "production" and not settings.AUTH_ENABLED:
+        raise RuntimeError("Production API authentication cannot be disabled")
     api_config = settings.get_api_config()
 
-    verifier = APIKeyVerifier(settings.get_auth_config()) if settings.AUTH_ENABLED else None
+    key_manager = _load_production_key_manager() if settings.env == "production" else None
+    verifier = (
+        APIKeyVerifier(settings.get_auth_config(), key_manager=key_manager)
+        if settings.AUTH_ENABLED else None
+    )
 
     async def auth_dependency(connection: HTTPConnection):
         if not settings.AUTH_ENABLED:

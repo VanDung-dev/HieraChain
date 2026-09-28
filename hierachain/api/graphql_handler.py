@@ -45,7 +45,7 @@ async def _validate_graphql_request(
     operation_name = body.get("operationName")
 
     settings = get_settings()
-    is_production = getattr(settings, "ENV", "dev") == "product"
+    is_production = settings.env == "production"
 
     if is_production and graphql_security.is_introspection_query(query):
         return False, JSONResponse(
@@ -85,7 +85,7 @@ def _execute_graphql_query(
         _settings = get_settings()
         is_debug = (
             _settings.LOG_LEVEL == "DEBUG"
-            and getattr(_settings, "ENV", "dev") != "product"
+            and _settings.env != "production"
         )
         for err in result.errors:
             logger.error(f"GraphQL schema error: {err.message}")
