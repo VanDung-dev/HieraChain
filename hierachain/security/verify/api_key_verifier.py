@@ -10,7 +10,7 @@ protected resources.
 import sys
 import time
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import APIKeyHeader, APIKeyQuery
@@ -19,6 +19,9 @@ from starlette.requests import HTTPConnection
 from hierachain.config.settings import get_settings
 from hierachain.security.brute_force_protector import BruteForceProtector
 from hierachain.security.secure_logging import get_security_logger
+
+if TYPE_CHECKING:
+    from hierachain.security.key_manager import KeyManager
 
 # Add the project root to the path for imports
 _file_path = __file__
@@ -71,7 +74,7 @@ class APIKeyVerifier:
     - Comprehensive error handling and auditing
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, key_manager: "KeyManager | None" = None):
         """
         Initialize APIKeyVerifier with configuration.
         
@@ -82,10 +85,11 @@ class APIKeyVerifier:
                 - key_name: Name of the key parameter
                 - cache_ttl: Cache time-to-live in seconds
                 - revocation_check: How often to check revocation
+            key_manager: Pre-provisioned keys for the API app, when provided.
         """
         self.config = config
         from hierachain.security.key_manager import KeyManager
-        self.key_manager = KeyManager()  # Handles key storage, revocation checks
+        self.key_manager = key_manager if key_manager is not None else KeyManager()
         self.enabled = config.get('enabled', True)
         self.key_location = config.get('key_location', 'header')
         self.key_name = config.get('key_name', 'x-api-key')
