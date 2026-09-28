@@ -4,7 +4,7 @@ Channel — secure data channel providing complete isolation between organizatio
 
 import logging
 import time
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Callable, cast
 
 from hierachain.hierarchical.channel.ledger import ChannelLedger
 from hierachain.hierarchical.channel.policy import ChannelPolicy
@@ -34,6 +34,7 @@ class Channel:
         self.ordering_service = None
         self.ledger = ChannelLedger()
         self.status = ChannelStatus.ACTIVE
+        self._persist_registry: Callable[[], bool] | None = None
 
         self.created_at = time.time()
         self.last_activity = time.time()
@@ -52,15 +53,27 @@ class Channel:
     def add_organization(
         self, organization: Organization, endorsements: list[str]
     ) -> bool:
-        if not self.policy.evaluate_endorsement(endorsements, len(self.organizations)):
-            return False
-
         valid_endorsements = [e for e in endorsements if e in self.organizations]
         if len(valid_endorsements) != len(endorsements):
+            return False
+        if not self.policy.evaluate_endorsement(
+            endorsements,
+            len(self.organizations),
+            eligible_org_ids=set(self.organizations),
+        ):
             return False
 
         self.organizations[organization.org_id] = organization
         cast(dict[str, int], self.event_statistics["events_by_org"])[organization.org_id] = 0
+
+        def rollback() -> None:
+            self.organizations.pop(organization.org_id, None)
+            cast(dict[str, int], self.event_statistics["events_by_org"]).pop(
+                organization.org_id, None
+            )
+
+        if not self._persist_or_rollback(rollback):
+            return False
 
         self._log_channel_event(
             "organization_added",
@@ -78,10 +91,28 @@ class Channel:
             return False
 
         remaining_orgs = len(self.organizations) - 1
-        if not self.policy.evaluate_endorsement(endorsements, remaining_orgs):
+        if any(
+            endorsement not in self.organizations or endorsement == org_id
+            for endorsement in endorsements
+        ):
+            return False
+        eligible_org_ids = set(self.organizations) - {org_id}
+        if not self.policy.evaluate_endorsement(
+            endorsements, remaining_orgs, eligible_org_ids=eligible_org_ids
+        ):
             return False
 
         org_info = self.organizations.pop(org_id)
+        events_by_org = cast(dict[str, int], self.event_statistics["events_by_org"])
+        event_count = events_by_org.pop(org_id, None)
+
+        def rollback() -> None:
+            self.organizations[org_id] = org_info
+            if event_count is not None:
+                events_by_org[org_id] = event_count
+
+        if not self._persist_or_rollback(rollback):
+            return False
 
         for collection in self.private_collections.values():
             collection.remove_organization(org_id)
@@ -113,13 +144,42 @@ class Channel:
 
         return True
 
-    def submit_event(self, event: dict[str, Any], submitter_org_id: str) -> bool:
+    def submit_event(
+        self,
+        event: dict[str, Any],
+        submitter_org_id: str,
+        *,
+        submitter_user_id: str | None = None,
+    ) -> bool:
+        """Submit as a registered member identified by the verified auth layer.
+
+        Callers must pass ``submitter_user_id`` from authenticated context. The ID
+        alone does not grant a role: this method resolves it in the live member
+        registry captured from HierarchyManager and checks its registered org/role.
+        """
         if submitter_org_id not in self.organizations:
             return False
 
         submitter_org = self.organizations[submitter_org_id]
+        if not submitter_user_id:
+            return False
 
-        if not self.policy.evaluate_write_access(submitter_org):
+        member = submitter_org.member_registry.get(submitter_user_id)
+        if not isinstance(member, dict):
+            return False
+        identity = member.get("identity")
+        member_role = member.get("role")
+        if (
+            not isinstance(identity, dict)
+            or identity.get("user_id") != submitter_user_id
+            or identity.get("org_id") != submitter_org_id
+            or identity.get("role") != member_role
+            or not isinstance(member_role, str)
+            or not member_role
+        ):
+            return False
+
+        if not self.policy.evaluate_write_access(submitter_org, member_role):
             return False
 
         enriched_event = {
@@ -129,7 +189,8 @@ class Channel:
             "timestamp": time.time(),
         }
 
-        self.ledger.add_event(enriched_event)
+        if not self.ledger.add_event(enriched_event):
+            return False
 
         self.event_statistics["total_events"] += 1
         cast(dict[str, int], self.event_statistics["events_by_org"])[submitter_org_id] += 1
@@ -189,7 +250,11 @@ class Channel:
     def update_channel_policy(
         self, new_policy_config: dict[str, Any], endorsements: list[str]
     ) -> bool:
-        if not self.policy.evaluate_endorsement(endorsements, len(self.organizations)):
+        if not self.policy.evaluate_endorsement(
+            endorsements,
+            len(self.organizations),
+            eligible_org_ids=set(self.organizations),
+        ):
             return False
 
         old_policy_config = {
@@ -197,9 +262,18 @@ class Channel:
             "write": self.policy.write_policy,
             "endorsement": self.policy.endorsement_policy,
             "admin": self.policy.admin_policy,
+            "lifecycle_endorsement": self.policy.lifecycle_endorsement,
+            "custom_policies": self.policy.custom_policies,
         }
 
+        old_policy = self.policy
         self.policy = ChannelPolicy(new_policy_config)
+
+        def rollback() -> None:
+            self.policy = old_policy
+
+        if not self._persist_or_rollback(rollback):
+            return False
 
         self._log_channel_event(
             "policy_updated",
@@ -213,10 +287,21 @@ class Channel:
         return True
 
     def suspend_channel(self, reason: str, endorsements: list[str]) -> bool:
-        if not self.policy.evaluate_endorsement(endorsements, len(self.organizations)):
+        if not self.policy.evaluate_endorsement(
+            endorsements,
+            len(self.organizations),
+            eligible_org_ids=set(self.organizations),
+        ):
             return False
 
+        old_status = self.status
         self.status = ChannelStatus.SUSPENDED
+
+        def rollback() -> None:
+            self.status = old_status
+
+        if not self._persist_or_rollback(rollback):
+            return False
 
         self._log_channel_event(
             "channel_suspended", {"reason": reason, "endorsed_by": endorsements}
@@ -225,24 +310,50 @@ class Channel:
         return True
 
     def resume_channel(self, endorsements: list[str]) -> bool:
-        if not self.policy.evaluate_endorsement(endorsements, len(self.organizations)):
+        if not self.policy.evaluate_endorsement(
+            endorsements,
+            len(self.organizations),
+            eligible_org_ids=set(self.organizations),
+        ):
             return False
 
+        old_status = self.status
         self.status = ChannelStatus.ACTIVE
+
+        def rollback() -> None:
+            self.status = old_status
+
+        if not self._persist_or_rollback(rollback):
+            return False
 
         self._log_channel_event("channel_resumed", {"endorsed_by": endorsements})
 
         return True
 
-    def _log_channel_event(self, event_type: str, details: dict[str, Any]) -> None:
+    def _log_channel_event(self, event_type: str, details: dict[str, Any]) -> bool:
         channel_event = {
             "event": "channel_management",
+            "entity_id": self.channel_id,
             "event_type": event_type,
             "channel_id": self.channel_id,
             "timestamp": time.time(),
             "details": details,
         }
-        self.ledger.add_event(channel_event)
+        return self.ledger.add_event(channel_event)
+
+    def _persist_or_rollback(self, rollback: Callable[[], None]) -> bool:
+        """Persist a registry mutation, restoring in-memory state if it fails."""
+        if self._persist_registry is None:
+            return True
+        try:
+            persisted = self._persist_registry()
+        except Exception:
+            rollback()
+            raise
+        if not persisted:
+            rollback()
+            return False
+        return True
 
     def __str__(self) -> str:
         return (
