@@ -4,15 +4,15 @@ Includes Ed25519 signing keys, Curve25519 ZMQ transport keys,
 and X25519 WireGuard keys for multi-region P2P mesh simulation.
 """
 
-import os
-import json
 import base64
-import zmq
+import json
+import os
 from typing import Dict, List
+
+import zmq
+from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
-from cryptography.hazmat.primitives import serialization
-
 
 NODE_WG_IPS: Dict[str, str] = {
     "node1": "10.200.1.1",
@@ -83,8 +83,9 @@ def generate_node_identity(node_id: str, msp_id: str) -> dict:
 def _write_identity(node_dir: str, identity: dict) -> None:
     os.makedirs(node_dir, exist_ok=True)
     identity_path = os.path.join(node_dir, "identity.json")
-    with open(identity_path, "w") as f:
+    with os.fdopen(os.open(identity_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
         json.dump(identity, f, indent=4)
+    os.chmod(identity_path, 0o600)
     print(f"Generated identity for {identity['node_id']} at {identity_path}")
     print(f"  Public Key: {identity['signing_public_key'][:16]}...")
 
@@ -100,16 +101,15 @@ def _write_peers_env(node_dir: str, peers: List[str]) -> None:
 def _write_wg_config(node_dir: str, node_id: str, identity: dict,
                      wg_peers: List[dict]) -> None:
     wg_conf_path = os.path.join(node_dir, "wg0.conf")
-    wg_ip = identity.get("wireguard_ip") or NODE_WG_IPS.get(node_id, "10.200.0.0")
     lines = [
         "[Interface]",
         f"PrivateKey = {identity['wireguard_private_key']}",
-        f"ListenPort = 51820",
+        "ListenPort = 51820",
         "",
     ]
     for peer in wg_peers:
         lines.extend([
-            f"[Peer]",
+            "[Peer]",
             f"# {peer['node_id']}",
             f"PublicKey = {peer['wireguard_public_key']}",
             f"Endpoint = {peer['endpoint']}:51820",
@@ -167,9 +167,24 @@ def main() -> None:
             other_peers.append(peer_str)
         _write_peers_env(os.path.join(base_dir, node_id), other_peers)
 
+    trusted_block_keys = {
+        node_id: identity["signing_public_key"]
+        for node_id, identity in all_identities.items()
+    }
+    for node_id in nodes:
+        trust_path = os.path.join(base_dir, node_id, "trusted_block_keys.json")
+        with open(trust_path, "w") as trust_file:
+            json.dump(trusted_block_keys, trust_file, indent=4)
+
     peer_list_path = os.path.join(base_dir, "peers.json")
     with open(peer_list_path, "w") as f:
-        json.dump(all_identities, f, indent=4)
+        json.dump({
+            node_id: {
+                "signing_public_key": identity["signing_public_key"],
+                "transport_public_key": identity["transport_public_key"],
+            }
+            for node_id, identity in all_identities.items()
+        }, f, indent=4)
     print(f"\nSaved all peer identities to {peer_list_path}")
     print("=== Identity generation complete ===")
 

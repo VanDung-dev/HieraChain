@@ -44,6 +44,8 @@ spec:
               value: "5001"
             - name: HRC_VALIDATOR_IDENTITY
               value: "/app/config/identity/identity.json"
+            - name: HRC_BLOCK_TRUSTED_KEYS_FILE
+              value: "/app/config/identity/trusted_block_keys.json"
             - name: HRC_IPFS_ENABLED
               value: "true"
             - name: HRC_IPFS_HOST
