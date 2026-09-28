@@ -1,6 +1,6 @@
 ---
 title: "Cross-Chain 2PC"
-description: "Two-Phase Commit coordination for cross-chain transactions, including rollback and reconciliation behavior."
+description: "Durable Two-Phase Commit coordination with forward recovery for cross-chain transactions."
 icon: material/swap-horizontal
 ---
 
@@ -8,143 +8,81 @@ icon: material/swap-horizontal
 
 ## Overview
 
-Two-Phase Commit prepares both Sub-Chains, then commits the source followed by the destination. If a commit fails, the transaction manager marks the transaction as failed and attempts to roll back the source. The rollback can return `False` or raise an exception; the manager ignores `False` and logs an exception. For example, an asset transfer may involve the `logistics` and `finance` chains.
+The coordinator prepares both `DomainChain` participants, then fsyncs and reads back a COMMIT decision from its own journal before asking either participant to commit. A participant acknowledges only after both transaction-tagged operation events can be read back from that chain's ordering journal; block finalization remains asynchronous. The terminal `committed` record must also be read back before reporting `COMMITTED`. Once COMMIT is durable, recovery always retries forward and never rolls a participant back.
 
-A typical trigger is an inventory transfer between departments. The source chain records a `deduct` event and the destination chain records a `receive` event. The intended outcome is for both commits to succeed; if the destination commit fails after the source commits, the operation may be partially applied and require manual reconciliation.
+Before COMMIT is durable, the coordinator asks both participants to abort. It reports `ROLLED_BACK` only when both acknowledge. If either abort cannot be confirmed, the transaction remains `IN_DOUBT` and the coordinator retries the abort when both participants are available.
 
----
+On startup, unresolved coordinator records identify which persisted chains need `DomainChain` participants. Other persisted chains remain generic `SubChain` instances. A generic placeholder can also be explicitly rebound by calling `create_sub_chain()` with the same name and domain type; the old chain is shut down only after the replacement connects.
 
-## Flow diagram: happy path
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Client as Client
-    participant HM as 🏛️ HierarchyManager
-    participant TM as 🔄 CrossChainTransactionManager
-    participant SRC as 📦 Source SubChain
-    participant DST as 📦 Destination SubChain
-
-    Client->>HM: initiate_cross_chain_transaction(src, dst, payload)
-    HM->>TM: initiate_transaction(src, dst, payload)
-    TM->>TM: Create CrossChainTransaction (UUID, state=PENDING)
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: PHASE 1 — PREPARE
-        TM->>SRC: prepare_transaction(tx_id, payload, is_source=True)
-        SRC->>SRC: Lock resources, validate payload
-        SRC-->>TM: True ✅
-
-        TM->>DST: prepare_transaction(tx_id, payload, is_source=False)
-        DST->>DST: Verify capacity to accept
-        DST-->>TM: True ✅
-
-        TM->>TM: state = PREPARED
-    end
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: PHASE 2 — COMMIT
-        TM->>SRC: commit_transaction(tx_id)
-        SRC-->>TM: True ✅
-        TM->>DST: commit_transaction(tx_id)
-        DST-->>TM: True ✅
-        TM->>TM: state = COMMITTED
-    end
-
-    TM-->>HM: tx_id
-    HM-->>Client: tx_id
-```
-
----
-
-## Flow diagram: failure paths
+## Successful flow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant TM as 🔄 CrossChainTransactionManager
-    participant SRC as 📦 Source SubChain
-    participant DST as 📦 Destination SubChain
+    participant Client
+    participant TM as CrossChainTransactionManager
+    participant SRC as Source DomainChain
+    participant DST as Destination DomainChain
+    participant CJ as Coordinator journal
 
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: SCENARIO A — Phase 1 Prepare Fails
-        TM->>SRC: prepare_transaction(tx_id, payload, is_source=True)
-        SRC-->>TM: True ✅
-        TM->>DST: prepare_transaction(tx_id, payload, is_source=False)
-        DST-->>TM: False ❌  (capacity / validation fail)
-        TM->>TM: state = ROLLED_BACK
-        TM->>SRC: rollback_transaction(tx_id)
-        TM->>DST: rollback_transaction(tx_id)
-        Note over TM,DST: False rollback results are ignored; an exception stops later calls and may prevent tx_id from returning
-    end
-
-    rect rgb(0, 0, 0, 0)
-        Note over TM,DST: SCENARIO B — Phase 2 Partial Commit Fails
-        TM->>SRC: commit_transaction(tx_id)
-        SRC-->>TM: True ✅
-        TM->>DST: commit_transaction(tx_id)
-        DST-->>TM: Exception ❌
-        TM->>TM: state = FAILED ❌
-        TM->>SRC: rollback_transaction(tx_id)
-        SRC-->>TM: True, False, or exception
-        Note over TM,SRC: The manager ignores False and logs exceptions; inspect chain state to confirm rollback
-    end
+    Client->>TM: initiate_transaction(src, dst, payload)
+    TM->>CJ: fsync and read back begin
+    TM->>SRC: prepare_transaction(tx_id, payload, true)
+    SRC-->>TM: prepared
+    TM->>DST: prepare_transaction(tx_id, payload, false)
+    DST-->>TM: prepared
+    TM->>CJ: fsync and read back prepared
+    TM->>CJ: fsync and read back COMMIT decision
+    TM->>SRC: commit_transaction(tx_id)
+    SRC-->>TM: ordering events read back
+    TM->>DST: commit_transaction(tx_id)
+    DST-->>TM: ordering events read back
+    TM->>CJ: fsync and read back committed
+    TM-->>Client: tx_id
 ```
 
----
-
-## Operation state machine
+## Failure and recovery
 
 ```mermaid
-flowchart LR
-    P["PENDING"] --> PR["PREPARED"]
-    PR --> C["COMMITTED ✅"]
-    PR --> RB["ROLLED_BACK ⚠️"]
-    P --> RB
-    P --> F["FAILED ❌"]
-    PR --> F
+flowchart TD
+    PENDING --> PREPARED
+    PENDING --> ABORTING
+    PREPARED --> ABORTING
+    ABORTING -->|both abort acks| ROLLED_BACK
+    ABORTING -->|an abort is unconfirmed| IN_DOUBT
+    IN_DOUBT -->|no durable COMMIT| ABORTING
+    PREPARED -->|fsynced COMMIT decision| COMMITTING
+    COMMITTING -->|both participant acks| COMMITTED
+    COMMITTING -->|an ack is missing| IN_DOUBT
+    IN_DOUBT -->|durable COMMIT| COMMITTING
+    PENDING --> FAILED
 ```
-
----
-
-## Step-by-step breakdown
-
-| Step | Description |
-|:-----|:------------|
-| **1. Initiate** | `HierarchyManager.initiate_cross_chain_transaction()` calls `CrossChainTransactionManager.initiate_transaction()`, which creates a `CrossChainTransaction` with a UUID and `state=PENDING`. |
-| **2. Phase 1: Prepare SRC** | Source chain locks resources, validates payload schema |
-| **3. Phase 1: Prepare DST** | Destination chain checks capacity and constraints |
-| **4. Phase 1 result** | If both return `True`, state becomes `PREPARED`. If either fails, the manager sets `ROLLED_BACK` and calls `rollback_transaction()` on source, then destination. It ignores `False` results; an exception stops later calls and may prevent `tx_id` from returning. |
-| **5. Phase 2: Commit SRC** | The manager calls `DomainChain.commit_transaction()` on the source chain. |
-| **6. Phase 2: Commit DST** | If the source commit succeeds, the manager calls `DomainChain.commit_transaction()` on the destination chain. |
-| **7. Result** | If the call returns normally, it returns `tx_id`. The state is `COMMITTED` on success, `ROLLED_BACK` after a Phase 1 failure, or `FAILED` if a chain is missing or Phase 2 fails. `ROLLED_BACK` does not confirm that rollback succeeded because `False` results are ignored. |
-
----
-
-## Error handling
 
 | Condition | State | Recovery |
 |:----------|:------|:---------|
-| Phase 1 fails on either chain | `ROLLED_BACK` | The manager attempts source rollback, then destination rollback. It ignores `False` results; if one raises, later calls are skipped and initiation may raise before returning `tx_id`. |
-| Source or destination chain is missing | `FAILED` | The manager stops before prepare or rollback. |
-| Phase 2 commit fails | `FAILED` | The manager attempts to roll back the source. It ignores a `False` result and logs an exception, so inspect the source-chain state and reconcile manually if needed. |
-| Network timeout during Phase 2 | `FAILED` | The final commit outcome may be unknown. Inspect both chain states; `FAILED` alone does not show whether the destination committed. Reconcile manually if needed. |
+| A participant fails to prepare | `ROLLED_BACK` only after both abort acknowledgments; otherwise `IN_DOUBT` | Retry both aborts after the participants are available. |
+| A chain is missing or does not support 2PC before prepare | `FAILED` | Register the required `DomainChain` participants, then start a new transaction. |
+| Writing the COMMIT decision has an ambiguous result | `IN_DOUBT` | Read the coordinator journal before taking action. A durable COMMIT retries forward; no COMMIT retries abort. |
+| A participant commit fails after durable COMMIT | `IN_DOUBT` | Never roll back. The durable `prepared` record confirms both participants validated the payload; restore missing participant state from that payload and journal markers, then retry only missing events. |
+| The process restarts with unresolved records | `IN_DOUBT` until participants are available | Restore the named participants as `DomainChain` and retry. |
 
----
+## Guarantees and limits
 
-## Key classes and methods
+- The coordinator journal is stored separately from OrderingService event journals, so its records are not replayed as ledger events.
+- A `COMMITTED` transaction means both participant event pairs and the coordinator's terminal record were read back from durable journals. It does not mean the blocks have already been finalized.
+- Participant event markers include the transaction ID and operation step. A retry skips a start or completion event already accepted by that participant, including after restart.
+- After durable COMMIT, participant recovery uses the previously validated coordinator payload and accepted event markers; it does not rerun business validation against volatile entity registries.
+- `IN_DOUBT` is recoverable state, not a terminal failure. Call `transaction_manager.retry_pending()` to retry after a runtime participant failure; startup and participant registration also trigger retries.
 
-| Step | Class / Method | File |
-|:-----|:--------------|:-----|
+## Key methods
+
+| Action | Method | File |
+|:-------|:-------|:-----|
 | Initiate | `HierarchyManager.initiate_cross_chain_transaction()` | `hierachain/hierarchical/hierarchy_manager/base.py` |
-| Create transaction | `CrossChainTransactionManager.initiate_transaction()` | `hierachain/hierarchical/transaction_manager.py` |
-| Prepare | `DomainChain.prepare_transaction()` | `hierachain/domains/chains/domain_chain.py` |
-| Commit | `DomainChain.commit_transaction()` | `hierachain/domains/chains/domain_chain.py` |
-| Rollback | `DomainChain.rollback_transaction()` | `hierachain/domains/chains/domain_chain.py` |
-
----
+| Coordinate and recover | `CrossChainTransactionManager.initiate_transaction()` / `retry_pending()` | `hierachain/hierarchical/transaction_manager.py` |
+| Prepare, commit, or abort | `DomainChain.prepare_transaction()` / `commit_transaction()` / `rollback_transaction()` | `hierachain/domains/chains/domain_chain.py` |
 
 ## Related
 
-- [Event Submission](./event-submission.md): each `commit_transaction()` internally calls `add_event()`
-- [Error Mitigation](./error-recovery.md): handles state rollback at the system level
+- [Event Submission](./event-submission.md): operation events enter each chain's ordering journal before asynchronous block finalization.
+- [Error Mitigation](./error-recovery.md): system-level error handling and journal recovery.

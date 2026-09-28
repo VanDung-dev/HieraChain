@@ -41,7 +41,7 @@ The default limit is 100 requests per minute, configured with `HRC_RATE_LIMIT_RP
 
 ### Authentication
 
-`APIKeyVerifier` checks the `X-API-Key` header. Enable or disable it with `HRC_AUTH_ENABLED`.
+`APIKeyVerifier` checks the `X-API-Key` header for HTTP and WebSocket access. Production requires `HRC_AUTH_ENABLED=true` and a provisioned `HRC_API_KEYS_FILE`; dev/test can disable authentication.
 
 ---
 

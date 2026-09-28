@@ -41,7 +41,7 @@ sequenceDiagram
 ```
 
 * `GET  /api/business/health`: kiểm tra trạng thái hoạt động dịch vụ (health check).
-* `POST /api/business/channels`: tạo một channel mới.
+* `POST /api/business/channels`: tạo một channel mới. API key cần quyền `chains` và `channels:manage`.
 * `GET  /api/business/channels/{channel_id}`: lấy thông tin channel.
 * `POST /api/business/channels/{channel_id}/private-collections`: tạo một bộ sưu tập dữ liệu riêng tư (private data collection).
 * `POST /api/business/private-data`: Ghi dữ liệu riêng tư (Hỗ trợ truyền trực tiếp `value` hoặc tham chiếu qua IPFS `value_cid`).
@@ -60,9 +60,39 @@ sequenceDiagram
     
 * `POST /api/business/contracts`: Đăng ký một hợp đồng (Hỗ trợ truyền mã nguồn thô qua `implementation` hoặc tham chiếu IPFS qua `implementation_cid`).
 * `POST /api/business/contracts/execute`: thực thi một hợp đồng miền.
-* `POST /api/business/organizations`: đăng ký một tổ chức mới.
+* `POST /api/business/organizations`: đăng ký một tổ chức mới. Cần quyền `chains` và `organizations:manage`; user ID từ API key đã xác thực trở thành quản trị viên đầu tiên.
+* `POST /api/business/organizations/{org_id}/members`: quản trị viên tổ chức đăng ký member với role `admin` hoặc `member`. Member ID phải trùng user ID trong API key của member đó.
 
 *Lưu ý bổ sung: một số kịch bản test/giám sát trong `tests/integration/api_business/test_api_business.py` và `scripts/security/*` sử dụng các endpoint trên để kiểm thử bảo mật và xác minh hành vi hệ thống.*
+
+## Cấp tài nguyên và quyền
+
+Các endpoint cấp tài nguyên yêu cầu bật xác thực API key. Operator tin cậy gán scope `organizations:manage` và `channels:manage` khi cấp API key; các route này không tạo key. Tạo organization cũng cần scope `chains`, user ID đã xác thực trong key sẽ thành quản trị viên đầu tiên. Đăng ký member cần scope `chains` và caller phải là quản trị viên hiện có của organization. Tạo channel cần `chains` và `channels:manage`. Khi gửi event, hệ thống dùng user ID đã xác thực cùng role policy của channel.
+
+Registry organization, member và channel được lưu và khôi phục qua SQLite hoặc PostgreSQL đã cấu hình. Redis storage khôi phục registry từ Redis instance đã cấu hình; độ bền phụ thuộc cấu hình persistence của Redis. Backend in-memory chỉ tồn tại trong process hiện tại. Ledger event của channel và nội dung private collection không được khôi phục từ snapshot registry này. `ca_config` chỉ được giữ làm metadata trong API process và chưa được dùng để xác minh chứng chỉ member. Các method channel và private collection gọi trực tiếp bằng Python nhận organization ID làm endorsement và yêu cầu caller đáng tin cậy; chúng không xác minh chữ ký endorsement.
+
+```bash
+ORG_PROVISIONER_KEY=replace-me
+ORG_ADMIN_KEY=replace-me
+CHANNEL_PROVISIONER_KEY=replace-me
+
+curl -s -X POST http://localhost:2661/api/business/organizations \\
+  -H 'X-API-Key: '"$ORG_PROVISIONER_KEY" \\
+  -H 'Content-Type: application/json' \\
+  -d '{"org_id": "orgA", "ca_config": {}}'
+
+curl -s -X POST http://localhost:2661/api/business/organizations/orgA/members \\
+  -H 'X-API-Key: '"$ORG_ADMIN_KEY" \\
+  -H 'Content-Type: application/json' \\
+  -d '{"member_id": "userB", "role": "member"}'
+
+curl -s -X POST http://localhost:2661/api/business/channels \\
+  -H 'X-API-Key: '"$CHANNEL_PROVISIONER_KEY" \\
+  -H 'Content-Type: application/json' \\
+  -d '{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'
+```
+
+Gửi event cũng cần API key có quyền `events`.
 
 ## Ví dụ lệnh Curl
 
@@ -73,7 +103,7 @@ curl -s http://localhost:2661/api/business/health
 # Tạo channel
 curl -s -X POST http://localhost:2661/api/business/channels \
   -H 'Content-Type: application/json' \
-  -d '{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "ADMIN || MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'
+  -d '{"channel_id": "test_channel", "organizations": ["orgA"], "policy": {"read": "MEMBER", "write": "ADMIN", "endorsement": "MAJORITY"}}'
 
 # Tạo bộ sưu tập riêng tư cho channel
 curl -s -X POST \

@@ -29,7 +29,7 @@ print(settings.AUTH_ENABLED)
 
 ### Runtime environment
 
-* `HRC_ENV` selects the config class. Values are `dev` (default), `test`, or `product`.
+* `HRC_ENV` selects the config class; `ENV` is used when `HRC_ENV` is unset or blank. `HRC_ENV` takes precedence when both are set. Values are case-insensitive and ignore surrounding whitespace: `dev` / `development`, `test` / `testing`, or `production` / `prod` / `product` (default when both are blank: development). An unknown nonblank value raises an error instead of selecting development.
 
 ### API
 
@@ -46,16 +46,19 @@ print(settings.AUTH_ENABLED)
 * Block limits: `BLOCK_SIZE_LIMIT` (default: `1000` events/block in dev, `10` in test)
 * `PROOF_SUBMISSION_INTERVAL` (default: `300` seconds in dev, `10` in test)
 * `HRC_VALIDATOR_IDENTITY`: validator identity file path (default: `validator_key.json`)
+* `HRC_BLOCK_TRUSTED_KEYS_FILE`: required JSON file mapping `creator_id` to Ed25519 public-key hex. The local key in `HRC_VALIDATOR_IDENTITY` must match its entry. Missing or mismatched files stop chain/API startup. Every block, including genesis, requires a trusted signature. Existing unsigned chains need migration before startup.
 
 ### Storage and cache
 
-* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (defaults: `postgres` in development and production, `memory` in tests; supported values: `sqlite`, `postgres`, `redis`, `memory`)
-* If PostgreSQL is unavailable, startup falls back to SQLite. Set `HRC_STORAGE_BACKEND=sqlite` to select SQLite explicitly.
+* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (defaults: `postgres` in development and production, `memory` in tests; supported values: `sqlite`, `postgres` / `postgresql`, `redis`, `memory`). An unknown backend stops API startup and chain storage initialization.
+* In production, when the selected backend is PostgreSQL, set `DATABASE_URL` or `HRC_DATABASE_URL` explicitly. API startup rejects the built-in local fallback URL; it does not test database connectivity.
+* `DATABASE_URL` takes precedence when nonblank. An empty or whitespace-only value falls back to `HRC_DATABASE_URL`.
+* If PostgreSQL is unavailable, chain storage initialization fails. Set `HRC_STORAGE_BACKEND=sqlite` to select SQLite explicitly.
 * Advanced caching: `ADVANCED_CACHING_ENABLED` (default: `True`)
 * `BLOCK_CACHE_SIZE` (default: `5000`), `EVENT_CACHE_SIZE` (`20000`), `ENTITY_CACHE_SIZE` (`10000`)
 * Cache policies: `BLOCK_CACHE_POLICY` (`lru`), `EVENT_CACHE_POLICY` (`ttl`), `ENTITY_CACHE_POLICY` (`lfu`)
 * `ENTITY_TTL` (default: `3600` seconds)
-* DB: `DATABASE_URL` (default: `postgresql://hiera:hiera@localhost:5432/hierachain`)
+* DB: `DATABASE_URL` (development fallback: `postgresql://hiera:hiera@localhost:5432/hierachain`; do not rely on this fallback in production)
 * Redis: `REDIS_HOST` (`localhost`), `REDIS_PORT` (`6379`), `REDIS_DB` (`0`)
 
 ### IPFS (off-chain storage)
@@ -72,7 +75,8 @@ print(settings.AUTH_ENABLED)
 
 ### Security and authentication
 
-* Authentication: `HRC_AUTH_ENABLED` (default `false` in dev/test and `true` in production; explicitly setting it to `false` also disables authentication in production)
+* Authentication: `HRC_AUTH_ENABLED` (default `false` in dev/test and required `true` in production; an explicit `false` prevents production startup)
+* `HRC_API_KEYS_FILE`: required in production. Path to a readable, nonempty JSON key map; keys must be at least 32 characters and each entry needs a `user_id` and nonempty `permissions` list. The file is loaded when the API app starts; rotate or revoke keys by updating it and recreating every Compose node (or restarting each direct process).
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
 * Secret backend: `HRC_SECRET_BACKEND` (values: `env`, `vault`, `aws`). Default is `env`.
 * Master key: `HRC_MASTER_KEY_SOURCE` (`auto` in dev/test, `env` in production), `HRC_MASTER_KEY_FILE` (default: `config/master_backup_key.key`)
@@ -164,7 +168,7 @@ LOG_LEVEL=DEBUG
 ## Recommended production configuration (minimum)
 
 ```dotenv
-HRC_ENV=product
+HRC_ENV=production
 HRC_API_HOST=0.0.0.0
 HRC_AUTH_ENABLED=true
 HRC_CORS_ALLOW_ALL=false

@@ -36,7 +36,7 @@ Dùng để khởi tạo và theo dõi cấu trúc phân cấp của các chuỗ
     *   *Option*: `--name` (Bắt buộc), `--parent` (Mặc định: `main`).
 
 *   **`hrc chain list`**: Liệt kê toàn bộ các chuỗi hiện có và số lượng block của chúng.
-*   **`hrc chain submit-proof`**: Gửi bằng chứng mã hóa từ Sub-Chain lên Main Chain để xác thực liên chuỗi.
+*   **`hrc chain submit-proof`**: Hiện trả exit code khác 0 vì registry chain của CLI chỉ nằm trong bộ nhớ. Dùng endpoint REST gửi proof có xác thực và SQL storage bền vững.
 
 ### Nhóm lệnh `event` (Quản lý Sự kiện)
 
@@ -101,8 +101,8 @@ hrc chain create supply_chain --name logistics_01 --parent main
 # Bắt đầu sản xuất thực thể ITEM-99
 hrc event add logistics_01 start_operation --entity-id ITEM-99 --details '{"line": "A1"}'
 
-# Hoàn tất và gửi proof lên Main Chain
-hrc chain submit-proof logistics_01
+# Gửi proof qua REST API có xác thực và SQL storage bền vững
+curl -X POST -H "X-API-Key: $HRC_API_KEY" http://localhost:2661/api/ledger/chains/logistics_01/submit-proof
 ```
 
 ### 3. Kiểm định an toàn dữ liệu

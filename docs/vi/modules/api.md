@@ -41,7 +41,7 @@ Mặc định là 100 request mỗi phút, được cấu hình qua `HRC_RATE_LI
 
 ### Xác thực
 
-`APIKeyVerifier` kiểm tra header `X-API-Key`. Bật hoặc tắt qua `HRC_AUTH_ENABLED`.
+`APIKeyVerifier` kiểm tra header `X-API-Key` cho HTTP và WebSocket. Production bắt buộc `HRC_AUTH_ENABLED=true` và file key `HRC_API_KEYS_FILE` đã được cấp; dev/test có thể tắt xác thực.
 
 ---
 

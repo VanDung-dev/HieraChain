@@ -29,7 +29,7 @@ print(settings.AUTH_ENABLED)
 
 ### Môi trường chạy
 
-* `HRC_ENV` chọn lớp cấu hình. Giá trị là `dev` (mặc định), `test` hoặc `product`.
+* `HRC_ENV` chọn lớp cấu hình; dùng `ENV` khi `HRC_ENV` không được đặt hoặc để trống. Nếu đặt cả hai, `HRC_ENV` được ưu tiên. Giá trị không phân biệt chữ hoa/thường và bỏ khoảng trắng hai đầu: `dev` / `development`, `test` / `testing` hoặc `production` / `prod` / `product` (mặc định development khi cả hai để trống). Giá trị khác sẽ gây lỗi thay vì chọn development.
 
 ### API
 
@@ -46,16 +46,19 @@ print(settings.AUTH_ENABLED)
 * Giới hạn block: `BLOCK_SIZE_LIMIT` (mặc định: `1000` events/block ở dev, `10` ở test)
 * `PROOF_SUBMISSION_INTERVAL` (mặc định: `300` giây ở dev, `10` ở test)
 * `HRC_VALIDATOR_IDENTITY`: đường dẫn file identity của validator (mặc định: `validator_key.json`)
+* `HRC_BLOCK_TRUSTED_KEYS_FILE`: file JSON bắt buộc ánh xạ `creator_id` tới public key Ed25519 dạng hex. Khóa node trong `HRC_VALIDATOR_IDENTITY` phải khớp mục tương ứng. Thiếu file hoặc khóa không khớp sẽ chặn chain/API khởi động. Mọi block, kể cả genesis, đều cần chữ ký tin cậy. Chain cũ có block không ký cần được di chuyển dữ liệu trước khi khởi động.
 
 ### Lưu trữ và cache
 
-* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (mặc định: `postgres` ở development và production, `memory` ở test; giá trị: `sqlite`, `postgres`, `redis`, `memory`)
-* Nếu PostgreSQL không khả dụng, tiến trình khởi động sẽ fallback về SQLite. Đặt `HRC_STORAGE_BACKEND=sqlite` để chọn SQLite tường minh.
+* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (mặc định: `postgres` ở development và production, `memory` ở test; giá trị: `sqlite`, `postgres` / `postgresql`, `redis`, `memory`). Backend không hợp lệ sẽ chặn API khởi động và khởi tạo chain storage.
+* Trong production, khi backend được chọn là PostgreSQL, cần đặt rõ `DATABASE_URL` hoặc `HRC_DATABASE_URL`. API từ chối URL fallback local có sẵn khi khởi động; bước này không kiểm tra kết nối tới database.
+* `DATABASE_URL` được ưu tiên khi có giá trị. Nếu rỗng hoặc chỉ có khoảng trắng, hệ thống dùng `HRC_DATABASE_URL`.
+* Nếu PostgreSQL không khả dụng, khởi tạo storage của chain sẽ thất bại. Đặt `HRC_STORAGE_BACKEND=sqlite` để chọn SQLite tường minh.
 * Cache nâng cao: `ADVANCED_CACHING_ENABLED` (mặc định: `True`)
 * `BLOCK_CACHE_SIZE` (mặc định: `5000`), `EVENT_CACHE_SIZE` (`20000`), `ENTITY_CACHE_SIZE` (`10000`)
 * Chính sách cache: `BLOCK_CACHE_POLICY` (`lru`), `EVENT_CACHE_POLICY` (`ttl`), `ENTITY_CACHE_POLICY` (`lfu`)
 * `ENTITY_TTL` (mặc định: `3600` giây)
-* DB: `DATABASE_URL` (mặc định: `postgresql://hiera:hiera@localhost:5432/hierachain`)
+* DB: `DATABASE_URL` (fallback khi development: `postgresql://hiera:hiera@localhost:5432/hierachain`; không dựa vào fallback này trong production)
 * Redis: `REDIS_HOST` (`localhost`), `REDIS_PORT` (`6379`), `REDIS_DB` (`0`)
 
 ### IPFS (lưu trữ off-chain)
@@ -72,7 +75,8 @@ print(settings.AUTH_ENABLED)
 
 ### Bảo mật và authentication
 
-* Authentication: `HRC_AUTH_ENABLED` (mặc định `false` ở dev/test và `true` ở production; đặt tường minh thành `false` cũng sẽ tắt authentication ở production)
+* Authentication: `HRC_AUTH_ENABLED` (mặc định `false` ở dev/test và bắt buộc `true` ở production; đặt tường minh thành `false` sẽ chặn production khởi động)
+* `HRC_API_KEYS_FILE`: bắt buộc trong production. Đường dẫn tới file JSON chứa key không rỗng, đọc được; mỗi key dài ít nhất 32 ký tự và có `user_id` cùng danh sách `permissions` không rỗng. File được đọc khi tạo API app; để thay hoặc thu hồi key, cập nhật file và tạo lại mọi container node Compose (hoặc khởi động lại từng tiến trình chạy trực tiếp).
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
 * Secret backend: `HRC_SECRET_BACKEND` (giá trị: `env`, `vault`, `aws`). Mặc định là `env`.
 * Master key: `HRC_MASTER_KEY_SOURCE` (`auto` ở dev/test, `env` ở production), `HRC_MASTER_KEY_FILE` (mặc định: `config/master_backup_key.key`)
@@ -164,7 +168,7 @@ LOG_LEVEL=DEBUG
 ## Cấu hình production khuyến nghị (tối thiểu)
 
 ```dotenv
-HRC_ENV=product
+HRC_ENV=production
 HRC_API_HOST=0.0.0.0
 HRC_AUTH_ENABLED=true
 HRC_CORS_ALLOW_ALL=false

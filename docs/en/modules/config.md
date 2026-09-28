@@ -52,13 +52,15 @@ The **Config** module manages HieraChain's operational settings, secret keys, an
 
 ## Environment-based Configuration
 
-HieraChain uses the `HRC_ENV` environment variable to automatically switch between optimized configurations:
+HieraChain uses `HRC_ENV` to switch configurations and falls back to `ENV` when `HRC_ENV` is unset or blank. `HRC_ENV` takes precedence when both are set. Values are case-insensitive and ignore surrounding whitespace:
 
-| Environment | `HRC_ENV` Value | Key Characteristics |
+| Environment | Accepted values | Key Characteristics |
 | :--- | :--- | :--- |
-| **Development** | `dev` (Default) | DEBUG log level, SQLite/Memory storage, CORS allowed from everywhere. |
-| **Production** | `product` | Enforces Auth, HSTS, P2P Strict Trust, JSON log format. |
-| **Testing** | `test` | Fast configuration, small block size, Memory storage by default. |
+| **Development** | `dev`, `development` (default) | DEBUG log level, PostgreSQL storage by default, CORS allowed from everywhere. |
+| **Production** | `production`, `prod`, `product` | Authentication enabled by default, HSTS, P2P Strict Trust. |
+| **Testing** | `test`, `testing` | Fast configuration, small block size, Memory storage by default. |
+
+An unknown nonblank environment value raises an error instead of selecting development.
 
 ---
 

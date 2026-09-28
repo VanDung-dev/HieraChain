@@ -36,7 +36,7 @@ Used to initialize and monitor the hierarchical structure of chains.
     *   *Options*: `--name` (Required), `--parent` (Default: `main`).
 
 *   **`hrc chain list`**: List all existing chains and their block counts.
-*   **`hrc chain submit-proof`**: Submit cryptographic proof from Sub-Chain to Main Chain for cross-chain validation.
+*   **`hrc chain submit-proof`**: Currently exits with a nonzero status because the CLI chain registry is memory-only. Use the authenticated REST proof endpoint backed by durable SQL storage.
 
 ### `event` Commands (Event Management)
 
@@ -101,8 +101,8 @@ hrc chain create supply_chain --name logistics_01 --parent main
 # Start production of entity ITEM-99
 hrc event add logistics_01 start_operation --entity-id ITEM-99 --details '{"line": "A1"}'
 
-# Complete and submit proof to Main Chain
-hrc chain submit-proof logistics_01
+# Submit proofs through the authenticated REST API backed by durable SQL storage
+curl -X POST -H "X-API-Key: $HRC_API_KEY" http://localhost:2661/api/ledger/chains/logistics_01/submit-proof
 ```
 
 ### 3. Verify Data Integrity

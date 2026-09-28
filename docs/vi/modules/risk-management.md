@@ -22,8 +22,8 @@ Package **Risk Management** hiện cung cấp ghi nhật ký kiểm toán và b�
 
     __File__: `audit_logger.py`
 
-    * Ghi vết toàn bộ vòng đời rủi ro theo chuẩn **JSONL**.
-    * Đảm bảo tính toàn vẹn dữ liệu bằng hàm băm **SHA-256**.
+    * Lưu sự kiện audit vào backend đã cấu hình; mặc định là Arrow Parquet, còn `FileAuditStorage` ghi JSONL.
+    * Tính digest **SHA-256** trên mọi trường của `AuditEvent`.
     * Hỗ trợ truy vấn và tạo báo cáo phục vụ kiểm toán tuân thủ (Compliance).
 
 </div>
@@ -32,11 +32,28 @@ Package **Risk Management** hiện cung cấp ghi nhật ký kiểm toán và b�
 
 ## Nhật ký Kiểm toán và Tính toàn vẹn
 
-Mọi sự kiện trong module đều được lưu trữ với cấu trúc định danh duy nhất (Correlation ID) và được bảo vệ chống thay đổi:
+Tính toàn vẹn của sự kiện audit dùng manifest digest đáng tin cậy riêng:
 
-*   **Hashing**: Mỗi bản ghi audit chứa hash SHA-256 của nội dung, cho phép phát hiện hành vi can thiệp vào log.
-*   **Rotation**: Tự động xoay vòng log (100MB) và nén dữ liệu cũ để tối ưu lưu trữ.
-*   **Retention**: Mặc định lưu trữ nhật ký trong 90 ngày (có thể cấu hình).
+*   Đặt `HRC_AUDIT_MANIFEST_WRITE_URL` thành URL của PostgreSQL dành riêng cho manifest để `PostgresAuditManifest` được nối tự động. Trong production, `AuditLogger` từ chối khởi tạo nếu thiếu URL này hoặc callback `integrity_digest_writer(event_id, digest)` được truyền rõ ràng.
+*   Đặt database manifest ngoài host hoặc volume có thể sửa archive và dùng quyền truy cập tách biệt. Role của ứng dụng chỉ có quyền `INSERT` trên bảng; role xác minh riêng chỉ có quyền `SELECT`; cả hai cần quyền `USAGE` trên schema. Sidecar có thể bị sửa cùng archive không cung cấp bằng chứng chống can thiệp.
+*   Tạo hai role và bảng manifest trong database đó trước khi khởi động logger:
+
+    ```sql
+    CREATE TABLE public.audit_event_digests (
+        event_id TEXT PRIMARY KEY,
+        digest TEXT NOT NULL CHECK (digest ~ '^[0-9a-f]{64}$'),
+        recorded_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    REVOKE ALL ON public.audit_event_digests FROM PUBLIC;
+    GRANT USAGE ON SCHEMA public TO audit_manifest_writer, audit_manifest_reader;
+    GRANT INSERT ON public.audit_event_digests TO audit_manifest_writer;
+    GRANT SELECT ON public.audit_event_digests TO audit_manifest_reader;
+    ```
+
+*   Khi xác minh, kết nối `PostgresAuditManifest` bằng role xác minh rồi truyền `manifest.load_hashes()` và toàn bộ event trong archive vào `verify_integrity(events, expected_hashes)`.
+*   `verify_integrity(events, expected_hashes)` trả về `False` nếu thiếu manifest hoặc ID sự kiện hay digest không khớp. Truyền toàn bộ tập sự kiện tương ứng với manifest; bản ghi thiếu, thừa, trùng ID hoặc bị thay đổi đều làm kiểm tra thất bại.
+*   Nếu lưu archive hoặc ghi digest lỗi, exception được trả về caller và không phát thống kê hay cảnh báo thành công. Lỗi sau khi lưu archive có thể để lại event thiếu mục manifest; xác minh sẽ từ chối.
+*   File audit Arrow tự xoay vòng ở 100 MB. `FileAuditStorage` ghi file JSONL theo ngày.
 
 ---
 

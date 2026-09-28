@@ -52,13 +52,15 @@ Module **Config** quản lý các tham số vận hành, khóa bí mật và c�
 
 ## Quản lý cấu hình theo môi trường
 
-HieraChain sử dụng biến môi trường `HRC_ENV` để tự động chuyển đổi giữa các cấu hình tối ưu:
+HieraChain dùng `HRC_ENV` để chọn cấu hình và dùng `ENV` khi `HRC_ENV` không được đặt hoặc để trống. Nếu đặt cả hai, `HRC_ENV` được ưu tiên. Giá trị không phân biệt chữ hoa/thường và bỏ khoảng trắng hai đầu:
 
-| Môi trường | Giá trị `HRC_ENV` | Đặc điểm chính |
+| Môi trường | Giá trị được chấp nhận | Đặc điểm chính |
 | :--- | :--- | :--- |
-| **Development** | `dev` (Mặc định) | Log level DEBUG, lưu trữ SQLite/Memory, cho phép CORS từ mọi nơi. |
-| **Production** | `product` | Ép buộc xác thực (Auth), HSTS, P2P Strict Trust, log định dạng JSON. |
-| **Testing** | `test` | Cấu hình cực nhanh, block size nhỏ, mặc định lưu trữ Memory. |
+| **Development** | `dev`, `development` (mặc định) | Log level DEBUG, mặc định lưu trữ PostgreSQL, cho phép CORS từ mọi nơi. |
+| **Production** | `production`, `prod`, `product` | Bật xác thực theo mặc định, HSTS, P2P Strict Trust. |
+| **Testing** | `test`, `testing` | Cấu hình cực nhanh, block size nhỏ, mặc định lưu trữ Memory. |
+
+Giá trị môi trường khác, không rỗng, sẽ gây lỗi thay vì chọn development.
 
 ---
 

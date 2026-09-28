@@ -1,6 +1,6 @@
 ---
 title: "Cross-Chain Operations"
-description: "Guide to Two-Phase Commit (2PC) mechanism and distributed operation coordination."
+description: "How to initiate and recover durable Two-Phase Commit (2PC) operations."
 icon: material/swap-horizontal
 ---
 
@@ -8,58 +8,55 @@ icon: material/swap-horizontal
 
 ## Purpose
 
-HieraChain's hierarchical network consists of multiple independent Sub-chains serving different domains. To ensure integrity and atomicity when coordinating data flows or asset state transitions across two (or more) different systems, HieraChain integrates a coordination mechanism called **Two-Phase Commit (2PC)**.
+`CrossChainTransactionManager` coordinates a transaction between two `DomainChain` participants. Its coordinator-owned journal stores transaction metadata and the durable commit decision separately from each chain's ordering event journal.
 
-This mechanism is primarily managed by the `CrossChainTransactionManager` module at `hierachain/hierarchical/transaction_manager.py`.
+## Transaction states
 
-### 1. Operation State Lifecycle
+- **`PENDING`**: The coordinator has created the transaction.
+- **`PREPARED`**: Both participants accepted the prepare request; no commit decision has been made yet.
+- **`IN_DOUBT`**: The coordinator cannot confirm completion. Before a durable COMMIT decision it retries abort; after that decision it retries commit.
+- **`COMMITTED`**: Both participants acknowledged that their operation events were fsynced to their ordering journals. Block finalization may still be running asynchronously.
+- **`ROLLED_BACK`**: Both participants acknowledged abort before any durable COMMIT decision.
+- **`FAILED`**: The transaction could not start, for example because a named chain is missing or does not support 2PC.
 
-Each cross-chain operation moves sequentially through the following states to prevent loss:
+## Transaction flow
 
-* **`PENDING`**: Operation has been initialized, network is waiting to execute the main process.
-* **`PREPARED`**: Both source and destination chains have committed that conditions are sufficient for execution, resources have been successfully locked.
-* **`COMMITTED`**: Operation completed on all network chains with consensus.
-* **`ROLLED_BACK`**: Operation cancelled due to failure in one of the locks. Locked resources on branches will be rolled back to previous version.
-* **`FAILED`**: Operation failed completely (likely due to internal TCP connection failure or critical logic error).
+1. The coordinator fsyncs a `begin` record before preparing either participant.
+2. It prepares the source and destination, then fsyncs a `prepared` record.
+3. It fsyncs the COMMIT decision before calling either participant's `commit_transaction()`.
+4. Each participant acknowledges only after its transaction-tagged start and completion events have been accepted by its ordering journal.
+5. After both acknowledgments, the coordinator fsyncs `committed` and exposes `COMMITTED`.
 
-### 2. Two-Phase Commit (2PC) Model
+If prepare fails, the coordinator attempts abort on both participants. It reports `ROLLED_BACK` only if both return `True`; otherwise it records `IN_DOUBT` and retries abort later. After a durable COMMIT decision, it never calls rollback. A failed commit remains `IN_DOUBT` and is retried forward.
 
-In `CrossChainTransactionManager`, `_execute_2pc(transaction)` clearly allocates the main process to handle cross-chain operations. The core logic consists of two phases:
+## Initiate an operation
 
-#### Phase 1: Prepare Phase
-
-* The manager retrieves objects from `get_sub_chain()` of HierarchyManager.
-* Calls `prepare_transaction(tx_id, payload, is_source=True)` on the **Source** chain to lock source resources.
-* Then calls `prepare_transaction` on the **Destination** chain to mark the transaction receipt.
-* Goal of Phase 1: Force all participating chains to commit that they can perform the change.
-* If Source or Destination chain cannot Prepare successfully (e.g. due to lock balance errors), the system immediately proceeds to `_rollback()`.
-
-#### Phase 2: Commit Phase
-
-* Only executed if Phase 1 returns success for all participants.
-* Module calls `commit_transaction(tx_id)` on the Source chain.
-* Simultaneously performs the same on the Destination chain structure for final Commit.
-* At this step, the actual block will be created on both Sub-chains to finalize the data exchange.
-* If an error occurs during the Commit process (though rare), the transaction state is flagged as `FAILED` to await manual recovery tools via that ID.
-
-### 3. Command Initialization Guide
-
-When needing to issue a command via DApp or external Module, developers access the following API/Function:
+Use the `HierarchyManager` coordinator so its durable journal and recovery state remain shared:
 
 ```python
-# Get instance from existing HierarchyManager
-manager = CrossChainTransactionManager(hierarchy_manager=hierarchy_manager_instance)
-
-# Execute initiate transaction command
-tx_id = manager.initiate_transaction(
+tx_id = hierarchy_manager.initiate_cross_chain_transaction(
     source_chain_name="sub_chain_finance",
     dest_chain_name="sub_chain_logistics",
     payload={
-        "event_name": "asset_transfer",
-        "asset_id": "PKG-099238",
-        "quantity": 500
-    }
+        "entity_id": "PKG-099238",
+        "operation_type": "transfer",
+        "details": {"quantity": 500},
+    },
 )
+
+transaction = hierarchy_manager.transaction_manager.get_transaction(tx_id)
 ```
 
-This will trigger `_execute_2pc` automatically and synchronously within the management logic without requiring additional client-side operations.
+The entity must be registered on both chains and the operation payload must pass both participants' validation.
+
+## Recover unresolved operations
+
+The coordinator retries durable decisions at startup and when participants are registered. To retry after a runtime failure:
+
+```python
+hierarchy_manager.transaction_manager.retry_pending()
+```
+
+Persisted chains named by unresolved 2PC records are restored as `DomainChain` participants. Other persisted chains remain generic `SubChain` instances. If a generic placeholder must be promoted explicitly, call `create_sub_chain()` with its existing name and domain type; the replacement connects before the placeholder shuts down.
+
+After a durable COMMIT, the coordinator's `prepared` record confirms both participants validated the payload before the decision. Recovery restores participant input from that payload and skips operation events already marked in the ordering journal, so it does not depend on volatile entity registries being restored.

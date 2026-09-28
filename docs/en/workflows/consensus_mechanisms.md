@@ -19,7 +19,7 @@ HieraChain has pluggable consensus across layers. The MainChain (inter-organizat
 | **Config value** | `proof_of_authority` | `proof_of_federation` | `byzantine_fault_tolerant` |
 | **Target Layer** | SubChain (Internal) / Single MainChain | MainChain Alliance (Inter-Org) | SubChain / MainChain BFT |
 | **Who finalizes** | Any registered authority | Only rotating leader: `Validators[index % n]` | 2f+1 of n validators via PBFT |
-| **Signature type** | Ed25519 (asymmetric) | SHA-256 federation signature | Aggregated PBFT votes |
+| **Signature type** | Ed25519 (asymmetric) | Ed25519 over the unfinalized block hash | Aggregated PBFT votes |
 | **Leader rotation** | Optional round-robin | Enforced, deterministic by block index | View-based, changes on failure |
 | **ZK Proof check** | Optional | Enforced in `validate_block()` | N/A |
 | **Min validators** | 1 authority sufficient | ≥ 3 (`min_validators` config) | n ≥ 3f + 1 |
@@ -84,8 +84,8 @@ sequenceDiagram
     Note right of POF: Scan all events for forbidden crypto terms
     POF->>POF: _verify_block_zk_proof(block, previous_block)
     Note right of POF: Enforced — fails block if ZK invalid
-    POF->>POF: _create_federation_signature(block, leader_id)<br/>SHA-256(hash:leader_id:block.index:time)
-    POF->>POF: Append consensus_finalization event<br/>{ leader_id, validators_count, round, signature }
+    POF->>POF: _create_federation_signature(block, signing_key)<br/>Ed25519 sign(block.hash)
+    POF->>POF: Append consensus_finalization event<br/>{ leader_id, block_hash, validators_count, round, signature }
     POF-->>OS: Finalized Block ✅
 ```
 
@@ -98,6 +98,10 @@ sequenceDiagram
 | ZK verify | `_verify_block_zk_proof()` | `consensus/proof_of_federation.py` |
 | Federation sign | `_create_federation_signature()` | `consensus/proof_of_federation.py` |
 | Finalize | `ProofOfFederation.finalize_block()` | `consensus/proof_of_federation.py` |
+
+`validate_block()` rebuilds the block before the finalization event and checks that its hash matches the signed `block_hash`. It rejects a missing trusted validator key, altered payload, or a finalization event outside the last position.
+
+Every block, including genesis, must carry a valid Ed25519 `signature` from a creator in the trusted key map. `HRC_VALIDATOR_IDENTITY` supplies the fixed signing key, while `HRC_BLOCK_TRUSTED_KEYS_FILE` supplies the operator-approved `creator_id` to public-key map. `Blockchain.add_block(block, public_key=...)` accepts an explicit PEM key only when it matches that map. `Blockchain.is_chain_valid()` and `Blockchain.from_dict()` verify the complete chain; missing keys, unsigned blocks, and invalid signatures fail validation. CLI verification uses the same trusted key file and checks each named chain in its SQLite database.
 
 ---
 
