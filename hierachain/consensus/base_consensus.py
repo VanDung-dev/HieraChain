@@ -213,6 +213,30 @@ def _verify_block_zk_proof(block: Block, previous_block: Block | None = None) ->
 
     if zk_proof is None:
         if settings.ZK_PROOF_REQUIRED_FOR_MAINCHAIN:
+            proof_events = [
+                event for event in block.to_event_list()
+                if event.get("event") == "proof_submission"
+            ]
+            if proof_events:
+                try:
+                    verifier = get_zk_verifier()
+                    for event in proof_events:
+                        metadata = event.get("metadata", {})
+                        encoded = event.get("zk_proof")
+                        if not isinstance(metadata, dict) or not isinstance(encoded, str):
+                            return False
+                        proof_bytes = bytes.fromhex(encoded)
+                        if not verifier.verify(proof_bytes, {
+                            "old_state_root": metadata.get("previous_merkle_root", ""),
+                            "new_state_root": metadata.get("latest_merkle_root", ""),
+                            "block_index": metadata.get("latest_block_index", 0),
+                            "sub_chain_name": event.get("sub_chain"),
+                        }):
+                            return False
+                except Exception:
+                    logger.exception("Could not verify proof submissions in block %s", block.index)
+                    return False
+                return True
             logger.warning(
                 "Block %s: ZK proof required but missing",
                 block.index
