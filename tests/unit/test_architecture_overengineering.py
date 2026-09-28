@@ -52,7 +52,7 @@ def test_sub_chain_returns_ordering_service_event_id() -> None:
     assert ordering.event_pool.qsize() == 1
 
 
-def test_proof_submission_runs_subchain_and_cross_level_paths() -> None:
+def test_proof_submission_uses_one_cross_level_path() -> None:
     manager = object.__new__(HierarchyManager)
     chain = Mock()
     chain.submit_proof_to_main.return_value = True
@@ -65,7 +65,7 @@ def test_proof_submission_runs_subchain_and_cross_level_paths() -> None:
     manager.get_sub_chain = Mock(return_value=chain)
 
     assert HierarchyManager.submit_proof_to_main_chain(manager, "orders")
-    chain.submit_proof_to_main.assert_called_once_with(manager.main_chain)
+    chain.submit_proof_to_main.assert_not_called()
     sync.sync_to_mainchain.assert_called_once_with("orders")
 
 
@@ -93,6 +93,8 @@ def test_storage_failure_does_not_append_block_in_memory() -> None:
         block_processing_lock=Lock(),
         get_latest_block=Mock(return_value=SimpleNamespace(index=0, hash="b" * 64)),
         consensus=SimpleNamespace(finalize_block=Mock(return_value=block)),
+        _sign_block=Mock(),
+        is_valid_new_block=Mock(return_value=True),
         ordering_service=SimpleNamespace(
             storage_handler=SimpleNamespace(
                 save_block=Mock(side_effect=OSError("storage unavailable"))

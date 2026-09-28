@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -41,6 +42,8 @@ def test_hc001_failed_block_save_does_not_advance_state() -> None:
         block_processing_lock=nullcontext(),
         get_latest_block=lambda: SimpleNamespace(index=2, hash="previous-hash"),
         consensus=SimpleNamespace(finalize_block=lambda current, _name: current),
+        _sign_block=lambda _block: None,
+        is_valid_new_block=lambda _block: True,
         ordering_service=SimpleNamespace(storage_handler=storage),
         add_block=lambda _block: actions.append("add") or True,
         world_state=SimpleNamespace(
@@ -56,6 +59,7 @@ def test_hc001_failed_block_save_does_not_advance_state() -> None:
 
 
 def test_hc002_database_contains_finalized_block_after_ordering_commit() -> None:
+    from hierachain.config.settings import settings
     from hierachain.consensus.ordering.block_manager import OrderingBlockManager
     from hierachain.consensus.ordering.types import OrderingStatus
     from hierachain.consensus.proof_of_authority import ProofOfAuthority
@@ -63,6 +67,11 @@ def test_hc002_database_contains_finalized_block_after_ordering_commit() -> None
     from hierachain.hierarchical.sub_chain.block import (
         _process_and_finalize_single_block,
     )
+    from hierachain.security.identity_loader import (
+        load_node_identity,
+        load_trusted_block_keys,
+    )
+    from hierachain.security.verify.block_verifier import sign_block
 
     class UniqueIndexStorage:
         def __init__(self) -> None:
@@ -80,7 +89,10 @@ def test_hc002_database_contains_finalized_block_after_ordering_commit() -> None
     genesis = Block(index=0, events=[], previous_hash="0")
     adapter = UniqueIndexStorage()
     storage = object.__new__(OrderingStorageHandler)
+    identity = load_node_identity()
+    assert identity is not None
     storage.storage = adapter
+    storage.trusted_public_keys = load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE)
     storage.block_history = deque(maxlen=16)
     storage.last_block = genesis
     storage.processed_events = {}
@@ -93,6 +105,7 @@ def test_hc002_database_contains_finalized_block_after_ordering_commit() -> None
         metrics=SimpleNamespace(record_block_created=lambda *_args: None),
         status=OrderingStatus.ACTIVE,
         config={"chain_name": "test-chain"},
+        node_identity=identity,
         journal=SimpleNamespace(log_event=lambda _event: True),
         commit_queue=Queue(),
     )
@@ -108,6 +121,9 @@ def test_hc002_database_contains_finalized_block_after_ordering_commit() -> None
     finalized: list[Block] = []
     sub_chain = SimpleNamespace(
         name="test-chain",
+        node_identity=identity,
+        _sign_block=lambda block: sign_block(block, identity.node_id, identity.signing_keypair),
+        is_valid_new_block=lambda _block: True,
         block_processing_lock=nullcontext(),
         get_latest_block=lambda: genesis,
         consensus=consensus,
@@ -125,22 +141,24 @@ def test_hc002_database_contains_finalized_block_after_ordering_commit() -> None
     assert list(storage.block_history) == finalized
 
 
-def test_hc003_unauthenticated_product_compose_is_loopback_only() -> None:
+def test_hc003_product_compose_requires_node_auth() -> None:
     root = Path(__file__).resolve().parents[2]
     compose = (root / "docker/docker-compose.yml").read_text(encoding="utf-8")
     service_blocks = re.findall(
         r"(?ms)^  ([\w-]+):\n(.*?)(?=^  [\w-]+:|\Z)", compose
     )
 
-    unauthenticated_product_node = any(
-        re.search(r"(?m)^      - HRC_ENV=product$", block)
-        and re.search(r"(?m)^      - HRC_AUTH_ENABLED=false$", block)
-        for _name, block in service_blocks
+    product_nodes = [
+        block for _name, block in service_blocks
+        if re.search(r"(?m)^      - HRC_ENV=product$", block)
+    ]
+    assert len(product_nodes) == 4
+    assert all(
+        re.search(r"(?m)^      - HRC_AUTH_ENABLED=true$", block)
+        and re.search(r"(?m)^      - HRC_API_KEYS_FILE=/run/secrets/hrc_api_keys$", block)
+        and re.search(r"(?m)^    secrets:\n      - hrc_api_keys$", block)
+        for block in product_nodes
     )
-    gateway = re.search(r"(?ms)^  gateway:\n(.*?)(?=^  [\w-]+:|\Z)", compose)
-    assert gateway is not None
-    if unauthenticated_product_node:
-        assert '"127.0.0.1:2660:80"' in gateway.group(1)
 
 
 def test_hc004_endpoint_verifier_can_validate_key_from_app_verifier(
@@ -193,15 +211,22 @@ def test_hc004_created_key_permission_is_visible_to_endpoint_checker() -> None:
     assert ResourcePermissionChecker.has_permission(context, "events") is True
 
 
-def test_hc005_websocket_with_auth_connects_without_request_typeerror() -> None:
+def test_hc005_websocket_with_auth_connects_without_request_typeerror(tmp_path: Path) -> None:
     root = Path(__file__).resolve().parents[2]
+    api_key = "hrc_" + "a" * 40
+    key_file = tmp_path / "api_keys.json"
+    key_file.write_text(
+        json.dumps({api_key: {"user_id": "test_user", "permissions": ["events"]}}),
+        encoding="utf-8",
+    )
     script = """
+import os
 from fastapi.testclient import TestClient
 from hierachain.api.server import create_app
 
 client = TestClient(create_app())
 try:
-    with client.websocket_connect('/ws') as websocket:
+    with client.websocket_connect('/ws', headers={'X-API-Key': os.environ['HRC_API_KEY']}) as websocket:
         assert isinstance(websocket.receive_json(), dict)
 finally:
     client.close()
@@ -210,6 +235,8 @@ finally:
     env.update(
         HRC_ENV="product",
         HRC_AUTH_ENABLED="true",
+        HRC_API_KEYS_FILE=str(key_file),
+        HRC_API_KEY=api_key,
         HRC_P2P_ENABLED="false",
     )
     result = subprocess.run(
