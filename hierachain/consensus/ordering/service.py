@@ -25,7 +25,7 @@ from hierachain.consensus.ordering.types import (
     OrderingStatus,
     PendingEvent,
 )
-from hierachain.consensus.ordering.utils import generate_event_id
+from hierachain.consensus.ordering.utils import generate_event_id, make_serializable
 from hierachain.core.block import Block
 from hierachain.error_mitigation.journal import TransactionJournal
 
@@ -46,7 +46,12 @@ class OrderingService:
     ):
         self.config = config
         self.nodes = nodes or []
-        self.node_identity = node_identity
+        from hierachain.security.identity_loader import require_block_identity
+
+        self.node_identity, self.trusted_public_keys = require_block_identity(
+            node_identity, config.get("trusted_public_keys")
+        )
+        self.config["trusted_public_keys"] = self.trusted_public_keys
         self._status = OrderingStatus.MAINTENANCE
         self.should_stop = threading.Event()
         self.event_pool: Queue[PendingEvent] = Queue(
@@ -171,6 +176,50 @@ class OrderingService:
             raise RuntimeError(f"Failed to persist event {event_id} to the journal")
         self.pending_events[event_id] = pending_event
         self.event_pool.put(pending_event)
+
+        return event_id
+
+    def reconcile_journal_event(self, event_data: dict[str, Any]) -> str:
+        """Requeue a durable journal event without appending a second copy."""
+        if not isinstance(event_data, dict):
+            raise ValueError("event_data must be a dictionary")
+
+        event_id = event_data.get("event_id")
+        channel_id = event_data.get("channel_id")
+        if not isinstance(event_id, str) or not isinstance(channel_id, str):
+            raise ValueError("journal event must contain event_id and channel_id")
+
+        if event_id in self.pending_events:
+            return event_id
+
+        if (
+            event_id in getattr(self.block_builder, "current_batch_ids", set())
+            or event_id in self.storage_handler.processed_events
+        ):
+            return event_id
+
+        if self.storage_handler.storage.get_event_by_id(event_id) is not None:
+            return event_id
+
+        if self.status != OrderingStatus.ACTIVE:
+            raise RuntimeError(
+                f"Ordering service is in {self.status.value} mode"
+            )
+
+        pending_event = PendingEvent(
+            event_id=event_id,
+            event_data=make_serializable(event_data),
+            channel_id=channel_id,
+            submitter_org="recovery",
+            received_at=time.time(),
+            status=EventStatus.PENDING,
+        )
+        self.pending_events[event_id] = pending_event
+        try:
+            self.event_pool.put(pending_event)
+        except Exception:
+            self.pending_events.pop(event_id, None)
+            raise
 
         return event_id
 

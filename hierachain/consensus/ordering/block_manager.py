@@ -14,6 +14,7 @@ from hierachain.core.merkle_tree import (
     MerkleTree,
     compute_leaves_from_events_standalone,
 )
+from hierachain.security.verify.block_verifier import sign_block
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,11 @@ class OrderingBlockManager:
                 if self.storage_handler.last_block else "0"
             )
             block.hash = block.calculate_hash()
+            sign_block(
+                block,
+                self.service.node_identity.node_id,
+                self.service.node_identity.signing_keypair,
+            )
 
             try:
                 chain_name = self.config.get("chain_name")

@@ -8,8 +8,11 @@ from collections import deque
 from typing import Any
 
 from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
+from hierachain.config.settings import settings
 from hierachain.consensus.ordering.types import PendingEvent
 from hierachain.core.block import Block, convert_events_to_arrow
+from hierachain.security.identity_loader import load_trusted_block_keys
+from hierachain.security.verify.block_verifier import get_block_verifier
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +41,9 @@ def _verify_chain_links(blocks: list[Block]) -> None:
             )
 
 
-def _block_from_dict(data: dict[str, Any]) -> Block:
+def _block_from_dict(
+    data: dict[str, Any], trusted_public_keys: dict[str, bytes]
+) -> Block:
     """Create a Block from dictionary data with hash verification."""
     block = object.__new__(Block)
     block.index = data["index"]
@@ -69,6 +74,9 @@ def _block_from_dict(data: dict[str, Any]) -> Block:
             f"stored={stored_hash[:16]} computed={computed_hash[:16]}"
         )
     block.hash = stored_hash
+    public_key = trusted_public_keys.get(block.creator_id)
+    if not get_block_verifier().verify_block(block, public_key=public_key).is_valid:
+        raise ValueError(f"Block signature invalid or untrusted: index={block.index}")
     return block
 
 
@@ -76,6 +84,11 @@ class OrderingStorageHandler:
     """Manages persistent storage and caching for blocks and events"""
     def __init__(self, config: dict[str, Any]):
         self.config = config
+        self.trusted_public_keys = (
+            config.get("trusted_public_keys")
+            if config.get("trusted_public_keys") is not None
+            else load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE)
+        )
         db_url = config.get("db_url", "")
         if db_url.startswith(("postgres://", "postgresql://", "postgresql+psycopg://")):
             from hierachain.adapters.database.postgres_adapter import PostgresAdapter
@@ -91,13 +104,21 @@ class OrderingStorageHandler:
         self.chain_name = config.get("chain_name")
 
     def save_block(self, block: Block, chain_name: str | None) -> tuple[int, float]:
+        public_key = self.trusted_public_keys.get(block.creator_id)
+        if not get_block_verifier().verify_block(block, public_key=public_key).is_valid:
+            raise ValueError(f"Refusing to persist unsigned or untrusted block {block.index}")
         block_data = {
             "index": block.index,
             "hash": block.hash,
             "previous_hash": block.previous_hash,
             "timestamp": block.timestamp,
+            "nonce": block.nonce,
             "events": block.to_event_list(),
-            "metadata": {"merkle_root": block.merkle_root},
+            "metadata": {
+                "merkle_root": block.merkle_root,
+                "creator_id": block.creator_id,
+                "signature": block.signature,
+            },
             "merkle_root": block.merkle_root,
             "chain_name": chain_name
         }
@@ -144,7 +165,7 @@ class OrderingStorageHandler:
             if data is None:
                 break
             # Create block directly to avoid recalculating hash
-            blocks.append(_block_from_dict(data))
+            blocks.append(_block_from_dict(data, self.trusted_public_keys))
             current_index += 1
 
         # Verify chain integrity: every block's previous_hash must match
@@ -168,7 +189,7 @@ class OrderingStorageHandler:
         data = self.storage.get_latest_block(chain_name=self.chain_name)
         if not data:
             return None
-        return _block_from_dict(data)
+        return _block_from_dict(data, self.trusted_public_keys)
 
     def close(self) -> None:
         self.storage.close()
