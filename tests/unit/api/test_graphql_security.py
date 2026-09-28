@@ -2,12 +2,20 @@
 Unit tests for GraphQL security measures.
 """
 
-import pytest
+import asyncio
 import os
-import time
-from unittest.mock import patch, MagicMock
 
+import pytest
+
+from hierachain.api import graphql_handler
 from hierachain.api.graphql import security as graphql_security
+from hierachain.config.settings import (
+    DevelopmentSettings,
+    ProductionSettings,
+    Settings,
+    TestingSettings,
+    get_settings,
+)
 
 
 def test_graphql_query_depth_limit_simple():
@@ -149,6 +157,88 @@ def test_introspection_disabled_in_production(monkeypatch):
     monkeypatch.setenv("ENV", "production")
     assert os.environ.get("ENV") == "production"
 
+
+@pytest.mark.parametrize(
+    ("variable", "value", "settings_type"),
+    [
+        ("HRC_ENV", "prod", ProductionSettings),
+        ("HRC_ENV", " PRODUCT ", ProductionSettings),
+        ("ENV", " Production ", ProductionSettings),
+        ("HRC_ENV", " DEV ", DevelopmentSettings),
+        ("ENV", "TESTING", TestingSettings),
+    ],
+)
+def test_environment_alias_selects_settings(
+    monkeypatch: pytest.MonkeyPatch,
+    variable: str,
+    value: str,
+    settings_type: type[Settings],
+) -> None:
+    monkeypatch.delenv("HRC_ENV", raising=False)
+    monkeypatch.delenv("ENV", raising=False)
+    monkeypatch.setenv("HRC_AUTH_ENABLED", "true")
+    monkeypatch.setenv(variable, value)
+
+    assert isinstance(get_settings(), settings_type)
+
+
+@pytest.mark.parametrize(
+    ("hrc_env", "legacy_env"),
+    [("prodution", "production"), (None, "staging")],
+)
+def test_unknown_environment_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+    hrc_env: str | None,
+    legacy_env: str,
+) -> None:
+    if hrc_env is None:
+        monkeypatch.delenv("HRC_ENV", raising=False)
+    else:
+        monkeypatch.setenv("HRC_ENV", hrc_env)
+    monkeypatch.setenv("ENV", legacy_env)
+
+    with pytest.raises(ValueError, match="Unsupported HRC_ENV/ENV value"):
+        get_settings()
+
+
+def test_hrc_env_takes_precedence_over_legacy_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("HRC_ENV", "dev")
+    monkeypatch.setenv("ENV", "production")
+    monkeypatch.setenv("HRC_AUTH_ENABLED", "true")
+
+    assert isinstance(get_settings(), DevelopmentSettings)
+
+    monkeypatch.setenv("HRC_ENV", "  ")
+    assert isinstance(get_settings(), ProductionSettings)
+
+
+def test_graphql_handler_blocks_introspection_for_production_alias(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("ENV", raising=False)
+    monkeypatch.setenv("HRC_ENV", "prod")
+    monkeypatch.setenv("HRC_AUTH_ENABLED", "true")
+    monkeypatch.setattr(graphql_security, "check_rate_limit", lambda _client_ip: True)
+
+    class Request:
+        client: None = None
+
+        async def body(self) -> bytes:
+            return b'{"query":"{ __schema { types { name } } }"}'
+
+    valid, response, parsed = asyncio.run(
+        graphql_handler._validate_graphql_request(Request())
+    )
+
+    assert not valid
+    assert parsed is None
+    assert response is not None
+    assert response.status_code == 400
+    assert response.body == (
+        b'{"errors":[{"message":"Introspection queries disabled in production"}]}'
+    )
 
 def test_production_mode_restricts_queries(monkeypatch):
     """Test that production mode applies stricter limits."""
