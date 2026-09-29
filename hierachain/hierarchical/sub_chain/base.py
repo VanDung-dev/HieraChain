@@ -15,7 +15,7 @@ from hierachain.consensus import OrderingNode, OrderingService, OrderingStatus
 from hierachain.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.consensus.proof_of_federation import ProofOfFederation
 from hierachain.core.blockchain import Blockchain
-from hierachain.core.utils import create_event
+from hierachain.core.utils import create_event, validate_event_structure
 from hierachain.hierarchical.sub_chain.block import (
     _consumer_loop,
     _finalize_sub_chain_block_for_chain,
@@ -225,6 +225,9 @@ class SubChain(Blockchain):
 
     def add_event(self, event: dict[str, Any]) -> str:
         """Add event to Sub-Chain."""
+        if not isinstance(event, dict):
+            raise ValueError("Event must be a dictionary")
+
         if "timestamp" not in event:
             event["timestamp"] = time.time()
 
@@ -232,6 +235,9 @@ class SubChain(Blockchain):
             event["entity_id"] = event.get("sender", "system")
         if "event" not in event:
             event["event"] = event.get("type", "generic_event")
+
+        if not validate_event_structure(event):
+            raise ValueError("Invalid event structure")
 
         logger.debug("SubChain %s adding event: %s", self.name, event.get("event"))
 
