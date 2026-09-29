@@ -103,7 +103,10 @@ async def add_event(
 
     event = _build_event_data(event_request, inline_details, cid_info)
 
-    event_id = sub_chain.add_event(event)
+    try:
+        event_id = sub_chain.add_event(event)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     _log_event_success(chain_name, event["entity_id"], cid_info)
 
