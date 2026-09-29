@@ -35,6 +35,7 @@ from hierachain.api.middleware import (
     add_security_headers,
 )
 from hierachain.api.websocket.manager import ws_manager
+from hierachain.adapters.database.auth_state import RedisRevocationStore, SQLiteRevocationStore
 from hierachain.config.logging import LOGGING_CONFIG
 from hierachain.config.settings import _configured_database_url, get_settings
 from hierachain.network.network_client import NetworkClient, NetworkClientConfig
@@ -89,7 +90,13 @@ def _load_production_key_manager() -> KeyManager:
         for details in records.values()
     ):
         raise RuntimeError("HRC_API_KEYS_FILE contains no active API key")
-    return KeyManager(storage_backend=records)
+    settings = get_settings()
+    revocation_store = (
+        RedisRevocationStore(settings.AUTH_STATE_REDIS_URL)
+        if settings.AUTH_STATE_REDIS_URL
+        else SQLiteRevocationStore(settings.API_KEY_REVOCATIONS_DB)
+    )
+    return KeyManager(storage_backend=records, revocation_store=revocation_store)
 
 
 async def _start_p2p_network_layer(settings) -> None:
