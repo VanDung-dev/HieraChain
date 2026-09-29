@@ -18,6 +18,7 @@ from typing import Any, cast
 import orjson
 
 from hierachain.core.block import Block
+from hierachain.core.utils import validate_event_structure
 from hierachain.security.identity_loader import NodeIdentity, require_block_identity
 from hierachain.security.verify.block_verifier import get_block_verifier, sign_block
 
@@ -167,6 +168,9 @@ class Blockchain:
             # Add timestamp if not present
             if "timestamp" not in event:
                 event["timestamp"] = time.time()
+
+            if not validate_event_structure(event):
+                raise ValueError("Invalid event structure")
             
             self.pending_events.append(event)
             event_id = event.get("event_id")
