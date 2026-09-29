@@ -139,6 +139,8 @@ class Settings:
     AUTH_BRUTE_FORCE_MAX_FAILURES = int(os.getenv("HRC_BF_MAX_FAILURES", "5"))
     AUTH_BRUTE_FORCE_LOCKOUT_SECONDS = int(os.getenv("HRC_BF_LOCKOUT_SECONDS", "900"))
     AUTH_BRUTE_FORCE_WINDOW_SECONDS = int(os.getenv("HRC_BF_WINDOW_SECONDS", "300"))
+    AUTH_STATE_REDIS_URL = os.getenv("HRC_AUTH_STATE_REDIS_URL", "").strip()
+    API_KEY_REVOCATIONS_DB = os.getenv("HRC_API_KEY_REVOCATIONS_DB", "data/api_key_revocations.sqlite3")
     
     # Validator Identity
     VALIDATOR_IDENTITY_PATH = os.getenv("HRC_VALIDATOR_IDENTITY", "validator_key.json")
@@ -285,6 +287,10 @@ class Settings:
     @classmethod
     def get_auth_config(cls) -> dict[str, Any]:
         """Get authentication configuration"""
+        lockout_backend = (
+            "redis" if cls.AUTH_STATE_REDIS_URL else
+            "sqlite" if cls().env == "production" else "file"
+        )
         return {
             "enabled": cls.AUTH_ENABLED,
             "key_location": cls.API_KEY_LOCATION,
@@ -293,6 +299,11 @@ class Settings:
                 "max_failures": cls.AUTH_BRUTE_FORCE_MAX_FAILURES,
                 "lockout_duration": cls.AUTH_BRUTE_FORCE_LOCKOUT_SECONDS,
                 "tracking_window": cls.AUTH_BRUTE_FORCE_WINDOW_SECONDS,
+                "storage_backend": lockout_backend,
+                "storage_path": (
+                    cls.API_KEY_REVOCATIONS_DB if lockout_backend == "sqlite" else "data/brute_force"
+                ),
+                "redis_url": cls.AUTH_STATE_REDIS_URL or None,
             },
             "master_key": {
                 "source": cls.MASTER_KEY_SOURCE,
