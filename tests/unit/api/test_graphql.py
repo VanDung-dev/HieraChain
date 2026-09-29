@@ -2,7 +2,7 @@
 Test suite for the HieraChain GraphQL API.
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 def test_graphql_schema_import():
@@ -28,7 +28,7 @@ def test_graphql_query_all_chains():
     mock_manager.get_main_chain.return_value = mock_main_chain
     mock_manager.get_all_sub_chains.return_value = {"TestChain": mock_sub_chain}
     
-    with patch('hierachain.api.ledger.depds.get_hierarchy_manager', return_value=mock_manager):
+    with patch('hierachain.api.graphql.resolvers.get_hierarchy_manager', return_value=mock_manager):
         # Execute query
         query = """
         {
@@ -253,7 +253,7 @@ def test_graphql_mutation_add_event():
     mock_manager.get_main_chain.return_value = mock_chain
     mock_manager.get_all_sub_chains.return_value = {}
     
-    with patch('hierachain.api.ledger.depds.get_hierarchy_manager', return_value=mock_manager):
+    with patch('hierachain.api.graphql.resolvers.get_hierarchy_manager', return_value=mock_manager):
         mutation = """
         mutation {
             addEvent(event: {
@@ -315,12 +315,12 @@ def test_graphql_mutation_add_event_invalid_chain():
 def test_graphql_types_exist():
     """Test that all GraphQL types are properly defined"""
     from hierachain.api.graphql.schema import (
-        EventType,
         BlockType,
         ChainStatusType,
-        Query,
+        EventType,
         Mutations,
-        schema
+        Query,
+        schema,
     )
     from hierachain.api.graphql.types import BlockMetadataType
     
