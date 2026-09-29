@@ -91,25 +91,28 @@ class HieraChainClient:
         delay = self.config.initial_delay * (self.config.backoff_multiplier ** attempt)
         return min(delay, self.config.max_delay)
 
-    def _check_circuit_breaker(self) -> None:
-        if not self._circuit.allow_request():
+    def _check_circuit_breaker(self) -> bool:
+        state = self._circuit.acquire_request()
+        if state is None:
             raise CircuitOpenError(
                 f"Circuit breaker is open. Retry after "
                 f"{self.config.circuit_recovery_timeout}s"
             )
+        return state == CircuitState.HALF_OPEN
 
     def _handle_response(self, response: requests.Response) -> dict[str, Any]:
-        if response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
-            raise ServiceUnavailableError("Service unavailable (503)", status_code=503)
-
         if response.headers.get("X-Lockdown-Mode") == "true":
             raise LockdownError("Node is in lockdown mode", status_code=503)
 
-        if response.status_code >= 500:
-            response.raise_for_status()
+        if response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
+            raise ServiceUnavailableError("Service unavailable (503)", status_code=503)
 
-        self._circuit.record_success()
-        return response.json()
+        if not 200 <= response.status_code < 300:
+            raise HieraChainAPIError(
+                f"HTTP {response.status_code}", status_code=response.status_code
+            )
+
+        return {} if response.status_code == HTTPStatus.NO_CONTENT else response.json()
 
     def _execute_request(
         self,
@@ -125,20 +128,32 @@ class HieraChainClient:
             json=data,
             params=params,
             timeout=self.config.timeout,
+            allow_redirects=method.upper() in {"GET", "HEAD", "OPTIONS"},
         )
         return self._handle_response(response)
 
-    def _handle_request_error(self, e: Exception, attempt: int) -> None:
-        self._circuit.record_failure()
-        if attempt >= self.config.max_retries:
-            if isinstance(e, (ServiceUnavailableError, LockdownError)):
+    def _handle_request_error(
+        self, e: Exception, attempt: int, retries: int, probe: bool
+    ) -> None:
+        if (
+            isinstance(e, HieraChainAPIError)
+            and e.status_code is not None
+            and e.status_code < 500
+        ):
+            if probe:
+                self._circuit.release_probe()
+            raise e
+
+        self._circuit.record_failure(probe=probe)
+        if attempt >= retries or self._circuit.state == CircuitState.OPEN:
+            if isinstance(e, HieraChainAPIError):
                 raise e
             raise HieraChainAPIError(str(e)) from e
         delay = self._calculate_delay(attempt)
         logger.warning(
             "Request failed (%s: %s), retry %d/%d in %.1fs",
             type(e).__name__, e,
-            attempt + 1, self.config.max_retries, delay
+            attempt + 1, retries, delay
         )
         time.sleep(delay)
 
@@ -149,15 +164,28 @@ class HieraChainClient:
         data: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        self._check_circuit_breaker()
+        probe = self._check_circuit_breaker()
         url = f"{self.config.base_url}{endpoint}"
-        for attempt in range(self.config.max_retries + 1):
+        retries = (
+            self.config.max_retries
+            if method.upper() in {"GET", "HEAD", "OPTIONS"} and not probe
+            else 0
+        )
+        for attempt in range(retries + 1):
+            if attempt and self._circuit.state != CircuitState.CLOSED:
+                raise CircuitOpenError("Circuit breaker opened during retry")
             try:
-                return self._execute_request(method, url, data, params)
-            except Exception as e:
-                self._handle_request_error(e, attempt)
+                result = self._execute_request(method, url, data, params)
+                self._circuit.record_success(probe=probe)
+                return result
+            except (HieraChainAPIError, requests.RequestException) as e:
+                self._handle_request_error(e, attempt, retries, probe)
+            except Exception:
+                if probe:
+                    self._circuit.release_probe()
+                raise
         raise HieraChainAPIError(
-            f"Request failed after {self.config.max_retries} retries"
+            f"Request failed after {retries} retries"
         )
 
     def submit_event(self, chain_name: str, event_data: dict[str, Any]) -> EventResult:

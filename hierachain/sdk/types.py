@@ -7,7 +7,9 @@ Dataclasses and enums used by both sync and async clients.
 from __future__ import annotations
 
 import logging
+import threading
 import time
+from _thread import LockType
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -52,40 +54,64 @@ class CircuitBreaker:
     _state: CircuitState = field(default=CircuitState.CLOSED, repr=False)
     _failure_count: int = field(default=0, repr=False)
     _last_failure_time: float = field(default=0.0, repr=False)
+    _probe_in_flight: bool = field(default=False, repr=False)
+    _lock: LockType = field(default_factory=threading.Lock, repr=False, compare=False)
 
     @property
     def state(self) -> CircuitState:
-        if self._state == CircuitState.OPEN:
-            if time.time() - self._last_failure_time >= self.recovery_timeout:
-                self._state = CircuitState.HALF_OPEN
-        return self._state
+        with self._lock:
+            if self._state == CircuitState.OPEN:
+                if time.time() - self._last_failure_time >= self.recovery_timeout:
+                    self._state = CircuitState.HALF_OPEN
+            return self._state
 
-    def record_success(self) -> None:
-        self._failure_count = 0
-        self._state = CircuitState.CLOSED
+    def record_success(self, probe: bool | None = None) -> None:
+        with self._lock:
+            if probe is False and self._state != CircuitState.CLOSED:
+                return
+            self._failure_count = 0
+            self._probe_in_flight = False
+            self._state = CircuitState.CLOSED
 
-    def record_failure(self) -> None:
-        self._failure_count += 1
-        self._last_failure_time = time.time()
-        if self._failure_count >= self.failure_threshold:
-            self._state = CircuitState.OPEN
-            logger.warning(
-                "Circuit breaker opened after %d failures",
-                self._failure_count
-            )
+    def record_failure(self, probe: bool | None = None) -> None:
+        with self._lock:
+            is_probe = self._state == CircuitState.HALF_OPEN if probe is None else probe
+            self._failure_count += 1
+            self._last_failure_time = time.time()
+            if is_probe:
+                self._probe_in_flight = False
+            if is_probe or self._failure_count >= self.failure_threshold:
+                self._state = CircuitState.OPEN
+                logger.warning(
+                    "Circuit breaker opened after %d failures",
+                    self._failure_count
+                )
+
+    def acquire_request(self) -> CircuitState | None:
+        with self._lock:
+            if self._state == CircuitState.OPEN:
+                if time.time() - self._last_failure_time >= self.recovery_timeout:
+                    self._state = CircuitState.HALF_OPEN
+            if self._state == CircuitState.CLOSED:
+                return CircuitState.CLOSED
+            if self._state == CircuitState.HALF_OPEN and not self._probe_in_flight:
+                self._probe_in_flight = True
+                return CircuitState.HALF_OPEN
+            return None
 
     def allow_request(self) -> bool:
-        state = self.state
-        if state == CircuitState.CLOSED:
-            return True
-        if state == CircuitState.HALF_OPEN:
-            return True
-        return False
+        return self.acquire_request() is not None
+
+    def release_probe(self) -> None:
+        with self._lock:
+            self._probe_in_flight = False
 
     def reset(self) -> None:
-        self._state = CircuitState.CLOSED
-        self._failure_count = 0
-        self._last_failure_time = 0.0
+        with self._lock:
+            self._state = CircuitState.CLOSED
+            self._failure_count = 0
+            self._last_failure_time = 0.0
+            self._probe_in_flight = False
 
 
 @dataclass
