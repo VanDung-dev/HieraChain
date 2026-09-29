@@ -154,15 +154,16 @@ class MainChain(Blockchain):
         if sub_chain_name in self.registered_sub_chains:
             return False
 
+        safe_metadata = sanitize_metadata_for_main_chain(metadata or {})
         self.registered_sub_chains.add(sub_chain_name)
-        self.sub_chain_metadata[sub_chain_name] = metadata or {}
+        self.sub_chain_metadata[sub_chain_name] = safe_metadata
 
         # Add Sub-Chain as an authority for proof submission
         self.consensus.add_authority(sub_chain_name, {
             "role": "sub_chain",
             "permissions": ["proof_submission"],
             "registered_at": time.time(),
-            "metadata": metadata
+            "metadata": safe_metadata
         })
 
         # Create registration event
@@ -173,7 +174,7 @@ class MainChain(Blockchain):
             "details": {
                 "sub_chain_name": sub_chain_name,
                 "registered_by": "main_chain",
-                "metadata": sanitize_metadata_for_main_chain(metadata or {})
+                "metadata": safe_metadata
             }
         }
 
