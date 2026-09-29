@@ -5,14 +5,17 @@ Provides rate limiting, security headers, payload size limiting,
 and request logging.
 """
 
+import asyncio
 import logging
 import threading
 import time
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import FastAPI, Request
 from starlette.responses import JSONResponse
+
+from hierachain.adapters.database.redis_rate_limiter import RateLimiterBackendError, RedisRateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -145,42 +148,7 @@ class RateLimiter:
             return max(0, self.limit - count)
 
 
-class RedisRateLimiter:
-    def __init__(self, requests_per_minute: int, host: str, port: int, db: int):
-        import redis
-        self._redis = redis.Redis(
-            host=host, port=port, db=db,
-            socket_connect_timeout=2, socket_timeout=2, decode_responses=True
-        )
-        self.limit = requests_per_minute
-
-    @staticmethod
-    def _key(ip: str) -> str:
-        window = int(time.time()) // 60
-        return f"hrc:rl:{ip}:{window}"
-
-    def is_allowed(self, ip: str) -> bool:
-        key = self._key(ip)
-        try:
-            pipe = self._redis.pipeline()
-            pipe.incr(key)
-            pipe.expire(key, 60)
-            count, _ = pipe.execute()
-            return int(count) <= self.limit
-        except Exception as exc:
-            logger.warning("Redis rate-limiter error, allowing request: %s", exc)
-            return True
-
-    def remaining(self, ip: str) -> int:
-        key = self._key(ip)
-        try:
-            count = int(cast(Any, self._redis.get(key)) or 0)
-            return max(0, self.limit - count)
-        except (TypeError, AttributeError):
-            return self.limit
-
-
-def add_rate_limit(fast_app: FastAPI, settings, exempt_paths: set[str]) -> None:
+def add_rate_limit(fast_app: FastAPI, settings: Any, exempt_paths: set[str]) -> None:
     if not settings.RATE_LIMIT_ENABLED:
         return
 
@@ -211,8 +179,23 @@ def add_rate_limit(fast_app: FastAPI, settings, exempt_paths: set[str]) -> None:
         if forwarded and client_ip in trusted_proxies:
             client_ip = forwarded.split(",")[0].strip()
 
-        if not limiter.is_allowed(client_ip):
+        if isinstance(limiter, RedisRateLimiter):
+            try:
+                allowed, remaining = await asyncio.to_thread(limiter.check, client_ip)
+            except RateLimiterBackendError:
+                return JSONResponse(
+                    status_code=503,
+                    content={
+                        "error": "Service Unavailable",
+                        "message": "Rate limiter unavailable. Please try again later.",
+                        "status_code": 503,
+                    },
+                )
+        else:
+            allowed = limiter.is_allowed(client_ip)
             remaining = limiter.remaining(client_ip)
+
+        if not allowed:
             return JSONResponse(
                 status_code=429,
                 headers={
@@ -229,7 +212,7 @@ def add_rate_limit(fast_app: FastAPI, settings, exempt_paths: set[str]) -> None:
 
         response = await call_next(request)
         response.headers["X-RateLimit-Limit"] = str(rpm)
-        response.headers["X-RateLimit-Remaining"] = str(limiter.remaining(client_ip))
+        response.headers["X-RateLimit-Remaining"] = str(remaining)
         return response
 
 
