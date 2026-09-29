@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (27)"
+??? warning "Breaking Changes (31)"
+
+    * 2026-09-29
+
+        * **Core & Hierarchical (Validate Event Nghiêm ngặt)**: `Blockchain.add_event` (`hierachain/core/blockchain.py`) và `SubChain.add_event` (`hierachain/hierarchical/sub_chain/base.py`) nay ép `validate_event_structure()` (kèm kiểm tra kiểu `dict` trong `SubChain`) và raise `ValueError` khi cấu trúc không hợp lệ; `add_event` của ledger (`hierachain/api/ledger/events.py`) chuyển thành HTTP 422 thay vì chấp nhận event sai định dạng.
+        * **API (Rate Limiting Redis Fail-closed)**: `RedisRateLimiter` chuyển sang (`hierachain/adapters/database/redis_rate_limiter.py`) với `check()`/`RateLimiterBackendError`; `add_rate_limit` (`hierachain/api/middleware.py`) chạy kiểm tra Redis qua `asyncio.to_thread` và trả 503 khi backend không khả dụng thay vì fail-open cho qua như trước, đồng thời tái dùng quota `remaining` đã kiểm tra cho header.
+        * **API (GraphQL Giới hạn Kết quả)**: resolver (`hierachain/api/graphql/resolvers.py`) chặn kết quả qua `_bounded_limit()`/`MAX_QUERY_RESULTS=100` với `limit=None` nghĩa là 100, cắt lát `from_index`/`to_index`/`start+limit` có kẹp biên, và thoát sớm khi `limit=0` — limit yêu cầu lớn hơn nay chỉ trả tối đa 100 bản ghi.
+        * **Network (Kiểm tra Replay & Nonce Chặt)**: `_is_valid_replay` (`hierachain/network/zmq_transport.py`) bắt buộc `nonce` là `str` dài `1..128` ký tự, timestamp số hữu hạn trong `replay_tolerance`, và từ chối khi replay buffer `1000` entry vẫn đầy sau khi tỉa hết hạn thay vì âm thầm loại bỏ.
 
     * 2026-09-28
 
@@ -64,7 +71,16 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (19)"
+??? note "Improvements (25)"
+
+    * 2026-09-29
+
+        * **Database (Kho Auth State Dùng chung)**: thêm `SQLiteRevocationStore`/`SQLiteLockoutStore` (dùng chung qua file, `0600`, key băm digest) và `RedisRevocationStore`/`RedisLockoutStore` cùng `RedisRateLimiter` (`hierachain/adapters/database/auth_state.py`, `hierachain/adapters/database/redis_rate_limiter.py`); `hierachain/adapters/database/__init__.py` chuyển sang import lười `__getattr__`.
+        * **Config (Backend Auth State)**: thêm `HRC_AUTH_STATE_REDIS_URL` (`Settings.AUTH_STATE_REDIS_URL`) và `HRC_API_KEY_REVOCATIONS_DB` (`Settings.API_KEY_REVOCATIONS_DB`), với `get_auth_config()` chọn backend lockout `redis`/`sqlite`/`file` (`hierachain/config/settings.py`).
+        * **Bảo mật & API (Thu hồi Dùng chung & Kiểm tra Async)**: `KeyManager` nhận `revocation_store` và kiểm tra trong `is_revoked()` (`hierachain/security/key_manager.py`); `BruteForceProtector` ủy quyền cho lockout store SQLite/Redis dùng chung (`hierachain/security/brute_force_protector.py`); `APIKeyVerifier` offload kiểm tra brute-force/thu hồi/`is_valid` qua `asyncio.to_thread` và kiểm tra thu hồi trước tính hợp lệ (`hierachain/security/verify/api_key_verifier.py`); server production đấu nối `RedisRevocationStore`/`SQLiteRevocationStore` vào `KeyManager` (`hierachain/api/server.py`).
+        * **Hierarchical & Core (Làm sạch Metadata)**: `MainChain.register_sub_chain` sanitize một lần qua `sanitize_metadata_for_main_chain()` cho cả metadata registry và authority (`hierachain/hierarchical/main_chain/base.py`); `sanitize_metadata_for_main_chain` thêm `_sanitize_summary_value()` đệ quy (tỉa dict/list lồng nhau, bỏ dict `>5` key / list `>10` phần tử) và các field loại bỏ mới `internal_data`/`complete_log`/`detailed_data`, kèm validate list chặt hơn (`hierachain/core/utils.py`).
+        * **SDK (Circuit Breaker An toàn Luồng & Response)**: `CircuitBreaker` (`hierachain/sdk/types.py`) thêm locking với một probe `HALF_OPEN` duy nhất (`acquire_request()`/`release_probe()`, `record_success()`/`record_failure()` theo probe); client sync/async xử lý `HEAD`/`GET`/`OPTIONS` và body rỗng `HTTPStatus.NO_CONTENT` với phân loại lỗi retryable/non-retryable (`hierachain/sdk/client.py`, `hierachain/sdk/async_client.py`).
+        * **Network (Quản lý Peer & Health)**: `NetworkClient` theo dõi `public_key`/`_last_activity`, `PEER_TIMEOUT=60.0` với `_refresh_peer_health()`, giữ key khi đăng ký lại, và thêm `unregister_peer()` kèm dọn socket; `ZmqNode.register_peer()` reset socket khi đổi và `unregister_peer()` hủy message chờ (`hierachain/network/network_client.py`, `hierachain/network/zmq_transport.py`).
 
     * 2026-09-28
 

@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (27)"
+??? warning "Breaking Changes (31)"
+
+    * 2026-09-29
+
+        * **Core & Hierarchical (Strict Event Validation)**: `Blockchain.add_event` (`hierachain/core/blockchain.py`) and `SubChain.add_event` (`hierachain/hierarchical/sub_chain/base.py`) now enforce `validate_event_structure()` (plus `dict` type check in `SubChain`) and raise `ValueError` on invalid structure; ledger `add_event` (`hierachain/api/ledger/events.py`) maps it to HTTP 422 instead of accepting malformed events.
+        * **API (Fail-closed Redis Rate Limiting)**: `RedisRateLimiter` moved to (`hierachain/adapters/database/redis_rate_limiter.py`) with `check()`/`RateLimiterBackendError`; `add_rate_limit` (`hierachain/api/middleware.py`) runs Redis checks via `asyncio.to_thread` and returns 503 when the backend is unavailable instead of the previous fail-open allow, and reuses the checked `remaining` quota for headers.
+        * **API (GraphQL Bounded Limits)**: resolvers (`hierachain/api/graphql/resolvers.py`) cap results via `_bounded_limit()`/`MAX_QUERY_RESULTS=100` with `limit=None` meaning 100, clamped `from_index`/`to_index`/`start+limit` slicing, and early exit on `limit=0` — larger requested limits now return at most 100 items.
+        * **Network (Strict Replay & Nonce Checks)**: `_is_valid_replay` (`hierachain/network/zmq_transport.py`) requires `nonce` to be `str` with `1..128` chars, finite numeric timestamp within `replay_tolerance`, and rejects when the `1000`-entry replay buffer stays full after expiry pruning instead of silently evicting.
 
     * 2026-09-28
 
@@ -64,7 +71,16 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (19)"
+??? note "Improvements (25)"
+
+    * 2026-09-29
+
+        * **Database (Shared Auth State Stores)**: new `SQLiteRevocationStore`/`SQLiteLockoutStore` (file-shared, `0600`, digest-hashed keys) and `RedisRevocationStore`/`RedisLockoutStore` plus `RedisRateLimiter` (`hierachain/adapters/database/auth_state.py`, `hierachain/adapters/database/redis_rate_limiter.py`); `hierachain/adapters/database/__init__.py` switched to lazy `__getattr__` imports.
+        * **Config (Auth State Backends)**: new `HRC_AUTH_STATE_REDIS_URL` (`Settings.AUTH_STATE_REDIS_URL`) and `HRC_API_KEY_REVOCATIONS_DB` (`Settings.API_KEY_REVOCATIONS_DB`), with `get_auth_config()` selecting `redis`/`sqlite`/`file` lockout backend (`hierachain/config/settings.py`).
+        * **Security & API (Shared Revocation & Async Checks)**: `KeyManager` accepts `revocation_store` and checks it in `is_revoked()` (`hierachain/security/key_manager.py`); `BruteForceProtector` delegates to shared SQLite/Redis lockout stores (`hierachain/security/brute_force_protector.py`); `APIKeyVerifier` offloads brute-force/revocation/`is_valid` checks via `asyncio.to_thread` and checks revocation before validity (`hierachain/security/verify/api_key_verifier.py`); production server wires `RedisRevocationStore`/`SQLiteRevocationStore` into `KeyManager` (`hierachain/api/server.py`).
+        * **Hierarchical & Core (Metadata Sanitation)**: `MainChain.register_sub_chain` sanitizes once via `sanitize_metadata_for_main_chain()` for both registry and authority metadata (`hierachain/hierarchical/main_chain/base.py`); `sanitize_metadata_for_main_chain` gains recursive `_sanitize_summary_value()` (nested dict/list pruning, `>5`-key dict / `>10`-item list omitted) and new omitted fields `internal_data`/`complete_log`/`detailed_data`, with stricter list validation (`hierachain/core/utils.py`).
+        * **SDK (Thread-safe Circuit Breaker & Responses)**: `CircuitBreaker` (`hierachain/sdk/types.py`) gains locking with single in-flight `HALF_OPEN` probe (`acquire_request()`/`release_probe()`, probe-aware `record_success()`/`record_failure()`); sync/async clients handle `HEAD`/`GET`/`OPTIONS` and `HTTPStatus.NO_CONTENT` empty bodies with retryable vs non-retryable error split (`hierachain/sdk/client.py`, `hierachain/sdk/async_client.py`).
+        * **Network (Peer Management & Health)**: `NetworkClient` tracks `public_key`/`_last_activity`, `PEER_TIMEOUT=60.0` with `_refresh_peer_health()`, preserves keys on re-register, and adds `unregister_peer()` with socket cleanup; `ZmqNode.register_peer()` resets changed sockets and `unregister_peer()` discards pending messages (`hierachain/network/network_client.py`, `hierachain/network/zmq_transport.py`).
 
     * 2026-09-28
 
