@@ -10,9 +10,11 @@ import os
 import secrets
 import time
 import warnings
+from typing import Any
 
 import orjson
 
+from hierachain.adapters.database.auth_state import RedisRevocationStore, SQLiteRevocationStore
 from hierachain.core.cache import AdvancedCache
 from hierachain.security.secure_logging import SecureLogger
 
@@ -190,7 +192,12 @@ class KeyManager:
     Handles key storage, validation, revocation checks, and permissions.
     """
     
-    def __init__(self, storage_backend=None, config=None):
+    def __init__(
+        self,
+        storage_backend: Any | None = None,
+        config: dict | None = None,
+        revocation_store: SQLiteRevocationStore | RedisRevocationStore | None = None,
+    ) -> None:
         """
         Initialize KeyManager with optional storage backend.
         
@@ -214,6 +221,7 @@ class KeyManager:
         
         self.storage = storage_backend or {}  # In-memory fallback
         self.revoked_keys: set[str] = set()
+        self.revocation_store = revocation_store
         self.key_cache = AdvancedCache(max_size=5000, eviction_policy="ttl")
         self.permission_cache = AdvancedCache(max_size=10000, eviction_policy="lru")
         self.cache_ttl = 300  # 5 minutes default TTL
@@ -258,7 +266,9 @@ class KeyManager:
         Returns:
             bool: True if key is revoked, False otherwise
         """
-        return api_key in self.revoked_keys
+        return api_key in self.revoked_keys or (
+            self.revocation_store is not None and self.revocation_store.is_revoked(api_key)
+        )
     
     def has_permission(self, api_key: str, resource: str) -> bool:
         """
@@ -385,13 +395,15 @@ class KeyManager:
 
         return api_key
     
-    def revoke_key(self, api_key: str):
+    def revoke_key(self, api_key: str) -> None:
         """
         Revoke an API key.
         
         Args:
             api_key: The API key to revoke
         """
+        if self.revocation_store is not None:
+            self.revocation_store.revoke(api_key)
         self.revoked_keys.add(api_key)
         
         # Clear caches

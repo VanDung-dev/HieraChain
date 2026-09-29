@@ -7,6 +7,7 @@ Ensures only authorized clients with valid, non-revoked API keys can access
 protected resources.
 """
 
+import asyncio
 import sys
 import time
 from pathlib import Path
@@ -132,7 +133,7 @@ class APIKeyVerifier:
         await self._check_brute_force_protection(client_ip)
         
         api_key = await self._extract_api_key(request, api_key)
-        self._validate_api_key_present(api_key, client_ip)
+        await self._validate_api_key_present(api_key, client_ip)
         
         # Narrow api_key to str for Mypy
         if api_key is None:
@@ -144,10 +145,10 @@ class APIKeyVerifier:
 
     async def _check_brute_force_protection(self, client_ip: str) -> None:
         """Check if IP is locked out due to brute-force attempts."""
-        if not self.brute_force_protector.is_locked_out(client_ip):
+        if not await asyncio.to_thread(self.brute_force_protector.is_locked_out, client_ip):
             return
             
-        remaining = self.brute_force_protector.get_remaining_lockout(client_ip)
+        remaining = await asyncio.to_thread(self.brute_force_protector.get_remaining_lockout, client_ip)
         self._log_security_event("ip_locked_out", {
             "ip": client_ip,
             "remaining_seconds": round(remaining),
@@ -166,12 +167,12 @@ class APIKeyVerifier:
             return api_key
         return await self.api_key_dependency(request)
 
-    def _validate_api_key_present(self, api_key: str | None, client_ip: str) -> None:
+    async def _validate_api_key_present(self, api_key: str | None, client_ip: str) -> None:
         """Validate that API key is provided."""
         if api_key:
             return
             
-        self.brute_force_protector.record_failure(client_ip, "no_key")
+        await asyncio.to_thread(self.brute_force_protector.record_failure, client_ip, "no_key")
         self._log_security_event("missing_api_key", {"timestamp": time.time()})
         raise HTTPException(
             status_code=401,
@@ -182,15 +183,14 @@ class APIKeyVerifier:
         self, api_key: str, key_prefix: str, client_ip: str
     ) -> None:
         """Verify API key validity and revocation status."""
-        if not self.key_manager.is_valid(api_key):
-            await self._handle_invalid_key(key_prefix, client_ip)
-            
-        if self.key_manager.is_revoked(api_key):
+        if await asyncio.to_thread(self.key_manager.is_revoked, api_key):
             await self._handle_revoked_key(key_prefix, client_ip)
+        if not await asyncio.to_thread(self.key_manager.is_valid, api_key):
+            await self._handle_invalid_key(key_prefix, client_ip)
 
     async def _handle_invalid_key(self, key_prefix: str, client_ip: str) -> None:
         """Handle invalid API key case."""
-        self.brute_force_protector.record_failure(client_ip, key_prefix)
+        await asyncio.to_thread(self.brute_force_protector.record_failure, client_ip, key_prefix)
         self._log_security_event("invalid_api_key", {
             "key_prefix": key_prefix,
             "timestamp": time.time()
@@ -202,7 +202,7 @@ class APIKeyVerifier:
 
     async def _handle_revoked_key(self, key_prefix: str, client_ip: str) -> None:
         """Handle revoked API key case."""
-        self.brute_force_protector.record_failure(client_ip, key_prefix)
+        await asyncio.to_thread(self.brute_force_protector.record_failure, client_ip, key_prefix)
         self._log_security_event("revoked_api_key", {
             "key_prefix": key_prefix,
             "timestamp": time.time()

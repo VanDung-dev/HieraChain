@@ -5,7 +5,7 @@ This module provides tracking of failed authentication attempts
 by IP address and API key prefix, with automatic lockout when thresholds
 are exceeded. Designed to integrate with APIKeyVerifier.
 
-Supports both in-memory and persistent storage (Redis or file-based).
+Supports in-memory and persistent storage (SQLite, Redis, or file-based).
 """
 
 import os
@@ -15,6 +15,7 @@ from pathlib import Path
 
 import orjson
 
+from hierachain.adapters.database.auth_state import RedisLockoutStore, SQLiteLockoutStore
 from hierachain.security.secure_logging import get_security_logger
 
 logger = get_security_logger()
@@ -23,11 +24,11 @@ logger = get_security_logger()
 class _LockoutStorage:
     """Handles persistence of lockout data."""
     
-    def __init__(self, backend: str, path: str, redis_url: str | None):
+    def __init__(self, backend: str, path: str, redis_url: str | None) -> None:
         self._backend = backend
         self._path = path
         self._redis_url = redis_url
-        self._redis_client = None
+        self._shared_store: RedisLockoutStore | SQLiteLockoutStore | None = None
         self._init_backend()
     
     def _init_backend(self) -> None:
@@ -36,26 +37,34 @@ class _LockoutStorage:
             Path(self._path).parent.mkdir(parents=True, exist_ok=True)
         elif self._backend == "redis":
             self._init_redis()
+        elif self._backend == "sqlite":
+            self._shared_store = SQLiteLockoutStore(self._path)
     
     def _init_redis(self) -> None:
         """Initialize Redis client."""
-        try:
-            import redis
-            self._redis_client = redis.from_url(
-                self._redis_url or "redis://localhost:6379/0",
-                decode_responses=True
-            )
-        except ImportError:
-            logger.warning("Redis not available, falling back to file storage")
-            self._backend = "file"
-            Path(self._path).parent.mkdir(parents=True, exist_ok=True)
+        self._shared_store = RedisLockoutStore(self._redis_url or "redis://localhost:6379/0")
+
+    @property
+    def is_shared(self) -> bool:
+        return self._shared_store is not None
+
+    def get_lockout(self, ip: str) -> float | None:
+        if self._shared_store is None:
+            return None
+        return self._shared_store.get(ip)
+
+    def set_lockout(self, ip: str, expiry: float) -> None:
+        if self._shared_store is not None:
+            self._shared_store.set(ip, expiry)
+
+    def delete_lockout(self, ip: str) -> None:
+        if self._shared_store is not None:
+            self._shared_store.delete(ip)
     
     def load_lockouts(self) -> dict[str, float]:
         """Load persisted lockouts from storage."""
         if self._backend == "file":
             return self._load_from_file()
-        elif self._backend == "redis":
-            return self._load_from_redis()
         return {}
     
     def _load_from_file(self) -> dict[str, float]:
@@ -79,32 +88,10 @@ class _LockoutStorage:
             logger.error("Failed to load persisted lockouts: %s", e)
             return {}
     
-    def _load_from_redis(self) -> dict[str, float]:
-        """Load data from Redis storage."""
-        if not self._redis_client:
-            return {}
-        
-        try:
-            now = time.time()
-            keys = self._redis_client.keys("brute_force:lockout:*")
-            lockouts: dict[str, float] = {}
-            for key in keys:
-                ip = key.split(":")[-1]
-                expiry = self._redis_client.get(key)
-                if expiry and float(expiry) > now:
-                    lockouts[ip] = float(expiry)
-            logger.info("Loaded %d persisted lockouts from Redis", len(lockouts))
-            return lockouts
-        except Exception as e:
-            logger.error("Failed to load persisted lockouts from Redis: %s", e)
-            return {}
-    
     def save_lockouts(self, lockouts: dict[str, float]) -> None:
         """Persist current lockouts to storage."""
         if self._backend == "file":
             self._save_to_file(lockouts)
-        elif self._backend == "redis":
-            self._save_to_redis(lockouts)
     
     def _save_to_file(self, lockouts: dict[str, float]) -> None:
         """Save lockouts to file storage."""
@@ -114,22 +101,6 @@ class _LockoutStorage:
                 f.write(orjson.dumps(lockouts))
         except Exception as e:
             logger.error("Failed to persist lockouts: %s", e)
-    
-    def _save_to_redis(self, lockouts: dict[str, float]) -> None:
-        """Save lockouts to Redis storage."""
-        if not self._redis_client:
-            return
-        
-        try:
-            pipe = self._redis_client.pipeline()
-            keys = self._redis_client.keys("brute_force:lockout:*")
-            if keys:
-                pipe.delete(*keys)
-            for ip, expiry in lockouts.items():
-                pipe.setex(f"brute_force:lockout:{ip}", 900, str(expiry))
-            pipe.execute()
-        except Exception as e:
-            logger.error("Failed to persist lockouts to Redis: %s", e)
 
 
 class _FailureTracker:
@@ -208,7 +179,7 @@ class BruteForceProtector:
     - Persistent storage (survives service restarts)
     """
 
-    def __init__(self, config: dict | None = None):
+    def __init__(self, config: dict | None = None) -> None:
         """
         Initialize BruteForceProtector with configuration.
 
@@ -218,7 +189,7 @@ class BruteForceProtector:
                 - lockout_duration: Seconds to lock out (default: 900 = 15 min)
                 - tracking_window: Seconds window for counting failures
                                    (default: 300 = 5 min)
-                - storage_backend: Storage type - "memory", "redis", or "file" (default: "file")
+                - storage_backend: Storage type - "memory", "file", "sqlite", or "redis" (default: "file")
                 - storage_path: Path for file-based storage (default: "data/brute_force")
                 - redis_url: Redis connection URL (if using redis)
         """
@@ -269,9 +240,13 @@ class BruteForceProtector:
     def _trigger_lockout(self, ip: str, now: float, key_prefix: str, count: int) -> None:
         """Trigger lockout for an IP after threshold exceeded."""
         with self._lockout_lock:
-            self._lockouts[ip] = now + self.lockout_duration
+            expiry = now + self.lockout_duration
+            if self._storage.is_shared:
+                self._storage.set_lockout(ip, expiry)
+            else:
+                self._lockouts[ip] = expiry
+                self._storage.save_lockouts(self._lockouts)
             self._tracker.clear_failures(ip)
-            self._storage.save_lockouts(self._lockouts)
         
         self._log_brute_force_detected(ip, key_prefix, count)
 
@@ -300,6 +275,10 @@ class BruteForceProtector:
             bool: True if the IP is locked out
         """
         now = time.time()
+
+        if self._storage.is_shared:
+            expiry = self._storage.get_lockout(ip)
+            return expiry is not None and now < expiry
         
         with self._lockout_lock:
             expiry = self._lockouts.get(ip)
@@ -323,6 +302,10 @@ class BruteForceProtector:
             float: Remaining seconds of lockout, or 0.0 if not locked out
         """
         now = time.time()
+
+        if self._storage.is_shared:
+            expiry = self._storage.get_lockout(ip)
+            return max(0.0, expiry - now) if expiry is not None else 0.0
         
         with self._lockout_lock:
             expiry = self._lockouts.get(ip)
@@ -330,15 +313,19 @@ class BruteForceProtector:
                 return 0.0
             return expiry - now
 
-    def reset(self, ip: str):
+    def reset(self, ip: str) -> None:
         """
         Manually reset lockout and failure tracking for an IP.
 
         Args:
             ip: Client IP address to reset
         """
-        with self._lockout_lock:
-            self._lockouts.pop(ip, None)
+        if self._storage.is_shared:
+            self._storage.delete_lockout(ip)
+        else:
+            with self._lockout_lock:
+                self._lockouts.pop(ip, None)
+                self._storage.save_lockouts(self._lockouts)
         
         self._tracker.clear_failures(ip)
         
