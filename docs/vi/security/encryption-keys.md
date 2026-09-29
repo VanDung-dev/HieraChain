@@ -20,7 +20,7 @@ File: `hierachain/security/key_manager.py`, `key_provider.py`
     * `LocalKeyProvider` giữ khóa trong bộ nhớ cục bộ.
     * `FileVaultProvider` giữ dữ liệu mã hóa trên đĩa với AES-256-GCM.
 
-* Vòng đời API key bao phủ toàn bộ vòng đời API key từ lúc tạo đến khi thu hồi.
+* `KeyManager.revoke_key()` của API server lưu bền vững API key đã thu hồi qua SQLite hoặc Redis dùng chung đã cấu hình. Kiểm tra thu hồi không dùng kết quả permission trong cache.
 
 ## Chứng chỉ và định danh (MSP)
 
@@ -30,7 +30,7 @@ File: `hierachain/security/msp.py` (`Certificate`, `CertificateAuthority`, `Hier
 
 * Chứng chỉ nội bộ là dataclass `Certificate` với `cert_id`, `subject`, `public_key`, `signature` (ký Ed25519 qua `_sign_certificate`) và kiểm tra thời hạn `is_valid()`. Không có ASN.1 X.509 và không có mTLS.
 * Vận hành CA gồm `CertificateAuthority.issue_certificate()`, `revoke_certificate()` và `verify_certificate()` với tập `issued_certificates` và `revoked_certificates` lưu trong bộ nhớ. `HierarchicalMSP` dùng cơ chế này để đăng ký org và entity.
-* Hạn chế: thu hồi chỉ tồn tại trong bộ nhớ. Không có phân phối CRL, không có xác thực chuỗi X.509 và không có mutual TLS giữa các component. TLS được đặt ở reverse proxy theo quy tắc kiến trúc.
+* Hạn chế: thu hồi chứng chỉ MSP chỉ tồn tại trong bộ nhớ. Không có phân phối CRL, không có xác thực chuỗi X.509 và không có mutual TLS giữa các component. TLS được đặt ở reverse proxy theo quy tắc kiến trúc.
 
 ## Sao lưu và khôi phục khóa
 

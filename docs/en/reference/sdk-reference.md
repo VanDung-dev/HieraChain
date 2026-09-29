@@ -73,8 +73,9 @@ The SDK defines specialized exceptions so applications can handle business logic
 ```python
 from hierachain.sdk.exceptions import (
     CircuitOpenError,     # When Circuit Breaker is activated
+    HieraChainAPIError,   # HTTP errors, with status_code
     LockdownError,        # When system is in security lockdown mode
-    ServiceUnavailableError # When connection error or server overload
+    ServiceUnavailableError # When the server returns HTTP 503
 )
 
 try:
@@ -106,16 +107,16 @@ async with HieraChainAsyncClient(config) as async_client:
 The SDK retries network failures and uses a circuit breaker to limit requests when the API is unavailable:
 
 #### a. Auto-retry (Exponential Backoff)
-If a request fails, the SDK waits for `initial_delay * (backoff_multiplier ^ attempt)` before retrying. By default, it retries up to `max_retries = 5` times after the initial request.
+Read requests (`GET`) retry transport failures and HTTP 5xx with `initial_delay * (backoff_multiplier ^ attempt)`, up to `max_retries = 5` times by default. HTTP 3xx/4xx raises `HieraChainAPIError` immediately; its `status_code` contains the response status. Submission requests (`POST`) are sent once, including after a timeout or 503, because the server has no idempotency contract. The SDK does not follow POST redirects.
 
 #### b. Circuit Breaker
 Fail-fast operation (prioritizes early error reporting):
 - **CLOSED**: Network state stable, all requests pass through to API.
-- **OPEN**: If 5 consecutive transport failures are detected (`circuit_failure_threshold`), the relay trips, immediately raising `CircuitOpenError` until the 30s timeout (`circuit_recovery_timeout`) elapses.
-- **HALF_OPEN**: After the cooldown period, it self-tests one packet. If it fails, it re-opens; if successful, it recovers to Closed.
+- **OPEN**: If 5 consecutive transport or HTTP 5xx failures are detected (`circuit_failure_threshold`), the relay trips, immediately raising `CircuitOpenError` until the 30s timeout (`circuit_recovery_timeout`) elapses.
+- **HALF_OPEN**: After the cooldown period, only one request is admitted as a probe. It is not retried; failure re-opens the circuit, and success closes it.
 
 #### c. Lockdown & 503 Handling
-If the Node server returns the `X-Lockdown-Mode: true` header or HTTP `503 Service Unavailable`, the SDK raises `LockdownError` or `ServiceUnavailableError` after the configured retries.
+If the Node server returns the `X-Lockdown-Mode: true` header or HTTP `503 Service Unavailable`, the SDK raises `LockdownError` or `ServiceUnavailableError`. Read requests may retry first; POST requests do not.
 
 ### 3. Data Interaction
 

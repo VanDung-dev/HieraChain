@@ -70,7 +70,7 @@ sequenceDiagram
 | Bước | Mô tả |
 |:-----|:------|
 | **1. Nhận qua API** | FastAPI kiểm tra schema `EventRequest`, gồm `entity_id` và `event_type`; endpoint trả `event_id` sau khi sự kiện được tiếp nhận, chưa xác nhận block finality. |
-| **2. Thêm sự kiện vào SubChain** | `SubChain.add_event()` bổ sung giá trị mặc định cho lời gọi nội bộ rồi gọi `OrderingService.receive_event()`; API vẫn bắt buộc `entity_id` và `event_type`. Hàm này không gọi `validate_event_for_consensus()`. |
+| **2. Thêm sự kiện vào SubChain** | `SubChain.add_event()` bổ sung giá trị mặc định, kiểm tra cấu trúc event rồi mới gọi `OrderingService.receive_event()`; API vẫn bắt buộc `entity_id` và `event_type`. Hàm này không gọi `validate_event_for_consensus()`. |
 | **3. Chứng thực nền** | Ordering Service chuyển sự kiện qua certifier sau phản hồi API; sự kiện bị từ chối không được đưa vào block. |
 | **4. Gom batch** | `BlockBuilder.add_event()` thêm event đã chứng thực vào batch; khi đủ `block_size`, hết `batch_timeout` hoặc được flush, `_finalize_batch()` trả danh sách event và reset batch. |
 | **5. Tạo và commit block Ordering** | `OrderingBlockManager.create_block_async()` tạo block; `commit_block()` lưu block vào storage rồi mới đưa vào `commit_queue`. |
@@ -95,7 +95,7 @@ event = {
 }
 ```
 
-> **Lưu ý**: API yêu cầu `entity_id` và `event_type`; khi chuyển sang event nội bộ, `event_type` được biểu diễn bằng khóa `event`. Không nên coi `event_id` API trả về là bằng chứng block đã được finalize.
+> **Lưu ý**: API yêu cầu `entity_id` và `event_type`; khi chuyển sang event nội bộ, `event_type` được biểu diễn bằng khóa `event`. `SubChain.add_event()` từ chối event sai cấu trúc hoặc chứa thuật ngữ bị cấm trước khi xếp hàng. Không nên coi `event_id` API trả về là bằng chứng block đã được finalize.
 
 ---
 
@@ -104,6 +104,7 @@ event = {
 | Tình huống | Hành vi |
 |:-----------|:--------|
 | Thiếu trường bắt buộc hoặc chain không tồn tại | API từ chối request; schema yêu cầu `entity_id` và `event_type`. |
+| Cấu trúc event không hợp lệ | `SubChain.add_event()` ném `ValueError` trước khi ghi journal; API Ledger trả HTTP 422. |
 | Ghi event journal thất bại | `OrderingService.receive_event()` ném lỗi và không xếp sự kiện vào `event_pool`. |
 | Chứng thực event thất bại | Processor đánh dấu event bị từ chối; event không được thêm vào block. |
 | Lưu block Ordering thất bại | Lỗi được ghi log và Ordering Service chuyển sang `MAINTENANCE`; block chưa được đưa vào `commit_queue`. |

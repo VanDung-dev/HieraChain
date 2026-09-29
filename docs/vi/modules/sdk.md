@@ -116,7 +116,7 @@ SDK định nghĩa các lớp lỗi cụ thể để ứng dụng có thể xử
 | :--- | :--- | :--- |
 | `CircuitOpenError` | Hệ thống đang lỗi liên tục, SDK tạm ngừng gửi request. | Đợi một khoảng thời gian trước khi thử lại. |
 | `LockdownError` | Node mục tiêu đang trong chế độ phong tỏa bảo mật. | Kiểm tra thông báo từ quản trị viên hệ thống. |
-| `ServiceUnavailableError` | Server quá tải (503). | SDK sẽ tự động retry với backoff. |
+| `ServiceUnavailableError` | Server quá tải (503). | GET có thể thử lại với backoff; POST chỉ gửi một lần. |
 | `HieraChainAPIError` | Lỗi logic từ phía API hoặc dữ liệu không hợp lệ. | Kiểm tra lại payload và quyền truy cập. |
 
 ---

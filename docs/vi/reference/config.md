@@ -76,7 +76,9 @@ print(settings.AUTH_ENABLED)
 ### Bảo mật và authentication
 
 * Authentication: `HRC_AUTH_ENABLED` (mặc định `false` ở dev/test và bắt buộc `true` ở production; đặt tường minh thành `false` sẽ chặn production khởi động)
-* `HRC_API_KEYS_FILE`: bắt buộc trong production. Đường dẫn tới file JSON chứa key không rỗng, đọc được; mỗi key dài ít nhất 32 ký tự và có `user_id` cùng danh sách `permissions` không rỗng. File được đọc khi tạo API app; để thay hoặc thu hồi key, cập nhật file và tạo lại mọi container node Compose (hoặc khởi động lại từng tiến trình chạy trực tiếp).
+* `HRC_API_KEYS_FILE`: bắt buộc trong production. Đường dẫn tới file JSON chứa key không rỗng, đọc được; mỗi key dài ít nhất 32 ký tự và có `user_id` cùng danh sách `permissions` không rỗng. File được đọc khi tạo API app; thay đổi map key vẫn cần tạo lại từng node hoặc khởi động lại từng tiến trình chạy trực tiếp.
+* `HRC_API_KEY_REVOCATIONS_DB` (mặc định: `data/api_key_revocations.sqlite3`): lưu bền vững API key đã thu hồi và brute-force lockout cục bộ cho API production. Mọi worker trên một host phải dùng chung file ghi được và bền vững này.
+* `HRC_AUTH_STATE_REDIS_URL` (tùy chọn): khi đặt, API key revocation và brute-force lockout dùng cùng Redis giữa các host. Cần cấu hình Redis persistence nếu revocation phải tồn tại sau khi Redis khởi động lại. Lỗi backend sẽ từ chối xác thực thay vì dùng trạng thái cục bộ.
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
 * Secret backend: `HRC_SECRET_BACKEND` (giá trị: `env`, `vault`, `aws`). Mặc định là `env`.
 * Master key: `HRC_MASTER_KEY_SOURCE` (`auto` ở dev/test, `env` ở production), `HRC_MASTER_KEY_FILE` (mặc định: `config/master_backup_key.key`)
@@ -84,6 +86,7 @@ print(settings.AUTH_ENABLED)
     * `HRC_BF_MAX_FAILURES` (mặc định: `5`)
     * `HRC_BF_LOCKOUT_SECONDS` (mặc định: `900` = 15 phút)
     * `HRC_BF_WINDOW_SECONDS` (mặc định: `300` = 5 phút)
+    * TTL Redis của lockout theo `HRC_BF_LOCKOUT_SECONDS`; mỗi request đọc lại key lockout dùng chung. Bộ đếm lần thất bại vẫn nằm trong từng process.
 * Identity và organization: `IDENTITY_MANAGER_ENABLED` (`True`), `REQUIRE_ORGANIZATION_VALIDATION` (`True`), `MSP_ENABLED` (`True`)
 
 ### Bảo mật mạng P2P
@@ -109,6 +112,7 @@ print(settings.AUTH_ENABLED)
 * `HRC_RATE_LIMIT` (`false` ở dev/test; `true` ở production)
 * `HRC_RATE_LIMIT_RPM` (mặc định: `100` requests/phút)
 * `HRC_RATE_LIMIT_BACKEND`: `memory` (đơn node) hoặc `redis` (đa node hoặc cluster).
+* Với backend `redis`, lỗi và timeout Redis từ chối request không thuộc diện miễn trừ bằng HTTP 503 (fail-closed). Kiểm tra Redis chạy ngoài event loop của API.
 
 ### Monitoring và metrics
 

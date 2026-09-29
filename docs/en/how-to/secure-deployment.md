@@ -23,6 +23,7 @@ HRC_AUTH_ENABLED=true
 HRC_API_KEY_LOCATION=header
 HRC_API_KEY_NAME=X-API-Key
 HRC_API_KEYS_FILE=/absolute/path/to/api-keys.json
+HRC_API_KEY_REVOCATIONS_DB=/absolute/path/to/persistent/auth-state.sqlite3
 ```
 
 Generate an initial key and save its metadata outside the repository:
@@ -52,7 +53,7 @@ print(api_key)
 PY
 ```
 
-Store the printed key in the client's secret manager. For Docker Compose, set `HRC_API_KEYS_SOURCE_FILE` to this host file; Compose mounts it read-only at `/run/secrets/hrc_api_keys` on every node. For a direct process, set `HRC_API_KEYS_FILE` to the same absolute path. To rotate or revoke a key, update the file and recreate every Compose node (or restart each direct process); the app does not reload the file while running.
+Store the printed key in the client's secret manager. For Docker Compose, set `HRC_API_KEYS_SOURCE_FILE` to this host file; Compose mounts it read-only at `/run/secrets/hrc_api_keys` on every node. For a direct process, set `HRC_API_KEYS_FILE` to the same absolute path. Keep `HRC_API_KEY_REVOCATIONS_DB` on persistent writable storage shared by workers on each host. To share revocations and lockouts across hosts, set the same `HRC_AUTH_STATE_REDIS_URL` on every node and enable Redis persistence. `KeyManager.revoke_key()` updates that shared state immediately; there is no administrative revocation endpoint. To change the key map, update the file and recreate every Compose node (or restart each direct process); the app does not reload the file while running.
 The optional Compose `stress-test` profile also needs `HRC_API_KEY` set to one of the provisioned keys.
 
 Client needs to send the header:

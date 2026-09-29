@@ -73,8 +73,9 @@ SDK định nghĩa các ngoại lệ chuyên biệt để ứng dụng có thể
 ```python
 from hierachain.sdk.exceptions import (
     CircuitOpenError,     # Khi Circuit Breaker được kích hoạt
+    HieraChainAPIError,   # Lỗi HTTP, có status_code
     LockdownError,        # Khi hệ thống đang trong chế độ phong tỏa bảo mật
-    ServiceUnavailableError # Khi lỗi kết nối hoặc server quá tải
+    ServiceUnavailableError # Khi server trả HTTP 503
 )
 
 try:
@@ -106,16 +107,16 @@ async with HieraChainAsyncClient(config) as async_client:
 SDK thử lại khi gặp lỗi mạng và dùng circuit breaker để giới hạn request khi API không khả dụng:
 
 #### a. Tự động phục hồi (Exponential Backoff Retry)
-Khi request thất bại, SDK chờ `initial_delay * (backoff_multiplier ^ attempt)` rồi thử lại. Mặc định SDK thử lại tối đa `max_retries = 5` lần sau request đầu tiên.
+Request đọc (`GET`) thử lại khi lỗi truyền tải hoặc HTTP 5xx, với thời gian chờ `initial_delay * (backoff_multiplier ^ attempt)` và tối đa `max_retries = 5` lần theo mặc định. HTTP 3xx/4xx lập tức phát sinh `HieraChainAPIError`; `status_code` chứa mã phản hồi. Request ghi (`POST`) chỉ gửi một lần, kể cả khi timeout hoặc nhận 503, vì server chưa có hợp đồng idempotency. SDK không đi theo redirect của POST.
 
 #### b. Chốt kiểm tra mạch (Circuit Breaker)
 Hoạt động fail-fast (ưu tiên báo lỗi sớm):
 - **CLOSED**: Trạng thái mạng ổn định, toàn bộ request cho pass qua API.
-- **OPEN**: Nếu phát hiện 5 lỗi truyền tải liên tục (`circuit_failure_threshold`), rơ-le ngắt, ngay lập tức báo `CircuitOpenError` cho đến lúc hết khoảng timeout 30s (`circuit_recovery_timeout`).
-- **HALF_OPEN**: Khi đủ thời gian làm mát, nó tự test một packet. Nếu lỗi sẽ Open lại, nếu tốt sẽ phục hồi đóng mạch về Closed.
+- **OPEN**: Nếu phát hiện 5 lỗi truyền tải hoặc HTTP 5xx liên tiếp (`circuit_failure_threshold`), circuit mở và báo `CircuitOpenError` cho đến khi hết thời gian chờ 30 giây (`circuit_recovery_timeout`).
+- **HALF_OPEN**: Sau thời gian chờ, chỉ một request được nhận làm probe. Probe không được thử lại; thất bại sẽ mở circuit, thành công sẽ đóng circuit.
 
 #### c. Quản lý trạng thái kẹt (Lockdown & 503)
-Nếu Node server trả header `X-Lockdown-Mode: true` hoặc HTTP `503 Service Unavailable`, SDK phát sinh `LockdownError` hoặc `ServiceUnavailableError` sau số lần thử lại đã cấu hình.
+Nếu Node server trả header `X-Lockdown-Mode: true` hoặc HTTP `503 Service Unavailable`, SDK phát sinh `LockdownError` hoặc `ServiceUnavailableError`. Request đọc có thể thử lại trước; POST thì không.
 
 ### 3. Tương tác Dữ liệu
 

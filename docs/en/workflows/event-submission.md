@@ -72,7 +72,7 @@ sequenceDiagram
 | Step | Description |
 |:-----|:------------|
 | **1. API receive** | `POST /api/ledger/chains/{chain_name}/events` validates the request schema and passes the event to the Sub-Chain |
-| **2. Enqueue** | `SubChain.add_event()` supplies missing internal defaults, then calls `OrderingService.receive_event()`; the orderer journals the event before queueing it and returns an `event_id` |
+| **2. Enqueue** | `SubChain.add_event()` supplies missing internal defaults and validates the event structure before calling `OrderingService.receive_event()`; the orderer journals the event before queueing it and returns an `event_id` |
 | **3. Background certification** | The Ordering Service processes queued events through its certifier; this occurs after the API acknowledgement |
 | **4. Batch** | `BlockBuilder.add_event()` adds certified events to a batch; size, timeout, or an explicit flush returns the batch data |
 | **5. Build and order commit** | `OrderingBlockManager.create_block_async()` builds a `Block`; `commit_block()` persists the ordering block and puts it in `commit_queue` |
@@ -97,7 +97,7 @@ event = {
 }
 ```
 
-> The Ledger API requires `entity_id` and `event_type`, and maps `event_type` to the internal `event` field. Defaults in `SubChain.add_event()` apply to internal calls and do not make those API fields optional. `SubChain.add_event()` does not run a forbidden-term scan before enqueueing; API validation and background certification occur at their respective stages. The returned `event_id` acknowledges acceptance for ordering, not block finalization.
+> The Ledger API requires `entity_id` and `event_type`, and maps `event_type` to the internal `event` field. Defaults in `SubChain.add_event()` apply to internal calls and do not make those API fields optional. `SubChain.add_event()` rejects malformed events and forbidden terminology before enqueueing. The returned `event_id` acknowledges acceptance for ordering, not block finalization.
 
 ---
 
@@ -106,6 +106,7 @@ event = {
 | Condition | Behavior |
 |:----------|:---------|
 | Request body is invalid | FastAPI rejects it during request-model validation before calling `SubChain.add_event()` |
+| Event structure is invalid | `SubChain.add_event()` raises `ValueError` before journaling; the Ledger API returns HTTP 422 |
 | Journal write fails | `OrderingService.receive_event()` raises before adding the event to its in-memory queue |
 | Event fails background certification | The processor marks the event rejected; it is not added to a block |
 | Ordering block persistence fails | The error is logged and the Ordering Service enters `MAINTENANCE`; the block is not added to `commit_queue` |

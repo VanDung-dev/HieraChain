@@ -56,8 +56,11 @@ HieraChain dùng ba lớp bảo vệ độc lập cho giao tiếp mạng:
 ### 1. ZMQ Transport (`zmq_transport.py`)
 Hiện thực hóa mô hình P2P không đồng bộ sử dụng Socket **ROUTER** (để nhận) và **DEALER** (để gửi). 
 
-*   **Hiệu năng**: Xử lý hàng nghìn thông điệp mỗi giây với độ trễ cực thấp.
+*   **Truyền tải**: Dùng socket không đồng bộ; broadcast gửi tuần tự tới các peer đã đăng ký.
 *   **Identity Management**: Quản lý định danh các nút ở mức socket để định tuyến chính xác.
+*   **Replay buffer**: Giữ tối đa 1.000 cặp timestamp/nonce với nonce dạng chuỗi dài tối đa 128 ký tự. Khi tất cả mục vẫn nằm trong cửa sổ 60 giây, thông điệp mới bị từ chối cho đến khi có mục hết hạn.
+
+`NetworkClient` theo dõi seed và peer đăng ký thủ công trong cùng registry. Gỡ peer cũng đóng socket DEALER gửi đi của peer đó. Peer được xem là healthy trong 60 giây đầu sau khi đăng ký; mỗi thông điệp nhận vào hợp lệ từ định danh socket đã đăng ký sẽ gia hạn khoảng này. Peer im lặng chuyển unhealthy khi đọc trạng thái hoặc danh sách peer. Chỉ báo health này không xác thực peer hay xác nhận thông điệp gửi đi đã được nhận.
 
 ### 2. Secure Connection Manager (`secure_connection.py`)
 Điều phối quy trình thiết lập kết nối an toàn:

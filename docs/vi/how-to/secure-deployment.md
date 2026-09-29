@@ -23,6 +23,7 @@ HRC_AUTH_ENABLED=true
 HRC_API_KEY_LOCATION=header
 HRC_API_KEY_NAME=X-API-Key
 HRC_API_KEYS_FILE=/absolute/path/to/api-keys.json
+HRC_API_KEY_REVOCATIONS_DB=/absolute/path/to/persistent/auth-state.sqlite3
 ```
 
 Tạo key ban đầu và lưu metadata ở ngoài repository:
@@ -52,7 +53,7 @@ print(api_key)
 PY
 ```
 
-Lưu key được in ra vào kho secret của client. Với Docker Compose, đặt `HRC_API_KEYS_SOURCE_FILE` bằng đường dẫn file trên host; Compose mount file chỉ đọc tại `/run/secrets/hrc_api_keys` cho mọi node. Khi chạy trực tiếp, đặt `HRC_API_KEYS_FILE` bằng cùng đường dẫn tuyệt đối. Muốn thay hoặc thu hồi key, cập nhật file rồi tạo lại mọi container node Compose (hoặc khởi động lại từng tiến trình chạy trực tiếp); app không tự đọc lại file khi đang chạy.
+Lưu key được in ra vào kho secret của client. Với Docker Compose, đặt `HRC_API_KEYS_SOURCE_FILE` bằng đường dẫn file trên host; Compose mount file chỉ đọc tại `/run/secrets/hrc_api_keys` cho mọi node. Khi chạy trực tiếp, đặt `HRC_API_KEYS_FILE` bằng cùng đường dẫn tuyệt đối. Đặt `HRC_API_KEY_REVOCATIONS_DB` trên vùng lưu trữ ghi được và bền vững mà các worker cùng host dùng chung. Để chia sẻ revocation và lockout giữa các host, đặt cùng `HRC_AUTH_STATE_REDIS_URL` trên mọi node và bật Redis persistence. `KeyManager.revoke_key()` cập nhật trạng thái dùng chung ngay; hiện không có endpoint quản trị để thu hồi key. Để thay đổi map key, cập nhật file rồi tạo lại mọi container node Compose (hoặc khởi động lại từng tiến trình chạy trực tiếp); app không tự đọc lại file khi đang chạy.
 Profile Compose `stress-test` tùy chọn cũng cần đặt `HRC_API_KEY` bằng một key đã cấp.
 
 Client cần gửi header:

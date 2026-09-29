@@ -34,6 +34,8 @@ query GetSingleBlock {
 
 Lọc event theo tên chain, loại event và giới hạn kết quả.
 
+`blocks` và `events` trả tối đa 100 kết quả cho mỗi trường. Mặc định là 100; `limit: 0` trả danh sách rỗng. Giới hạn này cũng áp dụng khi `limit` được truyền qua biến GraphQL.
+
 ```graphql
 query FilterEvents {
   events(

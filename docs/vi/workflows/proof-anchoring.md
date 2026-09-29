@@ -54,7 +54,7 @@ sequenceDiagram
 |:-----|:------|
 | **1. Kiểm tra kích hoạt** | `auto_submit_proof_if_needed()` kiểm tra thời gian đã trôi qua và có block mới đã hoàn tất. |
 | **2. Tạo proof ZK** | Nếu `HRC_ENABLE_ZK_PROOFS=true`: ZKProver tính trên `(old_state_root, new_state_root, events)`. Thử lại tối đa 3 lần nếu lỗi. |
-| **3. Metadata proof** | `_generate_default_proof_metadata()` tạo `{ sub_chain_name, block_count, latest_hash, timestamp }`. |
+| **3. Metadata proof** | `_generate_default_proof_metadata()` tạo metadata tóm tắt; MainChain từ chối trường chi tiết bị cấm trong dict hoặc list lồng nhau và lọc đệ quy các container được chấp nhận trước khi ghi. |
 | **4. Ghi lên Main Chain** | `MainChain.add_proof()` xác thực rồi đưa proof vào hàng chờ; đường submit hoàn tất và đọc lại block đã ký từ storage bền vững. |
 | **5. Ghi nhận** | Chỉ sau khi đọc lại thành công, Sub-Chain ghi event `proof_submitted` và cập nhật `last_proof_submission`. |
 

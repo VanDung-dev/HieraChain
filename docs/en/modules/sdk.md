@@ -116,7 +116,7 @@ The SDK defines specific exception classes for applications to handle with disti
 | :--- | :--- | :--- |
 | `CircuitOpenError` | System is continuously failing, SDK paused sending requests. | Wait some time before retrying. |
 | `LockdownError` | Target node is in security lockdown mode. | Check administrator notifications. |
-| `ServiceUnavailableError` | Server overloaded (503). | SDK will automatically retry with backoff. |
+| `ServiceUnavailableError` | Server overloaded (503). | GET may retry with backoff; POST is sent once. |
 | `HieraChainAPIError` | Logic error from the API or invalid data. | Review payload and access permissions. |
 
 ---

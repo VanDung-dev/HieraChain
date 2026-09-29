@@ -17,6 +17,7 @@ Components reside in dedicated packages under `hierachain/hierarchical/`.
 ### 2.1 Main Chain (`main_chain/base.py`)
 
 * Stores cryptographic block proofs rather than raw business event records.
+* Recursively sanitizes Sub-Chain registration metadata before storing it in the registry, consensus authority, or registration event; summaries expose only the sanitized copy.
 * Verifies state transitions using zero-knowledge proofs when enabled.
 * Validates cross-chain anchors under consortium or authority consensus.
 

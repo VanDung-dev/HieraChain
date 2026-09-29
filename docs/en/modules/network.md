@@ -56,8 +56,11 @@ HieraChain uses three independent security layers for network communication:
 ### 1. ZMQ Transport (`zmq_transport.py`)
 Implements the asynchronous P2P model using **ROUTER** (for receiving) and **DEALER** (for sending) sockets.
 
-*   **Performance**: Processes thousands of messages per second with extremely low latency.
+*   **Transport**: Uses asynchronous sockets; broadcasts send to registered peers sequentially.
 *   **Identity Management**: Manages node identities at the socket level for accurate routing.
+*   **Replay buffer**: Retains at most 1,000 timestamp/nonce pairs with nonce strings of at most 128 characters. When all entries are still within the 60-second window, new messages are rejected until an entry expires.
+
+`NetworkClient` tracks seed and manually registered peers in the same registry. Removing a peer also closes its outbound DEALER socket. A peer is initially healthy for 60 seconds after registration; each accepted inbound message from its registered socket identity renews that period. An idle peer becomes unhealthy when status or peers are read. This health indicator does not authenticate the peer or confirm delivery of outbound messages.
 
 ### 2. Secure Connection Manager (`secure_connection.py`)
 Orchestrates the secure connection establishment process:

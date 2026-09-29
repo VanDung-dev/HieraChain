@@ -54,7 +54,7 @@ sequenceDiagram
 |:-----|:------------|
 | **1. Trigger check** | `auto_submit_proof_if_needed()` checks the elapsed interval and whether a newer finalized block exists. |
 | **2. ZK generation** | If `HRC_ENABLE_ZK_PROOFS=true`: ZKProver computes over `(old_state_root, new_state_root, events)`. Retries 3× with backoff |
-| **3. Proof metadata** | `_generate_default_proof_metadata()` builds `{ sub_chain_name, block_count, latest_hash, timestamp }` |
+| **3. Proof metadata** | `_generate_default_proof_metadata()` builds summary metadata; MainChain rejects forbidden detail fields inside nested dictionaries or lists and sanitizes accepted containers recursively before recording them |
 | **4. Main Chain write** | `MainChain.add_proof()` verifies and queues the proof; the submission path finalizes and reads back the signed block from durable storage. |
 | **5. Record** | Only after durable readback, Sub-Chain logs a `proof_submitted` event and updates `last_proof_submission`. |
 

@@ -76,7 +76,9 @@ print(settings.AUTH_ENABLED)
 ### Security and authentication
 
 * Authentication: `HRC_AUTH_ENABLED` (default `false` in dev/test and required `true` in production; an explicit `false` prevents production startup)
-* `HRC_API_KEYS_FILE`: required in production. Path to a readable, nonempty JSON key map; keys must be at least 32 characters and each entry needs a `user_id` and nonempty `permissions` list. The file is loaded when the API app starts; rotate or revoke keys by updating it and recreating every Compose node (or restarting each direct process).
+* `HRC_API_KEYS_FILE`: required in production. Path to a readable, nonempty JSON key map; keys must be at least 32 characters and each entry needs a `user_id` and nonempty `permissions` list. The file is loaded when the API app starts; changing the key map still requires recreating each node or restarting each direct process.
+* `HRC_API_KEY_REVOCATIONS_DB` (default: `data/api_key_revocations.sqlite3`): durable local API key revocations and brute-force lockouts for the production API. All workers on one host must use the same persistent, writable file.
+* `HRC_AUTH_STATE_REDIS_URL` (optional): when set, API key revocations and brute-force lockouts use the same Redis instance across hosts. Configure Redis persistence if revocations must survive a Redis restart. Backend errors reject authentication rather than using local state.
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
 * Secret backend: `HRC_SECRET_BACKEND` (values: `env`, `vault`, `aws`). Default is `env`.
 * Master key: `HRC_MASTER_KEY_SOURCE` (`auto` in dev/test, `env` in production), `HRC_MASTER_KEY_FILE` (default: `config/master_backup_key.key`)
@@ -84,6 +86,7 @@ print(settings.AUTH_ENABLED)
     * `HRC_BF_MAX_FAILURES` (default: `5`)
     * `HRC_BF_LOCKOUT_SECONDS` (default: `900` = 15 minutes)
     * `HRC_BF_WINDOW_SECONDS` (default: `300` = 5 minutes)
+    * Redis lockout TTL follows `HRC_BF_LOCKOUT_SECONDS`; lockout checks read the shared key on each request. Failure counts remain process-local.
 * Identity and organization: `IDENTITY_MANAGER_ENABLED` (`True`), `REQUIRE_ORGANIZATION_VALIDATION` (`True`), `MSP_ENABLED` (`True`)
 
 ### P2P network security
@@ -109,6 +112,7 @@ print(settings.AUTH_ENABLED)
 * `HRC_RATE_LIMIT` (`false` in dev/test; `true` in production)
 * `HRC_RATE_LIMIT_RPM` (default: `100` requests/minute)
 * `HRC_RATE_LIMIT_BACKEND`: `memory` (single node) or `redis` (multi-node or cluster).
+* With the `redis` backend, Redis errors and timeouts reject non-exempt requests with HTTP 503 (fail-closed). Redis checks run off the API event loop.
 
 ### Monitoring and metrics
 

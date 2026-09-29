@@ -34,6 +34,8 @@ query GetSingleBlock {
 
 Filter events by chain name, event type, and result limit.
 
+`blocks` and `events` return at most 100 results per field. The default is 100; `limit: 0` returns an empty list. The cap also applies when `limit` is supplied through a GraphQL variable.
+
 ```graphql
 query FilterEvents {
   events(

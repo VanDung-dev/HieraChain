@@ -17,6 +17,7 @@ Các thành phần được tổ chức trong các gói chuyên biệt dưới `
 ### 2.1 Chuỗi chính Main Chain (`main_chain/base.py`)
 
 * Lưu trữ các bằng chứng khối mật mã thay vì dữ liệu sự kiện thô.
+* Lọc đệ quy metadata đăng ký Sub-Chain trước khi lưu vào registry, authority đồng thuận hoặc event đăng ký; bản tóm tắt chỉ trả bản đã lọc.
 * Xác thực các bước chuyển trạng thái bằng zero-knowledge proof khi được kích hoạt.
 * Kiểm tra tính hợp lệ của các điểm neo liên chuỗi theo cơ chế đồng thuận thẩm quyền hoặc liên minh.
 

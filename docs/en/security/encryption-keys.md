@@ -20,7 +20,7 @@ This code creates and uses key pairs:
     * `LocalKeyProvider` keeps keys in local memory.
     * `FileVaultProvider` keeps encrypted data on disk with AES-256-GCM.
 
-* API key lifecycle covers the full API key lifecycle from creation to revocation.
+* The API server's `KeyManager.revoke_key()` persists API key revocation through SQLite or a configured shared Redis backend. Revocation checks bypass cached key permissions.
 
 ## Certificate and identity (MSP)
 
@@ -30,7 +30,7 @@ This code manages lightweight internal identities, not X.509:
 
 * Internal certificate is the `Certificate` dataclass with `cert_id`, `subject`, `public_key`, `signature` (Ed25519 via `_sign_certificate`) and `is_valid()` time check. There is no X.509 ASN.1 and no mTLS.
 * CA operations are `CertificateAuthority.issue_certificate()`, `revoke_certificate()` and `verify_certificate()` with an in-memory `issued_certificates` set and `revoked_certificates` set. `HierarchicalMSP` uses this for org and entity registration.
-* Limitation: revocation lives only in memory. There is no CRL distribution, no X.509 chain validation and no mutual TLS between components. TLS is expected at the reverse proxy per architecture rules.
+* Limitation: MSP certificate revocation lives only in memory. There is no CRL distribution, no X.509 chain validation and no mutual TLS between components. TLS is expected at the reverse proxy per architecture rules.
 
 ## Key backup and recovery
 
