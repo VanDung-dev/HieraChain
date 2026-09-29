@@ -1,4 +1,6 @@
 import time
+from collections.abc import Iterator
+from typing import Any
 
 import graphene
 import orjson
@@ -12,6 +14,12 @@ from hierachain.api.graphql.types import (
     EventType,
 )
 from hierachain.api.ledger.depds import get_hierarchy_manager
+
+MAX_QUERY_RESULTS = 100
+
+
+def _bounded_limit(limit: int | None) -> int:
+    return MAX_QUERY_RESULTS if limit is None else max(0, min(limit, MAX_QUERY_RESULTS))
 
 
 def _get_chain_for_name(chain_name):
@@ -48,12 +56,16 @@ def resolve_block(_root, _info, chain_name, block_index):
     return None
 
 
-def _get_blocks_from_chain(chain, from_index, to_index, limit, chain_name):
+def _get_blocks_from_chain(
+    chain: Any, from_index: int | None, to_index: int | None, limit: int, chain_name: str,
+) -> list[BlockType]:
     chain_blocks = chain.chain
-    start = from_index if from_index is not None else 0
-    end = to_index if to_index is not None else len(chain_blocks)
+    start = max(0, from_index) if from_index is not None else 0
+    end = min(len(chain_blocks), start + limit)
+    if to_index is not None:
+        end = max(0, min(end, to_index))
     blocks = []
-    for block in chain_blocks[start:end][:limit]:
+    for block in chain_blocks[start:end]:
         if block is None or not hasattr(block, 'index'):
             continue
         blocks.append(_to_block_type(block, chain_name))
@@ -61,12 +73,13 @@ def _get_blocks_from_chain(chain, from_index, to_index, limit, chain_name):
 
 
 def resolve_blocks(
-    _root, _info, chain_name, from_index=None, to_index=None, limit=100
-):
+    _root: Any, _info: Any, chain_name: str,
+    from_index: int | None = None, to_index: int | None = None, limit: int | None = None,
+) -> list[BlockType]:
     chain = _get_chain_for_name(chain_name)
     if not chain:
         return []
-    return _get_blocks_from_chain(chain, from_index, to_index, limit, chain_name)
+    return _get_blocks_from_chain(chain, from_index, to_index, _bounded_limit(limit), chain_name)
 
 
 def _filter_event_by_entity_id(event, entity_id):
@@ -101,50 +114,35 @@ def _filter_event(event, entity_id, event_type, from_timestamp, to_timestamp):
     )
 
 
-def _get_filtered_events_from_block(
-    block, entity_id, event_type, from_timestamp, to_timestamp
-):
-    if not hasattr(block, 'events') or not block.events:
-        return []
-
-    filtered = []
-    for event in block.events:
-        if _filter_event(
-            event, entity_id, event_type, from_timestamp, to_timestamp
-        ):
-            filtered.append(_to_event_type(event))
-    return filtered
-
-
 def _get_events_from_chain(
-    chain, entity_id, event_type, from_timestamp, to_timestamp
-):
+    chain: Any, entity_id: str | None, event_type: str | None,
+    from_timestamp: float | None, to_timestamp: float | None,
+) -> Iterator[EventType]:
     for block in chain.chain:
-        block_events = _get_filtered_events_from_block(
-            block, entity_id, event_type, from_timestamp, to_timestamp
-        )
-        for event in block_events:
-            yield event
+        for event in getattr(block, 'events', None) or ():
+            if _filter_event(event, entity_id, event_type, from_timestamp, to_timestamp):
+                yield _to_event_type(event)
 
 
 def resolve_events(
-    _root,
-    _info,
-    chain_name,
-    entity_id=None,
-    event_type=None,
-    from_timestamp=None,
-    to_timestamp=None,
-    limit=100
-):
+    _root: Any,
+    _info: Any,
+    chain_name: str,
+    entity_id: str | None = None,
+    event_type: str | None = None,
+    from_timestamp: float | None = None,
+    to_timestamp: float | None = None,
+    limit: int | None = None,
+) -> list[EventType]:
     chain = _get_chain_for_name(chain_name)
-    if not chain:
+    effective_limit = _bounded_limit(limit)
+    if not chain or effective_limit == 0:
         return []
 
     events = []
     for event in _get_events_from_chain(chain, entity_id, event_type, from_timestamp, to_timestamp):
         events.append(event)
-        if len(events) >= limit:
+        if len(events) >= effective_limit:
             break
 
     return events
