@@ -11,6 +11,7 @@ It provides a `ZmqNode` class that handles:
 import asyncio
 import inspect
 import logging
+import math
 import time
 from collections.abc import Callable
 from typing import Any, cast
@@ -20,6 +21,8 @@ import zmq
 import zmq.asyncio
 
 logger = logging.getLogger(__name__)
+MAX_REPLAY_ENTRIES = 1000
+MAX_NONCE_LENGTH = 128
 
 
 class NetworkError(Exception):
@@ -119,10 +122,21 @@ class ZmqNode:
         self, peer_id: str, address: str, public_key: bytes | None = None
     ) -> None:
         """Register a known peer with optional public key."""
+        if self.peers.get(peer_id) != {"address": address, "public_key": public_key}:
+            socket = self.dealer_pool.pop(peer_id, None)
+            if socket is not None:
+                socket.close(linger=0)
         self.peers[peer_id] = {
             "address": address,
             "public_key": public_key
         }
+
+    def unregister_peer(self, peer_id: str) -> None:
+        """Remove a peer and discard its pending outbound messages."""
+        self.peers.pop(peer_id, None)
+        socket = self.dealer_pool.pop(peer_id, None)
+        if socket is not None:
+            socket.close(linger=0)
 
     def set_handler(self, handler: Callable[[dict[str, Any], str], Any]) -> None:
         """Set the callback function for processing received messages."""
@@ -154,7 +168,7 @@ class ZmqNode:
     ) -> None:
         """Broadcast message to all registered peers."""
         exclude = exclude or []
-        for peer_id in self.peers:
+        for peer_id in tuple(self.peers):
             if peer_id not in exclude:
                 await self.send_direct(peer_id, message)
 
@@ -177,25 +191,36 @@ def _is_valid_replay(node: ZmqNode, message_data: dict[str, Any]) -> bool:
         logger.warning("Message missing nonce")
         return False
 
-    now = time.time()
-    ts_val = float(cast(Any, timestamp))
+    if not isinstance(nonce, str) or not 0 < len(nonce) <= MAX_NONCE_LENGTH:
+        logger.warning("Invalid message nonce")
+        return False
 
-    if abs(now - ts_val) > node.replay_tolerance:
+    now = time.time()
+    try:
+        ts_val = float(cast(Any, timestamp))
+    except (TypeError, ValueError, OverflowError):
+        logger.warning("Invalid message timestamp")
+        return False
+
+    if not math.isfinite(ts_val) or abs(now - ts_val) > node.replay_tolerance:
         logger.warning(
             "Message timestamp out of tolerance: %s (now=%s)", ts_val, now
         )
         return False
 
-    entry = (ts_val, str(nonce))
+    entry = (ts_val, nonce)
     if entry in node.replay_buffer:
         logger.warning("Replay detected: %s", nonce)
         return False
 
-    node.replay_buffer.add(entry)
-
-    cutoff = now - node.replay_tolerance
-    if len(node.replay_buffer) > 1000:
+    if len(node.replay_buffer) >= MAX_REPLAY_ENTRIES:
+        cutoff = now - node.replay_tolerance
         node.replay_buffer = {e for e in node.replay_buffer if e[0] > cutoff}
+        if len(node.replay_buffer) >= MAX_REPLAY_ENTRIES:
+            logger.warning("Replay buffer full; rejecting message")
+            return False
+
+    node.replay_buffer.add(entry)
 
     return True
 
