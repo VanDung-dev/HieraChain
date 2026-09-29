@@ -110,9 +110,8 @@ def _check_nested_structures(value: Any) -> bool:
         # Recursively check nested dictionaries
         return validate_proof_metadata(value)
     
-    if isinstance(value, list) and len(value) > 10:
-        # Large lists are considered detailed data
-        return False
+    if isinstance(value, list):
+        return len(value) <= 10 and all(_check_nested_structures(item) for item in value)
         
     return True
 
@@ -182,6 +181,22 @@ def _is_summary_value(value: Any) -> bool:
     return False
 
 
+_OMIT_METADATA_VALUE = object()
+
+
+def _sanitize_summary_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        if len(value) > 5:
+            return _OMIT_METADATA_VALUE
+        return sanitize_metadata_for_main_chain(value)
+    if isinstance(value, list):
+        if len(value) > 10:
+            return _OMIT_METADATA_VALUE
+        sanitized = [_sanitize_summary_value(item) for item in value]
+        return [item for item in sanitized if item is not _OMIT_METADATA_VALUE]
+    return value if _is_summary_value(value) else _OMIT_METADATA_VALUE
+
+
 def sanitize_metadata_for_main_chain(metadata: dict[str, Any]) -> dict[str, Any]:
     """
     Sanitize metadata for Main Chain submission by removing detailed data.
@@ -195,7 +210,8 @@ def sanitize_metadata_for_main_chain(metadata: dict[str, Any]) -> dict[str, Any]
     # Fields that should be removed for Main Chain (too detailed)
     detailed_fields = {
         "full_details", "raw_data", "complete_record", "individual_events",
-        "detailed_logs", "complete_history", "full_trace"
+        "detailed_logs", "complete_history", "full_trace", "internal_data",
+        "complete_log", "detailed_data"
     }
     
     # Fields that must always be preserved (ZK proofs)
@@ -203,14 +219,15 @@ def sanitize_metadata_for_main_chain(metadata: dict[str, Any]) -> dict[str, Any]
 
     sanitized = {}
     for key, value in metadata.items():
-        # 1. Always preserve critical security fields
-        if key in critical_fields:
+        # Preserve proof scalars; still inspect any nested proof metadata.
+        if key in critical_fields and not isinstance(value, (dict, list)):
             sanitized[key] = value
             continue
 
-        # 2. Filter out detailed fields and non-summary values
-        if key not in detailed_fields and _is_summary_value(value):
-            sanitized[key] = value
+        if key not in detailed_fields:
+            summary_value = _sanitize_summary_value(value)
+            if summary_value is not _OMIT_METADATA_VALUE:
+                sanitized[key] = summary_value
     
     return sanitized
 
@@ -274,4 +291,3 @@ def get_block_events(block: Any) -> list[dict[str, Any]]:
         ]
     except (AttributeError, TypeError):
         return []
-
