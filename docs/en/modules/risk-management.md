@@ -53,7 +53,9 @@ Audit event integrity uses a separate trusted digest manifest:
 *   For verification, connect `PostgresAuditManifest` with the verifier role, then pass `manifest.load_hashes()` and the complete archive event set to `verify_integrity(events, expected_hashes)`.
 *   `verify_integrity(events, expected_hashes)` returns `False` when the manifest is missing or when event IDs or digests differ. Pass the complete event set represented by the manifest; missing, extra, duplicate, or changed records fail verification.
 *   If archive storage or the digest writer fails, the exception reaches the caller and no success statistics or alerts are emitted. A failure after archive storage can leave an event without a manifest entry; verification rejects it.
-*   Arrow audit files rotate at 100 MB. `FileAuditStorage` writes daily JSONL files.
+*   Arrow audit files rotate at 100 MB. `get_event_count()` uses Parquet row counts for an unfiltered count and scans only the selected filter columns in bounded batches otherwise. SQLite and Arrow apply the same event type, severity, source, user, and inclusive time-range filters.
+*   Arrow retention is explicit: `ArrowAuditStorage.cleanup_old_events(max_age_seconds)` removes a Parquet archive only when every event in it is older than the cutoff. It returns the number of deleted events. Mixed-age archives and legacy `.arrow`, `.log`, or `.jsonl` files remain; no automatic cleanup runs. Coordinate archive deletion with the independently stored digest manifest before using full-manifest integrity verification.
+*   `FileAuditStorage` writes daily JSONL files.
 
 ---
 

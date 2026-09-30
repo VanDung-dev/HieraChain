@@ -26,6 +26,7 @@ HieraChain splits storage into layers to balance durability and query speed:
 
     * Holds current entity state derived from finalized blocks.
     * Updated when a block commits and supports caching. The codebase does not define implicit `creation/update/status_change` event types.
+    * `get_entity_state()` and `get_all_states()` return mutable deep snapshots. Editing a returned dictionary or nested `last_details` does not update internal state or its Merkle root; use finalized events to change state.
 
 *   :material-database-sync:{ .lg .middle } __Persistence Layer (Adapters)__
 

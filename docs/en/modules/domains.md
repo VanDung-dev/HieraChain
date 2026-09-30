@@ -23,7 +23,7 @@ Components are organized into three sub-packages under `hierachain/domains/`:
 ### 2.2 Enterprise events (`events/base_event.py`, `events/event_creators.py`)
 
 * `BaseEvent`: Base class for structured business events with schema validation.
-* `event_creators.py`: Helper factories producing validated dictionaries for operations: `create_quality_check`, `create_approval`, `create_resource_allocation`, and `create_status_update`.
+* `event_creators.py`: Helper factories producing event objects for operations: `create_quality_check`, `create_approval`, `create_resource_allocation`, and `create_status_update`.
 
 ### 2.3 Integrity utilities (`utils/cross_chain_validator.py`, `utils/entity_tracer.py`)
 
@@ -37,8 +37,10 @@ Components are organized into three sub-packages under `hierachain/domains/`:
 
 1. Registration: Links a unique `entity_id` to an entity type and metadata attributes.
 2. Status updates: Tracks sequential states (`in_progress`, `quality_approved`, `completed`).
-3. Resource allocation: Records assigned equipment, personnel, or storage locations.
+3. Resource allocation: Tracks assigned and reserved resources. `assigned` adds a resource to `allocated_resources` (and removes its reservation); `reserved` adds it to `reserved_resources`; `released` removes it from either list; `transferred` moves an allocated resource to another registered entity named by `details.target_entity_id`. Invalid transitions are rejected before the event is submitted.
 4. Operation metrics: `OperationMetricsTracker` calculates execution metrics per operation type.
+
+Domain events require a registered entity. A failed event submission or handler returns `False` and does not increment quality or approval metrics. Proof consistency checks report proof events missing `sub_chain_name`, `proof_hash`, or `timestamp` as inconsistent.
 
 ## 4. Two-Phase Commit (2PC) coordination
 

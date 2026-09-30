@@ -26,6 +26,7 @@ HieraChain chia storage thành các lớp để cân bằng giữa độ bền v
 
     * Lưu trạng thái hiện tại của entity suy ra từ block đã finalize.
     * Cập nhật khi block được commit và có hỗ trợ cache. Codebase không định nghĩa sẵn các loại event `creation/update/status_change`.
+    * `get_entity_state()` và `get_all_states()` trả snapshot sâu có thể sửa. Sửa dictionary trả về hoặc `last_details` lồng bên trong không cập nhật state nội bộ hay Merkle root; cần event đã finalize để đổi state.
 
 *   :material-database-sync:{ .lg .middle } __Persistence Layer (Adapters)__
 

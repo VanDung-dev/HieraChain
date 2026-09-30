@@ -55,9 +55,9 @@ Used to record and query business activities.
 
 Used to generate and verify Ed25519 key pairs for Validators.
 
-*   **`hrc key generate`**: Generate a new key pair.
+*   **`hrc key generate`**: Generate a new key pair in a new file with mode `0600` on POSIX systems. An existing output file is never overwritten; the private key is not printed.
 
-    *   *Options*: `--output` (Default: `validator_key.json`), `--format` (json/hex).
+    *   *Options*: `--output` (Default: `validator_key.json`), `--format` (`json` or `hex`). The hex file contains the private key on the first line and the public key on the second line.
 
 *   **`hrc key show`**: Display key information from a file (masks the secret key).
 *   **`hrc key verify`**: Verify the validity of a key pair (public key matches secret key).
@@ -76,10 +76,12 @@ Used to operate API nodes.
 
 Tools for auditors to check ledger integrity.
 
-*   **`hrc verify chain`**: Verify the link structure between blocks (hash chaining).
-*   **`hrc verify signatures`**: Verify all digital signatures of blocks and events in the database.
+*   **`hrc verify chain`**: Verify block hashes, Merkle roots, chain links, and required block signatures against configured trusted keys. Missing blocks, an empty database, unavailable trusted keys, or invalid data return a nonzero exit status.
+*   **`hrc verify signatures`**: Verify required block signatures and any signed events. Unsigned events are counted as unverified; an event with incomplete signing data or an invalid signature returns a nonzero exit status. An empty database also returns a nonzero exit status.
 
-    *   *Options*: `--limit` (Check only the N most recent blocks), `--db` (Database path).
+Both commands accept `--db` (SQLite path/URL or PostgreSQL URL; otherwise the configured database is used). `verify signatures` also accepts `--limit` to check only the N most recent blocks in each chain. Signed events need a public key in `details.public_key` or `details.sender_public_key` for verification.
+
+These commands inspect stored blocks. CLI-created chains are currently memory-only and are not persisted by the CLI.
 
 ---
 

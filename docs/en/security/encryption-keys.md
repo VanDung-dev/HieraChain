@@ -38,7 +38,7 @@ Files: `hierachain/cli/key.py`, `hierachain/security/key_provider.py` (`FileVaul
 
 There is no dedicated `key_backup_manager.py`. The actual mechanism is minimal:
 
-* Generation runs `python -m hierachain key generate --output validator_key.json` (CLI) to create an Ed25519 pair via `Ed25519PrivateKey.generate()` and write `{private_key, public_key}` hex JSON. The `show` and `verify` commands inspect the result.
+* Generation runs `python -m hierachain key generate --output validator_key.json` (CLI) to create an Ed25519 pair via `Ed25519PrivateKey.generate()` and write `{private_key, public_key}` hex JSON. The new file has mode `0600` on POSIX systems; generation refuses to overwrite an existing file. The `show` and `verify` commands inspect the result.
 * Encrypted vault (dev and test only) uses `FileVaultProvider` to encrypt the vault file with `PBKDF2HMAC(SHA256, 310_000 iter)` and `Fernet(AES-128-CBC+HMAC)`. This is suitable for dev and test and is documented as not for production. For production use HSM or KMS through the `KeyProvider` interface and `HRC_VAULT_*`.
 * There is no multi-location backup, no SHA-512 integrity check and no auto distribution or cleanup. Operators must copy `validator_key.json` or `.vault` with external backup tooling.
 

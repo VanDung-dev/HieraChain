@@ -38,7 +38,7 @@ File: `hierachain/cli/key.py`, `hierachain/security/key_provider.py` (`FileVault
 
 Không có `key_backup_manager.py` riêng. Cơ chế thực tế tối giản:
 
-* Tạo khóa chạy `python -m hierachain key generate --output validator_key.json` (CLI) để tạo cặp Ed25519 qua `Ed25519PrivateKey.generate()` và ghi JSON `{private_key, public_key}` dạng hex. Lệnh `show` và `verify` dùng để kiểm tra kết quả.
+* Tạo khóa chạy `python -m hierachain key generate --output validator_key.json` (CLI) để tạo cặp Ed25519 qua `Ed25519PrivateKey.generate()` và ghi JSON `{private_key, public_key}` dạng hex. File mới có mode `0600` trên hệ POSIX; lệnh từ chối ghi đè file đã có. Lệnh `show` và `verify` dùng để kiểm tra kết quả.
 * Vault mã hóa (chỉ cho dev và test) dùng `FileVaultProvider` để mã hóa file vault bằng `PBKDF2HMAC(SHA256, 310_000 iter)` và `Fernet`. Phần này phù hợp cho dev và test và được ghi rõ không dùng cho production. Với production hãy dùng HSM hoặc KMS qua interface `KeyProvider` và `HRC_VAULT_*`.
 * Không có sao lưu đa vị trí, không có kiểm tra toàn vẹn SHA-512 và không có tự động phân phối hay dọn dẹp. Operator phải tự sao chép `validator_key.json` hoặc `.vault` bằng công cụ sao lưu ngoài.
 

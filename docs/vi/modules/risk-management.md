@@ -53,7 +53,9 @@ Tính toàn vẹn của sự kiện audit dùng manifest digest đáng tin cậy
 *   Khi xác minh, kết nối `PostgresAuditManifest` bằng role xác minh rồi truyền `manifest.load_hashes()` và toàn bộ event trong archive vào `verify_integrity(events, expected_hashes)`.
 *   `verify_integrity(events, expected_hashes)` trả về `False` nếu thiếu manifest hoặc ID sự kiện hay digest không khớp. Truyền toàn bộ tập sự kiện tương ứng với manifest; bản ghi thiếu, thừa, trùng ID hoặc bị thay đổi đều làm kiểm tra thất bại.
 *   Nếu lưu archive hoặc ghi digest lỗi, exception được trả về caller và không phát thống kê hay cảnh báo thành công. Lỗi sau khi lưu archive có thể để lại event thiếu mục manifest; xác minh sẽ từ chối.
-*   File audit Arrow tự xoay vòng ở 100 MB. `FileAuditStorage` ghi file JSONL theo ngày.
+*   File audit Arrow tự xoay vòng ở 100 MB. `get_event_count()` dùng số dòng trong metadata Parquet khi không lọc; khi có filter, hàm chỉ quét các cột cần thiết theo batch có giới hạn. SQLite và Arrow cùng áp dụng filter theo loại event, mức độ, nguồn, user và khoảng thời gian bao gồm hai đầu mút.
+*   Retention của Arrow phải gọi rõ ràng: `ArrowAuditStorage.cleanup_old_events(max_age_seconds)` chỉ xóa archive Parquet khi mọi event trong file đều cũ hơn cutoff và trả về số event đã xóa. File trộn event cũ/mới và file legacy `.arrow`, `.log`, `.jsonl` được giữ lại; không có cleanup tự động. Cần phối hợp xóa archive với manifest digest lưu độc lập trước khi xác minh tính toàn vẹn trên toàn manifest.
+*   `FileAuditStorage` ghi file JSONL theo ngày.
 
 ---
 

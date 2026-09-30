@@ -23,7 +23,7 @@ Các thành phần được tổ chức thành ba gói con dưới `hierachain/d
 ### 2.2 Sự kiện doanh nghiệp (`events/base_event.py`, `events/event_creators.py`)
 
 * `BaseEvent`: Lớp cơ sở cho các sự kiện nghiệp vụ có cấu trúc kèm kiểm tra lược đồ.
-* `event_creators.py`: Các hàm tiện ích tạo dữ liệu hợp lệ cho các thao tác: `create_quality_check`, `create_approval`, `create_resource_allocation` và `create_status_update`.
+* `event_creators.py`: Các hàm tiện ích tạo đối tượng sự kiện cho các thao tác: `create_quality_check`, `create_approval`, `create_resource_allocation` và `create_status_update`.
 
 ### 2.3 Tiện ích toàn vẹn (`utils/cross_chain_validator.py`, `utils/entity_tracer.py`)
 
@@ -37,8 +37,10 @@ Các thành phần được tổ chức thành ba gói con dưới `hierachain/d
 
 1. Đăng ký: Gắn định danh `entity_id` duy nhất với loại thực thể và thuộc tính metadata.
 2. Cập nhật trạng thái: Theo dõi các trạng thái tuần tự (`in_progress`, `quality_approved`, `completed`).
-3. Phân bổ tài nguyên: Ghi nhận thiết bị, nhân sự hoặc vị trí kho được phân công.
+3. Phân bổ tài nguyên: Theo dõi tài nguyên đã phân công và đã giữ chỗ. `assigned` thêm vào `allocated_resources` (và bỏ giữ chỗ); `reserved` thêm vào `reserved_resources`; `released` xóa khỏi một trong hai danh sách; `transferred` chuyển tài nguyên đã phân công sang thực thể đã đăng ký khác theo `details.target_entity_id`. Chuyển trạng thái không hợp lệ bị từ chối trước khi gửi event.
 4. Chỉ số vận hành: `OperationMetricsTracker` tính toán các chỉ số thực thi theo từng loại thao tác.
+
+Sự kiện nghiệp vụ yêu cầu thực thể đã đăng ký. Gửi event hoặc handler thất bại trả `False` và không tăng metrics chất lượng/phê duyệt. Kiểm tra tính nhất quán proof đánh dấu event proof thiếu `sub_chain_name`, `proof_hash` hoặc `timestamp` là không nhất quán.
 
 ## 4. Điều phối Two-Phase Commit (2PC)
 

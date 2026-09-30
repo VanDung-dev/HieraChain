@@ -55,9 +55,9 @@ Dùng để ghi và truy vấn các hoạt động kinh doanh.
 
 Dùng để tạo và kiểm tra các cặp khóa Ed25519 cho Validator.
 
-*   **`hrc key generate`**: Tạo cặp khóa mới.
+*   **`hrc key generate`**: Tạo cặp khóa trong file mới với mode `0600` trên hệ POSIX. Không ghi đè file đã có và không in khóa bí mật.
 
-    *   *Option*: `--output` (Mặc định: `validator_key.json`), `--format` (json/hex).
+    *   *Option*: `--output` (Mặc định: `validator_key.json`), `--format` (`json` hoặc `hex`). File hex ghi khóa bí mật ở dòng đầu và khóa công khai ở dòng thứ hai.
 
 *   **`hrc key show`**: Hiển thị thông tin khóa từ file (che dấu khóa bí mật).
 *   **`hrc key verify`**: Kiểm tra tính hợp lệ của cặp khóa (khớp giữa khóa công khai và bí mật).
@@ -76,10 +76,12 @@ Dùng để vận hành node API.
 
 Công cụ dành cho kiểm toán viên để kiểm tra tính toàn vẹn của sổ cái.
 
-*   **`hrc verify chain`**: Kiểm tra cấu trúc liên kết giữa các block (hash chaining).
-*   **`hrc verify signatures`**: Kiểm tra toàn bộ chữ ký số của các block và sự kiện trong cơ sở dữ liệu.
+*   **`hrc verify chain`**: Kiểm tra hash block, Merkle root, liên kết chuỗi và chữ ký block bắt buộc bằng khóa tin cậy đã cấu hình. Thiếu block, cơ sở dữ liệu rỗng, thiếu khóa tin cậy hoặc dữ liệu sai đều trả exit code khác 0.
+*   **`hrc verify signatures`**: Kiểm tra chữ ký block bắt buộc và các sự kiện đã ký. Sự kiện không ký được đếm là chưa xác minh; sự kiện thiếu dữ liệu ký hoặc có chữ ký sai trả exit code khác 0. Cơ sở dữ liệu rỗng cũng trả exit code khác 0.
 
-    *   *Option*: `--limit` (Chỉ kiểm tra N block gần nhất), `--db` (Đường dẫn cơ sở dữ liệu).
+Cả hai lệnh nhận `--db` (đường dẫn/URL SQLite hoặc URL PostgreSQL; nếu bỏ qua thì dùng cơ sở dữ liệu đã cấu hình). `verify signatures` còn nhận `--limit` để chỉ kiểm tra N block gần nhất trong từng chain. Sự kiện đã ký cần khóa công khai trong `details.public_key` hoặc `details.sender_public_key` để xác minh.
+
+Các lệnh này kiểm tra block đã lưu. Chain do CLI tạo hiện chỉ nằm trong bộ nhớ và CLI chưa lưu chúng xuống storage.
 
 ---
 
