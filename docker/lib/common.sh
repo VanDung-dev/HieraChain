@@ -12,7 +12,7 @@ init_env() {
   case "$ENV" in
     docker)
       ENGINE="docker"
-      COMPOSE="$ENGINE compose -f docker/docker-compose.yml"
+      COMPOSE="$ENGINE compose --env-file .env -f docker/docker-compose.yml"
       COMPOSE_EXEC="$COMPOSE exec -T"
       COMPOSE_LOGS="$COMPOSE logs"
       ENGINE_EXEC="$ENGINE exec"
