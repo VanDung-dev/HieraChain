@@ -8,7 +8,12 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (31)"
+??? warning "Breaking Changes (33)"
+
+    * 2026-09-30
+
+        * **Domain (Strict Resource Allocation)**: `BaseChain.add_domain_event` (`hierachain/domains/chains/base_chain.py`) now rejects events for unregistered entities and invalid resource transitions via `_can_apply_resource_allocation()` (event type must equal `resource_{allocation_type}`, membership checks for `assigned`/`reserved`/`released`/`transferred` including `target_entity_id` existence); `ResourceAllocationEvent.is_valid` (`hierachain/domains/events/custom_events.py`) requires non-empty `target_entity_id` distinct from `entity_id` for `transferred` — previously accepted events now return `False`.
+        * **Validator (Strict Proof Fields)**: `ProofValidator._validate_single_proof` (`hierachain/domains/utils/cross_chain_validator.py`) requires `sub_chain_name`/`proof_hash` to be non-empty `str` and `timestamp` to be a positive non-bool `int`/`float`, recording `missing_proof_fields` with an `inconsistent_proofs` increment instead of silently skipping field-less proofs.
 
     * 2026-09-29
 
@@ -71,7 +76,15 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (25)"
+??? note "Improvements (30)"
+
+    * 2026-09-30
+
+        * **Database (Chain Name Listing)**: new `SQLBase.list_block_chain_names()` (`hierachain/adapters/database/base/sql_adapter.py`) returning ordered `DISTINCT chain_name` from `blocks` with fail-hard error propagation for CLI verification.
+        * **State (Immutable Snapshots)**: `WorldState.get_entity_state()`/`get_all_states()` (`hierachain/state/world_state.py`) now return `deepcopy` snapshots (plus `deepcopy` of `last_details` on updates) so callers cannot mutate internal state.
+        * **Audit (Sealed Reads & Retention)**: `ArrowAuditStorage` (`hierachain/risk_management/audit_logger.py`) centralizes `_seal_active_file()`, fixes `limit=0`/`None` handling in `retrieve_events`, counts via Parquet metadata/bounded `4096`-row batches in `get_event_count()`, and adds `cleanup_old_events()` deleting only fully-expired Parquet archives; `DatabaseAuditStorage._filter_sql()` unifies `event_type`/`severity`/`source_component`/`user_id`/`time_range` predicates for retrieval and count.
+        * **CLI (Key Files & Multi-backend Verify)**: `hierachain/cli/key.py` writes new keys with `O_EXCL` `0600`, reads JSON or two-line hex via `_read_key_file()`, and fully masks the private key on `show`; `hierachain/cli/verify.py` adds `_open_backend()` for `postgres`/`postgresql`/`sqlite` URLs plus path backends over `SQLBase`, tracks `events_unsigned` separately (unsigned allowed, incomplete signatures invalid, `sender_public_key` fallback, `to_event_list()`), and fails the audit on invalid events as well as blocks.
+        * **Domain (Resource Lifecycle)**: `BaseChain` (`hierachain/domains/chains/base_chain.py`) handles `resource_released`/`resource_reserved`/`resource_transferred` with `allocated_resources`/`reserved_resources` lifecycle (reserve, release from either list, move on `reserved`→`assigned`, transfer between entities), registers entities only after `add_event` succeeds, and returns `False` on handler errors instead of swallowing them.
 
     * 2026-09-29
 

@@ -8,7 +8,12 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (31)"
+??? warning "Breaking Changes (33)"
+
+    * 2026-09-30
+
+        * **Domain (Validate Phân bổ Tài nguyên Chặt)**: `BaseChain.add_domain_event` (`hierachain/domains/chains/base_chain.py`) nay từ chối event của entity chưa đăng ký và chuyển đổi tài nguyên không hợp lệ qua `_can_apply_resource_allocation()` (kiểu event phải bằng `resource_{allocation_type}`, kiểm tra thành viên cho `assigned`/`reserved`/`released`/`transferred` kèm kiểm tra tồn tại `target_entity_id`); `ResourceAllocationEvent.is_valid` (`hierachain/domains/events/custom_events.py`) bắt buộc `target_entity_id` khác rỗng và khác `entity_id` với kiểu `transferred` — các event trước đây được chấp nhận nay trả `False`.
+        * **Validator (Validate Field Proof Chặt)**: `ProofValidator._validate_single_proof` (`hierachain/domains/utils/cross_chain_validator.py`) bắt buộc `sub_chain_name`/`proof_hash` là `str` khác rỗng và `timestamp` là `int`/`float` dương (không phải `bool`), ghi nhận `missing_proof_fields` kèm tăng `inconsistent_proofs` thay vì lặng lẽ bỏ qua proof thiếu field.
 
     * 2026-09-29
 
@@ -71,7 +76,15 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (25)"
+??? note "Improvements (30)"
+
+    * 2026-09-30
+
+        * **Database (Liệt kê Tên Chain)**: thêm `SQLBase.list_block_chain_names()` (`hierachain/adapters/database/base/sql_adapter.py`) trả về `DISTINCT chain_name` có thứ tự từ bảng `blocks` kèm lan truyền lỗi database cho CLI verification.
+        * **State (Snapshot Bất biến)**: `WorldState.get_entity_state()`/`get_all_states()` (`hierachain/state/world_state.py`) nay trả về snapshot `deepcopy` (kèm `deepcopy` cho `last_details` khi cập nhật) để caller không thể thay đổi state nội bộ.
+        * **Audit (Đọc Sealed & Retention)**: `ArrowAuditStorage` (`hierachain/risk_management/audit_logger.py`) tập trung `_seal_active_file()`, sửa xử lý `limit=0`/`None` trong `retrieve_events`, đếm qua metadata Parquet/batch `4096` dòng trong `get_event_count()`, và thêm `cleanup_old_events()` chỉ xóa archive Parquet đã hết hạn toàn bộ; `DatabaseAuditStorage._filter_sql()` hợp nhất predicate `event_type`/`severity`/`source_component`/`user_id`/`time_range` cho cả truy vấn và đếm.
+        * **CLI (Key File & Verify Đa-backend)**: `hierachain/cli/key.py` ghi key mới bằng `O_EXCL` `0600`, đọc JSON hoặc hex hai dòng qua `_read_key_file()`, và che hoàn toàn private key khi `show`; `hierachain/cli/verify.py` thêm `_open_backend()` cho URL `postgres`/`postgresql`/`sqlite` và backend đường dẫn trên `SQLBase`, theo dõi riêng `events_unsigned` (unsigned được phép, thiếu chữ ký là invalid, fallback `sender_public_key`, dùng `to_event_list()`), và fail audit khi event invalid chứ không chỉ block.
+        * **Domain (Vòng đời Tài nguyên)**: `BaseChain` (`hierachain/domains/chains/base_chain.py`) xử lý `resource_released`/`resource_reserved`/`resource_transferred` với vòng đời `allocated_resources`/`reserved_resources` (reserve, release từ cả hai list, chuyển `reserved`→`assigned`, chuyển entity), chỉ đăng ký entity sau khi `add_event` thành công, và trả `False` khi handler lỗi thay vì nuốt lỗi.
 
     * 2026-09-29
 
