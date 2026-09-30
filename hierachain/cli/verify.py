@@ -6,6 +6,8 @@ import logging
 
 import click
 
+from hierachain.adapters.database.base.sql_adapter import SQLBase
+from hierachain.adapters.database.postgres_adapter import PostgresAdapter
 from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 from hierachain.config.settings import settings
 from hierachain.core.block import Block
@@ -27,6 +29,19 @@ def _db_url_to_path(url: str | None) -> str:
     return url
 
 
+def _open_backend(db_url: str) -> SQLBase:
+    """Open the SQL adapter named by a CLI database URL or SQLite path."""
+    if db_url.startswith("postgresql+psycopg://"):
+        db_url = db_url.replace("postgresql+psycopg://", "postgresql://", 1)
+    if db_url.startswith(("postgres://", "postgresql://")):
+        return PostgresAdapter(database_url=db_url)
+    if db_url.startswith(("sqlite:///", "sqlite://")):
+        return SQLiteAdapter(_db_url_to_path(db_url))
+    if "://" in db_url:
+        raise ValueError("Unsupported database URL scheme")
+    return SQLiteAdapter(db_url)
+
+
 @click.group(name="verify")
 def verify_group() -> None:
     """Verification tools for blockchain integrity."""
@@ -41,14 +56,14 @@ def verify_group() -> None:
 def verify_chain(db: str | None) -> None:
     """Verify chain integrity and every trusted block signature."""
     db_url = db or settings.DATABASE_URL
-    click.echo(f"Verifying chain integrity from: {db_url}")
+    click.echo("Verifying chain integrity")
     try:
         trusted_keys = load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE)
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
     
     try:
-        backend = SQLiteAdapter(_db_url_to_path(db_url))
+        backend = _open_backend(db_url)
     except Exception as e:
         raise click.ClickException(f"Failed to connect to storage: {e}") from e
 
@@ -74,19 +89,15 @@ def verify_chain(db: str | None) -> None:
         backend.close()
 
 
-def _get_chain_names(backend: SQLiteAdapter) -> list[str]:
+def _get_chain_names(backend: SQLBase) -> list[str]:
     """Get every chain that has stored blocks; never report empty verification as success."""
-    with backend._get_connection() as connection:
-        rows = connection.execute(
-            "SELECT DISTINCT chain_name FROM blocks ORDER BY chain_name"
-        ).fetchall()
-    names = [row[0] for row in rows]
+    names = backend.list_block_chain_names()
     if not names or any(not name for name in names):
         raise click.ClickException("No named block chains to verify")
     return names
 
 
-def _load_blocks_from_backend(backend: SQLiteAdapter, chain_name: str) -> list[Block]:
+def _load_blocks_from_backend(backend: SQLBase, chain_name: str) -> list[Block]:
     """Helper to load all blocks from storage with a progress bar."""
     latest = backend.get_latest_block(chain_name=chain_name)
     if not latest:
@@ -124,21 +135,21 @@ def _report_verification_result(result) -> None:
 def verify_signatures(db: str | None, limit: int) -> None:
     """Audit cryptographic signatures of blocks and events."""
     db_url = db or settings.DATABASE_URL
-    click.echo(f"Auditing signatures from: {db_url}")
+    click.echo("Auditing signatures")
     try:
         trusted_keys = load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE)
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
     
     try:
-        backend = SQLiteAdapter(_db_url_to_path(db_url))
+        backend = _open_backend(db_url)
     except Exception as e:
         raise click.ClickException(f"Failed to connect to storage: {e}") from e
 
     try:
         stats = {
             "blocks_valid": 0, "blocks_invalid": 0,
-            "events_valid": 0, "events_invalid": 0,
+            "events_valid": 0, "events_invalid": 0, "events_unsigned": 0,
         }
         for chain_name in _get_chain_names(backend):
             latest = backend.get_latest_block(chain_name=chain_name)
@@ -152,8 +163,8 @@ def verify_signatures(db: str | None, limit: int) -> None:
             for key, value in chain_stats.items():
                 stats[key] += value
         _report_audit_stats(stats)
-        if stats["blocks_invalid"]:
-            raise click.ClickException("Block signature audit failed")
+        if stats["blocks_invalid"] or stats["events_invalid"]:
+            raise click.ClickException("Signature audit failed")
 
     except click.ClickException:
         raise
@@ -164,7 +175,7 @@ def verify_signatures(db: str | None, limit: int) -> None:
 
 
 def _run_audit_loop(
-    backend: SQLiteAdapter,
+    backend: SQLBase,
     chain_name: str,
     start: int,
     tip: int,
@@ -174,7 +185,8 @@ def _run_audit_loop(
     block_verifier = BlockVerifier(strict_mode=True)
     sig_verifier = SignatureVerifier()
     stats = {
-        "blocks_valid": 0, "blocks_invalid": 0, "events_valid": 0, "events_invalid": 0
+        "blocks_valid": 0, "blocks_invalid": 0,
+        "events_valid": 0, "events_invalid": 0, "events_unsigned": 0,
     }
     
     with click.progressbar(range(start, tip + 1), label='Auditing') as bar:
@@ -214,37 +226,38 @@ def _audit_block_signature(
         stats["blocks_invalid"] += 1
 
 
-def _audit_event_signatures(block, sig_verifier, stats) -> None:
-    """Helper to verify all events within a block and update stats."""
-    # block.events is a PyArrow Table, convert to list of dicts
-    events_list = (
-        block.events.to_pylist()
-        if hasattr(block.events, 'to_pylist') else block.events
-    )
-    
-    for event in events_list:
-        if _verify_single_event_signature(event, sig_verifier):
+def _audit_event_signatures(
+    block: Block, sig_verifier: SignatureVerifier, stats: dict[str, int]
+) -> None:
+    """Unsigned events are allowed; incomplete or invalid signatures fail."""
+    for event in block.to_event_list():
+        result = _verify_single_event_signature(event, sig_verifier)
+        if result is None:
+            stats["events_unsigned"] += 1
+        elif result:
             stats["events_valid"] += 1
         else:
-            if event.get('signature') and (
-                event.get('details', {}).get('public_key')
-                if isinstance(event.get('details'), dict) else None
-            ):
-                stats["events_invalid"] += 1
+            stats["events_invalid"] += 1
 
 
-def _verify_single_event_signature(event, sig_verifier):
-    """Helper to verify the signature of a single event."""
+def _verify_single_event_signature(
+    event: dict, sig_verifier: SignatureVerifier
+) -> bool | None:
+    """Return None for an unsigned event, false for incomplete signing data."""
     signature = event.get('signature')
     details = event.get('details', {})
-    public_key = details.get('public_key') if isinstance(details, dict) else None
-    
-    if signature and public_key:
-        return sig_verifier.verify_event_signature(event, public_key)
-    return False
+    public_key = (
+        details.get('public_key') or details.get('sender_public_key')
+        if isinstance(details, dict) else None
+    )
+    if not signature and not public_key:
+        return None
+    if not signature or not public_key:
+        return False
+    return sig_verifier.verify_event_signature(event, public_key)
 
 
-def _report_audit_stats(stats) -> None:
+def _report_audit_stats(stats: dict[str, int]) -> None:
     """Helper to report the final audit statistics."""
     click.echo("\n Audit Complete:")
     click.echo(
@@ -253,6 +266,7 @@ def _report_audit_stats(stats) -> None:
     click.echo(
         f"Events: {stats['events_valid']} Valid, {stats['events_invalid']} Invalid"
     )
+    click.echo(f"Unsigned events: {stats['events_unsigned']} (not verified)")
     
     if stats['blocks_invalid'] > 0 or stats['events_invalid'] > 0:
         click.secho("Audit found issues!", fg='red')
