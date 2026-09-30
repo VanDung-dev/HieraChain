@@ -450,3 +450,91 @@ def test_arrow_storage_integrity_manifest_covers_all_event_fields(tmp_path):
         assert not verify_integrity(retrieved, expected_hashes)
     finally:
         storage.close()
+
+
+def test_sqlite_and_arrow_share_filter_and_count_semantics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sqlite_store = DatabaseAuditStorage(str(tmp_path / "audit.db"))
+    arrow_store = ArrowAuditStorage(str(tmp_path / "arrow"))
+    events = [
+        AuditEvent(
+            event_id=f"event-{index}",
+            event_type=kind,
+            severity=severity,
+            timestamp=float(index),
+            source_component=source,
+            description="audit event",
+            details={"index": index},
+            user_id=user,
+            affected_entities=[f"entity-{index}"],
+        )
+        for index, kind, severity, source, user in (
+            (1, AuditEventType.SECURITY_EVENT, AuditSeverity.WARNING, "api", "user-a"),
+            (2, AuditEventType.SYSTEM_EVENT, AuditSeverity.INFO, "worker", "user-b"),
+            (3, AuditEventType.SECURITY_EVENT, AuditSeverity.WARNING, "api", "user-b"),
+        )
+    ]
+    try:
+        for event in events:
+            assert sqlite_store.store_event(event)
+            assert arrow_store.store_event(event)
+
+        filters = [
+            AuditFilter(),
+            AuditFilter(source_components=["api"]),
+            AuditFilter(user_ids=["user-b"]),
+            AuditFilter(event_types=[AuditEventType.SECURITY_EVENT], severity_levels=[AuditSeverity.WARNING]),
+            AuditFilter(time_range=(2.0, 3.0)),
+            AuditFilter(source_components=["api"], user_ids=["user-b"], time_range=(3.0, 3.0)),
+            AuditFilter(source_components=[]),
+        ]
+        for filter_criteria in filters:
+            sqlite_events = sqlite_store.retrieve_events(filter_criteria)
+            arrow_events = arrow_store.retrieve_events(filter_criteria)
+            assert {event.event_id for event in sqlite_events} == {event.event_id for event in arrow_events}
+            assert sqlite_store.get_event_count(filter_criteria) == arrow_store.get_event_count(filter_criteria)
+
+        assert sqlite_store.retrieve_events(AuditFilter(), limit=0)
+        assert len(arrow_store.retrieve_events(AuditFilter(), limit=0)) == len(events)
+        assert sqlite_store.retrieve_events(AuditFilter(), limit=-1)
+        assert len(arrow_store.retrieve_events(AuditFilter(), limit=-1)) == len(events)
+        assert sqlite_store.retrieve_events(AuditFilter(source_components=["api"]))[0].affected_entities is not None
+
+        monkeypatch.setattr(audit_logger_module.pq, "read_table", lambda *_a, **_kw: (_ for _ in ()).throw(
+            AssertionError("count loaded the full archive")
+        ))
+        assert arrow_store.get_event_count(AuditFilter()) == 3
+        assert arrow_store.get_event_count(AuditFilter(source_components=["api"])) == 2
+    finally:
+        arrow_store.close()
+
+
+def test_arrow_retention_removes_only_fully_expired_parquet_files(tmp_path: Path) -> None:
+    store = ArrowAuditStorage(str(tmp_path / "arrow"))
+    now = time.time()
+
+    def event(event_id: str, timestamp: float) -> AuditEvent:
+        return AuditEvent(
+            event_id=event_id,
+            event_type=AuditEventType.SYSTEM_EVENT,
+            severity=AuditSeverity.INFO,
+            timestamp=timestamp,
+            source_component="audit",
+            description="retention event",
+            details={},
+        )
+
+    try:
+        assert store.store_event(event("old", now - 100))
+        store.retrieve_events(AuditFilter())  # Seal the old file.
+        assert store.store_event(event("recent", now))
+        assert store.cleanup_old_events(50) == 1
+        assert [item.event_id for item in store.retrieve_events(AuditFilter())] == ["recent"]
+
+        assert store.store_event(event("mixed-old", now - 100))
+        assert store.store_event(event("mixed-recent", now))
+        assert store.cleanup_old_events(50) == 0
+        assert store.get_event_count(AuditFilter()) == 3
+    finally:
+        store.close()

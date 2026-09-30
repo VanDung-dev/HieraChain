@@ -6,12 +6,22 @@ including proof consistency checks and hierarchical integrity verification.
 """
 
 import time
+from pathlib import Path
 from typing import cast
 
 import pytest
 
-from hierachain.hierarchical import HierarchyManager
+from hierachain.config.settings import settings
 from hierachain.domains.utils import CrossChainValidator
+from hierachain.hierarchical import HierarchyManager
+
+
+@pytest.fixture(autouse=True)
+def isolated_storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep persisted chains and background orderers separate for each case."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("HRC_STORAGE_BACKEND", "sqlite")
+    monkeypatch.setattr(settings, "DATABASE_URL", f"sqlite:///{tmp_path / 'main.db'}")
 
 
 def _iter_block_events(chain):
@@ -20,7 +30,7 @@ def _iter_block_events(chain):
         if isinstance(events, list):
             yield block, events, False
         elif hasattr(events, "to_pylist"):
-            yield block, events.to_pylist(), True
+            yield block, block.to_event_list(), True
 
 
 def _set_proof_submission_timestamp(main_chain, timestamp):
@@ -370,7 +380,7 @@ def test_cross_chain_validation_with_timestamp_inconsistency():
 
     _finalize_sub_chain_and_submit(sub_chain, main_chain)
 
-    found_proof = _set_proof_submission_timestamp(main_chain, 0)
+    found_proof = _set_proof_submission_timestamp(main_chain, 1.0)
     assert found_proof, "Proof submission event not found in main chain"
 
     # Create validator and run validation
@@ -473,7 +483,7 @@ def test_cross_chain_validation_with_logic_inconsistency():
             break
 
     assert found_event, (
-        f"Event for ENTITY-001 not found in chain."
+        "Event for ENTITY-001 not found in chain."
     )
 
     test_chain.submit_proof_to_main(main_chain)
