@@ -183,6 +183,13 @@ class ArrowAuditStorage(AuditStorage):
             files.append(self.active_log_file)
         return sorted(set(files))
 
+    def _seal_active_file(self) -> None:
+        """Make current writes readable before a snapshot query or cleanup."""
+        with self._lock:
+            self._close_writer()
+            self._archive_active_file()
+            self._open()
+
     def _iter_parquet(self, path: Path):
         try:
             table = pq.read_table(path, schema=self._schema)
@@ -236,23 +243,20 @@ class ArrowAuditStorage(AuditStorage):
     def retrieve_events(self, filter_criteria: AuditFilter, limit: int | None = None) -> list[AuditEvent]:
         events: list[AuditEvent] = []
         try:
-            with self._lock:
-                self._close_writer()
-                self._archive_active_file()
-                self._open()
+            self._seal_active_file()
             for jf in reversed(self._get_files()):
                 try:
                     if jf.suffix == ".jsonl":
                         for ev in _iter_events_from_file(jf):
                             if filter_criteria.matches(ev):
                                 events.append(ev)
-                                if limit and len(events) >= limit:
+                                if limit is not None and limit > 0 and len(events) >= limit:
                                     return events
                     else:
                         for ev in self._iter_parquet(jf):
                             if filter_criteria.matches(ev):
                                 events.append(ev)
-                                if limit and len(events) >= limit:
+                                if limit is not None and limit > 0 and len(events) >= limit:
                                     return events
                 except OSError:
                     continue
@@ -262,7 +266,89 @@ class ArrowAuditStorage(AuditStorage):
             return events
 
     def get_event_count(self, filter_criteria: AuditFilter) -> int:
-        return len(self.retrieve_events(filter_criteria))
+        """Count Parquet rows from metadata or bounded column batches."""
+        if any(values == [] for values in (
+            filter_criteria.event_types,
+            filter_criteria.severity_levels,
+            filter_criteria.source_components,
+            filter_criteria.user_ids,
+        )):
+            return 0
+
+        self._seal_active_file()
+        event_types = (
+            {value.value for value in filter_criteria.event_types}
+            if filter_criteria.event_types is not None else None
+        )
+        severity_levels = (
+            {value.value for value in filter_criteria.severity_levels}
+            if filter_criteria.severity_levels is not None else None
+        )
+        sources = set(filter_criteria.source_components) if filter_criteria.source_components is not None else None
+        users = set(filter_criteria.user_ids) if filter_criteria.user_ids is not None else None
+        columns = [
+            name for name, enabled in (
+                ("event_type", event_types is not None),
+                ("severity", severity_levels is not None),
+                ("source_component", sources is not None),
+                ("user_id", users is not None),
+                ("timestamp", filter_criteria.time_range is not None),
+            ) if enabled
+        ]
+        count = 0
+        try:
+            for path in self._get_files():
+                if path.suffix == ".parquet":
+                    parquet = pq.ParquetFile(path)
+                    if not columns:
+                        count += parquet.metadata.num_rows
+                        continue
+                    for batch in parquet.iter_batches(batch_size=4096, columns=columns):
+                        for row in batch.to_pylist():
+                            if event_types is not None and row["event_type"] not in event_types:
+                                continue
+                            if severity_levels is not None and row["severity"] not in severity_levels:
+                                continue
+                            if sources is not None and row["source_component"] not in sources:
+                                continue
+                            if users is not None and row["user_id"] not in users:
+                                continue
+                            if filter_criteria.time_range is not None:
+                                start, end = filter_criteria.time_range
+                                if not start <= row["timestamp"] <= end:
+                                    continue
+                            count += 1
+                else:
+                    events = _iter_events_from_file(path) if path.suffix == ".jsonl" else self._iter_parquet(path)
+                    count += sum(filter_criteria.matches(event) for event in events)
+            return count
+        except Exception as exc:
+            raise RuntimeError("Failed to count audit archive") from exc
+
+    def cleanup_old_events(self, max_age_seconds: float) -> int:
+        """Delete only Parquet archives whose every event predates the cutoff."""
+        if max_age_seconds < 0:
+            raise ValueError("max_age_seconds must be nonnegative")
+        cutoff = time.time() - max_age_seconds
+        self._seal_active_file()
+        expired: list[tuple[Path, int]] = []
+        try:
+            for path in self._get_files():
+                if path == self.active_log_file or path.suffix != ".parquet":
+                    continue
+                parquet = pq.ParquetFile(path)
+                all_expired = all(
+                    value is not None and value < cutoff
+                    for batch in parquet.iter_batches(batch_size=4096, columns=["timestamp"])
+                    for value in batch.column(0).to_pylist()
+                )
+                if all_expired:
+                    expired.append((path, parquet.metadata.num_rows))
+            for path, _ in expired:
+                path.unlink()
+            return sum(rows for _, rows in expired)
+        except Exception as exc:
+            raise RuntimeError("Failed to clean up audit archive") from exc
 
     def close(self):
         with self._lock:
@@ -345,6 +431,33 @@ class DatabaseAuditStorage(AuditStorage):
             if conn:
                 conn.close()
 
+    @staticmethod
+    def _filter_sql(filter_criteria: AuditFilter) -> tuple[str, list[Any]]:
+        """Build the same predicate for retrieval and count queries."""
+        query = " WHERE 1=1"
+        params: list[Any] = []
+        for column, values in (
+            ("event_type", filter_criteria.event_types),
+            ("severity", filter_criteria.severity_levels),
+            ("source_component", filter_criteria.source_components),
+            ("user_id", filter_criteria.user_ids),
+        ):
+            if values is None:
+                continue
+            if not values:
+                query += " AND 0=1"
+                continue
+            placeholders = ",".join("?" for _ in values)
+            query += f" AND {column} IN ({placeholders})"
+            params.extend(
+                value.value if isinstance(value, (AuditEventType, AuditSeverity)) else value
+                for value in values
+            )
+        if filter_criteria.time_range is not None:
+            query += " AND timestamp >= ? AND timestamp <= ?"
+            params.extend(filter_criteria.time_range)
+        return query, params
+
     def retrieve_events(
         self, filter_criteria: AuditFilter, limit: int | None = None
     ) -> list[AuditEvent]:
@@ -353,24 +466,10 @@ class DatabaseAuditStorage(AuditStorage):
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            query = "SELECT * FROM audit_events WHERE 1=1"
-            params = []
-            
-            if filter_criteria.event_types:
-                placeholders = ",".join("?" for _ in filter_criteria.event_types)
-                query += f" AND event_type IN ({placeholders})"
-                params.extend(t.value for t in filter_criteria.event_types)
-            if filter_criteria.severity_levels:
-                placeholders = ",".join("?" for _ in filter_criteria.severity_levels)
-                query += f" AND severity IN ({placeholders})"
-                params.extend(s.value for s in filter_criteria.severity_levels)
-            if filter_criteria.time_range:
-                start, end = filter_criteria.time_range
-                query += " AND timestamp >= ? AND timestamp <= ?"
-                params.extend([start, end])
-                
+            predicate, params = self._filter_sql(filter_criteria)
+            query = "SELECT * FROM audit_events" + predicate
             query += " ORDER BY timestamp DESC"
-            if limit:
+            if limit is not None and limit > 0:
                 query += " LIMIT ?"
                 params.append(limit)
                 
@@ -404,22 +503,8 @@ class DatabaseAuditStorage(AuditStorage):
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            query = "SELECT COUNT(*) FROM audit_events WHERE 1=1"
-            params = []
-            
-            if filter_criteria.event_types:
-                placeholders = ",".join("?" for _ in filter_criteria.event_types)
-                query += f" AND event_type IN ({placeholders})"
-                params.extend(t.value for t in filter_criteria.event_types)
-            if filter_criteria.severity_levels:
-                placeholders = ",".join("?" for _ in filter_criteria.severity_levels)
-                query += f" AND severity IN ({placeholders})"
-                params.extend(s.value for s in filter_criteria.severity_levels)
-            if filter_criteria.time_range:
-                start, end = filter_criteria.time_range
-                query += " AND timestamp >= ? AND timestamp <= ?"
-                params.extend([start, end])
-                
+            predicate, params = self._filter_sql(filter_criteria)
+            query = "SELECT COUNT(*) FROM audit_events" + predicate
             cursor.execute(query, params)
             count = cursor.fetchone()[0]
             return count
