@@ -53,6 +53,9 @@ class BaseChain(SubChain, ABC):
             "operation_complete": self._handle_operation_complete,
             "status_update": self._handle_status_update,
             "resource_assigned": self._handle_resource_allocation,
+            "resource_released": self._handle_resource_allocation,
+            "resource_reserved": self._handle_resource_allocation,
+            "resource_transferred": self._handle_resource_allocation,
             "quality_check": self._handle_quality_check,
             "approval": self._handle_approval,
             "compliance_check": self._handle_compliance_check
@@ -72,15 +75,14 @@ class BaseChain(SubChain, ABC):
         if entity_id in self.entity_registry:
             return False
         
-        # Add registration metadata
-        entity_data.update({
+        # Add registration metadata only after the event is accepted.
+        registered_data = {
+            **entity_data,
             "registered_at": time.time(),
             "registered_by": self.name,
             "domain_type": self.domain_type,
-            "status": "registered"
-        })
-        
-        self.entity_registry[entity_id] = entity_data
+            "status": "registered",
+        }
         
         # Create registration event
         registration_event = {
@@ -94,7 +96,13 @@ class BaseChain(SubChain, ABC):
             }
         }
         
-        self.add_event(registration_event)
+        try:
+            if not self.add_event(registration_event):
+                return False
+        except Exception:
+            logger.exception("Could not register entity %s", entity_id)
+            return False
+        self.entity_registry[entity_id] = registered_data
         return True
     
     def get_entity_info(self, entity_id: str) -> dict[str, Any] | None:
@@ -139,12 +147,19 @@ class BaseChain(SubChain, ABC):
             True if event was added successfully, False otherwise
         """
         # Validate event
-        if not event.is_valid():
+        if event.entity_id not in self.entity_registry or not event.is_valid():
+            return False
+        if event.event_type.startswith("resource_") and not self._can_apply_resource_allocation(event):
             return False
         
         # Convert to dictionary and add to chain
         event_dict = event.to_dict()
-        self.add_event(event_dict)
+        try:
+            if not self.add_event(event_dict):
+                return False
+        except Exception:
+            logger.exception("Could not add domain event %s", event.event_type)
+            return False
         
         # Process event with registered handlers
         event_type = event.event_type
@@ -152,8 +167,8 @@ class BaseChain(SubChain, ABC):
             try:
                 self.event_handlers[event_type](event)
             except Exception as e:
-                # Log error but don't fail the event addition
                 logger.error("Error processing event %s: %s", event_type, e)
+                return False
         
         return True
     
@@ -188,26 +203,72 @@ class BaseChain(SubChain, ABC):
             self.entity_registry[entity_id]["status"] = new_status
             self.entity_registry[entity_id]["status_updated_at"] = event.timestamp
     
-    def _ensure_resource_list(self, entity_id: str) -> list[str]:
-        """Ensure the entity has an allocated resources list."""
-        if "allocated_resources" not in self.entity_registry[entity_id]:
-            self.entity_registry[entity_id]["allocated_resources"] = []
-        return self.entity_registry[entity_id]["allocated_resources"]
+    def _ensure_resource_list(self, entity_id: str, field: str) -> list[str]:
+        """Ensure the entity has the requested resource list."""
+        return self.entity_registry[entity_id].setdefault(field, [])
+
+    def _can_apply_resource_allocation(self, event: BaseEvent) -> bool:
+        """Reject unsupported or impossible resource transitions before appending."""
+        resource_id = event.get_detail("resource_id")
+        resource_type = event.get_detail("resource_type")
+        allocation_type = event.get_detail("allocation_type")
+        if (
+            not isinstance(resource_id, str) or not resource_id
+            or not isinstance(resource_type, str) or not resource_type
+            or event.event_type != f"resource_{allocation_type}"
+        ):
+            return False
+
+        entity = self.entity_registry[event.entity_id]
+        allocated = entity.get("allocated_resources", [])
+        reserved = entity.get("reserved_resources", [])
+        if not isinstance(allocated, list) or not isinstance(reserved, list):
+            return False
+        if allocation_type == "assigned":
+            return resource_id not in allocated
+        if allocation_type == "reserved":
+            return resource_id not in allocated and resource_id not in reserved
+        if allocation_type == "released":
+            return resource_id in allocated or resource_id in reserved
+        if allocation_type == "transferred":
+            target_id = event.get_detail("target_entity_id")
+            if not isinstance(target_id, str) or not target_id or target_id == event.entity_id:
+                return False
+            target = self.entity_registry.get(target_id)
+            if target is None:
+                return False
+            target_allocated = target.get("allocated_resources", [])
+            target_reserved = target.get("reserved_resources", [])
+            return (
+                resource_id in allocated
+                and isinstance(target_allocated, list)
+                and isinstance(target_reserved, list)
+                and resource_id not in target_allocated
+                and resource_id not in target_reserved
+            )
+        return False
 
     def _handle_resource_allocation(self, event: BaseEvent) -> None:
         """Handle resource allocation events."""
         entity_id = event.entity_id
-        if entity_id not in self.entity_registry:
-            return
-
         resource_id = event.get_detail("resource_id")
         allocation_type = event.get_detail("allocation_type")
-        resources = self._ensure_resource_list(entity_id)
+        allocated = self._ensure_resource_list(entity_id, "allocated_resources")
+        reserved = self._ensure_resource_list(entity_id, "reserved_resources")
         
         if allocation_type == "assigned":
-            resources.append(resource_id)
-        elif allocation_type == "released" and resource_id in resources:
+            if resource_id in reserved:
+                reserved.remove(resource_id)
+            allocated.append(resource_id)
+        elif allocation_type == "reserved":
+            reserved.append(resource_id)
+        elif allocation_type == "released":
+            resources = allocated if resource_id in allocated else reserved
             resources.remove(resource_id)
+        elif allocation_type == "transferred":
+            allocated.remove(resource_id)
+            target_id = event.get_detail("target_entity_id")
+            self._ensure_resource_list(target_id, "allocated_resources").append(resource_id)
     
     def _handle_quality_check(self, event: BaseEvent) -> None:
         """Handle quality check events."""
