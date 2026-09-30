@@ -185,6 +185,13 @@ class SQLBase(ABC):
                 for row in cursor.fetchall()
             ]
 
+    def list_block_chain_names(self) -> list[str]:
+        """List chains with stored blocks, propagating database failures."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT DISTINCT chain_name FROM blocks ORDER BY chain_name")
+            return [row["chain_name"] for row in cursor.fetchall()]
+
     @staticmethod
     def _execute_fetch_chain_info(cursor: Any, chain_name: str) -> Any | None:
         """Default SQLite implementation."""
