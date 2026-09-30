@@ -33,7 +33,7 @@ class ResourceAllocationEvent(DomainEvent):
             entity_id: Entity identifier (used as metadata field)
             resource_type: Type of resource being allocated
             resource_id: Identifier of the specific resource
-            allocation_type: Type of allocation (assigned, released, reserved)
+            allocation_type: Type of allocation (assigned, released, reserved, transferred)
             domain_type: Domain this event belongs to
             details: Additional event details
             timestamp: Event timestamp (defaults to current time)
@@ -79,6 +79,11 @@ class ResourceAllocationEvent(DomainEvent):
         
         if not self.resource_id or not isinstance(self.resource_id, str):
             return False
+
+        if self.allocation_type == "transferred":
+            target_id = self.get_detail("target_entity_id")
+            if not isinstance(target_id, str) or not target_id or target_id == self.entity_id:
+                return False
         
         return True
 
