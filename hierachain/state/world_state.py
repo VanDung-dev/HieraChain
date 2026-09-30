@@ -7,6 +7,7 @@ Provides get_entity_state() for queries and get_state_root() for proof generatio
 
 import logging
 import threading
+from copy import deepcopy
 from typing import Any
 
 from hierachain.core.block import Block
@@ -38,12 +39,15 @@ class WorldState:
                 self._states[entity_id] = self._compute_new_state(current, event)
 
     def get_entity_state(self, entity_id: str) -> dict[str, Any] | None:
+        """Return an independent snapshot for one entity."""
         with self._lock:
-            return self._states.get(entity_id)
+            state = self._states.get(entity_id)
+            return deepcopy(state) if state is not None else None
 
     def get_all_states(self) -> dict[str, dict[str, Any]]:
+        """Return an independent snapshot of all entity states."""
         with self._lock:
-            return dict(self._states)
+            return deepcopy(self._states)
 
     def get_state_root(self) -> str:
         with self._lock:
@@ -75,13 +79,13 @@ class WorldState:
                 "entity_id": event.get("entity_id"),
                 "last_event": event.get("event"),
                 "last_timestamp": event.get("timestamp"),
-                "last_details": event.get("details"),
+                "last_details": deepcopy(event.get("details")),
                 "event_count": 1,
             }
         return {
             **current,
             "last_event": event.get("event"),
             "last_timestamp": event.get("timestamp"),
-            "last_details": event.get("details"),
+            "last_details": deepcopy(event.get("details")),
             "event_count": current.get("event_count", 0) + 1,
         }
