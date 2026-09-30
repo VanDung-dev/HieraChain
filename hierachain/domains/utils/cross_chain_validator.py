@@ -285,11 +285,28 @@ class ProofValidator:
         self, proof_event: dict[str, Any], results: dict[str, Any],
     ) -> None:
         """Validate one proof event."""
-        details = proof_event.get("details", {})
+        details = proof_event.get("details")
+        details = details if isinstance(details, dict) else {}
         sub_chain_name = details.get("sub_chain_name")
         proof_hash = details.get("proof_hash")
-
-        if not sub_chain_name or not proof_hash:
+        timestamp = proof_event.get("timestamp")
+        missing_fields = []
+        if not isinstance(sub_chain_name, str) or not sub_chain_name:
+            missing_fields.append("sub_chain_name")
+        if not isinstance(proof_hash, str) or not proof_hash:
+            missing_fields.append("proof_hash")
+        if (
+            isinstance(timestamp, bool)
+            or not isinstance(timestamp, (int, float))
+            or timestamp <= 0
+        ):
+            missing_fields.append("timestamp")
+        if missing_fields:
+            results["inconsistent_proofs"] += 1
+            results["inconsistencies"].append({
+                "type": "missing_proof_fields",
+                "fields": missing_fields,
+            })
             return
 
         sub_chain = self._hm.get_sub_chain(sub_chain_name)
