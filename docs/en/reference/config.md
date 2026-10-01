@@ -81,6 +81,7 @@ print(settings.AUTH_ENABLED)
 * `HRC_AUTH_STATE_REDIS_URL` (optional): when set, API key revocations and brute-force lockouts use the same Redis instance across hosts. Configure Redis persistence if revocations must survive a Redis restart. Backend errors reject authentication rather than using local state.
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
 * Secret backend: `HRC_SECRET_BACKEND` (values: `env`, `vault`, `aws`). Default is `env`.
+* AWS Secret Manager: `HRC_AWS_SECRET_NAME` (required secret name or ARN containing a JSON object), `HRC_AWS_REGION` (default: `us-east-1`). `SecretManager.get_secret(key)` selects a string field, never the whole `SecretString`; see [Secret Manager](../modules/config.md) for defaults and migration.
 * Master key: `HRC_MASTER_KEY_SOURCE` (`auto` in dev/test, `env` in production), `HRC_MASTER_KEY_FILE` (default: `config/master_backup_key.key`)
 * Brute-force protection:
     * `HRC_BF_MAX_FAILURES` (default: `5`)

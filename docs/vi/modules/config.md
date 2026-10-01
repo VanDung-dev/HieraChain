@@ -34,7 +34,7 @@ Module **Config** quản lý các tham số vận hành, khóa bí mật và c�
 
     * Truy xuất bí mật (secrets) độc lập với hạ tầng.
     * Hỗ trợ backends: Environment, HashiCorp Vault, AWS Secrets Manager.
-    * Tự động fallback linh hoạt.
+    * Trả giá trị mặc định khi bí mật thiếu hoặc không truy xuất được.
 
 *   :material-format-list-bulleted-type:{ .lg .middle } __Structured Logging__
 
@@ -73,14 +73,20 @@ Giá trị môi trường khác, không rỗng, sẽ gây lỗi thay vì chọn 
 from hierachain.config.secret_manager import SecretManager
 
 sm = SecretManager()
-# Tự động lấy từ Vault, AWS hoặc Env tùy theo cấu hình
+# Retrieve the configured field
 cluster_key = sm.get_secret("HRC_CLUSTER_SECRET")
 ```
 
 ### Backends hỗ trợ:
 1.  **Environment (`env`)**: Mặc định, đọc trực tiếp từ biến môi trường.
 2.  **Vault (`vault`)**: Kết nối tới HashiCorp Vault KV v2.
-3.  **AWS (`aws`)**: Kết nối tới AWS Secrets Manager.
+3.  **AWS (`aws`)**: Đọc trường chuỗi từ JSON object trong AWS Secrets Manager.
+
+`get_secret(key, default=None)` nhận tên biến môi trường cho `env`, hoặc tên trường cho Vault/AWS. Với AWS, `key` không phải SecretId: đặt `HRC_AWS_SECRET_NAME` thành tên secret hoặc ARN và tùy chọn `HRC_AWS_REGION` (mặc định `us-east-1`). `SecretString` phải là JSON object với trường được yêu cầu có kiểu chuỗi; mỗi lần gọi chỉ trả trường đó, kể cả chuỗi rỗng đã lưu.
+
+Thiếu cấu hình, thiếu trường, trường không phải chuỗi, JSON lỗi, `SecretBinary` và lỗi AWS đều trả `default` (hoặc `None`). AWS không fallback sang biến môi trường và không trả toàn bộ JSON object. Log không chứa nội dung bí mật hoặc thông điệp exception. AWS secret cũ lưu dạng chuỗi thuần cần chuyển sang JSON object có trường chuỗi được đặt tên.
+
+Vault fallback sang biến môi trường khi thiếu URL hoặc thông tin xác thực; backend không được hỗ trợ cũng chọn `env`. Caller phải gọi `SecretManager` trực tiếp: cấu hình backend không tự thay mọi lời gọi `os.getenv()` trong ứng dụng.
 
 ---
 

@@ -34,7 +34,7 @@ The **Config** module manages HieraChain's operational settings, secret keys, an
 
     * Retrieves secrets independently of infrastructure.
     * Supports backends: Environment, HashiCorp Vault, AWS Secrets Manager.
-    * Automatic flexible fallback.
+    * Explicit default value handling for missing or unavailable secrets.
 
 *   :material-format-list-bulleted-type:{ .lg .middle } __Structured Logging__
 
@@ -73,14 +73,20 @@ This is a critical component for protecting sensitive keys such as `HRC_CLUSTER_
 from hierachain.config.secret_manager import SecretManager
 
 sm = SecretManager()
-# Automatically retrieves from Vault, AWS, or Env depending on configuration
+# Retrieve the configured field
 cluster_key = sm.get_secret("HRC_CLUSTER_SECRET")
 ```
 
 ### Supported Backends:
 1.  **Environment (`env`)**: Default, reads directly from environment variables.
 2.  **Vault (`vault`)**: Connects to HashiCorp Vault KV v2.
-3.  **AWS (`aws`)**: Connects to AWS Secrets Manager.
+3.  **AWS (`aws`)**: Reads a string field from a JSON object in AWS Secrets Manager.
+
+`get_secret(key, default=None)` takes an environment variable name for `env`, or a field name for Vault/AWS. For AWS, `key` is never a SecretId: set `HRC_AWS_SECRET_NAME` to the secret name or ARN and optionally `HRC_AWS_REGION` (default `us-east-1`). The `SecretString` must be a JSON object whose requested field is a string; each call returns only that field, including an empty string when stored.
+
+Missing configuration, missing fields, non-string fields, malformed JSON, `SecretBinary`, and AWS errors return `default` (or `None`). AWS does not fall back to environment variables or return the whole JSON object. Logs omit secret contents and exception messages. Existing AWS secrets stored as plain strings must be migrated to JSON objects with named string fields.
+
+Vault falls back to environment variables when its URL or credential is missing; an unknown backend also selects `env`. Callers must invoke `SecretManager` explicitly: configuring its backend does not replace every `os.getenv()` call in the application.
 
 ---
 

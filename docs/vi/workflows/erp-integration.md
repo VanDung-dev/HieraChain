@@ -108,6 +108,16 @@ blockchain_event = {
 
 ---
 
+## Registry transformer và snapshot task
+
+`ERPIntegrationLedger` dùng chung `MappingEngine` với `EventTranslator`. Transformer đăng ký qua `integration.mapping_engine.register_transformer(name, function)` được gọi với `(value, params)` từ quy tắc ánh xạ. Caller dùng translator riêng có thể truyền registry qua `EventTranslator(mapping_engine)`; ánh xạ đường dẫn đơn cũng hoạt động với `EventTranslator()`.
+
+Template trả về từ `create_sap_integration_profile()` đổi `created` thành `creation`, đổi số lượng như `"12.50"` thành `12.5`, và đổi `"20260930123045"` với format `%Y%m%d%H%M%S` thành `"2026-09-30T12:30:45"`.
+
+`SyncScheduler.get_all_tasks()` trả về các dictionary trạng thái độc lập và chỉ lấy lock một lần. Sửa dictionary trả về không làm thay đổi task đã lên lịch.
+
+---
+
 ## Hệ thống ERP hỗ trợ
 
 | Hệ thống ERP | Lớp Adapter | Khóa cấu hình |
@@ -140,8 +150,11 @@ blockchain_event = {
 |:-----------|:--------|
 | Lỗi kết nối tới ERP adapter | Thử lại với backoff (30s, 60s, 120s, 240s, tối đa 300s) |
 | Thiếu khóa ánh xạ trường | Ghi log cảnh báo; tiếp tục gửi sự kiện với dữ liệu có sẵn |
+| Transformer không có hoặc ném exception | Ghi log cảnh báo; bỏ trường tương ứng khỏi sự kiện đã chuyển đổi |
 | Gọi `add_event()` lỗi (từ cấm) | Loại sự kiện; ghi log kèm dữ liệu ERP thô để đối chiếu |
 | Vượt max lần thử lại | Kích hoạt cảnh báo qua Risk Alerts với `erp_sync_failure` |
+
+`_execute_sync()` hiện bỏ qua giá trị trả về của `chain.add_event()` và có thể trả `SyncStatus.COMPLETED` dù từng sự kiện có lỗi. Trạng thái này chưa chứng minh sổ cái đã nhận hoặc lưu bền dữ liệu; caller phải kiểm tra `SyncResult.errors`. Các test transformer và scheduler chưa xác minh việc chuyển dữ liệu ERP production.
 
 ---
 
