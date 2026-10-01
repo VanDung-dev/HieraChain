@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (33)"
+??? warning "Breaking Changes (37)"
+
+    * 2026-10-01
+
+        * **Giảm thiểu Lỗi (Khóa Lưu giữ & Validator Chặt)**: `EncryptionValidator` (`hierachain/error_mitigation/encryption_validator.py`) nay resolve khóa 32-byte do caller quản lý theo `key_id` qua `key_resolver` (không còn fallback `os.urandom` tạm thời) với AES-256-GCM gắn AAD (`algorithm`/`key_id`/`timestamp`), bổ sung `decrypt_data()` kèm kiểm tra bytes/độ dài tag-IV/thuật toán/timestamp hữu hạn, và che lỗi nội bộ sau `SecurityError` chung; `_run_single_custom_validator` (`hierachain/error_mitigation/data_validator.py`) ép kiểu trả về `(bool, str)` và chuyển lỗi/ngoại lệ của validator từ warning sang `add_error` kèm tên field — các validation trước đây cho qua nay sẽ fail.
+        * **ERP (Transformer Fail-closed)**: `EventTranslator` (`hierachain/integration/erp/mapping.py`) dùng chung `MappingEngine` của caller (`hierachain/integration/erp/base.py`) để áp transformer đã đăng ký nhất quán, và tên `transformer` không tồn tại nay raise `MappingError` thay vì lặng lẽ trả về giá trị gốc.
+        * **Cluster (Payload Chữ ký Quarantine)**: `QuarantineReport.compute_signature` (`hierachain/cluster/lockdown_types.py`) ký toàn bộ payload `orjson` sort-key thay vì `node_id:timestamp:last_block_index`, `from_dict()` kiểm tra `msg_type`/`lockdown_type` và từ chối timestamp không hữu hạn trước khi ký, còn `verify_signature()` trả `False` khi thiếu/chữ ký sai thay vì raise — các chữ ký đã phát hành trước đây không còn verify được.
+        * **Config (Field Secret JSON AWS)**: `_get_from_aws`/`SecretManager._get_aws` (`hierachain/config/secret_manager.py`) parse `SecretString` thành object JSON qua `orjson` và trả về field chuỗi tên theo `key`, bắt buộc `HRC_AWS_SECRET_NAME` làm `SecretId` thay vì fallback sang `key` — secret không phải JSON, field không phải chuỗi và thiếu tên secret nay đều trả `None`.
 
     * 2026-09-30
 
@@ -135,7 +142,11 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (10)"
+??? warning "Fix (11)"
+
+    * 2026-10-01
+
+        * **ERP (Deadlock Scheduler)**: `SyncScheduler.get_all_tasks` (`hierachain/integration/erp/scheduler.py`) dựng trạng thái qua snapshot tách rời `_task_status()` dưới một lock duy nhất thay vì gọi `get_status()` cho từng task, khắc phục deadlock lock lồng nhau khi liệt kê tasks.
 
     * 2026-09-28
 

@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (33)"
+??? warning "Breaking Changes (37)"
+
+    * 2026-10-01
+
+        * **Error Mitigation (Retained Keys & Strict Validators)**: `EncryptionValidator` (`hierachain/error_mitigation/encryption_validator.py`) now resolves a caller-managed 32-byte key by `key_id` via `key_resolver` (no ephemeral `os.urandom` fallback) with AAD-bound AES-256-GCM (`algorithm`/`key_id`/`timestamp`), adds `decrypt_data()` with bytes/tag-IV length/algorithm/finite-timestamp checks, and masks failures behind generic `SecurityError`; `_run_single_custom_validator` (`hierachain/error_mitigation/data_validator.py`) enforces `(bool, str)` return and promotes validator failures/exceptions from warning to `add_error` with field name — previously passing validations now fail.
+        * **ERP (Fail-closed Transformers)**: `EventTranslator` (`hierachain/integration/erp/mapping.py`) shares the caller's `MappingEngine` (`hierachain/integration/erp/base.py`) so registered transformers apply consistently, and unknown `transformer` names raise `MappingError` instead of silently returning the input value.
+        * **Cluster (Quarantine Signature Payload)**: `QuarantineReport.compute_signature` (`hierachain/cluster/lockdown_types.py`) signs the full `orjson` sorted-keys payload instead of `node_id:timestamp:last_block_index`, `from_dict()` validates `msg_type`/`lockdown_type` and rejects non-finite timestamps before signing, and `verify_signature()` returns `False` on missing/invalid signatures instead of raising — previously issued signatures no longer verify.
+        * **Config (AWS Secret JSON Field)**: `_get_from_aws`/`SecretManager._get_aws` (`hierachain/config/secret_manager.py`) parse `SecretString` as a JSON object via `orjson` and return the validated string field named by `key`, requiring `HRC_AWS_SECRET_NAME` as the `SecretId` instead of falling back to `key` — non-JSON secrets, non-string fields, and missing secret names now return `None`.
 
     * 2026-09-30
 
@@ -135,7 +142,11 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (10)"
+??? warning "Fix (11)"
+
+    * 2026-10-01
+
+        * **ERP (Scheduler Deadlock)**: `SyncScheduler.get_all_tasks` (`hierachain/integration/erp/scheduler.py`) builds statuses via detached `_task_status()` snapshots under a single lock instead of calling `get_status()` per task, fixing a nested-lock deadlock when listing tasks.
 
     * 2026-09-28
 
