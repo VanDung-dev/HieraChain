@@ -4,19 +4,23 @@ Unit tests for hierachain.config.secret_manager.SecretManager.
 Tests cover:
 - env backend (mocking os.environ)
 - vault backend fallback when hvac is not configured
-- aws backend fallback when boto3 is not configured
+- aws JSON field selection and rejection of invalid payloads
 - default value handling
 - unknown backend fallback to env
 """
 import os
 from unittest.mock import MagicMock, patch
 
+import pytest
+from botocore.exceptions import ClientError
 
-def _make_manager(backend: str = "env", **extra_env):
+from hierachain.config.secret_manager import SecretManager
+
+
+def _make_manager(backend: str = "env", **extra_env: str) -> SecretManager:
     """Create a SecretManager with a controlled environment."""
     env = {"HRC_SECRET_BACKEND": backend, **extra_env}
-    with patch.dict(os.environ, env, clear=False):
-        from hierachain.config.secret_manager import SecretManager
+    with patch.dict(os.environ, env, clear=True):
         return SecretManager()
 
 
@@ -92,45 +96,77 @@ class TestVaultBackend:
 
         with (
             patch.dict(os.environ, env),
-            patch.dict("sys.modules", {"hvac": mock_hvac}),
+            patch("hierachain.config.secret_manager.hvac", mock_hvac),
         ):
-            # Re-import to pick up mocked hvac
-            import importlib
-            import hierachain.config.secret_manager as sm_module
-            importlib.reload(sm_module)
-            mgr = sm_module.SecretManager()
+            mgr = SecretManager()
             result = mgr.get_secret("HRC_CLUSTER_SECRET")
 
         assert result == "vault_secret_value"
 
 
 class TestAwsBackend:
-    def test_uses_aws_when_configured(self):
-        """Mock boto3 and verify we call it correctly."""
-        env = {
-            "HRC_SECRET_BACKEND": "aws",
-            "HRC_AWS_REGION": "ap-southeast-1",
-            "HRC_AWS_SECRET_NAME": "prod/HieraChain/cluster_secret",
-        }
-        mock_boto3 = MagicMock()
-        mock_boto3.client.return_value.get_secret_value.return_value = {
-            "SecretString": "aws_secret_value"
-        }
+    def test_returns_only_requested_field(self, caplog: pytest.LogCaptureFixture) -> None:
+        mgr = _make_manager(
+            "aws", HRC_AWS_REGION="ap-southeast-1", HRC_AWS_SECRET_NAME="hiera/test"
+        )
+        blob = '{"FIRST":"first-test-value","SECOND":"second-test-value","EMPTY":""}'
+        with patch("hierachain.config.secret_manager.boto3.client") as client:
+            client.return_value.get_secret_value.return_value = {"SecretString": blob}
+            assert mgr.get_secret("FIRST") == "first-test-value"
+            assert mgr.get_secret("SECOND") == "second-test-value"
+            assert mgr.get_secret("EMPTY", default="fallback") == ""
+            assert mgr.get_secret("MISSING") is None
+            assert mgr.get_secret("MISSING", default="fallback") == "fallback"
+            client.assert_called_with("secretsmanager", region_name="ap-southeast-1")
+            assert client.return_value.get_secret_value.call_count == 5
+            client.return_value.get_secret_value.assert_called_with(SecretId="hiera/test")
+        assert blob not in caplog.text
+        assert "first-test-value" not in caplog.text
+        assert "second-test-value" not in caplog.text
 
+    @pytest.mark.parametrize("payload", [
+        {}, {"SecretBinary": b"binary-test-value"}, {"SecretString": None},
+        {"SecretString": b"bytes-test-value"}, {"SecretString": "invalid-test-json"},
+        {"SecretString": '"scalar-test-value"'}, {"SecretString": "[]"},
+        {"SecretString": "null"}, {"SecretString": "123"},
+        {"SecretString": '{"FIRST":null}'}, {"SecretString": '{"FIRST":false}'},
+        {"SecretString": '{"FIRST":123}'}, {"SecretString": '{"FIRST":["nested-test-value"]}'},
+        {"SecretString": '{"FIRST":{"SECOND":"nested-test-value"}}'},
+    ])
+    def test_invalid_payload_returns_default(
+        self, payload: dict[str, object], caplog: pytest.LogCaptureFixture
+    ) -> None:
+        mgr = _make_manager("aws", HRC_AWS_SECRET_NAME="hiera/test")
         with (
-            patch.dict(os.environ, env),
-            patch.dict(
-                "sys.modules",
-                {"boto3": mock_boto3, "botocore.exceptions": MagicMock()}
-            )
+            patch("hierachain.config.secret_manager.boto3.client") as client,
+            patch.dict(os.environ, {"FIRST": "env-test-value"}),
         ):
-            import importlib
-            import hierachain.config.secret_manager as sm_module
-            importlib.reload(sm_module)
-            mgr = sm_module.SecretManager()
-            result = mgr.get_secret("HRC_AWS_SECRET_NAME")
+            client.return_value.get_secret_value.return_value = payload
+            assert mgr.get_secret("FIRST") is None
+            assert mgr.get_secret("FIRST", default="fallback") == "fallback"
+        assert "test-value" not in caplog.text
+        assert "invalid-test-json" not in caplog.text
+        assert "hiera/test" not in caplog.text
 
-        assert result == "aws_secret_value"
+    def test_missing_secret_id_does_not_use_key_as_id(self) -> None:
+        mgr = _make_manager("aws")
+        with patch("hierachain.config.secret_manager.boto3.client") as client:
+            assert mgr.get_secret("FIRST", default="fallback") == "fallback"
+            client.assert_not_called()
+
+    @pytest.mark.parametrize("error", [
+        ClientError({"Error": {"Code": "AccessDeniedException", "Message": "private-test-value"}},
+                    "GetSecretValue"),
+        RuntimeError("private-test-value"),
+    ])
+    def test_service_error_returns_default_without_logging_details(
+        self, error: Exception, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        mgr = _make_manager("aws", HRC_AWS_SECRET_NAME="hiera/test")
+        with patch("hierachain.config.secret_manager.boto3.client") as client:
+            client.return_value.get_secret_value.side_effect = error
+            assert mgr.get_secret("FIRST", default="fallback") == "fallback"
+        assert "private-test-value" not in caplog.text
 
 
 class TestUnknownBackend:
@@ -145,6 +181,3 @@ class TestUnknownBackend:
 
         assert result == "my_value"
         assert any("Unknown HRC_SECRET_BACKEND" in m for m in caplog.messages)
-
-
-

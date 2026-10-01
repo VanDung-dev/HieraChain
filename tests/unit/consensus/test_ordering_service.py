@@ -2,29 +2,28 @@
 Unit tests for the Ordering Service
 """
 
-import time
 import os
-import tempfile
 import shutil
+import tempfile
+import time
 from typing import Any, Generator
 from unittest.mock import patch
 
 import pytest
 
-from hierachain.consensus import OrderingService, OrderingNode, OrderingStatus
 from hierachain.config import Settings
-from hierachain.core import Block
-from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.consensus import OrderingNode, OrderingService, OrderingStatus
 from hierachain.error_mitigation import (
-    ErrorClassifier,
-    PriorityLevel,
-    ErrorCategory,
     ConsensusValidator,
     EncryptionValidator,
+    ErrorCategory,
+    ErrorClassifier,
+    PriorityLevel,
     ResourceValidator,
     ValidationError,
-    SecurityError,
 )
+from hierachain.error_mitigation.journal import TransactionJournal
+
 
 # Create a test node factory function to ensure fresh heartbeat
 def create_test_node():
@@ -1150,25 +1149,25 @@ def test_consensus_validator_with_edge_cases():
     assert validator_large_f.validate_node_count(nodes_301)
 
 
-def test_encryption_validator_with_large_keys():
+def test_encryption_validator_with_large_keys() -> None:
     """Test encryption validator with large key sizes"""
-    config = {"algorithm": "AES-256-GCM"}
-    validator = EncryptionValidator(config)
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+    config = {"algorithm": "AES-256-GCM", "key_id": "test-key"}
+    keys = {"test-key": AESGCM.generate_key(bit_length=256)}
+    validator = EncryptionValidator(config, key_resolver=keys.__getitem__)
 
     # Test validation passes
     assert validator.validate_config() is True
 
     # Test encryption of large data
     large_data = "A" * (1024 * 1024)  # 1MB of data
-    try:
-        encrypted = validator.encrypt_data(large_data)
-        assert "ciphertext" in encrypted
-        assert "tag" in encrypted
-        assert "iv" in encrypted
-        assert encrypted["algorithm"] == "AES-256-GCM"
-    except SecurityError:
-        # May fail in some environments due to missing dependencies
-        pass  # Acceptable for this test
+    encrypted = validator.encrypt_data(large_data)
+    assert "ciphertext" in encrypted
+    assert "tag" in encrypted
+    assert "iv" in encrypted
+    assert encrypted["algorithm"] == "AES-256-GCM"
+    assert validator.decrypt_data(encrypted) == large_data
 
 
 def test_resource_validator_with_extreme_values():
