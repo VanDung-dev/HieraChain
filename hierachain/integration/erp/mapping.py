@@ -180,8 +180,9 @@ class MappingEngine:
 class EventTranslator:
     """Translates ERP events to blockchain events"""
     
-    def __init__(self) -> None:
+    def __init__(self, mapping_engine: MappingEngine | None = None) -> None:
         self.logger = logging.getLogger(__name__)
+        self.mapping_engine = mapping_engine if mapping_engine is not None else MappingEngine()
     
     def translate(
         self, erp_event: dict[str, Any], mapping_rules: dict[str, Any]
@@ -202,19 +203,20 @@ class EventTranslator:
         add_blockchain_metadata(blockchain_event)
         return blockchain_event
 
-    @staticmethod
-    def _apply_rule(erp_event: dict[str, Any], rule: Any) -> Any:
+    def _apply_rule(self, erp_event: dict[str, Any], rule: Any) -> Any:
         """Apply a single mapping rule to get a value from erp_event"""
         if isinstance(rule, str):
             return get_nested_value(erp_event, rule)
             
         if isinstance(rule, dict):
-            return _handle_complex_rule(erp_event, rule)
+            return _handle_complex_rule(erp_event, rule, self.mapping_engine)
             
         return None
 
 
-def _handle_complex_rule(erp_event: dict[str, Any], rule: dict[str, Any]) -> Any:
+def _handle_complex_rule(
+    erp_event: dict[str, Any], rule: dict[str, Any], mapping_engine: MappingEngine,
+) -> Any:
     """Handle a complex mapping rule with potential transformer"""
     source_path = str(rule.get("source_path", ""))
     if not source_path:
@@ -224,8 +226,9 @@ def _handle_complex_rule(erp_event: dict[str, Any], rule: dict[str, Any]) -> Any
     
     transformer_name = rule.get("transformer")
     if transformer_name:
-        # Identity transformer (no transformation)
-        def identity_transform(v, _p):
-            return v
-        return identity_transform(value, rule.get("params"))
+        with mapping_engine.lock:
+            transformer = mapping_engine.transformers.get(transformer_name)
+        if transformer is None:
+            raise MappingError(f"Unknown transformer {transformer_name}")
+        return transformer(value, rule.get("params"))
     return value

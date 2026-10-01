@@ -171,23 +171,27 @@ class SyncScheduler:
             if profile_name not in self.tasks:
                 return {"error": "Task not found"}
             
-            task_info = self.tasks[profile_name]
-            return {
-                "task_id": task_info["task_id"],
-                "profile_name": profile_name,
-                "status": task_info["status"].value,
-                "interval": task_info["interval"],
-                "last_sync": task_info["last_sync"],
-                "next_sync": task_info["next_sync"],
-                "retry_count": task_info["retry_count"],
-                "max_retries": task_info["max_retries"],
-                "created_at": task_info["created_at"]
-            }
+            return self._task_status(profile_name, self.tasks[profile_name])
+
+    @staticmethod
+    def _task_status(profile_name: str, task_info: dict[str, Any]) -> dict[str, Any]:
+        """Build a detached status snapshot while the caller holds the lock."""
+        return {
+            "task_id": task_info["task_id"],
+            "profile_name": profile_name,
+            "status": task_info["status"].value,
+            "interval": task_info["interval"],
+            "last_sync": task_info["last_sync"],
+            "next_sync": task_info["next_sync"],
+            "retry_count": task_info["retry_count"],
+            "max_retries": task_info["max_retries"],
+            "created_at": task_info["created_at"],
+        }
     
     def get_all_tasks(self) -> list[dict[str, Any]]:
         """Get status of all tasks"""
         with self.lock:
-            return [self.get_status(profile_name) for profile_name in self.tasks.keys()]
+            return [self._task_status(name, task_info) for name, task_info in self.tasks.items()]
     
     def shutdown(self):
         """Shutdown the scheduler"""

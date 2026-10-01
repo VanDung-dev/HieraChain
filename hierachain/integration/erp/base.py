@@ -29,7 +29,7 @@ class ERPIntegrationLedger:
     def __init__(self):
         self.adapters: dict[str, Any] = {}
         self.mapping_engine = MappingEngine()
-        self.event_translator = EventTranslator()
+        self.event_translator = EventTranslator(self.mapping_engine)
         self.change_detector = ChangeDetector()
         self.sync_scheduler = SyncScheduler()
         self.logger = logging.getLogger(__name__)
