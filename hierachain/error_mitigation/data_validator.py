@@ -316,10 +316,12 @@ def _run_single_custom_validator(
 
     try:
         valid, message = validator(event[fld])
+        if not isinstance(valid, bool) or not isinstance(message, str):
+            raise TypeError("Custom validator must return (bool, str)")
         if not valid:
             result.add_error(f"Event[{index}]: {message}")
     except Exception as e:
-        result.add_warning(f"Event[{index}]: Custom validator failed: {e}")
+        result.add_error(f"Event[{index}]: Custom validator failed for '{fld}': {e}")
 
 
 def _validate_table_structure(
