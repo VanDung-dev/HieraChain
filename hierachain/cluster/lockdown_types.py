@@ -2,8 +2,12 @@
 
 import hashlib
 import hmac
+import math
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
+
+import orjson
 
 
 class LockdownMessageType(Enum):
@@ -67,13 +71,13 @@ class LockdownMessage:
 class QuarantineReport:
     node_id: str
     timestamp: float
-    pending_event_ids: list = field(default_factory=list)
+    pending_event_ids: list[str] = field(default_factory=list)
     last_block_index: int = 0
     last_block_hash: str = ""
     total_pending: int = 0
     signature: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "msg_type": "cluster_lockdown",
             "lockdown_type": LockdownMessageType.QUARANTINE_REPORT.value,
@@ -87,7 +91,13 @@ class QuarantineReport:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "QuarantineReport":
+    def from_dict(cls, data: dict[str, Any]) -> "QuarantineReport":
+        if (
+            data.get("msg_type", "cluster_lockdown") != "cluster_lockdown"
+            or data.get("lockdown_type", LockdownMessageType.QUARANTINE_REPORT.value)
+            != LockdownMessageType.QUARANTINE_REPORT.value
+        ):
+            raise ValueError("Invalid quarantine report message type")
         return cls(
             node_id=data.get("node_id", "unknown"),
             timestamp=data.get("timestamp", 0.0),
@@ -99,10 +109,20 @@ class QuarantineReport:
         )
 
     def compute_signature(self, secret_key: str) -> str:
-        msg = f"{self.node_id}:{self.timestamp}:{self.last_block_index}"
+        """Sign every serialized field except signature, preserving list order."""
+        if not math.isfinite(self.timestamp):
+            raise ValueError("Quarantine report timestamp must be finite")
+        payload = self.to_dict()
+        payload.pop("signature")
+        msg = orjson.dumps(payload, option=orjson.OPT_SORT_KEYS)
         return hmac.new(
-            secret_key.encode(), msg.encode(), hashlib.sha256
+            secret_key.encode(), msg, hashlib.sha256
         ).hexdigest()[:32]
 
     def verify_signature(self, secret_key: str) -> bool:
-        return hmac.compare_digest(self.signature, self.compute_signature(secret_key))
+        if not isinstance(self.signature, str) or not self.signature:
+            return False
+        try:
+            return hmac.compare_digest(self.signature, self.compute_signature(secret_key))
+        except (TypeError, ValueError):
+            return False
