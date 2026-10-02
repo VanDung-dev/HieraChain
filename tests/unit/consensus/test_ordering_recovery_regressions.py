@@ -2,6 +2,7 @@
 
 import asyncio
 import struct
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -10,11 +11,44 @@ import orjson
 import pytest
 
 import hierachain.error_mitigation.journal as journal_module
+import hierachain.consensus.ordering.service as service_module
 from hierachain.consensus.ordering.processor import OrderingProcessor
 from hierachain.consensus.ordering.recovery import OrderingRecovery
 from hierachain.consensus.ordering.types import OrderingStatus
 from hierachain.consensus.ordering.utils import make_serializable
 from hierachain.hierarchical.transaction_manager import CrossChainTransactionManager
+
+
+@pytest.mark.parametrize(("timeout", "active"), [(None, True), (5.0, False)])
+def test_wait_for_active_allows_long_replay_without_resetting_it(
+    monkeypatch: pytest.MonkeyPatch, timeout: float | None, active: bool,
+) -> None:
+    service = object.__new__(service_module.OrderingService)
+    service.status = OrderingStatus.MAINTENANCE
+    service.should_stop = threading.Event()
+    service.processing_thread = SimpleNamespace(is_alive=lambda: True)
+    now = [0.0]
+
+    def advance(delay: float) -> None:
+        now[0] += delay
+        if now[0] >= 11:
+            service.status = OrderingStatus.ACTIVE
+
+    monkeypatch.setattr(service_module, "time", SimpleNamespace(monotonic=lambda: now[0], sleep=advance))
+    assert service.wait_for_active(timeout=timeout) is active
+    assert (now[0] >= 11) is active
+
+
+@pytest.mark.parametrize("stopped", [False, True])
+@pytest.mark.parametrize("status", [OrderingStatus.MAINTENANCE, OrderingStatus.ACTIVE])
+def test_wait_for_active_stops_on_processor_failure_or_shutdown(stopped: bool, status: OrderingStatus) -> None:
+    service = object.__new__(service_module.OrderingService)
+    service.status = status
+    service.should_stop = threading.Event()
+    if stopped:
+        service.should_stop.set()
+    service.processing_thread = SimpleNamespace(is_alive=lambda: stopped)
+    assert service.wait_for_active(timeout=None) is False
 
 
 def _event(event_id: str) -> dict[str, Any]:

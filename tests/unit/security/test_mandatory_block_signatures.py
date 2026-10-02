@@ -149,8 +149,10 @@ def test_sub_chain_reloads_signed_genesis(monkeypatch, tmp_path) -> None:
             events=[{"entity_id": "E1", "event": "updated", "timestamp": time.time()}],
             previous_hash="",
         )
-        sub_chain._sign_block(candidate)
-        assert _process_and_finalize_single_block(sub_chain, candidate)
+        sub_chain.ordering_service.processor.block_manager.commit_block(candidate)
+        committed = sub_chain.ordering_service.get_next_block()
+        assert committed is not None
+        assert _process_and_finalize_single_block(sub_chain, committed)
         assert sub_chain.is_chain_valid()
     finally:
         sub_chain.shutdown()

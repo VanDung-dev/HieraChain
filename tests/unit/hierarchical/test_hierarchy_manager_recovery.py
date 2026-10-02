@@ -3,6 +3,7 @@
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -26,6 +27,9 @@ class _MetadataStorage:
     def load_chain(self, name: str) -> dict[str, object]:
         return {"name": name, "chain": []}
 
+    def close(self) -> None:
+        pass
+
 
 class _CreatedSubChain:
     def __init__(self, name: str, domain_type: str, calls: list[str]) -> None:
@@ -39,6 +43,51 @@ class _CreatedSubChain:
 
     def shutdown(self) -> None:
         self.calls.append("shutdown")
+
+
+@pytest.mark.parametrize("stage", ["_restore_main_chain", "_restore_sub_chains", "_restore_hierarchy_registry"])
+def test_failed_bootstrap_closes_storage_journal_and_started_chains(
+    monkeypatch: pytest.MonkeyPatch, stage: str,
+) -> None:
+    storage = Mock()
+    coordinator = Mock()
+    chain = Mock()
+    monkeypatch.setattr(HierarchyManager, "_create_storage", staticmethod(lambda: storage))
+    monkeypatch.setattr(
+        "hierachain.hierarchical.hierarchy_manager.base.CrossChainTransactionManager",
+        lambda _manager: coordinator,
+    )
+    monkeypatch.setattr(HierarchyManager, "_restore_main_chain", lambda _self: None)
+    monkeypatch.setattr(
+        HierarchyManager, "_restore_sub_chains", lambda manager: manager.sub_chains.update({"restored": chain}),
+    )
+
+    def fail(_self: HierarchyManager) -> None:
+        raise RuntimeError("broken persisted chain")
+
+    monkeypatch.setattr(HierarchyManager, stage, fail)
+    with pytest.raises(RuntimeError, match="broken persisted chain"):
+        HierarchyManager()
+    storage.close.assert_called_once()
+    coordinator.journal.close.assert_called_once()
+    assert chain.shutdown.call_count == (1 if stage == "_restore_hierarchy_registry" else 0)
+
+
+@pytest.mark.parametrize("injected", [False, True])
+def test_transaction_recovery_failure_closes_only_owned_journal(
+    monkeypatch: pytest.MonkeyPatch, injected: bool,
+) -> None:
+    from hierachain.hierarchical import transaction_manager as transactions
+
+    journal = Mock()
+    monkeypatch.setattr(transactions, "TransactionJournal", lambda **_kwargs: journal)
+    monkeypatch.setattr(
+        transactions.CrossChainTransactionManager, "_load_journal",
+        Mock(side_effect=RuntimeError("broken journal")),
+    )
+    with pytest.raises(RuntimeError, match="broken journal"):
+        transactions.CrossChainTransactionManager(Mock(), journal=journal if injected else None)
+    assert journal.close.call_count == (0 if injected else 1)
 
 
 def test_manager_restores_persisted_subchains(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -55,6 +104,9 @@ def test_manager_restores_persisted_subchains(monkeypatch: pytest.MonkeyPatch) -
 
         def connect_to_main_chain(self, _main_chain: object) -> bool:
             return True
+
+        def shutdown(self) -> None:
+            pass
 
     monkeypatch.setattr(
         "hierachain.hierarchical.sub_chain.SubChain", RestoredSubChain
@@ -254,8 +306,8 @@ class _OrderingServiceStub:
             raise OSError("ordering storage unavailable")
         return None
 
-    def wait_for_active(self, timeout: float) -> bool:
-        assert timeout == 10.0
+    def wait_for_active(self, timeout: float | None) -> bool:
+        assert timeout is None
         return self.active
 
     def shutdown(self) -> None:

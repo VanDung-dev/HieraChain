@@ -7,8 +7,7 @@ import os
 import re
 import subprocess
 import sys
-from collections import deque
-from contextlib import nullcontext
+import time
 from pathlib import Path
 from queue import Queue
 from types import SimpleNamespace
@@ -16,129 +15,100 @@ from types import SimpleNamespace
 import pytest
 
 
-def test_hc001_failed_block_save_does_not_advance_state() -> None:
-    from collections import deque
+@pytest.mark.parametrize("failure", ["consensus", "storage"])
+def test_hc001_failed_block_save_does_not_advance_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str,
+) -> None:
+    from unittest.mock import Mock
 
-    from hierachain.consensus.ordering.storage import OrderingStorageHandler
-    from hierachain.hierarchical.sub_chain.block import (
-        _process_and_finalize_single_block,
-    )
-
-    storage = object.__new__(OrderingStorageHandler)
-    storage.storage = SimpleNamespace(save_block=lambda _block_data: False)
-    storage.block_history = deque(maxlen=4)
-    storage.last_block = None
-    storage.processed_events = {}
-
-    actions: list[str] = []
-    block = SimpleNamespace(
-        index=0,
-        previous_hash="",
-        hash="",
-        calculate_hash=lambda: "block-hash",
-    )
-    sub_chain = SimpleNamespace(
-        name="test-chain",
-        block_processing_lock=nullcontext(),
-        get_latest_block=lambda: SimpleNamespace(index=2, hash="previous-hash"),
-        consensus=SimpleNamespace(finalize_block=lambda current, _name: current),
-        _sign_block=lambda _block: None,
-        is_valid_new_block=lambda _block: True,
-        ordering_service=SimpleNamespace(storage_handler=storage),
-        add_block=lambda _block: actions.append("add") or True,
-        world_state=SimpleNamespace(
-            apply_block=lambda _block: actions.append("apply")
-        ),
-        auto_submit_proof_if_needed=lambda: actions.append("proof"),
-    )
-
-    result = _process_and_finalize_single_block(sub_chain, block)
-
-    assert result is False
-    assert actions == []
-
-
-def test_hc002_database_contains_finalized_block_after_ordering_commit() -> None:
-    from hierachain.config.settings import settings
-    from hierachain.consensus.ordering.block_manager import OrderingBlockManager
     from hierachain.consensus.ordering.types import OrderingStatus
-    from hierachain.consensus.proof_of_authority import ProofOfAuthority
     from hierachain.core.block import Block
-    from hierachain.hierarchical.sub_chain.block import (
-        _process_and_finalize_single_block,
-    )
-    from hierachain.security.identity_loader import (
-        load_node_identity,
-        load_trusted_block_keys,
-    )
-    from hierachain.security.verify.block_verifier import sign_block
+    from hierachain.hierarchical.sub_chain import base as sub_chain_base
+    from hierachain.hierarchical.sub_chain.base import SubChain
 
-    class UniqueIndexStorage:
-        def __init__(self) -> None:
-            self.rows: dict[tuple[str, int], dict[str, object]] = {}
-            self.attempts: list[dict[str, object]] = []
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sub_chain_base, "_consumer_loop", lambda _chain: None)
+    chain = SubChain("failed_commit", config={"db_url": f"sqlite:///{tmp_path / 'chain.db'}"})
+    service = chain.ordering_service
+    try:
+        chain.consensus.config["block_interval"] = 0.0
+        save = Mock(wraps=service.storage_handler.storage.save_block)
+        monkeypatch.setattr(service.storage_handler.storage, "save_block", save)
+        if failure == "consensus":
+            monkeypatch.setattr(chain.consensus, "validate_block", lambda *_args: False)
+        else:
+            save.return_value = False
+        block = Block(
+            index=0, events=[{"entity_id": "E1", "event": "updated", "timestamp": time.time()}],
+            previous_hash="",
+        )
+        with pytest.raises((ValueError, RuntimeError), match="Consensus rejected|Storage adapter rejected"):
+            service.processor.block_manager.commit_block(block)
+        assert save.call_count == (0 if failure == "consensus" else 1)
+        assert service.blocks_created == 1
+        assert service.commit_queue.empty()
+        assert service.storage_handler.last_block.index == 0
+        assert service.status is OrderingStatus.MAINTENANCE
+        assert len(chain.chain) == 1
+        assert not chain.world_state.get_entity_state("E1")
+        assert [block.index for block in service.storage_handler.get_blocks_from_db(0)] == [0]
+    finally:
+        chain.shutdown()
 
-        def save_block(self, block_data: dict[str, object]) -> bool:
-            self.attempts.append(block_data.copy())
-            key = (str(block_data["chain_name"]), int(block_data["index"]))
-            self.rows[key] = block_data.copy()
-            return True
 
-    from hierachain.consensus.ordering.storage import OrderingStorageHandler
+def test_hc002_database_contains_finalized_block_after_ordering_commit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from unittest.mock import Mock
 
-    genesis = Block(index=0, events=[], previous_hash="0")
-    adapter = UniqueIndexStorage()
-    storage = object.__new__(OrderingStorageHandler)
-    identity = load_node_identity()
-    assert identity is not None
-    storage.storage = adapter
-    storage.trusted_public_keys = load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE)
-    storage.block_history = deque(maxlen=16)
-    storage.last_block = genesis
-    storage.processed_events = {}
-    storage.chain_name = "test-chain"
+    from hierachain.config.settings import settings
+    from hierachain.core.block import Block
+    from hierachain.hierarchical.sub_chain import base as sub_chain_base
+    from hierachain.hierarchical.sub_chain.base import SubChain
 
-    service = SimpleNamespace(
-        blocks_created=1,
-        storage_handler=storage,
-        block_builder=SimpleNamespace(),
-        metrics=SimpleNamespace(record_block_created=lambda *_args: None),
-        status=OrderingStatus.ACTIVE,
-        config={"chain_name": "test-chain"},
-        node_identity=identity,
-        journal=SimpleNamespace(log_event=lambda _event: True),
-        commit_queue=Queue(),
-    )
-    raw_block = Block(
-        index=0,
-        events=[{"entity_id": "entity-1", "event": "created", "timestamp": 1.0}],
-        previous_hash="",
-    )
-    OrderingBlockManager(service).commit_block(raw_block)
-
-    consensus = ProofOfAuthority("test-poa")
-    consensus.add_authority("test-chain", {"role": "sub_chain_authority"})
-    finalized: list[Block] = []
-    sub_chain = SimpleNamespace(
-        name="test-chain",
-        node_identity=identity,
-        _sign_block=lambda block: sign_block(block, identity.node_id, identity.signing_keypair),
-        is_valid_new_block=lambda _block: True,
-        block_processing_lock=nullcontext(),
-        get_latest_block=lambda: genesis,
-        consensus=consensus,
-        ordering_service=SimpleNamespace(storage_handler=storage),
-        add_block=lambda block: finalized.append(block) or True,
-        world_state=SimpleNamespace(apply_block=lambda _block: None),
-        auto_submit_proof_if_needed=lambda: None,
-    )
-
-    assert _process_and_finalize_single_block(sub_chain, raw_block) is True
-    assert len(adapter.attempts) == 2
-    assert adapter.attempts[0]["hash"] != adapter.attempts[1]["hash"]
-    assert adapter.rows[("test-chain", 1)]["hash"] == adapter.attempts[1]["hash"]
-    assert finalized[0].hash == adapter.rows[("test-chain", 1)]["hash"]
-    assert list(storage.block_history) == finalized
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(settings, "BLOCK_INTERVAL", 0.02)
+    monkeypatch.setattr(sub_chain_base, "_consumer_loop", lambda _chain: None)
+    config = {"db_url": f"sqlite:///{tmp_path / 'chain.db'}"}
+    chain = SubChain("lagged_consumer", config=config)
+    try:
+        service = chain.ordering_service
+        storage = service.storage_handler
+        save = Mock(wraps=storage.save_block)
+        monkeypatch.setattr(storage, "save_block", save)
+        # Producer advances three blocks while the consumer still has only genesis.
+        for index in range(3):
+            service.processor.block_manager.commit_block(Block(
+                index=0, previous_hash="",
+                events=[{"entity_id": f"E{index}", "event": "updated", "timestamp": time.time()}],
+            ))
+        persisted = storage.get_blocks_from_db(0)
+        snapshots = [block.to_dict() for block in persisted]
+        assert [block.index for block in persisted] == [0, 1, 2, 3]
+        for previous, block in zip(persisted, persisted[1:]):
+            assert block.previous_hash == previous.hash
+            assert block.timestamp - previous.timestamp >= 0.01
+            assert chain.consensus.validate_block(block, previous)
+            finalization = block.to_event_list()[-1]
+            assert finalization["event"] == "consensus_finalization"
+            assert not finalization["details"]["authority_signature"].startswith("valid_")
+            assert block.signature
+        assert len(chain.chain) == 1
+        assert chain.finalize_sub_chain_block()["block_index"] == 3
+        assert save.call_count == 3  # Consumer must never re-finalize, re-sign or rewrite.
+        assert [block.to_dict() for block in storage.get_blocks_from_db(0)] == snapshots
+        assert [block.to_dict() for block in chain.chain] == snapshots
+        assert chain.is_chain_valid()
+    finally:
+        chain.shutdown()
+    reopened = SubChain("lagged_consumer", config=config)
+    try:
+        assert [block.to_dict() for block in reopened.chain] == snapshots
+        assert reopened.ordering_service.blocks_created == 4
+        assert reopened.ordering_service.commit_queue.empty()
+        assert reopened.is_chain_valid()
+    finally:
+        reopened.shutdown()
 
 
 def test_hc003_product_compose_requires_node_auth() -> None:

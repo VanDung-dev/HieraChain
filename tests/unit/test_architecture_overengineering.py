@@ -81,7 +81,7 @@ def test_auto_proof_uses_new_block_when_certification_removed_pending_event() ->
     assert SubChain.should_submit_proof(sub_chain)
 
 
-def test_storage_failure_does_not_append_block_in_memory() -> None:
+def test_rejected_committed_block_does_not_change_state_or_rewrite_storage() -> None:
     block = SimpleNamespace(
         index=-1,
         previous_hash=None,
@@ -96,18 +96,26 @@ def test_storage_failure_does_not_append_block_in_memory() -> None:
         _sign_block=Mock(),
         is_valid_new_block=Mock(return_value=True),
         ordering_service=SimpleNamespace(
+            should_stop=Mock(),
             storage_handler=SimpleNamespace(
                 save_block=Mock(side_effect=OSError("storage unavailable"))
             )
         ),
-        add_block=Mock(return_value=True),
+        add_block=Mock(return_value=False),
         world_state=SimpleNamespace(apply_block=Mock()),
         auto_submit_proof_if_needed=Mock(),
     )
 
     assert not _process_and_finalize_single_block(sub_chain, block)
-    sub_chain.ordering_service.storage_handler.save_block.assert_called_once()
-    sub_chain.add_block.assert_not_called()
+    sub_chain.ordering_service.storage_handler.save_block.assert_not_called()
+    sub_chain.consensus.finalize_block.assert_not_called()
+    sub_chain._sign_block.assert_not_called()
+    sub_chain.world_state.apply_block.assert_not_called()
+    sub_chain.auto_submit_proof_if_needed.assert_not_called()
+    sub_chain.ordering_service.should_stop.set.assert_called_once()
+    assert block.index == -1
+    assert block.previous_hash is None
+    assert block.hash is None
 
 
 def test_key_manager_starts_one_cache_cleanup_worker_per_cache(monkeypatch) -> None:
