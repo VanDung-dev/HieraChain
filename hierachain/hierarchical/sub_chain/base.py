@@ -14,6 +14,7 @@ from hierachain.config.settings import settings
 from hierachain.consensus import OrderingNode, OrderingService, OrderingStatus
 from hierachain.consensus.proof_of_authority import ProofOfAuthority
 from hierachain.consensus.proof_of_federation import ProofOfFederation
+from hierachain.core.block import Block
 from hierachain.core.blockchain import Blockchain
 from hierachain.core.utils import create_event, validate_event_structure
 from hierachain.hierarchical.sub_chain.block import (
@@ -117,11 +118,13 @@ class SubChain(Blockchain):
                 },
             )
 
+        self._shutdown_event = threading.Event()
         self._init_ordering_service()
         try:
             self.world_state = WorldState()
 
-            if not self.ordering_service.wait_for_active(timeout=10.0):
+            # A valid journal backlog must finish instead of restarting replay every ten seconds.
+            if not self.ordering_service.wait_for_active(timeout=None):
                 raise RuntimeError(f"Ordering recovery did not become active for {name}")
 
             self.sync_chain()
@@ -129,11 +132,10 @@ class SubChain(Blockchain):
             self.ordering_service.shutdown()
             raise
 
-        self._block_processing_lock = threading.Lock()
+        self._block_processing_lock = threading.RLock()
         self._async_sync_lock = threading.Lock()
 
         self.running = True
-        self._shutdown_event = threading.Event()
         self.consumer_thread = threading.Thread(
             target=_consumer_loop, args=(self,), daemon=True
         )
@@ -150,12 +152,34 @@ class SubChain(Blockchain):
             return False
         return True
 
+    def _finalize_ordered_block(self, block: Block, previous_block: Block | None) -> Block:
+        """Complete consensus before the orderer signs and persists the block."""
+        if previous_block is None:
+            raise ValueError("Sub-chain ordering requires a persisted genesis block")
+        timing_factor = 0.5 if isinstance(self.consensus, ProofOfAuthority) else 0.8
+        interval = self.consensus.config["block_interval"] * timing_factor
+        delay = previous_block.timestamp + interval - time.time()
+        if delay > 0 and self._shutdown_event.wait(delay):
+            raise RuntimeError("Sub-chain stopped during consensus finalization")
+        block.timestamp = time.time()
+        block.hash = block.calculate_hash()
+        if isinstance(self.consensus, ProofOfAuthority):
+            finalized_block = self.consensus.finalize_block(
+                block, self.name, private_key=self.node_identity.signing_keypair.private_key,
+            )
+        else:
+            finalized_block = self.consensus.finalize_block(block, self.name)
+        # Authority signatures cover the original header, including its creator.
+        finalized_block.creator_id = block.creator_id
+        finalized_block.hash = finalized_block.calculate_hash()
+        if not self.consensus.validate_block(finalized_block, previous_block):
+            raise ValueError(f"Consensus rejected ordered block {finalized_block.index}")
+        return finalized_block
+
     def stop(self):
         """Stop the background block consumer."""
         try:
-            while not self.ordering_service.commit_queue.empty():
-                block = self.ordering_service.commit_queue.get_nowait()
-                _process_and_finalize_single_block(self, block)
+            self.finalize_sub_chain_block()
         except Exception as e:
             logger.warning("Error draining commit_queue during stop: %s", e)
 
@@ -172,6 +196,7 @@ class SubChain(Blockchain):
 
     def shutdown(self) -> None:
         """Shutdown the sub-chain and cleanup resources."""
+        self._shutdown_event.set()
         self.running = False
         if self.consumer_thread:
             self.consumer_thread.join(timeout=2.0)
@@ -221,6 +246,7 @@ class SubChain(Blockchain):
             config=config,
             node_identity=self.node_identity,
             genesis_block=self.chain[0],
+            block_finalizer=self._finalize_ordered_block,
         )
 
     def add_event(self, event: dict[str, Any]) -> str:
