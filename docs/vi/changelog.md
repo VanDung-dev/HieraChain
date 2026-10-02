@@ -83,7 +83,14 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (30)"
+??? note "Improvements (34)"
+
+    * 2026-10-02
+
+        * **Đồng thuận (Finalizer Ordering & Toàn vẹn Khởi động)**: `OrderingService` (`hierachain/consensus/ordering/service.py`) nhận thêm hook `block_finalizer(block, previous_block)` tùy chọn và kiểm tra chuỗi đã persist (so hash đuôi `get_blocks_from_db(0)` với block mới nhất) trước khi replay journal, raise khi history thiếu/hỏng; `wait_for_active()` nhận `timeout=None` để chờ recovery vô hạn với deadline monotonic kèm kiểm tra `should_stop`/luồng còn sống; `OrderingBlockManager.commit_block` (`hierachain/consensus/ordering/block_manager.py`) hủy khi service đang dừng, gán `creator_id` dưới lock index, ủy quyền đồng thuận cho finalizer và kiểm tra lại shutdown trước khi ký.
+        * **Hierarchical (Finalization Block Ordered của Sub-chain)**: thêm `SubChain._finalize_ordered_block()` (`hierachain/hierarchical/sub_chain/base.py`) hoàn tất đồng thuận trước khi orderer ký và persist (delay theo timing có thể ngắt qua `_shutdown_event`, giữ `creator_id` sau finalization, từ chối `validate_block` thành `ValueError`); `SubChain` dùng `threading.RLock` cho xử lý block, chờ recovery ordering vô hạn (`wait_for_active(timeout=None)` để backlog journal chạy xong thay vì replay lại), rút gọn shutdown qua `finalize_sub_chain_block()`, và truyền finalizer vào `OrderingService`.
+        * **Hierarchical (Áp dụng Block Sub-chain)**: `_process_and_finalize_single_block()` (`hierachain/hierarchical/sub_chain/block.py`) nay áp block ordering đã finalize nguyên trạng (không tính lại index/hash, không finalization/ký lại), chuyển orderer sang `MAINTENANCE` kèm tín hiệu dừng khi `add_block` thất bại; `_finalize_sub_chain_block_for_chain()` tuần tự hóa dequeue kèm apply dưới `block_processing_lock` để giữ thứ tự FIFO; loại bỏ `_reset_ordering_service_state()` (`hierachain/hierarchical/sub_chain/ordering.py`), rehydration dựa vào đồng bộ chain thay vì ghi đè `block_history`/`blocks_created`.
+        * **Hierarchical (Quản lý Tài nguyên Recovery)**: `HierarchyManager.__init__`/`_restore_sub_chains()` (`hierachain/hierarchical/hierarchy_manager/base.py`) bọc bootstrap và khôi phục sub-chain trong `ExitStack` (callback `shutdown` cho journal/storage/từng chain, chỉ `pop_all()` khi thành công) thay cho cleanup try/except thủ công.
 
     * 2026-09-30
 
@@ -142,7 +149,13 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (11)"
+??? warning "Fix (14)"
+
+    * 2026-10-02
+
+        * **Hierarchical (Dọn dẹp Journal khi Load lỗi)**: `CrossChainTransactionManager.__init__` (`hierachain/hierarchical/transaction_manager.py`) đóng journal tự tạo khi `_load_journal()` raise (journal do caller truyền vào để caller tự quản) thay vì rò rỉ handle.
+        * **Core (Validate Sender)**: `validate_event_structure()` (`hierachain/core/utils.py`) loại trường khóa công khai `sender` của envelope đã ký khỏi quét thuật ngữ tiền mã hóa của nội dung nghiệp vụ và validate riêng `sender`, giữ key envelope ngoài kiểm tra nội dung.
+        * **API (Đồng thời khi Recovery Hierarchy)**: `get_hierarchy_manager()` (`hierachain/api/ledger/depds.py`) dùng lock non-blocking (trả 503 "in progress" khi luồng khác đang recovery) với backoff retry monotonic 5 giây giới hạn số lần thử trong bão request thay vì block các request đồng thời.
 
     * 2026-10-01
 

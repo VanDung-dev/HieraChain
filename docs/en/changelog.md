@@ -83,7 +83,14 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (30)"
+??? note "Improvements (34)"
+
+    * 2026-10-02
+
+        * **Consensus (Ordering Finalizer & Startup Integrity)**: `OrderingService` (`hierachain/consensus/ordering/service.py`) accepts an optional `block_finalizer(block, previous_block)` hook and validates the persisted chain (`get_blocks_from_db(0)` tail-hash versus latest) before journal replay, raising on incomplete/damaged history; `wait_for_active()` accepts `timeout=None` for indefinite recovery waits with monotonic deadlines plus `should_stop`/thread-liveness checks; `OrderingBlockManager.commit_block` (`hierachain/consensus/ordering/block_manager.py`) aborts when the service is stopping, assigns `creator_id` under the index lock, delegates consensus to the finalizer, and re-checks shutdown before signing.
+        * **Hierarchical (Sub-chain Ordered-Block Finalization)**: new `SubChain._finalize_ordered_block()` (`hierachain/hierarchical/sub_chain/base.py`) completes consensus before the orderer signs and persists (timing-aware delay interruptible via `_shutdown_event`, `creator_id` preserved across finalization, `validate_block` rejection raised as `ValueError`); `SubChain` uses a `threading.RLock` for block processing, waits indefinitely for ordering recovery (`wait_for_active(timeout=None)` so journal backlogs finish instead of restarting), drains shutdown via `finalize_sub_chain_block()`, and passes the finalizer into `OrderingService`.
+        * **Hierarchical (Sub-chain Block Application)**: `_process_and_finalize_single_block()` (`hierachain/hierarchical/sub_chain/block.py`) now applies already-finalized ordering blocks unchanged (no index/hash recalculation, consensus re-finalization, or re-signing), parking the orderer in `MAINTENANCE` with a stop signal when `add_block` fails; `_finalize_sub_chain_block_for_chain()` serializes dequeue plus apply under `block_processing_lock` to preserve FIFO order; `_reset_ordering_service_state()` was removed (`hierachain/hierarchical/sub_chain/ordering.py`) with rehydration relying on chain sync instead of rewriting `block_history`/`blocks_created`.
+        * **Hierarchical (Recovery Resource Management)**: `HierarchyManager.__init__`/`_restore_sub_chains()` (`hierachain/hierarchical/hierarchy_manager/base.py`) scope bootstrap and sub-chain restoration in `ExitStack` (journal/storage/per-chain `shutdown` callbacks, `pop_all()` only on success) replacing manual try/except cleanup.
 
     * 2026-09-30
 
@@ -142,7 +149,13 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (11)"
+??? warning "Fix (14)"
+
+    * 2026-10-02
+
+        * **Hierarchical (Journal Load Cleanup)**: `CrossChainTransactionManager.__init__` (`hierachain/hierarchical/transaction_manager.py`) closes the internally created journal when `_load_journal()` raises (caller-supplied journals are left to the caller) instead of leaking the handle.
+        * **Core (Sender Validation)**: `validate_event_structure()` (`hierachain/core/utils.py`) excludes the signed-envelope `sender` public-key field from business-content cryptocurrency-term scanning and validates `sender` separately, keeping envelope keys out of content checks.
+        * **API (Hierarchy Recovery Concurrency)**: `get_hierarchy_manager()` (`hierachain/api/ledger/depds.py`) uses non-blocking lock acquisition (503 "in progress" when another thread is recovering) with a 5-second monotonic retry backoff bounding recovery attempts during request storms instead of blocking concurrent requests.
 
     * 2026-10-01
 
