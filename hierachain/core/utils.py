@@ -86,8 +86,11 @@ def validate_event_structure(event: dict[str, Any]) -> bool:
     if not _check_field_types(event):
         return False
     
-    # 3. Content constraints
-    if not validate_no_cryptocurrency_terms(event):
+    # `sender` is the public-key field of the signed API envelope, not business content.
+    business_content = {key: value for key, value in event.items() if key != "sender"}
+    if not validate_no_cryptocurrency_terms(business_content):
+        return False
+    if not validate_no_cryptocurrency_terms(event.get("sender", "")):
         return False
     
     return True
