@@ -68,9 +68,6 @@ def _apply_rehydrated_blocks(sub_chain: Any, all_blocks: list) -> None:
             if entity_id not in sub_chain.entity_event_index:
                 sub_chain.entity_event_index[entity_id] = events
 
-        sub_chain.ordering_service.block_history = list(sub_chain.chain)
-        sub_chain.ordering_service.blocks_created = all_blocks[-1].index + 1
-
     if not sub_chain.is_chain_valid():
         raise ValueError(
             f"Chain {sub_chain.name} failed integrity validation after rehydration"
@@ -107,7 +104,6 @@ def _sync_chain_for_sub_chain(sub_chain: Any) -> None:
     """Synchronize local chain with Ordering Service (Rehydration)."""
     latest_block_os = sub_chain.ordering_service.get_latest_block()
     _rehydrate_chain_from_ordering_service(sub_chain, latest_block_os)
-    _reset_ordering_service_state(sub_chain)
     _discard_rehydrated_blocks_from_queue(sub_chain)
 
 
@@ -166,14 +162,3 @@ def _update_event_statistics(sub_chain: Any, block: Any) -> None:
                 "block_index": block.index,
                 "event": event,
             })
-
-
-def _reset_ordering_service_state(sub_chain: Any) -> None:
-    """Reset the Ordering Service state."""
-    latest_local = sub_chain.get_latest_block()
-    sub_chain.ordering_service.block_history = list(sub_chain.chain)
-    sub_chain.ordering_service.blocks_created = latest_local.index + 1
-    logger.info(
-        "Reset ordering service state: blocks_created = %d",
-        sub_chain.ordering_service.blocks_created,
-    )
