@@ -42,6 +42,8 @@ python -m pytest tests --benchmark-only -v --benchmark-histogram=benchmark_repor
 python -m pytest tests -v
 ```
 
+Consensus integration, 2PC, data-flow and recovery tests use per-case temporary SQLite databases and journals. They do not require the PostgreSQL service from the application's `.env`; dedicated live-backend tests exercise PostgreSQL.
+
 ### Durable Throughput Benchmark in Docker
 
 Run the benchmark from the current source tree with PostgreSQL 16, 1 CPU,

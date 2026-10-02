@@ -42,6 +42,8 @@ python -m pytest tests --benchmark-only -v --benchmark-histogram=benchmark_repor
 python -m pytest tests -v
 ```
 
+Các test integration consensus, 2PC, luồng dữ liệu và recovery dùng SQLite và journal trong thư mục tạm riêng cho từng test. Chúng không yêu cầu dịch vụ PostgreSQL trong `.env` của ứng dụng; test live-backend chuyên biệt kiểm tra PostgreSQL.
+
 ### Benchmark throughput bền vững bằng Docker
 
 Chạy benchmark từ source hiện tại với PostgreSQL 16, giới hạn 1 CPU, 1 GiB RAM
