@@ -60,6 +60,7 @@ COPY docker/.env.HRC.example /app/docker/.env.HRC.example
 COPY docker/entrypoint.sh /app/docker/entrypoint.sh
 COPY docker/scripts/ /app/docker/scripts/
 COPY docker/stress/ /app/docker/stress/
+COPY pytest.ini /app/pytest.ini
 
 RUN mkdir -p /app/data /app/log && \
     chmod +x /app/docker/entrypoint.sh /app/docker/scripts/wg-tc.sh

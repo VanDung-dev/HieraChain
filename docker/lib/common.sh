@@ -157,17 +157,23 @@ generate_keys() {
 
 WHEEL_DIR="docker/dist"
 
+ensure_stress_api_key() {
+  $COMPOSE --profile stress-test config --format json | uv run --no-sync python -c '
+import sys
+import orjson
+config = orjson.loads(sys.stdin.buffer.read())
+key = config["services"]["stress-tester"].get("environment", {}).get("HRC_API_KEY")
+if not isinstance(key, str) or not key.strip():
+    raise SystemExit("ERROR: set HRC_API_KEY in .env or the environment to a provisioned chains/events/proofs key before stress")
+'
+}
+
 build_wheel() {
   local wheel
-  wheel=$(ls "$WHEEL_DIR"/hierachain-*.whl 2>/dev/null | head -1)
-  if [ -n "$wheel" ] \
-    && [ "$wheel" -nt pyproject.toml ] \
-    && ! find hierachain -type f -newer "$wheel" -print -quit | grep -q .; then
-    echo "  Wheel up-to-date: $(basename "$wheel")"
-    return
-  fi
   echo "  Building wheel..."
   mkdir -p "$WHEEL_DIR"
+  # setuptools reuses build/lib, which can retain modules deleted from the source tree.
+  rm -rf build
   rm -f "$WHEEL_DIR"/hierachain-*.whl
   uv build --wheel -o "$WHEEL_DIR"
   wheel=$(ls "$WHEEL_DIR"/hierachain-*.whl | head -1)
@@ -369,6 +375,7 @@ run_tests() {
 
   $COMPOSE --profile stress-test run --rm stress-tester \
     bash -c "
+      set -e
       mkdir -p /app/log/report
       export TARGET_NODES='${TARGET_NODES}'
       export TEST_DURATION='${DURATION:-60}'
@@ -378,7 +385,8 @@ run_tests() {
       export HRC_IPFS_HOST=/dns4/ipfs-node1/tcp/5001
       export HRC_IPFS_ENCRYPTION_KEY='${IPFS_ENCRYPTION_KEY}'
       ${k8s_env}
-      pytest docker/stress/ -v \
+      pytest docker/stress/ -v --log-level=INFO --durations=10 \
+        -o log_cli=false -o faulthandler_timeout=0 --show-capture=no --tb=short \
         --html=/app/log/report/${report}.html \
         --self-contained-html \
         --junitxml=/app/log/report/${report}.xml

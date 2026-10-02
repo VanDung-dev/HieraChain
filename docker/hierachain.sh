@@ -111,6 +111,9 @@ case "$COMMAND" in
     ;;
 
   stress)
+    if [ "$K8S" = false ]; then
+      ensure_stress_api_key
+    fi
     ensure_keys
     if [ "$REUSE" = false ]; then
       generate_identities

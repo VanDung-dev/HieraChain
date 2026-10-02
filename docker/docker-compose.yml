@@ -595,6 +595,9 @@ services:
       - TEST_DURATION=60
       - REAL_REQUESTS=true
       - HRC_API_KEY=${HRC_API_KEY:-}
+      - HRC_API_KEY_NAME=${HRC_API_KEY_NAME:-X-API-Key}
+      - HRC_STRESS_ENV=docker
+      - STRESS_TIMEOUT=${STRESS_TIMEOUT:-120}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     networks:
