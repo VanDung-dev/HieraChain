@@ -10,7 +10,7 @@ import threading
 import time
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from typing import TYPE_CHECKING, Any
 
 _SHARED_POOL = ThreadPoolExecutor(max_workers=os.cpu_count() or 4)
@@ -92,31 +92,37 @@ class HierarchyManager:
             CrossChainTransactionManager(self)
         )
 
-        self.cross_level_sync: CrossLevelSyncManager | None = None
-        if settings.CROSS_LEVEL_SYNC_ENABLED:
-            sync = CrossLevelSyncManager(
-                node_id=getattr(node_identity, "node_id", "main-node"),
-                hierarchy_level="mainchain",
-                batch_size=settings.CROSS_LEVEL_SYNC_BATCH_SIZE,
-                sync_timeout=settings.CROSS_LEVEL_SYNC_TIMEOUT,
-                conflict_strategy=ConflictResolutionStrategy.MAINCHAIN_WINS,
-                block_verifier=None,
-                proof_verifier=None,
-            )
-            sync.connect_mainchain(self.main_chain)
-            self.cross_level_sync = sync
+        # Bootstrap owns these resources until all recovery steps succeed.
+        with ExitStack() as cleanup:
+            cleanup.callback(self.transaction_manager.journal.close)
+            self.cross_level_sync: CrossLevelSyncManager | None = None
+            if settings.CROSS_LEVEL_SYNC_ENABLED:
+                sync = CrossLevelSyncManager(
+                    node_id=getattr(node_identity, "node_id", "main-node"),
+                    hierarchy_level="mainchain",
+                    batch_size=settings.CROSS_LEVEL_SYNC_BATCH_SIZE,
+                    sync_timeout=settings.CROSS_LEVEL_SYNC_TIMEOUT,
+                    conflict_strategy=ConflictResolutionStrategy.MAINCHAIN_WINS,
+                    block_verifier=None,
+                    proof_verifier=None,
+                )
+                sync.connect_mainchain(self.main_chain)
+                self.cross_level_sync = sync
 
-        self.storage = None
-        self.storage = self._create_storage()
-        if self.storage is not None:
-            if not self.storage.store_chain(self.main_chain):
-                raise RuntimeError("Failed to persist main chain metadata")
-            self.main_chain.proof_storage = self.storage
-            self._restore_main_chain()
-            if self.cross_level_sync is not None:
-                self.cross_level_sync.storage = self.storage
-            self._restore_sub_chains()
-            self._restore_hierarchy_registry()
+            self.storage = self._create_storage()
+            if self.storage is not None:
+                cleanup.callback(self.storage.close)
+                if not self.storage.store_chain(self.main_chain):
+                    raise RuntimeError("Failed to persist main chain metadata")
+                self.main_chain.proof_storage = self.storage
+                self._restore_main_chain()
+                if self.cross_level_sync is not None:
+                    self.cross_level_sync.storage = self.storage
+                self._restore_sub_chains()
+                for chain in self.sub_chains.values():
+                    cleanup.callback(chain.shutdown)
+                self._restore_hierarchy_registry()
+            cleanup.pop_all()
 
     def _restore_main_chain(self) -> None:
         """Restore and verify the signed MainChain history before accepting proofs."""
@@ -252,8 +258,7 @@ class HierarchyManager:
 
         from hierachain.hierarchical.sub_chain import SubChain
 
-        restored: list[SubChain] = []
-        try:
+        with ExitStack() as cleanup:
             for metadata in self.storage.list_chains():
                 name = metadata["name"]
                 domain_type = metadata.get("domain_type") or "generic"
@@ -267,12 +272,9 @@ class HierarchyManager:
                         domain_type=domain_type,
                         node_identity=self.node_identity,
                     )
-                restored.append(chain)
+                cleanup.callback(chain.shutdown)
                 self.add_sub_chain(name, chain, persist=False)
-        except Exception:
-            for chain in restored:
-                chain.shutdown()
-            raise
+            cleanup.pop_all()
 
     def create_sub_chain(
         self, name: str, domain_type: str, metadata: dict[str, Any] | None = None
