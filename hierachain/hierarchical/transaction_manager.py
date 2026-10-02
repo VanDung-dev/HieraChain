@@ -44,7 +44,12 @@ class CrossChainTransactionManager:
             storage_dir="transactions",
             active_log_name="cross_chain_2pc.arrow",
         )
-        self._load_journal()
+        try:
+            self._load_journal()
+        except Exception:
+            if journal is None:
+                self.journal.close()
+            raise
 
     def _journal_record(self, transaction: CrossChainTransaction, phase: str) -> bool:
         record = {
