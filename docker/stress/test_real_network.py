@@ -5,14 +5,15 @@ These tests send actual HTTP requests to running HieraChain nodes.
 Requires Docker containers to be running with the API server.
 """
 
-import pytest
 import logging
 
+import pytest
+
 from docker.stress.real_stress_client import (
-    RealStressClient,
-    run_real_stress_test,
     REAL_REQUESTS,
+    RealStressClient,
     generate_event,
+    run_real_stress_test,
 )
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ class TestRealNetworkStress:
         assert results.successful_requests + results.failed_requests == results.total_requests
         assert results.successful_requests > 0
 
-        print(f"\n=== Light Stress Test Results ===")
+        print("\n=== Light Stress Test Results ===")
         print(f"Total Requests: {results.total_requests}")
         print(f"Successful: {results.successful_requests}")
         print(f"Failed: {results.failed_requests}")
@@ -81,7 +82,7 @@ class TestRealNetworkStress:
         assert results.successful_requests + results.failed_requests == results.total_requests
         assert results.successful_requests > 0
 
-        print(f"\n=== Medium Stress Test Results ===")
+        print("\n=== Medium Stress Test Results ===")
         print(f"Total Requests: {results.total_requests}")
         print(f"Successful: {results.successful_requests}")
         print(f"Avg Response Time: {results.avg_response_time*1000:.2f}ms")
@@ -102,7 +103,7 @@ class TestRealNetworkStress:
         assert results.successful_requests + results.failed_requests == results.total_requests
         assert results.successful_requests > 0
 
-        print(f"\n=== Heavy Stress Test Results ===")
+        print("\n=== Heavy Stress Test Results ===")
         print(f"Total Requests: {results.total_requests}")
         print(f"Successful: {results.successful_requests}")
         print(f"Failed: {results.failed_requests}")
@@ -118,7 +119,6 @@ class TestEventSubmission:
 
     def test_generate_event(self):
         """Test event generation."""
-        client = RealStressClient()
         event = generate_event()
 
         # Match EventRequest schema from hierachain.api.ledger.schemas
@@ -128,7 +128,7 @@ class TestEventSubmission:
         assert "data" in event["details"]
 
     @pytest.mark.stress
-    def test_submit_single_event(self):
+    def test_submit_single_event(self) -> None:
         """Test submitting a single event."""
         client = RealStressClient()
 
@@ -143,6 +143,7 @@ class TestEventSubmission:
         assert healthy, "No healthy Docker node to receive the event"
 
         node_id = healthy[0]
+        assert client.create_chain(node_id), f"Could not prepare the event test chain on {node_id}"
         event = generate_event()
 
         result = client.submit_event(node_id, event)

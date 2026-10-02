@@ -103,28 +103,8 @@ class TestIPFSStress:
     """Stress tests for IPFS-backed event workflow."""
 
     def _ensure_chain(self, client: RealStressClient) -> bool:
-        healthy = [nid for nid, s in client.node_status.items() if s.is_healthy]
-        if not healthy:
-            return False
-        node_id = healthy[0]
-        resp = client.session.post(
-            f"{client.node_status[node_id].url}/api/ledger/admin/chains/{CHAIN_NAME}/sub-chain",
-            json={"domain": "stress_test"},
-            timeout=10,
-        )
-        return resp.status_code in (200, 201, 409)
-
-    def _register_entity(self, client: RealStressClient, entity_id: str) -> bool:
-        healthy = [nid for nid, s in client.node_status.items() if s.is_healthy]
-        if not healthy:
-            return False
-        node_id = healthy[0]
-        resp = client.session.post(
-            f"{client.node_status[node_id].url}/api/ledger/chains/{CHAIN_NAME}/entities/{entity_id}",
-            json={"type": "stress_test"},
-            timeout=10,
-        )
-        return resp.status_code in (200, 201, 409)
+        """Prepare the generic chain through the current ledger creation API."""
+        return client.create_chains_on_nodes(CHAIN_NAME)
 
     def _submit_ipfs_event(
         self, node_url: str, entity_id: str, ipfs_ref: dict[str, Any], client: RealStressClient
@@ -190,7 +170,7 @@ class TestIPFSStress:
         if not stress_client.wait_for_nodes(timeout=10):
             pytest.skip("No HieraChain nodes available")
 
-        self._ensure_chain(stress_client)
+        assert self._ensure_chain(stress_client), "Could not prepare IPFS stress chain on all target nodes"
 
         healthy = [nid for nid, s in stress_client.node_status.items() if s.is_healthy]
         if not healthy:
@@ -203,7 +183,6 @@ class TestIPFSStress:
         fail = 0
         times = []
         entity_id = f"ipfs_stress_run_{int(time.time())}"
-        self._register_entity(stress_client, entity_id)
 
         for i, ref in enumerate(ipfs_refs):
             t0 = time.time()
@@ -244,7 +223,7 @@ class TestIPFSStress:
         if not stress_client.wait_for_nodes(timeout=10):
             pytest.skip("No HieraChain nodes available")
 
-        self._ensure_chain(stress_client)
+        assert self._ensure_chain(stress_client), "Could not prepare IPFS stress chain on all target nodes"
 
         healthy = [nid for nid, s in stress_client.node_status.items() if s.is_healthy]
         if not healthy:
@@ -254,7 +233,6 @@ class TestIPFSStress:
 
         # Submit events
         entity_id = f"ipfs_resolve_run_{int(time.time())}"
-        assert self._register_entity(stress_client, entity_id)
 
         for ref in ipfs_refs:
             result = self._submit_ipfs_event(node_url, entity_id, ref, stress_client)

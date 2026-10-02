@@ -215,32 +215,19 @@ class PoisonPillTest:
         if not self.client.wait_for_nodes(timeout=30):
             raise RuntimeError("No healthy Docker nodes; refusing to simulate poison results")
         chain_name = self.config.get("chain_name", "stress_test")
-        # create_chains_on_nodes may return True even when the chain only exists
-        # on a pod that the load-balanced gateway can't always reach. Always probe.
-        if not self.client.create_chains_on_nodes():
+        if not self.client.create_chains_on_nodes(chain_name):
             raise RuntimeError("Could not create the poison-test chain on live Docker nodes")
-        # Wait a few seconds for chain replication across the K8s cluster
-        time.sleep(5)
-        if not self._probe_chain_writable(chain_name):
-            # Fallback: try verifying on any node, then probe again
-            found = False
-            for node_id in self.client.node_status:
-                if self.client.verify_chain_exists(node_id, chain_name):
-                    logger.info("Chain '%s' verified on node %s", chain_name, node_id)
-                    found = True
-                    if self._probe_chain_writable(chain_name):
-                        return True
-            if not found:
-                logger.warning("Chain '%s' not found on any node", chain_name)
-            raise RuntimeError(f"Stress chain {chain_name!r} is not writable on live Docker nodes")
+        for node_id in self.client.node_status:
+            if not self._probe_chain_writable(chain_name, node_id):
+                raise RuntimeError(f"Stress chain {chain_name!r} is not writable on {node_id}")
         return True
 
-    def _probe_chain_writable(self, chain_name: str) -> bool:
-        """Submit a single test event to verify the chain is writable through the gateway."""
+    def _probe_chain_writable(self, chain_name: str, node_id: str) -> bool:
+        """Verify each prepared node once instead of repeatedly probing random nodes."""
         try:
             probe = generate_valid_event("probe-writable")
             return self.client.submit_secure_event(
-                chain_name=chain_name, event_data=probe, node_id=None
+                chain_name=chain_name, event_data=probe, node_id=node_id
             )
         except Exception:
             return False

@@ -11,17 +11,19 @@ Environment:
   - WebSocket endpoint: ws://{node}:2661/ws
 """
 
-import time
 import json
 import logging
 import os
 import threading
+import time
+
 import pytest
 
 from docker.stress.real_stress_client import (
-    RealStressClient,
     REAL_REQUESTS,
+    RealStressClient,
     generate_event,
+    get_auth_headers,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,8 +37,9 @@ WS_CHAIN = os.getenv("WS_CHAIN_NAME", "websocket_stress_test")
 
 # Optional: ignore if websockets library is not available
 try:
-    import websockets
     import asyncio
+
+    import websockets
     HAS_WEBSOCKETS = True
 except ImportError:
     HAS_WEBSOCKETS = False
@@ -68,7 +71,10 @@ class WebSocketLoadTest:
         loop = self._get_loop()
         try:
             ws = loop.run_until_complete(
-                websockets.connect(f"{self.ws_url}?chain_name={chain_name}", open_timeout=10)
+                websockets.connect(
+                    f"{self.ws_url}?chain_name={chain_name}", open_timeout=10,
+                    additional_headers=get_auth_headers(),
+                )
             )
             # Subscribe
             loop.run_until_complete(
@@ -183,7 +189,7 @@ class TestWebSocketBasic:
 
         tester.cleanup()
 
-    def test_ping_pong(self):
+    def test_ping_pong(self) -> None:
         """Test ping/pong keepalive."""
         healthy = [nid for nid, s in self.client.node_status.items() if s.is_healthy]
         if not healthy:
@@ -192,7 +198,7 @@ class TestWebSocketBasic:
         status = self.client.node_status[healthy[0]]
         tester = WebSocketLoadTest(status.url)
 
-        tester.connect_sync(conn_id=1, chain_name=WS_CHAIN)
+        assert tester.connect_sync(conn_id=1, chain_name=WS_CHAIN), tester.errors.get(1)
         time.sleep(1)
 
         # Read connected messages
@@ -208,6 +214,7 @@ class TestWebSocketBasic:
             )
             pong = tester.read_one_sync(1, timeout=5)
             logger.info("Pong response: %s", pong)
+            assert pong is not None and pong.get("type") == "pong", pong
 
         tester.cleanup()
 
@@ -275,7 +282,7 @@ class TestWebSocketConcurrent:
         for cycle in range(churn_cycles):
             conn_id = cycle % 10
             tester.disconnect_sync(conn_id)
-            ok = tester.connect_sync(conn_id, chain_name=WS_CHAIN)
+            assert tester.connect_sync(conn_id, chain_name=WS_CHAIN), tester.errors.get(conn_id)
             time.sleep(0.1)
 
         elapsed = time.time() - start

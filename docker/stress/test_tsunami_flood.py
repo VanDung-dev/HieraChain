@@ -8,20 +8,22 @@ This test floods the event pool with massive amounts of events to test:
 - Lockdown triggering and recovery
 """
 
-import time
+import logging
+import math
+import os
 import random
 import string
 import threading
-import logging
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
+
 import pytest
+from urllib3.util import Retry
 
 from docker.stress.real_stress_client import DEFAULT_NODES
 
 logger = logging.getLogger(__name__)
-
-import os
 
 # Test configuration loaded dynamically (supports Docker Compose configuration)
 DEFAULT_CONFIG = {
@@ -51,26 +53,29 @@ def generate_random_event(size_bytes: int = 1024) -> dict[str, Any]:
 class TsunamiFloodTest:
     """Tsunami flood stress test implementation."""
 
-    def __init__(self, config: dict | None = None):
+    def __init__(self, config: dict | None = None) -> None:
         self.config = config or DEFAULT_CONFIG.copy()
         self.sent_count = 0
         self.failed_count = 0
-        self.lock = threading.Lock()
         self.results: list[dict] = []
+        self._deadline: float | None = None
+        self._stop = threading.Event()
         
         # Shared client to avoid redundant health checks and session overhead
         from docker.stress.real_stress_client import REAL_REQUESTS, RealStressClient
         self.client = None
         if REAL_REQUESTS:
             self.client = RealStressClient(nodes=self.config["target_nodes"])
+            # A flood attempt must not multiply its remaining budget through HTTP retries.
+            self.client.session.get_adapter("http://").max_retries = Retry(total=0)
 
-    def _process_event(self, event: dict, node_id: str) -> bool:
+    def _process_event(self, event: dict, node_id: str, timeout: float | None = None) -> bool:
         """Process a single event returning True on success."""
         from docker.stress.real_stress_client import REAL_REQUESTS
 
         if not REAL_REQUESTS or self.client is None:
             raise RuntimeError("Tsunami flood requires a live RealStressClient")
-        return self.client.submit_event(node_id, event)
+        return self.client.submit_event(node_id, event, timeout=timeout)
 
     def send_event_batch(self, node_url: str, batch: list[dict]) -> dict:
         """
@@ -81,22 +86,28 @@ class TsunamiFloodTest:
             raise RuntimeError("Tsunami flood requires REAL_REQUESTS=true")
         node_id = node_url.split(":")[0]
 
-        start_time = time.time()
+        start_time = time.monotonic()
         success_count = 0
+        attempted_count = 0
         errors = []
 
         for event in batch:
-            if self._process_event(event, node_id):
+            remaining = self._deadline - time.monotonic() if self._deadline is not None else self.client.timeout
+            if self._stop.is_set() or remaining <= 0:
+                break
+            attempted_count += 1
+            if self._process_event(event, node_id, timeout=min(self.client.timeout, remaining)):
                 success_count += 1
             else:
                 errors.append(f"Event failed on {node_id}")
 
-        elapsed = time.time() - start_time
+        elapsed = time.monotonic() - start_time
         return {
             "node": node_url,
             "batch_size": len(batch),
             "success": success_count,
-            "failed": len(batch) - success_count,
+            "failed": attempted_count - success_count,
+            "unattempted": len(batch) - attempted_count,
             "elapsed_seconds": elapsed,
             "events_per_second": success_count / elapsed if elapsed > 0 else 0,
             "errors": errors[:5],
@@ -116,25 +127,42 @@ class TsunamiFloodTest:
             raise RuntimeError("Could not create the stress chain on live Docker nodes")
 
     def _execute_batches(self, batches: list, concurrent: int, nodes: list) -> None:
-        with ThreadPoolExecutor(max_workers=concurrent) as executor:
+        timeout = float(self.config["timeout_seconds"])
+        if not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError("Flood timeout_seconds must be positive and finite")
+        self._deadline = time.monotonic() + timeout
+        self._stop.clear()
+        executor = ThreadPoolExecutor(max_workers=concurrent)
+        futures = []
+        try:
             futures = [
                 executor.submit(self.send_event_batch, nodes[i % len(nodes)], batch)
                 for i, batch in enumerate(batches)
             ]
-            for future in as_completed(futures):
+            for completed, future in enumerate(as_completed(futures, timeout=timeout), 1):
+                result = future.result()
+                logger.info("Flood batch %d/%d finished: accepted=%d failed=%d unattempted=%d",
+                            completed, len(futures), result["success"], result["failed"], result["unattempted"])
+        except TimeoutError:
+            logger.error("Flood reached its %.1fs deadline; stopping workers and cancelling queued batches", timeout)
+        finally:
+            self._stop.set()
+            executor.shutdown(wait=True, cancel_futures=True)
+        for future in futures:
+            if not future.cancelled():
                 result = future.result()
                 self.results.append(result)
-                with self.lock:
-                    self.sent_count += result["success"]
-                    self.failed_count += result["failed"]
+                self.sent_count += result["success"]
+                self.failed_count += result["failed"]
 
     def _build_results(self, num_events: int, elapsed: float, nodes: list, concurrent: int) -> dict:
         return {
             "test_name": "tsunami_flood",
-            "status": "completed",
+            "status": "completed" if self.sent_count + self.failed_count == num_events else "timed_out",
             "total_events": num_events,
             "sent_success": self.sent_count,
             "sent_failed": self.failed_count,
+            "unattempted_events": num_events - self.sent_count - self.failed_count,
             "success_rate": self.sent_count / num_events if num_events > 0 else 0,
             "elapsed_seconds": elapsed,
             "events_per_second": self.sent_count / elapsed if elapsed > 0 else 0,
@@ -169,9 +197,9 @@ class TsunamiFloodTest:
         batches = [events[i:i + batch_size] for i in range(0, len(events), batch_size)]
         logger.info(f"Created {len(batches)} batches of {batch_size} events")
 
-        start_time = time.time()
+        start_time = time.monotonic()
         self._execute_batches(batches, concurrent, nodes)
-        return self._build_results(num_events, time.time() - start_time, nodes, concurrent)
+        return self._build_results(num_events, time.monotonic() - start_time, nodes, concurrent)
 
 
 # Pytest test cases
@@ -204,7 +232,7 @@ class TestTsunamiFlood:
         test = TsunamiFloodTest(small_config)
         result = test.run_flood()
         
-        assert result["status"] == "completed"
+        assert result["status"] == "completed", result
         assert result["sent_success"] + result["sent_failed"] == result["total_events"]
         assert result["success_rate"] >= 0.8  # Upgraded for optimized performance
 
@@ -229,7 +257,7 @@ class TestTsunamiFlood:
         test = TsunamiFloodTest(DEFAULT_CONFIG)
         result = test.run_flood()
 
-        assert result["status"] == "completed"
+        assert result["status"] == "completed", result
         assert result["sent_success"] + result["sent_failed"] == result["total_events"]
         assert result["success_rate"] >= 0.8  # Upgraded success rate threshold
 
@@ -244,12 +272,12 @@ if __name__ == "__main__":
     print("  TSUNAMI FLOOD TEST RESULTS")
     print("=" * 60)
     
-    print(f"\n📊 TEST SUMMARY")
+    print("\n📊 TEST SUMMARY")
     print(f"  Status:           {result['status']}")
     print(f"  Duration:         {result['elapsed_seconds']:.2f}s")
     print(f"  Events/Second:    {result['events_per_second']:.2f}")
     
-    print(f"\n📝 EVENT STATISTICS")
+    print("\n📝 EVENT STATISTICS")
     print(f"  Total Events:     {result['total_events']}")
     print(f"  Sent Success:     {result['sent_success']}")
     print(f"  Sent Failed:      {result['sent_failed']}")
@@ -258,7 +286,7 @@ if __name__ == "__main__":
 
     nm = result.get("node_metrics", {})
     if nm:
-        print(f"\n🖧  NODE DISTRIBUTION (TODO #7 Metrics)")
+        print("\n🖧  NODE DISTRIBUTION (TODO #7 Metrics)")
         print(f"  Target Nodes:     {nm.get('num_target_nodes', 0)}")
         print(f"  Events/Node:      {nm.get('events_per_node', 0)}")
         print(f"  Concurrent:       {nm.get('concurrent_senders', 0)}")

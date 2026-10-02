@@ -7,13 +7,11 @@ import os
 import time
 import random
 import logging
-import threading
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 import requests
 import requests.exceptions
-from requests.adapters import HTTPAdapter, Retry
 
 from docker.stress.real_stress_client import RealStressClient, NodeStatus
 
@@ -69,93 +67,16 @@ class NetworkStressTestResult:
     network_type: str = ""
     network_stats: Dict[str, Any] = field(default_factory=dict)
 
-class NetworkStressTester:
+class NetworkStressTester(RealStressClient):
     def __init__(self, nodes: Optional[List[str]] = None, timeout: float = 15.0):
-        self.nodes = nodes or DEFAULT_NODES
-        self.timeout = timeout
-        self.node_status: dict[str, NodeStatus] = {}
+        super().__init__(nodes=nodes or DEFAULT_NODES, timeout=timeout)
         self.results = NetworkStressTestResult()
-        self.session = self._setup_session()
-        self.lock = threading.Lock()
         self.latency_sim = 0.0
         self.packet_loss_rate = 0
         self.jitter_sim = 0.0
         self.congestion_rate = 0
         self.bandwidth_limit_rate = 0
-        self._setup_node_status()
-        
-    def _setup_session(self) -> requests.Session:
-        """Setup requests session with retry and backoff."""
-        session = requests.Session()
-        
-        # Increase connection pool for concurrent workers
-        adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=Retry(
-            total=5,
-            backoff_factor=0.1,
-            status_forcelist=[500, 502, 503, 504],
-            allowed_methods=["HEAD", "GET", "PUT", "POST", "PATCH", "DELETE"]
-        ))
-        
-        session.mount("http://", adapter)
-        session.mount("https://", adapter)
-        
-        # Set default headers
-        session.headers.update({
-            "User-Agent": "HieraChain-Stress-Tester/1.0",
-            "Content-Type": "application/json",
-        })
-        
-        # Add API Key if provided in environment
-        api_key = os.getenv("HRC_API_KEY")
-        if api_key:
-            key_name = os.getenv("HRC_API_KEY_NAME", "X-API-Key")
-            session.headers.update({key_name: api_key})
-        
-        return session
-    
-    def _setup_node_status(self) -> None:
-        """Initialize node status — exclude gateway (port 80, non-API)."""
-        for node in self.nodes:
-            parts = node.split(":")
-            port = int(parts[1]) if len(parts) > 1 else 2661
-            if port == 80:
-                continue
-            node_id = parts[0]
-            url = f"http://{node}"
-            self.node_status[node_id] = NodeStatus(node_id=node_id, url=url)
-    
-    def check_health(self, node_id: str) -> bool:
-        """Check if a node is healthy by trying multiple system endpoints."""
-        status = self.node_status.get(node_id)
-        if not status:
-            return False
-        
-        # Endpoints to try in order of preference
-        endpoints = ["/api/admin/status", "/api/ledger/health", "/"]
-        
-        for endpoint in endpoints:
-            try:
-                url = f"{status.url}{endpoint}"
-                response = self.session.get(url, timeout=self.timeout)
-                if response.status_code == 200:
-                    status.is_healthy = True
-                    return True
-            except requests.RequestException as e:
-                logger.debug(f"Endpoint {endpoint} failed for {node_id}: {e}")
-                continue
-        
-        # If we reach here, all endpoints failed
-        status.is_healthy = False
-        logger.warning(f"❌ Node {node_id} is UNHEALTHY (all endpoints failed at {status.url})")
-        return False
-    
-    def check_all_nodes(self) -> dict[str, bool]:
-        """Check health of all nodes."""
-        _results = {}
-        for node_id in self.node_status:
-            _results[node_id] = self.check_health(node_id)
-        return _results
-    
+
     def apply_network_condition(self, condition: NetworkCondition) -> None:
         """Apply a network condition to the stress test."""
         condition.apply(self)
@@ -291,29 +212,7 @@ class NetworkStressTester:
         return random.choice(healthy)
 
     def _wait_for_nodes(self, timeout: float = 30.0, min_healthy: int | None = None) -> bool:
-        """
-        Wait for nodes to become healthy.
-        
-        Args:
-            timeout: Maximum time to wait in seconds.
-            min_healthy: Minimum number of healthy nodes required. 
-                        If None, requires all nodes to be healthy.
-        """
-        if min_healthy is None:
-            min_healthy = len(self.node_status)
-            
-        logger.info("Waiting for %d/%d nodes to be healthy (timeout=%ds)...",
-                   min_healthy, len(self.node_status), timeout)
-        
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            healthy = sum(1 for nid in self.node_status if self.check_health(nid))
-            if healthy >= min_healthy:
-                logger.info("Cluster ready: %d nodes healthy", healthy)
-                return True
-            time.sleep(2.0)
-        
-        return False
+        return self.wait_for_nodes(timeout=timeout, min_healthy=min_healthy)
 
     def print_results(self) -> None:
         """Print test results summary."""
