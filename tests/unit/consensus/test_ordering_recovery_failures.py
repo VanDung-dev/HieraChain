@@ -23,6 +23,8 @@ from hierachain.consensus.ordering.types import (
     PendingEvent,
 )
 from hierachain.core.block import Block
+from hierachain.security.identity_loader import load_node_identity
+from hierachain.security.verify.block_verifier import sign_block
 
 
 def _make_processor(
@@ -38,7 +40,10 @@ def _make_processor(
         "batch_timeout": 0.1,
     }
     storage_handler = OrderingStorageHandler(config)
+    identity = load_node_identity()
+    assert identity is not None, "Test signer must be configured"
     service = SimpleNamespace(
+        node_identity=identity,
         should_stop=threading.Event(),
         event_pool=Queue(),
         pending_events={},
@@ -211,7 +216,7 @@ def test_get_latest_block_database_failure_propagates(
 def test_load_from_db_propagates_failure_on_nonterminal_block(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    _service, _processor, storage_handler = _make_processor(tmp_path, [])
+    service, _processor, storage_handler = _make_processor(tmp_path, [])
     previous_hash = "0"
     for index in range(3):
         block = Block(
@@ -226,6 +231,7 @@ def test_load_from_db_propagates_failure_on_nonterminal_block(
             ],
             previous_hash=previous_hash,
         )
+        sign_block(block, service.node_identity.node_id, service.node_identity.signing_keypair)
         storage_handler.save_block(block, "test-chain")
         previous_hash = block.hash
     execute_lookup = storage_handler.storage._execute_get_block_by_index

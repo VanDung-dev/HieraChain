@@ -35,7 +35,7 @@ def test_hc001_failed_block_save_does_not_advance_state(
         save = Mock(wraps=service.storage_handler.storage.save_block)
         monkeypatch.setattr(service.storage_handler.storage, "save_block", save)
         if failure == "consensus":
-            monkeypatch.setattr(chain.consensus, "validate_block", lambda *_args: False)
+            monkeypatch.setattr(type(chain.consensus), "validate_block", lambda *_args: False)
         else:
             save.return_value = False
         block = Block(

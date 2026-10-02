@@ -29,6 +29,9 @@ class _MemoryJournal:
     def replay(self):
         yield from self.records
 
+    def close(self) -> None:
+        pass
+
 
 class _Participant:
     def __init__(self, name: str, journal: _MemoryJournal) -> None:
@@ -701,9 +704,13 @@ def test_domain_chain_can_replace_generic_restored_placeholder(
         def load_chain(self, name: str) -> dict:
             return {"name": name, "chain": []}
 
+        def close(self) -> None:
+            pass
+
     class _TransactionManager:
         def __init__(self, manager) -> None:
             self.manager = manager
+            self.journal = _MemoryJournal()
 
         def retry_pending(self) -> None:
             calls.append(f"retry:{','.join(self.manager.sub_chains)}")
@@ -798,9 +805,13 @@ def test_restore_uses_domain_chains_only_for_unresolved_participants(monkeypatch
         def load_chain(self, name: str) -> dict:
             return {"name": name, "chain": []}
 
+        def close(self) -> None:
+            pass
+
     class _TransactionManager:
         def __init__(self, manager) -> None:
             self.manager = manager
+            self.journal = _MemoryJournal()
 
         def requires_2pc_participant(self, chain_name: str) -> bool:
             return chain_name == "source"

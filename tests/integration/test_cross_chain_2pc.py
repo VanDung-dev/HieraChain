@@ -9,6 +9,8 @@ import pytest
 
 from hierachain.hierarchical import HierarchyManager, TransactionState
 
+pytestmark = pytest.mark.usefixtures("isolated_chain_storage")
+
 
 def _assert_2pc_outcome(hierarchy, tx_id, source_chain, dest_chain, expected_state):
     assert tx_id is not None
@@ -36,7 +38,13 @@ def hierarchy_setup():
     source_chain.register_entity("item-fail", {"owner": "Bob"})
     dest_chain.register_entity("item-fail", {"owner": "None"})
     
-    return hierarchy, source_chain, dest_chain
+    try:
+        yield hierarchy, source_chain, dest_chain
+    finally:
+        for chain in hierarchy.get_all_sub_chains().values():
+            chain.shutdown()
+        hierarchy.transaction_manager.journal.close()
+        hierarchy.storage.close()
 
 
 def test_2pc_success(hierarchy_setup):
@@ -46,7 +54,7 @@ def test_2pc_success(hierarchy_setup):
     payload = {
         "entity_id": "item-123",
         "operation_type": "transfer",
-        "details": {"amount": 100}
+        "details": {"quantity": 100}
     }
     
     # Initiate transaction
@@ -61,6 +69,14 @@ def test_2pc_success(hierarchy_setup):
         dest_chain,
         TransactionState.COMMITTED,
     )
+    for chain in (source_chain, dest_chain):
+        events = [
+            event for event in chain.ordering_service.journal.replay()
+            if event.get("transaction_id") == tx_id
+        ]
+        assert [event["transaction_step"] for event in events] == ["start", "complete"]
+        # Arrow details use Map<String, String>, including nested operation data.
+        assert events[0]["details"]["operation_details"] == str(payload["details"])
 
 
 def test_2pc_prepare_failure(hierarchy_setup):

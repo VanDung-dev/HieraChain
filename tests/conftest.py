@@ -15,6 +15,7 @@ if os.getenv("HRC_ENV", "").lower() in ("test", "testing"):
 import shutil
 import sys
 import time
+from pathlib import Path
 
 import pytest
 
@@ -28,6 +29,14 @@ if _PROJECT_ROOT not in sys.path:
 
 # Data directory containing journal files
 _DATA_DIR = os.path.join(_PROJECT_ROOT, "data")
+
+
+@pytest.fixture
+def isolated_chain_storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Use per-case SQLite and journals for backend-independent chain tests."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("HRC_STORAGE_BACKEND", "sqlite")
+    monkeypatch.setattr(settings, "DATABASE_URL", f"sqlite:///{tmp_path / 'main.db'}")
 
 
 def _remove_data_dir_with_retry(max_retries=3, delay=0.5):
