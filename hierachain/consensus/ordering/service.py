@@ -43,8 +43,10 @@ class OrderingService:
         nodes: list[Any] | None = None,
         node_identity: Any | None = None,
         genesis_block: Block | None = None,
+        block_finalizer: Callable[[Block, Block | None], Block] | None = None,
     ):
         self.config = config
+        self.block_finalizer = block_finalizer
         self.nodes = nodes or []
         from hierachain.security.identity_loader import require_block_identity
 
@@ -66,7 +68,17 @@ class OrderingService:
         self.storage_handler = OrderingStorageHandler(config)
 
         # Initialize blocks_created from DB to ensure continuity after restart
-        latest_block = self.storage_handler.get_latest_block_from_db()
+        # Verify links before journal replay can append to a damaged chain.
+        try:
+            persisted_blocks = self.storage_handler.get_blocks_from_db(0)
+            latest_block = self.storage_handler.get_latest_block_from_db()
+            if latest_block is not None and (
+                not persisted_blocks or persisted_blocks[-1].hash != latest_block.hash
+            ):
+                raise ValueError("Persisted chain is incomplete or changed during ordering startup")
+        except Exception:
+            self.storage_handler.close()
+            raise
         if latest_block is None and genesis_block is not None:
             self.storage_handler.save_block(
                 genesis_block, self.storage_handler.chain_name
@@ -359,22 +371,25 @@ class OrderingService:
         """Add a custom validation rule for events"""
         self.certifier.add_validation_rule(rule)
 
-    def wait_for_active(self, timeout: float = 5.0) -> bool:
+    def wait_for_active(self, timeout: float | None = 5.0) -> bool:
         """
         Wait for the service to become active.
 
         Args:
-            timeout: Maximum time to wait in seconds.
+            timeout: Maximum time to wait in seconds, or None to finish recovery.
 
         Returns:
-            True if service is active, False if timeout reached.
+            True if active, False on timeout, shutdown, or processor failure.
         """
-        start_time = time.time()
-        while time.time() - start_time < timeout:
+        deadline = None if timeout is None else time.monotonic() + timeout
+        while True:
+            if self.should_stop.is_set() or not self.processing_thread or not self.processing_thread.is_alive():
+                return False
             if self.status == OrderingStatus.ACTIVE:
                 return True
+            if deadline is not None and time.monotonic() >= deadline:
+                return False
             time.sleep(0.05)
-        return self.status == OrderingStatus.ACTIVE
 
     def start(self) -> None:
         """Start or restart the ordering service"""
