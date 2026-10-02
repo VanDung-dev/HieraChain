@@ -78,6 +78,36 @@ Profile này khởi động PostgreSQL 16 riêng và lưu journal append-only t�
 
 ### Kiểm thử Áp lực với Docker
 
+Stress ở chế độ production cần `HRC_API_KEY` trong `.env` gốc hoặc môi trường, dùng key đã được cấp trong `HRC_API_KEYS_SOURCE_FILE` với quyền `chains`, `events`và `proofs` (hoặc `all`). Không đưa key vào log hay báo cáo. Launcher kiểm tra có cấu hình key trước triển khai; pytest kiểm tra truy cập chain có xác thực trên từng node trước khi chạy test. Thiếu key, phản hồi 401/403/429 hoặc node không kết nối được sẽ dừng phiên test. Client HTTP và WebSocket dùng cùng key và `HRC_API_KEY_NAME` (mặc định `X-API-Key`).
+
+Sau khi sửa source, build lại wheel và image. Lệnh build wheel xóa thư mục sinh tự động `build/` để module đã xóa không còn sót trong cache setuptools:
+
+```bash
+bash -c 'source docker/lib/common.sh; build_wheel'
+docker build --target production -t hierachain:latest -f docker/Dockerfile .
+```
+
+Khi cluster đã dùng image mới, chạy với `--reuse` để giữ deployment và volume. Lệnh stress mặc định triển khai lại và xóa volume. Kiểm tra riêng từng file trước khi chạy toàn bộ suite:
+
+```bash
+docker compose --env-file .env -f docker/docker-compose.yml --profile stress-test run --rm stress-tester python -m pytest docker/stress/test_real_network.py -v
+bash docker/hierachain.sh stress docker --reuse
+```
+
+Fixture crypto ký event/block và cung cấp public key tin cậy. Benchmark assert kết quả xác minh thành công. Khi chỉ kiểm tra crypto cục bộ không cần preflight mạng, đặt `REAL_REQUESTS=false`; kết quả này không xác minh dịch vụ thật.
+
+`--duration` điều khiển các test đọc `TEST_DURATION`; đây không phải giới hạn thời gian của toàn bộ suite. Tsunami flood đầy đủ vẫn yêu cầu 5.000 event. Pha gửi có ngân sách `STRESS_TIMEOUT` riêng (mặc định 120 giây), sau bước chờ node và tạo chain. Worker dừng khi hết giờ, batch còn trong hàng đợi bị hủy và request HTTP đang chạy dùng thời gian còn lại, không retry trong flood. Lần chạy chưa đủ event báo `timed_out` cùng `unattempted_events` và không đạt tiêu chí chấp nhận. Launcher hiển thị kết quả từng test, traceback lỗi ngắn và mười test chậm nhất. Live log, log đã capture trên console và stack thread theo thời gian được ẩn mặc định; log INFO vẫn được capture trong báo cáo HTML, cùng kết quả XML.
+
+```bash
+STRESS_TIMEOUT=120 bash docker/hierachain.sh stress docker --reuse --duration 15
+```
+
+HTTP 200 từ `/api/ledger/health` xác nhận tiến trình còn hoạt động; `/api/ledger/ready` kiểm tra recovery của hệ phân cấp. Stress dùng `/api/ledger/ready` mà không chuyển sang liveness; bước chờ node chia sẻ timeout cho các request và không tự retry HTTP. Bước tạo chain yêu cầu đủ mọi node đã cấu hình, còn poison setup probe từng node một lần. Bootstrap hệ phân cấp thất bại sẽ đóng storage pool, journal của coordinator và các sub-chain đã khởi động. Request đồng thời với bootstrap nhận HTTP 503 ngay; lần khởi tạo thất bại chờ năm giây trước khi thử lại. Event đã ký cho phép trường `sender` cấp ngoài, trong khi nội dung nghiệp vụ vẫn phải qua kiểm tra thuật ngữ; API admin vẫn bắt buộc xác minh chữ ký. Khi khởi động, orderer kiểm tra liên kết block đã lưu trước khi replay journal. Lỗi `Chain link BROKEN` cần khôi phục từ dữ liệu tin cậy hoặc được chấp thuận rõ ràng để reset dữ liệu test có thể bỏ. Build lại image không sửa block đã lưu. Sub-chain chờ replay journal hoàn tất, không hủy backlog hợp lệ sau mười giây; lỗi processor hoặc shutdown vẫn dừng bootstrap. Rehydration của sub-chain cập nhật trạng thái cục bộ mà không ghi lùi chỉ số block hoặc cache của orderer đang hoạt động.
+
+Block của sub-chain được hoàn tất consensus, tuân thủ khoảng thời gian tối thiểu của consensus và ký header bằng khóa tin cậy trước khi orderer lưu. Consumer xác minh và áp dụng block đã commit mà không đổi index, hash, event hay chữ ký, và không ghi lại block. Lỗi consensus hoặc storage không được tăng chỉ số block hoặc đưa block vào commit queue. Consumer và lệnh flush đồng thời lấy block theo đúng thứ tự. Test throughput consensus qua HTTP chờ tối đa 120 giây để mọi event nghiệp vụ đã nhận được commit, loại event consensus PoA trong mỗi block mới khỏi số đếm. Throughput tính cả thời gian chờ commit, nên test restart tiếp theo không nhận backlog từ test throughput đã pass. Recovery vẫn yêu cầu primary vừa restart phải ledger-ready trong 60 giây; các test này dùng chain PoA generic và không chứng minh view change của giao thức BFT.
+
+Setup stress IPFS tạo chain generic qua ledger client dùng chung và yêu cầu thành công trên mọi node đích. Event truyền `entity_id` trực tiếp vào `POST /api/ledger/chains/{chain_name}/events`; không cần endpoint đăng ký entity riêng.
+
 Chạy kiểm thử áp lực trong các container Docker với cấu hình gồm 4 node HieraChain (mỗi node giới hạn 1 CPU, 1GiB RAM):
 
 * Xây dựng cấu hình và chạy stress test với báo cáo định dạng HTML:

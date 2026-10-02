@@ -79,6 +79,36 @@ journal under `/app/data`. Journal fsync is always enabled. Override
 
 ### Docker Stress Testing
 
+Production stress requires `HRC_API_KEY` in the root `.env` or environment, using a key already provisioned in `HRC_API_KEYS_SOURCE_FILE` with `chains`, `events`, and `proofs` permissions (or `all`). Never paste the key into logs or reports. The launcher checks that a key is configured before deployment; pytest checks authenticated chain access on every node before running tests. Missing keys, 401/403/429 responses, and unreachable nodes stop the session. HTTP and WebSocket clients use the same key and `HRC_API_KEY_NAME` (default `X-API-Key`).
+
+After source changes, rebuild the wheel and image. The wheel build clears generated `build/` so deleted modules cannot survive in setuptools' cache:
+
+```bash
+bash -c 'source docker/lib/common.sh; build_wheel'
+docker build --target production -t hierachain:latest -f docker/Dockerfile .
+```
+
+Once the cluster uses the new image, run with `--reuse` to preserve its deployment and volumes. The default stress command redeploys and removes volumes. Check an individual file before running the full suite:
+
+```bash
+docker compose --env-file .env -f docker/docker-compose.yml --profile stress-test run --rm stress-tester python -m pytest docker/stress/test_real_network.py -v
+bash docker/hierachain.sh stress docker --reuse
+```
+
+Crypto fixtures sign events and blocks and provide a trusted public key. Their benchmarks assert verification succeeds. For local crypto-only checks without network preflight, set `REAL_REQUESTS=false`; this does not validate live services.
+
+`--duration` controls tests that read `TEST_DURATION`; it is not a time limit for the entire suite. The full tsunami flood still requests 5,000 events. Its send phase has a separate `STRESS_TIMEOUT` budget (default 120 seconds), after node readiness and chain creation. Workers stop at the deadline, queued batches are cancelled, and active HTTP calls use the remaining budget without flood retries. Incomplete runs report `timed_out` and `unattempted_events` and fail acceptance. The launcher shows each test result, short failure tracebacks, and the ten slowest tests. Live logs, captured console logs, and timed thread stack dumps are hidden by default; INFO logs remain captured for the HTML report, alongside the XML results.
+
+```bash
+STRESS_TIMEOUT=120 bash docker/hierachain.sh stress docker --reuse --duration 15
+```
+
+An HTTP 200 from `/api/ledger/health` confirms liveness; `/api/ledger/ready` checks hierarchy recovery. Stress readiness uses `/api/ledger/ready` without falling back to liveness; node polling shares its timeout across requests, without automatic HTTP retries. Chain setup requires every configured node, and poison setup probes each node once. Failed hierarchy bootstrap closes its storage pool, coordinator journal, and any started sub-chains. Concurrent bootstrap requests receive HTTP 503 immediately; failed attempts have a five-second retry cooldown. The signed event envelope permits its top-level `sender` field while business content still follows terminology checks; signature validation remains required by the admin API. Ordering startup validates persisted block links before replaying the journal. A `Chain link BROKEN` error requires recovery from trusted data or an explicitly approved reset of disposable test data. Rebuilding an image does not repair persisted blocks. Sub-chain startup waits for journal replay to finish, without cancelling a valid backlog after ten seconds; processor failure or shutdown still aborts bootstrap. Sub-chain rehydration updates local state without rewinding the active orderer's block index or cache.
+
+Sub-chain blocks complete consensus, respect its minimum block interval, and receive the trusted header signature before the orderer saves them. The consumer validates and applies these committed blocks without changing their index, hash, events or signature, and never writes them again. Consensus or storage failure cannot advance the commit queue or block index. Concurrent consumer and flush calls drain the queue in order. HTTP consensus throughput checks wait up to 120 seconds for every accepted business event to commit, excluding the PoA consensus event in each new block. Throughput includes this drain time, so subsequent restart tests inherit no backlog from a passing throughput test. Recovery still requires the restarted primary to become ledger-ready within 60 seconds; they exercise a generic PoA chain and do not prove BFT protocol view changes.
+
+IPFS stress setup creates the generic chain through the shared ledger client and requires success on every target node. Events supply `entity_id` directly to `POST /api/ledger/chains/{chain_name}/events`; no separate entity registration endpoint is required.
+
 Run stress tests in Docker containers with 4 HieraChain nodes (1 CPU, 1GiB RAM each):
 
 * Build and run stress tests with HTML report:
