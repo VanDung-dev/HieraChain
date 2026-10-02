@@ -56,19 +56,24 @@ class OrderingBlockManager:
         
         # Use lock to ensure thread-safe block index assignment
         with self._block_index_lock:
-            block.index = self.service.blocks_created
-            block.previous_hash = (
-                self.storage_handler.last_block.hash
-                if self.storage_handler.last_block else "0"
-            )
-            block.hash = block.calculate_hash()
-            sign_block(
-                block,
-                self.service.node_identity.node_id,
-                self.service.node_identity.signing_keypair,
-            )
-
             try:
+                if self.service.should_stop.is_set():
+                    raise RuntimeError("Ordering service is stopping")
+                previous_block = self.storage_handler.last_block
+                block.index = self.service.blocks_created
+                block.previous_hash = previous_block.hash if previous_block else "0"
+                block.creator_id = self.service.node_identity.node_id
+                block.hash = block.calculate_hash()
+                finalizer = getattr(self.service, "block_finalizer", None)
+                if finalizer is not None:
+                    block = finalizer(block, previous_block)
+                if self.service.should_stop.is_set():
+                    raise RuntimeError("Ordering service stopped during block finalization")
+                sign_block(
+                    block,
+                    self.service.node_identity.node_id,
+                    self.service.node_identity.signing_keypair,
+                )
                 chain_name = self.config.get("chain_name")
                 event_count, block_latency = self.storage_handler.save_block(
                     block, chain_name
