@@ -6,48 +6,20 @@ import logging
 import time
 from typing import Any
 
-from hierachain.consensus.proof_of_authority import ProofOfAuthority
+from hierachain.consensus.ordering.types import OrderingStatus
 
 logger = logging.getLogger(__name__)
 
 
 def _process_and_finalize_single_block(sub_chain: Any, block: Any) -> bool:
-    """Process and finalize a single block."""
+    """Apply an already finalized, signed and persisted ordering block unchanged."""
     with sub_chain.block_processing_lock:
-        latest_block = sub_chain.get_latest_block()
-
-        block.index = latest_block.index + 1
-        block.previous_hash = latest_block.hash
-        block.hash = block.calculate_hash()
-        if isinstance(sub_chain.consensus, ProofOfAuthority):
-            finalized_block = sub_chain.consensus.finalize_block(
-                block,
-                sub_chain.name,
-                private_key=sub_chain.node_identity.signing_keypair.private_key,
-            )
-        else:
-            finalized_block = sub_chain.consensus.finalize_block(block, sub_chain.name)
-        sub_chain._sign_block(finalized_block)
-
-        if not sub_chain.is_valid_new_block(finalized_block):
-            logger.error("Failed to add ordered block %d", finalized_block.index)
-            return False
-
-        try:
-            sub_chain.ordering_service.storage_handler.save_block(
-                finalized_block, sub_chain.name
-            )
-        except Exception as e:  # noqa: BLE001
-            logger.error(
-                "Failed to persist finalized block %d: %s", finalized_block.index, e
-            )
-            return False
-
-        if sub_chain.add_block(finalized_block):
-            sub_chain.world_state.apply_block(finalized_block)
+        if sub_chain.add_block(block):
+            sub_chain.world_state.apply_block(block)
             sub_chain.auto_submit_proof_if_needed()
             return True
-
+        sub_chain.ordering_service.status = OrderingStatus.MAINTENANCE
+        sub_chain.ordering_service.should_stop.set()
     logger.error("Failed to add ordered block %d", block.index)
     return False
 
@@ -56,21 +28,14 @@ def _finalize_sub_chain_block_for_chain(sub_chain: Any) -> dict[str, Any] | None
     """Finalize and return a block for the Main Chain."""
     new_blocks: list[Any] = []
 
-    while True:
-        block = sub_chain.ordering_service.get_next_block()
-        if not block:
-            logger.debug(
-                "No block from get_next_block. Queue %d empty.",
-                id(sub_chain.ordering_service.commit_queue),
-            )
-            break
-
-        logger.debug(
-            f"Got block {block.index} from ordering service. "
-            f"Queue {id(sub_chain.ordering_service.commit_queue)}"
-        )
-
-        if _process_and_finalize_single_block(sub_chain, block):
+    # Serialize dequeue and application so concurrent flush/consumer calls keep FIFO order.
+    with sub_chain.block_processing_lock:
+        while True:
+            block = sub_chain.ordering_service.get_next_block()
+            if not block:
+                break
+            if not _process_and_finalize_single_block(sub_chain, block):
+                break
             new_blocks.append(block)
 
     if not new_blocks:
