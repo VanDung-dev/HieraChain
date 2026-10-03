@@ -3,7 +3,9 @@ Channel — secure data channel providing complete isolation between organizatio
 """
 
 import logging
+import threading
 import time
+from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, cast
 
 from hierachain.hierarchical.channel.ledger import ChannelLedger
@@ -18,6 +20,17 @@ if TYPE_CHECKING:
     from hierachain.hierarchical.private_data import PrivateCollection
 
 logger = logging.getLogger(__name__)
+
+
+def _registry_operation(method: Callable[..., Any]) -> Callable[..., Any]:
+    """Read current access state and serialize local registry operations."""
+    @wraps(method)
+    def wrapped(self: "Channel", *args: Any, **kwargs: Any) -> Any:
+        with self._registry_lock:
+            if self._refresh_registry is not None:
+                self._refresh_registry()
+            return method(self, *args, **kwargs)
+    return wrapped
 
 
 class Channel:
@@ -35,6 +48,8 @@ class Channel:
         self.ledger = ChannelLedger()
         self.status = ChannelStatus.ACTIVE
         self._persist_registry: Callable[[], bool] | None = None
+        self._refresh_registry: Callable[[], None] | None = None
+        self._registry_lock = threading.RLock()
 
         self.created_at = time.time()
         self.last_activity = time.time()
@@ -50,6 +65,7 @@ class Channel:
             "events_by_org": {org_id: 0 for org_id in self.organizations.keys()},
         }
 
+    @_registry_operation
     def add_organization(
         self, organization: Organization, endorsements: list[str]
     ) -> bool:
@@ -86,6 +102,7 @@ class Channel:
 
         return True
 
+    @_registry_operation
     def remove_organization(self, org_id: str, endorsements: list[str]) -> bool:
         if org_id not in self.organizations:
             return False
@@ -124,6 +141,7 @@ class Channel:
 
         return True
 
+    @_registry_operation
     def create_private_collection(
         self, name: str, member_org_ids: list[str], config: dict[str, Any]
     ) -> bool:
@@ -144,6 +162,7 @@ class Channel:
 
         return True
 
+    @_registry_operation
     def submit_event(
         self,
         event: dict[str, Any],
@@ -157,7 +176,7 @@ class Channel:
         alone does not grant a role: this method resolves it in the live member
         registry captured from HierarchyManager and checks its registered org/role.
         """
-        if submitter_org_id not in self.organizations:
+        if self.status != ChannelStatus.ACTIVE or submitter_org_id not in self.organizations:
             return False
 
         submitter_org = self.organizations[submitter_org_id]
@@ -202,6 +221,7 @@ class Channel:
         self.last_activity = time.time()
         return True
 
+    @_registry_operation
     def query_events(
         self, query_params: dict[str, Any], requester_org_id: str
     ) -> list[dict[str, Any]] | None:
@@ -221,6 +241,7 @@ class Channel:
     def finalize_block(self) -> Any | None:
         return self.ledger.finalize_block()
 
+    @_registry_operation
     def get_channel_info(self) -> dict[str, Any]:
         return {
             "channel_id": self.channel_id,
@@ -234,6 +255,7 @@ class Channel:
             "statistics": self.event_statistics,
         }
 
+    @_registry_operation
     def get_organization_info(self, org_id: str) -> dict[str, Any] | None:
         if org_id not in self.organizations:
             return None
@@ -247,6 +269,7 @@ class Channel:
             "events_submitted": cast(dict[str, int], self.event_statistics["events_by_org"]).get(org_id, 0),
         }
 
+    @_registry_operation
     def update_channel_policy(
         self, new_policy_config: dict[str, Any], endorsements: list[str]
     ) -> bool:
@@ -286,6 +309,7 @@ class Channel:
 
         return True
 
+    @_registry_operation
     def suspend_channel(self, reason: str, endorsements: list[str]) -> bool:
         if not self.policy.evaluate_endorsement(
             endorsements,
@@ -309,6 +333,7 @@ class Channel:
 
         return True
 
+    @_registry_operation
     def resume_channel(self, endorsements: list[str]) -> bool:
         if not self.policy.evaluate_endorsement(
             endorsements,
