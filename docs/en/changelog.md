@@ -8,7 +8,16 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (37)"
+??? warning "Breaking Changes (43)"
+
+    * 2026-10-03
+
+        * **Database (Registry Revision Guard)**: `SQLBase.save_hierarchy_registry()` / `RedisStorageAdapter.save_hierarchy_registry()` (`hierachain/adapters/database/base/sql_adapter.py`, `hierachain/adapters/database/postgres_adapter.py`, `hierachain/adapters/database/redis_adapter.py`) now require `state["_revision"]` to be a new `str` distinct from `expected_revision` (SQL conditional INSERT/UPDATE on the stored `_revision`, Redis WATCH/MULTI compare, Postgres `%s` dialect override) and reject missing/unchanged revisions — previously accepted any snapshot and overwrote unconditionally.
+        * **Hierarchy (Optimistic Concurrency & Admin Enforcement)**: `_persist_hierarchy_registry()` (`hierachain/hierarchical/hierarchy_manager/base.py`) stamps a `uuid4` `_revision` and rejects stale saves via `expected_revision`, `get_organization()`/`get_channel()`/`_restore_hierarchy_registry()` refresh from persisted state (raising on missing/invalid snapshots), and new `_apply_hierarchy_registry()`/`_mutate_registry()` retry with rollback; `_build_channel_orgs()` (`hierachain/hierarchical/hierarchy_manager/organization.py`) now takes a `registered` dict instead of the manager, and `register_organization_member(..., actor_user_id)` raises `PermissionError` via shared `_is_organization_admin()` for non-admins — previously overwrote newer state and allowed any caller.
+        * **Channel (Live Refresh & ACTIVE Gate)**: `Channel` (`hierachain/hierarchical/channel/channel.py`) serializes registry operations via `_registry_operation` RLock with live `_refresh_registry()` before each call (org add/remove, private-collection creation, event query/info, policy update, suspend/resume), and `submit_event()` returns `False` when `status != ACTIVE` before role resolution — previously served stale membership and accepted events on non-active channels.
+        * **Ordering (Backpressure, Timeout & Gap Detection)**: `OrderingService` (`hierachain/consensus/ordering/service.py`) validates `enqueue_timeout` (`0 < timeout <= 60`, default `1.0`) raising `ValueError` otherwise, reserves queue capacity before the journal write via `_enqueue_event()` raising `OrderingBackpressureError(event_id, journaled)` (`hierachain/consensus/ordering/types.py`) when full/inactive, and `OrderingStorageHandler._load_from_db()` (`hierachain/consensus/ordering/storage.py`) loads via `get_blocks_from_index()` raising `ValueError` on index gaps — previously queued unconditionally and stopped silently at the first missing block.
+        * **API (Backpressure 503 & Admin 403)**: `add_event` (`hierachain/api/ledger/events.py`) maps `OrderingBackpressureError` to HTTP 503 with `{message, event_id, journaled}` for client retry; `register_organization_member` (`hierachain/api/business/organizations.py`) reuses shared `_is_organization_admin()` and maps manager `PermissionError` to 403 while forwarding `actor_user_id` — previously backpressured events surfaced as generic errors with duplicated inline admin checks.
+        * **Core (Block Event Snapshot)**: `Block.to_event_list()` (`hierachain/core/block.py`) converts the verified Arrow table on every call returning an independent snapshot, dropping `_cached_events` memoization and `__slots__` entry (plus `_block_from_dict` cleanup in `hierachain/consensus/ordering/storage.py`) — previously returned a shared mutable cached list that could drift from underlying events.
 
     * 2026-10-01
 
@@ -83,7 +92,16 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (34)"
+??? note "Improvements (40)"
+
+    * 2026-10-03
+
+        * **Journal (Cursor-based Tail Reads)**: new `TransactionJournal.read_since(cursor)` (`hierachain/error_mitigation/journal.py`) flushes/fsyncs the active journal, spans rotated files via `(st_ino, offset)` cursor, reads legacy Parquet only on the initial scan, and fails closed (`ValueError`/`RuntimeError`) on missing/truncated cursors or a missing active file.
+        * **Domains & Hierarchical (Incremental 2PC Recovery)**: `DomainChain._load_transaction_event_markers()` (`hierachain/domains/chains/domain_chain.py`) and `CrossChainTransactionManager._read_latest_records()` (`hierachain/hierarchical/transaction_manager.py`) consume only new frames via `read_since()` with `_transaction_journal_cursor`/`_journal_cursor` plus `_durable_records` cache under lock, falling back to full `replay()` when the cursor API is missing.
+        * **Sub-chain (Bootstrap Retention & Index Reuse)**: `SubChain` (`hierachain/hierarchical/sub_chain/base.py`) constructs ordering with `retain_bootstrap=True`; `_rehydrate_chain_from_ordering_service()`/`_apply_rehydrated_blocks()` (`hierachain/hierarchical/sub_chain/ordering.py`) prefer one-shot `take_bootstrap_blocks()` then `get_blocks_from_db(start_index=0)` and rebuild indexes via `Blockchain._rebuild_event_indexes()`, removing `_update_event_statistics()`.
+        * **Database (Single-statement Block Range)**: new `SQLBase.get_blocks_from_index()` (`hierachain/adapters/database/base/sql_adapter.py`, Postgres `%s` placeholder in `hierachain/adapters/database/postgres_adapter.py`) loads headers plus ordered events in one JOIN (`ORDER BY chain_name, index, event id`) grouped per block; ordered event payloads from `get_event_by_id` now include `chain_name`.
+        * **Ordering (Bootstrap Snapshot & Bounded Certification)**: `OrderingService.take_bootstrap_blocks()` (`hierachain/consensus/ordering/service.py`, appended in `hierachain/consensus/ordering/block_manager.py`) transfers the verified startup snapshot once when `retain_bootstrap=True`; `EventCertifier(max_history=10000)` (`hierachain/consensus/ordering/certifier.py`) LRU-bounds `certified_events` with lock-protected access; `get_event_status` short-circuits durable `ordered` via `get_event_by_id`.
+        * **Core (Eager TTL Cache Cleanup)**: `AdvancedCache` (`hierachain/core/cache.py`) drops the per-instance daemon TTL cleanup thread/`_cleanup_stop`, running eager `cleanup_ttl()` under a single lock on `set` eviction plus `get_stats()`/`get_keys()`/`__len__()`.
 
     * 2026-10-02
 
@@ -149,7 +167,14 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (14)"
+??? warning "Fix (18)"
+
+    * 2026-10-03
+
+        * **Ordering (Serialized Commits & Lockdown)**: share a single `service._commit_lock` RLock across `OrderingBlockManager`/`OrderingMaintenance`/`OrderingProcessor` (`hierachain/consensus/ordering/block_manager.py`, `hierachain/consensus/ordering/maintenance.py`, `hierachain/consensus/ordering/processor.py`, `hierachain/consensus/ordering/service.py`); in-flight commits retry via `OrderingPausedError` keeping the cut batch intact, `LOCKDOWN`/`SHUTDOWN`/`ERROR` are no longer clobbered by `MAINTENANCE`, collection pauses in `LOCKDOWN`, shutdown wakes capacity-blocked producers, and rejected events are removed from the pending map.
+        * **Hierarchy (In-place Registry Refresh)**: `_apply_hierarchy_registry()` refreshes orgs/channels in place preserving `Channel` object references and `events_by_org` counts while closing removed channels, and `_mutate_registry()` retries registry mutations 3x with rollback (`hierachain/hierarchical/hierarchy_manager/base.py`).
+        * **Channel (Serialized Registry Access)**: `_registry_operation` decorator (`hierachain/hierarchical/channel/channel.py`) serializes org add/remove, private-collection creation, event query, channel/org info, policy update, and suspend/resume under the shared registry RLock with live refresh.
+        * **API (Centralized Org Admin Check)**: `register_organization_member` (`hierachain/api/business/organizations.py`) reuses shared `_is_organization_admin()` (`hierachain/hierarchical/hierarchy_manager/organization.py`) replacing duplicated inline role/identity checks.
 
     * 2026-10-02
 

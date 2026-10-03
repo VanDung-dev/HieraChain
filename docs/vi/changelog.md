@@ -8,7 +8,16 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (37)"
+??? warning "Breaking Changes (43)"
+
+    * 2026-10-03
+
+        * **Database (Chặn Ghi Registry Theo Revision)**: `SQLBase.save_hierarchy_registry()` / `RedisStorageAdapter.save_hierarchy_registry()` (`hierachain/adapters/database/base/sql_adapter.py`, `hierachain/adapters/database/postgres_adapter.py`, `hierachain/adapters/database/redis_adapter.py`) nay bắt buộc `state["_revision"]` là `str` mới khác `expected_revision` (SQL INSERT/UPDATE có điều kiện theo `_revision` đã lưu, Redis so sánh qua WATCH/MULTI, Postgres dùng placeholder `%s`) và từ chối revision thiếu/không đổi — trước đây chấp nhận mọi snapshot và ghi đè vô điều kiện.
+        * **Hierarchy (Đồng thời Lạc quan & Siết Quyền Admin)**: `_persist_hierarchy_registry()` (`hierachain/hierarchical/hierarchy_manager/base.py`) đóng dấu `uuid4` `_revision` và từ chối bản ghi cũ qua `expected_revision`, `get_organization()`/`get_channel()`/`_restore_hierarchy_registry()` refresh từ state đã persist (raise khi snapshot thiếu/không hợp lệ), cùng `_apply_hierarchy_registry()`/`_mutate_registry()` retry kèm rollback; `_build_channel_orgs()` (`hierachain/hierarchical/hierarchy_manager/organization.py`) nay nhận `registered` dict thay vì manager, và `register_organization_member(..., actor_user_id)` raise `PermissionError` qua `_is_organization_admin()` dùng chung khi không phải admin — trước đây ghi đè state mới hơn và cho phép mọi caller.
+        * **Channel (Refresh Trực tiếp & Cổng ACTIVE)**: `Channel` (`hierachain/hierarchical/channel/channel.py`) tuần tự hóa thao tác registry qua RLock `_registry_operation` kèm `_refresh_registry()` trực tiếp trước mỗi lệnh gọi (thêm/xóa org, tạo private-collection, truy vấn/thông tin event, cập nhật policy, suspend/resume), và `submit_event()` trả `False` khi `status != ACTIVE` trước khi phân giải vai trò — trước đây phục vụ membership cũ và nhận event trên channel không active.
+        * **Ordering (Backpressure, Validate Timeout & Phát hiện Gap)**: `OrderingService` (`hierachain/consensus/ordering/service.py`) validate `enqueue_timeout` (`0 < timeout <= 60`, mặc định `1.0`) và raise `ValueError` nếu ngoài biên, giữ chỗ hàng đợi trước khi ghi journal qua `_enqueue_event()` với `OrderingBackpressureError(event_id, journaled)` (`hierachain/consensus/ordering/types.py`) khi đầy/không active, còn `OrderingStorageHandler._load_from_db()` (`hierachain/consensus/ordering/storage.py`) tải qua `get_blocks_from_index()` và raise `ValueError` khi gap index — trước đây queue vô điều kiện và dừng lặng lẽ ở block thiếu đầu tiên.
+        * **API (Backpressure 503 & Admin 403)**: `add_event` (`hierachain/api/ledger/events.py`) chuyển `OrderingBackpressureError` thành HTTP 503 kèm `{message, event_id, journaled}` để client retry; `register_organization_member` (`hierachain/api/business/organizations.py`) dùng chung `_is_organization_admin()` và chuyển `PermissionError` của manager thành 403 đồng thời chuyển tiếp `actor_user_id` — trước đây event nghẽn hiện lỗi chung và kiểm tra admin viết inline trùng lặp.
+        * **Core (Snapshot Event Block Độc lập)**: `Block.to_event_list()` (`hierachain/core/block.py`) chuyển đổi bảng Arrow đã verify ở mỗi lần gọi để trả snapshot độc lập, loại bỏ memoization `_cached_events` và entry `__slots__` (kèm dọn `_block_from_dict` trong `hierachain/consensus/ordering/storage.py`) — trước đây trả về list cache dùng chung có thể lệch với events gốc.
 
     * 2026-10-01
 
@@ -83,7 +92,16 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (34)"
+??? note "Improvements (40)"
+
+    * 2026-10-03
+
+        * **Journal (Đọc Đuôi Theo Cursor)**: thêm `TransactionJournal.read_since(cursor)` (`hierachain/error_mitigation/journal.py`) flush/fsync journal active, quét xuyên file xoay vòng bằng cursor `(st_ino, offset)`, chỉ đọc Parquet legacy ở lần quét đầu, và fail-closed (`ValueError`/`RuntimeError`) khi cursor thiếu/cụt hoặc thiếu file active.
+        * **Domains & Hierarchical (Phục hồi 2PC Tăng dần)**: `DomainChain._load_transaction_event_markers()` (`hierachain/domains/chains/domain_chain.py`) và `CrossChainTransactionManager._read_latest_records()` (`hierachain/hierarchical/transaction_manager.py`) chỉ tiêu thụ frame mới qua `read_since()` với `_transaction_journal_cursor`/`_journal_cursor` kèm cache `_durable_records` dưới lock, fallback về `replay()` đầy đủ khi thiếu API cursor.
+        * **Sub-chain (Giữ Bootstrap & Tái dùng Index)**: `SubChain` (`hierachain/hierarchical/sub_chain/base.py`) dựng ordering với `retain_bootstrap=True`; `_rehydrate_chain_from_ordering_service()`/`_apply_rehydrated_blocks()` (`hierachain/hierarchical/sub_chain/ordering.py`) ưu tiên `take_bootstrap_blocks()` một lần rồi `get_blocks_from_db(start_index=0)` và rebuild index qua `Blockchain._rebuild_event_indexes()`, loại bỏ `_update_event_statistics()`.
+        * **Database (Truy vấn Block Range Một Câu lệnh)**: thêm `SQLBase.get_blocks_from_index()` (`hierachain/adapters/database/base/sql_adapter.py`, Postgres dùng placeholder `%s` trong `hierachain/adapters/database/postgres_adapter.py`) tải header kèm events có thứ tự trong một JOIN (`ORDER BY chain_name, index, event id`) gom theo từng block; payload event có thứ tự từ `get_event_by_id` nay gồm `chain_name`.
+        * **Ordering (Snapshot Bootstrap & Giới hạn Certification)**: `OrderingService.take_bootstrap_blocks()` (`hierachain/consensus/ordering/service.py`, append trong `hierachain/consensus/ordering/block_manager.py`) chuyển snapshot khởi động đã verify một lần khi `retain_bootstrap=True`; `EventCertifier(max_history=10000)` (`hierachain/consensus/ordering/certifier.py`) giới hạn LRU cho `certified_events` kèm truy cập có lock; `get_event_status` trả nhanh `ordered` đã bền qua `get_event_by_id`.
+        * **Core (Dọn TTL Eager cho Cache)**: `AdvancedCache` (`hierachain/core/cache.py`) bỏ luồng nền TTL/`_cleanup_stop` theo từng instance, chạy `cleanup_ttl()` eager dưới một lock khi `set` loại bỏ kèm `get_stats()`/`get_keys()`/`__len__()`.
 
     * 2026-10-02
 
@@ -149,7 +167,14 @@ icon: material/history
         * **Đồng thuận (Ordering Service)**: Giới hạn dung lượng hàng đợi `event_pool` bằng `Settings.EVENT_POOL_MAX_SIZE` trong `hierachain/consensus/ordering/service.py` nhằm chống tràn bộ nhớ, đồng thời bổ sung xử lý chế độ bảo trì trong `submit_event` để chờ kích hoạt (`wait_for_active()`) và từ chối gửi event khi dịch vụ không ở trạng thái hoạt động.
         * **API (Ledger Events)**: Cập nhật endpoint `add_event` tại `/api/ledger/events` (`hierachain/api/ledger/events.py`) để trả về `event_id` có thẩm quyền trực tiếp từ `sub_chain.add_event(event)` thay vì tạo mã định danh vị trí giả lập.
 
-??? warning "Fix (14)"
+??? warning "Fix (18)"
+
+    * 2026-10-03
+
+        * **Ordering (Tuần tự hóa Commit & Lockdown)**: dùng chung một RLock `service._commit_lock` cho `OrderingBlockManager`/`OrderingMaintenance`/`OrderingProcessor` (`hierachain/consensus/ordering/block_manager.py`, `hierachain/consensus/ordering/maintenance.py`, `hierachain/consensus/ordering/processor.py`, `hierachain/consensus/ordering/service.py`); commit đang bay retry qua `OrderingPausedError` giữ nguyên batch đã cắt, `LOCKDOWN`/`SHUTDOWN`/`ERROR` không còn bị `MAINTENANCE` ghi đè, tạm dừng thu thập khi `LOCKDOWN`, shutdown đánh thức producer đang nghẽn, và event bị từ chối được xóa khỏi pending map.
+        * **Hierarchy (Refresh Registry Tại chỗ)**: `_apply_hierarchy_registry()` refresh orgs/channels tại chỗ giữ nguyên tham chiếu object `Channel` và đếm `events_by_org` đồng thời đóng các channel đã xóa, còn `_mutate_registry()` retry thay đổi registry 3 lần kèm rollback (`hierachain/hierarchical/hierarchy_manager/base.py`).
+        * **Channel (Tuần tự hóa Truy cập Registry)**: decorator `_registry_operation` (`hierachain/hierarchical/channel/channel.py`) tuần tự hóa thêm/xóa org, tạo private-collection, truy vấn event, thông tin channel/org, cập nhật policy và suspend/resume dưới RLock registry dùng chung kèm refresh trực tiếp.
+        * **API (Tập trung Kiểm tra Admin Org)**: `register_organization_member` (`hierachain/api/business/organizations.py`) dùng chung `_is_organization_admin()` (`hierachain/hierarchical/hierarchy_manager/organization.py`) thay cho các kiểm tra role/identity viết inline trùng lặp.
 
     * 2026-10-02
 
