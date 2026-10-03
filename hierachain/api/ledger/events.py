@@ -13,6 +13,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.api.ledger.schemas import EventRequest, EventResponse
 from hierachain.api.storage.endpoint_helpers import process_event_details
+from hierachain.consensus.ordering.types import OrderingBackpressureError
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.sanitization import sanitize_dict, sanitize_string
 from hierachain.security.secure_logging import SecureLogger
@@ -105,6 +106,10 @@ async def add_event(
 
     try:
         event_id = sub_chain.add_event(event)
+    except OrderingBackpressureError as exc:
+        raise HTTPException(status_code=503, detail={
+            "message": str(exc), "event_id": exc.event_id, "journaled": exc.journaled,
+        }) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

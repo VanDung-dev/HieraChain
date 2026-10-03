@@ -17,6 +17,9 @@ from hierachain.api.business.schemas import (
 from hierachain.api.business.state import _organizations
 from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
+from hierachain.hierarchical.hierarchy_manager.organization import (
+    _is_organization_admin,
+)
 from hierachain.hierarchical.types import OrganizationError
 from hierachain.security.sanitization import sanitize_dict, sanitize_string
 from hierachain.security.secure_logging import SecureLogger
@@ -132,16 +135,7 @@ async def register_organization_member(
             detail=f"Organization '{org_id}' not found.",
         )
 
-    actor = organization.members.get(user_id)
-    actor_identity = actor.get("identity") if isinstance(actor, dict) else None
-    if (
-        not isinstance(actor, dict)
-        or actor.get("role") != "admin"
-        or not isinstance(actor_identity, dict)
-        or actor_identity.get("user_id") != user_id
-        or actor_identity.get("org_id") != org_id
-        or actor_identity.get("role") != "admin"
-    ):
+    if not _is_organization_admin(organization, user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only a registered organization administrator can add members.",
@@ -162,7 +156,12 @@ async def register_organization_member(
     role = member_request.role
     identity = {"user_id": member_id, "org_id": org_id, "role": role}
     try:
-        manager.register_organization_member(org_id, member_id, identity, role)
+        manager.register_organization_member(org_id, member_id, identity, role, actor_user_id=user_id)
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only a registered organization administrator can add members.",
+        ) from e
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
