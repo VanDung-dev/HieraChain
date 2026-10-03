@@ -1,6 +1,8 @@
 """API regression coverage for authenticated channel event submission."""
 
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi import FastAPI
@@ -13,6 +15,23 @@ from hierachain.api.ledger.events import router
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.key_manager import KeyManager
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
+
+
+@pytest.fixture(autouse=True)
+def isolated_managers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Keep registry tests independent and close all managers on assertion failure."""
+    monkeypatch.chdir(tmp_path)
+    created: list[HierarchyManager] = []
+    original_init = HierarchyManager.__init__
+
+    def tracked_init(manager: HierarchyManager, *args: Any, **kwargs: Any) -> None:
+        original_init(manager, *args, **kwargs)
+        created.append(manager)
+
+    monkeypatch.setattr(HierarchyManager, "__init__", tracked_init)
+    yield
+    for manager in reversed(created):
+        manager.close()
 
 
 def test_channel_event_submission_uses_verified_user_and_live_role_registry(
@@ -297,3 +316,211 @@ def test_channel_event_rest_submission_uses_restored_registry(
     assert len(channel.ledger.current_block_events) == 1
     assert channel.event_statistics["events_by_org"]["org-a"] == 1
     manager.storage.close()
+
+
+def test_channel_http_ack_survives_restart_and_finalization(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        HierarchyManager, "_create_storage",
+        staticmethod(lambda: SQLiteAdapter(str(tmp_path / "durable-channel.sqlite"))),
+    )
+    manager = HierarchyManager()
+    manager.create_organization("org", "Organization", ["admin"])
+    manager.create_channel("durable", ["org"])
+    keys = KeyManager()
+    key = keys.create_key("admin", permissions=["events"])
+    verifier = APIKeyVerifier({"enabled": True, "key_location": "header", "key_name": "x-api-key"})
+    verifier.key_manager = keys
+    app = FastAPI()
+    app.state.auth_verifier = verifier
+    app.include_router(router)
+    app.dependency_overrides[get_hierarchy_manager] = lambda: manager
+    with TestClient(app) as client:
+        response = client.post(
+            "/channels/durable/organizations/org/events", headers={"x-api-key": key},
+            json={"entity_id": "retained", "event_type": "created", "details": {"nested": {"value": "original"}}},
+        )
+        assert response.status_code == 200, response.text
+    manager.storage.close()
+
+    restored = HierarchyManager()
+    channel = restored.get_channel("durable")
+    assert channel is not None
+    assert channel.ledger.current_block_events[0]["entity_id"] == "retained"
+    assert channel.ledger.current_block_events[0]["submitted_by"] == "admin"
+    assert channel.event_statistics["total_events"] == 1
+    block = channel.finalize_block()
+    assert block is not None and block.signature
+    restored.storage.close()
+
+    finalized = HierarchyManager()
+    channel = finalized.get_channel("durable")
+    assert channel is not None
+    assert not channel.ledger.current_block_events
+    assert channel.ledger.height == 1
+    assert channel.ledger.last_block_hash == block.hash
+    assert channel.query_events({"entity_id": "retained"}, "org")[0]["details"] == {
+        "nested": {"value": "original"}
+    }
+    assert channel.event_statistics["total_events"] == 1
+    finalized.storage.close()
+
+
+def test_channel_failed_finalization_keeps_durable_pending_events(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        HierarchyManager, "_create_storage",
+        staticmethod(lambda: SQLiteAdapter(str(tmp_path / "finalization.sqlite"))),
+    )
+    manager = HierarchyManager()
+    manager.create_organization("org", "Organization", ["admin"])
+    channel = manager.create_channel("durable", ["org"])
+    assert channel.submit_event({"entity_id": "pending", "event": "created"}, "org", submitter_user_id="admin")
+    monkeypatch.setattr(manager.storage, "save_hierarchy_registry", lambda *_args, **_kwargs: False)
+    with pytest.raises(RuntimeError, match="persist channel ledger"):
+        channel.finalize_block()
+    assert channel.ledger.height == 0
+    assert channel.ledger.last_block_hash == "0"
+    assert channel.ledger.blocks == []
+    assert channel.ledger.current_block_events[0]["entity_id"] == "pending"
+    manager.storage.close()
+    restored = HierarchyManager()
+    assert restored.get_channel("durable").ledger.current_block_events[0]["entity_id"] == "pending"
+    assert restored.get_channel("durable").finalize_block() is not None
+    restored.storage.close()
+
+
+def test_channel_workers_refresh_pending_events_before_writing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        HierarchyManager, "_create_storage",
+        staticmethod(lambda: SQLiteAdapter(str(tmp_path / "workers.sqlite"))),
+    )
+    first = HierarchyManager()
+    first.create_organization("org", "Organization", ["admin"])
+    first_channel = first.create_channel("durable", ["org"])
+    second = HierarchyManager()
+    second_channel = second.get_channel("durable")
+    assert first_channel.submit_event({"entity_id": "first", "event": "created"}, "org", submitter_user_id="admin")
+    assert second_channel.submit_event({"entity_id": "second", "event": "created"}, "org", submitter_user_id="admin")
+    block = first_channel.finalize_block()
+    assert {event["entity_id"] for event in block.to_event_list()} == {"first", "second"}
+    first.storage.close()
+    second.storage.close()
+    restored = HierarchyManager()
+    channel = restored.get_channel("durable")
+    assert channel.event_statistics["total_events"] == 2
+    assert channel.ledger.height == 1
+    assert channel.ledger.current_block_events == []
+    restored.storage.close()
+
+
+def test_channel_restore_rejects_tampered_and_swapped_signed_histories(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from copy import deepcopy
+
+    from hierachain.hierarchical.channel.ledger import ChannelLedger
+
+    monkeypatch.setattr(HierarchyManager, "_create_storage", staticmethod(lambda: None))
+    manager = HierarchyManager()
+    manager.create_organization("org", "Organization", ["admin"])
+    channel = manager.create_channel("original", ["org"])
+    assert channel.submit_event({"entity_id": "signed", "event": "created"}, "org", submitter_user_id="admin")
+    channel.finalize_block()
+    snapshot = channel.ledger.snapshot()
+    other = ChannelLedger(manager.main_chain.node_identity, manager.main_chain.trusted_public_keys, "other")
+    with pytest.raises(RuntimeError, match="signed channel block history"):
+        other.restore(snapshot)
+    changed = deepcopy(snapshot)
+    changed["blocks"][0]["previous_hash"] = "altered"
+    with pytest.raises(RuntimeError, match="signed channel block history"):
+        channel.ledger.restore(changed)
+    assert channel.ledger.height == 1
+    assert channel.ledger.blocks[0].previous_hash == "0"
+
+
+def test_channel_conflicting_workers_ack_only_the_persisted_event(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    monkeypatch.setattr(
+        HierarchyManager, "_create_storage",
+        staticmethod(lambda: SQLiteAdapter(str(tmp_path / "conflict.sqlite"))),
+    )
+    first = HierarchyManager()
+    first.create_organization("org", "Organization", ["admin"])
+    first.create_channel("durable", ["org"])
+    second = HierarchyManager()
+    barrier = Barrier(2)
+    original_saves = []
+    for manager in (first, second):
+        save = manager.storage.save_hierarchy_registry
+        original_saves.append(save)
+
+        def synchronized_save(*args, _save=save, **kwargs):
+            barrier.wait(timeout=5)
+            return _save(*args, **kwargs)
+
+        monkeypatch.setattr(manager.storage, "save_hierarchy_registry", synchronized_save)
+
+    def submit(manager: HierarchyManager, entity_id: str) -> bool:
+        try:
+            return manager.get_channel("durable").submit_event(
+                {"entity_id": entity_id, "event": "created"}, "org", submitter_user_id="admin",
+            )
+        except RuntimeError:
+            return False
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(submit, manager, name) for manager, name in ((first, "first"), (second, "second"))]
+        accepted = [future.result(timeout=10) for future in futures]
+    assert sorted(accepted) == [False, True]
+    for manager, save in zip((first, second), original_saves):
+        monkeypatch.setattr(manager.storage, "save_hierarchy_registry", save)
+        manager.storage.close()
+    restored = HierarchyManager()
+    channel = restored.get_channel("durable")
+    assert [event["entity_id"] for event in channel.ledger.current_block_events] == [
+        "first" if accepted[0] else "second"
+    ]
+    assert channel.event_statistics["total_events"] == 1
+    restored.storage.close()
+
+
+def test_channel_http_rejects_failed_storage_without_accepting_event(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        HierarchyManager, "_create_storage",
+        staticmethod(lambda: SQLiteAdapter(str(tmp_path / "channel-failure.sqlite"))),
+    )
+    manager = HierarchyManager()
+    manager.create_organization("org", "Organization", ["admin"])
+    channel = manager.create_channel("durable", ["org"])
+    keys = KeyManager()
+    key = keys.create_key("admin", permissions=["events"])
+    verifier = APIKeyVerifier({"enabled": True, "key_location": "header", "key_name": "x-api-key"})
+    verifier.key_manager = keys
+    app = FastAPI()
+    app.state.auth_verifier = verifier
+    app.include_router(router)
+    app.dependency_overrides[get_hierarchy_manager] = lambda: manager
+    monkeypatch.setattr(manager.storage, "save_hierarchy_registry", lambda *_args, **_kwargs: False)
+    with TestClient(app) as client:
+        response = client.post(
+            "/channels/durable/organizations/org/events", headers={"x-api-key": key},
+            json={"entity_id": "not-accepted", "event_type": "created"},
+        )
+        assert response.status_code == 503, response.text
+    assert channel.ledger.current_block_events == []
+    assert channel.event_statistics["total_events"] == 0
+    manager.storage.close()
+    restored = HierarchyManager()
+    assert restored.get_channel("durable").ledger.current_block_events == []
+    restored.storage.close()

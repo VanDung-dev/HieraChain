@@ -261,11 +261,3 @@ def test_production_mode_restricts_queries(monkeypatch):
     monkeypatch.setenv("ENV", "development")
     dev_complexity = graphql_security.estimate_complexity(query)
     assert dev_complexity > 0
-
-
-def test_module_exports():
-    """Test that required functions are exported."""
-    assert hasattr(graphql_security, 'check_rate_limit')
-    assert hasattr(graphql_security, 'is_introspection_query')
-    assert hasattr(graphql_security, 'get_query_depth')
-    assert hasattr(graphql_security, 'estimate_complexity')

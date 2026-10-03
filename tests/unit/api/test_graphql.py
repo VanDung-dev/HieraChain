@@ -5,12 +5,6 @@ Test suite for the HieraChain GraphQL API.
 from unittest.mock import MagicMock, patch
 
 
-def test_graphql_schema_import():
-    """Test that GraphQL schema can be imported"""
-    from hierachain.api.graphql.schema import schema
-    assert schema is not None
-
-
 def test_graphql_query_all_chains():
     """Test GraphQL query for all chains"""
     from hierachain.api.graphql.schema import schema
@@ -189,34 +183,20 @@ def test_graphql_query_blocks():
 
 def test_graphql_query_events():
     """Test GraphQL query for events"""
+    from types import SimpleNamespace
+
     from hierachain.api.graphql.schema import schema
     from hierachain.api.ledger import depds
-    
-    # Mock events - use plain dict instead of MagicMock to avoid ChunkedArray issue
-    mock_event1 = MagicMock()
-    mock_event1.entity_id = "entity1"
-    mock_event1.event_type = "created"
-    mock_event1.event = "created"
-    mock_event1.data = {"key": "value"}
-    mock_event1.timestamp = 1234567890.0
-    mock_event1.signature = "sig1"
-    
-    mock_event2 = MagicMock()
-    mock_event2.entity_id = "entity2"
-    mock_event2.event_type = "updated"
-    mock_event2.event = "updated"
-    mock_event2.data = {"key2": "value2"}
-    mock_event2.timestamp = 1234567900.0
-    mock_event2.signature = "sig2"
-    
-    # Mock the block containing events
-    mock_block = MagicMock()
-    mock_block.events = [mock_event1, mock_event2]
-    
-    # Mock the chain - use chain attribute with blocks containing events
-    mock_chain = MagicMock()
-    mock_chain.chain = [mock_block]
-    
+    from hierachain.core.block import Block
+
+    block = Block(index=1, previous_hash="0", events=[
+        {"entity_id": "entity1", "event": "created", "details": {"key": "value"},
+         "timestamp": 1234567890.0},
+        {"entity_id": "entity2", "event": "updated", "details": {"key2": "value2"},
+         "timestamp": 1234567900.0},
+    ])
+    mock_chain = SimpleNamespace(chain=[block])
+
     mock_manager = MagicMock()
     mock_manager.get_main_chain.return_value = None
     mock_manager.get_all_sub_chains.return_value = {"TestChain": mock_chain}
@@ -239,6 +219,15 @@ def test_graphql_query_events():
         assert len(events) == 2
         assert events[0]['entityId'] == "entity1"
         assert events[0]['eventType'] == "created"
+        import asyncio
+
+        filtered = asyncio.run(schema.execute_async(
+            '{ events(chainName: "TestChain", entityId: "entity2", eventType: "updated", '
+            'fromTimestamp: 1234567895, toTimestamp: 1234567901) { entityId details } }'
+        ))
+        assert filtered.errors is None
+        assert filtered.data["events"] == [{"entityId": "entity2", "details": '{"key2":"value2"}'}]
+
 
 
 def test_graphql_mutation_add_event():
@@ -310,24 +299,3 @@ def test_graphql_mutation_add_event_invalid_chain():
         data = result.data['addEvent']
         assert data['success'] is False
         assert 'not found' in data['error'].lower()
-
-
-def test_graphql_types_exist():
-    """Test that all GraphQL types are properly defined"""
-    from hierachain.api.graphql.schema import (
-        BlockType,
-        ChainStatusType,
-        EventType,
-        Mutations,
-        Query,
-        schema,
-    )
-    from hierachain.api.graphql.types import BlockMetadataType
-    
-    assert EventType is not None
-    assert BlockType is not None
-    assert BlockMetadataType is not None
-    assert ChainStatusType is not None
-    assert Query is not None
-    assert Mutations is not None
-    assert schema is not None

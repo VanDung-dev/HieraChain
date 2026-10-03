@@ -303,7 +303,7 @@ def test_production_key_file_survives_app_restart(
     tmp_path: Path,
 ) -> None:
     provisioner = KeyManager()
-    api_key = provisioner.create_key("operator", ["chains"])
+    api_key = provisioner.create_key("operator", ["chains", "events"])
     key_file = tmp_path / "api_keys.json"
     key_file.write_text(json.dumps(provisioner.storage), encoding="utf-8")
     monkeypatch.setenv("HRC_ENV", "production")
