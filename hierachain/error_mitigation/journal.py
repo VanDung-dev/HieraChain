@@ -554,6 +554,43 @@ class TransactionJournal:
             with self._lock:
                 self._open_journal()
 
+    def read_since(
+        self, cursor: tuple[int, int] | None = None,
+    ) -> tuple[list[dict[str, Any]], tuple[int, int]]:
+        """Read durable frames after an inode/offset cursor, including rotated files.
+
+        A removed or truncated cursor fails closed. Legacy Parquet is read only
+        during the initial scan; subsequent reads start at a verified Arrow boundary.
+        """
+        with self._lock:
+            if self._journal_file is None:
+                raise RuntimeError("Cannot read a closed transaction journal")
+            self._journal_file.flush()
+            os.fsync(self._journal_file.fileno())
+            # ponytail: enumerate archive names per tail read; compact archives
+            # only when file-count profiling warrants a persistent manifest.
+            files = self._get_journal_files()
+            if not files or files[-1] != self.active_log_file:
+                raise ValueError("Active journal file is missing")
+            if cursor is not None:
+                position = next((i for i, path in enumerate(files) if path.stat().st_ino == cursor[0]), None)
+                if position is None:
+                    raise ValueError("Journal cursor file is missing")
+                files = files[position:]
+                if cursor[1] > files[0].stat().st_size:
+                    raise ValueError("Journal cursor file was truncated")
+            records: list[dict[str, Any]] = []
+            for i, path in enumerate(files):
+                if path.suffix == ".parquet":
+                    records.extend(self._iter_parquet_file(path))
+                    continue
+                with path.open("rb") as handle:
+                    if i == 0 and cursor is not None:
+                        handle.seek(cursor[1])
+                    records.extend(_iterate_journal_batches(handle, self._schema))
+                    next_cursor = (path.stat().st_ino, handle.tell())
+            return records, next_cursor
+
     def close(self):
         """Close the journal file handle."""
         with self._lock:
