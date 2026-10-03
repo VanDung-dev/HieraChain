@@ -6,6 +6,8 @@ import logging
 from queue import Empty
 from typing import Any
 
+from hierachain.core.blockchain import Blockchain
+
 logger = logging.getLogger(__name__)
 
 
@@ -51,22 +53,12 @@ def _check_divergence_and_rehydrate(
 def _apply_rehydrated_blocks(sub_chain: Any, all_blocks: list) -> None:
     """Refresh the entire local chain from the reloaded block list."""
     with sub_chain.lock:
-        temp_entity_index = dict(sub_chain.entity_event_index)
-
         sub_chain.chain.clear()
-        sub_chain.total_events = 0
-        sub_chain.event_type_counts.clear()
-        sub_chain.entity_event_index.clear()
-
         sub_chain.world_state.clear()
         for block in all_blocks:
             sub_chain.chain.append(block)
             sub_chain.world_state.apply_block(block)
-            _update_event_statistics(sub_chain, block)
-
-        for entity_id, events in temp_entity_index.items():
-            if entity_id not in sub_chain.entity_event_index:
-                sub_chain.entity_event_index[entity_id] = events
+        Blockchain._rebuild_event_indexes(sub_chain)
 
     if not sub_chain.is_chain_valid():
         raise ValueError(
@@ -78,9 +70,9 @@ def _rehydrate_chain_from_ordering_service(
     sub_chain: Any, _latest_block_os: Any
 ) -> None:
     """Rehydrate the local chain from the Ordering Service."""
-    all_blocks = (
-        sub_chain.ordering_service.storage_handler.get_blocks_from_db(start_index=0)
-    )
+    all_blocks = sub_chain.ordering_service.take_bootstrap_blocks()
+    if all_blocks is None:
+        all_blocks = sub_chain.ordering_service.storage_handler.get_blocks_from_db(start_index=0)
 
     if not all_blocks:
         return
@@ -102,8 +94,7 @@ def _rehydrate_chain_from_ordering_service(
 
 def _sync_chain_for_sub_chain(sub_chain: Any) -> None:
     """Synchronize local chain with Ordering Service (Rehydration)."""
-    latest_block_os = sub_chain.ordering_service.get_latest_block()
-    _rehydrate_chain_from_ordering_service(sub_chain, latest_block_os)
+    _rehydrate_chain_from_ordering_service(sub_chain, None)
     _discard_rehydrated_blocks_from_queue(sub_chain)
 
 
@@ -137,28 +128,3 @@ def _discard_rehydrated_blocks_from_queue(sub_chain: Any) -> None:
             "Queued ordering blocks conflict with rehydrated blocks: "
             f"{conflicting_indexes}"
         )
-
-
-def _update_event_statistics(sub_chain: Any, block: Any) -> None:
-    """Update event statistics for a block during rehydration."""
-    events = (
-        block.to_event_list()
-        if hasattr(block, "to_event_list")
-        else block.events
-    )
-    sub_chain.total_events += len(events)
-
-    for event in events:
-        etype = event.get("event", "unknown")
-        sub_chain.event_type_counts[etype] = (
-            sub_chain.event_type_counts.get(etype, 0) + 1
-        )
-
-        entity_id = event.get("entity_id")
-        if entity_id:
-            if entity_id not in sub_chain.entity_event_index:
-                sub_chain.entity_event_index[entity_id] = []
-            sub_chain.entity_event_index[entity_id].append({
-                "block_index": block.index,
-                "event": event,
-            })

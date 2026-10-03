@@ -247,6 +247,7 @@ class SubChain(Blockchain):
             node_identity=self.node_identity,
             genesis_block=self.chain[0],
             block_finalizer=self._finalize_ordered_block,
+            retain_bootstrap=True,
         )
 
     def add_event(self, event: dict[str, Any]) -> str:
