@@ -8,9 +8,11 @@ import logging
 import os
 import threading
 import time
-from collections.abc import Iterator
+import uuid
+from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack, contextmanager
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
 _SHARED_POOL = ThreadPoolExecutor(max_workers=os.cpu_count() or 4)
@@ -25,6 +27,7 @@ def _shared_pool(max_workers: int | None = None) -> Iterator[ThreadPoolExecutor]
         yield _SHARED_POOL
 
 from hierachain.hierarchical.channel import Channel
+from hierachain.hierarchical.channel.policy import ChannelPolicy
 from hierachain.hierarchical.channel.types import ChannelStatus
 from hierachain.hierarchical.main_chain import MainChain
 from hierachain.hierarchical.multi_org import MultiOrgNetwork, Organization
@@ -43,6 +46,7 @@ from hierachain.hierarchical.hierarchy_manager.organization import (
     _build_channel_orgs,
     _build_collection_orgs,
     _init_organization_msp,
+    _is_organization_admin,
     _trace_entity_history,
 )
 from hierachain.hierarchical.hierarchy_manager.validation import (
@@ -87,6 +91,8 @@ class HierarchyManager:
         self.channels: dict[str, Channel] = {}
         self.private_collections: dict[str, PrivateCollection] = {}
         self._registry_lock = threading.RLock()
+        self._registry_state: dict[str, Any] | None = None
+        self._registry_mutating = False
 
         self.transaction_manager: CrossChainTransactionManager = (
             CrossChainTransactionManager(self)
@@ -194,7 +200,13 @@ class HierarchyManager:
             if not callable(save):
                 return False
             try:
-                return save(self._hierarchy_registry_snapshot()) is True
+                state = self._hierarchy_registry_snapshot()
+                state["_revision"] = uuid.uuid4().hex
+                revision = (self._registry_state or {}).get("_revision")
+                if save(state, expected_revision=revision) is not True:
+                    return False
+                self._registry_state = deepcopy(state)
+                return True
             except Exception:
                 logger.exception("Could not persist hierarchy registry")
                 return False
@@ -205,15 +217,23 @@ class HierarchyManager:
             return
         state = load()
         if state is None:
+            if (self._registry_state or {}).get("_revision") is not None:
+                raise RuntimeError("Persisted hierarchy registry is missing")
             return
+        if state == self._registry_state:
+            return
+        self._apply_hierarchy_registry(state)
+
+    def _apply_hierarchy_registry(self, state: dict[str, Any]) -> None:
+        """Refresh access state in place, preserving channel ledgers and references."""
         if (
             not isinstance(state, dict)
             or not isinstance(state.get("organizations"), dict)
             or not isinstance(state.get("channels"), dict)
+            or ("_revision" in state and not isinstance(state["_revision"], str))
         ):
             raise RuntimeError("Invalid hierarchy registry snapshot")
 
-        network = MultiOrgNetwork()
         organizations: dict[str, Organization] = {}
         for org_id, saved in state["organizations"].items():
             if not isinstance(org_id, str) or not isinstance(saved, dict):
@@ -235,10 +255,8 @@ class HierarchyManager:
                     raise RuntimeError("Invalid member in hierarchy registry")
             org.members = members
             organizations[org_id] = org
-            network.add_organization(org)
 
-        self.organizations = organizations
-        self.network = network
+        prepared: dict[str, tuple[list[Any], ChannelPolicy, ChannelStatus]] = {}
         for channel_id, saved in state["channels"].items():
             if not isinstance(channel_id, str) or not isinstance(saved, dict):
                 raise RuntimeError("Invalid channel in hierarchy registry")
@@ -246,10 +264,65 @@ class HierarchyManager:
             policy = saved.get("policy")
             if not isinstance(org_ids, list) or not isinstance(policy, dict):
                 raise RuntimeError("Invalid channel in hierarchy registry")
-            channel = Channel(channel_id, _build_channel_orgs(org_ids, self), policy)
-            channel.status = ChannelStatus(saved.get("status"))
+            channel_orgs = _build_channel_orgs(org_ids, organizations)
+            prepared[channel_id] = (channel_orgs, ChannelPolicy(policy), ChannelStatus(saved.get("status")))
+
+        # Validate the entire snapshot before updating objects held by callers.
+        network = MultiOrgNetwork()
+        for org_id, org in organizations.items():
+            existing = self.organizations.get(org_id)
+            if existing is not None:
+                existing.msp = org.msp
+                existing.members.clear()
+                existing.members.update(org.members)
+                organizations[org_id] = existing
+                org = existing
+            network.add_organization(org)
+        channels: dict[str, Channel] = {}
+        for channel_id, (channel_orgs, policy, channel_status) in prepared.items():
+            for org in channel_orgs:
+                org.member_registry = organizations[org.org_id].members
+            channel = self.channels.get(channel_id)
+            if channel is None:
+                channel = Channel(channel_id, channel_orgs, state["channels"][channel_id]["policy"])
+            else:
+                channel.organizations = {org.org_id: org for org in channel_orgs}
+                channel.policy = policy
+                counts = channel.event_statistics["events_by_org"]
+                channel.event_statistics["events_by_org"] = {
+                    org.org_id: counts.get(org.org_id, 0) for org in channel_orgs
+                }
+            channel.status = channel_status
             channel._persist_registry = self._persist_hierarchy_registry
-            self.channels[channel_id] = channel
+            channel._registry_lock = self._registry_lock
+            channel._refresh_registry = self._restore_hierarchy_registry
+            channels[channel_id] = channel
+        for channel_id, channel in self.channels.items():
+            if channel_id not in channels:
+                channel.organizations.clear()
+                channel.status = ChannelStatus.CLOSED
+        self.organizations = organizations
+        self.network = network
+        self.channels = channels
+        self._registry_state = deepcopy(state)
+
+    def _mutate_registry(self, change: Callable[[], Any], failure_message: str) -> Any:
+        with self._registry_lock:
+            for _ in range(3):
+                self._restore_hierarchy_registry()
+                before = deepcopy(self._registry_state or self._hierarchy_registry_snapshot())
+                self._registry_mutating = True
+                try:
+                    result = change()
+                    if self._persist_hierarchy_registry():
+                        return result
+                except Exception:
+                    self._apply_hierarchy_registry(before)
+                    raise
+                finally:
+                    self._registry_mutating = False
+                self._apply_hierarchy_registry(before)
+            raise RuntimeError(failure_message)
 
     def _restore_sub_chains(self) -> None:
         """Recreate every persisted sub-chain before serving API requests."""
@@ -513,31 +586,34 @@ class HierarchyManager:
     def create_organization(
         self, org_id: str, name: str, admin_users: list[str] | None = None
     ) -> Any:
-        with self._registry_lock:
+        def change() -> Any:
             if org_id in self.organizations:
                 raise ValueError(f"Organization {org_id} already exists")
 
             org = _init_organization_msp(org_id, name, admin_users)
             self.organizations[org_id] = org
-            if not self._persist_hierarchy_registry():
-                del self.organizations[org_id]
-                raise RuntimeError("Failed to persist organization registry")
-
             if self.network is None:
                 self.network = MultiOrgNetwork()
             self.network.add_organization(org)
             return org
+        return self._mutate_registry(change, "Failed to persist organization registry")
 
     def get_organization(self, org_id: str) -> Any:
-        return self.organizations.get(org_id)
+        with self._registry_lock:
+            if not self._registry_mutating:
+                self._restore_hierarchy_registry()
+            return self.organizations.get(org_id)
 
     def register_organization_member(
-        self, org_id: str, member_id: str, identity: dict[str, Any], role: str
+        self, org_id: str, member_id: str, identity: dict[str, Any], role: str,
+        *, actor_user_id: str | None = None,
     ) -> str:
-        with self._registry_lock:
+        def change() -> str:
             organization = self.get_organization(org_id)
             if organization is None:
                 raise ValueError(f"Organization {org_id} not found")
+            if actor_user_id is not None and not _is_organization_admin(organization, actor_user_id):
+                raise PermissionError("Only a registered organization administrator can add members")
             if member_id in organization.members:
                 raise ValueError(f"Member {member_id} already exists")
             if (
@@ -547,10 +623,8 @@ class HierarchyManager:
             ):
                 raise ValueError("Member identity does not match registry fields")
             organization.register_member(member_id, identity, role)
-            if not self._persist_hierarchy_registry():
-                del organization.members[member_id]
-                raise RuntimeError("Failed to persist organization member")
             return member_id
+        return self._mutate_registry(change, "Failed to persist organization member")
 
     def create_channel(
         self,
@@ -558,11 +632,11 @@ class HierarchyManager:
         org_ids: list[str],
         policy_config: dict[str, Any] | None = None,
     ) -> Channel:
-        with self._registry_lock:
+        def change() -> Channel:
             if channel_id in self.channels:
                 raise ValueError(f"Channel {channel_id} already exists")
 
-            organizations = _build_channel_orgs(org_ids, self)
+            organizations = _build_channel_orgs(org_ids, self.organizations)
             policy = policy_config or {
                 "read": "MEMBER",
                 "write": "ADMIN",
@@ -571,14 +645,17 @@ class HierarchyManager:
 
             channel = Channel(channel_id, organizations, policy)
             self.channels[channel_id] = channel
-            if not self._persist_hierarchy_registry():
-                del self.channels[channel_id]
-                raise RuntimeError("Failed to persist channel registry")
             channel._persist_registry = self._persist_hierarchy_registry
+            channel._registry_lock = self._registry_lock
+            channel._refresh_registry = self._restore_hierarchy_registry
             return channel
+        return self._mutate_registry(change, "Failed to persist channel registry")
 
     def get_channel(self, channel_id: str) -> Channel | None:
-        return self.channels.get(channel_id)
+        with self._registry_lock:
+            if not self._registry_mutating:
+                self._restore_hierarchy_registry()
+            return self.channels.get(channel_id)
 
     def create_private_collection(
         self,

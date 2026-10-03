@@ -8,6 +8,20 @@ from hierachain.hierarchical.channel import Organization as ChannelOrganization
 from hierachain.hierarchical.multi_org import create_organization
 
 
+def _is_organization_admin(organization: Any, user_id: str) -> bool:
+    """Resolve an administrator from the current, internally consistent member registry."""
+    member = organization.members.get(user_id)
+    identity = member.get("identity") if isinstance(member, dict) else None
+    return (
+        isinstance(member, dict)
+        and member.get("role") == "admin"
+        and isinstance(identity, dict)
+        and identity.get("user_id") == user_id
+        and identity.get("org_id") == organization.org_id
+        and identity.get("role") == "admin"
+    )
+
+
 def _trace_entity_history(
     sub_chains: dict[str, Any], entity_id: str
 ) -> dict[str, list[dict[str, Any]]]:
@@ -31,11 +45,13 @@ def _init_organization_msp(
     return org
 
 
-def _build_channel_orgs(org_ids: list[str], manager: Any) -> list[ChannelOrganization]:
+def _build_channel_orgs(
+    org_ids: list[str], registered: dict[str, Any],
+) -> list[ChannelOrganization]:
     """Build channel organization objects from IDs."""
     organizations = []
     for org_id in org_ids:
-        org = manager.get_organization(org_id)
+        org = registered.get(org_id)
         if not org:
             raise ValueError(f"Organization {org_id} not found")
         member_registry = getattr(org, "members", None)
