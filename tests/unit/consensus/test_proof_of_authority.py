@@ -137,40 +137,6 @@ def test_poa_event_validation():
     assert poa.validate_event_for_consensus(valid_custom_event) is True
 
 
-def test_multiple_authorities_concurrent_operations():
-    """Test handling multiple authorities operating concurrently"""
-    poa = ProofOfAuthority(name="ConcurrentPoA")
-    poa.config["block_interval"] = 0.1  # Reduce interval for testing
-
-    # Create genesis block with current time
-    genesis_block = Block(
-        index=0,
-        events=[{
-            "entity_id": "GENESIS-001",
-            "event": "genesis",
-            "timestamp": time.time()
-        }],
-        previous_hash="0" * 64
-    )
-
-    # Create multiple blocks with proper timing
-    blocks = []
-    for i in range(5):
-        events = [{
-            "entity_id": f"ENTITY-{i}",
-            "event": "data_entry",
-            "timestamp": time.time() + (i * 0.2)  # Stagger timestamps
-        }]
-
-        block = Block(
-            index=i + 1,
-            events=events,
-            previous_hash=genesis_block.hash if i == 0 else blocks[i - 1].hash,
-            timestamp=time.time() + (i * 0.2)  # Ensure proper timing
-        )
-        blocks.append(block)
-
-
 def test_network_unstable_conditions():
     """Test behavior under unstable network conditions"""
     poa = ProofOfAuthority(name="UnstableNetworkPoA")

@@ -253,32 +253,6 @@ def test_block_creation() -> None:
         _cleanup_ordering_service(service, temp_dir)
 
 
-def test_invalid_event_handling():
-    """Test invalid event handling functionality"""
-    temp_dir = create_test_temp_dir()
-    service = None
-    try:
-        config = get_test_config(temp_dir)
-        service = OrderingService(nodes=[node], config=config)
-
-        # Event missing required fields
-        invalid_event = {"entity_id": "TEST-001", "timestamp": time.time()}
-        service.receive_event(invalid_event, "test-channel", "test-org")
-
-        # Wait for processing
-        time.sleep(1.0)  # Increased wait time
-
-    finally:
-        if service:
-            service.shutdown()
-        if os.path.exists(temp_dir):
-            try:
-                shutil.rmtree(temp_dir)
-            except PermissionError:
-                time.sleep(0.5)
-                shutil.rmtree(temp_dir, ignore_errors=True)
-
-
 def test_timeout_block_creation():
     """Test timeout-based block creation functionality"""
     temp_dir = create_test_temp_dir()

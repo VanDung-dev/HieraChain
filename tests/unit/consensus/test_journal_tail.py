@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
@@ -14,6 +15,30 @@ from hierachain.hierarchical.types import CrossChainTransaction
 
 def _record(index: int) -> dict:
     return {"entity_id": str(index), "event": "created", "timestamp": float(index + 1)}
+
+
+class _PartialFailureWriter:
+    def __init__(self, handle: Any, write_limit: int = 2) -> None:
+        self.handle = handle
+        self.write_limit = write_limit
+        self.write_calls = 0
+        self.fail_next = True
+
+    def write(self, data: Any) -> int:
+        self.write_calls += 1
+        if self.fail_next and self.write_calls == 2:
+            self.fail_next = False
+            raise OSError("injected failure after partial frame progress")
+        return self.handle.write(data[: self.write_limit])
+
+    def flush(self) -> None:
+        self.handle.flush()
+
+    def fileno(self) -> int:
+        return self.handle.fileno()
+
+    def close(self) -> None:
+        self.handle.close()
 
 
 def test_cursor_reads_only_new_frames_and_survives_rotation(
@@ -70,6 +95,65 @@ def test_tail_rejects_missing_truncated_and_corrupt_cursor_data(
             journal.read_since()
     finally:
         journal.close()
+
+
+def test_partial_append_is_removed_before_later_durable_append(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    journal = TransactionJournal(storage_dir="partial-append")
+    assert journal.log_event(_record(0))
+    start_size = journal.active_log_file.stat().st_size
+    partial_writer = _PartialFailureWriter(journal._journal_file)
+    journal._journal_file = partial_writer
+
+    try:
+        assert not journal.log_event(_record(1))
+        assert journal.active_log_file.stat().st_size == start_size
+        assert journal.log_event(_record(2))
+        assert partial_writer.write_calls > 2
+    finally:
+        journal.close()
+
+    restarted = TransactionJournal(storage_dir="partial-append")
+    try:
+        assert [row["entity_id"] for row in restarted.replay()] == ["0", "2"]
+    finally:
+        restarted.close()
+
+
+@pytest.mark.parametrize("rollback_failure", ["truncate", "fsync"])
+def test_failed_append_rollback_poisons_writer_until_reopen(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    rollback_failure: str,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    journal = TransactionJournal(storage_dir="poisoned-append")
+    assert journal.log_event(_record(0))
+    partial_writer = _PartialFailureWriter(journal._journal_file)
+    journal._journal_file = partial_writer
+    failing_operation = "ftruncate" if rollback_failure == "truncate" else "fsync"
+    original_operation = getattr(os, failing_operation)
+
+    def fail_rollback(_fd: int, *_args: int) -> None:
+        raise OSError(f"injected rollback {rollback_failure} failure")
+
+    monkeypatch.setattr(os, failing_operation, fail_rollback)
+    try:
+        assert not journal.log_event(_record(1))
+        writes_after_failure = partial_writer.write_calls
+        assert not journal.log_event(_record(2))
+        assert partial_writer.write_calls == writes_after_failure
+    finally:
+        monkeypatch.setattr(os, failing_operation, original_operation)
+        journal.close()
+
+    restarted = TransactionJournal(storage_dir="poisoned-append")
+    try:
+        assert [row["entity_id"] for row in restarted.replay()] == ["0"]
+    finally:
+        restarted.close()
 
 
 def test_coordinator_ack_reads_new_phase_and_rejects_missing_write_or_fsync(

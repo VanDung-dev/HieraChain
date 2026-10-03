@@ -25,6 +25,7 @@ from hierachain.consensus.ordering.types import (
 from hierachain.core.block import Block
 from hierachain.domains.chains.domain_chain import DomainChain
 from hierachain.domains.chains.tx_manager import TransactionManager
+from hierachain.hierarchical.sub_chain.base import SubChain
 from hierachain.security.key_manager import KeyManager
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 
@@ -172,6 +173,188 @@ def test_durable_reconcile_retries_same_id_without_another_append(
     ]
 
 
+def test_supplied_event_id_is_stable_and_payload_is_snapshotted(
+    service: OrderingService,
+) -> None:
+    original = {
+        "event_id": "stable-retry-id",
+        "entity_id": "item",
+        "event": "created",
+        "details": {"items": ["one"]},
+    }
+
+    assert service.receive_event(original, "p2", "org") == "stable-retry-id"
+    original["details"]["items"].append("caller-mutation")
+
+    pending = service.pending_events["stable-retry-id"]
+    assert pending.event_data["details"]["items"] == ["one"]
+    assert service.receive_event(
+        {
+            "event_id": "stable-retry-id",
+            "entity_id": "item",
+            "event": "created",
+            "details": {"items": ["one"]},
+        },
+        "p2",
+        "org",
+    ) == "stable-retry-id"
+    assert service.event_pool.qsize() == 1
+    assert [row["event_id"] for row in service.journal.read_since()[0]] == [
+        "stable-retry-id"
+    ]
+
+    with pytest.raises(ValueError, match="already bound to different content"):
+        service.receive_event(
+            {
+                "event_id": "stable-retry-id",
+                "entity_id": "item",
+                "event": "created",
+                "details": {"items": ["different"]},
+            },
+            "p2",
+            "org",
+        )
+
+
+def test_subchain_snapshots_nested_event_before_ordering_and_local_retention() -> None:
+    chain = object.__new__(SubChain)
+    chain.name = "p2"
+    chain.pending_events = []
+    chain.lock = threading.RLock()
+    received: list[dict] = []
+
+    def receive_event(event_data, channel_id, submitter_org):
+        assert channel_id == "p2"
+        assert submitter_org == "p2"
+        received.append(event_data)
+        return "subchain-stable-id"
+
+    chain.ordering_service = SimpleNamespace(receive_event=receive_event)
+    caller_event = {
+        "event_id": "subchain-stable-id",
+        "entity_id": "item",
+        "event": "created",
+        "timestamp": 1.0,
+        "details": {"values": [1]},
+    }
+
+    assert chain.add_event(caller_event) == "subchain-stable-id"
+    caller_event["details"]["values"].append(2)
+
+    assert received[0]["details"]["values"] == [1]
+    assert chain.pending_events[0]["details"]["values"] == [1]
+    assert chain.pending_events[0]["event_id"] == "subchain-stable-id"
+
+
+def test_stable_retry_requeues_matching_journal_content_without_second_append(
+    service: OrderingService,
+) -> None:
+    row = {
+        "event_id": "stable-after-ambiguous-ack",
+        "channel_id": "p2",
+        "entity_id": "item",
+        "event": "created",
+        "details": {"amount": 3},
+        "timestamp": 1.0,
+    }
+    assert service.journal.log_event(row)
+
+    assert service.receive_event(
+        {
+            "event_id": row["event_id"],
+            "entity_id": "item",
+            "event": "created",
+            "details": {"amount": 3},
+            "timestamp": 1.0,
+        },
+        "p2",
+        "org",
+    ) == row["event_id"]
+    assert service.pending_events[row["event_id"]].event_data["details"] == {
+        "amount": 3
+    }
+    assert service.event_pool.qsize() == 1
+    assert [item["event_id"] for item in service.journal.read_since()[0]] == [
+        row["event_id"]
+    ]
+
+
+def test_stable_id_conflicting_durable_content_is_rejected(
+    service: OrderingService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        service.storage_handler.storage,
+        "get_event_by_id",
+        lambda _event_id: {
+            "event_id": "durable-stable-id",
+            "chain_name": "p2",
+            "data": {
+                "event_id": "durable-stable-id",
+                "entity_id": "item",
+                "event": "created",
+                "details": {"value": "committed"},
+            },
+        },
+    )
+    with pytest.raises(ValueError, match="already bound to different content"):
+        service.receive_event(
+            {
+                "event_id": "durable-stable-id",
+                "entity_id": "item",
+                "event": "created",
+                "details": {"value": "conflict"},
+            },
+            "p2",
+            "org",
+        )
+    assert service.event_pool.empty()
+    assert service.journal.read_since()[0] == []
+
+
+def test_concurrent_stable_retries_only_append_one_journal_record(
+    service: OrderingService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    both_checked = threading.Barrier(2)
+    find_stable = service._find_stable_event
+
+    def synchronized_find(event_id, channel_id, candidate):
+        result = find_stable(event_id, channel_id, candidate)
+        both_checked.wait(timeout=2)
+        return result
+
+    monkeypatch.setattr(service, "_find_stable_event", synchronized_find)
+    results: list[str] = []
+    errors: list[Exception] = []
+    candidate = {
+        "event_id": "concurrent-stable-id",
+        "entity_id": "item",
+        "event": "created",
+        "details": {"value": 1},
+    }
+
+    def submit() -> None:
+        try:
+            results.append(service.receive_event(candidate, "p2", "org"))
+        except Exception as error:
+            errors.append(error)
+
+    producers = [threading.Thread(target=submit) for _ in range(2)]
+    for producer in producers:
+        producer.start()
+    for producer in producers:
+        producer.join(timeout=3)
+
+    assert all(not producer.is_alive() for producer in producers)
+    assert not errors
+    assert results == ["concurrent-stable-id", "concurrent-stable-id"]
+    assert service.event_pool.qsize() == 1
+    assert [row["event_id"] for row in service.journal.read_since()[0]] == [
+        "concurrent-stable-id"
+    ]
+
+
 def test_rejected_results_do_not_remain_in_pending_or_grow_history(
     service: OrderingService,
 ) -> None:
@@ -228,6 +411,10 @@ def test_participant_tail_reads_new_markers_and_keeps_pending_on_missing_write(
     chain.lock = threading.RLock()
     chain.pending_events = []
     chain.completed_operations = 0
+    chain.entity_registry = {"item": {"status": "registered"}}
+    chain.event_handlers = {}
+    chain._domain_projection_healthy = True
+    chain._domain_projection_errors = []
     chain._tx_manager = TransactionManager()
     chain._tx_commit_lock = threading.RLock()
     chain._transaction_event_markers = None

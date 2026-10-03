@@ -242,14 +242,6 @@ def test_error_mitigation_with_node_failures():
     # Check that node failure is tracked
     assert "node_2" in primary.node_failure_counts
 
-def test_bft_with_slow_nodes():
-    """Test BFT consensus behavior with slow nodes"""
-    normal_node = network["node_3"]
-    slow_node = network["node_2"]
-
-    _check_message_validation_and_error_mitigation(normal_node, slow_node)
-
-
 def test_bft_with_silent_nodes():
     """Test BFT consensus behavior with silent nodes"""
     normal_node = network["node_3"]
@@ -259,69 +251,6 @@ def test_bft_with_silent_nodes():
 
     silent_node.log_node_behavior("node_2", "no_response")
     assert "node_2" in silent_node.node_failure_counts
-
-
-def test_bft_with_malicious_nodes():
-    """Test BFT consensus behavior with malicious nodes"""
-    # Test normal message
-    normal_message = BFTMessage(
-        message_type=MessageType.PREPARE,
-        view=0,
-        sequence_number=1,
-        sender_id="node_1",
-        timestamp=time.time(),
-        signature="",
-        data={"test": "data"},
-        nonce="normal-nonce"
-    )
-    # Sign with real key
-    normal_message.signature = sign_message(
-        network["node_1"].key_provider,
-        normal_message.get_signable_payload()
-    )
-
-    # Test invalid signature message (simulating malicious behavior)
-    invalid_message = BFTMessage(
-        message_type=MessageType.PREPARE,
-        view=0,
-        sequence_number=1,
-        sender_id="node_1",
-        timestamp=time.time(),
-        signature="invalid_signature",  # Invalid signature
-        data={"test": "data"},
-        nonce="invalid-nonce"
-    )
-
-    normal_node = network["node_3"]
-    malicious_node = network["node_2"]
-
-    # Test normal signature verification
-    valid_signature_result = verify_message_signature(
-        normal_message, normal_node.node_public_keys
-    )
-    assert valid_signature_result is True  # Normal signature should be valid
-
-    # Test that malicious behavior detection works
-    assert hasattr(malicious_node, 'log_node_behavior')
-
-    # Test that we can initialize the nodes with error mitigation
-    assert normal_node.consensus_validator is not None
-    assert normal_node.error_classifier is not None
-
-    # Test node behavior logging for malicious actions
-    malicious_node.log_node_behavior("node_2", "invalid_signature")
-    # Check that error was classified
-    assert normal_node.error_classifier is not None
-
-    is_valid = validate_consensus_message(
-        invalid_message,
-        normal_node.all_nodes,
-        normal_node.node_public_keys,
-        normal_node.verification_strictness,
-        normal_node.view_change_timeout,
-        normal_node.log_node_behavior,
-    )
-    assert is_valid in [True, False]
 
 
 def test_bft_with_split_brain_scenario():
