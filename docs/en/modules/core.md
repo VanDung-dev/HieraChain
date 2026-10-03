@@ -19,6 +19,7 @@ All core primitives reside in `hierachain/core/`.
 * Stores event records in a `pyarrow.Table`.
 * Queries event fields with Arrow compute expressions rather than Python loops.
 * Calculates deterministic block hashes and Merkle roots.
+* Uses Arrow data as the source for both verification and persistence. `to_event_list()` and `to_dict()` return independent event snapshots; changing the input list or an exported snapshot does not change the block.
 
 ### 2.2 Blockchain (`blockchain.py`)
 
@@ -36,6 +37,8 @@ All core primitives reside in `hierachain/core/`.
 
 * Provides an in-memory cache with LRU, LFU, FIFO, and TTL eviction policies.
 * `KeyManager` uses it for key and permission lookups.
+
+TTL expiration is lazy: reads reject expired entries; writes at capacity, statistics, key enumeration, and `len(cache)` remove them. `cleanup_ttl()` remains available for explicit cleanup. Cache instances do not create cleanup threads, so discarded caches can be collected. Expired entries in an idle cache can remain allocated until its next operation or collection.
 
 ## 3. Block memory and storage layout
 

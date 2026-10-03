@@ -50,7 +50,11 @@ Sự kiện được ghi đồng bộ vào **Event Journal** và fsync trước 
 
 Endpoint `GET /api/ledger/ready` trả HTTP 200 chỉ khi Ordering Service của mọi Sub-Chain đã đăng ký ở trạng thái `ACTIVE`; endpoint trả HTTP 503 khi bất kỳ service nào còn đang recovery hoặc ở trạng thái maintenance.
 
+`lockdown()` chờ commit đang chạy hoàn tất, sau đó chặn commit tiếp theo và sự kiện mới cho đến khi gọi `resume()`. Sự kiện trong hàng đợi và batch đã cắt được giữ để xử lý khi resume; journal vẫn được giữ để phục hồi sau crash. Hoàn tất recovery không ghi đè `LOCKDOWN`, và `resume()` không thể kích hoạt lại service đã dừng.
+
 ### 2. Batching Strategy
+Nhận vào hàng đợi chờ tối đa `enqueue_timeout` giây (mặc định `1.0`, cho phép giá trị lớn hơn zero đến `60`). Hàng đợi đầy hoặc shutdown gây `OrderingBackpressureError`, mang `event_id` và `journaled`. Event mới giữ chỗ trước khi ghi, nên bị từ chối tại bước này có `journaled=False`. Đưa lại event đã bền vững vào hàng đợi báo `journaled=True` và có thể thử lại cùng ID mà không ghi thêm entry. `POST /api/ledger/chains/{chain_name}/events` chuyển lỗi này thành HTTP 503 với các trường trên trong `detail`. Shutdown đánh thức producer đang chờ. Nhận event giữ condition của hàng đợi xuyên suốt fsync; độ trễ đĩa vì vậy cũng làm consumer chờ.
+
 Để tối ưu hiệu năng, Ordering Service không đóng khối cho từng sự kiện đơn lẻ mà sử dụng chiến lược gom nhóm:
 *   `OrderingService` khởi tạo trực tiếp mặc định dùng `batch_size=100` và `batch_timeout=2.0` giây.
 *   SubChain mặc định dùng `block_size=50` và `batch_timeout=1.0` giây; cấu hình riêng có thể thay đổi hai giá trị này.
@@ -61,6 +65,8 @@ Module `Certifier` tích hợp chặt chẽ với hệ thống **Security** đ�
 *   Chữ ký số của node gửi (Identity Verification).
 *   Quyền truy cập vào kênh (Policy Enforcement).
 
+Certifier mặc định giữ 10.000 kết quả gần nhất (`EventCertifier(max_history=...)`). Event bị từ chối được xóa khỏi pending map. Sau khi kết quả bị loại khỏi cache, `get_event_status()` tra storage bền vững cho event đã commit và trả `ordered` không kèm kết quả certification; event bị từ chối từ lâu có thể trả `None`. Lịch sử này không phải bằng chứng certification bền vững.
+
 ---
 
 ## Ví dụ sử dụng
@@ -68,7 +74,7 @@ Module `Certifier` tích hợp chặt chẽ với hệ thống **Security** đ�
 ```python
 from hierachain.consensus.ordering.service import OrderingService
 
-# Khởi tạo với cấu hình doanh nghiệp
+# Initialize with enterprise configuration
 config = {
     "batch_size": 200,
     "batch_timeout": 1.5,
@@ -77,7 +83,7 @@ config = {
 
 service = OrderingService(config=config)
 
-# Gửi event; ID trả về xác nhận đã ghi journal và đưa vào hàng đợi, chưa phải block finality
+# Submit event; the returned ID acknowledges journaling and enqueueing, not block finality
 event_id = service.receive_event(
     event_data={"item": "container_45", "status": "shipped"},
     channel_id="logistics_chain",

@@ -50,7 +50,11 @@ Accepted events are synchronously written to the **Event Journal** and fsynced b
 
 The `GET /api/ledger/ready` endpoint returns HTTP 200 only when every registered Sub-Chain's Ordering Service is `ACTIVE`; it returns HTTP 503 while any service is recovering or in maintenance.
 
+`lockdown()` waits for any in-flight commit to finish, then blocks further commits and incoming events until `resume()`. Queued events and an already cut batch remain available for resume; their journal entries are retained for crash recovery. Recovery completion does not override `LOCKDOWN`, and `resume()` cannot reactivate a stopped service.
+
 ### 2. Batching Strategy
+Queue admission waits at most `enqueue_timeout` seconds (default `1.0`, allowed range greater than zero through `60`). A full queue or shutdown raises `OrderingBackpressureError`, carrying `event_id` and `journaled`. New submissions reserve capacity before writing, so rejection at this boundary has `journaled=False`. Reconciliation of an existing durable event reports `journaled=True` and can retry the same ID without another append. `POST /api/ledger/chains/{chain_name}/events` maps this error to HTTP 503 with these fields in `detail`. Shutdown wakes waiting producers. Admission holds the queue condition through fsync; disk latency therefore also delays consumers.
+
 To optimize performance, Ordering Service does not create a block for each individual event but uses batching:
 *   A directly initialized `OrderingService` uses `batch_size=100` and `batch_timeout=2.0` seconds by default.
 *   Sub-Chain defaults are `block_size=50` and `batch_timeout=1.0` second.
@@ -60,6 +64,8 @@ The `Certifier` module integrates closely with the **Security** system to check:
 *   Data format (Schema Validation).
 *   Submitter's digital signature (Identity Verification).
 *   Channel access permissions (Policy Enforcement).
+
+The certifier retains the most recent 10,000 results by default (`EventCertifier(max_history=...)`). Rejected events leave the pending map. After a result is evicted, `get_event_status()` queries durable storage for committed events and returns `ordered` without a certification result; an older rejected event can return `None`. This history is not durable certification evidence.
 
 ---
 

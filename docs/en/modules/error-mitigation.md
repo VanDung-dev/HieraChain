@@ -27,6 +27,8 @@ Custom field validators return `(is_valid, message)`. If a callback raises an ex
 * Enforces append-only storage before events commit to blockchain state.
 * Provides replay generators to reconstruct uncommitted events after ungraceful shutdowns.
 
+`read_since(cursor=None)` flushes and fsyncs the active writer, reads durable frames, and returns `(records, (inode, byte_offset))`. The first call scans history, including legacy Parquet; later calls read new Arrow frames and follow file rotation. A missing active file, missing or truncated cursor file, corrupt frame, or fsync error rejects read-back. Archive filenames are still enumerated on each call, so cost depends on archive count as well as new records.
+
 ### 2.3 Recoverable encryption (`encryption_validator.py`)
 
 `EncryptionValidator(config, key_resolver)` uses AES-256-GCM. Encryption requires `config["key_id"]` and a caller-supplied `key_resolver(key_id)` that returns exactly 32 bytes for an approved, retained key. Missing IDs, unavailable keys, or invalid key material raise `SecurityError`; the validator does not generate disposable encryption keys.
@@ -64,7 +66,7 @@ This example retains keys in memory. Production callers must preserve keys in th
 
 The `TransactionJournal` provides write-ahead persistence:
 
-1. Durable writes: Writes records to Parquet files on disk before blocks finalize.
+1. Durable writes: Appends framed Arrow records and fsyncs them on disk before blocks finalize; legacy Parquet remains readable.
 2. Schema enforcement: Guarantees every journal record matches the required event schema.
 3. Replay ability: Replays logged events from disk into the ordering pipeline during node restart.
 

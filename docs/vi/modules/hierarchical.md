@@ -27,11 +27,17 @@ Các thành phần được tổ chức trong các gói chuyên biệt dưới `
 * Đóng gói sự kiện nghiệp vụ vào các khối và tính toán Merkle root.
 * Tạo bằng chứng trạng thái định kỳ để gửi lên Main Chain.
 
+Khởi động đọc header block và event theo thứ tự bằng một truy vấn SQL theo khoảng, vẫn kiểm tra Merkle, hash, chữ ký từ khóa tin cậy, khoảng trống index và liên kết chuỗi. Sub-Chain nhận snapshot bootstrap đã xác thực của ordering một lần thay vì đọc lại toàn chuỗi; các lần đồng bộ sau đọc storage mới. Recovery dựng lại index thực thể, index loại event và counters qua helper index chung của Blockchain, để truy vấn phản ánh sổ cái đã khôi phục.
+
 ### 2.3 Quản lý phân cấp Hierarchy Manager (`hierarchy_manager/base.py`)
 
 * Điều phối vòng đời chuỗi, xác thực liên chuỗi và cấu hình đa tổ chức.
 * Quản lý các kênh trao đổi (channel), bộ sưu tập dữ liệu riêng tư và giao dịch Two-Phase Commit (2PC).
 * Tổng hợp báo cáo tính toàn vẹn hệ thống trên toàn bộ các chuỗi đã đăng ký.
+
+Trạng thái truy cập tổ chức/thành viên/channel được lưu cùng `_revision` nội bộ. SQLite và PostgreSQL dùng ghi có điều kiện nguyên tử; Redis dùng WATCH/MULTI. Provisioning qua manager tải lại và thử tối đa ba lần khi ghi không thành công. Provisioning thành viên qua REST kiểm tra lại quyền administrator đã xác thực trong mỗi lần retry. Conflict cấu hình channel trả thất bại và rollback thay đổi cục bộ, yêu cầu endorsement mới trước khi thử lại. Thao tác đọc và kiểm tra truy cập channel làm mới trạng thái chung, giữ nguyên ledger trong RAM của channel hiện có; backend không truy cập được hoặc trạng thái đã lưu bị mất sẽ từ chối truy cập. Manager chỉ dùng bộ nhớ giữ trạng thái cục bộ.
+
+Snapshot chưa có revision được nâng cấp khi ghi thành công lần tiếp theo. Cần nâng cấp đồng thời mọi registry writer: không hỗ trợ chạy lẫn writer cũ ghi vô điều kiện với writer có kiểm tra revision. Storage adapter tùy chỉnh phải hỗ trợ `save_hierarchy_registry(state, expected_revision=...)` và từ chối revision cũ.
 
 ### 2.4 Đa tổ chức, kênh và dữ liệu riêng tư
 
@@ -69,6 +75,8 @@ graph TD
 ## 4. Thao tác liên chuỗi (2PC)
 
 `CrossChainTransactionManager` trong `hierachain/hierarchical/transaction_manager.py` triển khai giao thức Two-Phase Commit để duy trì tính nguyên tử qua các Sub-Chain:
+
+ACK pha của coordinator và ACK commit của participant vẫn yêu cầu đọc lại journal bền vững. Journal gốc dùng `read_since(cursor)` để decode record mới sau lượt quét lịch sử đầu tiên, kể cả record trong file đã rotate. Participant thử lại giữ ID event bền vững để tránh ghi trùng; submission không rõ kết quả làm mất hiệu lực snapshot marker. Journal tùy chỉnh chỉ có `replay()` tiếp tục dùng replay toàn bộ. Lịch sử transaction và số archive vẫn chưa có giới hạn; thay đổi này không thêm retention hay compaction.
 
 ```python
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager

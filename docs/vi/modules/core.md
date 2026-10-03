@@ -19,6 +19,7 @@ Toàn bộ thành phần cốt lõi nằm tại `hierachain/core/`.
 * Lưu trữ bản ghi sự kiện trong một `pyarrow.Table`.
 * Truy vấn các trường sự kiện qua biểu thức tính toán của Arrow thay vì vòng lặp Python.
 * Tính toán mã băm khối và Merkle root xác định.
+* Dùng dữ liệu Arrow làm nguồn cho cả xác minh và lưu trữ. `to_event_list()` và `to_dict()` trả snapshot sự kiện độc lập; sửa list đầu vào hoặc snapshot xuất ra không làm thay đổi khối.
 
 ### 2.2 Chuỗi khối (`blockchain.py`)
 
@@ -36,6 +37,8 @@ Toàn bộ thành phần cốt lõi nằm tại `hierachain/core/`.
 
 * Cung cấp bộ nhớ đệm trong RAM với các chính sách dọn dẹp LRU, LFU, FIFO và TTL.
 * `KeyManager` sử dụng bộ nhớ đệm này cho các tra cứu khóa và quyền.
+
+TTL được xử lý khi dùng cache: đọc từ chối entry hết hạn; ghi khi đầy, lấy thống kê, liệt kê key và `len(cache)` xóa chúng. `cleanup_ttl()` vẫn cho phép dọn chủ động. Cache không tạo thread dọn riêng, nên cache đã bỏ có thể được thu hồi. Entry hết hạn trong cache không hoạt động có thể còn chiếm bộ nhớ đến thao tác tiếp theo hoặc khi cache được thu hồi.
 
 ## 3. Cấu trúc bộ nhớ và lưu trữ của Block
 

@@ -27,11 +27,17 @@ Components reside in dedicated packages under `hierachain/hierarchical/`.
 * Packages business events into blocks and calculates Merkle roots.
 * Generates periodic state proofs for submission to the Main Chain.
 
+Startup loads block headers and ordered events with one SQL range query, while retaining Merkle, hash, trusted-signature, gap, and chain-link checks. Sub-Chain consumes the verified ordering bootstrap snapshot once instead of reading the full chain again; later synchronization reads fresh storage. Recovery rebuilds entity and event-type indexes and counters through the shared Blockchain index helper, so queries reflect the restored ledger.
+
 ### 2.3 Hierarchy Manager (`hierarchy_manager/base.py`)
 
 * Coordinates chain lifecycles, cross-chain verification, and multi-organization setups.
 * Manages communication channels, private data collections, and two-phase commit (2PC) transactions.
 * Compiles system-wide integrity reports across all registered chains.
+
+Organization/member/channel access state is persisted with an internal `_revision`. SQLite and PostgreSQL use atomic conditional writes; Redis uses WATCH/MULTI. Manager provisioning reloads and retries up to three times on an unsuccessful write. REST member provisioning rechecks the authenticated administrator on every retry. Channel configuration conflicts return failure and roll back the local change, requiring fresh endorsement before retry. Reads and channel access checks refresh shared state without replacing an existing channel's in-memory ledger; unavailable or missing persisted state fails closed. Memory-only managers retain local state.
+
+Snapshots without a revision are upgraded on their next successful write. Upgrade all registry writers together: mixing older unconditional writers with revision-aware writers is unsupported. Custom storage adapters must support `save_hierarchy_registry(state, expected_revision=...)` and reject stale revisions.
 
 ### 2.4 Multi-organization, channels, and private data
 
@@ -49,7 +55,7 @@ graph TD
         A[Business Events] --> B[Ordering Service]
         B --> C[Block Builder]
         C --> D[(Local DB)]
-    C --> E[Merkle Tree / ZK Prover]
+        C --> E[Merkle Tree / ZK Prover]
     end
 
     subgraph "Main Chain (Root Authority)"
@@ -69,6 +75,8 @@ graph TD
 ## 4. Cross-chain operations (2PC)
 
 `CrossChainTransactionManager` in `hierachain/hierarchical/transaction_manager.py` implements a two-phase commit protocol to maintain atomicity across Sub-Chains:
+
+Coordinator phase ACKs and participant commit ACKs still require durable journal read-back. Native journals use `read_since(cursor)` to decode new records after an initial history scan, including records in rotated files. Participant retries retain durable event IDs to avoid duplicate appends; ambiguous submissions invalidate their marker snapshot. Custom journals exposing only `replay()` keep the full replay path. Transaction history and archive count remain unbounded; this change does not add retention or compaction.
 
 ```python
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager

@@ -27,6 +27,8 @@ Custom field validator trả về `(is_valid, message)`. Nếu callback ném exc
 * Áp dụng lưu trữ chỉ ghi tiếp trước khi sự kiện được commit vào trạng thái blockchain.
 * Cung cấp các generator phát lại để tái tạo các sự kiện chưa commit sau các lần tắt máy đột ngột.
 
+`read_since(cursor=None)` flush và fsync writer đang hoạt động, đọc frame bền vững và trả `(records, (inode, byte_offset))`. Lần đầu quét lịch sử, gồm cả Parquet cũ; các lần sau đọc frame Arrow mới và theo file rotation. File đang hoạt động bị mất, file cursor bị mất hoặc bị cắt ngắn, frame hỏng hoặc lỗi fsync khiến read-back thất bại. Mỗi lần gọi vẫn liệt kê tên archive, nên chi phí phụ thuộc số archive cùng với số record mới.
+
 ### 2.3 Mã hóa có thể khôi phục (`encryption_validator.py`)
 
 `EncryptionValidator(config, key_resolver)` dùng AES-256-GCM. Mã hóa yêu cầu `config["key_id"]` và `key_resolver(key_id)` do caller cung cấp, trả đúng 32 byte cho khóa đã được cho phép và giữ lại. ID thiếu, khóa không khả dụng hoặc dữ liệu khóa không hợp lệ gây `SecurityError`; validator không tạo khóa mã hóa dùng xong rồi bỏ.
@@ -64,7 +66,7 @@ Ví dụ này giữ khóa trong bộ nhớ. Caller production phải giữ khóa
 
 `TransactionJournal` cung cấp khả năng lưu trữ ghi trước:
 
-1. Ghi bền vững: Ghi các bản ghi vào tệp Parquet trên đĩa trước khi các block hoàn tất.
+1. Ghi bền vững: Ghi tiếp record Arrow có frame và fsync xuống đĩa trước khi block hoàn tất; Parquet cũ vẫn đọc được.
 2. Thực thi schema: Đảm bảo mọi bản ghi nhật ký khớp với schema sự kiện bắt buộc.
 3. Khả năng phát lại: Phát lại các sự kiện đã ghi từ đĩa vào hàng đợi sắp xếp khi nút khởi động lại.
 
