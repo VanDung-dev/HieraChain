@@ -52,8 +52,7 @@ def managers(
         yield instances[0], instances[1]
     finally:
         for manager in instances:
-            manager.transaction_manager.journal.close()
-            manager.storage.close()
+            manager.close()
 
 
 def _name() -> str:

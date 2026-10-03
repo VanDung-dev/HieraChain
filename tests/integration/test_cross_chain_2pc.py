@@ -75,8 +75,8 @@ def test_2pc_success(hierarchy_setup):
             if event.get("transaction_id") == tx_id
         ]
         assert [event["transaction_step"] for event in events] == ["start", "complete"]
-        # Arrow details use Map<String, String>, including nested operation data.
-        assert events[0]["details"]["operation_details"] == str(payload["details"])
+        # The journal preserves typed nested details before block serialization.
+        assert events[0]["details"]["operation_details"] == payload["details"]
 
 
 def test_2pc_prepare_failure(hierarchy_setup):
