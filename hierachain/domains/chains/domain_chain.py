@@ -524,7 +524,8 @@ class DomainChain(BaseChain):
 
             # An ordering ACK is only a commit ACK once both events can be
             # read back from the durable journal after the write.
-            self._transaction_event_markers = None
+            if not callable(getattr(self.ordering_service.journal, "read_since", None)):
+                self._transaction_event_markers = None
             if not self._load_transaction_event_markers():
                 return False
             markers = self._transaction_event_markers
@@ -544,19 +545,25 @@ class DomainChain(BaseChain):
 
     def _load_transaction_event_markers(self) -> bool:
         """Load durable 2PC event markers once so participant retries are idempotent."""
-        if self._transaction_event_markers is not None:
-            return True
-
         journal = getattr(getattr(self, "ordering_service", None), "journal", None)
         replay = getattr(journal, "replay", None)
         if not callable(replay):
             return False
 
-        markers: dict[tuple[str, str], dict[str, Any] | None] = {}
+        read_since = getattr(journal, "read_since", None)
+        if self._transaction_event_markers is not None and not callable(read_since):
+            return True
+        markers: dict[tuple[str, str], dict[str, Any] | None] = self._transaction_event_markers or {}
         try:
-            # ponytail: Cache tx-tagged rows after one scan; ambiguous submissions
-            # invalidate this index so the retry can reconcile the exact durable row.
-            for event in replay():
+            if callable(read_since):
+                cursor = (
+                    getattr(self, "_transaction_journal_cursor", None)
+                    if self._transaction_event_markers is not None else None
+                )
+                events, cursor = read_since(cursor)
+            else:
+                events, cursor = replay(), None
+            for event in events:
                 if not isinstance(event, dict):
                     continue
                 tx_id = event.get("transaction_id")
@@ -568,6 +575,7 @@ class DomainChain(BaseChain):
             return False
 
         self._transaction_event_markers = markers
+        self._transaction_journal_cursor = cursor
         return True
 
     def _reconcile_transaction_events(self, transaction_id: str) -> bool:
