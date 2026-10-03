@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 from queue import Queue
@@ -230,6 +231,9 @@ def test_hc006_journal_rejection_does_not_accept_or_queue_event(
     from hierachain.consensus.ordering.types import OrderingStatus
 
     service = object.__new__(OrderingService)
+    service._commit_lock = threading.RLock()
+    service.enqueue_timeout = 1.0
+    service.should_stop = threading.Event()
     service.status = OrderingStatus.ACTIVE
     service.metrics = SimpleNamespace(record_received=lambda: None)
     service.pending_events = {}

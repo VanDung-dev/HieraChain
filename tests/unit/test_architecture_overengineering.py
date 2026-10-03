@@ -118,7 +118,7 @@ def test_rejected_committed_block_does_not_change_state_or_rewrite_storage() -> 
     assert block.hash is None
 
 
-def test_key_manager_starts_one_cache_cleanup_worker_per_cache(monkeypatch) -> None:
+def test_key_manager_does_not_start_cache_cleanup_workers(monkeypatch) -> None:
     started: list[object] = []
 
     class _Thread:
@@ -132,4 +132,4 @@ def test_key_manager_starts_one_cache_cleanup_worker_per_cache(monkeypatch) -> N
 
     KeyManager(storage_backend={}, config={"verify_signatures": True})
 
-    assert len(started) == 2
+    assert not started
