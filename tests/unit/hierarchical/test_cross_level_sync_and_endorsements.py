@@ -350,6 +350,8 @@ def test_hierarchy_manager_channel_uses_registered_member_role_and_fails_closed(
     manager.channels = {}
     manager.storage = None
     manager._registry_lock = threading.RLock()
+    manager._registry_state = None
+    manager._registry_mutating = False
     channel = manager.create_channel("admin-only", [org_id])
 
     rejected_event = {"entity_id": "entity-1", "event": "member_write"}

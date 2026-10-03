@@ -365,6 +365,9 @@ def test_ambiguous_event_append_is_reconciled_once_without_duplicate_journal_row
 
     journal = _AmbiguousJournal()
     service = OrderingService.__new__(OrderingService)
+    service._commit_lock = threading.RLock()
+    service.enqueue_timeout = 1.0
+    service.should_stop = threading.Event()
     service.status = OrderingStatus.ACTIVE
     service.config = {"chain_name": "test-chain"}
     service.metrics = SimpleNamespace(record_received=lambda: None)

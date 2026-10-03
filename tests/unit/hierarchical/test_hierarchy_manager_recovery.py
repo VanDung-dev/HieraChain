@@ -301,7 +301,7 @@ class _OrderingServiceStub:
         self.fail_read = fail_read
         self.stopped = False
 
-    def get_latest_block(self) -> None:
+    def take_bootstrap_blocks(self) -> None:
         if self.fail_read:
             raise OSError("ordering storage unavailable")
         return None
