@@ -39,6 +39,8 @@ class CrossChainTransactionManager:
         self.hierarchy_manager = hierarchy_manager
         self.transactions: dict[str, CrossChainTransaction] = {}
         self._phases: dict[str, str] = {}
+        self._journal_cursor: tuple[int, int] | None = None
+        self._durable_records: dict[str, dict[str, Any]] = {}
         self._journal_lock = threading.RLock()
         self.journal = journal or TransactionJournal(
             storage_dir="transactions",
@@ -74,7 +76,6 @@ class CrossChainTransactionManager:
             if persisted is not True:
                 return False
             try:
-                # ponytail: Full replay proves the ACK; use an indexed tail only if journal size warrants it.
                 durable = self._read_latest_records().get(transaction.transaction_id)
             except Exception:
                 logger.exception("Could not read back 2PC phase %s for %s", phase, transaction.transaction_id)
@@ -90,13 +91,22 @@ class CrossChainTransactionManager:
     def _read_latest_records(self) -> dict[str, dict[str, Any]]:
         latest: dict[str, dict[str, Any]] = {}
         with self._journal_lock:
-            for record in self.journal.replay():
+            read_since = getattr(self.journal, "read_since", None)
+            if callable(read_since):
+                records, cursor = read_since(self._journal_cursor)
+                latest = self._durable_records
+            else:
+                records = self.journal.replay()
+                cursor = None
+            for record in records:
                 if not isinstance(record, dict) or record.get("event") != _JOURNAL_EVENT:
                     continue
                 tx_id = record.get("tx_id")
                 phase = record.get("phase")
                 if isinstance(tx_id, str) and isinstance(phase, str):
                     latest[tx_id] = record
+            self._journal_cursor = cursor
+            self._durable_records = latest
         return latest
 
     def _load_journal(self) -> None:
