@@ -3,17 +3,17 @@
 Injected drops/delays do not change Docker's network configuration.
 """
 
-import os
-import time
-import random
 import logging
+import os
+import random
+import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 import requests
 import requests.exceptions
 
-from docker.stress.real_stress_client import RealStressClient, NodeStatus
+from docker.stress.real_stress_client import NodeStatus, RealStressClient
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +58,7 @@ class NetworkStressTestResult:
     total_requests: int = 0
     successful_requests: int = 0
     failed_requests: int = 0
+    injected_failures: int = 0
     avg_response_time: float = 0.0
     nodes: dict[str, NodeStatus] = field(default_factory=dict)
     
@@ -144,6 +145,7 @@ class NetworkStressTester(RealStressClient):
                 status.last_error = "Simulated packet loss"
                 self.results.total_requests += 1
                 self.results.failed_requests += 1
+                self.results.injected_failures += 1
             return
         if self.congestion_rate > 0 and random.randint(1, 100) <= self.congestion_rate:
             with self.lock:
@@ -151,6 +153,7 @@ class NetworkStressTester(RealStressClient):
                 status.last_error = "Simulated network congestion"
                 self.results.total_requests += 1
                 self.results.failed_requests += 1
+                self.results.injected_failures += 1
             return
         if self.bandwidth_limit_rate > 0 and random.randint(1, 100) <= self.bandwidth_limit_rate:
             with self.lock:
@@ -158,6 +161,7 @@ class NetworkStressTester(RealStressClient):
                 status.last_error = "Simulated network bandwidth limit"
                 self.results.total_requests += 1
                 self.results.failed_requests += 1
+                self.results.injected_failures += 1
             return
 
         # Simulate latency / jitter delay
@@ -223,6 +227,8 @@ class NetworkStressTester(RealStressClient):
         print(f"Total Requests:    {self.results.total_requests}")
         print(f"Successful:        {self.results.successful_requests}")
         print(f"Failed:            {self.results.failed_requests}")
+        print(f"Injected drops:    {self.results.injected_failures}")
+        print(f"HTTP failures:     {self.results.failed_requests - self.results.injected_failures}")
         print(f"Avg Response Time:   {self.results.avg_response_time*1000:.2f}ms")
         print()
         print("--- Node Status ---")
@@ -262,18 +268,22 @@ def test_network_stress():
         logger.info("Total Requests: %d", results.total_requests)
         logger.info("Successful: %d (%.1f%%)", results.successful_requests, (results.successful_requests / results.total_requests * 100) if results.total_requests > 0 else 0)
         logger.info("Failed: %d (%.1f%%)", results.failed_requests, (results.failed_requests / results.total_requests * 100) if results.total_requests > 0 else 0)
+        logger.info("Injected drops: %d", results.injected_failures)
         
         # Validate minimum success rate
         assert results.total_requests > 0, "Network stress sent no requests"
         assert results.successful_requests + results.failed_requests == results.total_requests
-        success_rate = results.successful_requests / results.total_requests
-        logger.info("Success rate: %.1f%%", success_rate * 100)
+        assert 0 <= results.injected_failures <= results.failed_requests
+        http_requests = results.total_requests - results.injected_failures
+        assert http_requests > 0, "Network stress sent no HTTP requests after injection"
+        success_rate = results.successful_requests / http_requests
+        logger.info("HTTP success rate after injection: %.1f%%", success_rate * 100)
 
-        # Allow lower success rate for stress tests
+        # Random client-side drops are expected; HTTP failures still count against the threshold.
         if test_config.condition_type in ("latency", "congestion", "bandwidth"):
-            assert success_rate >= 0.5, f"Too many failures: {success_rate*100:.1f}% success"
+            assert success_rate >= 0.5, f"Too many HTTP failures: {success_rate*100:.1f}% success"
         else:
-            assert success_rate >= 0.8, f"Too many failures: {success_rate*100:.1f}% success"
+            assert success_rate >= 0.8, f"Too many HTTP failures: {success_rate*100:.1f}% success"
         
         # Print detailed results
         tester.print_results()

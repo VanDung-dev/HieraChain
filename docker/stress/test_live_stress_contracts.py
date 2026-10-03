@@ -12,6 +12,7 @@ import docker.stress.real_stress_client as real_client
 import docker.stress.resource_monitoring as resource_monitoring
 import docker.stress.test_bft_consensus as bft
 import docker.stress.test_chaos as chaos
+import docker.stress.test_network_conditions as network_conditions
 import docker.stress.test_resource_monitoring as resource_test_module
 import docker.stress.test_websocket_load as websocket_test_module
 from docker.stress.resource_monitoring import ResourceMonitor, ResourceStressTester
@@ -288,6 +289,68 @@ def test_websocket_and_http_share_configured_auth_header(monkeypatch: pytest.Mon
         client.session.close()
 
 
+@pytest.mark.parametrize("response", ["valid", "missing", "stale"])
+def test_websocket_ping_waits_past_heartbeat_and_requires_matching_pong(
+    monkeypatch: pytest.MonkeyPatch, response: str,
+) -> None:
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    messages = [{"type": kind} for kind in ("connected", "subscribed", "ping", "event")]
+
+    class Socket:
+        closed = False
+
+        async def send(self, payload: str) -> None:
+            request = json.loads(payload)
+            if request["type"] == "ping" and response != "missing":
+                messages.append({"type": "pong", "timestamp": request.get("timestamp") if response == "valid" else -1})
+
+        async def recv(self) -> str:
+            if not messages:
+                raise websocket_test_module.asyncio.TimeoutError
+            return json.dumps(messages.pop(0))
+
+        async def close(self) -> None:
+            self.closed = True
+
+    socket = Socket()
+    monkeypatch.setattr(websocket_test_module.websockets, "connect", AsyncMock(return_value=socket))
+    tester = websocket_test_module.WebSocketLoadTest("http://node1:2661")
+    monkeypatch.setattr(websocket_test_module, "WebSocketLoadTest", lambda _url: tester)
+    test = websocket_test_module.TestWebSocketBasic()
+    test.client = SimpleNamespace(node_status={"node1": SimpleNamespace(is_healthy=True, url="http://node1:2661")})
+    if response == "valid":
+        test.test_ping_pong()
+    else:
+        with pytest.raises(AssertionError):
+            test.test_ping_pong()
+    assert [row["type"] for row in tester.messages[1]][:4] == ["connected", "subscribed", "ping", "event"]
+    assert socket.closed
+    assert tester._loop.is_closed()
+
+
+def test_websocket_type_wait_has_one_deadline_despite_unrelated_messages(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    now = [0.0]
+
+    async def heartbeat() -> str:
+        now[0] += 0.4
+        return json.dumps({"type": "ping"})
+
+    monkeypatch.setattr(websocket_test_module, "time", SimpleNamespace(monotonic=lambda: now[0]))
+    tester = websocket_test_module.WebSocketLoadTest("http://node1:2661")
+    tester.connections[1] = SimpleNamespace(recv=heartbeat, close=AsyncMock())
+    tester.messages[1] = []
+    try:
+        assert tester.read_one_sync(1, timeout=1, message_type="pong") is None
+        assert len(tester.messages[1]) == 3
+    finally:
+        tester.cleanup()
+
+
 def test_docker_session_preflight_fails_before_tests(monkeypatch: pytest.MonkeyPatch) -> None:
     preflight = Mock(side_effect=RuntimeError("Authentication preflight failed: HTTP 403"))
     monkeypatch.setattr(real_client.RealStressClient, "preflight_auth", preflight)
@@ -377,6 +440,58 @@ def test_network_simulated_failures_are_counted_as_requests(monkeypatch):
     assert tester.results.total_requests == 1
     assert tester.results.failed_requests == 1
     assert tester.results.successful_requests == 0
+    assert tester.results.injected_failures == 1
+
+
+@pytest.mark.parametrize("attribute", ["packet_loss_rate", "congestion_rate", "bandwidth_limit_rate"])
+def test_network_injection_is_separate_from_http_errors(monkeypatch: pytest.MonkeyPatch, attribute: str) -> None:
+    tester = NetworkStressTester(nodes=["node1:2661"])
+    tester.session.get = Mock(return_value=Mock(status_code=503, text="unavailable"))
+    monkeypatch.setattr(network_conditions.random, "randint", lambda *_: 1)
+    try:
+        setattr(tester, attribute, 100)
+        tester._send_request("node1")
+        tester.session.get.assert_not_called()
+        setattr(tester, attribute, 0)
+        tester._send_request("node1")
+        assert tester.results.total_requests == tester.results.failed_requests == 2
+        assert tester.results.injected_failures == 1
+        assert tester.results.successful_requests == 0
+        tester.session.get.assert_called_once()
+    finally:
+        tester.session.close()
+
+
+@pytest.mark.parametrize(("successful", "injected", "error"), [
+    (261, 275, None),
+    (0, 275, "Too many HTTP failures"),
+    (0, 536, "sent no HTTP requests"),
+])
+def test_network_threshold_excludes_only_injected_drops(
+    monkeypatch: pytest.MonkeyPatch, successful: int, injected: int, error: str | None,
+) -> None:
+    from types import SimpleNamespace
+
+    class Tester:
+        def __init__(self, nodes: list[str]) -> None:
+            pass
+
+        def run_network_stress_test(self, condition: network_conditions.NetworkCondition) -> SimpleNamespace:
+            if condition.condition_type == "congestion":
+                return SimpleNamespace(duration=15, total_requests=536, successful_requests=successful,
+                                       failed_requests=536 - successful, injected_failures=injected)
+            return SimpleNamespace(duration=15, total_requests=1, successful_requests=1,
+                                   failed_requests=0, injected_failures=0)
+
+        def print_results(self) -> None:
+            pass
+
+    monkeypatch.setattr(network_conditions, "NetworkStressTester", Tester)
+    if error is None:
+        network_conditions.test_network_stress()
+    else:
+        with pytest.raises(AssertionError, match=error):
+            network_conditions.test_network_stress()
 
 
 def test_docker_cpu_limit_uses_nano_cpus(monkeypatch):

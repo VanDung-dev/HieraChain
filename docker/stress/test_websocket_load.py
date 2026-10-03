@@ -107,23 +107,29 @@ class WebSocketLoadTest:
                 pass
         return False
 
-    def read_one_sync(self, conn_id: int, timeout: float = 5) -> dict | None:
-        """Read a message from the connection."""
+    def read_one_sync(
+        self, conn_id: int, timeout: float = 5, message_type: str | None = None,
+    ) -> dict | None:
+        """Read the next message, or wait for a type within one timeout budget."""
         loop = self._get_loop()
         with self.lock:
             ws = self.connections.get(conn_id)
         if not ws:
             return None
-        try:
-            msg = loop.run_until_complete(
-                asyncio.wait_for(ws.recv(), timeout=timeout)
-            )
-            data = json.loads(msg) if isinstance(msg, str) else msg
-            with self.lock:
-                self.messages[conn_id].append(data)
-            return data
-        except Exception:
-            return None
+        deadline = time.monotonic() + timeout
+        while (remaining := deadline - time.monotonic()) > 0:
+            try:
+                msg = loop.run_until_complete(
+                    asyncio.wait_for(ws.recv(), timeout=remaining)
+                )
+                data = json.loads(msg) if isinstance(msg, str) else msg
+                with self.lock:
+                    self.messages[conn_id].append(data)
+                if message_type is None or data.get("type") == message_type:
+                    return data
+            except Exception:
+                return None
+        return None
 
     @property
     def active_count(self) -> int:
@@ -198,25 +204,19 @@ class TestWebSocketBasic:
         status = self.client.node_status[healthy[0]]
         tester = WebSocketLoadTest(status.url)
 
-        assert tester.connect_sync(conn_id=1, chain_name=WS_CHAIN), tester.errors.get(1)
-        time.sleep(1)
-
-        # Read connected messages
-        tester.read_one_sync(1, timeout=3)
-        tester.read_one_sync(1, timeout=3)
-
-        # Send ping
-        loop = tester._get_loop()
-        ws = tester.connections.get(1)
-        if ws:
+        try:
+            assert tester.connect_sync(conn_id=1, chain_name=WS_CHAIN), tester.errors.get(1)
+            loop = tester._get_loop()
+            ws = tester.connections[1]
+            timestamp = time.time()
             loop.run_until_complete(
-                ws.send(json.dumps({"type": "ping"}))
+                ws.send(json.dumps({"type": "ping", "timestamp": timestamp}))
             )
-            pong = tester.read_one_sync(1, timeout=5)
+            pong = tester.read_one_sync(1, timeout=5, message_type="pong")
             logger.info("Pong response: %s", pong)
-            assert pong is not None and pong.get("type") == "pong", pong
-
-        tester.cleanup()
+            assert pong is not None and pong.get("timestamp") == timestamp, pong
+        finally:
+            tester.cleanup()
 
 
 @pytest.mark.stress
