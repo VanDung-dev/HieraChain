@@ -373,9 +373,28 @@ class RedisStorageAdapter:
     def load_chain(self, chain_name: str) -> dict[str, Any] | None:
         return self._chain_mgr.load_chain(chain_name)
 
-    def save_hierarchy_registry(self, state: dict[str, Any]) -> bool:
-        """Persist access state in the configured Redis database."""
-        return bool(self.client.set("hierachain:hierarchy_registry", orjson.dumps(state)))
+    def save_hierarchy_registry(
+        self, state: dict[str, Any], *, expected_revision: str | None = None,
+    ) -> bool:
+        """Use WATCH/MULTI to reject stale registry writes across workers."""
+        if not isinstance(state.get("_revision"), str) or state["_revision"] == expected_revision:
+            raise ValueError("Registry writes require a new revision")
+        key = _k("hierarchy_registry")
+        try:
+            with self.client.pipeline() as pipe:
+                pipe.watch(key)
+                raw = pipe.get(key)
+                current = orjson.loads(raw) if raw is not None else None
+                if current is not None and not isinstance(current, dict):
+                    raise ValueError("Invalid hierarchy registry snapshot")
+                revision = current.get("_revision") if current is not None else None
+                if revision != expected_revision:
+                    return False
+                pipe.multi()
+                pipe.set(key, orjson.dumps(state))
+                return bool(pipe.execute()[0])
+        except redis_mod.WatchError:
+            return False
 
     def load_hierarchy_registry(self) -> dict[str, Any] | None:
         """Load access state from the configured Redis database."""

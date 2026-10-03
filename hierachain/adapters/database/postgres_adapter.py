@@ -38,6 +38,7 @@ class PostgresAdapter(SQLBase):
     Stores and retrieves blockchain data using high-performance connection pooling
     and native PostgreSQL dialects.
     """
+    _block_range_placeholder = "%s"
 
     def __init__(self, database_url: str = "postgresql://hiera:hiera@localhost:5432/hierachain", pool_min: int = 1, pool_max: int = 10):
         self.database_url = database_url
@@ -392,6 +393,31 @@ class PostgresAdapter(SQLBase):
     @staticmethod
     def _execute_load_hierarchy_registry(cursor: Any) -> None:
         cursor.execute("SELECT value FROM chain_state WHERE key = %s", ("hierarchy_registry",))
+
+    @staticmethod
+    def _execute_save_hierarchy_registry(
+        conn: Any, encoded: str, expected_revision: str | None,
+    ) -> bool:
+        cursor = conn.cursor()
+        if expected_revision is None:
+            cursor.execute(
+                """
+                INSERT INTO chain_state (key, value, last_block_hash, updated_at)
+                VALUES ('hierarchy_registry', %s::jsonb, '', %s)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
+                WHERE chain_state.value->>'_revision' IS NULL
+                """,
+                (encoded, time.time()),
+            )
+        else:
+            cursor.execute(
+                "UPDATE chain_state SET value=%s::jsonb, updated_at=%s "
+                "WHERE key='hierarchy_registry' AND value->>'_revision' = %s",
+                (encoded, time.time(), expected_revision),
+            )
+        saved = cursor.rowcount == 1
+        conn.commit()
+        return saved
 
     @staticmethod
     def _execute_delete_chain(conn: Any, chain_name: str) -> bool:

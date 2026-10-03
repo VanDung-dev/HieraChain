@@ -633,6 +633,43 @@ class SQLBase(ABC):
             cursor = conn.cursor()
             return self._execute_get_block_by_index(cursor, index, chain_name)
 
+    _block_range_placeholder = "?"
+
+    def get_blocks_from_index(
+        self, start_index: int, chain_name: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Load headers and ordered events in one coherent SQL statement."""
+        p = self._block_range_placeholder
+        where = f'b."index">={p}'
+        params: tuple[Any, ...] = (start_index,)
+        if chain_name is not None:
+            where += f' AND b.chain_name={p}'
+            params += (chain_name,)
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f'SELECT b.*, e.id AS event_row_id, e.entity_id AS event_entity_id, '
+                f'e.event_type AS event_type, e.timestamp AS event_timestamp, e.data AS event_data '
+                f'FROM blocks b LEFT JOIN events e ON e.chain_name=b.chain_name AND e.block_hash=b.hash '
+                f'WHERE {where} '
+                f'ORDER BY b.chain_name, b."index", e.id',
+                params,
+            )
+            blocks: list[dict[str, Any]] = []
+            previous_key = None
+            for row in cursor:
+                key = (row["chain_name"], row["index"])
+                if key != previous_key:
+                    blocks.append(self._create_block_data(row, []))
+                    previous_key = key
+                if row["event_row_id"] is not None:
+                    blocks[-1]["events"].append(self._create_event_from_row({
+                        "chain_name": row["chain_name"], "entity_id": row["event_entity_id"],
+                        "event_type": row["event_type"], "timestamp": row["event_timestamp"],
+                        "data": row["event_data"],
+                    }))
+            return blocks
+
     def _execute_get_block_by_index(
         self, cursor: Any, index: int, chain_name: str | None,
     ) -> dict[str, Any] | None:
@@ -694,6 +731,7 @@ class SQLBase(ABC):
             return None
         return {
             "event_id": row["event_id"],
+            "chain_name": row["chain_name"],
             "status": "ordered",
             "block_hash": row["block_hash"],
             "timestamp": row["timestamp"],
@@ -709,16 +747,44 @@ class SQLBase(ABC):
             "update_state", _op, key=key
         )
 
-    def save_hierarchy_registry(self, state: dict[str, Any]) -> bool:
-        """Persist organization and channel access state before acknowledging changes."""
+    def save_hierarchy_registry(
+        self, state: dict[str, Any], *, expected_revision: str | None = None,
+    ) -> bool:
+        """Atomically reject a registry snapshot based on an obsolete revision."""
         try:
+            if not isinstance(state.get("_revision"), str) or state["_revision"] == expected_revision:
+                raise ValueError("Registry writes require a new revision")
             encoded = orjson.dumps(state).decode("utf-8")
             with self._get_connection() as conn:
-                result = self._execute_update_state(conn, "hierarchy_registry", encoded, "")
-            return result is not False
+                return self._execute_save_hierarchy_registry(conn, encoded, expected_revision)
         except Exception:
             self.logger.exception("Could not persist hierarchy registry")
             return False
+
+    @staticmethod
+    def _execute_save_hierarchy_registry(
+        conn: Any, encoded: str, expected_revision: str | None,
+    ) -> bool:
+        cursor = conn.cursor()
+        if expected_revision is None:
+            cursor.execute(
+                """
+                INSERT INTO chain_state (key, value, last_block_hash, updated_at)
+                VALUES ('hierarchy_registry', ?, '', ?)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
+                WHERE json_extract(chain_state.value, '$._revision') IS NULL
+                """,
+                (encoded, time.time()),
+            )
+        else:
+            cursor.execute(
+                "UPDATE chain_state SET value=?, updated_at=? "
+                "WHERE key='hierarchy_registry' AND json_extract(value, '$._revision') = ?",
+                (encoded, time.time(), expected_revision),
+            )
+        saved = cursor.rowcount == 1
+        conn.commit()
+        return saved
 
     def load_hierarchy_registry(self) -> dict[str, Any] | None:
         """Return the saved registry, or raise if storage cannot be read."""
