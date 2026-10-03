@@ -32,7 +32,6 @@ class Block:
     - Hashing uses strict JSON canonicalization.
     """
     __slots__ = (
-        '_cached_events',
         '_events',
         'creator_id',
         'hash',
@@ -44,7 +43,6 @@ class Block:
         'timestamp',
     )
     _events: pa.Table
-    _cached_events: list[dict[str, Any]] | None
 
     def __init__(
         self,
@@ -67,10 +65,8 @@ class Block:
         # Handle events based on input type
         if isinstance(events, pa.Table):
             self._events = events
-            self._cached_events = None
             self.merkle_root = merkle_root if merkle_root is not None else calculate_merkle_from_arrow(self._events)
         else:
-            self._cached_events = events
             if merkle_root is not None:
                 self.merkle_root = merkle_root
                 self._events = convert_events_to_arrow(events)
@@ -114,11 +110,8 @@ class Block:
         return table_to_list_of_dicts(filtered)
 
     def to_event_list(self) -> list[dict[str, Any]]:
-        """Convert internal Arrow events to a list of dictionaries."""
-        cached = self._cached_events
-        if cached is None:
-            cached = self._cached_events = table_to_list_of_dicts(self.events)
-        return cached
+        """Return an independent event snapshot of the verified Arrow data."""
+        return table_to_list_of_dicts(self.events)
 
     def validate_structure(self) -> bool:
         """

@@ -49,8 +49,6 @@ class AdvancedCache(dict):
         self.hits = 0
         self.misses = 0
         self.evictions = 0
-        self._cleanup_stop = threading.Event()
-        self._start_ttl_cleanup_thread()
 
     def get(self, key: str, default: Any = None) -> Any:
         with self.lock:
@@ -69,7 +67,9 @@ class AdvancedCache(dict):
     def set(self, key: str, value: Any, ttl: float | None = None) -> None:
         with self.lock:
             if key not in self.cache and len(self.cache) >= self.max_size:
-                self._evict()
+                self.cleanup_ttl()
+                if len(self.cache) >= self.max_size:
+                    self._evict()
             if key in self.cache:
                 entry = self.cache[key]
                 entry.value = value
@@ -151,32 +151,14 @@ class AdvancedCache(dict):
             del self.cache[key]
         self.access_order.pop(key, None)
 
-    def _start_ttl_cleanup_thread(self) -> None:
-        def cleanup_loop():
-            while not self._cleanup_stop.is_set():
-                try:
-                    if self._cleanup_stop.wait(60):
-                        break
-                    self.cleanup_ttl()
-                except Exception as e:
-                    self.logger.error(f"TTL cleanup error: {e}")
-        cleanup_thread = threading.Thread(target=cleanup_loop, daemon=True)
-        cleanup_thread.start()
-
-    def cleanup_ttl(self):
+    def cleanup_ttl(self) -> None:
         with self.lock:
-            keys = list(self.cache.keys())
-        expired_keys = []
-        for k in keys:
-            entry = self.cache.get(k)
-            if entry and entry.is_expired:
-                expired_keys.append(k)
-        with self.lock:
-            for k in expired_keys:
+            for k in [key for key, entry in self.cache.items() if entry.is_expired]:
                 self._remove_key(k)
 
     def get_stats(self) -> dict[str, Any]:
         with self.lock:
+            self.cleanup_ttl()
             total_requests = self.hits + self.misses
             hit_rate = (self.hits / total_requests * 100) if total_requests > 0 else 0
             return {
@@ -191,6 +173,7 @@ class AdvancedCache(dict):
 
     def get_keys(self) -> list[str]:
         with self.lock:
+            self.cleanup_ttl()
             return list(self.cache.keys())
 
     def contains(self, key: str) -> bool:
@@ -217,6 +200,7 @@ class AdvancedCache(dict):
 
     def __len__(self) -> int:
         with self.lock:
+            self.cleanup_ttl()
             return len(self.cache)
 
     def keys(self) -> list[str]:
