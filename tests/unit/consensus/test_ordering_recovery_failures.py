@@ -43,6 +43,7 @@ def _make_processor(
     identity = load_node_identity()
     assert identity is not None, "Test signer must be configured"
     service = SimpleNamespace(
+        _commit_lock=threading.RLock(),
         node_identity=identity,
         should_stop=threading.Event(),
         event_pool=Queue(),
@@ -234,17 +235,15 @@ def test_load_from_db_propagates_failure_on_nonterminal_block(
         sign_block(block, service.node_identity.node_id, service.node_identity.signing_keypair)
         storage_handler.save_block(block, "test-chain")
         previous_hash = block.hash
-    execute_lookup = storage_handler.storage._execute_get_block_by_index
+    create_block_data = storage_handler.storage._create_block_data
 
-    def fail_after_first_block(
-        cursor: Any, index: int, chain_name: str | None
-    ) -> dict[str, Any] | None:
-        if index == 1:
+    def fail_after_first_block(row: Any, events: list[dict[str, Any]]) -> dict[str, Any]:
+        if row["index"] == 1:
             raise OSError("database unavailable at block 1")
-        return execute_lookup(cursor, index, chain_name)
+        return create_block_data(row, events)
 
     monkeypatch.setattr(
-        storage_handler.storage, "_execute_get_block_by_index", fail_after_first_block
+        storage_handler.storage, "_create_block_data", fail_after_first_block
     )
 
     with pytest.raises(OSError, match="database unavailable at block 1"):

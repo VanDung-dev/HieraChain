@@ -10,8 +10,8 @@ from typing import Any
 import orjson
 import pytest
 
-import hierachain.error_mitigation.journal as journal_module
 import hierachain.consensus.ordering.service as service_module
+import hierachain.error_mitigation.journal as journal_module
 from hierachain.consensus.ordering.processor import OrderingProcessor
 from hierachain.consensus.ordering.recovery import OrderingRecovery
 from hierachain.consensus.ordering.types import OrderingStatus
@@ -24,6 +24,7 @@ def test_wait_for_active_allows_long_replay_without_resetting_it(
     monkeypatch: pytest.MonkeyPatch, timeout: float | None, active: bool,
 ) -> None:
     service = object.__new__(service_module.OrderingService)
+    service._commit_lock = threading.RLock()
     service.status = OrderingStatus.MAINTENANCE
     service.should_stop = threading.Event()
     service.processing_thread = SimpleNamespace(is_alive=lambda: True)
@@ -43,6 +44,7 @@ def test_wait_for_active_allows_long_replay_without_resetting_it(
 @pytest.mark.parametrize("status", [OrderingStatus.MAINTENANCE, OrderingStatus.ACTIVE])
 def test_wait_for_active_stops_on_processor_failure_or_shutdown(stopped: bool, status: OrderingStatus) -> None:
     service = object.__new__(service_module.OrderingService)
+    service._commit_lock = threading.RLock()
     service.status = status
     service.should_stop = threading.Event()
     if stopped:
@@ -136,6 +138,8 @@ def test_replay_error_does_not_activate_ordering_service():
             return None
 
     service = SimpleNamespace(
+        _commit_lock=threading.RLock(),
+        should_stop=threading.Event(),
         journal=Journal(),
         blocks_created=0,
         storage_handler=SimpleNamespace(storage=Storage()),
@@ -145,6 +149,7 @@ def test_replay_error_does_not_activate_ordering_service():
     recovery = OrderingRecovery(service, recovery_worker)
     processor = OrderingProcessor.__new__(OrderingProcessor)
     processor.service = service
+    processor.should_stop = service.should_stop
     processor.recovery = recovery
 
     with pytest.raises(RuntimeError, match="recovery"):
@@ -220,6 +225,8 @@ def test_corrupt_complete_frame_keeps_ordering_in_maintenance(
             return None
 
     service = SimpleNamespace(
+        _commit_lock=threading.RLock(),
+        should_stop=threading.Event(),
         journal=journal,
         blocks_created=0,
         storage_handler=SimpleNamespace(storage=Storage()),
@@ -228,6 +235,7 @@ def test_corrupt_complete_frame_keeps_ordering_in_maintenance(
     recovery = OrderingRecovery(service, SimpleNamespace(block_manager=BlockManager()))
     processor = OrderingProcessor.__new__(OrderingProcessor)
     processor.service = service
+    processor.should_stop = service.should_stop
     processor.recovery = recovery
 
     with pytest.raises(ValueError, match="Corrupt Arrow batch"):

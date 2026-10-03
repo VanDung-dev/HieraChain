@@ -84,6 +84,7 @@ def test_journal_replay_block_payload_round_trips_with_postgres_jsonb() -> None:
     storage = _PostgresLikeStorage()
     config = {"chain_name": "recovery-chain", "block_size": 1}
     service = type("Service", (), {})()
+    service._commit_lock = threading.RLock()
     service.should_stop = threading.Event()
     service.event_pool = Queue()
     service.pending_events = {}

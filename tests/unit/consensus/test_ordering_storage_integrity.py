@@ -10,6 +10,7 @@ import pytest
 
 from hierachain.consensus.ordering.storage import _block_from_dict
 from hierachain.core.block import Block
+from hierachain.core.blockchain import Blockchain
 from hierachain.hierarchical.sub_chain.ordering import _apply_rehydrated_blocks
 
 
@@ -41,6 +42,8 @@ def test_rehydration_does_not_accept_an_invalid_chain() -> None:
         chain=[],
         total_events=0,
         event_type_counts={},
+        event_type_index={},
+        _index_block_events=lambda block: Blockchain._index_block_events(sub_chain, block),
         world_state=SimpleNamespace(clear=lambda: None, apply_block=lambda _block: None),
         ordering_service=SimpleNamespace(block_history=[], blocks_created=0),
         is_chain_valid=lambda: False,
