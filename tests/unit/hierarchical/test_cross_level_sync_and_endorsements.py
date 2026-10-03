@@ -103,6 +103,56 @@ def test_real_hierarchy_proof_submission_is_recorded_once(
         subchain.shutdown()
 
 
+@pytest.mark.parametrize("submission_path", ["mainchain", "subchain"])
+def test_concurrent_same_tip_proof_submissions_are_serialized(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, submission_path: str,
+) -> None:
+    monkeypatch.setattr(settings, "ENABLE_ZK_PROOFS", False)
+    monkeypatch.setattr(settings, "ZK_PROOF_REQUIRED_FOR_MAINCHAIN", False)
+    mainchain, subchain, sync = _real_chain_pair(tmp_path / "concurrent", monkeypatch)
+    start = threading.Barrier(3, timeout=5)
+    results: list[Any] = []
+    latest_block = subchain.get_latest_block()
+    metadata = {
+        "domain_type": subchain.domain_type,
+        "latest_block_index": latest_block.index,
+        "latest_merkle_root": latest_block.merkle_root or latest_block.hash,
+        "previous_merkle_root": "genesis",
+    }
+
+    def submit() -> None:
+        start.wait()
+        if submission_path == "mainchain":
+            results.append(mainchain.add_proof("orders", latest_block.hash, metadata))
+        else:
+            results.append(subchain.submit_proof_to_main(mainchain))
+
+    workers = [threading.Thread(target=submit) for _ in range(2)]
+    try:
+        for worker in workers:
+            worker.start()
+        start.wait()
+        for worker in workers:
+            worker.join(timeout=10)
+
+        assert all(not worker.is_alive() for worker in workers)
+        assert results == [True, True]
+        assert mainchain.proof_sequence == 1
+
+        # The normal sync path finalizes and reads back the single anchor that
+        # the concurrent calls placed in MainChain's pending event stream.
+        result = sync.sync_to_mainchain("orders")
+        assert result.success
+        assert mainchain.proof_count == 1
+        assert sum(
+            event.get("event") == "proof_submission"
+            for block in mainchain.chain
+            for event in block.to_event_list()
+        ) == 1
+    finally:
+        subchain.shutdown()
+
+
 def test_sync_waits_for_durable_block_and_retries_without_duplicate_proof(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -110,13 +160,14 @@ def test_sync_waits_for_durable_block_and_retries_without_duplicate_proof(
     monkeypatch.setattr(settings, "ZK_PROOF_REQUIRED_FOR_MAINCHAIN", False)
     mainchain, subchain, sync = _real_chain_pair(tmp_path / "retry", monkeypatch)
     storage = sync.storage
+    previous_proof_index = subchain.last_proof_block_index
     original_save = storage.save_block
     storage.save_block = lambda _data: False
     try:
         failed = sync.sync_to_mainchain("orders")
         assert not failed.success
         assert sync.get_stats()["syncs_completed"] == 0
-        assert subchain.last_proof_block_index == 0
+        assert subchain.last_proof_block_index == previous_proof_index
         assert mainchain.proof_count == 0
         assert not mainchain.verify_proof(subchain.get_latest_block().hash, "orders")
         assert not sync.verify_cross_level_state("orders", "mainchain")
@@ -141,10 +192,11 @@ def test_direct_subchain_submission_rejects_missing_durable_storage(
     monkeypatch.setattr(settings, "ZK_PROOF_REQUIRED_FOR_MAINCHAIN", False)
     mainchain, subchain, _sync = _real_chain_pair(tmp_path / "no-storage", monkeypatch)
     mainchain.proof_storage = None
+    previous_proof_index = subchain.last_proof_block_index
     try:
         assert not subchain.submit_proof_to_main(mainchain)
         assert mainchain.proof_count == 0
-        assert subchain.last_proof_block_index == 0
+        assert subchain.last_proof_block_index == previous_proof_index
     finally:
         subchain.shutdown()
 
@@ -173,6 +225,8 @@ def test_mainchain_proof_survives_manager_restart(
     finally:
         for chain in first.sub_chains.values():
             chain.shutdown()
+        first.transaction_manager.journal.close()
+        first.storage.close()
 
     restored = HierarchyManager()
     try:
@@ -181,6 +235,8 @@ def test_mainchain_proof_survives_manager_restart(
     finally:
         for chain in restored.sub_chains.values():
             chain.shutdown()
+        restored.transaction_manager.journal.close()
+        restored.storage.close()
 
 
 def test_rest_proof_submission_records_once_through_cross_level_manager(
@@ -336,6 +392,15 @@ def test_hierarchy_manager_channel_uses_registered_member_role_and_fails_closed(
         {"user_id": member_user_id, "org_id": org_id, "role": "member"},
         "member",
     )
+    manager = HierarchyManager.__new__(HierarchyManager)
+    manager.main_chain = MainChain("member_access_test")
+    manager.organizations = {org_id: org}
+    manager.channels = {}
+    manager.storage = None
+    manager._registry_lock = threading.RLock()
+    manager._registry_state = None
+    manager._registry_mutating = False
+    channel = manager.create_channel("admin-only", [org_id])
     org.members["foreign-user"] = {
         "identity": {
             "user_id": "foreign-user",
@@ -344,15 +409,6 @@ def test_hierarchy_manager_channel_uses_registered_member_role_and_fails_closed(
         },
         "role": "admin",
     }
-
-    manager = HierarchyManager.__new__(HierarchyManager)
-    manager.organizations = {org_id: org}
-    manager.channels = {}
-    manager.storage = None
-    manager._registry_lock = threading.RLock()
-    manager._registry_state = None
-    manager._registry_mutating = False
-    channel = manager.create_channel("admin-only", [org_id])
 
     rejected_event = {"entity_id": "entity-1", "event": "member_write"}
     assert not channel.submit_event(rejected_event, org_id)
@@ -378,6 +434,7 @@ def test_hierarchy_manager_channel_uses_registered_member_role_and_fails_closed(
     assert channel.event_statistics["total_events"] == 1
     assert channel.event_statistics["events_by_org"][org_id] == 1
 
+    org.members.pop("foreign-user")
     member_channel = manager.create_channel(
         "member-write", [org_id], {"write": "MEMBER"}
     )

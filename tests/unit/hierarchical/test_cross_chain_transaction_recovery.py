@@ -104,6 +104,59 @@ def test_commit_decision_is_durable_before_any_participant_commit() -> None:
     assert manager.get_transaction(tx_id).state is TransactionState.COMMITTED
 
 
+def test_retry_pending_skips_transaction_owned_by_initial_prepare() -> None:
+    prepare_entered = threading.Event()
+    release_prepare = threading.Event()
+
+    class PausingParticipant(_Participant):
+        def prepare_transaction(self, tx_id: str, payload: dict, is_source: bool) -> bool:
+            prepare_entered.set()
+            if not release_prepare.wait(timeout=5):
+                raise TimeoutError("prepare barrier was not released")
+            return super().prepare_transaction(tx_id, payload, is_source)
+
+    journal = _MemoryJournal()
+    source = PausingParticipant("source", journal)
+    destination = _Participant("destination", journal)
+    manager = _manager(journal, source, destination)
+    initiated: list[str] = []
+    worker = threading.Thread(
+        target=lambda: initiated.append(
+            manager.initiate_transaction("source", "destination", _payload())
+        )
+    )
+    worker.start()
+    try:
+        assert prepare_entered.wait(timeout=5)
+        tx_id = next(iter(manager.transactions))
+
+        manager.retry_pending()
+        manager.retry_pending()
+
+        assert [record["phase"] for record in journal.records] == ["begin"]
+        assert source.rollback_calls == []
+        assert destination.rollback_calls == []
+    finally:
+        release_prepare.set()
+        worker.join(timeout=5)
+
+    assert not worker.is_alive()
+    assert initiated == [tx_id]
+    assert [record["phase"] for record in journal.records] == [
+        "begin", "prepared", "commit", "committed"
+    ]
+    assert source.rollback_calls == []
+    assert destination.rollback_calls == []
+    assert source.commit_calls == [tx_id]
+    assert destination.commit_calls == [tx_id]
+
+    manager.retry_pending()
+    assert source.rollback_calls == []
+    assert destination.rollback_calls == []
+    assert source.commit_calls == [tx_id]
+    assert destination.commit_calls == [tx_id]
+
+
 def test_coordinator_does_not_commit_on_unreadable_journal_ack() -> None:
     class FalseAckJournal(_MemoryJournal):
         def log_event(self, record: dict) -> bool:
@@ -176,6 +229,11 @@ def test_failed_commit_retries_forward_without_rollback() -> None:
     assert manager.requires_2pc_participant("source")
     assert manager.requires_2pc_participant("destination")
     assert not manager.requires_2pc_participant("other")
+    transaction = manager.get_transaction(tx_id)
+    assert transaction is not None
+    assert not manager._abort_before_decision(transaction, source, destination)
+    assert source.rollback_calls == []
+    assert destination.rollback_calls == []
 
     manager.retry_pending()
 
@@ -387,6 +445,10 @@ def test_ambiguous_event_append_is_reconciled_once_without_duplicate_journal_row
     chain.lock = threading.RLock()
     chain.pending_events = []
     chain.completed_operations = 0
+    chain.entity_registry = {"asset-1": {"status": "registered"}}
+    chain.event_handlers = {}
+    chain._domain_projection_healthy = True
+    chain._domain_projection_errors = []
     chain._tx_manager = TransactionManager()
     chain._tx_commit_lock = threading.RLock()
     chain._transaction_event_markers = None
@@ -423,7 +485,10 @@ def test_ambiguous_event_append_is_reconciled_once_without_duplicate_journal_row
     queued = list(service.event_pool.queue)
     queued_start, queued_complete = queued
     assert queued_start.event_id == start_record["event_id"]
-    assert queued_start.event_data == start_record
+    assert queued_start.channel_id == start_record["channel_id"]
+    assert queued_start.event_data == {
+        key: value for key, value in start_record.items() if key != "channel_id"
+    }
     assert queued_complete.event_data["transaction_step"] == "complete"
 
     assert service.reconcile_journal_event(start_record) == start_record["event_id"]
@@ -440,7 +505,11 @@ def test_ambiguous_event_append_is_reconciled_once_without_duplicate_journal_row
     }
     journal.records.append(stored_record)
     service.storage_handler.storage.get_event_by_id = (
-        lambda event_id: {"event_id": event_id}
+        lambda event_id: {
+            "event_id": event_id,
+            "chain_name": "test-chain",
+            "data": stored_record,
+        }
         if event_id == "evt-already-stored"
         else None
     )
@@ -605,7 +674,7 @@ def test_restart_finishes_prepared_decision_without_duplicate_events() -> None:
     assert [row["transaction_step"] for row in destination_events.records] == ["start", "complete"]
 
 
-def test_real_hierarchy_restart_recovers_commit_with_empty_entity_registries(
+def test_real_hierarchy_restart_recovers_entity_state_and_committed_transaction(
     tmp_path, monkeypatch
 ) -> None:
     from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
@@ -631,8 +700,9 @@ def test_real_hierarchy_restart_recovers_commit_with_empty_entity_registries(
         assert manager.create_sub_chain("destination", "finance")
         source = manager.get_sub_chain("source")
         destination = manager.get_sub_chain("destination")
-        assert source.register_entity("asset-1", {})
-        assert destination.register_entity("asset-1", {})
+        initial_data = {"asset_type": "equipment"}
+        assert source.register_entity("asset-1", initial_data)
+        assert destination.register_entity("asset-1", initial_data)
 
         destination.commit_transaction = lambda _tx_id: False
         tx_id = manager.initiate_cross_chain_transaction(
@@ -663,8 +733,13 @@ def test_real_hierarchy_restart_recovers_commit_with_empty_entity_registries(
     try:
         source = recovered.get_sub_chain("source")
         destination = recovered.get_sub_chain("destination")
-        assert source.entity_registry == {}
-        assert destination.entity_registry == {}
+        assert source.get_entity_info("asset-1")["asset_type"] == "equipment"
+        assert destination.get_entity_info("asset-1")["asset_type"] == "equipment"
+        assert source.get_entity_info("asset-1").get("current_operation") is None
+        assert source.start_domain_operation("asset-1", "inspection")
+        assert source.get_entity_info("asset-1")["current_operation"] == "inspection"
+        assert not source.start_domain_operation("asset-1", "approval")
+        assert source.complete_domain_operation("asset-1", "inspection")
         assert (
             recovered.transaction_manager.get_transaction(tx_id).state
             is TransactionState.COMMITTED
@@ -728,6 +803,8 @@ def test_domain_chain_can_replace_generic_restored_placeholder(
         def __init__(self, name: str, node_identity=None) -> None:
             self.name = name
             self.node_identity = node_identity
+            self.registered_sub_chains = set()
+            self.pending_events = []
 
     class _Placeholder:
         def __init__(self, name: str, domain_type: str, node_identity=None) -> None:
@@ -829,6 +906,8 @@ def test_restore_uses_domain_chains_only_for_unresolved_participants(monkeypatch
         def __init__(self, name: str, node_identity=None) -> None:
             self.name = name
             self.node_identity = node_identity
+            self.registered_sub_chains = set()
+            self.pending_events = []
 
     class _Chain:
         def __init__(self, name: str, domain_type: str, **_kwargs) -> None:
