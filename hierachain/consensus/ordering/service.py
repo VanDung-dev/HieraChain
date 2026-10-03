@@ -22,6 +22,7 @@ from hierachain.consensus.ordering.processor import OrderingProcessor
 from hierachain.consensus.ordering.storage import OrderingStorageHandler
 from hierachain.consensus.ordering.types import (
     EventStatus,
+    OrderingBackpressureError,
     OrderingStatus,
     PendingEvent,
 )
@@ -44,8 +45,12 @@ class OrderingService:
         node_identity: Any | None = None,
         genesis_block: Block | None = None,
         block_finalizer: Callable[[Block, Block | None], Block] | None = None,
+        retain_bootstrap: bool = False,
     ):
         self.config = config
+        self.enqueue_timeout = float(config.get("enqueue_timeout", 1.0))
+        if not 0 < self.enqueue_timeout <= 60:
+            raise ValueError("enqueue_timeout must be between 0 and 60 seconds")
         self.block_finalizer = block_finalizer
         self.nodes = nodes or []
         from hierachain.security.identity_loader import require_block_identity
@@ -54,6 +59,7 @@ class OrderingService:
             node_identity, config.get("trusted_public_keys")
         )
         self.config["trusted_public_keys"] = self.trusted_public_keys
+        self._commit_lock = threading.RLock()
         self._status = OrderingStatus.MAINTENANCE
         self.should_stop = threading.Event()
         self.event_pool: Queue[PendingEvent] = Queue(
@@ -84,9 +90,11 @@ class OrderingService:
                 genesis_block, self.storage_handler.chain_name
             )
             latest_block = genesis_block
+            persisted_blocks = [genesis_block]
         if latest_block:
             self.storage_handler.last_block = latest_block
         self.blocks_created = (latest_block.index + 1) if latest_block else 0
+        self._bootstrap_blocks: list[Block] | None = persisted_blocks if retain_bootstrap else None
         logger.info(
             "Initialized ordering service state: blocks_created=%s",
             self.blocks_created
@@ -137,7 +145,8 @@ class OrderingService:
     @status.setter
     def status(self, value: OrderingStatus) -> None:
         """Set the current service status"""
-        self._status = value
+        with self._commit_lock:
+            self._status = value
 
     def _init_processing_thread(self):
         """Entry point for the background processing thread"""
@@ -184,12 +193,30 @@ class OrderingService:
         )
 
         logged_data = {**enriched_data, "channel_id": channel_id}
-        if not self.journal.log_event(logged_data):
-            raise RuntimeError(f"Failed to persist event {event_id} to the journal")
-        self.pending_events[event_id] = pending_event
-        self.event_pool.put(pending_event)
+        self._enqueue_event(pending_event, logged_data)
 
         return event_id
+
+    def _enqueue_event(self, event: PendingEvent, journal_data: dict[str, Any] | None = None) -> None:
+        """Reserve queue capacity before the durable write, then publish atomically."""
+        deadline = time.monotonic() + self.enqueue_timeout
+        pool = self.event_pool
+        # ponytail: Queue's condition holds capacity during fsync; use a separate
+        # reservation queue only if profiling shows consumer contention here.
+        with pool.not_full:
+            while pool.maxsize > 0 and pool._qsize() >= pool.maxsize:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or self.should_stop.is_set() or self.status != OrderingStatus.ACTIVE:
+                    raise OrderingBackpressureError(event.event_id, journaled=journal_data is None)
+                pool.not_full.wait(min(remaining, 0.05))
+            if self.should_stop.is_set() or self.status != OrderingStatus.ACTIVE:
+                raise OrderingBackpressureError(event.event_id, journaled=journal_data is None)
+            if journal_data is not None and not self.journal.log_event(journal_data):
+                raise RuntimeError(f"Failed to persist event {event.event_id} to the journal")
+            self.pending_events[event.event_id] = event
+            pool._put(event)
+            pool.unfinished_tasks += 1
+            pool.not_empty.notify()
 
     def reconcile_journal_event(self, event_data: dict[str, Any]) -> str:
         """Requeue a durable journal event without appending a second copy."""
@@ -226,18 +253,19 @@ class OrderingService:
             received_at=time.time(),
             status=EventStatus.PENDING,
         )
-        self.pending_events[event_id] = pending_event
-        try:
-            self.event_pool.put(pending_event)
-        except Exception:
-            self.pending_events.pop(event_id, None)
-            raise
+        self._enqueue_event(pending_event)
 
         return event_id
 
     def get_latest_block(self) -> Block | None:
         """Retrieve the latest block for the current chain"""
         return self.storage_handler.get_latest_block_from_db()
+
+    def take_bootstrap_blocks(self) -> list[Block] | None:
+        """Transfer the verified startup snapshot once; later syncs read storage."""
+        with self._commit_lock:
+            blocks, self._bootstrap_blocks = self._bootstrap_blocks, None
+            return blocks
 
     def get_blocks(self, start_index: int = 0) -> list[Block]:
         """Retrieve blocks starting from index"""
@@ -365,6 +393,9 @@ class OrderingService:
                 "certification_result": certification
             }
 
+        stored = self.storage_handler.storage.get_event_by_id(event_id)
+        if stored is not None and stored.get("chain_name") == self.storage_handler.chain_name:
+            return {"event_id": event_id, "status": "ordered", "certification_result": None}
         return None
 
     def add_validation_rule(self, rule: Callable) -> None:
@@ -411,8 +442,10 @@ class OrderingService:
         logger.info("Ordering service shutting down...")
         self.status = OrderingStatus.SHUTDOWN
         self.should_stop.set()
-        self.storage_handler.close()
-        self.journal.close()
+        with self.event_pool.not_full:
+            self.event_pool.not_full.notify_all()
         if self.processing_thread and self.processing_thread.is_alive():
             self.processing_thread.join(timeout=5.0)
+        self.storage_handler.close()
+        self.journal.close()
         logger.info("Ordering service shutdown complete.")

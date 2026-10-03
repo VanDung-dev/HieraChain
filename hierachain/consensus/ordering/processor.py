@@ -130,7 +130,12 @@ class OrderingProcessor:
         
         while not self.should_stop.is_set():
             try:
+                if self.service.status == OrderingStatus.LOCKDOWN:
+                    await asyncio.sleep(0.05)
+                    continue
                 await self._collect_next_event(self.current_batch)
+                if self.service.status == OrderingStatus.LOCKDOWN:
+                    continue
                 self.last_batch_time = await self._handle_batch_logic(
                     self.current_batch,
                     self.last_batch_time,
@@ -138,15 +143,22 @@ class OrderingProcessor:
                 )
             except Exception as e:
                 logger.error("Error in processor loop; stopping in MAINTENANCE: %s", e)
-                self.service.status = OrderingStatus.MAINTENANCE
+                if self.service.status not in (OrderingStatus.LOCKDOWN, OrderingStatus.SHUTDOWN):
+                    self.service.status = OrderingStatus.MAINTENANCE
                 raise
 
     async def _initialize_service(self):
         """Perform service initialization and state recovery"""
-        self.service.status = OrderingStatus.MAINTENANCE
+        with self.service._commit_lock:
+            if self.should_stop.is_set() or self.service.status in (OrderingStatus.SHUTDOWN, OrderingStatus.ERROR):
+                return
+            if self.service.status != OrderingStatus.LOCKDOWN:
+                self.service.status = OrderingStatus.MAINTENANCE
         await self.recovery.recover_state_async()
-        self.service.status = OrderingStatus.ACTIVE
-        logger.info("Ordering Service is now ACTIVE")
+        with self.service._commit_lock:
+            if self.service.status == OrderingStatus.MAINTENANCE:
+                self.service.status = OrderingStatus.ACTIVE
+                logger.info("Ordering Service is now ACTIVE")
 
     def _drain_event_pool(self, batch: list[PendingEvent]) -> None:
         """Drain ready events from the queue synchronously up to batch_size."""
@@ -328,6 +340,7 @@ class OrderingExecutor:
                     await self.block_manager.create_block_async(raw_block_data)
             else:
                 _handle_rejected_event(pending_event, self.metrics)
+                _remove_pending(self.pending_events, pending_event.event_id)
 
         except Exception as e:
             logger.error("Error processing event %s: %s", pending_event.event_id, e)

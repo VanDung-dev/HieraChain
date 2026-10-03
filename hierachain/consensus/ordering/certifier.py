@@ -4,7 +4,9 @@ Event certification and validation for the HieraChain ordering service.
 
 import logging
 import math
+import threading
 import time
+from collections import OrderedDict
 from collections.abc import Callable
 from typing import Any
 
@@ -156,9 +158,13 @@ def _check_zk_proof(
 class EventCertifier:
     """Event certification and validation"""
     
-    def __init__(self) -> None:
+    def __init__(self, max_history: int = 10000) -> None:
+        if max_history < 1:
+            raise ValueError("Certification history must have a positive capacity")
+        self.max_history = max_history
+        self._history_lock = threading.RLock()
         self.validation_rules: list[Callable] = []
-        self.certified_events: dict[str, dict[str, Any]] = {}
+        self.certified_events: OrderedDict[str, dict[str, Any]] = OrderedDict()
         self._setup_default_rules()
         
     def _setup_default_rules(self) -> None:
@@ -210,9 +216,14 @@ class EventCertifier:
         # 4. ZK verification
         _check_zk_proof(event, certification)
 
-        self.certified_events[event.event_id] = certification
+        with self._history_lock:
+            self.certified_events[event.event_id] = certification
+            self.certified_events.move_to_end(event.event_id)
+            while len(self.certified_events) > self.max_history:
+                self.certified_events.popitem(last=False)
         return certification
 
     def get_certification(self, event_id: str) -> dict[str, Any] | None:
         """Get certification result for an event"""
-        return self.certified_events.get(event_id)
+        with self._history_lock:
+            return self.certified_events.get(event_id)

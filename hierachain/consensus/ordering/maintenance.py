@@ -4,7 +4,6 @@ Ordering maintenance and emergency operations for the HieraChain ordering servic
 
 import logging
 import queue
-import threading
 
 from hierachain.consensus.ordering.types import OrderingStatus
 from hierachain.consensus.ordering.utils import dump_forensic_data
@@ -17,12 +16,13 @@ class OrderingMaintenance:
 
     def __init__(self, service):
         self.service = service
-        # Add lock for atomic status changes
-        self._status_lock = threading.Lock()
+        self._status_lock = service._commit_lock
 
     def lockdown(self, reason: str = "Unspecified maintenance") -> bool:
-        """Freeze all ordering operations and dump state for forensics"""
+        """Wait for an in-flight commit, then freeze ordering until resumed."""
         with self._status_lock:
+            if self.service.should_stop.is_set():
+                return False
             if self.service.status == OrderingStatus.LOCKDOWN:
                 return True
 
@@ -36,6 +36,8 @@ class OrderingMaintenance:
     def resume(self) -> bool:
         """Attempt to resume operations from lockdown/maintenance"""
         with self._status_lock:
+            if self.service.should_stop.is_set():
+                return False
             if self.service.status == OrderingStatus.ACTIVE:
                 return True
 

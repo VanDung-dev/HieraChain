@@ -54,7 +54,6 @@ def _block_from_dict(
     block.signature = data.get("signature")
     block.merkle_root = data.get("merkle_root") or ""
     block._events = convert_events_to_arrow(data["events"])
-    block._cached_events = None
 
     calculated_merkle_root = block.calculate_merkle_root()
     if block.merkle_root != calculated_merkle_root:
@@ -154,19 +153,12 @@ class OrderingStorageHandler:
         return self._load_from_db(start_index)
 
     def _load_from_db(self, start_index: int) -> list[Block]:
+        rows = self.storage.get_blocks_from_index(start_index, chain_name=self.chain_name)
         blocks = []
-        current_index = start_index
-        
-        while True:
-            # We need to know which chain we are loading blocks for
-            data = self.storage.get_block_by_index(
-                current_index, chain_name=self.chain_name
-            )
-            if data is None:
-                break
-            # Create block directly to avoid recalculating hash
+        for expected_index, data in enumerate(rows, start=start_index):
+            if data["index"] != expected_index:
+                raise ValueError(f"Persisted chain has a gap at block {expected_index}")
             blocks.append(_block_from_dict(data, self.trusted_public_keys))
-            current_index += 1
 
         # Verify chain integrity: every block's previous_hash must match
         # the preceding block's hash
