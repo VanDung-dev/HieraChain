@@ -10,9 +10,16 @@ provides validation mechanisms to ensure system integrity.
 """
 
 import os
+from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
+
 from hierachain.config.version import VERSION, get_version
+
+# Environment-backed class attributes below are captured during import. Load
+# the configured dotenv file first, before any Settings subclass is defined.
+load_dotenv(Path(os.getenv("HRC_ENV_FILE", ".env")))
 
 
 def _configured_database_url() -> str:
@@ -23,8 +30,38 @@ def _configured_database_url() -> str:
     )
 
 
+def _first_nonblank_environment_value(*names: str, default: str = "") -> str:
+    """Return the first nonblank configured environment value."""
+    for name in names:
+        value = os.getenv(name)
+        if value is not None and value.strip():
+            return value.strip()
+    return default
+
+
+def _environment_csv(*names: str) -> list[str]:
+    """Read the first configured comma-separated environment value."""
+    value = _first_nonblank_environment_value(*names)
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 class Settings:
     """Ledger configuration settings"""
+
+    def __init__(self) -> None:
+        """Reject unsupported key-source configuration instead of ignoring it."""
+        source = os.getenv("HRC_MASTER_KEY_SOURCE", "").strip().lower()
+        unsupported: list[str] = []
+        if source and source != "env":
+            unsupported.append("HRC_MASTER_KEY_SOURCE")
+        if os.getenv("HRC_MASTER_KEY_FILE", "").strip():
+            unsupported.append("HRC_MASTER_KEY_FILE")
+        if unsupported:
+            names = ", ".join(unsupported)
+            raise ValueError(
+                f"Unsupported master-key configuration ({names}); "
+                "the runtime does not provide a master-key source"
+            )
     
     # Environment - use property ENV below
     
@@ -48,7 +85,9 @@ class Settings:
     # Ledger version
     VERSION = get_version(VERSION)
     Ledger_NAME = "HieraChain"
-    NODE_ID = os.getenv("HRC_NODE_ID", "default-node")
+    NODE_ID = _first_nonblank_environment_value(
+        "HRC_NODE_ID", "NODE_ID", default="default-node"
+    )
 
     # Blockchain settings
     BLOCK_SIZE_LIMIT = 1000  # Maximum events per block
@@ -128,13 +167,6 @@ class Settings:
     # Secret backend: "env" (default), "vault" (HashiCorp), "aws" (AWS Secrets Manager)
     SECRET_BACKEND = os.getenv("HRC_SECRET_BACKEND", "env")
     
-    # Master key management
-    # Source: "auto" (env → file → generate), "env" (env var only), "file" (file only)
-    MASTER_KEY_SOURCE = os.getenv("HRC_MASTER_KEY_SOURCE", "auto")
-    MASTER_KEY_FILE = os.getenv(
-        "HRC_MASTER_KEY_FILE", os.path.join("config", "master_backup_key.key")
-    )
-    
     # Brute-force protection for API key verification
     AUTH_BRUTE_FORCE_MAX_FAILURES = int(os.getenv("HRC_BF_MAX_FAILURES", "5"))
     AUTH_BRUTE_FORCE_LOCKOUT_SECONDS = int(os.getenv("HRC_BF_LOCKOUT_SECONDS", "900"))
@@ -151,13 +183,11 @@ class Settings:
     P2P_ENABLED = os.getenv("HRC_P2P_ENABLED", "true").lower() == "true"
     # Container networking requires binding 0.0.0.0
     P2P_HOST = os.getenv("HRC_P2P_HOST", "0.0.0.0")  # nosec B104
-    P2P_PORT = int(os.getenv("HRC_P2P_PORT", "5555"))
-    # Comma-separated list of seed nodes: node_id@ip:port
-    P2P_PEERS: list[str] = (
-        os.getenv("HRC_PEERS", "").split(",")
-        if os.getenv("HRC_PEERS")
-        else []
+    P2P_PORT = int(
+        _first_nonblank_environment_value("HRC_P2P_PORT", "NODE_PORT", default="5555")
     )
+    # Comma-separated list of seed nodes: node_id@ip:port
+    P2P_PEERS: list[str] = _environment_csv("HRC_PEERS", "PEERS")
     # Trust policy: "open" (any peer unless blocked), "strict" (allowlist only)
     P2P_TRUST_POLICY = os.getenv("HRC_P2P_TRUST_POLICY", "open")
     # Comma-separated list of trusted peer IDs for strict mode
@@ -210,15 +240,19 @@ class Settings:
     TRUSTED_PROXIES = os.getenv("HRC_TRUSTED_PROXIES", "127.0.0.1")
     
     # CLI settings
-    CLI_CONFIG_FILE = "chains.json"
+    CLI_CONFIG_FILE = "data/config.yaml"
     CLI_LOG_LEVEL = "INFO"
     
     # Database settings (if using database storage)
     DATABASE_URL = _configured_database_url() or "postgresql://hiera:hiera@localhost:5432/hierachain"
     
     # Redis settings (if using Redis storage)
-    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-    REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_HOST = _first_nonblank_environment_value(
+        "HRC_REDIS_HOST", "REDIS_HOST", default="localhost"
+    )
+    REDIS_PORT = int(
+        _first_nonblank_environment_value("HRC_REDIS_PORT", "REDIS_PORT", default="6379")
+    )
     REDIS_DB = int(os.getenv("REDIS_DB", "0"))
     
     # Logging settings
@@ -305,11 +339,6 @@ class Settings:
                 ),
                 "redis_url": cls.AUTH_STATE_REDIS_URL or None,
             },
-            "master_key": {
-                "source": cls.MASTER_KEY_SOURCE,
-                "key_file": cls.MASTER_KEY_FILE,
-                "environment": cls.env,
-            }
         }
 
     @classmethod
@@ -438,9 +467,6 @@ class ProductionSettings(Settings):
     # === P2P: Strict trust by default in production ===
     P2P_TRUST_POLICY = "strict"
     P2P_REQUIRE_SIGNATURES = True
-
-    # === Crypto: Secure key management in production ===
-    MASTER_KEY_SOURCE = "env"  # Prefer env var in production
 
     # === Logging: Restrict SQL detail in production ===
     LOG_SQL_DETAIL = False

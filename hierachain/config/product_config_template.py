@@ -51,9 +51,6 @@ HRC_HSTS_ENABLED=true
 HRC_RATE_LIMIT=true
 HRC_RATE_LIMIT_RPM=100
 
-# Master Key Management (Env-based in production)
-HRC_MASTER_KEY_SOURCE=env
-
 # ==================== IPFS STORAGE CONFIGURATION ====================
 # Enable IPFS for off-chain storage of large payloads
 HRC_IPFS_ENABLED=false
