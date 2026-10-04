@@ -4,7 +4,10 @@ Change detector and state comparison for ERP Integration.
 
 import logging
 import threading
+from copy import deepcopy
 from typing import Any
+
+from hierachain.integration.erp.mapping import get_nested_value
 
 logger = logging.getLogger(__name__)
 
@@ -12,10 +15,16 @@ logger = logging.getLogger(__name__)
 def get_entity_key(erp_event: dict[str, Any], profile: dict[str, Any]) -> str:
     """Generate unique key for entity"""
     key_fields = profile.get("key_fields", ["id"])
+    if not isinstance(key_fields, (list, tuple)) or not key_fields:
+        raise ValueError("ERP identity requires a non-empty list of key_fields")
     key_values = []
     
     for key_field in key_fields:
-        value = erp_event.get(key_field, "unknown")
+        if not isinstance(key_field, str) or not key_field:
+            raise ValueError("ERP identity fields must be non-empty paths")
+        value = get_nested_value(erp_event, key_field)
+        if value is None or value == "":
+            raise ValueError(f"Missing ERP identity field: {key_field}")
         key_values.append(str(value))
     
     return ":".join(key_values)
@@ -77,22 +86,29 @@ class ChangeDetector:
     ) -> dict[str, Any]:
         """Detect changes in ERP event and add change metadata"""
         entity_key = get_entity_key(erp_event, profile)
+        profile_scope = str(profile.get("profile_name") or profile.get("erp_system", "default"))
+        state_key = f"{profile_scope}:{entity_key}"
+        business_state = deepcopy(erp_event)
+        business_state.pop("changes", None)
+        business_state.pop("change_detected", None)
         
         with self.lock:
-            previous_state = self.previous_states.get(entity_key)
+            previous_state = self.previous_states.get(state_key)
             
             if previous_state:
-                changes = compare_states(previous_state, erp_event)
+                changes = compare_states(previous_state, business_state)
                 if changes:
                     erp_event["changes"] = changes
                     erp_event["change_detected"] = True
                 else:
+                    erp_event.pop("changes", None)
                     erp_event["change_detected"] = False
             else:
                 erp_event["change_detected"] = True
                 erp_event["changes"] = {"type": "new_entity"}
             
-            # Update stored state
-            self.previous_states[entity_key] = erp_event.copy()
+            # Snapshot business fields only; generated change metadata must not
+            # make an otherwise identical record look modified on the next pass.
+            self.previous_states[state_key] = business_state
             
         return erp_event

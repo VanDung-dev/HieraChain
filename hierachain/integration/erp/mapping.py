@@ -6,6 +6,7 @@ import logging
 import threading
 import time
 from collections.abc import Callable
+from copy import deepcopy
 from typing import Any
 
 from hierachain.integration.types import MappingError
@@ -110,18 +111,38 @@ class MappingEngine:
         self,
         profile_name: str,
         erp_system: str,
-        mapping_rules: dict[str, Any]
+        mapping_rules: dict[str, Any],
+        *,
+        config: dict[str, Any] | None = None,
+        detect_changes: bool = False,
+        key_fields: list[str] | None = None,
     ) -> str:
-        """Create a new mapping profile"""
+        """Create a mapping profile with isolated mapping and adapter metadata."""
         with self.lock:
-            # Validate mapping rules
-            self._validate_mapping_rules(mapping_rules)
-            
+            if config is not None and not isinstance(config, dict):
+                raise MappingError("Profile config must be a dictionary")
+            if not isinstance(detect_changes, bool):
+                raise MappingError("detect_changes must be a boolean")
+            resolved_key_fields = ["id"] if key_fields is None else key_fields
+            if (
+                not isinstance(resolved_key_fields, list)
+                or not resolved_key_fields
+                or any(not isinstance(field, str) or not field for field in resolved_key_fields)
+            ):
+                raise MappingError("key_fields must be a non-empty list of non-empty strings")
+
+            profile_rules = deepcopy(mapping_rules)
+            self._validate_mapping_rules(profile_rules)
+            now = time.time()
             self.profiles[profile_name] = {
+                "profile_name": profile_name,
                 "erp_system": erp_system,
-                "mapping_rules": mapping_rules,
-                "created_at": time.time(),
-                "last_updated": time.time()
+                "mapping_rules": profile_rules,
+                "config": deepcopy(config or {}),
+                "detect_changes": detect_changes,
+                "key_fields": deepcopy(resolved_key_fields),
+                "created_at": now,
+                "last_updated": now,
             }
             return profile_name
     
@@ -131,15 +152,17 @@ class MappingEngine:
             if profile_name not in self.profiles:
                 return False
             
-            self._validate_mapping_rules(mapping_rules)
-            self.profiles[profile_name]["mapping_rules"] = mapping_rules
+            profile_rules = deepcopy(mapping_rules)
+            self._validate_mapping_rules(profile_rules)
+            self.profiles[profile_name]["mapping_rules"] = profile_rules
             self.profiles[profile_name]["last_updated"] = time.time()
             return True
     
     def get_profile(self, profile_name: str) -> dict[str, Any] | None:
         """Get mapping profile"""
         with self.lock:
-            return self.profiles.get(profile_name)
+            profile = self.profiles.get(profile_name)
+            return deepcopy(profile) if profile is not None else None
     
     def delete_profile(self, profile_name: str) -> bool:
         """Delete mapping profile"""

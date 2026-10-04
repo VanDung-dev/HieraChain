@@ -62,15 +62,22 @@ class ERPIntegrationLedger:
         self,
         profile_name: str,
         erp_system: str,
-        mapping_rules: dict[str, Any]
+        mapping_rules: dict[str, Any],
+        *,
+        config: dict[str, Any] | None = None,
+        detect_changes: bool = False,
+        key_fields: list[str] | None = None,
     ) -> str:
         """Create mapping profile for ERP integration"""
         try:
             with self.lock:
                 return self.mapping_engine.create_profile(
-                    profile_name, 
+                    profile_name,
                     erp_system,
-                    mapping_rules
+                    mapping_rules,
+                    config=config,
+                    detect_changes=detect_changes,
+                    key_fields=key_fields,
                 )
         except Exception as e:
             self.logger.error(
@@ -117,6 +124,11 @@ class ERPIntegrationLedger:
     ) -> str:
         """Start scheduled synchronization"""
         try:
+            if chain is None:
+                raise IntegrationError(
+                    "Scheduled synchronization requires a chain sink; "
+                    "use translate_erp_to_blockchain for translation-only work"
+                )
             profile = self.mapping_engine.get_profile(profile_name)
             if not profile:
                 raise IntegrationError(f"Mapping profile {profile_name} not found")
@@ -170,7 +182,15 @@ class ERPIntegrationLedger:
             events_processed=0,
             start_time=time.time()
         )
-        
+
+        if chain is None:
+            result.status = SyncStatus.FAILED
+            result.end_time = time.time()
+            result.errors.append(
+                "Scheduled synchronization requires a chain sink to accept translated events"
+            )
+            return result
+
         try:
             # Fetch changes from ERP
             erp_events = adapter.get_changes_since_last_sync()
@@ -179,8 +199,11 @@ class ERPIntegrationLedger:
             for erp_event in erp_events:
                 try:
                     bc_event = self.translate_erp_to_blockchain(erp_event, profile_name)
-                    if chain:
-                        chain.add_event(bc_event)
+                    accepted = chain.add_event(bc_event)
+                    if accepted is not True and (
+                        not isinstance(accepted, str) or not accepted.strip()
+                    ):
+                        raise IntegrationError("Chain sink did not acknowledge the event")
                     result.events_processed += 1
                     
                 except Exception as e:
@@ -190,9 +213,10 @@ class ERPIntegrationLedger:
                     result.errors.append(error_msg)
                     self.logger.warning(error_msg)
             
-            # Update last sync timestamp
-            self.sync_scheduler.update_last_sync(profile_name, time.time())
-            result.status = SyncStatus.COMPLETED
+            if result.errors:
+                result.status = SyncStatus.FAILED
+            else:
+                result.status = SyncStatus.COMPLETED
             result.end_time = time.time()
             
             # Log success
@@ -208,9 +232,6 @@ class ERPIntegrationLedger:
             result.errors.append(error_msg)
             self.logger.error(error_msg)
             
-            # Schedule retry
-            self.sync_scheduler.schedule_retry(profile_name)
-        
         return result
     
     def get_sync_status(self, profile_name: str) -> dict[str, Any]:
