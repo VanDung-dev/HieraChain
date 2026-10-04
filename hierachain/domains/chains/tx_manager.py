@@ -2,6 +2,7 @@
 Two-phase-commit (2PC) transaction manager for HieraChain Ledger.
 """
 
+import copy
 import time
 from typing import Any
 
@@ -15,8 +16,8 @@ class TransactionManager:
 
     @property
     def pending_transactions(self) -> dict[str, dict[str, Any]]:
-        """Read-only access to pending transactions."""
-        return self._pending
+        """Return a detached snapshot of pending transactions."""
+        return copy.deepcopy(self._pending)
 
     @property
     def committed_transactions(self) -> set[str]:
@@ -36,14 +37,27 @@ class TransactionManager:
         payload: dict[str, Any],
         is_source: bool,
         recovery_commit: bool = False,
-    ):
-        """Store a prepared transaction."""
+    ) -> bool:
+        """Store an isolated snapshot of a prepared transaction."""
+        try:
+            payload_snapshot = copy.deepcopy(payload)
+        except Exception:
+            return False
         self._pending[transaction_id] = {
-            "payload": payload,
+            "payload": payload_snapshot,
             "is_source": is_source,
             "recovery_commit": recovery_commit,
             "timestamp": time.time(),
         }
+        return True
+
+    def mark_recovery_commit(self, transaction_id: str) -> bool:
+        """Mark a stored prepare for recovery after a durable COMMIT decision."""
+        pending = self._pending.get(transaction_id)
+        if pending is None:
+            return False
+        pending["recovery_commit"] = True
+        return True
 
     def pop_pending(self, transaction_id: str) -> dict[str, Any] | None:
         """Remove and return the pending transaction data."""

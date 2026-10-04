@@ -92,26 +92,30 @@ def _check_logical_consistency(
 
     all_events.sort(key=lambda x: x.get("timestamp", 0))
 
-    entity_status = None
-    current_operation = None
+    entity_statuses: dict[str, str | None] = {}
+    current_operations: dict[str, str | None] = {}
 
     for event in all_events:
         event_type = str(event.get("event", ""))
         details = event.get("details", {})
+        if not isinstance(details, dict):
+            # Structure validation records this event as invalid; malformed
+            # payloads must not abort the independent logical consistency pass.
+            continue
         chain_name = str(event.get("_chain_name", "Unknown"))
 
-        current_operation = _check_operation_consistency(
+        current_operations[chain_name] = _check_operation_consistency(
             event_type,
             details,
-            current_operation,
+            current_operations.get(chain_name),
             chain_name,
             event,
             inconsistencies,
         )
-        entity_status = _check_status_consistency(
+        entity_statuses[chain_name] = _check_status_consistency(
             event_type,
             details,
-            entity_status,
+            entity_statuses.get(chain_name),
             chain_name,
             event,
             inconsistencies,

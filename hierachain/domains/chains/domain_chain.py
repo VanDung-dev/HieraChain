@@ -6,6 +6,7 @@ directly for common business scenarios or as a reference for creating
 custom domain-specific chains.
 """
 
+import copy
 import logging
 import threading
 from typing import Any
@@ -89,6 +90,11 @@ class DomainChain(BaseChain):
             tuple[str, str], dict[str, Any] | None
         ] | None = None
 
+        # Replay domain projections only after this class has initialized its
+        # state. Derived classes with additional deterministic projections can
+        # register handlers and call rebuild_domain_state() once initialized.
+        self.rebuild_domain_state()
+
     # -- backward-compatible properties --------------------------------
 
     @property
@@ -149,22 +155,24 @@ class DomainChain(BaseChain):
         Returns:
             True if operation was started successfully
         """
-        # Validate domain rules
-        if not self.validate_domain_rules(entity_id, f"start_{operation_type}"):
-            return False
+        with self.lock:
+            if not self.validate_domain_rules(
+                entity_id, f"start_{operation_type}"
+            ):
+                return False
 
-        operation_data = details or {}
-        if not self.validate_domain_operation(
-            entity_id, operation_type, operation_data
-        ):
-            return False
+            operation_data = details or {}
+            if not self.validate_domain_operation(
+                entity_id, operation_type, operation_data
+            ):
+                return False
 
-        success = self.start_operation(
-            entity_id, operation_type, details, transaction_id=transaction_id
-        )
-        if success:
-            self._metrics.record_operation_started()
-        return success
+            success = self.start_operation(
+                entity_id, operation_type, details, transaction_id=transaction_id
+            )
+            if success:
+                self._metrics.record_operation_started()
+            return success
 
     def complete_domain_operation(
         self,
@@ -282,19 +290,20 @@ class DomainChain(BaseChain):
         Returns:
             True if status was updated successfully
         """
-        entity_info = self.get_entity_info(entity_id)
-        if not entity_info:
-            return False
-    
-        old_status = entity_info.get("status", "unknown")
-        event = create_status_update(
-            entity_id=entity_id,
-            old_status=old_status,
-            new_status=status,
-            reason=reason,
-            details=details
-        )
-        return self.add_domain_event(event)
+        with self.lock:
+            entity_info = self.get_entity_info(entity_id)
+            if not entity_info:
+                return False
+
+            old_status = entity_info.get("status", "unknown")
+            event = create_status_update(
+                entity_id=entity_id,
+                old_status=old_status,
+                new_status=status,
+                reason=reason,
+                details=details
+            )
+            return self.add_domain_event(event)
 
     # -- approvals -----------------------------------------------------
 
@@ -319,21 +328,24 @@ class DomainChain(BaseChain):
         Returns:
             True if approval was processed successfully
         """
-        if not self.validate_domain_rules(entity_id, f"approval_{approval_type}"):
-            return False
+        with self.lock:
+            if not self.validate_domain_rules(
+                entity_id, f"approval_{approval_type}"
+            ):
+                return False
 
-        event = create_approval(
-            entity_id=entity_id,
-            approval_type=approval_type,
-            approval_status=approval_status,
-            approver_id=approver_id,
-            domain_type=self.domain_type,
-            details=details
-        )
-        success = self.add_domain_event(event)
-        if success:
-            self._metrics.record_approval_result(approval_status)
-        return success
+            event = create_approval(
+                entity_id=entity_id,
+                approval_type=approval_type,
+                approval_status=approval_status,
+                approver_id=approver_id,
+                domain_type=self.domain_type,
+                details=details
+            )
+            success = self.add_domain_event(event)
+            if success:
+                self._metrics.record_approval_result(approval_status)
+            return success
 
     # -- compliance ----------------------------------------------------
 
@@ -398,6 +410,18 @@ class DomainChain(BaseChain):
         payload: dict[str, Any],
         is_source: bool = True
     ) -> bool:
+        """Prepare once under the participant commit lock."""
+        with self._tx_commit_lock:
+            return self._prepare_transaction_locked(
+                transaction_id, payload, is_source
+            )
+
+    def _prepare_transaction_locked(
+        self,
+        transaction_id: str,
+        payload: dict[str, Any],
+        is_source: bool,
+    ) -> bool:
         """
         Phase 1: Prepare for a cross-chain transaction.
     
@@ -409,27 +433,40 @@ class DomainChain(BaseChain):
         Returns:
             True if prepared successfully.
         """
-        if (
-            transaction_id in self._tx_manager.committed_transactions
-            or self._tx_manager.is_prepared(transaction_id)
-        ):
+        if transaction_id in self._tx_manager.committed_transactions:
             return True
 
-        entity_id = payload.get("entity_id")
+        try:
+            payload_snapshot = copy.deepcopy(payload)
+        except Exception:
+            return False
+        if not isinstance(payload_snapshot, dict):
+            return False
+
+        if self._tx_manager.is_prepared(transaction_id):
+            pending = self._tx_manager.pending_transactions.get(transaction_id)
+            return (
+                pending is not None
+                and pending.get("payload") == payload_snapshot
+                and pending.get("is_source") is is_source
+            )
+
+        entity_id = payload_snapshot.get("entity_id")
         if not isinstance(entity_id, str):
             return False
         
-        operation_type = payload.get("operation_type")
+        operation_type = payload_snapshot.get("operation_type")
         if not isinstance(operation_type, str):
             return False
             
-        details = payload.get("details", {})
+        details = payload_snapshot.get("details", {})
 
         if not self._validate_transaction_payload(entity_id, operation_type, details):
             return False
 
-        self._tx_manager.store_pending(transaction_id, payload, is_source)
-        return True
+        return self._tx_manager.store_pending(
+            transaction_id, payload_snapshot, is_source
+        )
 
     def recover_committed_transaction(
         self,
@@ -442,17 +479,28 @@ class DomainChain(BaseChain):
             if transaction_id in self._tx_manager.committed_transactions:
                 return True
 
+            try:
+                payload_snapshot = copy.deepcopy(payload)
+            except Exception:
+                return False
+            if not isinstance(payload_snapshot, dict):
+                return False
+
             pending = self._tx_manager.pending_transactions.get(transaction_id)
             if pending is not None:
-                pending["recovery_commit"] = True
-                return True
+                if (
+                    pending.get("payload") != payload_snapshot
+                    or pending.get("is_source") is not is_source
+                ):
+                    return False
+                return self._tx_manager.mark_recovery_commit(transaction_id)
 
             if not self._load_transaction_event_markers():
                 return False
 
-            entity_id = payload.get("entity_id")
-            operation_type = payload.get("operation_type")
-            details = payload.get("details", {})
+            entity_id = payload_snapshot.get("entity_id")
+            operation_type = payload_snapshot.get("operation_type")
+            details = payload_snapshot.get("details", {})
             if (
                 not isinstance(entity_id, str)
                 or not isinstance(operation_type, str)
@@ -472,7 +520,7 @@ class DomainChain(BaseChain):
 
             self._tx_manager.store_pending(
                 transaction_id,
-                payload,
+                payload_snapshot,
                 is_source,
                 recovery_commit=True,
             )
