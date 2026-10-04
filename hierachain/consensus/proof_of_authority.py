@@ -8,6 +8,7 @@ Sub-Chains) have designated roles and permissions for block creation.
 
 import hashlib
 import logging
+import math
 import os
 import sys
 import time
@@ -40,17 +41,20 @@ class ProofOfAuthority(BaseConsensus):
     """
     __slots__ = ('authorities', 'authority_metadata', 'block_interval')
 
-    def __init__(self, name: str = "ProofOfAuthority", block_interval: float | None = None):
+    def __init__(self, name: str = "ProofOfAuthority", block_interval: float | None = None) -> None:
         """
         Initialize Proof of Authority consensus.
         Args:
             name: Name of the consensus mechanism
-            block_interval: Minimum seconds between blocks (None = use default 10.0)
+            block_interval: Optional spacing setting (None = 0.0, no additional delay).
+                Positive values retain the validation threshold of half this value.
         """
         super().__init__(name)
         self.authorities: set[str] = set()
         self.authority_metadata: dict[str, dict[str, Any]] = {}
-        self.block_interval: float = block_interval if block_interval is not None else 10.0
+        self.block_interval: float = block_interval if block_interval is not None else 0.0
+        if not math.isfinite(self.block_interval) or self.block_interval < 0:
+            raise ValueError("PoA block_interval must be finite and nonnegative")
         self.config = {
             "block_interval": self.block_interval,
             "require_authority_signature": True,
@@ -124,7 +128,7 @@ class ProofOfAuthority(BaseConsensus):
         return self.is_authority(authority_id)
 
     def _check_block_timing(self, block: Block, previous_block: Block) -> bool:
-        """Check if block was created too fast."""
+        """Reject decreasing timestamps and enforce explicitly configured spacing."""
         time_diff = block.timestamp - previous_block.timestamp
         return time_diff >= self.config["block_interval"] / 2
 

@@ -63,7 +63,7 @@ class ProofOfFederation(BaseConsensus):
     
         # Configuration defaults (can be updated via settings)
         self.config = {
-            "block_interval": 5.0,  # Faster than PoA (typically 10s)
+            "block_interval": 5.0,  # Federation timing is independent of PoA settings.
             "min_validators": 3,    # Minimum size for a valid federation
             "enforce_rotation": True
         }
