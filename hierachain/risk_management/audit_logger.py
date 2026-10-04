@@ -7,6 +7,9 @@ system activities, risk events, and mitigation actions.
 
 from __future__ import annotations
 
+import csv
+import hashlib
+import io
 import logging
 import os
 import sqlite3
@@ -14,11 +17,13 @@ import struct
 import threading
 import time
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta
+from enum import Enum
 from pathlib import Path
 from typing import Any, cast
 
-import orjson
 import pyarrow as pa
 import pyarrow.parquet as pq
 
@@ -30,6 +35,7 @@ from hierachain.risk_management.types import (
     AuditFilter,
     AuditSeverity,
 )
+from hierachain.serialization import dumps_canonical_json, dumps_json, loads_json
 
 _AUDIT_SCHEMA = pa.schema([
     ("event_id", pa.string()),
@@ -52,10 +58,12 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "ArrowAuditStorage",
+    "AuditIntegrityStatus",
     "AuditEvent",
     "AuditEventType",
     "AuditFilter",
     "AuditLogger",
+    "AuditReadResult",
     "AuditSeverity",
     "AuditStorage",
     "DatabaseAuditStorage",
@@ -78,28 +86,29 @@ class AuditStorage:
 
 
 def _audit_event_to_row(event: AuditEvent) -> dict[str, Any]:
+    normalized = event.to_dict()
     return {
-        "event_id": event.event_id,
-        "event_type": event.event_type.value,
-        "severity": event.severity.value,
-        "timestamp": event.timestamp,
-        "source_component": event.source_component,
-        "description": event.description,
-        "details": orjson.dumps(event.details).decode() if event.details else "",
-        "user_id": event.user_id,
-        "session_id": event.session_id,
-        "ip_address": event.ip_address,
-        "correlation_id": event.correlation_id or "",
+        "event_id": normalized["event_id"],
+        "event_type": normalized["event_type"],
+        "severity": normalized["severity"],
+        "timestamp": normalized["timestamp"],
+        "source_component": normalized["source_component"],
+        "description": normalized["description"],
+        "details": dumps_json(normalized["details"]) if normalized["details"] else "",
+        "user_id": normalized["user_id"],
+        "session_id": normalized["session_id"],
+        "ip_address": normalized["ip_address"],
+        "correlation_id": normalized["correlation_id"] or "",
         "affected_entities": (
-            orjson.dumps(event.affected_entities).decode()
-            if event.affected_entities is not None else ""
+            dumps_json(normalized["affected_entities"])
+            if normalized["affected_entities"] is not None else ""
         ),
     }
 
 
 def _row_to_audit_event(row: dict[str, Any]) -> AuditEvent:
-    details = orjson.loads(row["details"]) if row.get("details") else {}
-    affected = orjson.loads(row["affected_entities"]) if row.get("affected_entities") else None
+    details = loads_json(row["details"]) if row.get("details") else {}
+    affected = loads_json(row["affected_entities"]) if row.get("affected_entities") else None
     return AuditEvent(
         event_id=row["event_id"],
         event_type=AuditEventType(row["event_type"]),
@@ -147,10 +156,7 @@ class ArrowAuditStorage(AuditStorage):
 
     def _close_writer(self):
         if self._pq_writer is not None:
-            try:
-                self._pq_writer.close()
-            except Exception as e:
-                logging.debug("Error closing audit writer: %s", e)
+            self._pq_writer.close()
             self._pq_writer = None
 
     def _should_rotate(self) -> bool:
@@ -190,36 +196,32 @@ class ArrowAuditStorage(AuditStorage):
             self._archive_active_file()
             self._open()
 
-    def _iter_parquet(self, path: Path):
-        try:
+    def _iter_parquet(self, path: Path) -> Iterator[AuditEvent]:
+        if path.suffix == ".parquet":
             table = pq.read_table(path, schema=self._schema)
             for batch in table.to_batches():
                 for row in batch.to_pylist():
                     yield _row_to_audit_event(row)
-        except Exception:
-            try:
-                with open(path, "rb") as f:
-                    lb = f.read(4)
-                    if not lb:
-                        return
-                    f.seek(0)
-                    while True:
-                        lb2 = f.read(4)
-                        if not lb2 or len(lb2) < 4:
-                            return
-                        ml = struct.unpack("<I", lb2)[0]
-                        data = f.read(ml)
-                        if len(data) < ml:
-                            return
-                        try:
-                            batch = pa.ipc.read_record_batch(data, self._schema)
-                            row = batch.to_pylist()[0]
-                            yield _row_to_audit_event(row)
-                        except Exception as ex:
-                            logging.debug("Skipping corrupted audit record: %s", ex)
-                            continue
-            except Exception as e:
-                logging.error("Failed to read audit file %s: %s", path, e)
+            return
+        # Legacy Arrow archives use length-prefixed record batches. A damaged
+        # Parquet file must never be reinterpreted as a legacy archive.
+        with open(path, "rb") as stream:
+            file_size = os.fstat(stream.fileno()).st_size
+            while True:
+                header = stream.read(4)
+                if not header:
+                    return
+                if len(header) != 4:
+                    raise RuntimeError("Truncated audit frame header")
+                length = struct.unpack("<I", header)[0]
+                if length == 0 or length > file_size - stream.tell():
+                    raise RuntimeError("Truncated or invalid audit frame")
+                payload = stream.read(length)
+                batch = pa.ipc.read_record_batch(payload, self._schema)
+                if batch.num_rows == 0:
+                    raise RuntimeError("Empty audit frame")
+                for row in batch.to_pylist():
+                    yield _row_to_audit_event(row)
 
     def store_event(self, event: AuditEvent) -> bool:
         row = _audit_event_to_row(event)
@@ -245,25 +247,15 @@ class ArrowAuditStorage(AuditStorage):
         try:
             self._seal_active_file()
             for jf in reversed(self._get_files()):
-                try:
-                    if jf.suffix == ".jsonl":
-                        for ev in _iter_events_from_file(jf):
-                            if filter_criteria.matches(ev):
-                                events.append(ev)
-                                if limit is not None and limit > 0 and len(events) >= limit:
-                                    return events
-                    else:
-                        for ev in self._iter_parquet(jf):
-                            if filter_criteria.matches(ev):
-                                events.append(ev)
-                                if limit is not None and limit > 0 and len(events) >= limit:
-                                    return events
-                except OSError:
-                    continue
+                source = _iter_events_from_file(jf) if jf.suffix == ".jsonl" else self._iter_parquet(jf)
+                for ev in source:
+                    if filter_criteria.matches(ev):
+                        events.append(ev)
+                        if limit is not None and limit > 0 and len(events) >= limit:
+                            return events
             return events
         except Exception as e:
-            logging.error("Failed to retrieve audit events (parquet): %s", e)
-            return events
+            raise RuntimeError("Failed to retrieve audit archive") from e
 
     def get_event_count(self, filter_criteria: AuditFilter) -> int:
         """Count Parquet rows from metadata or bounded column batches."""
@@ -275,7 +267,10 @@ class ArrowAuditStorage(AuditStorage):
         )):
             return 0
 
-        self._seal_active_file()
+        try:
+            self._seal_active_file()
+        except Exception as exc:
+            raise RuntimeError("Failed to count audit archive") from exc
         event_types = (
             {value.value for value in filter_criteria.event_types}
             if filter_criteria.event_types is not None else None
@@ -396,6 +391,7 @@ class DatabaseAuditStorage(AuditStorage):
     def store_event(self, event: AuditEvent) -> bool:
         conn = None
         try:
+            normalized = event.to_dict()
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute(
@@ -405,20 +401,20 @@ class DatabaseAuditStorage(AuditStorage):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    event.event_id,
-                    event.event_type.value,
-                    event.severity.value,
-                    event.timestamp,
-                    event.source_component,
-                    event.description,
-                    orjson.dumps(event.details).decode() if event.details else None,
-                    event.user_id,
-                    event.session_id,
-                    event.ip_address,
-                    event.correlation_id,
+                    normalized["event_id"],
+                    normalized["event_type"],
+                    normalized["severity"],
+                    normalized["timestamp"],
+                    normalized["source_component"],
+                    normalized["description"],
+                    dumps_json(normalized["details"]) if normalized["details"] else None,
+                    normalized["user_id"],
+                    normalized["session_id"],
+                    normalized["ip_address"],
+                    normalized["correlation_id"],
                     (
-                        orjson.dumps(event.affected_entities).decode()
-                        if event.affected_entities is not None else None
+                        dumps_json(normalized["affected_entities"])
+                        if normalized["affected_entities"] is not None else None
                     ),
                 )
             )
@@ -479,11 +475,11 @@ class DatabaseAuditStorage(AuditStorage):
             for r in rows:
                 ev_dict = dict(r)
                 if ev_dict.get('details'):
-                    ev_dict['details'] = orjson.loads(ev_dict['details'])
+                    ev_dict['details'] = loads_json(ev_dict['details'])
                 else:
                     ev_dict['details'] = {}
                 if ev_dict.get('affected_entities'):
-                    ev_dict['affected_entities'] = orjson.loads(ev_dict['affected_entities'])
+                    ev_dict['affected_entities'] = loads_json(ev_dict['affected_entities'])
                 else:
                     ev_dict['affected_entities'] = None
                 # Match enum types
@@ -492,8 +488,7 @@ class DatabaseAuditStorage(AuditStorage):
                 events.append(AuditEvent.from_dict(ev_dict))
             return events
         except Exception as e:
-            logging.error("Failed to retrieve audit events from DB: %s", str(e))
-            return []
+            raise RuntimeError("Failed to retrieve audit events from DB") from e
         finally:
             if conn:
                 conn.close()
@@ -509,8 +504,7 @@ class DatabaseAuditStorage(AuditStorage):
             count = cursor.fetchone()[0]
             return count
         except Exception as e:
-            logging.error("Failed to count audit events in DB: %s", str(e))
-            return 0
+            raise RuntimeError("Failed to count audit events in DB") from e
         finally:
             if conn:
                 conn.close()
@@ -535,15 +529,14 @@ class DatabaseAuditStorage(AuditStorage):
 
 
 
-def _parse_event_line(line: str) -> AuditEvent | None:
+def _parse_event_line(line: str) -> AuditEvent:
     try:
-        return AuditEvent.from_dict(orjson.loads(line.strip()))
-    except (orjson.JSONDecodeError, KeyError, ValueError) as e:
-        logging.warning("Failed to parse audit event: %s", str(e))
-        return None
+        return AuditEvent.from_dict(loads_json(line.strip()))
+    except (KeyError, ValueError) as e:
+        raise RuntimeError("Invalid audit event record") from e
 
 
-def _iter_events_from_file(log_file: Path):
+def _iter_events_from_file(log_file: Path) -> Iterator[AuditEvent]:
     with open(log_file, 'r', encoding='utf-8') as f:
         for line in f:
             event = _parse_event_line(line)
@@ -599,8 +592,7 @@ class FileAuditStorage(AuditStorage):
                     break
             return events
         except Exception as e:
-            logging.error("Failed to retrieve audit events: %s", str(e))
-            return []
+            raise RuntimeError("Failed to retrieve audit events") from e
 
     def _get_files_to_search(self, time_range: tuple | None) -> list[Path]:
         if not time_range:
@@ -608,14 +600,19 @@ class FileAuditStorage(AuditStorage):
                 list(self.audit_directory.glob("audit_*.jsonl")), reverse=True
             )
         start_time, end_time = time_range
-        log_files = []
-        current = start_time
-        while current <= end_time:
-            log_file = self._get_log_file(current)
+        current_day = datetime.fromtimestamp(start_time).date()
+        end_day = datetime.fromtimestamp(end_time).date()
+        log_files: list[Path] = []
+        while current_day <= end_day:
+            log_file = self._get_log_file_for_date(current_day)
             if log_file.exists():
                 log_files.append(log_file)
-            current += 86400
+            current_day += timedelta(days=1)
         return log_files
+
+    def _get_log_file_for_date(self, current_day: date) -> Path:
+        """Return the daily file for a local calendar date."""
+        return self.audit_directory / f"audit_{current_day:%Y-%m-%d}.jsonl"
 
     def get_event_count(self, filter_criteria: AuditFilter) -> int:
         return len(self.retrieve_events(filter_criteria))
@@ -638,10 +635,39 @@ def verify_integrity(
         if event.event_id in seen_ids:
             return False
         expected_hash = expected_hashes.get(event.event_id)
-        if expected_hash != event.calculate_hash():
+        valid_hashes = {event.calculate_hash()}
+        timestamp = event.timestamp
+        if isinstance(timestamp, (int, float)) and float(timestamp).is_integer():
+            # Older writers hashed integer timestamps before storage backends
+            # normalized their REAL/float representation.
+            legacy_data = event.to_dict()
+            legacy_data["timestamp"] = int(timestamp)
+            legacy_content = dumps_canonical_json(legacy_data, default=str)
+            valid_hashes.add(hashlib.sha256(legacy_content).hexdigest())
+        if expected_hash not in valid_hashes:
             return False
         seen_ids.add(event.event_id)
     return seen_ids == set(expected_hashes)
+
+
+class AuditIntegrityStatus(str, Enum):
+    """Integrity outcome for an audit read."""
+
+    VERIFIED = "verified"
+    UNVERIFIED = "unverified"
+    FAILED = "failed"
+
+
+@dataclass(frozen=True)
+class AuditReadResult:
+    """Audit events with an explicit trusted-manifest verification outcome."""
+
+    events: list[AuditEvent]
+    integrity_status: AuditIntegrityStatus
+
+    @property
+    def is_verified(self) -> bool:
+        return self.integrity_status is AuditIntegrityStatus.VERIFIED
 
 
 class AuditLogger:
@@ -650,15 +676,20 @@ class AuditLogger:
         storage: AuditStorage | None = None,
         enable_real_time_alerts: bool = True,
         integrity_digest_writer: Callable[[str, str], None] | None = None,
+        integrity_digest_reader: Callable[[], Mapping[str, str]] | None = None,
     ):
-        manifest_url = (os.getenv("HRC_AUDIT_MANIFEST_WRITE_URL") or "").strip()
-        if integrity_digest_writer is None and manifest_url:
-            integrity_digest_writer = PostgresAuditManifest(manifest_url).write_digest
+        write_manifest_url = (os.getenv("HRC_AUDIT_MANIFEST_WRITE_URL") or "").strip()
+        read_manifest_url = (os.getenv("HRC_AUDIT_MANIFEST_READ_URL") or "").strip()
+        if integrity_digest_writer is None and write_manifest_url:
+            integrity_digest_writer = PostgresAuditManifest(write_manifest_url).write_digest
+        if integrity_digest_reader is None and read_manifest_url:
+            integrity_digest_reader = PostgresAuditManifest(read_manifest_url).load_hashes
         if integrity_digest_writer is None and settings.env == "production":
             raise RuntimeError("Production audit logging requires a trusted digest manifest writer")
         self.storage = storage or ArrowAuditStorage("log/risk_management/audit_logs")
         self.enable_real_time_alerts = enable_real_time_alerts
         self.integrity_digest_writer = integrity_digest_writer
+        self.integrity_digest_reader = integrity_digest_reader
         self.logger = logging.getLogger(__name__)
         self.alert_handlers: list[Callable[[AuditEvent], None]] = []
         self.event_processors: list[Callable[[AuditEvent], AuditEvent]] = []
@@ -691,7 +722,7 @@ class AuditLogger:
             timestamp=time.time(),
             source_component="risk_analyzer",
             description=f"Risk detected: {description}",
-            details={'risk_id': risk_id, 'risk_category': risk_category, **details},
+            details={**details, 'risk_id': risk_id, 'risk_category': risk_category},
             affected_entities=affected_components,
             correlation_id=correlation_id
         )
@@ -722,7 +753,7 @@ class AuditLogger:
             timestamp=time.time(),
             source_component="mitigation_manager",
             description=f"Mitigation {status}: {description}",
-            details={'action_id': action_id, 'status': status, **details},
+            details={**details, 'action_id': action_id, 'status': status},
             correlation_id=correlation_id
         )
         self._log_event(event)
@@ -741,7 +772,7 @@ class AuditLogger:
             timestamp=time.time(),
             source_component="consensus",
             description=f"Consensus event: {description}",
-            details={'consensus_event_type': event_type, **details}
+            details={**details, 'consensus_event_type': event_type}
         )
         self._log_event(event)
 
@@ -761,7 +792,7 @@ class AuditLogger:
             timestamp=time.time(),
             source_component="security",
             description=f"Security event: {description}",
-            details={'security_event_type': event_type, **details},
+            details={**details, 'security_event_type': event_type},
             user_id=user_id,
             ip_address=ip_address
         )
@@ -784,10 +815,10 @@ class AuditLogger:
             source_component="performance_monitor",
             description=f"Performance event: {description}",
             details={
+                **details,
                 'metric_name': metric_name,
                 'value': value,
                 'threshold': threshold,
-                **details
             }
         )
         self._log_event(event)
@@ -808,7 +839,7 @@ class AuditLogger:
             timestamp=time.time(),
             source_component="api",
             description=f"User action: {description}",
-            details={'action': action, **details},
+            details={**details, 'action': action},
             user_id=user_id,
             session_id=session_id,
             ip_address=ip_address
@@ -882,7 +913,38 @@ class AuditLogger:
     def query_events(
         self, filter_criteria: AuditFilter, limit: int | None = None
     ) -> list[AuditEvent]:
+        """Return archive events without implying trusted-manifest verification."""
         return self.storage.retrieve_events(filter_criteria, limit)
+
+    def query_events_with_integrity(
+        self, filter_criteria: AuditFilter, limit: int | None = None,
+    ) -> AuditReadResult:
+        """Read events and explicitly verify the complete archive when possible.
+
+        Without a configured trusted digest reader, filtered events are returned
+        with ``UNVERIFIED`` status. If a reader is configured, the complete
+        archive is checked before filtered results are released. Manifest errors
+        and mismatches return no events with ``FAILED`` status.
+        """
+        if self.integrity_digest_reader is None:
+            return AuditReadResult(
+                self.storage.retrieve_events(filter_criteria, limit),
+                AuditIntegrityStatus.UNVERIFIED,
+            )
+
+        try:
+            all_events = self.storage.retrieve_events(AuditFilter())
+            expected_hashes = self.integrity_digest_reader()
+            if not verify_integrity(all_events, expected_hashes):
+                return AuditReadResult([], AuditIntegrityStatus.FAILED)
+        except Exception:
+            self.logger.exception("Could not verify audit archive against trusted manifest")
+            return AuditReadResult([], AuditIntegrityStatus.FAILED)
+
+        filtered = [event for event in all_events if filter_criteria.matches(event)]
+        if limit is not None and limit > 0:
+            filtered = filtered[:limit]
+        return AuditReadResult(filtered, AuditIntegrityStatus.VERIFIED)
 
     def get_statistics(self) -> dict[str, Any]:
         return self._stats.copy()
@@ -892,23 +954,28 @@ class AuditLogger:
         filter_criteria: AuditFilter,
         output_format: str = "json"
     ) -> str:
+        """Serialize stored events without implying trusted-manifest verification."""
         events = self.storage.retrieve_events(filter_criteria)
         if output_format.lower() == "json":
-            return orjson.dumps(
-                [event.to_dict() for event in events],
-                option=orjson.OPT_INDENT_2,
-                default=str
-            ).decode()
+            return dumps_json([event.to_dict() for event in events], indent=2, default=str)
         elif output_format.lower() == "csv":
-            lines = [
-                "event_id,event_type,severity,timestamp,source_component,description"
-            ]
+            output = io.StringIO(newline="")
+            writer = csv.writer(output)
+            writer.writerow([
+                "event_id", "event_type", "severity", "timestamp", "source_component", "description"
+            ])
             for event in events:
-                lines.append(
-                    f"{event.event_id},{event.event_type.value},"
-                    f"{event.severity.value},{event.timestamp},"
-                    f"{event.source_component},\"{event.description}\""
-                )
-            return "\n".join(lines)
+                writer.writerow([
+                    _spreadsheet_safe_cell(event.event_id), event.event_type.value,
+                    event.severity.value, event.timestamp,
+                    _spreadsheet_safe_cell(event.source_component),
+                    _spreadsheet_safe_cell(event.description),
+                ])
+            return output.getvalue()
         else:
             raise ValueError(f"Unsupported output format: {output_format}")
+
+
+def _spreadsheet_safe_cell(value: str) -> str:
+    """Preserve CSV text while preventing spreadsheet formula evaluation."""
+    return "'" + value if value.lstrip().startswith(("=", "+", "-", "@")) else value
