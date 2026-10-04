@@ -7,6 +7,7 @@ This protects against data loss during power failures, system crashes, or
 rapid shutdowns.
 """
 
+import json
 import logging
 import os
 import re
@@ -17,9 +18,15 @@ from collections.abc import Generator
 from pathlib import Path
 from typing import Any, BinaryIO
 
-import orjson
 import pyarrow as pa
 import pyarrow.parquet as pq
+
+from hierachain.serialization import dumps_json, loads_json
+
+try:
+    import fcntl
+except ImportError:  # Keep package importable on platforms without POSIX locks.
+    fcntl = None
 
 from hierachain.core.block import EVENT_SCHEMA as _EVENT_SCHEMA
 
@@ -144,22 +151,27 @@ def _pack_extra_fields(ev: dict[str, Any], raw_data: dict[str, Any]) -> None:
         for key, value in raw_data.items()
         if key not in schema_fields and not isinstance(value, bytes)
     }
-    if not extra_fields:
+    original_details = raw_data.get("details")
+    if not extra_fields and not isinstance(original_details, dict):
         return
 
     data_value = ev.get("data")
     if isinstance(data_value, bytes):
         try:
-            data_value = orjson.loads(data_value)
-        except orjson.JSONDecodeError:
+            data_value = loads_json(data_value)
+        except json.JSONDecodeError:
             data_value = {"$binary": data_value.hex()}
 
-    envelope = {_JOURNAL_DATA_MARKER: {"data": data_value, "extra": extra_fields}}
+    envelope = {_JOURNAL_DATA_MARKER: {
+        "data": data_value, "extra": extra_fields, "fields": list(raw_data),
+    }}
+    if isinstance(original_details, dict):
+        envelope[_JOURNAL_DATA_MARKER]["details"] = original_details
     try:
-        ev["data"] = orjson.dumps(envelope)
+        ev["data"] = dumps_json(envelope).encode("utf-8")
     except (TypeError, ValueError):
         envelope[_JOURNAL_DATA_MARKER]["data"] = str(data_value)
-        ev["data"] = orjson.dumps(envelope)
+        ev["data"] = dumps_json(envelope).encode("utf-8")
 
 
 def _serialize_data_field(ev: dict[str, Any]) -> None:
@@ -174,7 +186,7 @@ def _serialize_data_field(ev: dict[str, Any]) -> None:
             if isinstance(data, str):
                 ev["data"] = data.encode("utf-8")
             else:
-                ev["data"] = orjson.dumps(data)
+                ev["data"] = dumps_json(data).encode("utf-8")
         except (TypeError, ValueError) as e:
             logger.warning("Could not JSON serialize 'data' field: %s. Using str().", e)
             ev["data"] = str(data).encode("utf-8")
@@ -200,11 +212,62 @@ def _read_next_batch(f: BinaryIO) -> bytes | None:
     return batch_data
 
 
+def _open_storage_directory(path: Path, create: bool = False) -> int:
+    """Walk the directory using pinned descriptors and reject every symlink."""
+    absolute = path.absolute()
+    descriptor = os.open(absolute.anchor, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        for component in absolute.parts[1:]:
+            if create:
+                try:
+                    os.mkdir(component, mode=0o700, dir_fd=descriptor)
+                    os.fsync(descriptor)
+                except FileExistsError:
+                    pass
+            next_descriptor = os.open(
+                component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=descriptor,
+            )
+            os.close(descriptor)
+            descriptor = next_descriptor
+        return descriptor
+    except OSError as exc:
+        os.close(descriptor)
+        raise ValueError("Security: journal directory contains an unsafe path component") from exc
+
+
+def _open_safe_file(path: Path, mode: str, buffering: int = -1) -> BinaryIO:
+    descriptor = _open_storage_directory(path.parent)
+    try:
+        def opener(name: str, flags: int) -> int:
+            return os.open(path.name, flags | os.O_NOFOLLOW, mode=0o600, dir_fd=descriptor)
+        handle = open(path, mode, buffering=buffering, opener=opener)
+        try:
+            if any(flag in mode for flag in ("a", "w", "x")):
+                os.fsync(descriptor)
+            return handle
+        except OSError:
+            handle.close()
+            raise
+    finally:
+        os.close(descriptor)
+
+
+def _rename_safe_file(source: Path, target: Path) -> None:
+    if source.parent != target.parent:
+        raise ValueError("Security: journal rename must stay within its directory")
+    descriptor = _open_storage_directory(source.parent)
+    try:
+        os.rename(source.name, target.name, src_dir_fd=descriptor, dst_dir_fd=descriptor)
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _repair_truncated_active_file(path: Path) -> None:
     """Discard an incomplete final frame before the active file is opened for append."""
     file_size = path.stat().st_size
     valid_end = 0
-    with path.open("r+b", buffering=0) as handle:
+    with _open_safe_file(path, "r+b", buffering=0) as handle:
         while valid_end < file_size:
             handle.seek(valid_end)
             length_bytes = handle.read(4)
@@ -237,7 +300,7 @@ def _serialize_arrow_batch(batch: pa.RecordBatch) -> bytes:
 def _is_parquet_file(path: Path) -> bool:
     """Identify legacy Parquet by its leading magic, even when its footer is damaged."""
     try:
-        with path.open("rb") as handle:
+        with _open_safe_file(path, "rb") as handle:
             return handle.read(4) == b"PAR1"
     except OSError:
         return False
@@ -256,8 +319,8 @@ def _unpack_extra_field_content(row: dict[str, Any], data_content: Any) -> None:
         row["data"] = None
         return
     try:
-        decoded = orjson.loads(data_content)
-    except (orjson.JSONDecodeError, TypeError):
+        decoded = loads_json(data_content)
+    except (json.JSONDecodeError, TypeError):
         row["data"] = {"$binary": bytes(data_content).hex()}
         return
 
@@ -265,11 +328,21 @@ def _unpack_extra_field_content(row: dict[str, Any], data_content: Any) -> None:
         envelope = decoded.get(_JOURNAL_DATA_MARKER)
         if (
             isinstance(envelope, dict)
-            and set(envelope) == {"data", "extra"}
+            and {"data", "extra"} <= set(envelope) <= {"data", "extra", "details", "fields"}
             and isinstance(envelope["extra"], dict)
+            and ("details" not in envelope or isinstance(envelope["details"], dict))
+            and ("fields" not in envelope or (
+                isinstance(envelope["fields"], list)
+                and all(isinstance(name, str) for name in envelope["fields"])
+            ))
         ):
             row["data"] = envelope["data"]
+            if "details" in envelope:
+                row["details"] = envelope["details"]
             _apply_extra_fields(row, envelope["extra"])
+            if "fields" in envelope:
+                for name in set(row) - set(envelope["fields"]):
+                    row.pop(name)
             return
 
         # Old journal frames stored only the packed extra-field object in this column.
@@ -344,10 +417,12 @@ class TransactionJournal:
             storage_dir: Directory to store journal files.
             active_log_name: Name of the active journal file.
         """
+        if fcntl is None or not all(hasattr(os, flag) for flag in ("O_DIRECTORY", "O_NOFOLLOW")):
+            raise RuntimeError("TransactionJournal requires POSIX file locks and no-follow directory opens")
         # Strictly validate storage_dir input string first
         _validate_storage_dir_input(storage_dir)
 
-        data_root = Path("data").resolve()
+        data_root = Path("data").absolute()
 
         # Build a safe storage path anchored to data_root from sanitized components
         self.storage_path = _build_storage_path(data_root, storage_dir)
@@ -383,39 +458,61 @@ class TransactionJournal:
                 f"escapes storage directory {self.storage_path}"
             ) from exc
 
-        # Reject symlinks for both directory and file targets
-        try:
-            if self.storage_path.is_symlink():
-                raise ValueError("Security: storage path cannot be a symlink")
-            if self.active_log_file.exists() and self.active_log_file.is_symlink():
-                raise ValueError("Security: active log file cannot be a symlink")
-        except (OSError, RuntimeError) as e:
-            logger.warning("Filesystem check failed, attempting creation anyway: %s", e)
+        if self.active_log_file.is_symlink():
+            raise ValueError("Security: active log file cannot be a symlink")
 
         self._journal_file: BinaryIO | None = None
+        self._lease_file: BinaryIO | None = None
         self._schema = _EVENT_SCHEMA
         self._lock = threading.Lock()
+        self._write_poisoned = False
 
         # Ensure directory exists
-        self.storage_path.mkdir(parents=True, exist_ok=True)
+        descriptor = _open_storage_directory(self.storage_path, create=True)
+        os.close(descriptor)
 
         # Open the active log file
         self._open_journal()
 
     def _open_journal(self) -> None:
         """Open the active Arrow IPC journal for append-only writes."""
+        self._acquire_writer_lease()
         try:
             if self.active_log_file.exists() and _is_parquet_file(self.active_log_file):
                 legacy_file = self.storage_path / (
                     f"{self.active_log_file.stem}_legacy_{time.time_ns()}.parquet"
                 )
-                self.active_log_file.rename(legacy_file)
+                _rename_safe_file(self.active_log_file, legacy_file)
             if self.active_log_file.exists():
                 _repair_truncated_active_file(self.active_log_file)
-            self._journal_file = self.active_log_file.open("ab", buffering=0)
-        except OSError as e:
+            self._journal_file = _open_safe_file(self.active_log_file, "ab", buffering=0)
+        except Exception as e:
+            self._release_writer_lease()
             logger.critical("Failed to open transaction journal: %s", e)
             raise
+
+    def _acquire_writer_lease(self) -> None:
+        """Reject another owning instance/process before touching journal data."""
+        if self._lease_file is not None:
+            return
+        if fcntl is None:
+            raise RuntimeError("TransactionJournal requires POSIX file locks")
+        # Public journal filenames cannot start with a dot. Keep the lease
+        # outside that namespace so an active *.lock file cannot rotate it.
+        path = self.storage_path / f".writer_{self.active_log_file.stem}.lock"
+        handle = _open_safe_file(path, "ab", buffering=0)
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as exc:
+            handle.close()
+            raise RuntimeError("Journal path already has an owning writer") from exc
+        self._lease_file = handle
+
+    def _release_writer_lease(self) -> None:
+        handle = self._lease_file
+        if handle is not None:
+            self._lease_file = None
+            handle.close()
 
     def _close_writer(self) -> None:
         if self._journal_file is not None:
@@ -438,7 +535,7 @@ class TransactionJournal:
             self._close_writer()
             ts = time.time_ns()
             rotated = self.storage_path / f"{self.active_log_file.stem}_{ts}.arrow"
-            self.active_log_file.rename(rotated)
+            _rename_safe_file(self.active_log_file, rotated)
             self._open_journal()
         except OSError as e:
             logger.error("Journal rotation failed: %s", e)
@@ -468,9 +565,30 @@ class TransactionJournal:
             logger.error("Schema conversion error for event %s: %s", event_id, e)
             raise
 
+    def _rollback_failed_append(self, start_offset: int) -> bool:
+        """Remove a failed frame before allowing another append."""
+        try:
+            if self._journal_file is None:
+                raise OSError("Journal writer closed during append rollback")
+            self._journal_file.flush()
+            fd = self._journal_file.fileno()
+            os.ftruncate(fd, start_offset)
+            os.fsync(fd)
+            return True
+        except Exception as exc:
+            self._write_poisoned = True
+            logger.critical(
+                "Journal append rollback failed; refusing future writes until reopen: %s",
+                exc,
+            )
+            return False
+
     def _write_event_to_file(self, event_data: dict[str, Any]) -> bool:
         """Perform actual file write operations."""
         with self._lock:
+            if self._write_poisoned:
+                logger.critical("Journal writer is poisoned; refusing append")
+                return False
             if self._journal_file is None:
                 self._open_journal()
             if self._journal_file is None:
@@ -478,6 +596,12 @@ class TransactionJournal:
             self._rotate_if_needed()
             if self._journal_file is None:
                 return False
+            try:
+                start_offset = os.fstat(self._journal_file.fileno()).st_size
+            except (OSError, ValueError) as e:
+                logger.critical("Could not inspect journal before append: %s", e)
+                return False
+            append_started = False
             try:
                 batch = self._dict_to_arrow_batch(event_data)
                 payload = _serialize_arrow_batch(batch)
@@ -488,6 +612,7 @@ class TransactionJournal:
                 for chunk in (struct.pack("<I", len(payload)), payload):
                     remaining = memoryview(chunk)
                     while remaining:
+                        append_started = True
                         written = self._journal_file.write(remaining)
                         if written is None or written <= 0:
                             raise OSError("Journal write made no progress")
@@ -497,6 +622,8 @@ class TransactionJournal:
                 return True
             except (OSError, pa.ArrowException) as e:
                 logger.critical("CRITICAL: Failed to write to transaction journal: %s", e)
+                if append_started:
+                    self._rollback_failed_append(start_offset)
                 return False
 
     def flush(self) -> None:
@@ -527,7 +654,8 @@ class TransactionJournal:
     def _iter_parquet_file(self, path: Path) -> Generator[dict[str, Any], None, None]:
         if path.suffix == ".parquet":
             try:
-                table = pq.read_table(path, schema=self._schema)
+                with _open_safe_file(path, "rb") as handle:
+                    table = pq.read_table(handle, schema=self._schema)
                 for batch in table.to_batches():
                     for row in batch.to_pylist():
                         yield _unpack_row_data(row)
@@ -535,7 +663,7 @@ class TransactionJournal:
                 raise ValueError(f"Could not replay legacy Parquet journal {path}: {exc}") from exc
             return
 
-        with path.open("rb") as handle:
+        with _open_safe_file(path, "rb") as handle:
             yield from _iterate_journal_batches(handle, self._schema)
 
     def replay(self) -> Generator[dict[str, Any], None, None]:
@@ -584,28 +712,36 @@ class TransactionJournal:
                 if path.suffix == ".parquet":
                     records.extend(self._iter_parquet_file(path))
                     continue
-                with path.open("rb") as handle:
+                with _open_safe_file(path, "rb") as handle:
                     if i == 0 and cursor is not None:
                         handle.seek(cursor[1])
                     records.extend(_iterate_journal_batches(handle, self._schema))
                     next_cursor = (path.stat().st_ino, handle.tell())
             return records, next_cursor
 
-    def close(self):
+    def close(self) -> None:
         """Close the journal file handle."""
         with self._lock:
             self._close_writer()
+            self._release_writer_lease()
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear the current journal."""
-        self.close()
-        try:
-            for jf in self._get_journal_files():
-                try:
-                    jf.unlink()
-                except OSError:
-                    pass
-            self._open_journal()
-            logger.info("Transaction journal cleared (Arrow format).")
-        except OSError as e:
-            logger.error("Failed to clear journal: %s", e)
+        with self._lock:
+            self._acquire_writer_lease()
+            self._close_writer()
+            try:
+                for jf in self._get_journal_files():
+                    try:
+                        descriptor = _open_storage_directory(jf.parent)
+                        try:
+                            os.unlink(jf.name, dir_fd=descriptor)
+                            os.fsync(descriptor)
+                        finally:
+                            os.close(descriptor)
+                    except OSError:
+                        pass
+                self._open_journal()
+                logger.info("Transaction journal cleared (Arrow format).")
+            except OSError as e:
+                logger.error("Failed to clear journal: %s", e)

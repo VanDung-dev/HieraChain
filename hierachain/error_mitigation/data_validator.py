@@ -5,6 +5,7 @@ This module provides data validation utilities for Arrow tables and events,
 ensuring data integrity and schema compliance.
 """
 
+import json
 import logging
 import time
 from collections.abc import Callable
@@ -12,8 +13,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-import orjson
 import pyarrow as pa
+
+from hierachain.core.block import EVENT_SCHEMA, convert_events_to_arrow
+from hierachain.serialization import dumps_json, loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -251,6 +254,17 @@ class DataValidator:
         
         # Decomposed checks
         _validate_table_structure(table, required_columns, result)
+        for name in required_columns:
+            if name not in table.column_names:
+                continue
+            column_type = table.schema.field(name).type
+            compatible = (
+                pa.types.is_integer(column_type) or pa.types.is_floating(column_type)
+                if name == "timestamp" else
+                pa.types.is_string(column_type) or pa.types.is_large_string(column_type)
+            )
+            if not compatible:
+                result.add_error(f"Column '{name}' has incompatible type {column_type}")
         self._validate_table_content(table, required_columns, result)
 
         return result
@@ -298,7 +312,7 @@ def _check_strict_details(
         return
 
     try:
-        orjson.dumps(details).decode()
+        dumps_json(details)
     except (TypeError, ValueError) as e:
         result.add_error(f"Event[{index}]: details not JSON serializable: {e}")
 
@@ -355,6 +369,35 @@ def validate_consistency(
         msg = f"Row count mismatch: list has {len(events_list)}, table has {len(table)}"
         result.add_error(msg)
 
+    if not result.is_valid:
+        return result
+    if table.schema.equals(EVENT_SCHEMA):
+        try:
+            expected_rows = convert_events_to_arrow(events_list).to_pylist()
+        except (TypeError, ValueError, pa.ArrowException) as exc:
+            result.add_error(f"Source events cannot use the canonical Arrow schema: {exc}")
+            return result
+        for index, (expected_row, row) in enumerate(zip(expected_rows, table.to_pylist(), strict=True)):
+            for name in table.column_names:
+                if expected_row[name] != row[name]:
+                    result.add_error(f"Row[{index}]: field '{name}' differs")
+        return result
+    for index, (event, row) in enumerate(zip(events_list, table.to_pylist(), strict=True)):
+        for name in table.column_names:
+            expected = event.get(name)
+            actual = row[name]
+            if pa.types.is_map(table.schema.field(name).type) and actual is not None:
+                actual = dict(actual)
+            if name == "details" and isinstance(actual, str):
+                try:
+                    actual = loads_json(actual)
+                except json.JSONDecodeError:
+                    result.add_error(f"Row[{index}]: invalid details JSON")
+                    continue
+            if actual != expected:
+                result.add_error(f"Row[{index}]: field '{name}' differs")
+        for name in event.keys() - set(table.column_names):
+            result.add_error(f"Row[{index}]: missing column '{name}'")
     return result
 
 

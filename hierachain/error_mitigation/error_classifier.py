@@ -59,11 +59,13 @@ class ErrorClassifier:
         _log_classification(error_info)
         self.classification_history.append(error_info)
         if (
-            priority == PriorityLevel.CRITICAL
+            (priority == PriorityLevel.CRITICAL or (
+                category == ErrorCategory.SECURITY and priority == PriorityLevel.HIGH
+            ))
             and category in self.lockdown_trigger_categories
             and self.lockdown_callback is not None
         ):
-            logger.warning("CRITICAL %s error detected. Triggering lockdown: %s", category.value, error_id)
+            logger.warning("%s %s error detected. Triggering lockdown: %s", priority.name, category.value, error_id)
             try:
                 self.lockdown_callback(error_info)
             except Exception as e:
