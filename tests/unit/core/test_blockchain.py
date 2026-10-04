@@ -524,3 +524,21 @@ def test_blockchain_block_cache_integration():
     assert stats["total_blocks"] == 6  # Genesis + 5 created
     assert stats["total_events"] == 51  # 1 from genesis + 50 added
     assert stats["chain_valid"] is True
+
+
+def test_accepted_event_and_entity_queries_own_nested_data() -> None:
+    chain = Blockchain(name="SnapshotChain")
+    event = {"entity_id": "entity-1", "event": "created", "details": {"items": ["original"]}}
+    chain.add_event(event)
+    assert "timestamp" not in event
+    event["details"]["items"].append("changed")
+    block = chain.create_block()
+    assert chain.add_block(block)
+    events = chain.get_events_by_entity("entity-1")
+    assert events[0]["details"]["items"] == ["original"]
+    events[0]["details"]["items"].clear()
+    indexed = chain.get_indexed_entity_events("entity-1")
+    indexed[0]["event"]["details"]["items"].clear()
+    indexed.clear()
+    assert chain.get_events_by_entity("entity-1")[0]["details"]["items"] == ["original"]
+    assert len(chain.get_indexed_entity_events("entity-1")) == 1

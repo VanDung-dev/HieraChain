@@ -90,3 +90,36 @@ def test_audit_retrieval_does_not_replay_active_file(tmp_path, monkeypatch):
         assert storage._pq_writer is not None
     finally:
         storage.close()
+
+
+def test_acknowledged_parquet_append_survives_abrupt_process_exit(tmp_path) -> None:
+    import subprocess
+    import sys
+
+    path = tmp_path / "crash.parquet"
+    script = (
+        "import os; from hierachain.core.parquet_log import write_parquet_log; "
+        f"write_parquet_log({str(path)!r}, {{'id': 'accepted', 'timestamp': 1}}); os._exit(0)"
+    )
+    completed = subprocess.run([sys.executable, "-c", script], capture_output=True, timeout=30)
+    assert completed.returncode == 0, completed.stderr.decode()
+    table = parquet_log.read_parquet_log(path)
+    assert table.column("timestamp").to_pylist() == [1.0]
+
+
+def test_failed_segment_publication_preserves_acknowledged_rows(tmp_path, monkeypatch) -> None:
+    import pytest
+
+    path = tmp_path / "failed.parquet"
+    parquet_log.write_parquet_log(path, {"timestamp": 1})
+    replace = parquet_log.os.replace
+
+    def fail_replace(*args) -> None:
+        raise OSError("publication failed")
+
+    monkeypatch.setattr(parquet_log.os, "replace", fail_replace)
+    with pytest.raises(OSError, match="publication failed"):
+        parquet_log.write_parquet_log(path, {"timestamp": 2})
+    monkeypatch.setattr(parquet_log.os, "replace", replace)
+    parquet_log.write_parquet_log(path, {"timestamp": 3})
+    assert parquet_log.read_parquet_log(path).column("timestamp").to_pylist() == [1.0, 3.0]
