@@ -10,19 +10,22 @@ It provides a `ZmqNode` class that handles:
 
 import asyncio
 import inspect
+import json
 import logging
 import math
 import time
 from collections.abc import Callable
 from typing import Any, cast
 
-import orjson
 import zmq
 import zmq.asyncio
+
+from hierachain.serialization import dumps_json, loads_json
 
 logger = logging.getLogger(__name__)
 MAX_REPLAY_ENTRIES = 1000
 MAX_NONCE_LENGTH = 128
+MAX_MESSAGE_BYTES = 1024 * 1024
 
 
 class NetworkError(Exception):
@@ -64,6 +67,8 @@ class ZmqNode:
 
         # Replay Protection
         self.replay_buffer: set[tuple[float, str]] = set()  # (timestamp, nonce)
+        self.peer_replay_buffers: dict[str, set[tuple[float, str]]] = {}
+        self._message_validator: Callable[[dict[str, Any], str], bool] | None = None
         self.replay_tolerance = 60  # seconds
         
         # Sockets
@@ -90,6 +95,7 @@ class ZmqNode:
             router = self.ctx.socket(zmq.ROUTER)
             self.router = router
             router.setsockopt(zmq.IDENTITY, self.node_id.encode('utf-8'))
+            router.setsockopt(zmq.MAXMSGSIZE, MAX_MESSAGE_BYTES)
 
             # Enable CurveZMQ for Server (ROUTER)
             if self.server_secret:
@@ -134,6 +140,7 @@ class ZmqNode:
     def unregister_peer(self, peer_id: str) -> None:
         """Remove a peer and discard its pending outbound messages."""
         self.peers.pop(peer_id, None)
+        self.peer_replay_buffers.pop(peer_id, None)
         socket = self.dealer_pool.pop(peer_id, None)
         if socket is not None:
             socket.close(linger=0)
@@ -141,6 +148,10 @@ class ZmqNode:
     def set_handler(self, handler: Callable[[dict[str, Any], str], Any]) -> None:
         """Set the callback function for processing received messages."""
         self._message_handler = handler
+
+    def set_message_validator(self, validator: Callable[[dict[str, Any], str], bool]) -> None:
+        """Authenticate a message before reserving replay state."""
+        self._message_validator = validator
 
     async def send_direct(self, target_peer_id: str, message: dict[str, Any]) -> bool:
         """
@@ -156,7 +167,7 @@ class ZmqNode:
 
         try:
             socket = await _get_or_create_dealer(self, target_peer_id)
-            encoded_msg = orjson.dumps(message)
+            encoded_msg = dumps_json(message).encode("utf-8")
             await socket.send(encoded_msg)
             return True
         except Exception as e:
@@ -175,11 +186,14 @@ class ZmqNode:
         # networking helpers are defined as module-level functions below
 
 
-def _is_valid_replay(node: ZmqNode, message_data: dict[str, Any]) -> bool:
+def _is_valid_replay(
+    node: ZmqNode, message_data: dict[str, Any], buffer: set[tuple[float, str]] | None = None,
+) -> bool:
     """
     Check if message is a replay.
     Returns True if valid (not a replay), False otherwise.
     """
+    replay_buffer = node.replay_buffer if buffer is None else buffer
     timestamp = message_data.get("timestamp")
     nonce = message_data.get("nonce")
 
@@ -209,18 +223,19 @@ def _is_valid_replay(node: ZmqNode, message_data: dict[str, Any]) -> bool:
         return False
 
     entry = (ts_val, nonce)
-    if entry in node.replay_buffer:
+    if entry in replay_buffer:
         logger.warning("Replay detected: %s", nonce)
         return False
 
-    if len(node.replay_buffer) >= MAX_REPLAY_ENTRIES:
+    if len(replay_buffer) >= MAX_REPLAY_ENTRIES:
         cutoff = now - node.replay_tolerance
-        node.replay_buffer = {e for e in node.replay_buffer if e[0] > cutoff}
-        if len(node.replay_buffer) >= MAX_REPLAY_ENTRIES:
+        expired = {e for e in replay_buffer if e[0] < cutoff}
+        replay_buffer.difference_update(expired)
+        if len(replay_buffer) >= MAX_REPLAY_ENTRIES:
             logger.warning("Replay buffer full; rejecting message")
             return False
 
-    node.replay_buffer.add(entry)
+    replay_buffer.add(entry)
 
     return True
 
@@ -277,8 +292,21 @@ async def _receive_once(node: ZmqNode) -> None:
     router = node.router
     if router is None:
         raise NetworkError("Router socket is not initialized")
-    msg_parts = await router.recv_multipart()
-    await _handle_received_message(node, msg_parts)
+    msg_parts = []
+    frame_count = 0
+    oversized = False
+    while True:
+        frame = await router.recv()
+        frame_count += 1
+        if frame_count > 2 or len(frame) > MAX_MESSAGE_BYTES:
+            oversized = True
+            msg_parts.clear()
+        elif not oversized:
+            msg_parts.append(frame)
+        if not router.getsockopt(zmq.RCVMORE):
+            break
+    if not oversized:
+        await _handle_received_message(node, msg_parts)
 
 
 async def _handle_receiver_error(node: ZmqNode, e: Exception) -> bool:
@@ -295,16 +323,16 @@ async def _handle_receiver_error(node: ZmqNode, e: Exception) -> bool:
 
 async def _handle_received_message(node: ZmqNode, msg_parts: list[bytes]) -> None:
     """Handle a received message."""
-    if len(msg_parts) < 2:
+    if len(msg_parts) != 2 or len(msg_parts[0]) > 255 or len(msg_parts[1]) > MAX_MESSAGE_BYTES:
         return
 
     try:
         sender_id = msg_parts[0].decode('utf-8')
         message_str = msg_parts[-1].decode('utf-8')
-        message_data = orjson.loads(message_str)
+        message_data = loads_json(message_str)
 
         await _process_message_data(node, message_data, sender_id)
-    except (UnicodeDecodeError, orjson.JSONDecodeError):
+    except (UnicodeDecodeError, json.JSONDecodeError):
         logger.warning("Received invalid message format or encoding")
     except Exception as e:
         logger.error("Error processing message parts: %s", e)
@@ -314,7 +342,19 @@ async def _process_message_data(
     node: ZmqNode, message_data: dict[str, Any], sender_id: str,
 ) -> None:
     """Process received message data."""
-    if not _is_valid_replay(node, message_data):
+    if not isinstance(message_data, dict):
+        return
+    validator = node._message_validator
+    if validator is not None:
+        if not validator(message_data, sender_id):
+            return
+    elif sender_id not in node.peers:
+        # Plain transport has no identity verifier; only configured peers enter.
+        return
+    if sender_id not in node.peer_replay_buffers and len(node.peer_replay_buffers) >= MAX_REPLAY_ENTRIES:
+        return
+    buffer = node.peer_replay_buffers.setdefault(sender_id, set())
+    if not _is_valid_replay(node, message_data, buffer):
         return
 
     handler = node.message_handler

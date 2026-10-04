@@ -10,7 +10,7 @@ import logging
 import time
 from typing import Any, cast
 
-import orjson
+from hierachain.serialization import dumps_json
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +79,6 @@ class ResourceValidator:
             "timestamp": time.time(),
             "auto_scale_enabled": self.auto_scale,
         }
-        logger.info("Resource scaling triggered: %s", orjson.dumps(scaling_event).decode())
+        logger.info("Resource scaling triggered: %s", dumps_json(scaling_event))
         from hierachain.core.parquet_log import write_parquet_log
         write_parquet_log("log/error_mitigation/resource_scaling.parquet", scaling_event)

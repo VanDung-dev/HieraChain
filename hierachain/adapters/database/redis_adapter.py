@@ -5,19 +5,25 @@ Provides Redis persistence for blockchain data with the same public interface
 as SQLBase adapters. Supports store/load chains, blocks, events, and proofs.
 """
 
+import json
 import logging
 import time
+import uuid
 from typing import Any
 
-import orjson
 import redis as redis_mod
 
 from hierachain.config.settings import settings
 from hierachain.core.blockchain import Blockchain
+from hierachain.serialization import dumps_json, loads_json
 
 logger = logging.getLogger(__name__)
 
 _KEY_PREFIX = "hierachain"
+
+
+class RedisStorageError(RuntimeError):
+    """Redis query failed or persisted data could not be decoded safely."""
 
 
 def _k(*parts: str) -> str:
@@ -96,7 +102,7 @@ class RedisChainManager:
         for bh in block_hashes:
             raw = self.client.get(_k("block", bh))
             if raw:
-                block_dict = orjson.loads(raw)
+                block_dict = loads_json(raw)
                 events = self._load_block_events(bh)
                 block_dict["events"] = events
                 blocks.append(block_dict)
@@ -105,7 +111,7 @@ class RedisChainManager:
     def _load_block_events(self, block_hash: str) -> list[dict[str, Any]]:
         raw = self.client.get(_k("block", block_hash, "events"))
         if raw:
-            return orjson.loads(raw)
+            return loads_json(raw)
         return []
 
 
@@ -122,47 +128,47 @@ class RedisEventManager:
     @staticmethod
     def _parse_and_filter_event(raw: Any, chain_name: str | None) -> dict[str, Any] | None:
         try:
-            ev = orjson.loads(raw)
-            if chain_name and ev.get("chain_name") != chain_name:
-                return None
-            return ev
-        except (orjson.JSONDecodeError, TypeError, AttributeError):
+            ev = loads_json(raw)
+        except (json.JSONDecodeError, TypeError) as exc:
+            raise RedisStorageError("Invalid stored Redis event JSON") from exc
+        if not isinstance(ev, dict):
+            raise RedisStorageError("Stored Redis event must be a JSON object")
+        if chain_name and ev.get("chain_name") != chain_name:
             return None
+        return ev
 
     def get_events_by_pattern(self, pattern: str, chain_name: str | None = None) -> list[dict[str, Any]]:
-        keys = self.client.keys(pattern)
-        if not keys:
-            return []
-        
-        raw_events = self.client.mget(keys)
-        results = []
-        for raw in raw_events:
-            if raw:
+        try:
+            keys = self.client.keys(pattern)
+            if not keys:
+                return []
+
+            raw_events = self.client.mget(keys)
+            results = []
+            for raw in raw_events:
+                if raw is None:
+                    raise RedisStorageError("Redis event index references a missing record")
                 ev = self._parse_and_filter_event(raw, chain_name)
                 if ev is not None:
                     results.append(ev)
-        results.sort(key=lambda e: e.get("timestamp", 0))
-        return results
+            results.sort(key=lambda event: event.get("timestamp", 0))
+            return results
+        except RedisStorageError:
+            raise
+        except Exception as exc:
+            raise RedisStorageError("Redis event query failed") from exc
 
     def get_entity_events(
         self, entity_id: str, chain_name: str | None = None,
     ) -> list[dict[str, Any]]:
-        try:
-            pattern = _k("event", "entity", entity_id) + ":*"
-            return self.get_events_by_pattern(pattern, chain_name)
-        except Exception as e:
-            logger.error("Redis get_entity_events failed: %s", e)
-            return []
+        pattern = _k("event", "entity", entity_id) + ":*"
+        return self.get_events_by_pattern(pattern, chain_name)
 
     def get_events_by_type(
         self, event_type: str, chain_name: str | None = None,
     ) -> list[dict[str, Any]]:
-        try:
-            pattern = _k("event", "type", event_type) + ":*"
-            return self.get_events_by_pattern(pattern, chain_name)
-        except Exception as e:
-            logger.error("Redis get_events_by_type failed: %s", e)
-            return []
+        pattern = _k("event", "type", event_type) + ":*"
+        return self.get_events_by_pattern(pattern, chain_name)
 
 
 class RedisProofManager:
@@ -184,18 +190,20 @@ class RedisProofManager:
         metadata: dict[str, Any],
     ) -> bool:
         try:
-            proof_key = _k("proof", sub_chain_name, str(block_index))
             data = {
                 "main_chain_name": main_chain_name,
                 "sub_chain_name": sub_chain_name,
                 "proof_hash": proof_hash,
                 "block_index": block_index,
-                "metadata": orjson.dumps(metadata).decode('utf-8'),
+                "metadata": dumps_json(metadata),
                 "submitted_at": _now(),
                 "created_at": _now(),
             }
-            self.client.hset(proof_key, mapping=data)
-            self.client.lpush(_k("proofs", sub_chain_name), proof_key)
+            history_key = _k("proofs", sub_chain_name)
+            # One Redis list operation records the immutable submission itself.
+            # A unique ID keeps repeat submissions at one block index distinct.
+            entry = {"submission_id": uuid.uuid4().hex, **data}
+            self.client.lpush(history_key, dumps_json(entry))
             return True
         except Exception as e:
             logger.error("Redis store_proof failed: %s", e)
@@ -206,14 +214,22 @@ class RedisProofManager:
             proof_keys = self.client.lrange(_k("proofs", sub_chain_name), 0, -1)
             proofs = []
             for pk in proof_keys:
-                data = self.client.hgetall(pk)
+                if isinstance(pk, bytes):
+                    pk_text = pk.decode("utf-8")
+                else:
+                    pk_text = pk
+                if isinstance(pk_text, str) and pk_text.startswith("{"):
+                    data = loads_json(pk_text)
+                else:
+                    # Read proof references written by older adapter versions.
+                    data = self.client.hgetall(pk)
                 if data:
                     proofs.append({
                         "main_chain_name": data.get("main_chain_name"),
                         "sub_chain_name": data.get("sub_chain_name"),
                         "proof_hash": data.get("proof_hash"),
                         "block_index": int(data.get("block_index", 0)),
-                        "metadata": orjson.loads(data.get("metadata", "{}")),
+                        "metadata": loads_json(data.get("metadata", "{}")),
                         "submitted_at": float(data.get("submitted_at", 0)),
                     })
             return proofs
@@ -238,7 +254,7 @@ class RedisStatsManager:
     ) -> int:
         """Parses block event data and updates stats. Returns event count."""
         try:
-            events = orjson.loads(raw)
+            events = loads_json(raw)
             for ev in events:
                 eid = ev.get("entity_id")
                 if eid:
@@ -246,7 +262,7 @@ class RedisStatsManager:
                 etype = ev.get("event", "unknown")
                 event_types[etype] = event_types.get(etype, 0) + 1
             return len(events)
-        except (orjson.JSONDecodeError, TypeError, AttributeError):
+        except (json.JSONDecodeError, TypeError, AttributeError):
             return 0
 
     @classmethod
@@ -294,8 +310,8 @@ class RedisStatsManager:
                 ts = self.client.hget(key, ts_field)
                 return float(ts) if ts else None
             raw = self.client.get(key)
-            return orjson.loads(raw).get(ts_field) if raw else None
-        except (orjson.JSONDecodeError, ValueError, TypeError, redis_mod.RedisError):
+            return loads_json(raw).get(ts_field) if raw else None
+        except (ValueError, TypeError, redis_mod.RedisError):
             return None
 
     def _cleanup_keys(
@@ -311,11 +327,28 @@ class RedisStatsManager:
             self.client.delete(*keys_to_delete)
         return len(keys_to_delete)
 
+    def _cleanup_new_proof_history(self, cutoff: float) -> int:
+        """Remove expired inline proof entries while retaining recent history."""
+        deleted = 0
+        for history_key in self.client.scan_iter(match=_k("proofs", "*")):
+            for raw in self.client.lrange(history_key, 0, -1):
+                raw_text = raw.decode("utf-8") if isinstance(raw, bytes) else raw
+                if not isinstance(raw_text, str) or not raw_text.startswith("{"):
+                    continue  # Legacy entries reference separate proof hashes.
+                record = loads_json(raw)
+                if not isinstance(record, dict) or "submission_id" not in record:
+                    continue
+                submitted_at = float(record["submitted_at"])
+                if submitted_at < cutoff:
+                    deleted += self.client.lrem(history_key, 0, raw)
+        return deleted
+
     def cleanup_old_data(self, days_to_keep: int = 30) -> bool:
         try:
             cutoff = _now() - (days_to_keep * 86400)
             deleted = 0
             deleted += self._cleanup_keys(_k("event", "*"), cutoff)
+            deleted += self._cleanup_new_proof_history(cutoff)
             deleted += self._cleanup_keys(_k("proof", "*"), cutoff, is_hash=True, ts_field="submitted_at")
             deleted += self._cleanup_keys(_k("block", "*"), cutoff)
 
@@ -384,14 +417,14 @@ class RedisStorageAdapter:
             with self.client.pipeline() as pipe:
                 pipe.watch(key)
                 raw = pipe.get(key)
-                current = orjson.loads(raw) if raw is not None else None
+                current = loads_json(raw) if raw is not None else None
                 if current is not None and not isinstance(current, dict):
                     raise ValueError("Invalid hierarchy registry snapshot")
                 revision = current.get("_revision") if current is not None else None
                 if revision != expected_revision:
                     return False
                 pipe.multi()
-                pipe.set(key, orjson.dumps(state))
+                pipe.set(key, dumps_json(state).encode("utf-8"))
                 return bool(pipe.execute()[0])
         except redis_mod.WatchError:
             return False
@@ -401,7 +434,7 @@ class RedisStorageAdapter:
         raw = self.client.get("hierachain:hierarchy_registry")
         if raw is None:
             return None
-        state = orjson.loads(raw)
+        state = loads_json(raw)
         if not isinstance(state, dict):
             raise ValueError("Invalid hierarchy registry snapshot")
         return state

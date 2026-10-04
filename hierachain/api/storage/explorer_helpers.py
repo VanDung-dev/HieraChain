@@ -7,13 +7,12 @@ in the Blockchain Explorer UI.
 
 from typing import Any
 
-import orjson
-
 from hierachain.api.storage.endpoint_helpers import (
     is_ipfs_enabled,
     resolve_event_details,
 )
 from hierachain.api.storage.utils import detect_data_location, format_cid_display
+from hierachain.serialization import dumps_json
 
 
 def format_event_for_display(event: dict[str, Any], resolve_cid: bool = False) -> dict[str, Any]:
@@ -339,11 +338,11 @@ def format_event_table_row_html(event: dict[str, Any], index: int, resolve_cid: 
         '''
 
     if resolve_cid and "details" in event:
-        details_html = f"<pre>{orjson.dumps(event['details'], option=orjson.OPT_INDENT_2).decode()}</pre>"
+        details_html = f"<pre>{dumps_json(event['details'], indent=2)}</pre>"
     elif not resolve_cid and storage_info.get("ipfs"):
         details_html = "<em>Click 'Load Details' to view</em>"
     else:
-        details_html = f"<pre>{orjson.dumps(event.get('details', {}), option=orjson.OPT_INDENT_2).decode()}</pre>"
+        details_html = f"<pre>{dumps_json(event.get('details', {}), indent=2)}</pre>"
 
     entity_id = event.get("entity_id") or "N/A"
     event_type = event.get("event") or event.get("event_type") or "N/A"

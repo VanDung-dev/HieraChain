@@ -13,14 +13,14 @@ import logging
 import threading
 import time
 from collections.abc import Callable
+from copy import deepcopy
 from typing import Any, cast
-
-import orjson
 
 from hierachain.core.block import Block
 from hierachain.core.utils import validate_event_structure
 from hierachain.security.identity_loader import NodeIdentity, require_block_identity
 from hierachain.security.verify.block_verifier import get_block_verifier, sign_block
+from hierachain.serialization import dumps_canonical_json
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +165,8 @@ class Blockchain:
             if not isinstance(event, dict):
                 raise ValueError("Event must be a dictionary")
             
+            event = deepcopy(event)
+
             # Add timestamp if not present
             if "timestamp" not in event:
                 event["timestamp"] = time.time()
@@ -176,8 +178,8 @@ class Blockchain:
             event_id = event.get("event_id")
             if not event_id:
                 try:
-                    event_bytes = orjson.dumps(event, option=orjson.OPT_SORT_KEYS)
-                except (TypeError, ValueError, orjson.JSONEncodeError):
+                    event_bytes = dumps_canonical_json(event)
+                except (TypeError, ValueError):
                     event_bytes = str(sorted(event.items())).encode()
                 event_id = f"evt-{hashlib.sha256(event_bytes).hexdigest()[:16]}"
             return event_id
@@ -438,7 +440,7 @@ class BlockchainQueryEngine:
                 and entity_id in self.blockchain.entity_event_index
             ):
                 indexed_events = self.blockchain.entity_event_index[entity_id]
-                return [e['event'] for e in indexed_events]
+                return deepcopy([e['event'] for e in indexed_events])
 
             events = []
             for block in self.blockchain.chain:
@@ -449,7 +451,7 @@ class BlockchainQueryEngine:
         """Get indexed events with block metadata for a specific entity."""
         with self.blockchain.lock:
             if hasattr(self.blockchain, 'entity_event_index'):
-                return self.blockchain.entity_event_index.get(entity_id, [])
+                return deepcopy(self.blockchain.entity_event_index.get(entity_id, []))
             return []
 
     def get_events_by_type(self, event_type: str) -> list[dict[str, Any]]:

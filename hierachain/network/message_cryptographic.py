@@ -16,9 +16,8 @@ import time
 import uuid
 from typing import Any, cast
 
-import orjson
-
 from hierachain.security.security_utils import KeyPair, verify_signature
+from hierachain.serialization import dumps_canonical_json
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +49,7 @@ def create_signable_payload(
         "nonce": nonce,
         "sender_id": sender_id,
     }
-    return orjson.dumps(canonical, option=orjson.OPT_SORT_KEYS)
+    return dumps_canonical_json(canonical)
 
 
 def sign_message(
@@ -145,7 +144,7 @@ def sign_handshake_payload(handshake_data: dict[str, Any], keypair: KeyPair) -> 
     Returns:
         Hex-encoded signature string.
     """
-    canonical = orjson.dumps(handshake_data, option=orjson.OPT_SORT_KEYS)
+    canonical = dumps_canonical_json(handshake_data)
     return keypair.sign(canonical)
 
 
@@ -166,7 +165,7 @@ def verify_handshake_signature(
         True if the signature is valid, False otherwise.
     """
     try:
-        canonical = orjson.dumps(handshake_data, option=orjson.OPT_SORT_KEYS)
+        canonical = dumps_canonical_json(handshake_data)
         return verify_signature(public_key_hex, canonical, signature)
     except Exception as e:
         logger.error("Handshake signature verification failed: %s", e)

@@ -14,8 +14,9 @@ IPFS Integration:
 
 from typing import Any
 
-import orjson
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from hierachain.serialization import dumps_json
 
 
 class EventRequest(BaseModel):
@@ -96,7 +97,7 @@ class EventRequest(BaseModel):
             return v
         
         # Check size (approximate via string conversion)
-        if len(orjson.dumps(v)) > 1024 * 1024:
+        if len(dumps_json(v).encode("utf-8")) > 1024 * 1024:
             raise ValueError("Event details exceed 1MB size limit")
 
         stack: list[tuple[Any, int]] = [(v, 1)]

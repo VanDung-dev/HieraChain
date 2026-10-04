@@ -13,10 +13,9 @@ import hashlib
 from dataclasses import dataclass
 from typing import Any
 
-import orjson
-
 from hierachain.config.settings import settings
 from hierachain.security.secure_logging import get_security_logger
+from hierachain.serialization import dumps_canonical_json
 
 logger = get_security_logger()
 
@@ -54,7 +53,7 @@ class ZKPublicInputs:
     
     def to_bytes(self) -> bytes:
         """Serialize to bytes for hashing."""
-        return orjson.dumps(self.to_dict(), option=orjson.OPT_SORT_KEYS)
+        return dumps_canonical_json(self.to_dict())
 
 
 class ZKVerificationError(Exception):

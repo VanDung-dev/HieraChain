@@ -12,12 +12,12 @@ import logging
 import time
 from typing import Any
 
-import orjson
 import pyarrow as pa
 import pyarrow.compute as pc
 
 from hierachain.core.merkle_tree import MerkleTree, serialize_event_payload
 from hierachain.core.utils import generate_hash
+from hierachain.serialization import loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class Block:
         signature: str | None = None
     ):
         self.index = index
-        self.timestamp = timestamp or time.time()
+        self.timestamp = time.time() if timestamp is None else timestamp
         self.previous_hash = previous_hash
         self.nonce = nonce
         self.creator_id = creator_id
@@ -286,7 +286,7 @@ def _recover_from_data_column(row: dict[str, Any]) -> dict[str, Any] | None:
     if not isinstance(data, (str, bytes, bytearray)):
         return None
     try:
-        return orjson.loads(data)
+        return loads_json(data)
     except (ValueError, TypeError) as e:
         logger.debug("JSON decode fallback: %s", e)
         return None
@@ -320,7 +320,7 @@ def table_to_list_of_dicts(table: pa.Table) -> list[dict[str, Any]]:
     Uses 'data' field for full payload recovery when available.
     """
     if 'data' in table.column_names:
-        return [orjson.loads(d.as_py()) for d in table.column('data') if d is not None]
+        return [loads_json(d.as_py()) for d in table.column('data') if d is not None]
 
     has_data_col = 'data' in table.column_names
     return [_process_arrow_row(row, has_data_col) for row in table.to_pylist()]

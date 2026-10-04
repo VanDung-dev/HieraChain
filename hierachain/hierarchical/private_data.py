@@ -7,13 +7,15 @@ This significantly enhances data privacy in enterprise collaborations.
 """
 
 import hashlib
+import json
 import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, cast
 
-import orjson
 from cryptography.fernet import Fernet, InvalidToken
+
+from hierachain.serialization import dumps_canonical_json, loads_json
 
 
 def _check_submitter(entry: "PrivateDataEntry", query_params: dict[str, Any]) -> bool:
@@ -201,7 +203,7 @@ class PrivateCollection:
                 return False
 
             # Encrypt the data
-            value_bytes = orjson.dumps(value, option=orjson.OPT_SORT_KEYS)
+            value_bytes = dumps_canonical_json(value)
             encrypted_value = self.cipher_suite.encrypt(value_bytes)
 
             # Calculate hash for integrity
@@ -266,9 +268,9 @@ class PrivateCollection:
         try:
             # Decrypt and return data
             decrypted_bytes = self.cipher_suite.decrypt(entry.encrypted_value)
-            return orjson.loads(decrypted_bytes)
+            return loads_json(decrypted_bytes)
 
-        except (InvalidToken, UnicodeDecodeError, orjson.JSONDecodeError):
+        except (InvalidToken, UnicodeDecodeError, json.JSONDecodeError):
             return None
 
     def get_data_hash(self, key: str, _requester_org_id: str) -> str | None:

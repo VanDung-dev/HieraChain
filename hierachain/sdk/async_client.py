@@ -8,10 +8,11 @@ backoff, circuit breaker pattern, and aiohttp transport.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from http import HTTPStatus
-from json import JSONDecodeError
 from typing import Any
+from urllib.parse import quote
 
 import aiohttp
 
@@ -30,6 +31,7 @@ from hierachain.sdk.types import (
     HieraChainClientConfig,
     NodeStatus,
 )
+from hierachain.serialization import dumps_json, loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +89,7 @@ class HieraChainAsyncClient:
         if not 200 <= response.status < 300:
             raise HieraChainAPIError(f"HTTP {response.status}", status_code=response.status)
 
-        return {} if response.status == HTTPStatus.NO_CONTENT else await response.json()
+        return {} if response.status == HTTPStatus.NO_CONTENT else await response.json(loads=loads_json)
 
     async def _execute_request(
         self,
@@ -100,10 +102,17 @@ class HieraChainAsyncClient:
         async with session.request(
             method=method,
             url=url,
-            json=data,
+            data=dumps_json(data).encode("utf-8") if data is not None else None,
+            headers=(
+                {"Content-Type": session.headers.get("Content-Type", "application/json")}
+                if data is not None else None
+            ),
             params=params,
             timeout=self.config.timeout,
-            allow_redirects=method.upper() in {"GET", "HEAD", "OPTIONS"},
+            allow_redirects=(
+                method.upper() in {"GET", "HEAD", "OPTIONS"}
+                and not session.headers.get("X-API-Key")
+            ),
         ) as response:
             return await self._handle_response(response)
 
@@ -157,7 +166,7 @@ class HieraChainAsyncClient:
                 if probe:
                     self._circuit.release_probe()
                 raise
-            except (HieraChainAPIError, aiohttp.ClientError, asyncio.TimeoutError, JSONDecodeError) as e:
+            except (HieraChainAPIError, aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError) as e:
                 await self._handle_request_error(e, attempt, retries, probe)
             except Exception:
                 if probe:
@@ -219,7 +228,7 @@ class HieraChainAsyncClient:
         params = {"resolve_cid": str(resolve_cid).lower()}
         if chain_name:
             params["chain_name"] = chain_name
-        url = f"/api/ledger/entities/{entity_id}/trace"
+        url = f"/api/ledger/entities/{quote(entity_id, safe='')}/trace"
         response = await self._request("GET", url, params=params)
         return EntityTrace(
             entity_id=response.get("entity_id", entity_id),
@@ -229,7 +238,7 @@ class HieraChainAsyncClient:
 
     async def health_check(self) -> bool:
         try:
-            response = await self._request("GET", "/health")
+            response = await self._request("GET", "/api/ledger/health")
             return response.get("status") == "healthy"
         except (HieraChainAPIError, CircuitOpenError):
             return False

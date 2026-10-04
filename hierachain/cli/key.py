@@ -5,8 +5,9 @@ Key management commands.
 import os
 
 import click
-import orjson
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from hierachain.serialization import dumps_json, loads_json
 
 
 @click.group()
@@ -35,7 +36,7 @@ def generate(output: str, key_format: str) -> None:
 
     data = {"private_key": private_key, "public_key": public_key}
     payload = (
-        orjson.dumps(data, option=orjson.OPT_INDENT_2)
+        dumps_json(data, indent=2).encode("utf-8")
         if key_format == 'json'
         else f"{private_key}\n{public_key}\n".encode('ascii')
     )
@@ -56,7 +57,7 @@ def _read_key_file(input_file: str) -> dict[str, str]:
         with open(input_file, 'rb') as file:
             payload = file.read()
         if payload.lstrip().startswith(b'{'):
-            data = orjson.loads(payload)
+            data = loads_json(payload)
             if not isinstance(data, dict):
                 raise ValueError("Expected a key object")
         else:

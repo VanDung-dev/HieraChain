@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any
 
-import orjson
+from hierachain.serialization import dumps_canonical_json, dumps_json
 
 
 class AuditEventType(Enum):
@@ -53,6 +53,8 @@ class AuditEvent:
         data = asdict(self)
         data['event_type'] = self.event_type.value
         data['severity'] = self.severity.value
+        # Keep hashing and storage stable when callers supply integer timestamps.
+        data['timestamp'] = float(data['timestamp'])
         data['details'] = self._sanitize_data(data['details'])
         if data.get('affected_entities'):
             data['affected_entities'] = self._sanitize_data(data['affected_entities'])
@@ -69,7 +71,7 @@ class AuditEvent:
         return data
 
     def to_json(self) -> str:
-        return orjson.dumps(self.to_dict(), default=str).decode()
+        return dumps_json(self.to_dict(), default=str)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AuditEvent:
@@ -89,9 +91,7 @@ class AuditEvent:
         )
 
     def calculate_hash(self) -> str:
-        content = orjson.dumps(
-            self.to_dict(), option=orjson.OPT_SORT_KEYS, default=str
-        )
+        content = dumps_canonical_json(self.to_dict(), default=str)
         return hashlib.sha256(content).hexdigest()
 
 

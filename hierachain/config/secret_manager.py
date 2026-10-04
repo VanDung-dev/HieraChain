@@ -22,8 +22,9 @@ from typing import Any
 
 import boto3
 import hvac
-import orjson
 from botocore.exceptions import ClientError
+
+from hierachain.serialization import loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ def _get_from_aws(key: str, secret_name: str, region: str) -> str | None:
         if not isinstance(secret_string, str):
             logger.warning("AWS secret must contain a JSON SecretString")
             return None
-        data = orjson.loads(secret_string)
+        data = loads_json(secret_string)
         value = data.get(key) if isinstance(data, dict) else None
         if not isinstance(value, str):
             logger.warning("AWS secret field is missing or is not a string")
@@ -119,6 +120,8 @@ class SecretManager:
 
     def __init__(self) -> None:
         self._backend: str = os.environ.get("HRC_SECRET_BACKEND", "env").lower().strip()
+        if self._backend not in {"env", "vault", "aws"}:
+            raise ValueError(f"Unsupported HRC_SECRET_BACKEND value: {self._backend!r}")
 
         # Vault config
         self._vault_url: str = os.environ.get("HRC_VAULT_URL", "")
@@ -152,8 +155,6 @@ class SecretManager:
         elif self._backend == "aws":
             value = self._get_aws(key)
         else:
-            if self._backend != "env":
-                logger.warning("Unknown HRC_SECRET_BACKEND, falling back to 'env'")
             value = _get_from_env(key)
 
         if value is None:
@@ -170,11 +171,8 @@ class SecretManager:
 
     def _get_vault(self, key: str) -> str | None:
         if not self._vault_url or not self._vault_token:
-            logger.error(
-                "Vault backend selected but HRC_VAULT_URL or HRC_VAULT_TOKEN is not set. "
-                "Falling back to env."
-            )
-            return _get_from_env(key)
+            logger.error("Vault backend selected but HRC_VAULT_URL or HRC_VAULT_TOKEN is not set")
+            return None
         return _get_from_vault(key, self._vault_url, self._vault_token, self._vault_path)
 
     def _get_aws(self, key: str) -> str | None:

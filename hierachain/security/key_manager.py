@@ -6,19 +6,24 @@ ensuring secure access control without cryptocurrency concepts.
 """
 
 import hashlib
+import json
 import os
 import secrets
 import time
 import warnings
 from typing import Any
 
-import orjson
-
 from hierachain.adapters.database.auth_state import RedisRevocationStore, SQLiteRevocationStore
 from hierachain.core.cache import AdvancedCache
 from hierachain.security.secure_logging import SecureLogger
+from hierachain.serialization import dumps_json, loads_json
 
 logger = SecureLogger("hierachain.security.key_manager")
+
+
+def _has_valid_permissions(key_data: dict[str, Any]) -> bool:
+    permissions = key_data.get("permissions", [])
+    return isinstance(permissions, list) and all(isinstance(permission, str) for permission in permissions)
 
 
 class KeyStorage:
@@ -48,9 +53,9 @@ class KeyStorage:
         try:
             data = self.km.storage.get(f"api_key:{api_key}")
             if isinstance(data, (str, bytes, bytearray)):
-                return orjson.loads(data)
+                return loads_json(data)
             return None
-        except (orjson.JSONDecodeError, TypeError) as e:
+        except (json.JSONDecodeError, TypeError) as e:
             logger.error("Error decoding key data from storage", error=str(e))
             return None
         # The Redis-like storage protocol does not define a shared error type.
@@ -69,7 +74,7 @@ class KeyStorage:
         if hasattr(self.km.storage, 'set') and hasattr(self.km.storage, 'get'):
             # Redis-like storage
             try:
-                self.km.storage.set(f"api_key:{api_key}", orjson.dumps(data).decode())
+                self.km.storage.set(f"api_key:{api_key}", dumps_json(data))
             # Keep the in-memory fallback for backend-specific storage errors.
             except Exception as e:  # noqa: BLE001
                 logger.error("Error storing key to storage", error=str(e))
@@ -296,11 +301,13 @@ class KeyManager:
             # Cache negative result
             self._cache_helper.set_permission(api_key, resource, False)
             return False
-            
-        permissions = key_data.get('permissions', [])
+
+        permissions = key_data.get("permissions", [])
+        if not _has_valid_permissions(key_data):
+            return False
         
         # Check for wildcard permission or specific resource permission
-        result = 'all' in permissions or resource in permissions
+        result = "all" in permissions or resource in permissions
         
         # Cache the result for efficiency
         self._cache_helper.set_permission(api_key, resource, result)
@@ -324,7 +331,7 @@ class KeyManager:
         """Return the permissions assigned to an API key."""
         key_data = self._get_key_data(api_key)
         permissions = key_data.get('permissions', []) if key_data else []
-        return permissions.copy() if isinstance(permissions, list) else []
+        return permissions.copy() if key_data and _has_valid_permissions(key_data) else []
 
     def get_app_details(self, api_key: str) -> dict | None:
         """
@@ -354,7 +361,7 @@ class KeyManager:
     def create_key(
         self,
         user_id: str,
-        permissions: list,
+        permissions: list[str],
         app_details: dict | None = None,
         expires_in: int | None = None
     ) -> str:
@@ -370,6 +377,9 @@ class KeyManager:
         Returns:
             str: Generated API key
         """
+        if not isinstance(permissions, list) or not all(isinstance(permission, str) for permission in permissions):
+            raise ValueError("permissions must be a list of strings")
+
         # Generate secure API key
         user_hash = hashlib.sha256(user_id.encode()).hexdigest()[:8]
         random_component = secrets.token_urlsafe(32)
@@ -431,16 +441,22 @@ class KeyManager:
         # Check cache first
         cached_data = self._cache_helper.get_key(api_key)
         if cached_data is not None:
-            return cached_data
+            if isinstance(cached_data, dict) and _has_valid_permissions(cached_data):
+                return cached_data
+            return None
         
         # Get from storage
-        return self._storage_helper.get(api_key)
+        key_data = self._storage_helper.get(api_key)
+        if not isinstance(key_data, dict) or not _has_valid_permissions(key_data):
+            return None
+        return key_data
 
 
 # Example usage and initialization
 def initialize_default_keys():
     """Initialize some default API keys for testing and development only."""
     import sys
+
     from hierachain.config.settings import Settings
 
     if (

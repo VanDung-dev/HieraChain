@@ -7,16 +7,16 @@ Supports psycopg v3 ConnectionPool / psycopg2 / SQLAlchemy connection pooling wi
 
 from __future__ import annotations
 
+import json
 import time
 from contextlib import contextmanager
 from typing import Any
-
-import orjson
 
 from hierachain.adapters.database.base.sql_adapter import SQLBase
 from hierachain.adapters.database.postgres_schema import init_database_schema
 from hierachain.core.blockchain import Blockchain
 from hierachain.security.secure_logging import get_storage_logger
+from hierachain.serialization import dumps_json, loads_json
 
 logger = get_storage_logger()
 
@@ -26,8 +26,8 @@ def _decode_jsonb(value: Any, default: Any = None) -> Any:
         return default
     if isinstance(value, (str, bytes, bytearray)):
         try:
-            return orjson.loads(value)
-        except orjson.JSONDecodeError:
+            return loads_json(value)
+        except json.JSONDecodeError:
             return value
     return value
 
@@ -185,7 +185,7 @@ class PostgresAdapter(SQLBase):
         created_at: float
     ) -> bool:
         cursor = conn.cursor()
-        meta_json = orjson.dumps(metadata).decode() if metadata else None
+        meta_json = dumps_json(metadata) if metadata else None
         cursor.execute(
             """
             INSERT INTO proofs
@@ -263,7 +263,7 @@ class PostgresAdapter(SQLBase):
         metadata = block_data.get("metadata_json") or block_data.get("metadata")
         if not metadata and block_data.get("merkle_root"):
             metadata = {"merkle_root": block_data["merkle_root"]}
-        meta_json = orjson.dumps(metadata).decode() if metadata else None
+        meta_json = dumps_json(metadata) if metadata else None
         cursor.execute(
             """
             DELETE FROM events
@@ -310,7 +310,7 @@ class PostgresAdapter(SQLBase):
                     event.get("entity_id"),
                     event.get("event") or event.get("event_type", "unknown"),
                     event.get("timestamp", time.time()),
-                    orjson.dumps(event).decode(),
+                    dumps_json(event),
                     event.get("submitted_by") or event.get("sender_id"),
                     time.time(),
                 )

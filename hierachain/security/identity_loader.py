@@ -6,12 +6,12 @@ import logging
 import os
 from typing import Any
 
-import orjson
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from hierachain.config.settings import settings
 from hierachain.security.security_utils import KeyPair
+from hierachain.serialization import loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def load_node_identity() -> NodeIdentity | None:
     
     try:
         with open(path, "rb") as f:
-            data = orjson.loads(f.read())
+            data = loads_json(f.read())
         return NodeIdentity(data)
     except Exception as e:
         logger.error("Failed to load node identity from %s: %s", path, e)
@@ -48,7 +48,7 @@ def load_all_peer_public_keys(peers_file: str) -> dict[str, str]:
         return {}
     try:
         with open(peers_file, "rb") as f:
-            data = orjson.loads(f.read())
+            data = loads_json(f.read())
         return {node_id: identity["signing_public_key"] for node_id, identity in data.items()}
     except Exception as e:
         logger.error("Failed to load peer public keys from %s: %s", peers_file, e)
@@ -61,7 +61,7 @@ def load_trusted_block_keys(path: str) -> dict[str, bytes]:
         raise RuntimeError("HRC_BLOCK_TRUSTED_KEYS_FILE is required")
     try:
         with open(path, "rb") as trusted_file:
-            raw_keys = orjson.loads(trusted_file.read())
+            raw_keys = loads_json(trusted_file.read())
         if not isinstance(raw_keys, dict) or not raw_keys:
             raise ValueError("Trusted block key map must be a non-empty object")
         result = {}

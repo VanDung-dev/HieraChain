@@ -13,10 +13,10 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-import orjson
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from hierachain.error_mitigation.validator_exceptions import SecurityError
+from hierachain.serialization import dumps_canonical_json, dumps_json
 
 logger = logging.getLogger(__name__)
 
@@ -112,10 +112,7 @@ class EncryptionValidator:
             or timestamp <= 0
         ):
             raise SecurityError("Invalid encrypted payload timestamp")
-        return orjson.dumps(
-            {field: payload[field] for field in ("algorithm", "key_id", "timestamp")},
-            option=orjson.OPT_SORT_KEYS,
-        )
+        return dumps_canonical_json({field: payload[field] for field in ("algorithm", "key_id", "timestamp")})
 
     def _schedule_key_rotation(self) -> None:
         rotation_event = {
@@ -123,4 +120,4 @@ class EncryptionValidator:
             "timestamp": time.time(),
             "next_rotation": time.time() + self.min_key_rotation_interval,
         }
-        logger.info("Key rotation scheduled: %s", orjson.dumps(rotation_event).decode())
+        logger.info("Key rotation scheduled: %s", dumps_json(rotation_event))

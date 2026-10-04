@@ -7,10 +7,12 @@ backoff, and circuit breaker pattern.
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from http import HTTPStatus
 from typing import Any
+from urllib.parse import quote
 
 import requests
 
@@ -31,6 +33,7 @@ from hierachain.sdk.types import (
     HieraChainClientConfig,
     NodeStatus,
 )
+from hierachain.serialization import dumps_json, loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +115,7 @@ class HieraChainClient:
                 f"HTTP {response.status_code}", status_code=response.status_code
             )
 
-        return {} if response.status_code == HTTPStatus.NO_CONTENT else response.json()
+        return {} if response.status_code == HTTPStatus.NO_CONTENT else loads_json(response.content)
 
     def _execute_request(
         self,
@@ -125,10 +128,17 @@ class HieraChainClient:
         response = session.request(
             method=method,
             url=url,
-            json=data,
+            data=dumps_json(data).encode("utf-8") if data is not None else None,
+            headers=(
+                {"Content-Type": session.headers.get("Content-Type", "application/json")}
+                if data is not None else None
+            ),
             params=params,
             timeout=self.config.timeout,
-            allow_redirects=method.upper() in {"GET", "HEAD", "OPTIONS"},
+            allow_redirects=(
+                method.upper() in {"GET", "HEAD", "OPTIONS"}
+                and not session.headers.get("X-API-Key")
+            ),
         )
         return self._handle_response(response)
 
@@ -178,7 +188,7 @@ class HieraChainClient:
                 result = self._execute_request(method, url, data, params)
                 self._circuit.record_success(probe=probe)
                 return result
-            except (HieraChainAPIError, requests.RequestException) as e:
+            except (HieraChainAPIError, requests.RequestException, json.JSONDecodeError) as e:
                 self._handle_request_error(e, attempt, retries, probe)
             except Exception:
                 if probe:
@@ -240,7 +250,7 @@ class HieraChainClient:
         params = {"resolve_cid": str(resolve_cid).lower()}
         if chain_name:
             params["chain_name"] = chain_name
-        url = f"/api/ledger/entities/{entity_id}/trace"
+        url = f"/api/ledger/entities/{quote(entity_id, safe='')}/trace"
         response = self._request("GET", url, params=params)
         return EntityTrace(
             entity_id=response.get("entity_id", entity_id),
@@ -250,7 +260,7 @@ class HieraChainClient:
 
     def health_check(self) -> bool:
         try:
-            response = self._request("GET", "/health")
+            response = self._request("GET", "/api/ledger/health")
             return response.get("status") == "healthy"
         except (HieraChainAPIError, CircuitOpenError):
             return False

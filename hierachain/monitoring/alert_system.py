@@ -15,10 +15,10 @@ from collections import defaultdict, deque
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from queue import Empty, Full, Queue
 from typing import Any, cast
 
 import httpx
-import orjson
 
 from hierachain.monitoring.types import (
     Alert,
@@ -27,6 +27,7 @@ from hierachain.monitoring.types import (
     AlertSeverity,
     AlertStatus,
 )
+from hierachain.serialization import dumps_json
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +91,7 @@ class EmailNotifier:
             msg['Subject'] = f"[{alert.severity.value.upper()}] {alert.title}"
             body = _format_alert_email(alert)
             msg.attach(MIMEText(body, 'html'))
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10) as server:
                 if self.use_tls:
                     server.starttls()
                 if self.username and self.password:
@@ -116,10 +117,12 @@ class WebhookNotifier:
             return False
         try:
             payload = alert.to_dict()
+            headers = httpx.Headers(self.headers)
+            headers.setdefault("Content-Type", "application/json")
             response = httpx.post(
                 cast(str, webhook_url),
-                json=payload,
-                headers=self.headers,
+                content=dumps_json(payload).encode("utf-8"),
+                headers=headers,
                 timeout=10
             )
             return response.status_code < 400
@@ -209,6 +212,10 @@ class AlertManager:
         )
         self.notifiers: list[Any] = []
         _initialize_notifiers(self)
+        self._notification_queue: Queue[Alert] = Queue(maxsize=128)
+        self._notification_stop = threading.Event()
+        self._notification_worker: threading.Thread | None = None
+        self._notification_lock = threading.Lock()
         self.last_alert_times: dict[str, float] = {}
         self.escalation_timers: dict[str, threading.Timer] = {}
         self.stats = {
@@ -219,6 +226,13 @@ class AlertManager:
             'notifications_failed': 0
         }
 
+    def close(self, timeout: float = 10) -> None:
+        """Stop accepting notifications and wait for bounded delivery work."""
+        self._notification_stop.set()
+        worker = self._notification_worker
+        if worker is not None:
+            worker.join(timeout=timeout)
+
     def add_alert_rule(self, rule: AlertRule) -> None:
         self.alert_rules[rule.rule_id] = rule
         self.logger.info(f"Added alert rule: {rule.name}")
@@ -227,7 +241,7 @@ class AlertManager:
         self, metric_name: str, value: float, source_component: str = "unknown"
     ) -> None:
         self.anomaly_detector.add_data_point(metric_name, value)
-        for rule in self.alert_rules.values():
+        for rule in sorted(self.alert_rules.values(), key=lambda item: _severity_rank(item.severity), reverse=True):
             _process_rule_for_metric(self, rule, metric_name, value, source_component)
 
     def create_alert(
@@ -286,7 +300,7 @@ class AlertManager:
             log_level_map.get(severity, logging.INFO),
             f"[{severity.value.upper()}] {title}: {message}"
         )
-        _send_notifications(self, alert)
+        _queue_notification(self, alert)
 
     def acknowledge_alert(self, alert_id: str, user: str | None = None) -> bool:
         return _acknowledge_alert(self, alert_id, user)
@@ -432,12 +446,17 @@ def _create_alert(
     if rule.suppress_duplicates and _is_duplicate_alert(manager, alert):
         manager.logger.debug(f"Suppressing duplicate alert: {alert.title}")
         return
+    for existing in tuple(manager.active_alerts.values()):
+        if (existing.category == alert.category and existing.metric_name == alert.metric_name
+                and existing.status == AlertStatus.ACTIVE
+                and _severity_rank(existing.severity) < _severity_rank(alert.severity)):
+            _resolve_alert(manager, existing.alert_id, "severity-upgrade")
     manager.active_alerts[alert_id] = alert
     manager.alert_history.append(alert)
     _trim_alert_history(manager)
     _update_alert_stats(manager, alert)
     manager.last_alert_times[rule.rule_id] = time.time()
-    _send_notifications(manager, alert)
+    _queue_notification(manager, alert)
     if rule.escalation_time > 0:
         _schedule_alert_escalation(manager, alert_id, rule.escalation_time)
     manager.logger.warning(f"Alert created: {alert.title} (ID: {alert_id})")
@@ -449,6 +468,7 @@ def _is_duplicate_alert(manager: AlertManager, alert: Alert) -> bool:
             existing_alert.category == alert.category
             and existing_alert.metric_name == alert.metric_name
             and existing_alert.status == AlertStatus.ACTIVE
+            and _severity_rank(existing_alert.severity) >= _severity_rank(alert.severity)
         ):
             return True
     return False
@@ -475,6 +495,42 @@ def _schedule_alert_escalation(
     )
     timer.start()
     manager.escalation_timers[alert_id] = timer
+
+
+def _severity_rank(severity: AlertSeverity) -> int:
+    return list(AlertSeverity).index(severity)
+
+
+def _queue_notification(manager: AlertManager, alert: Alert) -> None:
+    if not manager.notifiers or manager._notification_stop.is_set():
+        return
+    with manager._notification_lock:
+        if manager._notification_stop.is_set():
+            return
+        try:
+            manager._notification_queue.put_nowait(alert)
+        except Full:
+            manager.stats["notifications_failed"] += 1
+            manager.logger.error("Notification queue full; alert retained in history")
+            return
+        if manager._notification_worker is None:
+            manager._notification_worker = threading.Thread(
+                target=_deliver_notifications, args=(manager,), daemon=True,
+                name="hierachain-alert-delivery",
+            )
+            manager._notification_worker.start()
+
+
+def _deliver_notifications(manager: AlertManager) -> None:
+    while not manager._notification_stop.is_set() or not manager._notification_queue.empty():
+        try:
+            alert = manager._notification_queue.get(timeout=0.1)
+        except Empty:
+            continue
+        try:
+            _send_notifications(manager, alert)
+        finally:
+            manager._notification_queue.task_done()
 
 
 def _send_notifications(manager: AlertManager, alert: Alert) -> None:
@@ -547,7 +603,7 @@ def _escalate_alert(manager: AlertManager, alert_id: str) -> None:
             source_component=alert.source_component,
             escalation_level=alert.escalation_level
         )
-        _send_notifications(manager, escalation_alert)
+        _queue_notification(manager, escalation_alert)
         manager.logger.critical(
             f"Alert escalated: {alert_id} (level {alert.escalation_level})"
         )
@@ -587,7 +643,7 @@ def _generate_json_report(
         report_data['alert_history'] = [
             alert.to_dict() for alert in manager.alert_history[-100:]
         ]
-    return orjson.dumps(report_data, option=orjson.OPT_INDENT_2, default=str).decode()
+    return dumps_json(report_data, indent=2, default=str)
 
 
 def _generate_text_report(manager: AlertManager, active_alerts: list[Alert]) -> str:

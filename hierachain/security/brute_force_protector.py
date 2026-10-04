@@ -13,10 +13,9 @@ import threading
 import time
 from pathlib import Path
 
-import orjson
-
 from hierachain.adapters.database.auth_state import RedisLockoutStore, SQLiteLockoutStore
 from hierachain.security.secure_logging import get_security_logger
+from hierachain.serialization import dumps_json, loads_json
 
 logger = get_security_logger()
 
@@ -48,6 +47,10 @@ class _LockoutStorage:
     def is_shared(self) -> bool:
         return self._shared_store is not None
 
+    @property
+    def is_file_backend(self) -> bool:
+        return self._backend == "file"
+
     def get_lockout(self, ip: str) -> float | None:
         if self._shared_store is None:
             return None
@@ -60,6 +63,30 @@ class _LockoutStorage:
     def delete_lockout(self, ip: str) -> None:
         if self._shared_store is not None:
             self._shared_store.delete(ip)
+
+    def record_failure(
+        self,
+        ip: str,
+        now: float,
+        tracking_window: int,
+        max_failures: int,
+        lockout_duration: int,
+    ) -> tuple[int, bool] | None:
+        if self._shared_store is None:
+            return None
+        return self._shared_store.record_failure(
+            ip, now, tracking_window, max_failures, lockout_duration
+        )
+
+    def get_failure_count(self, ip: str, now: float, tracking_window: int) -> int | None:
+        if self._shared_store is None:
+            return None
+        return self._shared_store.get_failure_count(ip, now, tracking_window)
+
+    def refresh_file_lockouts(self) -> dict[str, float] | None:
+        if not self.is_file_backend:
+            return None
+        return self.load_lockouts()
     
     def load_lockouts(self) -> dict[str, float]:
         """Load persisted lockouts from storage."""
@@ -75,7 +102,7 @@ class _LockoutStorage:
         
         try:
             with open(lockout_file, 'rb') as f:
-                data = orjson.loads(f.read())
+                data = loads_json(f.read())
                 now = time.time()
                 # Only load non-expired lockouts
                 lockouts = {
@@ -86,7 +113,7 @@ class _LockoutStorage:
                 return lockouts
         except Exception as e:
             logger.error("Failed to load persisted lockouts: %s", e)
-            return {}
+            raise RuntimeError("Failed to read persisted lockouts") from e
     
     def save_lockouts(self, lockouts: dict[str, float]) -> None:
         """Persist current lockouts to storage."""
@@ -96,11 +123,18 @@ class _LockoutStorage:
     def _save_to_file(self, lockouts: dict[str, float]) -> None:
         """Save lockouts to file storage."""
         lockout_file = f"{self._path}_lockouts.json"
+        temporary_file = f"{lockout_file}.{os.getpid()}.{threading.get_ident()}.tmp"
         try:
-            with open(lockout_file, 'wb') as f:
-                f.write(orjson.dumps(lockouts))
+            with open(temporary_file, 'wb') as f:
+                f.write(dumps_json(lockouts).encode("utf-8"))
+            os.replace(temporary_file, lockout_file)
         except Exception as e:
             logger.error("Failed to persist lockouts: %s", e)
+            try:
+                os.unlink(temporary_file)
+            except FileNotFoundError:
+                pass
+            raise RuntimeError("Failed to persist lockouts") from e
 
 
 class _FailureTracker:
@@ -192,6 +226,9 @@ class BruteForceProtector:
                 - storage_backend: Storage type - "memory", "file", "sqlite", or "redis" (default: "file")
                 - storage_path: Path for file-based storage (default: "data/brute_force")
                 - redis_url: Redis connection URL (if using redis)
+
+        The memory and file backends keep failure counts in this process. Use
+        SQLite or Redis when multiple worker processes must share attempt counts.
         """
         cfg = config or {}
         self.max_failures = cfg.get("max_failures", 5)
@@ -224,6 +261,21 @@ class BruteForceProtector:
             bool: True if the IP is now locked out after this failure
         """
         now = time.time()
+
+        shared_failure = self._storage.record_failure(
+            ip,
+            now,
+            self.tracking_window,
+            self.max_failures,
+            self.lockout_duration,
+        )
+        if shared_failure is not None:
+            failure_count, locked_out = shared_failure
+            if failure_count >= self.max_failures:
+                self._log_brute_force_detected(ip, key_prefix, failure_count)
+            elif not locked_out:
+                self._log_failure(ip, key_prefix, failure_count)
+            return locked_out
         
         # Add failure and get count
         failure_count = self._tracker.add_failure(ip, now)
@@ -244,6 +296,9 @@ class BruteForceProtector:
             if self._storage.is_shared:
                 self._storage.set_lockout(ip, expiry)
             else:
+                latest_lockouts = self._storage.refresh_file_lockouts()
+                if latest_lockouts is not None:
+                    self._lockouts = latest_lockouts
                 self._lockouts[ip] = expiry
                 self._storage.save_lockouts(self._lockouts)
             self._tracker.clear_failures(ip)
@@ -281,6 +336,9 @@ class BruteForceProtector:
             return expiry is not None and now < expiry
         
         with self._lockout_lock:
+            latest_lockouts = self._storage.refresh_file_lockouts()
+            if latest_lockouts is not None:
+                self._lockouts = latest_lockouts
             expiry = self._lockouts.get(ip)
             if expiry is None or now >= expiry:
                 # Clean up expired lockout
@@ -308,6 +366,9 @@ class BruteForceProtector:
             return max(0.0, expiry - now) if expiry is not None else 0.0
         
         with self._lockout_lock:
+            latest_lockouts = self._storage.refresh_file_lockouts()
+            if latest_lockouts is not None:
+                self._lockouts = latest_lockouts
             expiry = self._lockouts.get(ip)
             if expiry is None or now >= expiry:
                 return 0.0
@@ -324,6 +385,9 @@ class BruteForceProtector:
             self._storage.delete_lockout(ip)
         else:
             with self._lockout_lock:
+                latest_lockouts = self._storage.refresh_file_lockouts()
+                if latest_lockouts is not None:
+                    self._lockouts = latest_lockouts
                 self._lockouts.pop(ip, None)
                 self._storage.save_lockouts(self._lockouts)
         
@@ -349,7 +413,8 @@ class BruteForceProtector:
         Returns:
             int: Number of recent failures
         """
-        return self._tracker.get_count(ip)
+        shared_count = self._storage.get_failure_count(ip, time.time(), self.tracking_window)
+        return shared_count if shared_count is not None else self._tracker.get_count(ip)
 
     @staticmethod
     def _log_brute_force_detected(ip: str, key_prefix: str, failure_count: int):

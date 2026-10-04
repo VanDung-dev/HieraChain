@@ -6,15 +6,16 @@ ensuring that even if CIDs are exposed, the underlying data remains secure.
 Only authorized nodes with the correct encryption keys can decrypt the data.
 """
 
+import json
 import os
 
-import orjson
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from hierachain.security.secure_logging import SecureLogger
+from hierachain.serialization import dumps_canonical_json, loads_json
 
 logger = SecureLogger("hierachain.storage.encryption")
 
@@ -183,7 +184,7 @@ class AESEncryption:
             Tuple of (ciphertext, nonce)
         """
         try:
-            plaintext = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
+            plaintext = dumps_canonical_json(data)
             return self.encrypt(plaintext, associated_data)
         except (TypeError, ValueError) as e:
             raise EncryptionError(f"JSON serialization failed: {e!s}")
@@ -207,8 +208,8 @@ class AESEncryption:
         """
         plaintext = self.decrypt(ciphertext, nonce, associated_data)
         try:
-            return orjson.loads(plaintext)
-        except (orjson.JSONDecodeError, UnicodeDecodeError) as e:
+            return loads_json(plaintext)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
             raise EncryptionError(f"JSON deserialization failed: {e!s}")
 
     @staticmethod

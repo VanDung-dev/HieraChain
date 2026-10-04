@@ -19,11 +19,10 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from typing import Any
 
-import orjson
-
 from hierachain.config.settings import settings
 from hierachain.core.blockchain import Blockchain
 from hierachain.security.secure_logging import get_storage_logger
+from hierachain.serialization import dumps_json, loads_json
 
 
 class SQLBase(ABC):
@@ -71,7 +70,7 @@ class SQLBase(ABC):
         try:
             raw = block_row['metadata_json']
             if raw:
-                metadata = orjson.loads(raw) if isinstance(raw, (str, bytes)) else raw
+                metadata = loads_json(raw) if isinstance(raw, (str, bytes)) else raw
         except (KeyError, IndexError, TypeError):
             pass
         merkle_root = metadata.get("merkle_root", "") if isinstance(metadata, dict) else ""
@@ -94,7 +93,7 @@ class SQLBase(ABC):
         if raw_data is None or raw_data == "" or raw_data == b"":
             data = {}
         elif isinstance(raw_data, (str, bytes, bytearray)):
-            data = orjson.loads(raw_data)
+            data = loads_json(raw_data)
         else:
             data = raw_data
         if (
@@ -359,7 +358,7 @@ class SQLBase(ABC):
                 sub_chain_name,
                 proof_hash,
                 block_index,
-                orjson.dumps(metadata).decode('utf-8'),
+                dumps_json(metadata),
                 time.time(),
                 time.time(),
             ),
@@ -492,7 +491,7 @@ class SQLBase(ABC):
                 "sub_chain_name": row['sub_chain_name'],
                 "proof_hash": row['proof_hash'],
                 "block_index": row['block_index'],
-                "metadata": orjson.loads(row['metadata'] or '{}'),
+                "metadata": loads_json(row['metadata'] or '{}'),
                 "submitted_at": row['submitted_at'],
             })
         return proofs
@@ -598,7 +597,7 @@ class SQLBase(ABC):
                 block_data["timestamp"],
                 block_data.get("nonce", 0),
                 len(events),
-                orjson.dumps(metadata).decode("utf-8") if metadata else None,
+                dumps_json(metadata) if metadata else None,
             ),
         )
 
@@ -617,7 +616,7 @@ class SQLBase(ABC):
                     event.get("entity_id"),
                     event.get("event", "unknown"),
                     event.get("timestamp", 0.0),
-                    orjson.dumps(event).decode("utf-8"),
+                    dumps_json(event),
                     event.get("submitted_by") or event.get("sender_id"),
                 ),
             )
@@ -735,7 +734,7 @@ class SQLBase(ABC):
             "status": "ordered",
             "block_hash": row["block_hash"],
             "timestamp": row["timestamp"],
-            "data": orjson.loads(row["data"]) if row["data"] else {},
+            "data": loads_json(row["data"]) if row["data"] else {},
         }
 
     def update_state(self, key: str, value: Any, last_block_hash: str) -> None:
@@ -754,7 +753,7 @@ class SQLBase(ABC):
         try:
             if not isinstance(state.get("_revision"), str) or state["_revision"] == expected_revision:
                 raise ValueError("Registry writes require a new revision")
-            encoded = orjson.dumps(state).decode("utf-8")
+            encoded = dumps_json(state)
             with self._get_connection() as conn:
                 return self._execute_save_hierarchy_registry(conn, encoded, expected_revision)
         except Exception:
@@ -795,7 +794,7 @@ class SQLBase(ABC):
         if row is None:
             return None
         value = row["value"]
-        state = orjson.loads(value) if isinstance(value, (str, bytes, bytearray)) else value
+        state = loads_json(value) if isinstance(value, (str, bytes, bytearray)) else value
         if not isinstance(state, dict):
             raise ValueError("Invalid hierarchy registry snapshot")
         return state
@@ -821,7 +820,7 @@ class SQLBase(ABC):
             """,
             (
                 key,
-                orjson.dumps(value).decode("utf-8") if not isinstance(value, (str, bytes)) else value,
+                dumps_json(value) if not isinstance(value, (str, bytes)) else value,
                 last_block_hash,
                 time.time(),
             ),
@@ -840,8 +839,12 @@ class SQLBase(ABC):
 
     @staticmethod
     def _execute_delete_chain(conn: Any, chain_name: str) -> bool:
-        """Default SQLite implementation."""
+        """Default SQLite implementation, including proof references."""
         cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM proofs WHERE main_chain_name = ? OR sub_chain_name = ?",
+            (chain_name, chain_name),
+        )
         cursor.execute("DELETE FROM events WHERE chain_name = ?", (chain_name,))
         cursor.execute("DELETE FROM blocks WHERE chain_name = ?", (chain_name,))
         cursor.execute("DELETE FROM chains WHERE name = ?", (chain_name,))

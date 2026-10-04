@@ -7,11 +7,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-import orjson
 import pyarrow as pa
 import pyarrow.compute as pc
 
 from hierachain.error_mitigation.validator_exceptions import ValidationError
+from hierachain.serialization import dumps_json
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def _log_scaling_event(event: dict[str, Any]) -> None:
     try:
         from hierachain.core.parquet_log import write_parquet_log
-        log_entry = orjson.dumps(event, option=orjson.OPT_INDENT_2).decode()
+        log_entry = dumps_json(event, indent=2)
         logger.info("Scaling event logged: %s", log_entry)
         write_parquet_log("log/error_mitigation/consensus_scaling.parquet", {"event": "consensus_scaling", "payload": event, "log_entry": log_entry})
     except (OSError, ValueError) as ex:
@@ -54,11 +54,11 @@ def _check_legacy_structure(data: Any) -> None:
 
 def _serialize_data_content(data: Any) -> str:
     if hasattr(data, "to_pylist"):
-        return orjson.dumps(data.to_pylist(), option=orjson.OPT_SORT_KEYS).decode()
+        return dumps_json(data.to_pylist(), sort_keys=True)
     if hasattr(data, "ToString"):
         return str(data)
     try:
-        return orjson.dumps(data, option=orjson.OPT_SORT_KEYS).decode()
+        return dumps_json(data, sort_keys=True)
     except TypeError:
         return str(data)
 

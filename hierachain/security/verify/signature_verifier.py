@@ -8,10 +8,9 @@ supporting Ed25519 (via PyNaCl) and ECDSA (via cryptography).
 import unicodedata
 from typing import Any
 
-import orjson
-
 from hierachain.security.secure_logging import get_security_logger
 from hierachain.security.security_utils import verify_batch_signatures, verify_signature
+from hierachain.serialization import dumps_canonical_json
 
 logger = get_security_logger()
 
@@ -223,7 +222,7 @@ class SignatureVerifier:
         Fixes JSON canonicalization vulnerabilities.
         """
         canonical = SignatureVerifier._canonicalize_value(data)
-        return orjson.dumps(canonical, option=orjson.OPT_SORT_KEYS)
+        return dumps_canonical_json(canonical)
 
     @staticmethod
     def _get_signable_event_content(event: dict[str, Any]) -> bytes:

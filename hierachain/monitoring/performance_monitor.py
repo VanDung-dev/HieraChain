@@ -15,7 +15,6 @@ from dataclasses import asdict
 from datetime import datetime
 from typing import Any
 
-import orjson
 import psutil
 
 from hierachain.monitoring.types import (
@@ -23,6 +22,7 @@ from hierachain.monitoring.types import (
     MetricUnit,
     PerformanceMetric,
 )
+from hierachain.serialization import dumps_json
 
 logger = logging.getLogger(__name__)
 
@@ -336,7 +336,7 @@ def _initialize_default_metrics(monitor: PerformanceMonitor) -> None:
         'consensus_success_rate': PerformanceMetric(
             name='consensus_success_rate', metric_type=MetricType.CONSENSUS,
             unit=MetricUnit.PERCENTAGE, description='Consensus success rate',
-            threshold_warning=95.0, threshold_critical=90.0
+            threshold_warning=95.0, threshold_critical=90.0, low_is_bad=True
         ),
         'event_processing_time': PerformanceMetric(
             name='event_processing_time', metric_type=MetricType.BLOCKCHAIN,
@@ -518,7 +518,7 @@ def _generate_json_report(
         'metrics': current_metrics,
         'summary': _calculate_report_summary(current_metrics)
     }
-    return orjson.dumps(report_data, option=orjson.OPT_INDENT_2, default=str).decode()
+    return dumps_json(report_data, indent=2, default=str)
 
 
 def _generate_text_report(

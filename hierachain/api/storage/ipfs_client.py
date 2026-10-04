@@ -8,14 +8,15 @@ The client is designed to work with local IPFS daemons running in a private netw
 ensuring that all data stored remains within the enterprise boundary.
 """
 
+import json
 import os
 from typing import Any
 
 import httpx
-import orjson
 
 from hierachain.api.storage.encryption import AESEncryption, EncryptionError
 from hierachain.security.secure_logging import SecureLogger
+from hierachain.serialization import dumps_canonical_json, loads_json
 
 logger = SecureLogger("hierachain.storage.ipfs_client")
 
@@ -153,7 +154,7 @@ class IPFSClient:
             if encrypt:
                 # Serialize metadata for AAD
                 aad = (
-                    orjson.dumps(metadata, option=orjson.OPT_SORT_KEYS)
+                    dumps_canonical_json(metadata)
                     if metadata
                     else None
                 )
@@ -181,7 +182,7 @@ class IPFSClient:
             )
             resp.raise_for_status()
             # Kubo returns NDJSON; first line has the Hash
-            result = resp.json()
+            result = loads_json(resp.content)
             cid = result["Hash"]
 
             response = {
@@ -262,7 +263,7 @@ class IPFSClient:
 
                 # Deserialize metadata for AAD
                 aad = (
-                    orjson.dumps(metadata, option=orjson.OPT_SORT_KEYS)
+                    dumps_canonical_json(metadata)
                     if metadata
                     else None
                 )
@@ -298,7 +299,7 @@ class IPFSClient:
             Upload result dict with CID, nonce, etc.
         """
         try:
-            json_bytes = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
+            json_bytes = dumps_canonical_json(data)
             return self.upload_bytes(json_bytes, encrypt=encrypt, metadata=metadata)
         except (TypeError, ValueError) as e:
             raise IPFSError(f"JSON serialization failed: {e!s}")
@@ -326,8 +327,8 @@ class IPFSClient:
             json_bytes = self.download_bytes(
                 cid, encrypted=encrypted, nonce=nonce, metadata=metadata
             )
-            return orjson.loads(json_bytes)
-        except (orjson.JSONDecodeError, UnicodeDecodeError) as e:
+            return loads_json(json_bytes)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
             raise IPFSError(f"JSON deserialization failed: {e!s}")
 
     # ---- Pin Management ----
@@ -396,7 +397,7 @@ class IPFSClient:
             self._ensure_connected()
             resp = self.client.post("/api/v0/pin/ls")
             resp.raise_for_status()
-            pins = resp.json()
+            pins = loads_json(resp.content)
 
             # Extract CIDs from pins dict
             cids = list(pins["Keys"].keys()) if "Keys" in pins else []
@@ -429,7 +430,7 @@ class IPFSClient:
             resp.raise_for_status()
 
             logger.debug("Retrieved IPFS stats", cid=cid)
-            return resp.json()
+            return loads_json(resp.content)
 
         except httpx.HTTPError as e:
             logger.error("Failed to get stats", cid=cid, error=str(e))
@@ -467,7 +468,7 @@ class IPFSClient:
             self._ensure_connected()
             resp = self.client.post("/api/v0/version")
             resp.raise_for_status()
-            version = resp.json()
+            version = loads_json(resp.content)
 
             # Safe access to Version key with default value
             logger.debug(

@@ -8,7 +8,7 @@ picklable hash functions for multiprocessing support.
 import hashlib
 from typing import Any
 
-import orjson
+from hierachain.serialization import dumps_canonical_json
 
 
 def serialize_event_payload(event: dict[str, Any]) -> bytes:
@@ -23,7 +23,7 @@ def serialize_event_payload(event: dict[str, Any]) -> bytes:
             except (TypeError, ValueError):
                 pass
         payload[key] = value
-    return orjson.dumps(payload, option=orjson.OPT_SORT_KEYS)
+    return dumps_canonical_json(payload)
 
 
 def compute_hash_standalone(data_string: str) -> str:
@@ -40,7 +40,7 @@ def compute_leaves_from_events_standalone(events: list[dict[str, Any]]) -> list[
 
 def generate_hash(data: str | dict[str, Any]) -> str:
     if isinstance(data, dict):
-        data_bytes = orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
+        data_bytes = dumps_canonical_json(data)
         return hashlib.sha256(data_bytes).hexdigest()
     else:
         return compute_hash_standalone(str(data))

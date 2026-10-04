@@ -11,7 +11,7 @@ Supports two output formats, selected via the ``HRC_LOG_FORMAT`` environment var
 import logging
 import os
 
-import orjson
+from hierachain.serialization import dumps_json
 
 
 class _JsonFormatter(logging.Formatter):
@@ -32,7 +32,7 @@ class _JsonFormatter(logging.Formatter):
         payload = self._build_base_payload(record)
         self._add_extra_fields(record, payload)
         self._add_exception_info(record, payload)
-        return orjson.dumps(payload, option=orjson.OPT_NON_STR_KEYS).decode()
+        return dumps_json(payload)
 
     def _build_base_payload(self, record: logging.LogRecord) -> dict:
         """Build the base payload with standard fields."""
@@ -52,9 +52,9 @@ class _JsonFormatter(logging.Formatter):
             if key in self._SKIP_FIELDS or key.startswith("_"):
                 continue
             try:
-                orjson.dumps(value)
+                dumps_json(value)
                 payload[key] = value
-            except (TypeError, orjson.JSONEncodeError):
+            except (TypeError, ValueError):
                 payload[key] = str(value)
 
     def _add_exception_info(self, record: logging.LogRecord, payload: dict) -> None:

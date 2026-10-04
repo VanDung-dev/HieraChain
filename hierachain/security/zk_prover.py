@@ -16,9 +16,8 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-import orjson
-
 from hierachain.config.settings import settings
+from hierachain.serialization import dumps_canonical_json
 
 
 class ZKProvingError(Exception):
@@ -58,7 +57,7 @@ __all__ = [
 
 def _generate_mock_proof(old_state_root: str, new_state_root: str, block_index: int, sub_chain_name: str = "") -> bytes:
     public_inputs = {"old_state_root": old_state_root, "new_state_root": new_state_root, "block_index": block_index, "sub_chain_name": sub_chain_name}
-    payload_bytes = orjson.dumps(public_inputs, option=orjson.OPT_SORT_KEYS)
+    payload_bytes = dumps_canonical_json(public_inputs)
     commitment = hashlib.sha256(payload_bytes).digest()
     proof_size = secrets.randbelow(2049) + 2048
     magic_bytes = b"mock_zkp_v2\x00"

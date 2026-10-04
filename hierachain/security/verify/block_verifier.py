@@ -16,6 +16,7 @@ from typing import Any
 
 from hierachain.security.secure_logging import get_security_logger
 from hierachain.security.security_utils import KeyPair
+from hierachain.serialization import dumps_canonical_json
 
 logger = get_security_logger()
 
@@ -406,7 +407,6 @@ class BlockVerifier:
     @staticmethod
     def _get_signable_content(block: Any) -> bytes:
         """Get the content that was signed (block header without signature)."""
-        import orjson
         header = {
             "index": block.index,
             "timestamp": block.timestamp,
@@ -415,7 +415,7 @@ class BlockVerifier:
             "nonce": block.nonce,
             "creator_id": block.creator_id
         }
-        return orjson.dumps(header, option=orjson.OPT_SORT_KEYS)
+        return dumps_canonical_json(header)
 
     def verify_chain(
         self,
@@ -450,10 +450,20 @@ class BlockVerifier:
             )
             result = self.verify_block(block, previous, public_key)
 
+            errors: list[str] = []
             if not result.is_valid:
+                errors.append(result.message)
+            if i == 0 and (
+                type(getattr(block, "index", None)) is not int
+                or getattr(block, "index", None) != 0
+                or getattr(block, "previous_hash", None) != "0"
+            ):
+                errors.append("Chain does not begin with the genesis block")
+
+            if errors:
                 invalid_blocks.append({
-                    "index": block.index,
-                    "errors": result.message
+                    "index": getattr(block, "index", None),
+                    "errors": "; ".join(errors),
                 })
 
         if invalid_blocks:
