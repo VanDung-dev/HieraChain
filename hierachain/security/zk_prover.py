@@ -1,8 +1,8 @@
 """
 Zero Knowledge Proof Generator for HieraChain Ledger.
 
-Generates ZK proofs for SubChain block state transitions.
-Supports mock (SHA-256 hash) and production (ZoKrates) modes.
+Generates mock SHA-256 fixtures for SubChain proof-flow testing.
+Production proving is a placeholder and reports failure, not a valid ZK proof.
 """
 
 from __future__ import annotations

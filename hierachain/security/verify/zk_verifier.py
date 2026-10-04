@@ -1,12 +1,12 @@
 """
 Zero Knowledge Proof Verifier for HieraChain Ledger.
 
-This module implements the ZKVerifier class that verifies ZK proofs from SubChains
-to ensure state transitions are mathematically correct, preventing Fake Proofs.
+This module exposes the ZKVerifier interface for SubChain proof flows.
+Only mock hash comparison is implemented; it does not prove valid transitions.
 
 Supports two modes:
 - Mock: Uses SHA-256 hash comparison for development/testing.
-- Production: Integrates with ZoKrates or external proving service.
+- Production: Unimplemented placeholder; verification raises ZKVerificationError.
 """
 
 import hashlib
@@ -146,9 +146,8 @@ class ZKVerifier:
     Zero Knowledge Proof Verifier for MainChain.
     
     Responsibilities:
-    - Verify ZK proofs from SubChains.
-    - Reject invalid state transitions (Fake Proofs).
-    - Support both Mock and Production modes.
+    - Compare mock proof commitments with their public inputs for testing.
+    - Report unsupported production verification as an error.
     
     Usage:
         verifier = ZKVerifier(mode="mock")
@@ -176,7 +175,8 @@ class ZKVerifier:
             if getattr(settings, 'ENABLE_ZK_PROOFS', False):
                 logger.critical(
                     "ZK mode is 'mock' but ENABLE_ZK_PROOFS=True! "
-                    "Mock proofs are forgeable — set ZK_MODE=production."
+                    "Mock proofs are forgeable; production ZK verification "
+                    "is not implemented."
                 )
 
         # Load verification key for production mode
