@@ -102,7 +102,8 @@ class Settings:
     )
     # Backward compatibility alias
     CONSENSUS_TYPE = MAINCHAIN_CONSENSUS
-    BLOCK_INTERVAL = float(os.getenv("HRC_BLOCK_INTERVAL", "10.0"))
+    # PoA has no additional spacing delay unless explicitly configured.
+    BLOCK_INTERVAL = float(os.getenv("HRC_BLOCK_INTERVAL", "0.0"))
     CONSENSUS_FEDERATION_CONFIG: dict[str, Any] = {
         "min_validators": 3,
         "block_interval": 5.0
