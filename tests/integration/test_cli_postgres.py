@@ -3,7 +3,6 @@
 import os
 from pathlib import Path
 
-import orjson
 import pytest
 from click.testing import CliRunner
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -14,6 +13,7 @@ from hierachain.config.settings import settings
 from hierachain.core.block import Block
 from hierachain.security.verify.block_verifier import BlockVerifier
 from hierachain.security.verify.signature_verifier import SignatureVerifier
+from hierachain.serialization import dumps_json
 
 
 @pytest.mark.integration
@@ -26,7 +26,7 @@ def test_postgres_cli_verifies_persisted_event_signatures(
 
     signer = Ed25519PrivateKey.generate()
     trust_file = tmp_path / "trusted.json"
-    trust_file.write_bytes(orjson.dumps({"validator-1": signer.public_key().public_bytes_raw().hex()}))
+    trust_file.write_bytes(dumps_json({"validator-1": signer.public_key().public_bytes_raw().hex()}).encode("utf-8"))
     monkeypatch.setattr(settings, "BLOCK_TRUSTED_KEYS_FILE", str(trust_file))
     event = {
         "entity_id": "entity-1",

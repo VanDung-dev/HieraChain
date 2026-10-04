@@ -6,6 +6,8 @@ import threading
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+import pytest
+
 from hierachain.domains.chains.domain_chain import DomainChain
 from hierachain.domains.chains.metrics import OperationMetricsTracker
 from hierachain.domains.chains.tx_manager import TransactionManager
@@ -15,6 +17,7 @@ from hierachain.domains.utils.cross_chain_validator import (
     ProofValidator,
     _build_default_validation_rules,
 )
+from hierachain.serialization import loads_json
 
 
 def _chain() -> DomainChain:
@@ -36,6 +39,27 @@ def _chain() -> DomainChain:
     chain._metrics = OperationMetricsTracker()
     chain.add_event = Mock(return_value="recorded")
     return chain
+
+
+def test_registration_json_restores_unicode_and_nested_values() -> None:
+    chain = _chain()
+    initial = {"name": "Thiết bị 🌱", "nested": {"measurements": [0.00001, 2**80 + 1, None]}}
+    assert chain.register_entity("asset-1", initial)
+    recorded = chain.add_event.call_args.args[0]
+    assert isinstance(recorded["details"]["initial_data_json"], str)
+    assert loads_json(recorded["details"]["initial_data_json"]) == initial
+    chain.pending_events = [recorded]
+    assert chain.rebuild_domain_state()
+    assert chain.entity_registry["asset-1"]["name"] == initial["name"]
+    assert chain.entity_registry["asset-1"]["nested"] == initial["nested"]
+
+
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), float("-inf")])
+def test_registration_rejects_values_that_cannot_round_trip(invalid: int | float) -> None:
+    chain = _chain()
+    assert not chain.register_entity("asset-1", {"nested": {"measurements": [invalid]}})
+    chain.add_event.assert_not_called()
+    assert chain.entity_registry == {}
 
 
 def test_resource_lifecycle_and_unregistered_entity_rejection() -> None:

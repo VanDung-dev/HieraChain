@@ -5,8 +5,6 @@ import threading
 from queue import Queue
 from typing import Any
 
-import orjson
-
 from hierachain.config.settings import settings
 from hierachain.consensus.ordering.block_builder import BlockBuilder
 from hierachain.consensus.ordering.processor import OrderingProcessor
@@ -16,6 +14,7 @@ from hierachain.security.identity_loader import (
     load_node_identity,
     load_trusted_block_keys,
 )
+from hierachain.serialization import dumps_json, loads_json
 
 
 class _Journal:
@@ -65,7 +64,7 @@ class _PostgresLikeStorage:
 
     def save_block(self, block: Any, _chain_name: str) -> tuple[int, float]:
         row = block.to_dict()
-        row["events"] = orjson.loads(orjson.dumps(row["events"]))
+        row["events"] = loads_json(dumps_json(row["events"]))
         restored = _block_from_dict(row, load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE))
         self.blocks.append(restored)
         self.last_block = restored

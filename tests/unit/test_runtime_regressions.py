@@ -30,6 +30,7 @@ from hierachain.network.zmq_transport import (
     ZmqNode,
     _handle_received_message,
 )
+from hierachain.serialization import dumps_json
 
 
 @pytest.mark.parametrize("level", list(ValidationLevel))
@@ -122,7 +123,6 @@ def test_critical_cpu_alert_upgrades_warning_and_notification_does_not_block() -
 
 @pytest.mark.asyncio
 async def test_network_replay_cache_isolated_and_rejects_unverified_input() -> None:
-    import orjson
 
     node = ZmqNode("receiver", 0)
     received = []
@@ -131,14 +131,16 @@ async def test_network_replay_cache_isolated_and_rejects_unverified_input() -> N
     now = time.time()
     try:
         for index in range(MAX_REPLAY_ENTRIES + 1):
-            payload = orjson.dumps({"timestamp": now, "nonce": str(index), "verified": False})
+            payload = dumps_json({"timestamp": now, "nonce": str(index), "verified": False}).encode("utf-8")
             await _handle_received_message(node, [b"untrusted", payload])
         assert node.peer_replay_buffers == {}
         node.peer_replay_buffers["busy"] = {(now, str(i)) for i in range(MAX_REPLAY_ENTRIES)}
-        await _handle_received_message(node, [b"busy", orjson.dumps(
-            {"timestamp": now, "nonce": "overflow", "verified": True})])
-        await _handle_received_message(node, [b"healthy", orjson.dumps(
-            {"timestamp": now, "nonce": "accepted", "verified": True})])
+        await _handle_received_message(node, [
+            b"busy", dumps_json({"timestamp": now, "nonce": "overflow", "verified": True}).encode("utf-8"),
+        ])
+        await _handle_received_message(node, [
+            b"healthy", dumps_json({"timestamp": now, "nonce": "accepted", "verified": True}).encode("utf-8"),
+        ])
         assert received == ["healthy"]
         await _handle_received_message(node, [b"healthy", b"x" * (MAX_MESSAGE_BYTES + 1)])
         await _handle_received_message(node, [b"healthy", b"", b"{}"])

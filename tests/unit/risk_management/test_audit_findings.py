@@ -6,7 +6,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import orjson
 import pyarrow as pa
 import pytest
 
@@ -23,6 +22,7 @@ from hierachain.risk_management.audit_logger import (
     FileAuditStorage,
     verify_integrity,
 )
+from hierachain.serialization import dumps_canonical_json
 
 
 def _event(event_id: str, timestamp: float, description: str = "audit") -> AuditEvent:
@@ -95,7 +95,7 @@ def test_integer_timestamps_round_trip_and_accept_legacy_digest(
     legacy_data = event.to_dict()
     legacy_data["timestamp"] = 1
     legacy_digest = hashlib.sha256(
-        orjson.dumps(legacy_data, option=orjson.OPT_SORT_KEYS, default=str)
+        dumps_canonical_json(legacy_data, default=str)
     ).hexdigest()
     try:
         assert storage.store_event(event)

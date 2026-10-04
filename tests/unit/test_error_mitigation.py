@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import orjson
 import pytest
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
@@ -16,6 +15,7 @@ from hierachain.error_mitigation import (
     SecurityError,
     ValidationLevel,
 )
+from hierachain.serialization import dumps_json
 
 
 def _check_details(value: Any) -> tuple[bool, str]:
@@ -148,24 +148,24 @@ def test_decryption_recovers_retained_key_in_new_process(tmp_path: Path) -> None
         for field, value in payload.items()
     }
     script = """
+import json
 import base64
 import sys
 from pathlib import Path
-import orjson
 from hierachain.error_mitigation import EncryptionValidator
 
 def resolve_key(key_id: str) -> bytes:
     assert key_id == 'retained-key'
     return Path(sys.argv[1]).read_bytes()
 
-payload = orjson.loads(sys.stdin.buffer.read())
+payload = json.loads(sys.stdin.buffer.read())
 for field in ('ciphertext', 'tag', 'iv'):
     payload[field] = base64.b64decode(payload[field])
 reader = EncryptionValidator({'algorithm': 'AES-256-GCM'}, key_resolver=resolve_key)
 assert reader.decrypt_data(payload) == 'Dữ liệu khôi phục'
 """
     result = subprocess.run(
-        [sys.executable, "-c", script, str(key_file)], input=orjson.dumps(serializable),
+        [sys.executable, "-c", script, str(key_file)], input=dumps_json(serializable).encode("utf-8"),
         capture_output=True, timeout=5,
     )
     assert result.returncode == 0, result.stderr.decode()

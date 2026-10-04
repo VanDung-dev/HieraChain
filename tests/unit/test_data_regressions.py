@@ -6,7 +6,6 @@ import logging
 from types import SimpleNamespace
 from unittest.mock import patch
 
-import orjson
 import pytest
 
 from hierachain.core.block import Block
@@ -29,6 +28,7 @@ from hierachain.security.secure_logging import (
     log_user_action,
     sanitize_for_log,
 )
+from hierachain.serialization import loads_json
 
 
 def test_zero_timestamp_round_trips_with_identical_hash() -> None:
@@ -123,7 +123,7 @@ def test_csv_report_quotes_cells_and_neutralizes_formulas(description: str) -> N
     assert rows[1][4] == "'" + event.source_component
     dangerous = description.lstrip().startswith(("=", "+", "-", "@"))
     assert rows[1][5] == ("'" + description if dangerous else description)
-    assert orjson.loads(logger.generate_report(AuditFilter()))[0]["description"] == description
+    assert loads_json(logger.generate_report(AuditFilter()))[0]["description"] == description
 
 
 @pytest.mark.parametrize("method", [

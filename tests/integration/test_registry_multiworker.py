@@ -8,7 +8,6 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-import orjson
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -21,6 +20,7 @@ from hierachain.api.ledger.depds import get_hierarchy_manager
 from hierachain.hierarchical import HierarchyManager
 from hierachain.security.key_manager import KeyManager
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
+from hierachain.serialization import dumps_json
 
 
 @pytest.fixture(params=["sqlite", "postgres", "redis"])
@@ -197,7 +197,7 @@ def test_legacy_sqlite_registry_is_upgraded_without_losing_state(
         seed.transaction_manager.journal.close()
         seed.storage.close()
     store = factory()
-    store.update_state("hierarchy_registry", orjson.dumps(legacy).decode(), "")
+    store.update_state("hierarchy_registry", dumps_json(legacy), "")
     store.close()
     manager = HierarchyManager("legacy-main")
     try:

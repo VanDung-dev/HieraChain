@@ -7,7 +7,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
-import orjson
 import pytest
 
 import hierachain.consensus.ordering.service as service_module
@@ -17,6 +16,7 @@ from hierachain.consensus.ordering.recovery import OrderingRecovery
 from hierachain.consensus.ordering.types import OrderingStatus
 from hierachain.consensus.ordering.utils import make_serializable
 from hierachain.hierarchical.transaction_manager import CrossChainTransactionManager
+from hierachain.serialization import dumps_json, loads_json
 
 
 @pytest.mark.parametrize(("timeout", "active"), [(None, True), (5.0, False)])
@@ -332,7 +332,7 @@ def test_replay_preserves_user_data_and_ids_for_jsonb_recovery(
         assert recovered["event_id"] == event_data["event_id"]
         assert recovered["channel_id"] == event_data["channel_id"]
         assert recovered["data"] == event_data["data"]
-        assert orjson.loads(orjson.dumps(recovered["data"])) == event_data["data"]
+        assert loads_json(dumps_json(recovered["data"])) == event_data["data"]
     finally:
         journal.close()
 
@@ -343,7 +343,7 @@ def test_replay_decodes_legacy_packed_extra_fields() -> None:
         "event": "transfer",
         "timestamp": 1.0,
         "details": [],
-        "data": orjson.dumps({"event_id": "evt-legacy", "channel_id": "payments"}),
+        "data": dumps_json({"event_id": "evt-legacy", "channel_id": "payments"}).encode("utf-8"),
     }
 
     recovered = journal_module._unpack_row_data(row)

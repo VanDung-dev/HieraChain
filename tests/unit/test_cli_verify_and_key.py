@@ -4,7 +4,6 @@ import os
 import stat
 from pathlib import Path
 
-import orjson
 import pytest
 from click.testing import CliRunner
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -16,6 +15,7 @@ from hierachain.config.settings import settings
 from hierachain.core.block import Block
 from hierachain.security.verify.block_verifier import BlockVerifier
 from hierachain.security.verify.signature_verifier import SignatureVerifier
+from hierachain.serialization import dumps_json, loads_json
 
 
 def test_key_file_is_private_and_not_overwritten(tmp_path: Path) -> None:
@@ -23,7 +23,7 @@ def test_key_file_is_private_and_not_overwritten(tmp_path: Path) -> None:
     runner = CliRunner()
     created = runner.invoke(key_group, ["generate", "--output", str(path)])
     assert created.exit_code == 0, created.output
-    data = orjson.loads(path.read_bytes())
+    data = loads_json(path.read_bytes())
     assert stat.S_IMODE(path.stat().st_mode) == 0o600
     assert data["private_key"] not in created.output
     assert runner.invoke(key_group, ["verify", "--input", str(path)]).exit_code == 0
@@ -31,13 +31,13 @@ def test_key_file_is_private_and_not_overwritten(tmp_path: Path) -> None:
         key_group, ["show", "--input", str(path)]
     ).output
     assert runner.invoke(key_group, ["generate", "--output", str(path)]).exit_code != 0
-    assert orjson.loads(path.read_bytes()) == data
+    assert loads_json(path.read_bytes()) == data
 
 
 def test_verify_cli_rejects_empty_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     signer = Ed25519PrivateKey.generate()
     trust_file = tmp_path / "trusted.json"
-    trust_file.write_bytes(orjson.dumps({"validator-1": signer.public_key().public_bytes_raw().hex()}))
+    trust_file.write_bytes(dumps_json({"validator-1": signer.public_key().public_bytes_raw().hex()}).encode("utf-8"))
     monkeypatch.setattr(settings, "BLOCK_TRUSTED_KEYS_FILE", str(trust_file))
     db_path = tmp_path / "empty.db"
     backend = SQLiteAdapter(str(db_path))
@@ -51,7 +51,7 @@ def test_verify_cli_rejects_empty_store(tmp_path: Path, monkeypatch: pytest.Monk
 def test_verify_cli_checks_persisted_event_signatures(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     signer = Ed25519PrivateKey.generate()
     trust_file = tmp_path / "trusted.json"
-    trust_file.write_bytes(orjson.dumps({"validator-1": signer.public_key().public_bytes_raw().hex()}))
+    trust_file.write_bytes(dumps_json({"validator-1": signer.public_key().public_bytes_raw().hex()}).encode("utf-8"))
     monkeypatch.setattr(settings, "BLOCK_TRUSTED_KEYS_FILE", str(trust_file))
     event = {
         "entity_id": "entity-1",

@@ -6,8 +6,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-import orjson
 import pytest
+
+from hierachain.serialization import dumps_json
 
 COMMON = Path(__file__).resolve().parents[2] / "docker/lib/common.sh"
 
@@ -73,7 +74,9 @@ def test_wheel_build_discards_deleted_modules_and_rebuilds(tmp_path: Path) -> No
 @pytest.mark.parametrize("key", [None, "", "   ", "test-credential"])
 def test_stress_key_guard_reads_compose_config_without_exposing_key(tmp_path: Path, key: str | None) -> None:
     config = tmp_path / "compose.json"
-    config.write_bytes(orjson.dumps({"services": {"stress-tester": {"environment": {"HRC_API_KEY": key}}}}))
+    config.write_bytes(dumps_json({
+        "services": {"stress-tester": {"environment": {"HRC_API_KEY": key}}},
+    }).encode("utf-8"))
     uv = tmp_path / "uv"
     uv.write_text(f'#!/bin/sh\nshift 3\nexec {shlex.quote(sys.executable)} "$@"\n', encoding="utf-8")
     uv.chmod(0o700)
