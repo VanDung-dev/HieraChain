@@ -3,6 +3,7 @@ Unit tests for SQLite adapter.
 """
 
 import os
+from pathlib import Path
 
 import pytest
 
@@ -248,3 +249,37 @@ def test_legacy_event_row_keeps_normalized_fallback_shape(adapter) -> None:
         "timestamp": 1.0,
         "data": {"legacy": True},
     }
+
+
+def test_json_event_survives_database_restart_without_changing_values(tmp_path: Path) -> None:
+    path = str(tmp_path / "json-round-trip.db")
+    event = {
+        "event_id": "json-round-trip", "entity_id": "asset-1", "event": "updated", "timestamp": 1.0,
+        "data": {"name": "Thiết bị 🌱", "large": 2**80 + 1, "values": [True, None, 1e-5]},
+        "details": {"nested": {"negative": -(2**80 + 1)}},
+    }
+    block = Block(index=1, timestamp=1.0, previous_hash="prev", events=[event])
+    chain = Blockchain("json-round-trip-chain")
+    chain._sign_block(block)
+    adapter = SQLiteAdapter(path)
+    try:
+        assert adapter.save_block({
+            "chain_name": chain.name, "index": block.index, "hash": block.hash,
+            "previous_hash": block.previous_hash, "timestamp": block.timestamp, "nonce": block.nonce,
+            "events": block.to_event_list(), "metadata": {
+                "merkle_root": block.merkle_root, "creator_id": block.creator_id, "signature": block.signature,
+            },
+        })
+    finally:
+        adapter.close()
+    reopened = SQLiteAdapter(path)
+    try:
+        fetched = reopened.get_block_by_index(1, chain.name)
+        assert fetched is not None
+        assert fetched["events"] == [event]
+        assert isinstance(fetched["events"][0]["data"]["large"], int)
+        restored = _block_from_dict(fetched, chain.trusted_public_keys)
+        assert restored.calculate_merkle_root() == block.merkle_root
+        assert restored.hash == block.hash
+    finally:
+        reopened.close()

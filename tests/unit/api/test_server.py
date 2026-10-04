@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 from starlette.websockets import WebSocketDisconnect
 
 from hierachain.api import create_app, server
@@ -29,6 +30,56 @@ def _run_server_lifespan() -> None:
             pass
 
     asyncio.run(run())
+
+
+def test_json_responses_preserve_http_and_validation_contracts(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HRC_AUTH_ENABLED", "false")
+    monkeypatch.setenv("HRC_ENV", "test")
+    app = create_app()
+
+    @app.get("/json-probe", response_model=None)
+    def probe(reading: int = 1) -> dict[str, object]:
+        return {"name": "Thiết bị 🌱", "reading": reading}
+
+    client = TestClient(app)
+    try:
+        response = client.get("/json-probe")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/json"
+        assert "Thiết bị 🌱".encode("utf-8") in response.content
+        assert response.json() == {"name": "Thiết bị 🌱", "reading": 1}
+        missing = client.get("/missing-json-probe")
+        assert missing.status_code == 404
+        assert missing.json() == {"detail": "Not Found"}
+        invalid = client.get("/json-probe?reading=invalid")
+        assert invalid.status_code == 422
+        assert invalid.json()["detail"][0]["loc"] == ["query", "reading"]
+        assert client.post("/json-probe").headers["allow"] == "GET"
+    finally:
+        client.close()
+
+
+def test_default_json_response_preserves_model_schema_and_large_integers(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HRC_AUTH_ENABLED", "false")
+    monkeypatch.setenv("HRC_ENV", "test")
+    app = create_app()
+
+    class Reading(BaseModel):
+        value: int
+        name: str
+
+    @app.get("/model-json-probe", response_model=Reading)
+    def probe() -> dict[str, object]:
+        return {"value": 2**80 + 1, "name": "Thiết bị 🌱"}
+
+    with TestClient(app) as client:
+        response = client.get("/model-json-probe")
+        assert response.status_code == 200
+        assert json.loads(response.content) == {"value": 2**80 + 1, "name": "Thiết bị 🌱"}
+        schema = client.get("/openapi.json").json()
+    response_schema = schema["paths"]["/model-json-probe"]["get"]["responses"]["200"]
+    model_schema = response_schema["content"]["application/json"]["schema"]
+    assert model_schema == {"$ref": "#/components/schemas/Reading"}
 
 
 def test_global_exception_handler_dev_debug():
