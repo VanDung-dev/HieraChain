@@ -17,6 +17,7 @@ from typing import Any
 from hierachain.config.settings import Settings
 from hierachain.consensus.ordering.block_builder import BlockBuilder
 from hierachain.consensus.ordering.certifier import EventCertifier
+from hierachain.consensus.ordering.journal_lookup import JournalEventLookup
 from hierachain.consensus.ordering.maintenance import OrderingMaintenance
 from hierachain.consensus.ordering.metrics import OrderingMetrics
 from hierachain.consensus.ordering.processor import OrderingProcessor
@@ -142,6 +143,7 @@ class OrderingService:
         self.journal = TransactionJournal(
             storage_dir=storage_dir, active_log_name=active_log_name
         )
+        self._journal_lookup = JournalEventLookup(self.journal, _event_content_fingerprint)
 
         batch_timeout = config.get("batch_timeout", 2.0)
         if not isinstance(batch_timeout, (int, float)) or not (0.1 <= batch_timeout <= 60.0):
@@ -316,14 +318,17 @@ class OrderingService:
         # and stored tiers. Once one of those tiers validates the content,
         # scanning every rotated journal frame again adds work to the normal
         # replay path without improving duplicate protection. Unknown IDs
-        # still scan the journal to cover the ambiguous append-before-queue
-        # window.
+        # consult the journal to cover the ambiguous append-before-queue window.
         if found_kind is not None:
             return found_kind, None
 
         # Journal records cover the ambiguous window after fsync and before
         # in-memory queue publication, as well as recovery that has not run yet.
         read_since = getattr(self.journal, "read_since", None)
+        lookup = getattr(self, "_journal_lookup", None)
+        if callable(read_since) and lookup is not None and lookup.journal is self.journal:
+            row = lookup.find(event_id, channel_id, candidate_data)
+            return ("journal", row) if row is not None else (None, None)
         if callable(read_since):
             journal_rows, _ = read_since()
         else:
