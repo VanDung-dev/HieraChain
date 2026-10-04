@@ -2,7 +2,8 @@
 World State tracking for HieraChain Ledger.
 
 Tracks current entity states by ingesting finalized blocks.
-Provides get_entity_state() for queries and get_state_root() for proof generation.
+Provides entity queries and a diagnostic Merkle root of the current projection.
+Cross-level proofs commit the latest block's event Merkle root instead.
 """
 
 import logging
@@ -21,7 +22,8 @@ class WorldState:
     Tracks current state of entities after block processing.
 
     Updated automatically when blocks are finalized via apply_block().
-    State root is used by cross-level sync and proof generation.
+    The projection root is separate from the block event root anchored by proofs.
+    Callers rebuilding a projection must clear it and apply each block once.
     """
 
     def __init__(self) -> None:
@@ -50,6 +52,7 @@ class WorldState:
             return deepcopy(self._states)
 
     def get_state_root(self) -> str:
+        """Return the entity projection root; this is not the cross-level proof root."""
         with self._lock:
             if not self._states:
                 return "0" * 64
