@@ -11,6 +11,7 @@ from hierachain.cluster.cross_level_sync_types import (
 )
 from hierachain.cluster.lockdown_types import (
     LockdownMessage,
+    LockdownMessageGuard,
     LockdownMessageType,
     QuarantineReport,
 )
@@ -21,6 +22,7 @@ __all__ = [
     "CrossLevelSyncRequest",
     "CrossLevelSyncStatus",
     "LockdownMessage",
+    "LockdownMessageGuard",
     "LockdownMessageType",
     "QuarantineReport",
     "SyncConflict",

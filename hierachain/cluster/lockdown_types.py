@@ -3,11 +3,14 @@
 import hashlib
 import hmac
 import math
+import threading
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-import orjson
+from hierachain.serialization import dumps_canonical_json
 
 
 class LockdownMessageType(Enum):
@@ -56,15 +59,75 @@ class LockdownMessage:
         ).hexdigest()
 
     def verify_signature(self, secret_key: str) -> bool:
-        if not isinstance(self.signature, str) or not self.signature:
+        """Authenticate only; dispatchers must also use LockdownMessageGuard.accept()."""
+        if (
+            not isinstance(self.signature, str) or not self.signature
+            or not isinstance(secret_key, str) or not secret_key
+            or not isinstance(self.message_type, LockdownMessageType)
+        ):
             return False
-        expected = self.compute_signature(secret_key)
         try:
+            expected = self.compute_signature(secret_key)
             return hmac.compare_digest(self.signature, expected) or hmac.compare_digest(
                 self.signature, expected[:32]
             )
         except (TypeError, ValueError):
             return False
+
+
+class LockdownMessageGuard:
+    """Process-local, bounded admission gate for authenticated lockdown messages.
+
+    Keep one guard per dispatcher, across requests. Capacity exhaustion rejects
+    new messages until records expire; it never evicts an unexpired replay record.
+    """
+
+    def __init__(
+        self, max_age: float = 60.0, future_skew: float = 5.0,
+        max_entries: int = 10000, clock: Callable[[], float] = time.time,
+    ) -> None:
+        if (
+            not math.isfinite(max_age) or max_age <= 0
+            or not math.isfinite(future_skew) or future_skew < 0
+            or not isinstance(max_entries, int) or max_entries <= 0
+        ):
+            raise ValueError("Invalid lockdown admission limits")
+        self.max_age = max_age
+        self.future_skew = future_skew
+        self.max_entries = max_entries
+        self._clock = clock
+        self._seen: dict[str, float] = {}
+        self._latest_time = float("-inf")
+        self._lock = threading.Lock()
+
+    def accept(self, message: LockdownMessage, secret_key: str) -> bool:
+        """Authenticate and atomically consume a fresh message exactly once."""
+        if (
+            not isinstance(message.timestamp, (int, float))
+            or isinstance(message.timestamp, bool) or not math.isfinite(message.timestamp)
+            or not isinstance(message.message_type, LockdownMessageType)
+            or not isinstance(message.node_id, str) or not message.node_id
+            or not isinstance(message.reason, str)
+            or not isinstance(secret_key, str) or not secret_key
+            or not message.verify_signature(secret_key)
+        ):
+            return False
+        # Canonical HMAC identifies both full and legacy truncated signatures.
+        identity = message.compute_signature(secret_key)
+        with self._lock:
+            now = self._clock()
+            if not math.isfinite(now):
+                return False
+            # A wall-clock rollback must not resurrect expired replay records.
+            now = max(now, self._latest_time)
+            self._latest_time = now
+            if not now - self.max_age <= message.timestamp <= now + self.future_skew:
+                return False
+            self._seen = {key: expiry for key, expiry in self._seen.items() if expiry >= now}
+            if identity in self._seen or len(self._seen) >= self.max_entries:
+                return False
+            self._seen[identity] = message.timestamp + self.max_age
+            return True
 
 
 @dataclass
@@ -114,7 +177,7 @@ class QuarantineReport:
             raise ValueError("Quarantine report timestamp must be finite")
         payload = self.to_dict()
         payload.pop("signature")
-        msg = orjson.dumps(payload, option=orjson.OPT_SORT_KEYS)
+        msg = dumps_canonical_json(payload)
         return hmac.new(
             secret_key.encode(), msg, hashlib.sha256
         ).hexdigest()[:32]

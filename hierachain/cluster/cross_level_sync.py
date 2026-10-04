@@ -1,8 +1,10 @@
 """Submit Sub-chain proofs to MainChain without merging chain histories."""
 
 import logging
+import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from typing import Any
 
 from hierachain.cluster.cross_level_sync_types import (
@@ -232,6 +234,9 @@ class CrossLevelSyncManager:
 
         # State
         self._status = CrossLevelSyncStatus.IDLE
+        self._state_lock = threading.RLock()
+        self._active_operations: dict[CrossLevelSyncStatus, int] = {}
+        self._batch_failed = False
         self._current_request: CrossLevelSyncRequest | None = None
         self._pending_blocks: list[Any] = []
         self._conflicts: list[SyncConflict] = []
@@ -289,9 +294,16 @@ class CrossLevelSyncManager:
         from_block: int = 0,
         to_block: int = -1,
     ) -> SyncResult:
+        """Reject raw parent block copying while tracking aggregate activity."""
+        with self._operation(CrossLevelSyncStatus.SYNCING_DOWN):
+            return self._sync_from_mainchain(sub_chain_id, from_block, to_block)
+
+    def _sync_from_mainchain(
+        self, sub_chain_id: str, from_block: int, to_block: int,
+    ) -> SyncResult:
         """Reject copying MainChain blocks into a Sub-chain's history."""
         start_time = time.time()
-        self._stats["syncs_initiated"] += 1
+        self._increment_stat("syncs_initiated")
 
         validation_error = self._validate_connections(sub_chain_id)
         if validation_error:
@@ -308,6 +320,13 @@ class CrossLevelSyncManager:
     def sync_to_mainchain(
         self, sub_chain_id: str, proof: bytes | None = None
     ) -> SyncResult:
+        """Submit a Sub-chain proof and track all overlapping operations."""
+        with self._operation(CrossLevelSyncStatus.SYNCING_UP):
+            return self._sync_to_mainchain(sub_chain_id, proof)
+
+    def _sync_to_mainchain(
+        self, sub_chain_id: str, proof: bytes | None = None,
+    ) -> SyncResult:
         """
         Sync state from Sub-chain to MainChain (proof submission up).
 
@@ -319,7 +338,7 @@ class CrossLevelSyncManager:
             SyncResult with operation outcome.
         """
         start_time = time.time()
-        self._stats["syncs_initiated"] += 1
+        self._increment_stat("syncs_initiated")
 
         validation_error = self._validate_connections(sub_chain_id)
         if validation_error:
@@ -327,10 +346,8 @@ class CrossLevelSyncManager:
                 validation_error.error_message, start_time
             )
 
-        self._status = CrossLevelSyncStatus.SYNCING_UP
-        subchain = self._subchains[sub_chain_id]
-
         try:
+            subchain = self._subchains[sub_chain_id]
             state_root = _get_state_root(subchain)
             latest_block = subchain.get_latest_block()
             previous_block = (
@@ -357,7 +374,7 @@ class CrossLevelSyncManager:
                     return self._handle_sync_failure(
                         "Proof verification failed", start_time
                     )
-                self._stats["proofs_verified"] += 1
+                self._increment_stat("proofs_verified")
 
             if not callable(getattr(subchain, "submit_proof_to_main", None)):
                 return self._handle_sync_failure(
@@ -393,8 +410,9 @@ class CrossLevelSyncManager:
 
     def _handle_sync_failure(self, error_message: str, start_time: float) -> SyncResult:
         """Helper to handle sync failure and return result."""
-        self._stats["syncs_failed"] += 1
-        self._status = CrossLevelSyncStatus.FAILED
+        with self._state_lock:
+            self._stats["syncs_failed"] += 1
+            self._batch_failed = True
         return SyncResult(
             success=False,
             error_message=error_message,
@@ -408,9 +426,9 @@ class CrossLevelSyncManager:
         start_time: float,
     ) -> SyncResult:
         """Helper to handle sync success and return result."""
-        self._stats["blocks_synced_up"] += 1
-        self._stats["syncs_completed"] += 1
-        self._status = CrossLevelSyncStatus.COMPLETE
+        with self._state_lock:
+            self._stats["blocks_synced_up"] += 1
+            self._stats["syncs_completed"] += 1
 
         result = SyncResult(
             success=True,
@@ -420,7 +438,10 @@ class CrossLevelSyncManager:
         )
 
         if self._on_sync_complete:
-            self._on_sync_complete(result)
+            try:
+                self._on_sync_complete(result)
+            except Exception:
+                logger.exception("Sync completion callback failed after the anchor was committed")
 
         logger.info("Sync to MainChain complete: anchor from %s", sub_chain_id)
         return result
@@ -464,6 +485,15 @@ class CrossLevelSyncManager:
         return source_root == target_root
 
     def resolve_sync_conflict(self, conflict: SyncConflict) -> bool:
+        """Resolve a conflict while preserving active sync status."""
+        with self._operation(CrossLevelSyncStatus.RESOLVING_CONFLICT):
+            resolved = self._resolve_sync_conflict(conflict)
+            if not resolved:
+                with self._state_lock:
+                    self._batch_failed = True
+            return resolved
+
+    def _resolve_sync_conflict(self, conflict: SyncConflict) -> bool:
         """
         Resolve a sync conflict.
 
@@ -473,8 +503,7 @@ class CrossLevelSyncManager:
         Returns:
             True if conflict was resolved.
         """
-        self._status = CrossLevelSyncStatus.RESOLVING_CONFLICT
-        self._stats["conflicts_total"] += 1
+        self._increment_stat("conflicts_total")
 
         # Use callback if available
         strategy = self.conflict_strategy
@@ -484,7 +513,7 @@ class CrossLevelSyncManager:
         resolved = _apply_resolution_strategy(conflict, strategy)
 
         if resolved:
-            self._stats["conflicts_resolved"] += 1
+            self._increment_stat("conflicts_resolved")
             logger.info(
                 "Resolved conflict %s: %s",
                 conflict.conflict_id,
@@ -499,17 +528,20 @@ class CrossLevelSyncManager:
 
     def get_status(self) -> CrossLevelSyncStatus:
         """Get current sync status."""
-        return self._status
+        with self._state_lock:
+            return self._status
 
     def get_stats(self) -> dict[str, Any]:
         """Get sync statistics."""
-        return {
-            **self._stats,
-            "status": self._status.value,
-            "pending_conflicts": len(self.get_pending_conflicts()),
-            "connected_subchains": len(self._subchains),
-            "mainchain_connected": self._mainchain_ref is not None,
-        }
+        with self._state_lock:
+            return {
+                **self._stats,
+                "status": self._status.value,
+                "active_operations": sum(self._active_operations.values()),
+                "pending_conflicts": len(self.get_pending_conflicts()),
+                "connected_subchains": len(self._subchains),
+                "mainchain_connected": self._mainchain_ref is not None,
+            }
 
     def set_callbacks(
         self,
@@ -522,10 +554,43 @@ class CrossLevelSyncManager:
 
     def reset(self) -> None:
         """Reset sync state."""
-        self._status = CrossLevelSyncStatus.IDLE
-        self._current_request = None
-        self._pending_blocks.clear()
-        self._conflicts.clear()
+        with self._state_lock:
+            if self._active_operations:
+                raise RuntimeError("Cannot reset while sync operations are active")
+            self._status = CrossLevelSyncStatus.IDLE
+            self._batch_failed = False
+            self._current_request = None
+            self._pending_blocks.clear()
+            self._conflicts.clear()
+
+    def _increment_stat(self, name: str) -> None:
+        with self._state_lock:
+            self._stats[name] += 1
+
+    @contextmanager
+    def _operation(self, status: CrossLevelSyncStatus) -> Iterator[None]:
+        """Keep a terminal status hidden until every overlapping operation finishes."""
+        with self._state_lock:
+            if not self._active_operations:
+                self._batch_failed = False
+            self._active_operations[status] = self._active_operations.get(status, 0) + 1
+            self._status = next(iter(self._active_operations))
+        try:
+            yield
+        except Exception:
+            with self._state_lock:
+                self._batch_failed = True
+            raise
+        finally:
+            with self._state_lock:
+                self._active_operations[status] -= 1
+                if not self._active_operations[status]:
+                    del self._active_operations[status]
+                self._status = (
+                    next(iter(self._active_operations)) if self._active_operations
+                    else CrossLevelSyncStatus.FAILED if self._batch_failed
+                    else CrossLevelSyncStatus.COMPLETE
+                )
 
     def _validate_connections(self, sub_chain_id: str) -> SyncResult | None:
         """Validate MainChain and Sub-chain are connected."""
