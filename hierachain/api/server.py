@@ -9,6 +9,8 @@ The server uses FastAPI for high performance and includes proper
 error handling, CORS support, and comprehensive logging.
 """
 
+import asyncio
+import json
 import logging
 import os
 import time
@@ -18,15 +20,20 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, cast
 
-import orjson
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from starlette.requests import HTTPConnection
 
+from hierachain.adapters.database.auth_state import (
+    RedisRevocationStore,
+    SQLiteRevocationStore,
+)
 from hierachain.api.admin.endpoints import router as admin_router
 from hierachain.api.business.router import business_router
 from hierachain.api.context import get_p2p_client, set_p2p_client
 from hierachain.api.graphql_handler import _register_graphql_router
+from hierachain.api.ledger.depds import close_hierarchy_manager
 from hierachain.api.ledger.router import ledger_router
 from hierachain.api.middleware import (
     add_payload_limit,
@@ -35,12 +42,12 @@ from hierachain.api.middleware import (
     add_security_headers,
 )
 from hierachain.api.websocket.manager import ws_manager
-from hierachain.adapters.database.auth_state import RedisRevocationStore, SQLiteRevocationStore
 from hierachain.config.logging import LOGGING_CONFIG
 from hierachain.config.settings import _configured_database_url, get_settings
 from hierachain.network.network_client import NetworkClient, NetworkClientConfig
 from hierachain.security.key_manager import KeyManager
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
+from hierachain.serialization import loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +72,8 @@ def _load_production_key_manager() -> KeyManager:
     if not path:
         raise RuntimeError("Production authentication requires HRC_API_KEYS_FILE")
     try:
-        records = orjson.loads(Path(path).read_bytes())
-    except (OSError, orjson.JSONDecodeError) as exc:
+        records = loads_json(Path(path).read_bytes())
+    except (OSError, json.JSONDecodeError) as exc:
         raise RuntimeError("Cannot load HRC_API_KEYS_FILE") from exc
     if not isinstance(records, dict) or not records:
         raise RuntimeError("HRC_API_KEYS_FILE must contain a nonempty key map")
@@ -160,27 +167,32 @@ async def lifespan(_app: FastAPI):
     await ws_manager.start()
     logger.info("WebSocket manager started")
 
-    await _start_p2p_network_layer(settings)
+    try:
+        await _start_p2p_network_layer(settings)
 
-    if settings.AUTH_ENABLED:
-        logger.info("Global API Authentication ENFORCED")
-    else:
-        logger.warning("Global API Authentication DISABLED")
+        if settings.AUTH_ENABLED:
+            logger.info("Global API Authentication ENFORCED")
+        else:
+            logger.warning("Global API Authentication DISABLED")
 
-    _check_cors_config(settings)
-
-    yield
-
-    logger.info("Shutting down HieraChain API server...")
-
-    await ws_manager.stop()
-    logger.info("WebSocket manager stopped")
-
-    current_p2p = get_p2p_client()
-    if current_p2p:
-        await current_p2p.stop()
-        set_p2p_client(None)
-        logger.info("P2P network layer stopped")
+        _check_cors_config(settings)
+        yield
+    finally:
+        logger.info("Shutting down HieraChain API server...")
+        try:
+            await ws_manager.stop()
+            logger.info("WebSocket manager stopped")
+        finally:
+            try:
+                current_p2p = get_p2p_client()
+                if current_p2p:
+                    try:
+                        await current_p2p.stop()
+                    finally:
+                        set_p2p_client(None)
+                    logger.info("P2P network layer stopped")
+            finally:
+                await asyncio.to_thread(close_hierarchy_manager)
 
 
 def _check_cors_config(settings) -> None:
@@ -212,7 +224,6 @@ def register_exception_handlers(fast_app: FastAPI, settings) -> None:
             settings.LOG_LEVEL == "DEBUG" and
             settings.env != "production"
         )
-        from starlette.responses import JSONResponse
         return JSONResponse(
             status_code=500,
             content={
@@ -224,7 +235,6 @@ def register_exception_handlers(fast_app: FastAPI, settings) -> None:
 
     @fast_app.exception_handler(HTTPException)
     async def http_exception_handler(_request, exc):
-        from starlette.responses import JSONResponse
         return JSONResponse(
             status_code=exc.status_code,
             content={
@@ -236,7 +246,6 @@ def register_exception_handlers(fast_app: FastAPI, settings) -> None:
 
     @fast_app.exception_handler(RecursionError)
     async def recursion_error_handler(_request, _exc):
-        from starlette.responses import JSONResponse
         logger.warning("RecursionError detected - possible JSON bomb attempt")
         return JSONResponse(
             status_code=422,

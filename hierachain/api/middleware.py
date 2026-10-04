@@ -13,7 +13,7 @@ import uuid
 from typing import Any
 
 from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
+from fastapi.responses import JSONResponse
 
 from hierachain.adapters.database.redis_rate_limiter import RateLimiterBackendError, RedisRateLimiter
 

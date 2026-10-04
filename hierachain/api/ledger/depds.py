@@ -52,3 +52,15 @@ def get_entity_tracer(
         _entity_tracer = EntityTracer(manager)
     assert _entity_tracer is not None
     return _entity_tracer
+
+
+def close_hierarchy_manager() -> None:
+    """Release the API-owned hierarchy and reset lazy providers for the next lifespan."""
+    global _hierarchy_manager, _entity_tracer, _hierarchy_retry_at
+    with _hierarchy_manager_lock:
+        manager = _hierarchy_manager
+        _hierarchy_manager = None
+        _entity_tracer = None
+        _hierarchy_retry_at = 0.0
+        if manager is not None:
+            manager.close()

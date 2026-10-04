@@ -5,13 +5,24 @@ This module provides FastAPI WebSocket endpoints for real-time
 bidirectional communication with HieraChain clients.
 """
 
+import json
 import logging
 import uuid
 
-import orjson
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    HTTPException,
+    Query,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from starlette.requests import HTTPConnection
 
 from hierachain.api.websocket.manager import WebSocketMessageType, ws_manager
+from hierachain.config.settings import get_settings
+from hierachain.security.verify.api_key_verifier import ResourcePermissionChecker
+from hierachain.serialization import dumps_json, loads_json
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +52,17 @@ async def websocket_endpoint(
         - {"type": "pong"}
     """
     connection_id = uuid.uuid4().hex
+
+    auth_context, authenticated = await _authenticate_connection(websocket)
+    if not authenticated:
+        await websocket.close(code=1008, reason="Authentication required")
+        return
+    if not _has_stream_permissions(auth_context):
+        await websocket.close(
+            code=1008,
+            reason="WebSocket streaming requires chains and events permissions",
+        )
+        return
     
     # Accept the connection
     await websocket.accept()
@@ -57,7 +79,7 @@ async def websocket_endpoint(
         await _send_welcome_message(websocket, connection_id, chain_name)
         
         # Message loop
-        await _message_loop(websocket, connection_id)
+        await _message_loop(websocket, connection_id, auth_context)
         
     except Exception as e:
         logger.error("WebSocket error: %s", e)
@@ -67,21 +89,54 @@ async def websocket_endpoint(
         await ws_manager.disconnect(connection_id)
 
 
-async def _send_welcome_message(websocket: WebSocket, connection_id: str, chain_name: str | None):
+async def _authenticate_connection(connection: HTTPConnection) -> tuple[dict | None, bool]:
+    """Authenticate a stream or status request with the app's configured verifier."""
+    verifier = getattr(connection.app.state, "auth_verifier", None)
+    auth_required = get_settings().AUTH_ENABLED
+    if verifier is None:
+        return None, not auth_required
+    if not verifier.enabled:
+        return None, not auth_required
+
+    try:
+        auth_context = await verifier(connection)
+    except HTTPException:
+        return None, False
+    except Exception:
+        logger.error("WebSocket authentication failed")
+        return None, False
+    if auth_context is None and auth_required:
+        return None, False
+    return auth_context, True
+
+
+def _has_stream_permissions(auth_context: dict | None) -> bool:
+    """The current stream sends both blocks and events to each chain subscriber."""
+    if auth_context is None:
+        return True
+    return all(
+        ResourcePermissionChecker.has_permission(auth_context, permission)
+        for permission in ("chains", "events")
+    )
+
+
+async def _send_welcome_message(websocket: WebSocket, connection_id: str, chain_name: str | None) -> None:
     """Send welcome message to new connection."""
-    await websocket.send_json({
+    await websocket.send_text(dumps_json({
         "type": "connected",
         "connection_id": connection_id,
         "message": "Connected to HieraChain WebSocket",
         "chain_name": chain_name
-    })
+    }))
 
 
-async def _message_loop(websocket: WebSocket, connection_id: str):
+async def _message_loop(
+    websocket: WebSocket, connection_id: str, auth_context: dict | None = None
+):
     """Main message loop - handles receiving and processing messages."""
     while True:
         try:
-            await _process_single_message(websocket, connection_id)
+            await _process_single_message(websocket, connection_id, auth_context)
         except WebSocketDisconnect:
             break
         except Exception as e:
@@ -94,7 +149,9 @@ async def _message_loop(websocket: WebSocket, connection_id: str):
             )
 
 
-async def _process_single_message(websocket: WebSocket, connection_id: str):
+async def _process_single_message(
+    websocket: WebSocket, connection_id: str, auth_context: dict | None = None
+):
     """Process a single incoming message."""
     # Receive message from client
     data = await websocket.receive_text()
@@ -106,14 +163,14 @@ async def _process_single_message(websocket: WebSocket, connection_id: str):
         return
     
     # Handle message
-    await handle_websocket_message(connection_id, message, websocket)
+    await handle_websocket_message(connection_id, message, websocket, auth_context)
 
 
 def _parse_message(data: str) -> dict | None:
     """Parse incoming JSON message."""
     try:
-        return orjson.loads(data)
-    except orjson.JSONDecodeError:
+        return loads_json(data)
+    except json.JSONDecodeError:
         return None
 
 
@@ -126,7 +183,10 @@ async def _send_json_error(connection_id: str, message: str):
 
 
 async def handle_websocket_message(
-    connection_id: str, message: dict, _websocket: WebSocket
+    connection_id: str,
+    message: dict,
+    _websocket: WebSocket,
+    auth_context: dict | None = None,
 ):
     """
     Handle incoming WebSocket messages from clients.
@@ -140,7 +200,7 @@ async def handle_websocket_message(
     
     # Handle different message types
     if msg_type == "subscribe":
-        await handle_subscribe(connection_id, message)
+        await handle_subscribe(connection_id, message, auth_context)
         
     elif msg_type == "unsubscribe":
         await handle_unsubscribe(connection_id)
@@ -174,8 +234,17 @@ async def handle_websocket_message(
         })
 
 
-async def handle_subscribe(connection_id: str, message: dict):
+async def handle_subscribe(
+    connection_id: str, message: dict, auth_context: dict | None = None
+):
     """Handle subscription request"""
+    if not _has_stream_permissions(auth_context):
+        await ws_manager.send_to_connection(connection_id, {
+            "type": WebSocketMessageType.ERROR,
+            "message": "WebSocket subscriptions require chains and events permissions",
+        })
+        return
+
     chain_name = message.get("chain_name", "all")
     event_types = message.get("event_types", [])
     
@@ -215,8 +284,13 @@ async def handle_unsubscribe(connection_id: str):
 
 
 @router.get("/ws/status")
-async def websocket_status():
+async def websocket_status(request: Request) -> dict:
     """Get WebSocket server status and statistics"""
+    auth_context, authenticated = await _authenticate_connection(request)
+    if not authenticated:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    if auth_context is not None and not ResourcePermissionChecker.has_permission(auth_context, "chains"):
+        raise HTTPException(status_code=403, detail="WebSocket status requires chains permission")
     stats = ws_manager.get_stats()
     return {
         "status": "running",

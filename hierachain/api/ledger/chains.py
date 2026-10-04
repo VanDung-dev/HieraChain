@@ -162,6 +162,7 @@ def _register_new_sub_chain(
         manager.add_sub_chain(safe_chain_name, sub_chain)
         return None
     except ValueError as ve:
+        sub_chain.shutdown()
         api_logger.info(
             "Sub-chain already exists", chain_name=safe_chain_name, error=str(ve)
         )
@@ -173,6 +174,9 @@ def _register_new_sub_chain(
                 "chain_name": safe_chain_name,
             },
         )
+    except Exception:
+        sub_chain.shutdown()
+        raise
 
 
 @router.post(
@@ -215,7 +219,9 @@ async def create_sub_chain(
                 }
             )
 
-        _register_new_sub_chain(manager, safe_chain_name, safe_chain_type)
+        conflict = _register_new_sub_chain(manager, safe_chain_name, safe_chain_type)
+        if conflict is not None:
+            return conflict
 
         api_logger.audit(
             action="create",

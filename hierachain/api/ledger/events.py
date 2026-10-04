@@ -151,7 +151,12 @@ async def add_channel_event(
     event = _build_event_data(event_request, inline_details, cid_info)
     event["submitted_by"] = user_id
 
-    if not channel.submit_event(event, org_id, submitter_user_id=user_id):
+    try:
+        accepted = channel.submit_event(event, org_id, submitter_user_id=user_id)
+    except RuntimeError as exc:
+        api_logger.error("Channel event persistence failed", channel_id=channel_id)
+        raise HTTPException(status_code=503, detail="Channel event could not be persisted") from exc
+    if not accepted:
         raise HTTPException(
             status_code=403,
             detail="User is not authorized to submit events to this channel",

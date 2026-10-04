@@ -127,32 +127,7 @@ async def execute_contract(execution_request: ContractExecuteRequest):
             detail=f"Contract '{contract_id}' not found"
         )
 
-    try:
-        contract = _contracts[contract_id]
-        event = execution_request.event
-
-        safe_event = sanitize_string(str(event.get('event', 'unknown')))
-        safe_version = sanitize_string(str(contract.get("version", "unknown")))
-        safe_entity = sanitize_string(str(event.get("entity_id", "unknown")))
-
-        execution_result = {
-            "status": "success",
-            "output": f"Contract {contract_id} executed with event {safe_event}",
-            "details": {
-                "contract_version": safe_version,
-                "event_entity": safe_entity,
-                "execution_timestamp": time.time()
-            }
-        }
-
-        return ContractResponse(
-            success=True,
-            message=f"Contract '{contract_id}' executed successfully",
-            contract_id=contract_id,
-            result=execution_result
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to execute contract. An internal error has occurred."
-        )
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Contract execution engine is not implemented.",
+    )
