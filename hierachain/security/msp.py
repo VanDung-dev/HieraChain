@@ -69,8 +69,6 @@ class CertificateAuthority:
         self.issued_certificates: dict[str, Certificate] = {}
         self.revoked_certificates: set[str] = set()
         self.ca_key = KeyPair.generate()
-        self._verification_cache: dict[str, bool] = {}
-        self._cache_max_size = 5000
 
     def issue_certificate(self, subject: str, public_key: str, attributes: dict[str, Any], valid_days: int = 365) -> Certificate:
         cert_id = _generate_cert_id(subject, public_key)
@@ -98,21 +96,14 @@ class CertificateAuthority:
                 cert.attributes = {}
             cert.attributes["revocation_reason"] = reason
             self.revoked_certificates.add(cert_id)
-            self._verification_cache[cert_id] = False
             return True
         return False
 
     def verify_certificate(self, cert_id: str) -> bool:
         if cert_id in self.revoked_certificates:
-            self._verification_cache[cert_id] = False
             return False
-        if cert_id in self._verification_cache:
-            return self._verification_cache[cert_id]
         certificate = self.issued_certificates.get(cert_id)
-        result = certificate.is_valid() if certificate else False
-        if len(self._verification_cache) < self._cache_max_size:
-            self._verification_cache[cert_id] = result
-        return result
+        return certificate.is_valid() if certificate else False
 
 
 class OrganizationPolicies:
@@ -201,6 +192,13 @@ class HierarchicalMSP:
         if not entity_id or entity_id not in self.entities:
             return False
         entity = self.entities[entity_id]
+        certificate = entity.get("certificate")
+        if (
+            entity.get("status") != "active"
+            or not isinstance(certificate, Certificate)
+            or not self.ca.verify_certificate(certificate.cert_id)
+        ):
+            return False
         role = entity["role"]
         if not action or not self.policies.check_permission(role, action):
             return False
