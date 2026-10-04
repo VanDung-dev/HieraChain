@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (51)"
+??? warning "Breaking Changes (55)"
+
+    * 2026-10-05
+
+        * **Consensus & Config (PoA Interval Opt-in, No Implicit Delay)**: `ProofOfAuthority.__init__` (`hierachain/consensus/proof_of_authority.py`) defaults `block_interval` from `10.0` to `0.0` (`None` = `0.0`), rejects non-finite/negative values with `ValueError`, and `_check_block_timing()` only enforces explicitly configured spacing while still rejecting decreasing timestamps; `Settings.BLOCK_INTERVAL` (`hierachain/config/settings.py`) changes the `HRC_BLOCK_INTERVAL` default from `"10.0"` to `"0.0"` — previously forced a 10s spacing delay unless overridden.
+        * **Channel (Durable Append-only Ledger Stream)**: `ChannelLedger` (`hierachain/hierarchical/channel/ledger.py`) replaces the `_persist` callback with `bind_storage()` requiring `append_channel_record`/`load_channel_records`, appends typed `event`/`block` records guarded by `expected_sequence` plus registry `revision`, adds `refresh()`/`_replay_record()` with trusted-key block validation rolling back only newly applied records, and shares `_validate_block()`/`_validate_pending_event()` between `restore()` and replay; `Channel` (`hierachain/hierarchical/channel/channel.py`) refreshes the ledger inside `_registry_operation`, records stats via `_record_event_statistics()` skipping events without `submitter_org`, and drops manual rollback in `add_event()`/`finalize_block()` — previously persisted via opaque callback with full-state rollback.
+        * **Hierarchy (Split Recovery/Registry & Versioned Ledger Seeds)**: `HierarchyManager` (`hierachain/hierarchical/hierarchy_manager/base.py`) delegates main-chain replay/sub-chain restore to new `hierarchy_manager/recovery.py` and snapshot persist/restore/apply to new `hierarchy_manager/registry.py`, stops embedding channel-ledger snapshots in the registry state, persists channel ledgers atomically with the registry `revision` via `_channel_ledger_version` seeds written through `append_channel_record`/`load_channel_records` (bound ledgers restart at sequence `1`), validates the full snapshot before mutating coordinator objects, and migrates legacy snapshots in place with 3-attempt retry — previously stored monolithic snapshots with embedded ledger data.
+        * **Database (Channel Ledger Tables & Atomic Registry+Ledger Write)**: new `ChannelLedgerSQLStorage` mixin plus `create_channel_ledger_tables()` (`hierachain/adapters/database/channel_ledger_sql.py`) gives `SQLBase` (SQLite/PostgreSQL) `append_channel_record`/`load_channel_records` with registry-revision and ledger-sequence guards (`channel_ledger_heads`/`channel_ledger_records` tables created in `postgres_schema.py`/`sqlite_schema.py`); `save_hierarchy_registry()` accepts `channel_ledgers` and commits registry plus ledger seeding in one transaction (commit moved out of `_execute_save_hierarchy_registry`, Postgres placeholder/lock/`BEGIN IMMEDIATE` overrides); `RedisStorageAdapter` (`hierachain/adapters/database/redis_adapter.py`) adds WATCH/MULTI ledger seeding/conditional append/suffix reads and fixes `load_hierarchy_registry` key handling — previously had no channel-ledger storage and committed registry alone.
 
     * 2026-10-04
 
@@ -103,7 +110,14 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (48)"
+??? note "Improvements (52)"
+
+    * 2026-10-05
+
+        * **Core (Bounded Event Paging)**: new `select_event_page()` (`hierachain/core/event_query.py`) pages by `(block_index, event_index)` cursor, filters Arrow columns in batches, stops decoding once `limit` is hit, and falls back to plain lists for external chains; `Blockchain` (`hierachain/core/blockchain.py`) records `event_index` in `_index_block_events` sharing one cached entry between `entity_event_index` and the new `_event_query_type_index`, adds `get_event_page()` picking the narrowest entity/type index under lock with time-range/cursor delegation, and resets the new index in `_rebuild_event_indexes()`.
+        * **API (GraphQL Cursor Pagination)**: `resolve_events` (`hierachain/api/graphql/resolvers.py`) delegates filtering to `Blockchain.get_event_page`/`select_event_page` (replacing `_filter_event*`/`_get_events_from_chain`), adds `_decode_event_cursor()`/`_encode_event_cursor()` opaque versioned chain-scoped base64url cursor of `(block_index, event_index)` with size/shape/value validation, and exposes a new `after` argument (`hierachain/api/graphql/schema.py`) plus per-event `cursor` field (`hierachain/api/graphql/types.py`).
+        * **Consensus (Incremental Journal ID Index)**: new `JournalEventLookup` (`hierachain/consensus/ordering/journal_lookup.py`) incrementally tracks ID/channel/content-SHA256 commitments under lock rejecting conflicting ID bindings with `ValueError`; `OrderingService` (`hierachain/consensus/ordering/service.py`) consults the index for unknown event IDs instead of rescanning the journal, recovering full payloads from disk only for journal-only hits with per-occurrence validation.
+        * **Journal (Synced File-state Tracking)**: `TransactionJournal` (`hierachain/error_mitigation/journal.py`) adds `_file_write_state()` (`st_dev`, `st_ino`, `st_size`, `st_mtime_ns`, `st_ctime_ns`) plus `_synced_file_state` updated after every successful `fsync` in append/rollback/flush, skips redundant `fsync` in `read_since()` when state is unchanged, and fail-closes (`ValueError`) when the active file was replaced (`(st_dev, st_ino)` mismatch) — previously `fsync`ed unconditionally on every tail read without replacement detection.
 
     * 2026-10-04
 

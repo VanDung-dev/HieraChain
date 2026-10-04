@@ -8,7 +8,14 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (51)"
+??? warning "Breaking Changes (55)"
+
+    * 2026-10-05
+
+        * **Đồng thuận & Config (PoA Interval Opt-in, Bỏ Delay Ngầm)**: `ProofOfAuthority.__init__` (`hierachain/consensus/proof_of_authority.py`) đổi mặc định `block_interval` từ `10.0` sang `0.0` (`None` = `0.0`), từ chối giá trị không hữu hạn/âm bằng `ValueError`, và `_check_block_timing()` chỉ ép spacing đã cấu hình tường minh nhưng vẫn chặn timestamp giảm dần; `Settings.BLOCK_INTERVAL` (`hierachain/config/settings.py`) đổi mặc định `HRC_BLOCK_INTERVAL` từ `"10.0"` sang `"0.0"` — trước đây ép delay spacing 10s nếu không override.
+        * **Channel (Ledger Stream Append-only Bền)**: `ChannelLedger` (`hierachain/hierarchical/channel/ledger.py`) thay callback `_persist` bằng `bind_storage()` bắt buộc `append_channel_record`/`load_channel_records`, append bản ghi `event`/`block` có kiểu kèm chặn `expected_sequence` và `revision` registry, thêm `refresh()`/`_replay_record()` với validate block theo trusted-key chỉ rollback các bản ghi mới áp dụng, và dùng chung `_validate_block()`/`_validate_pending_event()` giữa `restore()` và replay; `Channel` (`hierachain/hierarchical/channel/channel.py`) refresh ledger trong `_registry_operation`, ghi stat qua `_record_event_statistics()` bỏ qua event thiếu `submitter_org`, và bỏ rollback thủ công trong `add_event()`/`finalize_block()` — trước đây persist qua callback mờ với rollback toàn trạng thái.
+        * **Hierarchy (Tách Recovery/Registry & Seed Ledger Có Version)**: `HierarchyManager` (`hierachain/hierarchical/hierarchy_manager/base.py`) ủy quyền replay main-chain/khôi phục sub-chain cho `hierarchy_manager/recovery.py` mới và persist/restore/apply snapshot cho `hierarchy_manager/registry.py` mới, ngừng nhúng snapshot channel-ledger trong state registry, persist ledger channel nguyên tử cùng `revision` registry qua seed `_channel_ledger_version` ghi bằng `append_channel_record`/`load_channel_records` (ledger đã bind khởi động lại từ sequence `1`), validate toàn bộ snapshot trước khi mutate object coordinator, và migrate snapshot legacy tại chỗ với retry 3 lần — trước đây lưu snapshot nguyên khối kèm dữ liệu ledger nhúng.
+        * **Database (Bảng Ledger Channel & Ghi Registry+Ledger Nguyên tử)**: thêm mixin `ChannelLedgerSQLStorage` cùng `create_channel_ledger_tables()` (`hierachain/adapters/database/channel_ledger_sql.py`) giúp `SQLBase` (SQLite/PostgreSQL) có `append_channel_record`/`load_channel_records` với chặn revision registry và sequence ledger (bảng `channel_ledger_heads`/`channel_ledger_records` tạo trong `postgres_schema.py`/`sqlite_schema.py`); `save_hierarchy_registry()` nhận thêm `channel_ledgers` và commit registry kèm seed ledger trong một transaction (chuyển commit ra khỏi `_execute_save_hierarchy_registry`, override placeholder/lock/`BEGIN IMMEDIATE` cho Postgres); `RedisStorageAdapter` (`hierachain/adapters/database/redis_adapter.py`) thêm seed/append có điều kiện/đọc suffix ledger qua WATCH/MULTI và sửa xử lý key trong `load_hierarchy_registry` — trước đây chưa có lưu trữ ledger channel và commit registry đơn lẻ.
 
     * 2026-10-04
 
@@ -103,7 +110,14 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (48)"
+??? note "Improvements (52)"
+
+    * 2026-10-05
+
+        * **Core (Phân trang Event Giới hạn)**: thêm `select_event_page()` (`hierachain/core/event_query.py`) phân trang theo cursor `(block_index, event_index)`, lọc cột Arrow theo batch, dừng giải mã khi chạm `limit`, và fallback sang list thường cho chain ngoài; `Blockchain` (`hierachain/core/blockchain.py`) ghi thêm `event_index` trong `_index_block_events` dùng chung một entry cache giữa `entity_event_index` và `_event_query_type_index` mới, thêm `get_event_page()` chọn index entity/type hẹp nhất dưới lock với ủy quyền time-range/cursor, và reset index mới trong `_rebuild_event_indexes()`.
+        * **API (Phân trang Cursor GraphQL)**: `resolve_events` (`hierachain/api/graphql/resolvers.py`) ủy quyền lọc cho `Blockchain.get_event_page`/`select_event_page` (thay `_filter_event*`/`_get_events_from_chain`), thêm `_decode_event_cursor()`/`_encode_event_cursor()` với cursor base64url mờ có version, gắn chain, chứa `(block_index, event_index)` kèm validate kích thước/hình dạng/giá trị, và expose thêm tham số `after` (`hierachain/api/graphql/schema.py`) cùng field `cursor` cho mỗi event (`hierachain/api/graphql/types.py`).
+        * **Đồng thuận (Index ID Journal Tăng dần)**: thêm `JournalEventLookup` (`hierachain/consensus/ordering/journal_lookup.py`) theo dõi tăng dần cam kết ID/channel/content-SHA256 dưới lock và từ chối bind ID xung đột bằng `ValueError`; `OrderingService` (`hierachain/consensus/ordering/service.py`) tra index cho event ID lạ thay vì quét lại toàn bộ journal, chỉ phục hồi payload đầy đủ từ đĩa cho hit journal-only kèm validate từng occurrence.
+        * **Journal (Theo dõi File-state Đã Sync)**: `TransactionJournal` (`hierachain/error_mitigation/journal.py`) thêm `_file_write_state()` (`st_dev`, `st_ino`, `st_size`, `st_mtime_ns`, `st_ctime_ns`) cùng `_synced_file_state` cập nhật sau mỗi `fsync` thành công trong append/rollback/flush, bỏ `fsync` thừa trong `read_since()` khi state không đổi, và fail-closed (`ValueError`) khi file active bị thay thế (lệch `(st_dev, st_ino)`) — trước đây `fsync` vô điều kiện mỗi lần đọc đuôi mà không phát hiện thay thế.
 
     * 2026-10-04
 
