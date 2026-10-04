@@ -1,12 +1,13 @@
 """Authenticated HTTP regressions for P2 API behavior."""
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from hierachain.api.business import contracts, state
+from hierachain.api.business import contracts, private_data, state
 from hierachain.api.ledger import blocks, chains, depds
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.key_manager import KeyManager
@@ -29,6 +30,7 @@ def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     app.include_router(chains.router)
     app.include_router(blocks.router)
     app.include_router(contracts.router)
+    app.include_router(private_data.router)
     try:
         with TestClient(app, headers={"X-API-Key": key}) as http:
             yield http, manager
@@ -93,3 +95,30 @@ def test_contract_execution_reports_unsupported_engine(client, monkeypatch) -> N
     assert response.json()["detail"] == "Contract execution engine is not implemented."
     payload["contract_id"] = "missing"
     assert http.post("/contracts/execute", json=payload).status_code == 404
+
+
+@pytest.mark.parametrize(
+    "value_fields",
+    [
+        {"value": {"label": "example"}},
+        {"value_cid": "Qm" + "a" * 44, "value_nonce": "a1" * 12},
+    ],
+)
+def test_private_data_writes_report_unsupported_storage(
+    client: tuple[TestClient, HierarchyManager],
+    monkeypatch: pytest.MonkeyPatch,
+    value_fields: dict[str, Any],
+) -> None:
+    http, _ = client
+    collection = object()
+    monkeypatch.setitem(state._private_collections, "registered", collection)
+    payload = {"collection": "registered", "key": "example", "event_metadata": {}, **value_fields}
+
+    response = http.post("/private-data", json=payload)
+
+    assert response.status_code == 501
+    assert response.json()["detail"] == "Private-data storage is not implemented."
+    assert state._private_collections["registered"] is collection
+    payload["collection"] = "missing"
+    assert http.post("/private-data", json=payload).status_code == 404
+    assert http.post("/private-data", json=payload, headers={"X-API-Key": "invalid"}).status_code == 401

@@ -378,7 +378,7 @@ def test_channel_failed_finalization_keeps_durable_pending_events(
     manager.create_organization("org", "Organization", ["admin"])
     channel = manager.create_channel("durable", ["org"])
     assert channel.submit_event({"entity_id": "pending", "event": "created"}, "org", submitter_user_id="admin")
-    monkeypatch.setattr(manager.storage, "save_hierarchy_registry", lambda *_args, **_kwargs: False)
+    monkeypatch.setattr(manager.storage, "append_channel_record", lambda *_args, **_kwargs: False)
     with pytest.raises(RuntimeError, match="persist channel ledger"):
         channel.finalize_block()
     assert channel.ledger.height == 0
@@ -460,14 +460,14 @@ def test_channel_conflicting_workers_ack_only_the_persisted_event(
     barrier = Barrier(2)
     original_saves = []
     for manager in (first, second):
-        save = manager.storage.save_hierarchy_registry
+        save = manager.storage.append_channel_record
         original_saves.append(save)
 
         def synchronized_save(*args, _save=save, **kwargs):
             barrier.wait(timeout=5)
             return _save(*args, **kwargs)
 
-        monkeypatch.setattr(manager.storage, "save_hierarchy_registry", synchronized_save)
+        monkeypatch.setattr(manager.storage, "append_channel_record", synchronized_save)
 
     def submit(manager: HierarchyManager, entity_id: str) -> bool:
         try:
@@ -482,7 +482,7 @@ def test_channel_conflicting_workers_ack_only_the_persisted_event(
         accepted = [future.result(timeout=10) for future in futures]
     assert sorted(accepted) == [False, True]
     for manager, save in zip((first, second), original_saves):
-        monkeypatch.setattr(manager.storage, "save_hierarchy_registry", save)
+        monkeypatch.setattr(manager.storage, "append_channel_record", save)
         manager.storage.close()
     restored = HierarchyManager()
     channel = restored.get_channel("durable")
@@ -511,7 +511,7 @@ def test_channel_http_rejects_failed_storage_without_accepting_event(
     app.state.auth_verifier = verifier
     app.include_router(router)
     app.dependency_overrides[get_hierarchy_manager] = lambda: manager
-    monkeypatch.setattr(manager.storage, "save_hierarchy_registry", lambda *_args, **_kwargs: False)
+    monkeypatch.setattr(manager.storage, "append_channel_record", lambda *_args, **_kwargs: False)
     with TestClient(app) as client:
         response = client.post(
             "/channels/durable/organizations/org/events", headers={"x-api-key": key},

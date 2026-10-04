@@ -5,8 +5,8 @@ This module contains unit tests for the ProofOfAuthority consensus class,
 including authority management, block validation, and event validation.
 """
 
-import time
 import hashlib
+import time
 from typing import Any
 
 from hierachain.consensus import ProofOfAuthority
@@ -43,7 +43,7 @@ def test_poa_authority_management():
 
 def test_poa_block_validation():
     """Test PoA block validation"""
-    poa = ProofOfAuthority(name="TestPoA")
+    poa = ProofOfAuthority(name="TestPoA", block_interval=10.0)
     authority_id = "test_authority"
     poa.add_authority(authority_id)
 
