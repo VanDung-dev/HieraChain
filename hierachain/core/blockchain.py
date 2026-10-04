@@ -14,9 +14,11 @@ import threading
 import time
 from collections.abc import Callable
 from copy import deepcopy
+from itertools import islice
 from typing import Any, cast
 
 from hierachain.core.block import Block
+from hierachain.core.event_query import select_event_page
 from hierachain.core.utils import validate_event_structure
 from hierachain.security.identity_loader import NodeIdentity, require_block_identity
 from hierachain.security.verify.block_verifier import get_block_verifier, sign_block
@@ -39,6 +41,7 @@ class Blockchain:
         'entity_event_index',
         'event_type_counts',
         'event_type_index',
+        '_event_query_type_index',
         'lock',
         'name',
         'node_identity',
@@ -65,6 +68,7 @@ class Blockchain:
         self.event_type_counts: dict[str, int] = {}
         self.event_type_index: dict[str, list[int]] = {}
         self.entity_event_index: dict[str, list[dict[str, Any]]] = {}
+        self._event_query_type_index: dict[str, list[dict[str, Any]]] = {}
         self.query_engine = BlockchainQueryEngine(self)
         with self.lock:
             self.create_genesis_block()
@@ -108,7 +112,7 @@ class Blockchain:
             )
             self.total_events += len(events)
             seen_types: set[str] = set()
-            for event in events:
+            for event_index, event in enumerate(events):
                 etype = event.get("event", "unknown")
                 self.event_type_counts[etype] = self.event_type_counts.get(etype, 0) + 1
                 if etype not in seen_types:
@@ -117,17 +121,22 @@ class Blockchain:
                         self.event_type_index[etype] = []
                     self.event_type_index[etype].append(block.index)
 
-                # Update entity index
+                entry = {
+                    "block_index": block.index,
+                    "event_index": event_index,
+                    "event": event,
+                    "timestamp": event.get("timestamp", time.time()),
+                }
+                query_type = event.get("event_type") or event.get("event", "")
+                if isinstance(query_type, str):
+                    self._event_query_type_index.setdefault(query_type, []).append(entry)
+                # Share the cached payload between entity and query-type indexes.
                 entity_id = event.get("entity_id")
                 if entity_id:
                     safe_id = cast(str, entity_id)
                     if safe_id not in self.entity_event_index:
                         self.entity_event_index[safe_id] = []
-                    self.entity_event_index[safe_id].append({
-                        "block_index": block.index,
-                        "event": event,
-                        "timestamp": event.get("timestamp", time.time())
-                    })
+                    self.entity_event_index[safe_id].append(entry)
 
     def _rebuild_event_indexes(self) -> None:
         """Rebuild total_events, event_type_counts, and entity_event_index
@@ -137,6 +146,7 @@ class Blockchain:
             self.event_type_counts.clear()
             self.event_type_index.clear()
             self.entity_event_index.clear()
+            self._event_query_type_index = {}
             for block in self.chain:
                 self._index_block_events(block)
 
@@ -339,6 +349,26 @@ class Blockchain:
     ) -> list[dict[str, Any]]:
         """Get all events that match a custom filter function."""
         return self.query_engine.get_events_by_filter(filter_func)
+
+    def get_event_page(
+        self, *, entity_id: str | None = None, event_type: str | None = None,
+        from_timestamp: float | None = None, to_timestamp: float | None = None,
+        limit: int = 100, after: tuple[int, int] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Read finalized events with ledger positions, using the narrowest available index."""
+        with self.lock:
+            candidates = None
+            if entity_id:
+                candidates = self.entity_event_index.get(entity_id, [])
+            if event_type:
+                typed = self._event_query_type_index.get(event_type, [])
+                if candidates is None or len(typed) < len(candidates):
+                    candidates = typed
+            start = max(0, after[0]) if after is not None else 0
+            return select_event_page(
+                islice(self.chain, start, None), candidates=candidates, entity_id=entity_id, event_type=event_type,
+                from_timestamp=from_timestamp, to_timestamp=to_timestamp, limit=limit, after=after,
+            )
     
     def get_chain_stats(self) -> dict[str, Any]:
         """
