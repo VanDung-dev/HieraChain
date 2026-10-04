@@ -187,7 +187,7 @@ def test_hc005_websocket_with_auth_connects_without_request_typeerror(tmp_path: 
     api_key = "hrc_" + "a" * 40
     key_file = tmp_path / "api_keys.json"
     key_file.write_text(
-        json.dumps({api_key: {"user_id": "test_user", "permissions": ["events"]}}),
+        json.dumps({api_key: {"user_id": "test_user", "permissions": ["chains", "events"]}}),
         encoding="utf-8",
     )
     script = """
@@ -237,6 +237,7 @@ def test_hc006_journal_rejection_does_not_accept_or_queue_event(
     service.status = OrderingStatus.ACTIVE
     service.metrics = SimpleNamespace(record_received=lambda: None)
     service.pending_events = {}
+    service.storage_handler = SimpleNamespace(processed_events={})
     service.event_pool = Queue()
     service.journal = SimpleNamespace(log_event=lambda _event: False)
     monkeypatch.setattr(service_module, "generate_event_id", lambda *_args: "event-1")

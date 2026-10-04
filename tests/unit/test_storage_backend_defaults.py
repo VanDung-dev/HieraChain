@@ -67,3 +67,11 @@ def test_explicit_memory_backend_remains_available(
     monkeypatch.setenv("HRC_STORAGE_BACKEND", "memory")
 
     assert HierarchyManager._create_storage() is None
+
+
+def test_redis_ledger_backend_fails_before_accepting_unsupported_proofs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("HRC_STORAGE_BACKEND", "redis")
+    with pytest.raises(RuntimeError, match="Redis ledger storage does not support durable signed blocks"):
+        HierarchyManager._create_storage()

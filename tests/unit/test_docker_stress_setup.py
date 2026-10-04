@@ -12,6 +12,29 @@ import pytest
 COMMON = Path(__file__).resolve().parents[2] / "docker/lib/common.sh"
 
 
+def test_ipfs_client_import_does_not_bootstrap_production_server(tmp_path: Path) -> None:
+    root = COMMON.parents[2]
+    script = """
+import sys
+from hierachain.api.storage.ipfs_client import IPFSClient
+assert IPFSClient is not None
+assert 'hierachain.api.server' not in sys.modules
+try:
+    from hierachain.api import create_app
+except RuntimeError as error:
+    assert 'HRC_API_KEYS_FILE' in str(error), str(error)
+else:
+    raise AssertionError('Production server accepted missing authentication configuration')
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script], cwd=tmp_path,
+        env={**os.environ, "PYTHONPATH": str(root), "HRC_ENV": "production",
+             "HRC_AUTH_ENABLED": "true", "HRC_API_KEYS_FILE": ""},
+        capture_output=True, text=True, timeout=15, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_docker_stress_output_keeps_reports_and_hides_live_logs() -> None:
     source = COMMON.read_text(encoding="utf-8")
     command = source[source.index("pytest docker/stress/"):source.index('--junitxml=', source.index("pytest docker/stress/"))]
