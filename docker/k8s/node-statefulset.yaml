@@ -34,13 +34,13 @@ spec:
               name: node-port
             - containerPort: 2661
               name: api-port
-          command: ["sh", "-c", ". .venv/bin/activate && POD_INDEX=${HOSTNAME##*-} && NODE_NUM=$(($POD_INDEX + 1)) && export NODE_ID=\"node$NODE_NUM\" && export HRC_IPFS_HOST=\"/dns4/ipfs-$POD_INDEX.ipfs-headless.hierachain.svc.cluster.local/tcp/5001\" && [ -f /app/config/identity/peers.env ] && . /app/config/identity/peers.env; hrc node start --host 0.0.0.0 --port 2661"]
+          command: ["sh", "-c", ". .venv/bin/activate && POD_INDEX=${HOSTNAME##*-} && NODE_NUM=$(($POD_INDEX + 1)) && export HRC_NODE_ID=\"node$NODE_NUM\" && export HRC_P2P_PORT=5001 && export HRC_IPFS_HOST=\"/dns4/ipfs-$POD_INDEX.ipfs-headless.hierachain.svc.cluster.local/tcp/5001\" && [ -f /app/config/identity/peers.env ] && . /app/config/identity/peers.env; hrc node start --host 0.0.0.0 --port 2661"]
           env:
-            - name: NODE_ID
+            - name: HRC_NODE_ID
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: NODE_PORT
+            - name: HRC_P2P_PORT
               value: "5001"
             - name: HRC_VALIDATOR_IDENTITY
               value: "/app/config/identity/identity.json"
@@ -99,6 +99,11 @@ spec:
                 configMapKeyRef:
                   name: hierachain-config
                   key: HRC_STORAGE_BACKEND
+            - name: HRC_DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: hierachain-config
+                  key: HRC_DATABASE_URL
             - name: HRC_REDIS_HOST
               valueFrom:
                 configMapKeyRef:

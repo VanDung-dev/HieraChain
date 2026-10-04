@@ -10,21 +10,18 @@ Requires running HieraChain nodes with IPFS enabled.
 """
 
 import os
-import time
 import random
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 from typing import Any
 
 import pytest
 
-from hierachain.api.storage.ipfs_client import IPFSClient
-
 from docker.stress.real_stress_client import (
-    RealStressClient,
-    REAL_REQUESTS,
     DEFAULT_CHAIN_NAME,
+    REAL_REQUESTS,
+    RealStressClient,
 )
+from hierachain.api.storage.ipfs_client import IPFSClient
 
 IPFS_HOST = os.getenv("HRC_IPFS_HOST", "/ip4/127.0.0.1/tcp/5001")
 IPFS_ENABLED = os.getenv("HRC_IPFS_ENABLED", "false").lower() == "true"
@@ -195,7 +192,7 @@ class TestIPFSStress:
                 fail += 1
 
         avg = sum(times) / len(times) if times else 0
-        print(f"\n=== IPFS Event Stress Results ===")
+        print("\n=== IPFS Event Stress Results ===")
         print(f"Submitted: {len(ipfs_refs)}")
         print(f"Success: {success}")
         print(f"Failed: {fail}")
@@ -241,7 +238,7 @@ class TestIPFSStress:
         time.sleep(3)
 
         blocks_url = f"{node_url}/api/ledger/chains/{CHAIN_NAME}/blocks"
-        latest = stress_client.session.get(f"{blocks_url}?limit=0", timeout=30)
+        latest = stress_client.session.get(f"{blocks_url}?limit=1", timeout=30)
         assert latest.status_code == 200
         total_blocks = latest.json()["total_blocks"]
         resolve_limit = len(ipfs_refs) * 2
@@ -274,7 +271,7 @@ class TestIPFSStress:
                 f"CID {ref['cid']} did not resolve to its uploaded payload"
             )
 
-        print(f"\n=== IPFS Resolve Stress Results ===")
+        print("\n=== IPFS Resolve Stress Results ===")
         print(f"Blocks retrieved: {len(blocks)}")
         print(f"Events found: {event_count}")
         print(f"Resolve query time: {resolve_time*1000:.2f}ms")

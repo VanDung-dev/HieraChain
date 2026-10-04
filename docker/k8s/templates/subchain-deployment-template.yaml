@@ -9,7 +9,7 @@
 #   {{REPLICAS}} - Number of pod replicas
 #   {{NODE_PORT}} - Port for inter-node communication
 #   {{API_PORT}} - Port for API access
-#   {{PEERS}} - Comma-separated list of peer addresses
+#   {{PEERS}} - Comma-separated list of peer-id@host:port seed entries
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -45,11 +45,11 @@ spec:
               name: api-port
           command: ["hrc", "start", "--host", "0.0.0.0", "--port", "{{API_PORT}}"]
           env:
-            - name: NODE_ID
+            - name: HRC_NODE_ID
               value: "{{SUBCHAIN_ID}}"
-            - name: NODE_PORT
+            - name: HRC_P2P_PORT
               value: "{{NODE_PORT}}"
-            - name: PEERS
+            - name: HRC_PEERS
               value: "{{PEERS}}"
             - name: LOG_LEVEL
               value: "{{LOG_LEVEL}}"

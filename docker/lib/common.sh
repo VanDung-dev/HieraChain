@@ -160,8 +160,8 @@ WHEEL_DIR="docker/dist"
 ensure_stress_api_key() {
   $COMPOSE --profile stress-test config --format json | uv run --no-sync python -c '
 import sys
-import orjson
-config = orjson.loads(sys.stdin.buffer.read())
+import json
+config = json.load(sys.stdin)
 key = config["services"]["stress-tester"].get("environment", {}).get("HRC_API_KEY")
 if not isinstance(key, str) or not key.strip():
     raise SystemExit("ERROR: set HRC_API_KEY in .env or the environment to a provisioned chains/events/proofs key before stress")

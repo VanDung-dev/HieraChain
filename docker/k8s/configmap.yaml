@@ -15,7 +15,9 @@ data:
   HRC_API_PORT: "2661"
 
   # Stress test configuration
-  HRC_STORAGE_BACKEND: "redis"
+  # Each node writes its ledger to SQLite on its own persistent /app/data volume.
+  HRC_STORAGE_BACKEND: "sqlite"
+  HRC_DATABASE_URL: "sqlite:////app/data/hierachain.db"
   HRC_REDIS_HOST: "hierachain-redis"
   HRC_REDIS_PORT: "6379"
   HRC_RATE_LIMIT: "false"
