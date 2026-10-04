@@ -297,6 +297,12 @@ def _serialize_arrow_batch(batch: pa.RecordBatch) -> bytes:
     return sink.getvalue().to_pybytes()
 
 
+def _file_write_state(descriptor: int) -> tuple[int, int, int, int, int]:
+    """Identify the exact file state covered by a successful fsync."""
+    state = os.fstat(descriptor)
+    return state.st_dev, state.st_ino, state.st_size, state.st_mtime_ns, state.st_ctime_ns
+
+
 def _is_parquet_file(path: Path) -> bool:
     """Identify legacy Parquet by its leading magic, even when its footer is damaged."""
     try:
@@ -466,6 +472,7 @@ class TransactionJournal:
         self._schema = _EVENT_SCHEMA
         self._lock = threading.Lock()
         self._write_poisoned = False
+        self._synced_file_state: tuple[int, int, int, int, int] | None = None
 
         # Ensure directory exists
         descriptor = _open_storage_directory(self.storage_path, create=True)
@@ -476,6 +483,7 @@ class TransactionJournal:
 
     def _open_journal(self) -> None:
         """Open the active Arrow IPC journal for append-only writes."""
+        self._synced_file_state = None
         self._acquire_writer_lease()
         try:
             if self.active_log_file.exists() and _is_parquet_file(self.active_log_file):
@@ -515,6 +523,7 @@ class TransactionJournal:
             handle.close()
 
     def _close_writer(self) -> None:
+        self._synced_file_state = None
         if self._journal_file is not None:
             try:
                 self._journal_file.close()
@@ -567,6 +576,7 @@ class TransactionJournal:
 
     def _rollback_failed_append(self, start_offset: int) -> bool:
         """Remove a failed frame before allowing another append."""
+        self._synced_file_state = None
         try:
             if self._journal_file is None:
                 raise OSError("Journal writer closed during append rollback")
@@ -574,6 +584,7 @@ class TransactionJournal:
             fd = self._journal_file.fileno()
             os.ftruncate(fd, start_offset)
             os.fsync(fd)
+            self._synced_file_state = _file_write_state(fd)
             return True
         except Exception as exc:
             self._write_poisoned = True
@@ -612,6 +623,7 @@ class TransactionJournal:
                 for chunk in (struct.pack("<I", len(payload)), payload):
                     remaining = memoryview(chunk)
                     while remaining:
+                        self._synced_file_state = None
                         append_started = True
                         written = self._journal_file.write(remaining)
                         if written is None or written <= 0:
@@ -619,6 +631,7 @@ class TransactionJournal:
                         remaining = remaining[written:]
                 self._journal_file.flush()
                 os.fsync(self._journal_file.fileno())
+                self._synced_file_state = _file_write_state(self._journal_file.fileno())
                 return True
             except (OSError, pa.ArrowException) as e:
                 logger.critical("CRITICAL: Failed to write to transaction journal: %s", e)
@@ -633,6 +646,7 @@ class TransactionJournal:
                 try:
                     self._journal_file.flush()
                     os.fsync(self._journal_file.fileno())
+                    self._synced_file_state = _file_write_state(self._journal_file.fileno())
                 except Exception as ex:
                     logger.debug("Error flushing journal on flush: %s", ex)
 
@@ -689,17 +703,28 @@ class TransactionJournal:
 
         A removed or truncated cursor fails closed. Legacy Parquet is read only
         during the initial scan; subsequent reads start at a verified Arrow boundary.
+        ACKed writes already cover their file state with fsync. Read-back syncs
+        again only if that state is unknown or has changed, and still reads disk.
         """
         with self._lock:
             if self._journal_file is None:
                 raise RuntimeError("Cannot read a closed transaction journal")
             self._journal_file.flush()
-            os.fsync(self._journal_file.fileno())
+            file_state = _file_write_state(self._journal_file.fileno())
+            if file_state != self._synced_file_state:
+                # ACKed appends already synchronized this exact state. Reopen,
+                # external changes, or uncertain writes require a fresh sync.
+                self._synced_file_state = None
+                os.fsync(self._journal_file.fileno())
+                self._synced_file_state = _file_write_state(self._journal_file.fileno())
             # ponytail: enumerate archive names per tail read; compact archives
             # only when file-count profiling warrants a persistent manifest.
             files = self._get_journal_files()
             if not files or files[-1] != self.active_log_file:
                 raise ValueError("Active journal file is missing")
+            active_state = self.active_log_file.stat()
+            if (active_state.st_dev, active_state.st_ino) != file_state[:2]:
+                raise ValueError("Active journal file was replaced")
             if cursor is not None:
                 position = next((i for i, path in enumerate(files) if path.stat().st_ino == cursor[0]), None)
                 if position is None:
