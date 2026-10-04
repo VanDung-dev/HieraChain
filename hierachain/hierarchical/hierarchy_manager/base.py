@@ -5,11 +5,9 @@ HierarchyManager class — coordinates Main Chain and Sub-Chains.
 from __future__ import annotations
 
 import logging
-import math
 import os
 import threading
 import time
-import uuid
 from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack, contextmanager
@@ -28,10 +26,8 @@ def _shared_pool(max_workers: int | None = None) -> Iterator[ThreadPoolExecutor]
         yield _SHARED_POOL
 
 from hierachain.hierarchical.channel import Channel
-from hierachain.hierarchical.channel.policy import ChannelPolicy
-from hierachain.hierarchical.channel.types import ChannelStatus
 from hierachain.hierarchical.main_chain import MainChain
-from hierachain.hierarchical.multi_org import MultiOrgNetwork, Organization
+from hierachain.hierarchical.multi_org import MultiOrgNetwork
 from hierachain.hierarchical.private_data import PrivateCollection
 
 if TYPE_CHECKING:
@@ -42,6 +38,7 @@ from hierachain.cluster.cross_level_sync_types import (
     ConflictResolutionStrategy,
 )
 from hierachain.config.settings import settings
+from hierachain.hierarchical.hierarchy_manager import recovery, registry
 from hierachain.hierarchical.hierarchy_manager.organization import (
     _build_channel_orgs,
     _build_collection_orgs,
@@ -170,327 +167,35 @@ class HierarchyManager:
 
     def _restore_main_chain(self) -> None:
         """Restore and verify the signed MainChain history before accepting proofs."""
-        from hierachain.consensus.ordering.storage import (
-            _block_from_dict,
-            _verify_chain_links,
-        )
-        from hierachain.hierarchical.main_chain.proofs import _refresh_durable_proofs
-
-        saved = self.storage.load_chain(self.main_chain.name)
-        if not isinstance(saved, dict):
-            raise RuntimeError("Could not load main chain from durable storage")
-        rows = saved.get("chain", [])
-        if not rows:
-            return
-        blocks = [_block_from_dict(row, self.main_chain.trusted_public_keys) for row in rows]
-        if blocks[0].index != 0 or any(block.index != index for index, block in enumerate(blocks)):
-            raise RuntimeError("Main chain block indices are incomplete")
-        _verify_chain_links(blocks)
-        main = self.main_chain
-        main.chain = blocks
-        main._rebuild_event_indexes()
-        _refresh_durable_proofs(main)
-        main.proof_sequence = main.proof_count
-
-        # Registration state is an in-memory index over signed MainChain
-        # events. Rebuild it before _restore_sub_chains reconnects children;
-        # otherwise every restart appends another registration event and can
-        # replace the original registration metadata.
-        from hierachain.core.utils import get_block_events
-
-        registrations: dict[str, tuple[dict[str, Any], float]] = {}
-        for block in main.chain:
-            for event in get_block_events(block):
-                if event.get("event") != "sub_chain_registration":
-                    continue
-                name = event.get("entity_id")
-                details = event.get("details")
-                metadata = details.get("metadata") if isinstance(details, dict) else None
-                if (
-                    not isinstance(name, str)
-                    or not name
-                    or not isinstance(details, dict)
-                    or details.get("sub_chain_name") != name
-                    or not isinstance(metadata, dict)
-                    or (
-                        "sub_chain_name" in metadata
-                        and metadata["sub_chain_name"] != name
-                    )
-                    or (
-                        "domain_type" in metadata
-                        and (
-                            not isinstance(metadata["domain_type"], str)
-                            or not metadata["domain_type"]
-                        )
-                    )
-                ):
-                    raise RuntimeError("Invalid signed sub-chain registration event")
-                event_timestamp = event.get("timestamp")
-                try:
-                    valid_timestamp = (
-                        isinstance(event_timestamp, (int, float))
-                        and not isinstance(event_timestamp, bool)
-                        and math.isfinite(event_timestamp)
-                    )
-                except OverflowError:
-                    valid_timestamp = False
-                if not valid_timestamp:
-                    raise RuntimeError("Invalid sub-chain registration timestamp")
-                previous = registrations.get(name)
-                previous_domain = previous[0].get("domain_type") if previous else None
-                current_domain = metadata.get("domain_type")
-                if (
-                    previous_domain is not None
-                    and current_domain is not None
-                    and previous_domain != current_domain
-                ):
-                    raise RuntimeError(
-                        f"Conflicting signed domain types for sub-chain {name}"
-                    )
-                restored_metadata = deepcopy(previous[0]) if previous else {}
-                restored_metadata.update(deepcopy(metadata))
-                registrations[name] = (restored_metadata, float(event_timestamp))
-
-        for name, (metadata, registered_at) in registrations.items():
-            consensus = main.consensus
-            authorities = getattr(
-                consensus, "authorities", getattr(consensus, "validators", set())
-            )
-            authority_metadata = getattr(
-                consensus,
-                "authority_metadata",
-                getattr(consensus, "validator_metadata", None),
-            )
-            restored_authority = {
-                "role": "sub_chain",
-                "permissions": ["proof_submission"],
-                "registered_at": registered_at,
-                "metadata": deepcopy(metadata),
-            }
-            if name in authorities:
-                if isinstance(authority_metadata, dict):
-                    authority_metadata.setdefault(name, restored_authority)
-            else:
-                add_authority = getattr(consensus, "add_authority", None)
-                if not callable(add_authority) or add_authority(name, restored_authority) is not True:
-                    raise RuntimeError(
-                        f"Could not restore sub-chain authority: {name}"
-                    )
-
-        main.registered_sub_chains = set(registrations)
-        main.sub_chain_metadata = {
-            name: metadata for name, (metadata, _registered_at) in registrations.items()
-        }
+        return recovery._restore_main_chain(self)
 
     def _hierarchy_registry_snapshot(self) -> dict[str, Any]:
-        for channel in self.channels.values():
-            for org_id, channel_org in channel.organizations.items():
-                organization = self.organizations.get(org_id)
-                if (
-                    organization is None
-                    or channel_org.member_registry is not organization.members
-                ):
-                    raise ValueError("Channel organization is not in the manager registry")
-        return {
-            "organizations": {
-                org_id: {
-                    "msp": {
-                        "ca_cert": org.msp.ca_cert,
-                        "tls_ca_cert": org.msp.tls_ca_cert,
-                        "admin_certs": org.msp.admin_certs,
-                    },
-                    "members": org.members,
-                }
-                for org_id, org in self.organizations.items()
-            },
-            "channels": {
-                channel_id: {
-                    "organizations": list(channel.organizations),
-                    "policy": {
-                        "read": channel.policy.read_policy,
-                        "write": channel.policy.write_policy,
-                        "endorsement": channel.policy.endorsement_policy,
-                        "admin": channel.policy.admin_policy,
-                        "lifecycle_endorsement": channel.policy.lifecycle_endorsement,
-                        "custom_policies": channel.policy.custom_policies,
-                    },
-                    "status": channel.status.value,
-                    "ledger": channel.ledger.snapshot(),
-                }
-                for channel_id, channel in self.channels.items()
-            },
-        }
+        return registry._hierarchy_registry_snapshot(self)
 
     def _persist_hierarchy_registry(self) -> bool:
-        with self._registry_lock:
-            if self.storage is None:
-                return True
-            save = getattr(self.storage, "save_hierarchy_registry", None)
-            if not callable(save):
-                return False
-            try:
-                state = self._hierarchy_registry_snapshot()
-                state["_revision"] = uuid.uuid4().hex
-                revision = (self._registry_state or {}).get("_revision")
-                if save(state, expected_revision=revision) is not True:
-                    return False
-                self._registry_state = deepcopy(state)
-                return True
-            except Exception:
-                logger.exception("Could not persist hierarchy registry")
-                return False
+        return registry._persist_hierarchy_registry(self)
 
     def _restore_hierarchy_registry(self) -> None:
-        load = getattr(self.storage, "load_hierarchy_registry", None)
-        if not callable(load):
-            return
-        state = load()
-        if state is None:
-            if (self._registry_state or {}).get("_revision") is not None:
-                raise RuntimeError("Persisted hierarchy registry is missing")
-            return
-        if state == self._registry_state:
-            return
-        self._apply_hierarchy_registry(state)
+        return registry._restore_hierarchy_registry(self)
+
+    def _channel_registry_revision(self) -> str | None:
+        return (self._registry_state or {}).get("_revision")
+
+    def _bind_channel_ledger(self, channel: Channel) -> None:
+        channel.ledger._lock = self._registry_lock
+        if self.storage is not None:
+            channel.ledger.bind_storage(self.storage, self._channel_registry_revision)
 
     def _apply_hierarchy_registry(self, state: dict[str, Any]) -> None:
-        """Refresh access and durable ledger state, preserving channel references."""
-        if (
-            not isinstance(state, dict)
-            or not isinstance(state.get("organizations"), dict)
-            or not isinstance(state.get("channels"), dict)
-            or ("_revision" in state and not isinstance(state["_revision"], str))
-        ):
-            raise RuntimeError("Invalid hierarchy registry snapshot")
-
-        organizations: dict[str, Organization] = {}
-        for org_id, saved in state["organizations"].items():
-            if not isinstance(org_id, str) or not isinstance(saved, dict):
-                raise RuntimeError("Invalid organization in hierarchy registry")
-            msp = saved.get("msp")
-            members = saved.get("members")
-            if not isinstance(msp, dict) or not isinstance(members, dict):
-                raise RuntimeError("Invalid organization in hierarchy registry")
-            org = Organization(org_id, msp)
-            for member_id, member in members.items():
-                identity = member.get("identity") if isinstance(member, dict) else None
-                if (
-                    not isinstance(member_id, str)
-                    or not isinstance(identity, dict)
-                    or identity.get("user_id") != member_id
-                    or identity.get("org_id") != org_id
-                    or identity.get("role") != member.get("role")
-                ):
-                    raise RuntimeError("Invalid member in hierarchy registry")
-            org.members = members
-            organizations[org_id] = org
-
-        from hierachain.hierarchical.channel.ledger import ChannelLedger
-
-        prepared: dict[str, tuple[list[Any], ChannelPolicy, ChannelStatus, dict[str, Any]]] = {}
-        for channel_id, saved in state["channels"].items():
-            if not isinstance(channel_id, str) or not isinstance(saved, dict):
-                raise RuntimeError("Invalid channel in hierarchy registry")
-            org_ids = saved.get("organizations")
-            policy = saved.get("policy")
-            if not isinstance(org_ids, list) or not isinstance(policy, dict):
-                raise RuntimeError("Invalid channel in hierarchy registry")
-            channel_orgs = _build_channel_orgs(org_ids, organizations)
-            ledger = ChannelLedger(self.main_chain.node_identity, self.main_chain.trusted_public_keys, channel_id)
-            ledger.restore(saved.get("ledger", {"blocks": [], "pending_events": []}))
-            prepared[channel_id] = (
-                channel_orgs, ChannelPolicy(policy), ChannelStatus(saved.get("status")), ledger.snapshot()
-            )
-
-        # Validate the entire snapshot before updating objects held by callers.
-        network = MultiOrgNetwork()
-        for org_id, org in organizations.items():
-            existing = self.organizations.get(org_id)
-            if existing is not None:
-                existing.msp = org.msp
-                existing.members.clear()
-                existing.members.update(org.members)
-                organizations[org_id] = existing
-                org = existing
-            network.add_organization(org)
-        channels: dict[str, Channel] = {}
-        for channel_id, (channel_orgs, policy, channel_status, ledger_state) in prepared.items():
-            for org in channel_orgs:
-                org.member_registry = organizations[org.org_id].members
-            channel = self.channels.get(channel_id)
-            if channel is None:
-                channel = Channel(
-                    channel_id, channel_orgs, state["channels"][channel_id]["policy"],
-                    node_identity=self.main_chain.node_identity,
-                    trusted_public_keys=self.main_chain.trusted_public_keys,
-                )
-            else:
-                channel.organizations = {org.org_id: org for org in channel_orgs}
-                channel.policy = policy
-                counts = channel.event_statistics["events_by_org"]
-                channel.event_statistics["events_by_org"] = {
-                    org.org_id: counts.get(org.org_id, 0) for org in channel_orgs
-                }
-            channel.status = channel_status
-            channel.ledger.restore(ledger_state)
-            channel.restore_statistics()
-            channel._persist_registry = self._persist_hierarchy_registry
-            channel._registry_lock = self._registry_lock
-            channel._refresh_registry = self._restore_hierarchy_registry
-            channel.ledger._lock = self._registry_lock
-            channel.ledger._persist = self._persist_hierarchy_registry
-            channels[channel_id] = channel
-        for channel_id, channel in self.channels.items():
-            if channel_id not in channels:
-                channel.organizations.clear()
-                channel.status = ChannelStatus.CLOSED
-        self.organizations = organizations
-        self.network = network
-        self.channels = channels
-        self._registry_state = deepcopy(state)
+        """Refresh access metadata; existing ledgers consume their own durable suffix."""
+        return registry._apply_hierarchy_registry(self, state)
 
     def _mutate_registry(self, change: Callable[[], Any], failure_message: str) -> Any:
-        with self._registry_lock:
-            for _ in range(3):
-                self._restore_hierarchy_registry()
-                before = deepcopy(self._registry_state or self._hierarchy_registry_snapshot())
-                self._registry_mutating = True
-                try:
-                    result = change()
-                    if self._persist_hierarchy_registry():
-                        return result
-                except Exception:
-                    self._apply_hierarchy_registry(before)
-                    raise
-                finally:
-                    self._registry_mutating = False
-                self._apply_hierarchy_registry(before)
-            raise RuntimeError(failure_message)
+        return registry._mutate_registry(self, change, failure_message)
 
     def _restore_sub_chains(self) -> None:
         """Recreate every persisted sub-chain before serving API requests."""
-        if self.storage is None:
-            return
-
-        from hierachain.hierarchical.sub_chain import SubChain
-
-        with ExitStack() as cleanup:
-            for metadata in self.storage.list_chains():
-                name = metadata["name"]
-                domain_type = metadata.get("domain_type") or "generic"
-                if self.transaction_manager.requires_2pc_participant(name):
-                    from hierachain.domains.chains.domain_chain import DomainChain
-
-                    chain = DomainChain(name, domain_type)
-                else:
-                    chain = SubChain(
-                        name=name,
-                        domain_type=domain_type,
-                        node_identity=self.node_identity,
-                    )
-                cleanup.callback(chain.shutdown)
-                self.add_sub_chain(name, chain, persist=False)
-            cleanup.pop_all()
+        return recovery._restore_sub_chains(self)
 
     def create_sub_chain(
         self, name: str, domain_type: str, metadata: dict[str, Any] | None = None
@@ -796,7 +501,6 @@ class HierarchyManager:
             channel._registry_lock = self._registry_lock
             channel._refresh_registry = self._restore_hierarchy_registry
             channel.ledger._lock = self._registry_lock
-            channel.ledger._persist = self._persist_hierarchy_registry
             return channel
         return self._mutate_registry(change, "Failed to persist channel registry")
 
@@ -804,7 +508,10 @@ class HierarchyManager:
         with self._registry_lock:
             if not self._registry_mutating:
                 self._restore_hierarchy_registry()
-            return self.channels.get(channel_id)
+            channel = self.channels.get(channel_id)
+            if channel is not None:
+                channel._refresh_ledger()
+            return channel
 
     def create_private_collection(
         self,
@@ -838,6 +545,11 @@ class HierarchyManager:
         return self.create_private_collection(name, org_ids, config)
 
     def assign_organization_to_chain(self, org_id: str, chain_name: str) -> bool:
+        """Return False: organization-to-chain access assignment is not implemented.
+
+        Organization/channel membership and channel policies provide the
+        supported access path. Looking up a chain does not grant access to it.
+        """
         org = self.get_organization(org_id)
         if not org:
             return False
@@ -846,7 +558,13 @@ class HierarchyManager:
         if not chain:
             return False
 
-        return True
+        logger.warning(
+            "Organization-to-chain assignment is not implemented (%s, %s); "
+            "configure channel membership and policies instead",
+            org_id,
+            chain_name,
+        )
+        return False
 
     @staticmethod
     def _create_storage() -> Any | None:
