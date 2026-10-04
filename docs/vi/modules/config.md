@@ -62,6 +62,8 @@ HieraChain dùng `HRC_ENV` để chọn cấu hình và dùng `ENV` khi `HRC_ENV
 
 Giá trị môi trường khác, không rỗng, sẽ gây lỗi thay vì chọn development.
 
+Module settings nạp `.env` trước khi định nghĩa các thiết lập đọc biến môi trường. Đặt `HRC_ENV_FILE` để nạp tệp dotenv khác; giá trị đã có trong môi trường tiến trình được ưu tiên.
+
 ---
 
 ## Secret Manager (Quản lý Bí mật)
@@ -84,9 +86,11 @@ cluster_key = sm.get_secret("HRC_CLUSTER_SECRET")
 
 `get_secret(key, default=None)` nhận tên biến môi trường cho `env`, hoặc tên trường cho Vault/AWS. Với AWS, `key` không phải SecretId: đặt `HRC_AWS_SECRET_NAME` thành tên secret hoặc ARN và tùy chọn `HRC_AWS_REGION` (mặc định `us-east-1`). `SecretString` phải là JSON object với trường được yêu cầu có kiểu chuỗi; mỗi lần gọi chỉ trả trường đó, kể cả chuỗi rỗng đã lưu.
 
-Thiếu cấu hình, thiếu trường, trường không phải chuỗi, JSON lỗi, `SecretBinary` và lỗi AWS đều trả `default` (hoặc `None`). AWS không fallback sang biến môi trường và không trả toàn bộ JSON object. Log không chứa nội dung bí mật hoặc thông điệp exception. AWS secret cũ lưu dạng chuỗi thuần cần chuyển sang JSON object có trường chuỗi được đặt tên.
+Thiếu cấu hình, thiếu trường, trường không phải chuỗi, JSON lỗi, `SecretBinary` và lỗi backend đều trả `default` (hoặc `None`). AWS không fallback sang biến môi trường và không trả toàn bộ JSON object. Log không chứa nội dung bí mật hoặc thông điệp exception. AWS secret cũ lưu dạng chuỗi thuần cần chuyển sang JSON object có trường chuỗi được đặt tên.
 
-Vault fallback sang biến môi trường khi thiếu URL hoặc thông tin xác thực; backend không được hỗ trợ cũng chọn `env`. Caller phải gọi `SecretManager` trực tiếp: cấu hình backend không tự thay mọi lời gọi `os.getenv()` trong ứng dụng.
+Vault trả `default` (hoặc `None`) khi thiếu URL hoặc thông tin xác thực; trong trường hợp đó, nó không đọc biến môi trường cùng tên. Backend không được hỗ trợ sẽ gây `ValueError`. Caller phải gọi `SecretManager` trực tiếp: cấu hình backend không tự thay mọi lời gọi `os.getenv()` trong ứng dụng.
+
+`SecretManager` độc lập với xử lý master key. `HRC_MASTER_KEY_SOURCE=env` vẫn được chấp nhận để tương thích với hành vi secret qua biến môi trường hiện có. Giá trị nguồn khác và mọi `HRC_MASTER_KEY_FILE` không rỗng đều gây lỗi cấu hình vì runtime chưa có master-key provider thay thế. Hãy xóa các thiết lập không được hỗ trợ trước khi khởi động.
 
 ---
 

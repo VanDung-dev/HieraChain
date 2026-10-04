@@ -37,6 +37,12 @@ thuộc vào recovery engine riêng.
 restart, ordering service có thể phát lại các entry trong journal và xác thực
 chúng trước khi đưa trở lại pipeline sự kiện.
 
+Nếu thao tác ghi lỗi sau khi đã ghi một phần frame, journal cắt file về offset
+ban đầu của frame và fsync phần sửa chữa trước khi chấp nhận lần ghi tiếp theo.
+Nếu không xác nhận được việc sửa chữa, journal từ chối các lần ghi sau cho đến
+khi được đóng và mở lại thành instance mới; bước khởi động sẽ sửa phần cuối
+chưa hoàn chỉnh của file đang hoạt động.
+
 ```python
 from hierachain.error_mitigation.journal import TransactionJournal
 

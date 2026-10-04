@@ -30,6 +30,7 @@ print(settings.AUTH_ENABLED)
 ### Runtime environment
 
 * `HRC_ENV` selects the config class; `ENV` is used when `HRC_ENV` is unset or blank. `HRC_ENV` takes precedence when both are set. Values are case-insensitive and ignore surrounding whitespace: `dev` / `development`, `test` / `testing`, or `production` / `prod` / `product` (default when both are blank: development). An unknown nonblank value raises an error instead of selecting development.
+* `.env` is loaded before environment-backed settings are defined. Set `HRC_ENV_FILE` to use another dotenv file. Existing process environment values take precedence over values in that file.
 
 ### API
 
@@ -50,7 +51,7 @@ print(settings.AUTH_ENABLED)
 
 ### Storage and cache
 
-* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (defaults: `postgres` in development and production, `memory` in tests; supported values: `sqlite`, `postgres` / `postgresql`, `redis`, `memory`). An unknown backend stops API startup and chain storage initialization.
+* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (defaults: `postgres` in development and production, `memory` in tests; recognized values: `sqlite`, `postgres` / `postgresql`, `redis`, `memory`). An unknown backend stops API startup and chain storage initialization. `HierarchyManager` also rejects `redis` at startup because durable signed-block persistence is unavailable; use `sqlite` or `postgres` for durable ledger storage. Redis remains available for the separate indexing, authentication-state, and rate-limit adapters.
 * In production, when the selected backend is PostgreSQL, set `DATABASE_URL` or `HRC_DATABASE_URL` explicitly. API startup rejects the built-in local fallback URL; it does not test database connectivity.
 * `DATABASE_URL` takes precedence when nonblank. An empty or whitespace-only value falls back to `HRC_DATABASE_URL`.
 * If PostgreSQL is unavailable, chain storage initialization fails. Set `HRC_STORAGE_BACKEND=sqlite` to select SQLite explicitly.
@@ -59,7 +60,7 @@ print(settings.AUTH_ENABLED)
 * Cache policies: `BLOCK_CACHE_POLICY` (`lru`), `EVENT_CACHE_POLICY` (`ttl`), `ENTITY_CACHE_POLICY` (`lfu`)
 * `ENTITY_TTL` (default: `3600` seconds)
 * DB: `DATABASE_URL` (development fallback: `postgresql://hiera:hiera@localhost:5432/hierachain`; do not rely on this fallback in production)
-* Redis: `REDIS_HOST` (`localhost`), `REDIS_PORT` (`6379`), `REDIS_DB` (`0`)
+* Redis: `HRC_REDIS_HOST` or `REDIS_HOST` (`localhost`), `HRC_REDIS_PORT` or `REDIS_PORT` (`6379`), `REDIS_DB` (`0`). HRC-prefixed names take precedence.
 
 ### IPFS (off-chain storage)
 
@@ -80,9 +81,9 @@ print(settings.AUTH_ENABLED)
 * `HRC_API_KEY_REVOCATIONS_DB` (default: `data/api_key_revocations.sqlite3`): durable local API key revocations and brute-force lockouts for the production API. All workers on one host must use the same persistent, writable file.
 * `HRC_AUTH_STATE_REDIS_URL` (optional): when set, API key revocations and brute-force lockouts use the same Redis instance across hosts. Configure Redis persistence if revocations must survive a Redis restart. Backend errors reject authentication rather than using local state.
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
-* Secret backend: `HRC_SECRET_BACKEND` (values: `env`, `vault`, `aws`). Default is `env`.
+* Secret backend: `HRC_SECRET_BACKEND` (values: `env`, `vault`, `aws`). Default is `env`; another value raises `ValueError`.
 * AWS Secret Manager: `HRC_AWS_SECRET_NAME` (required secret name or ARN containing a JSON object), `HRC_AWS_REGION` (default: `us-east-1`). `SecretManager.get_secret(key)` selects a string field, never the whole `SecretString`; see [Secret Manager](../modules/config.md) for defaults and migration.
-* Master key: `HRC_MASTER_KEY_SOURCE` (`auto` in dev/test, `env` in production), `HRC_MASTER_KEY_FILE` (default: `config/master_backup_key.key`)
+* `HRC_MASTER_KEY_SOURCE=env` remains accepted as a compatibility alias for the existing environment-secret behavior. Other `HRC_MASTER_KEY_SOURCE` values and any nonempty `HRC_MASTER_KEY_FILE` now stop configuration loading with an error because no alternate master-key provider is implemented. This does not change the separate `FileVaultProvider` API.
 * Brute-force protection:
     * `HRC_BF_MAX_FAILURES` (default: `5`)
     * `HRC_BF_LOCKOUT_SECONDS` (default: `900` = 15 minutes)
@@ -92,6 +93,7 @@ print(settings.AUTH_ENABLED)
 
 ### P2P network security
 
+* Node identity and P2P transport: `HRC_NODE_ID` (default: `default-node`; `NODE_ID` is a fallback alias), `HRC_P2P_PORT` (default: `5555`; `NODE_PORT` is a fallback alias), and `HRC_PEERS` (default: empty list; comma-separated seed nodes; `PEERS` is a fallback alias). Use `peer-id@host:port` when the remote transport identity differs from its hostname; plain `host:port` treats the hostname as the peer ID. HRC-prefixed names take precedence.
 * `HRC_P2P_TRUST_POLICY` (default: `open` in dev, `strict` in production; values: `open|strict`)
 * `HRC_P2P_PEER_ALLOWLIST` (comma-separated peer IDs for strict mode)
 * `HRC_P2P_REQUIRE_SIGNATURES` (`false` in dev, `true` in production)
@@ -154,7 +156,7 @@ print(settings.AUTH_ENABLED)
 
 ### CLI
 
-* `CLI_CONFIG_FILE` (default: `chains.json`)
+* `CLI_CONFIG_FILE` (default: `data/config.yaml`; default node config used by `hrc --config`)
 * `CLI_LOG_LEVEL` (default: `INFO`)
 
 ## Example .env (development)
@@ -179,10 +181,8 @@ HRC_AUTH_ENABLED=true
 HRC_CORS_ALLOW_ALL=false
 HRC_CORS_ORIGINS=https://portal.example.com
 HRC_RATE_LIMIT=true
-DATABASE_URL=postgresql+psycopg://user:pass@db:5432/hierachain
-HRC_STORAGE_BACKEND=redis
-REDIS_HOST=redis
-REDIS_PORT=6379
+DATABASE_URL=postgresql://user:pass@db:5432/hierachain
+HRC_STORAGE_BACKEND=postgres
 HRC_IPFS_ENABLED=true
 HRC_IPFS_HOST=/ip4/ipfs/tcp/5001
 HRC_IPFS_ENCRYPTION_KEY=your_32_byte_hex_key_here

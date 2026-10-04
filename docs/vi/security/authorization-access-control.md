@@ -47,6 +47,12 @@ Lớp xác thực nhanh cho các yêu cầu qua API:
 *   **Middleware Tích hợp**: Tự động xác thực API Key cho mọi yêu cầu HTTP vào server.
 *   **Permission Mapping**: Ánh xạ API Key với các quyền hạn cụ thể trong hệ thống.
 
+## Kiểm tra ủy quyền
+
+* MSP chỉ cho phép hành động khi thực thể đang hoạt động và chứng chỉ hiện còn hiệu lực, chưa bị thu hồi. Tính hợp lệ của chứng chỉ được kiểm tra ở mỗi lần xác minh để lần kiểm tra thành công trước đó không kéo dài quyền sau khi chứng chỉ hết hạn.
+* Quyền API key phải là danh sách chuỗi. Quyền wildcard là giá trị chính xác `all`; dữ liệu quyền sai định dạng sẽ bị từ chối.
+* Kết quả policy trong cache gắn với phiên bản policy đã đăng ký. Các thay đổi qua `Policy.add_rule()` và `Policy.remove_rule()` có hiệu lực ở lần đánh giá tiếp theo.
+
 ---
 
 ## Luồng Xác thực & Ủy quyền

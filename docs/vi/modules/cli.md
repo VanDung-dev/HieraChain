@@ -34,9 +34,10 @@ Dùng để khởi tạo và theo dõi cấu trúc phân cấp của các chuỗ
 
     *   *Tham số*: `[supply_chain|healthcare|finance|manufacturing]`
     *   *Option*: `--name` (Bắt buộc), `--parent` (Mặc định: `main`).
+    *   Hierarchy manager hiện tại gắn sub-chain vào `main`; yêu cầu parent lồng tên khác sẽ bị từ chối rõ ràng.
 
 *   **`hrc chain list`**: Liệt kê toàn bộ các chuỗi hiện có và số lượng block của chúng.
-*   **`hrc chain submit-proof`**: Hiện trả exit code khác 0 vì registry chain của CLI chỉ nằm trong bộ nhớ. Dùng endpoint REST gửi proof có xác thực và SQL storage bền vững.
+*   **`hrc chain submit-proof`**: Hiện trả exit code khác 0. Dùng endpoint REST gửi proof có xác thực và SQL storage bền vững.
 
 ### Nhóm lệnh `event` (Quản lý Sự kiện)
 
@@ -68,7 +69,7 @@ Dùng để vận hành node API.
 
 *   **`hrc node start`**: Khởi chạy server FastAPI.
 
-    *   *Option*: `--host`, `--port`, `--reload` (Dành cho phát triển).
+    *   *Option*: `--host`, `--port`, `--reload` (Dành cho phát triển). Option toàn cục `--config` chọn cấu hình node được nạp trước khi khởi chạy.
 
 *   **`hrc node init`**: Khởi tạo thư mục dữ liệu và cấu hình mặc định cho node mới.
 
@@ -81,7 +82,7 @@ Công cụ dành cho kiểm toán viên để kiểm tra tính toàn vẹn của
 
 Cả hai lệnh nhận `--db` (đường dẫn/URL SQLite hoặc URL PostgreSQL; nếu bỏ qua thì dùng cơ sở dữ liệu đã cấu hình). `verify signatures` còn nhận `--limit` để chỉ kiểm tra N block gần nhất trong từng chain. Sự kiện đã ký cần khóa công khai trong `details.public_key` hoặc `details.sender_public_key` để xác minh.
 
-Các lệnh này kiểm tra block đã lưu. Chain do CLI tạo hiện chỉ nằm trong bộ nhớ và CLI chưa lưu chúng xuống storage.
+Các lệnh này kiểm tra block đã lưu. Lệnh tạo chain và event dùng registry bền vững của `HierarchyManager` và khôi phục các sub-chain đã đăng ký từ SQLite hoặc PostgreSQL đã cấu hình ở mỗi lần chạy. Việc sắp thứ tự event dùng journal bền vững riêng của từng sub-chain.
 
 ---
 
@@ -94,14 +95,17 @@ Các lệnh này kiểm tra block đã lưu. Chain do CLI tạo hiện chỉ n�
 hrc node init --data-dir ./my_data
 
 # Tạo chuỗi cung ứng linh kiện
-hrc chain create supply_chain --name logistics_01 --parent main
+hrc --config ./my_data/config.yaml chain create supply_chain --name logistics_01 --parent main
 ```
 
 ### 2. Ghi nhận quy trình sản xuất
 
 ```bash
 # Bắt đầu sản xuất thực thể ITEM-99
-hrc event add logistics_01 start_operation --entity-id ITEM-99 --details '{"line": "A1"}'
+hrc --config ./my_data/config.yaml event add logistics_01 start_operation --entity-id ITEM-99 --details '{"line": "A1"}'
+
+# Khởi chạy API với cùng cấu hình node
+hrc --config ./my_data/config.yaml node start
 
 # Gửi proof qua REST API có xác thực và SQL storage bền vững
 curl -X POST -H "X-API-Key: $HRC_API_KEY" http://localhost:2661/api/ledger/chains/logistics_01/submit-proof
@@ -118,11 +122,15 @@ hrc verify signatures --limit 100
 
 ## Cấu hình & Biến môi trường
 
-CLI ưu tiên đọc cấu hình từ file `chains.json` hoặc file được chỉ định qua option toàn cục:
+CLI đọc `data/config.yaml` mặc định hoặc file được chỉ định trước lệnh bằng option toàn cục:
 
 ```bash
-hrc --config custom_config.json chain list
+hrc --config ./my_data/config.yaml chain list
 ```
+
+`hrc node init` ghi YAML gồm `database_url` và `node_id`. CLI cũng nhận object JSON có các trường này. Các giá trị được áp dụng cho lệnh chain và lúc khởi chạy API. Các biến môi trường `DATABASE_URL`, `HRC_DATABASE_URL`, `HRC_NODE_ID` hoặc `NODE_ID` được cấu hình tường minh sẽ được ưu tiên. File cấu hình chỉ được chứa `database_url` và `node_id`.
+
+Journal sắp thứ tự sub-chain được lưu trong `data/<chain-name>` tương đối với thư mục làm việc hiện tại. Hãy giữ thư mục này bền vững và chạy CLI từ một thư mục làm việc ổn định; `--data-dir` tùy chỉnh hiện chỉ di chuyển cấu hình và database hierarchy, chưa di chuyển các journal đó.
 
 ---
 

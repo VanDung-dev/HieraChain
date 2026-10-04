@@ -37,6 +37,8 @@ HieraChain uses three independent security layers for network communication:
     * Authenticates node identity through MSP (Membership Service Provider) certificates.
     * Only allows nodes from valid organizations to join the network.
     * 2-step Handshake process: `INIT` and `ACK`.
+    * Binds the active certificate subject and signing key to the ZeroMQ routing ID
+      and registered organization identity.
 
 *   :material-shield-sync:{ .lg .middle } __Layer 3: Integrity & Replay Protection__
 
@@ -46,6 +48,7 @@ HieraChain uses three independent security layers for network communication:
 
     * Every P2P message is digitally signed.
     * Prevents replay attacks by checking unique Nonce and Timestamp within the allowed window (60s).
+    * Both handshake messages carry signed `timestamp` and `nonce` fields accepted by the transport replay gate.
 
 </div>
 
@@ -97,6 +100,12 @@ sequenceDiagram
     Note over NodeA, NodeB: 2. Authenticated P2P Channel Ready
 ```
 
+The responder echoes the `HANDSHAKE_INIT` nonce in the signed ACK. The initiator
+accepts an ACK only while a matching outbound handshake is pending, the peer
+passes the configured trust policy, and the ACK certificate is active and bound
+to that peer's routing ID and signing key. A missing or mismatched CA
+certificate, identity record, organization, or key is rejected.
+
 ---
 
 ## Usage Examples
@@ -140,3 +149,5 @@ await secure_node.send_secure("peer_002", payload)
 *   [Security and MSP](./security.md)
 *   [BFT Consensus](../consensus/bft_consensus.md)
 *   [Network Monitoring](./monitoring.md)
+
+ZeroMQ accepts frames up to 1 MiB and exactly two application frames (sender identity and body); excess frames are drained without accumulating a Python multipart list. Secure connections validate identities and signatures before retaining replay entries, with a separate 1,000-entry cache per verified peer. Plain transport requires configured peer IDs and isolates their caches; it provides no cryptographic identity guarantee. These limits do not replace upstream connection and bandwidth controls.

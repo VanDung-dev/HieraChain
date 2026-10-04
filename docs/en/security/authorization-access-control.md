@@ -47,6 +47,12 @@ Fast authentication layer for API requests:
 *   **Integrated Middleware**: Automatically authenticates API Keys for every HTTP request to the server.
 *   **Permission Mapping**: Maps API Keys to specific permissions within the system.
 
+## Authorization checks
+
+* MSP actions are allowed only while the entity is active and its certificate is currently valid and not revoked. Certificate validity is checked on each verification so an earlier successful check cannot outlive the certificate.
+* API key permissions must be a list of strings. The wildcard is the exact permission `all`; malformed permission data denies access.
+* Policy decision cache entries include the registered policy version. `Policy.add_rule()` and `Policy.remove_rule()` changes take effect on the next evaluation.
+
 ---
 
 ## Authentication & Authorization Flow

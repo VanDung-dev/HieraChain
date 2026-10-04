@@ -46,6 +46,8 @@ Get system status from API Admin. Returns an object containing `version`, `uptim
 
 Trace the history of an entity across chains.
 
+Entity IDs are percent-encoded as one URL path segment. `health_check()` uses the API route `/api/ledger/health`. If `api_key` is configured, the sync and async clients do not follow redirects for read requests; a 3xx response raises `HieraChainAPIError` and the `X-API-Key` is not sent to another origin.
+
 ---
 
 ### Example: Off-chain Storage (IPFS)
@@ -131,3 +133,7 @@ print("Event accepted, event_id:", result.event_id)
 # Get Block by hash
 block = client.get_block(block_id="8f2a9d...")
 ```
+
+### JSON transport
+
+Both SDK clients encode request bodies and decode response JSON through standard-library `json` helpers, using UTF-8 and a default `Content-Type: application/json` while honoring configured headers. Non-finite numbers are rejected before sending; responses containing `NaN`, `Infinity` or overflowing float values are rejected. Python integers larger than 64 bits are preserved without conversion to floats, within Python's integer conversion limit. Invalid response JSON follows the existing failure and retry handling. Mutating requests are still not retried automatically.

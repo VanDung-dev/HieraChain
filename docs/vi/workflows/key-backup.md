@@ -31,9 +31,10 @@ python -m hierachain key verify --input validator_key.json
 
 **File**: `hierachain/security/key_provider.py` (`FileVaultProvider`)
 
-* Creates a `.vault` file encrypted with `PBKDF2HMAC(SHA256, 310k iter)` → `Fernet` (AES-128-CBC+HMAC, not AES-256-GCM). Password is `HRC_VAULT_*` / constructor arg.
+* Tạo file `.vault` mã hóa bằng `PBKDF2HMAC(SHA256, 310k iter)` rồi dùng `Fernet` (AES-128-CBC với HMAC, không phải AES-256-GCM). Password được truyền vào constructor của `FileVaultProvider`.
 * Explicitly documented as *dev/test only*, production should implement `KeyProvider` via HSM/KMS.
 * No distribution to multiple vaults, no `metadata.json`, no `retention_period`, no `auto_restore_threshold`.
+* `HRC_VAULT_TOKEN` và `HRC_VAULT_PATH` cấu hình backend Vault riêng của `SecretManager`; chúng không cung cấp password cho `FileVaultProvider`.
 
 ```mermaid
 sequenceDiagram
@@ -55,7 +56,7 @@ sequenceDiagram
 |---|---|
 | `KeyBackupManager.backup_keys()` / `_encrypt_backup_data()` / `SHA-512` / `_distribute_to_locations()` | No such class/methods exist |
 | AES-256-GCM + nonce\|\|ciphertext + 3-vault failover | Vault uses `Fernet`; multi-location is manual copy |
-| `MasterKeyProvider.get_master_key()` | No such provider; master key is `HRC_MASTER_KEY_FILE`/`HRC_MASTER_KEY_SOURCE` + `HRC_VAULT_TOKEN`/`HRC_VAULT_PATH` envs |
+| `MasterKeyProvider.get_master_key()` | Không có provider này; chỉ `HRC_MASTER_KEY_SOURCE=env` được chấp nhận làm alias tương thích, còn giá trị nguồn khác và `HRC_MASTER_KEY_FILE` không rỗng sẽ dừng nạp cấu hình |
 | Auto backup on MSP cert issue or consensus rotation | No hook; certs in `security/msp.py` are in-memory only |
 
 ---
@@ -65,7 +66,7 @@ sequenceDiagram
 1. Generate: `python -m hierachain key generate -o validator_key.json`
 2. Backup: `cp validator_key.json /secure/backup/` (+ encrypt externally if needed)
 3. Restore: `cp /secure/backup/validator_key.json ./ && python -m hierachain key verify`
-4. For encrypted vault: `FileVaultProvider.create_vault(vault_path, password)` then store password in vault/KMS at `HRC_VAULT_TOKEN`.
+4. Với vault mã hóa: `FileVaultProvider.create_vault(vault_path, password)` và truyền password qua luồng quản lý secret của ứng dụng. `HRC_VAULT_TOKEN` là credential của dịch vụ Vault, không phải password của file vault.
 
 ---
 

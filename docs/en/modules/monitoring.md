@@ -144,3 +144,5 @@ When an alert is created but not **Acknowledged** within the specified time:
 *   [Risk Management](./risk-management.md)
 *   [Security and Resource Guard](./security.md)
 *   [System Configuration](./config.md)
+
+Consensus success rate is healthy above 95%, warning at or below 95%, and critical at or below 90%. Critical metric alerts replace active lower-severity alerts. Notification delivery uses one worker and a queue of at most 128 alerts; a full queue records a failed notification while preserving alert history. SMTP and webhook requests use a 10-second timeout. Call `AlertManager.close()` to finish queued delivery; abrupt process exit can lose queued notifications.

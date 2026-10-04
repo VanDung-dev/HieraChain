@@ -29,15 +29,19 @@ Components reside in dedicated packages under `hierachain/hierarchical/`.
 
 Startup loads block headers and ordered events with one SQL range query, while retaining Merkle, hash, trusted-signature, gap, and chain-link checks. Sub-Chain consumes the verified ordering bootstrap snapshot once instead of reading the full chain again; later synchronization reads fresh storage. Recovery rebuilds entity and event-type indexes and counters through the shared Blockchain index helper, so queries reflect the restored ledger.
 
+`validate_cross_chain_consistency()` compares each Sub-Chain tip hash with its latest durably stored MainChain proof. A missing or mismatched proof always makes `overall_consistent` false. When the tip has advanced but the configured proof interval has not elapsed, the per-chain result is `consistent: false, pending: true`; `pending` explains the scheduled wait but does not certify the unanchored tip. A MainChain proof is not treated as an anchor until its signed block has passed durable read-back.
+
 ### 2.3 Hierarchy Manager (`hierarchy_manager/base.py`)
 
 * Coordinates chain lifecycles, cross-chain verification, and multi-organization setups.
 * Manages communication channels, private data collections, and two-phase commit (2PC) transactions.
 * Compiles system-wide integrity reports across all registered chains.
 
-Organization/member/channel access state is persisted with an internal `_revision`. SQLite and PostgreSQL use atomic conditional writes; Redis uses WATCH/MULTI. Manager provisioning reloads and retries up to three times on an unsuccessful write. REST member provisioning rechecks the authenticated administrator on every retry. Channel configuration conflicts return failure and roll back the local change, requiring fresh endorsement before retry. Reads and channel access checks refresh shared state without replacing an existing channel's in-memory ledger; unavailable or missing persisted state fails closed. Memory-only managers retain local state.
+Organization/member/channel access state and channel ledgers are persisted with an internal `_revision`. SQLite and PostgreSQL use atomic conditional writes. Redis is rejected as a ledger backend until it supports durable signed-block persistence; Redis metadata helpers alone do not satisfy proof anchoring. Manager provisioning reloads and retries up to three times on an unsuccessful write. REST member provisioning rechecks the authenticated administrator on every retry. Channel configuration conflicts return failure and roll back the local change, requiring fresh endorsement before retry. Reads and channel access checks refresh shared access and ledger state while retaining the channel object; unavailable or missing persisted state fails closed. Memory-only managers retain local state.
 
 Snapshots without a revision are upgraded on their next successful write. Upgrade all registry writers together: mixing older unconditional writers with revision-aware writers is unsupported. Custom storage adapters must support `save_hierarchy_registry(state, expected_revision=...)` and reject stale revisions.
+
+Channel submission persists accepted pending events before returning success; a storage failure returns HTTP 503 and leaves pending events and counters unchanged. Finalization atomically replaces pending events with a signed block in the snapshot. Restart restores pending events, verifies every finalized block against trusted keys, and rebuilds submission counters. Queries still return finalized blocks; an acceptance ACK does not mean finalization has occurred. Direct channels and explicit memory-only managers remain ephemeral. Registry snapshots contain the full channel history, so write size grows with history; retention/compaction is not provided by this change. Upgrade all writers together: legacy writers that omit ledger snapshots must not run alongside these writers.
 
 ### 2.4 Multi-organization, channels, and private data
 
@@ -74,6 +78,10 @@ graph TD
 
 ## 4. Cross-chain operations (2PC)
 
+The coordinator acquires its journal writer on first use. Registry/channel-only managers can share a SQL registry without acquiring a 2PC writer when no coordinator history exists. Existing `data/transactions` history is recovered at startup and retains the exclusive journal lease. Shared 2PC or SubChain journal paths still require one owning writer; registry concurrency does not provide multiple ordering/coordinator writers.
+
+Call `HierarchyManager.close()` when its owner finishes. It closes sub-chain orderers, an acquired coordinator, and storage without creating an unused journal. `SubChain.stop()` drains committed blocks and releases its orderer and writer lease, allowing a replacement instance to recover the same paths. Entity consistency validation tracks operation and status state separately for each chain.
+
 `CrossChainTransactionManager` in `hierachain/hierarchical/transaction_manager.py` implements a two-phase commit protocol to maintain atomicity across Sub-Chains:
 
 Coordinator phase ACKs and participant commit ACKs still require durable journal read-back. Native journals use `read_since(cursor)` to decode new records after an initial history scan, including records in rotated files. Participant retries retain durable event IDs to avoid duplicate appends; ambiguous submissions invalidate their marker snapshot. Custom journals exposing only `replay()` keep the full replay path. Transaction history and archive count remain unbounded; this change does not add retention or compaction.
@@ -99,3 +107,9 @@ tx_id = manager.initiate_cross_chain_transaction(
 * [Consensus Module](./consensus.md)
 * [Domains Module](./domains.md)
 * [Two-Phase Commit Guide](../how-to/cross-chain-transactions.md)
+
+## Entity projection and proof roots
+
+A Sub-Chain initializes `WorldState` from its local genesis before startup synchronization. Rehydration clears the projection and applies the persisted history once; repeated synchronization with an unchanged tip does not increment entity event counts.
+
+`WorldState.get_state_root()` hashes the current entity projection for diagnostics. Cross-level proof metadata and ZK public inputs use block event Merkle roots: the previous block root and the latest block root (or the existing genesis/hash fallback where applicable). Anchoring therefore commits the block event history contract, not the entity projection root. Changing that commitment would require a separate proof schema and verifier migration.

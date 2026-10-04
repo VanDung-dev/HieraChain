@@ -93,6 +93,10 @@ event_id = service.receive_event(
 
 ---
 
+## Local journal ownership
+
+A local journal path has one owning instance/process at a time, enforced by a nonblocking POSIX advisory writer lock. A second owner fails to open until the first closes or exits; this guard does not turn the journal into a shared multiwriter log. Multiple threads must share the same `TransactionJournal` instance. Give independent writers distinct node identities and storage directories, or separate local volumes on a filesystem that supports POSIX locks and directory fsync. The Kubernetes StatefulSet's per-pod PVC pattern keeps node journals separate. Upgrade every process using a path before writing the new journal format; older versions do not acquire the writer lock.
+
 ## Related
 
 *   [Journal System](../modules/error-mitigation.md)

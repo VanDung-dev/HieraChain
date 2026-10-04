@@ -6,7 +6,7 @@ icon: material/numeric-2-circle
 
 # API Business
 
-API Business extends capabilities for working with channels, private data, domain contracts, and organizations.
+API Business extends capabilities for working with channels, private data collections, domain contracts, and organizations. The private-data write route is currently unsupported because no private-data store is connected.
 
 ## Source Code Components
 
@@ -21,7 +21,6 @@ sequenceDiagram
     participant User
     participant API as API business
     participant Channel as Channel Manager
-    participant Store as Private Store
 
     User->>API: POST /channels (Create)
     API->>Channel: Initialize Channel
@@ -32,8 +31,7 @@ sequenceDiagram
     API-->>User: OK
 
     User->>API: POST /private-data (Write)
-    API->>Store: Store Private Data (Encrypted)
-    API-->>User: OK
+    API-->>User: 501 Not Implemented
 
     User->>API: POST /contracts/execute
     API->>API: Execute Logic (Smart Contract)
@@ -44,10 +42,7 @@ sequenceDiagram
 * `POST /api/business/channels`: create a channel. Requires `chains` and `channels:manage` API key permissions.
 * `GET  /api/business/channels/{channel_id}`: get channel info.
 * `POST /api/business/channels/{channel_id}/private-collections`: create a private data collection.
-* `POST /api/business/private-data`: Write private data (Supports raw `value` or `value_cid` IPFS reference).
-
-    * `value_nonce: str | None`
-    * `event_metadata: dict[str, Any]` (Entity ID, Event Type, Timestamp)
+* `POST /api/business/private-data`: currently returns HTTP 501 for an existing collection. It does not persist inline `value` or `value_cid` data.
 
 * `ContractCreateRequest`
 
@@ -69,7 +64,7 @@ Additional note: some test/instrumentation scenarios in `tests/integration/api_b
 
 Provisioning requires API key authentication to be enabled. A trusted operator assigns `organizations:manage` and `channels:manage` scopes when provisioning API keys; these routes do not issue keys. Organization creation also requires `chains`, and the key's verified user ID becomes the first organization administrator. Member registration requires `chains` and an existing organization administrator. Channel creation requires `chains` and `channels:manage`. Event submission uses the authenticated API key user ID and channel role policy.
 
-The organization, member, and channel registry is saved and restored through configured SQLite or PostgreSQL storage. Redis storage restores the registry from its configured Redis instance; durability depends on Redis persistence. The in-memory backend is process-local. Channel event ledgers and private collection contents are not restored by this registry snapshot. `ca_config` is retained as API-process metadata and is not used to verify member certificates. Direct Python channel and private-collection methods accept organization IDs as endorsements and require a trusted caller; they do not verify endorsement signatures.
+The organization, member, and channel registry is saved and restored through configured SQLite or PostgreSQL storage. `HierarchyManager` rejects Redis ledger storage at startup because the Redis adapter lacks durable signed-block persistence. The in-memory backend is process-local. Private-data values are not stored: the write route returns HTTP 501 before processing an inline value or IPFS reference. `ca_config` is retained as API-process metadata and is not used to verify member certificates. Direct Python channel and private-collection methods accept organization IDs as endorsements and require a trusted caller; they do not verify endorsement signatures.
 
 ```bash
 ORG_PROVISIONER_KEY=replace-me
@@ -111,10 +106,7 @@ curl -s -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name": "sensitive_docs", "members": ["orgA"], "config": {"block_to_purge": 1000, "endorsement_policy": "MAJORITY"}}'
 
-# Write private data
-curl -s -X POST http://localhost:2661/api/business/private-data \
-  -H 'Content-Type: application/json' \
-  -d '{"collection": "sensitive_docs", "key": "doc-001", "value": {"text": "..."}, "event_metadata": {"entity_id": "DOC-001", "event": "document_created", "timestamp": 1714000000.0}}'
+# Private-data writes currently return HTTP 501 Not Implemented.
 
 # Register & execute domain contract
 curl -s -X POST http://localhost:2661/api/business/contracts \
@@ -151,3 +143,5 @@ If API key authentication is enabled (production), add the header per `settings.
 * API Ledger: [API Ledger](api-ledger.md)
 * Security Architecture: [Security (in-depth)](../architecture/security.md)
 * Modules: [API](../modules/api.md)
+
+Registered contracts return HTTP 501 from `/api/business/contracts/execute` because an execution engine is not implemented; unknown contracts return HTTP 404. Registration stores implementation metadata and does not imply execution support.

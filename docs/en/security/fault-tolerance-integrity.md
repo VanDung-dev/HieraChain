@@ -21,6 +21,7 @@ There is no startup signature scan in `security/integrity.py`. The actual integr
 * Merkle and chain links in `hierachain/core/block.py` and `core/merkle_tree.py` (domain-separated `0x01` prefix) and `consensus/ordering/storage.py:_verify_chain_links()` (`previous_hash` chain).
 * Proof verification in `hierachain/hierarchical/main_chain/proofs.py:_verify_proof_in_main_chain` (fallback chain scan) and `security/verify/block_verifier.py`.
 * Runtime integrity checks use chain links, Merkle roots, proof verification, and consensus validation. State snapshots and rollback are deployment responsibilities.
+* `BlockVerifier.verify_chain()` verifies a complete chain: its first block must be genesis at index `0` with `previous_hash` equal to `"0"`. This API does not accept partial histories; callers must supply the full chain.
 
 ```mermaid
 graph LR

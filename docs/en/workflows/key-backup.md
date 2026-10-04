@@ -31,9 +31,10 @@ python -m hierachain key verify --input validator_key.json
 
 **File**: `hierachain/security/key_provider.py` (`FileVaultProvider`)
 
-* Creates a `.vault` file encrypted with `PBKDF2HMAC(SHA256, 310k iter)` that leads to `Fernet` (AES-128-CBC with HMAC, not AES-256-GCM). The password comes from `HRC_VAULT_*` or the constructor argument.
+* Creates a `.vault` file encrypted with `PBKDF2HMAC(SHA256, 310k iter)` that leads to `Fernet` (AES-128-CBC with HMAC, not AES-256-GCM). The password is supplied to the `FileVaultProvider` constructor.
 * This provider is documented as dev/test only. Production should implement `KeyProvider` with HSM or KMS.
 * There is no distribution to multiple vaults, no `metadata.json`, no `retention_period` and no `auto_restore_threshold`.
+* `HRC_VAULT_TOKEN` and `HRC_VAULT_PATH` configure the separate `SecretManager` Vault backend; they do not supply the `FileVaultProvider` password.
 
 ```mermaid
 sequenceDiagram
@@ -55,7 +56,7 @@ sequenceDiagram
 |---|---|
 | `KeyBackupManager.backup_keys()` / `_encrypt_backup_data()` / `SHA-512` / `_distribute_to_locations()` | No such class/methods exist |
 | AES-256-GCM + nonce\|\|ciphertext + 3-vault failover | Vault uses `Fernet`; multi-location is manual copy |
-| `MasterKeyProvider.get_master_key()` | No such provider; master key is `HRC_MASTER_KEY_FILE`/`HRC_MASTER_KEY_SOURCE` + `HRC_VAULT_TOKEN`/`HRC_VAULT_PATH` envs |
+| `MasterKeyProvider.get_master_key()` | No such provider; `HRC_MASTER_KEY_SOURCE=env` is only a compatibility alias, while other source values and nonempty `HRC_MASTER_KEY_FILE` stop configuration loading |
 | Auto backup on MSP cert issue or consensus rotation | No hook; certs in `security/msp.py` are in-memory only |
 
 ---
@@ -65,7 +66,7 @@ sequenceDiagram
 1. Generate: `python -m hierachain key generate -o validator_key.json`
 2. Backup: `cp validator_key.json /secure/backup/` (encrypt externally if needed)
 3. Restore: `cp /secure/backup/validator_key.json ./ && python -m hierachain key verify`
-4. For encrypted vault: `FileVaultProvider.create_vault(vault_path, password)` then store password in vault/KMS at `HRC_VAULT_TOKEN`.
+4. For encrypted vault: `FileVaultProvider.create_vault(vault_path, password)` and supply the password through the application's secret-management flow. `HRC_VAULT_TOKEN` is a Vault service credential, not the vault password.
 
 ---
 

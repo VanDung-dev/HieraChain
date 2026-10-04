@@ -36,6 +36,7 @@ Module **SDK** cung cấp bộ công cụ phát triển (Software Development Ki
 
     * **Lockdown Awareness**: Tự động phát hiện và xử lý lỗi khi Node đang ở chế độ phong tỏa (`X-Lockdown-Mode`).
     * **Connection Pooling**: Tối ưu hóa việc tái sử dụng kết nối HTTP để giảm độ trễ.
+    * **Health Check**: Kiểm tra route `/api/ledger/health` của API.
 
 *   :material-magnify-expand:{ .lg .middle } __Truy vấn Nâng cao__
 
@@ -43,6 +44,8 @@ Module **SDK** cung cấp bộ công cụ phát triển (Software Development Ki
 
     * **Entity Tracing**: Truy vết vòng đời thực thể xuyên suốt các chuỗi con.
     * **CID Resolution**: Tự động giải mã dữ liệu từ IPFS khi truy vấn khối.
+
+Entity ID được percent-encode thành một path segment khi truy vấn trace. Khi cấu hình `api_key`, cả hai client từ chối redirect đối với request đọc; phản hồi 3xx được trả về dưới dạng `HieraChainAPIError` để `X-API-Key` không bị chuyển tiếp sang origin redirect.
 
 </div>
 

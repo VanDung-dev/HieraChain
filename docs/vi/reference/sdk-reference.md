@@ -46,6 +46,8 @@ Lấy trạng thái hệ thống từ API Admin. Trả về đối tượng ch�
 
 Truy vết lịch sử của một thực thể qua các chuỗi.
 
+Entity ID được percent-encode thành một path segment. `health_check()` dùng route API `/api/ledger/health`. Khi cấu hình `api_key`, client đồng bộ và bất đồng bộ không đi theo redirect của request đọc; phản hồi 3xx phát sinh `HieraChainAPIError` và `X-API-Key` không được gửi sang origin khác.
+
 ---
 
 ### Ví dụ: Lưu trữ Off-chain (IPFS)
@@ -131,3 +133,7 @@ print("Đã tiếp nhận sự kiện, event_id:", result.event_id)
 # Lấy Block bằng hash
 block = client.get_block(block_id="8f2a9d...")
 ```
+
+### Truyền JSON
+
+Cả hai SDK client mã hóa body request và đọc JSON response qua helper dùng `json` chuẩn, với UTF-8 và `Content-Type: application/json` mặc định, đồng thời tôn trọng header đã cấu hình. Số không hữu hạn bị từ chối trước khi gửi; response chứa `NaN`, `Infinity` hoặc số vượt khoảng biểu diễn float bị từ chối. Số nguyên Python lớn hơn 64 bit được giữ nguyên mà không chuyển thành float, trong giới hạn chuyển đổi số nguyên của Python. JSON response không hợp lệ đi qua xử lý lỗi và retry hiện có. Request thay đổi dữ liệu vẫn không tự retry.

@@ -37,6 +37,12 @@ a separate recovery engine.
 the ordering service can replay journal entries and validate them before they
 re-enter the event pipeline.
 
+If an append fails after writing part of a frame, the journal truncates back to
+the frame's original offset and fsyncs that repair before accepting another
+append. If it cannot confirm the repair, it refuses later writes until the
+journal is closed and reopened as a new instance, which repairs an incomplete
+active tail during startup.
+
 ```python
 from hierachain.error_mitigation.journal import TransactionJournal
 

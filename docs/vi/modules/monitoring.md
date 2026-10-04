@@ -144,3 +144,5 @@ Khi một cảnh báo được tạo ra mà không được **Acknowledge** (Xá
 *   [Quản lý rủi ro (Risk Management)](./risk-management.md)
 *   [Bảo mật và Resource Guard](./security.md)
 *   [Cấu hình hệ thống (Config)](./config.md)
+
+Tỷ lệ đồng thuận thành công trên 95% là bình thường, từ 95% trở xuống là warning, từ 90% trở xuống là critical. Cảnh báo critical thay thế cảnh báo active có mức thấp hơn. Gửi thông báo dùng một worker và hàng đợi tối đa 128 cảnh báo; khi đầy, hệ thống ghi nhận gửi thất bại nhưng giữ lịch sử cảnh báo. SMTP và webhook dùng timeout 10 giây. Gọi `AlertManager.close()` để hoàn tất gửi; tiến trình thoát đột ngột có thể mất thông báo còn trong hàng đợi.

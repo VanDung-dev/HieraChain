@@ -26,6 +26,10 @@ Omit the query parameter to connect to all chains:
 ws://localhost:2661/ws
 ```
 
+When API-key authentication is enabled, include the configured API-key header (default `X-API-Key`) in the WebSocket handshake. The key needs both `chains` and `events` permissions because the stream delivers both blocks and events. The browser example below applies to dev/test setups with authentication disabled; browser-native `WebSocket` does not support setting custom handshake headers.
+
+The HTTP `GET /ws/status` endpoint requires `chains` permission when authenticated, because its statistics include chain names and subscriber counts.
+
 ### Message Format
 
 All messages are JSON.

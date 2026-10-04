@@ -73,6 +73,7 @@ flowchart TD
 - Participant event markers include the transaction ID and operation step. A retry skips a start or completion event already accepted by that participant, including after restart.
 - After durable COMMIT, participant recovery uses the previously validated coordinator payload and accepted event markers; it does not rerun business validation against volatile entity registries.
 - `IN_DOUBT` is recoverable state, not a terminal failure. Call `transaction_manager.retry_pending()` to retry after a runtime participant failure; startup and participant registration also trigger retries.
+- Recovery claims each transaction while its coordinator path is active. A concurrent `retry_pending()` skips that transaction and can retry it after the active path releases it. The coordinator also refuses abort after a durable or ambiguous COMMIT decision.
 
 ## Key methods
 

@@ -30,6 +30,7 @@ print(settings.AUTH_ENABLED)
 ### Môi trường chạy
 
 * `HRC_ENV` chọn lớp cấu hình; dùng `ENV` khi `HRC_ENV` không được đặt hoặc để trống. Nếu đặt cả hai, `HRC_ENV` được ưu tiên. Giá trị không phân biệt chữ hoa/thường và bỏ khoảng trắng hai đầu: `dev` / `development`, `test` / `testing` hoặc `production` / `prod` / `product` (mặc định development khi cả hai để trống). Giá trị khác sẽ gây lỗi thay vì chọn development.
+* `.env` được nạp trước khi định nghĩa các thiết lập đọc biến môi trường. Đặt `HRC_ENV_FILE` để dùng tệp dotenv khác. Giá trị đã có trong môi trường tiến trình được ưu tiên hơn giá trị trong tệp.
 
 ### API
 
@@ -50,7 +51,7 @@ print(settings.AUTH_ENABLED)
 
 ### Lưu trữ và cache
 
-* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (mặc định: `postgres` ở development và production, `memory` ở test; giá trị: `sqlite`, `postgres` / `postgresql`, `redis`, `memory`). Backend không hợp lệ sẽ chặn API khởi động và khởi tạo chain storage.
+* `HRC_STORAGE_BACKEND` / `DATABASE_URL` / `HRC_DATABASE_URL` (mặc định: `postgres` ở development và production, `memory` ở test; giá trị được nhận diện: `sqlite`, `postgres` / `postgresql`, `redis`, `memory`). Backend không hợp lệ sẽ chặn API khởi động và khởi tạo chain storage. `HierarchyManager` cũng từ chối `redis` khi khởi động vì chưa lưu bền vững block đã ký; dùng `sqlite` hoặc `postgres` cho ledger bền vững. Redis vẫn dùng được trong các adapter riêng cho indexing, trạng thái xác thực và rate limit.
 * Trong production, khi backend được chọn là PostgreSQL, cần đặt rõ `DATABASE_URL` hoặc `HRC_DATABASE_URL`. API từ chối URL fallback local có sẵn khi khởi động; bước này không kiểm tra kết nối tới database.
 * `DATABASE_URL` được ưu tiên khi có giá trị. Nếu rỗng hoặc chỉ có khoảng trắng, hệ thống dùng `HRC_DATABASE_URL`.
 * Nếu PostgreSQL không khả dụng, khởi tạo storage của chain sẽ thất bại. Đặt `HRC_STORAGE_BACKEND=sqlite` để chọn SQLite tường minh.
@@ -59,7 +60,7 @@ print(settings.AUTH_ENABLED)
 * Chính sách cache: `BLOCK_CACHE_POLICY` (`lru`), `EVENT_CACHE_POLICY` (`ttl`), `ENTITY_CACHE_POLICY` (`lfu`)
 * `ENTITY_TTL` (mặc định: `3600` giây)
 * DB: `DATABASE_URL` (fallback khi development: `postgresql://hiera:hiera@localhost:5432/hierachain`; không dựa vào fallback này trong production)
-* Redis: `REDIS_HOST` (`localhost`), `REDIS_PORT` (`6379`), `REDIS_DB` (`0`)
+* Redis: `HRC_REDIS_HOST` hoặc `REDIS_HOST` (`localhost`), `HRC_REDIS_PORT` hoặc `REDIS_PORT` (`6379`), `REDIS_DB` (`0`). Tên có tiền tố HRC được ưu tiên.
 
 ### IPFS (lưu trữ off-chain)
 
@@ -80,9 +81,9 @@ print(settings.AUTH_ENABLED)
 * `HRC_API_KEY_REVOCATIONS_DB` (mặc định: `data/api_key_revocations.sqlite3`): lưu bền vững API key đã thu hồi và brute-force lockout cục bộ cho API production. Mọi worker trên một host phải dùng chung file ghi được và bền vững này.
 * `HRC_AUTH_STATE_REDIS_URL` (tùy chọn): khi đặt, API key revocation và brute-force lockout dùng cùng Redis giữa các host. Cần cấu hình Redis persistence nếu revocation phải tồn tại sau khi Redis khởi động lại. Lỗi backend sẽ từ chối xác thực thay vì dùng trạng thái cục bộ.
 * `HRC_API_KEY_LOCATION` (`header`), `HRC_API_KEY_NAME` (`X-API-Key`)
-* Secret backend: `HRC_SECRET_BACKEND` (giá trị: `env`, `vault`, `aws`). Mặc định là `env`.
+* Secret backend: `HRC_SECRET_BACKEND` (giá trị: `env`, `vault`, `aws`). Mặc định là `env`; giá trị khác gây `ValueError`.
 * AWS Secret Manager: `HRC_AWS_SECRET_NAME` (bắt buộc, tên secret hoặc ARN chứa JSON object), `HRC_AWS_REGION` (mặc định: `us-east-1`). `SecretManager.get_secret(key)` chọn trường chuỗi, không trả toàn bộ `SecretString`; xem [Secret Manager](../modules/config.md) về giá trị mặc định và chuyển đổi dữ liệu.
-* Master key: `HRC_MASTER_KEY_SOURCE` (`auto` ở dev/test, `env` ở production), `HRC_MASTER_KEY_FILE` (mặc định: `config/master_backup_key.key`)
+* `HRC_MASTER_KEY_SOURCE=env` vẫn được chấp nhận như alias tương thích cho hành vi secret qua biến môi trường hiện có. Giá trị khác của `HRC_MASTER_KEY_SOURCE` và mọi `HRC_MASTER_KEY_FILE` không rỗng sẽ khiến cấu hình dừng với lỗi vì chưa có master-key provider thay thế. Điều này không thay đổi API `FileVaultProvider` riêng biệt.
 * Bảo vệ brute-force:
     * `HRC_BF_MAX_FAILURES` (mặc định: `5`)
     * `HRC_BF_LOCKOUT_SECONDS` (mặc định: `900` = 15 phút)
@@ -92,6 +93,7 @@ print(settings.AUTH_ENABLED)
 
 ### Bảo mật mạng P2P
 
+* Định danh node và P2P transport: `HRC_NODE_ID` (mặc định: `default-node`; `NODE_ID` là alias dự phòng), `HRC_P2P_PORT` (mặc định: `5555`; `NODE_PORT` là alias dự phòng), và `HRC_PEERS` (mặc định: danh sách rỗng; danh sách seed node phân tách bằng dấu phẩy; `PEERS` là alias dự phòng). Dùng `peer-id@host:port` khi định danh transport từ xa khác hostname; dạng `host:port` lấy hostname làm peer ID. Tên có tiền tố HRC được ưu tiên.
 * `HRC_P2P_TRUST_POLICY` (mặc định: `open` ở dev, `strict` ở production; giá trị: `open|strict`)
 * `HRC_P2P_PEER_ALLOWLIST` (danh sách peer ID phân tách bằng dấu phẩy cho chế độ strict)
 * `HRC_P2P_REQUIRE_SIGNATURES` (`false` ở dev, `true` ở production)
@@ -154,7 +156,7 @@ print(settings.AUTH_ENABLED)
 
 ### CLI
 
-* `CLI_CONFIG_FILE` (mặc định: `chains.json`)
+* `CLI_CONFIG_FILE` (mặc định: `data/config.yaml`; cấu hình node mặc định cho `hrc --config`)
 * `CLI_LOG_LEVEL` (mặc định: `INFO`)
 
 ## Ví dụ .env (development)
@@ -179,10 +181,8 @@ HRC_AUTH_ENABLED=true
 HRC_CORS_ALLOW_ALL=false
 HRC_CORS_ORIGINS=https://portal.example.com
 HRC_RATE_LIMIT=true
-DATABASE_URL=postgresql+psycopg://user:pass@db:5432/hierachain
-HRC_STORAGE_BACKEND=redis
-REDIS_HOST=redis
-REDIS_PORT=6379
+DATABASE_URL=postgresql://user:pass@db:5432/hierachain
+HRC_STORAGE_BACKEND=postgres
 HRC_IPFS_ENABLED=true
 HRC_IPFS_HOST=/ip4/ipfs/tcp/5001
 HRC_IPFS_ENCRYPTION_KEY=your_32_byte_hex_key_here

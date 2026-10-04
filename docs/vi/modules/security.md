@@ -88,3 +88,7 @@ Các thiết lập chính nằm ở `hierachain/config/settings.py`:
 *   [Kiến trúc bảo mật (Architecture)](../architecture/security.md)
 *   [Mạng lưới P2P (Network Security)](./network.md)
 *   [Giám sát và Cảnh báo (Monitoring)](./monitoring.md)
+
+## Che bí mật theo field trong structured log
+
+`sanitize_for_log()`, mọi mức của `SecureLogger`, context security event, details audit và `log_user_action()` che toàn bộ giá trị có tên field nhạy cảm trước khi duyệt dictionary và list. Các tên được hỗ trợ gồm API key, password, private key, credentials, token, session ID, authorization và field secret có tiền tố, dưới dạng snake_case, kebab-case hoặc camelCase. Container dưới field nhạy cảm trở thành `***`; public key thông thường vẫn hiển thị. Cơ chế chống log injection và che mẫu bí mật trong chuỗi vẫn áp dụng. Ứng dụng nên truyền bí mật trong field có tên; chuỗi không có tên bất kỳ không thể được nhận diện nhạy cảm một cách tin cậy.

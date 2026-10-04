@@ -260,3 +260,5 @@ curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&off
 * Kiến trúc tổng quan: [Tổng quan](../architecture/overview.md)
 * Hierarchical module: [Hierarchical](../modules/hierarchical.md)
 * Core module: [Core](../modules/core.md)
+
+Danh sách block nhận `limit` từ 1 đến 100 (mặc định 10) và `offset >= 0`; giá trị không hợp lệ trả HTTP 422. Giới hạn này áp dụng cho số block, không phải tổng byte của các sự kiện. Xung đột đăng ký sub-chain đồng thời trả HTTP 409.

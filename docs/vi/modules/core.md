@@ -70,3 +70,15 @@ Các tác vụ xác thực mật mã và đồng bộ liên chuỗi chạy đồ
 * [Kiến trúc phân cấp](../architecture/hierarchy.md)
 * [Storage Module](./storage.md)
 * [Tổng quan bảo mật](./security.md)
+
+## Mapping của cache và timestamp
+
+`AdvancedCache` triển khai `MutableMapping` trên cùng kho dữ liệu dùng cho eviction. Duyệt cache, `items()`, `values()`, `update()`, `pop()`, `setdefault()` và `dict(cache)` dùng cùng entries với `get()` và `set()`. `None` là giá trị hợp lệ; index khóa thiếu hoặc đã hết hạn gây `KeyError`. `get_keys()` trả snapshot khóa còn hiệu lực. Cache không còn kế thừa `dict`; consumer nên kiểm tra `MutableMapping`. Các khóa được chuẩn hóa thành chuỗi.
+
+Timestamp block được truyền rõ là `0` được giữ nguyên khi serialize và kiểm tra hash. Chỉ `None` yêu cầu lấy thời gian hiện tại.
+
+### Serialization JSON
+
+`hierachain.serialization` dùng `json` chuẩn của Python. Hàm ghi từ chối số không hữu hạn thay vì chuyển thành `null`; hàm đọc từ chối `NaN`, `Infinity` và số vượt khoảng biểu diễn float. Số nguyên giữ độ chính xác của số nguyên Python trong giới hạn chuyển đổi đã cấu hình. Đầu ra UTF-8 dùng dạng gọn; payload digest và chữ ký sắp xếp khóa object. Object không được hỗ trợ yêu cầu serializer được cấu hình rõ ở những thành phần đã hỗ trợ cơ chế này.
+
+Digest request BFT giữ định dạng thư viện chuẩn hiện có. Các hash khác, event ID, Merkle root, payload chữ ký, AAD metadata mã hóa và nội dung IPFS tải lên mới có thể khác serializer trước khi cách biểu diễn số khác, dù giá trị sau giải mã bằng nhau. Nội dung JSON cũ vẫn đọc được, nhưng root và chữ ký lịch sử không tự được viết lại hay chấp nhận bằng encoder fallback. Cần nâng cấp các node đồng bộ và dùng ledger mới cho nhánh tái cấu trúc này, hoặc thực hiện migration và xác minh lịch sử cũ rõ ràng trước khi sử dụng. Giá trị thập phân cần tính toán chính xác và định danh lớn dùng chung với client có giới hạn độ chính xác cần schema chuỗi hoặc số nguyên rõ ràng.

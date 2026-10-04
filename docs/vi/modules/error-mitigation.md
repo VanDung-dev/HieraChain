@@ -29,6 +29,8 @@ Custom field validator trả về `(is_valid, message)`. Nếu callback ném exc
 
 `read_since(cursor=None)` flush và fsync writer đang hoạt động, đọc frame bền vững và trả `(records, (inode, byte_offset))`. Lần đầu quét lịch sử, gồm cả Parquet cũ; các lần sau đọc frame Arrow mới và theo file rotation. File đang hoạt động bị mất, file cursor bị mất hoặc bị cắt ngắn, frame hỏng hoặc lỗi fsync khiến read-back thất bại. Mỗi lần gọi vẫn liệt kê tên archive, nên chi phí phụ thuộc số archive cùng với số record mới.
 
+Mỗi lần ghi lưu offset bắt đầu. Nếu ghi hoặc fsync frame thất bại, journal cắt file về offset đó và fsync phần cắt trước khi cho phép lần ghi tiếp theo. Nếu thao tác cắt hoặc fsync phần cắt thất bại, writer bị vô hiệu hóa và từ chối ghi cho đến khi được đóng rồi mở lại thành instance mới; khi khởi động, journal sửa phần cuối chưa hoàn chỉnh của file đang hoạt động.
+
 ### 2.3 Mã hóa có thể khôi phục (`encryption_validator.py`)
 
 `EncryptionValidator(config, key_resolver)` dùng AES-256-GCM. Mã hóa yêu cầu `config["key_id"]` và `key_resolver(key_id)` do caller cung cấp, trả đúng 32 byte cho khóa đã được cho phép và giữ lại. ID thiếu, khóa không khả dụng hoặc dữ liệu khóa không hợp lệ gây `SecurityError`; validator không tạo khóa mã hóa dùng xong rồi bỏ.
@@ -82,3 +84,7 @@ journal.log_event(event_dict)
 * [Module Adapters](./adapters.md)
 * [Module Core](./core.md)
 * [Khóa cụm khẩn cấp](./cluster.md)
+
+`ErrorClassifier` gọi callback lockdown được cung cấp cho lỗi security mức HIGH hoặc CRITICAL và lỗi performance mức CRITICAL. `DataValidator.validate_table()` kiểm tra kiểu Arrow bắt buộc ở mọi mức; strict kiểm tra thêm null. Kiểm tra consistency so sánh từng hàng theo thứ tự, gồm details JSON đã giải mã. Journal duyệt thư mục và mở tệp qua descriptor với cờ no-follow để từ chối symlink.
+
+Journal fsync các entry thư mục sau khi tạo và xoay tệp. Frame mới giữ kiểu của `details` và tập field gốc trong binary envelope để registration domain và retry theo ID ổn định được khôi phục đúng. Reader mới đọc được envelope cũ và archive Parquet legacy; reader cũ không hiểu envelope mở rộng nên cần nâng cấp reader trước khi ghi định dạng mới. Metadata không được lưu trong registration lịch sử không thể tái tạo. Mỗi đường dẫn journal cần một process sở hữu; xem [quyền sở hữu journal cục bộ](../consensus/ordering.md#quyền-sở-hữu-journal-cục-bộ).

@@ -47,13 +47,19 @@ Package hiện cung cấp hai khối chức năng nhỏ:
 `lockdown_types.py` chỉ là helper cho dữ liệu và chữ ký; chúng không triển khai
 bộ điều phối bỏ phiếu hoặc phong tỏa toàn cluster.
 
+Việc gửi proof của một Sub-Chain được tuần tự hóa trên chain đó trong lúc lấy
+tip hiện tại, kiểm tra anchor có sẵn, ghi event MainChain và xác minh đọc lại
+từ storage bền vững. Vì vậy các request đồng thời cho cùng tip sẽ dùng lại một
+proof anchor thay vì thêm bản trùng. Khóa này chỉ áp dụng trong một object
+Sub-Chain, không phải khóa phân tán giữa các tiến trình.
+
 ---
 
 ## Chữ ký báo cáo Quarantine
 
 `QuarantineReport.compute_signature(secret_key)` tính HMAC-SHA256 trên mọi trường do `to_dict()` trả về, trừ `signature`: `msg_type`, `lockdown_type`, `node_id`, `timestamp`, `pending_event_ids`, `last_block_index`, `last_block_hash` và `total_pending`. Payload là JSON UTF-8 dạng gọn, sắp xếp khóa object, giữ nguyên Unicode và chỉ chấp nhận số hữu hạn. Thứ tự danh sách event được giữ nguyên và bảo vệ. Digest vẫn lấy 32 ký tự hex đầu tiên.
 
-Byte canonical dùng `orjson.dumps(payload, option=orjson.OPT_SORT_KEYS)`. Thành phần ký bên ngoài phải dùng cùng cách mã hóa. Định dạng float có thể khác thư viện JSON chuẩn của Python; báo cáo có cách mã hóa khác cần được ký lại từ dữ liệu tin cậy.
+Byte canonical dùng `hierachain.serialization.dumps_canonical_json(payload)`, tương đương `json.dumps(payload, sort_keys=True, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")` của thư viện chuẩn. Thành phần ký bên ngoài phải dùng cùng cách mã hóa. Chữ ký đã phát hành với cách biểu diễn float khác cần được ký lại từ dữ liệu tin cậy.
 
 Caller gán kết quả vào `report.signature`; `verify_signature(secret_key)` kiểm tra bằng phép so sánh thời gian hằng. Thay đổi bất kỳ trường báo cáo nào đều làm chữ ký sai. Round-trip JSON hoặc đổi thứ tự khóa object vẫn xác minh được. Chữ ký thiếu/sai định dạng và giá trị payload không được hỗ trợ trả `False`; ký timestamp không hữu hạn gây `ValueError`. `from_dict()` từ chối giá trị `msg_type` hoặc `lockdown_type` được cung cấp nhưng không mô tả báo cáo quarantine.
 
@@ -66,3 +72,11 @@ Chữ ký tạo bằng payload cũ chỉ có ba trường bị từ chối. Cầ
 *   [P2P Networking](./network.md)
 *   [Security Identity](./security.md)
 *   [Hierarchical Architecture](../architecture/hierarchy.md)
+
+## Trạng thái đồng bộ song song và tiếp nhận lockdown
+
+`CrossLevelSyncManager.get_status()` giữ trạng thái đang chạy khi còn bất kỳ sync hoặc xử lý conflict nào trong nhóm tác vụ chồng lấn. Khi nhóm hoàn tất, trạng thái là `failed` nếu có tác vụ thất bại, ngược lại là `complete`. Tác vụ độc lập tiếp theo mở nhóm mới. `get_stats()` có `active_operations`; `reset()` gây `RuntimeError` khi còn công việc. Lỗi callback hoàn tất được ghi log và không đảo ngược proof đã commit.
+
+`LockdownMessage.verify_signature()` chỉ xác thực chữ ký. Trước khi xử lý thông điệp, dispatcher của ứng dụng phải gọi `LockdownMessageGuard.accept(message, secret_key)` và chỉ xử lý khi nhận `True`. Giữ một guard xuyên suốt các request. Guard kiểm tra chữ ký và timestamp hữu hạn, mặc định cho phép thông điệp cũ tối đa 60 giây hoặc đi trước 5 giây, đồng thời từ chối nguyên tử payload đã tiếp nhận, kể cả khi đổi giữa chữ ký đầy đủ và rút gọn. Có thể cấu hình `max_age`, `future_skew`, `max_entries`. Khi kho replay đầy, guard từ chối thông điệp mới đến lúc entries hết hạn; không đẩy entries còn hiệu lực ra ngoài. Chữ ký sai không chiếm dung lượng.
+
+Repo chưa có dispatcher lockdown. Guard chỉ giữ trạng thái trong một process; không lưu qua restart hoặc chia sẻ giữa worker. Ứng dụng cần các bảo đảm này phải giữ trạng thái replay trong storage của dispatcher. Guard không kiểm tra tiếp nhận `QuarantineReport`.

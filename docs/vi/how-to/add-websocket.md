@@ -24,6 +24,10 @@ Truyền `chain_name` qua query để chọn chuỗi khi kết nối; bỏ tham 
 ws://localhost:2661/ws
 ```
 
+Khi bật xác thực API key, hãy gửi header API key đã cấu hình (mặc định `X-API-Key`) trong quá trình bắt tay WebSocket. Key cần cả quyền `chains` và `events` vì luồng gửi cả block lẫn event. Ví dụ trình duyệt bên dưới dùng cho môi trường dev/test đã tắt xác thực; `WebSocket` gốc của trình duyệt không hỗ trợ đặt header bắt tay tùy chỉnh.
+
+Endpoint HTTP `GET /ws/status` yêu cầu quyền `chains` khi xác thực, vì thống kê có tên chain và số lượng subscriber.
+
 ### Định dạng Tin nhắn
 
 Tất cả các tin nhắn trao đổi đều ở định dạng JSON.

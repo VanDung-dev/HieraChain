@@ -255,3 +255,5 @@ curl -s "http://localhost:2661/api/ledger/chains/supply_chain/blocks?limit=5&off
 * Overall architecture: [Overview](../architecture/overview.md)
 * Hierarchical module: [Hierarchical](../modules/hierarchical.md)
 * Core module: [Core](../modules/core.md)
+
+Block listing accepts `limit` from 1 to 100 (default 10) and `offset >= 0`; invalid values return HTTP 422. This bounds the number of blocks, not the total bytes of their events. A concurrent sub-chain registration conflict returns HTTP 409.

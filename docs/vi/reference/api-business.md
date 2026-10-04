@@ -6,7 +6,7 @@ icon: material/numeric-2-circle
 
 # API Business
 
-API Busines mở rộng khả năng làm việc với các channel, dữ liệu riêng tư (private data), hợp đồng miền (domain contracts) và các tổ chức (organizations).
+API Business mở rộng khả năng làm việc với các channel, bộ sưu tập dữ liệu riêng tư (private data), hợp đồng miền (domain contracts) và các tổ chức (organizations). Route ghi private data hiện chưa được hỗ trợ vì chưa có kho lưu dữ liệu riêng tư.
 
 ## Các thành phần Mã nguồn
 
@@ -21,7 +21,6 @@ sequenceDiagram
     participant User as Người dùng
     participant API as API business
     participant Channel as Quản lý Channel
-    participant Store as Kho Lưu trữ Riêng tư
 
     User->>API: POST /channels (Tạo)
     API->>Channel: Khởi tạo Channel
@@ -32,8 +31,7 @@ sequenceDiagram
     API-->>User: OK
 
     User->>API: POST /private-data (Ghi)
-    API->>Store: Lưu trữ Dữ liệu Riêng (Đã mã hóa)
-    API-->>User: OK
+    API-->>User: 501 Not Implemented
 
     User->>API: POST /contracts/execute
     API->>API: Thực thi Logic (Smart Contract)
@@ -44,10 +42,7 @@ sequenceDiagram
 * `POST /api/business/channels`: tạo một channel mới. API key cần quyền `chains` và `channels:manage`.
 * `GET  /api/business/channels/{channel_id}`: lấy thông tin channel.
 * `POST /api/business/channels/{channel_id}/private-collections`: tạo một bộ sưu tập dữ liệu riêng tư (private data collection).
-* `POST /api/business/private-data`: Ghi dữ liệu riêng tư (Hỗ trợ truyền trực tiếp `value` hoặc tham chiếu qua IPFS `value_cid`).
-
-    * `value_nonce: str | None`
-    * `event_metadata: dict[str, Any]` (Entity ID, Loại sự kiện, Dấu thời gian)
+* `POST /api/business/private-data`: hiện trả HTTP 501 với collection đã tồn tại. Endpoint không lưu `value` inline hoặc dữ liệu `value_cid`.
 
 * `ContractCreateRequest`
 
@@ -69,7 +64,7 @@ sequenceDiagram
 
 Các endpoint cấp tài nguyên yêu cầu bật xác thực API key. Operator tin cậy gán scope `organizations:manage` và `channels:manage` khi cấp API key; các route này không tạo key. Tạo organization cũng cần scope `chains`, user ID đã xác thực trong key sẽ thành quản trị viên đầu tiên. Đăng ký member cần scope `chains` và caller phải là quản trị viên hiện có của organization. Tạo channel cần `chains` và `channels:manage`. Khi gửi event, hệ thống dùng user ID đã xác thực cùng role policy của channel.
 
-Registry organization, member và channel được lưu và khôi phục qua SQLite hoặc PostgreSQL đã cấu hình. Redis storage khôi phục registry từ Redis instance đã cấu hình; độ bền phụ thuộc cấu hình persistence của Redis. Backend in-memory chỉ tồn tại trong process hiện tại. Ledger event của channel và nội dung private collection không được khôi phục từ snapshot registry này. `ca_config` chỉ được giữ làm metadata trong API process và chưa được dùng để xác minh chứng chỉ member. Các method channel và private collection gọi trực tiếp bằng Python nhận organization ID làm endorsement và yêu cầu caller đáng tin cậy; chúng không xác minh chữ ký endorsement.
+Registry organization, member và channel được lưu và khôi phục qua SQLite hoặc PostgreSQL đã cấu hình. `HierarchyManager` từ chối Redis ledger storage khi khởi động vì Redis adapter chưa lưu bền vững block đã ký. Backend in-memory chỉ tồn tại trong process hiện tại. Giá trị private data chưa được lưu: route ghi trả HTTP 501 trước khi xử lý giá trị inline hoặc tham chiếu IPFS. `ca_config` chỉ được giữ làm metadata trong API process và chưa được dùng để xác minh chứng chỉ member. Các method channel và private collection gọi trực tiếp bằng Python nhận organization ID làm endorsement và yêu cầu caller đáng tin cậy; chúng không xác minh chữ ký endorsement.
 
 ```bash
 ORG_PROVISIONER_KEY=replace-me
@@ -111,10 +106,7 @@ curl -s -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name": "sensitive_docs", "members": ["orgA"], "config": {"block_to_purge": 1000, "endorsement_policy": "MAJORITY"}}'
 
-# Ghi dữ liệu riêng tư
-curl -s -X POST http://localhost:2661/api/business/private-data \
-  -H 'Content-Type: application/json' \
-  -d '{"collection": "sensitive_docs", "key": "doc-001", "value": {"text": "..."}, "event_metadata": {"entity_id": "DOC-001", "event": "document_created", "timestamp": 1714000000.0}}'
+# Private-data writes currently return HTTP 501 Not Implemented.
 
 # Đăng ký & thực thi hợp đồng miền (domain contract)
 curl -s -X POST http://localhost:2661/api/business/contracts \
@@ -151,3 +143,5 @@ Nếu bật xác thực bằng API key (trong môi trường sản xuất - prod
 * API Ledger: [API Ledger](api-ledger.md)
 * Kiến trúc Bảo mật: [Bảo mật (chuyên sâu)](../architecture/security.md)
 * Các mô-đun: [API](../modules/api.md)
+
+Contract đã đăng ký trả HTTP 501 từ `/api/business/contracts/execute` vì chưa có engine thực thi; contract không tồn tại trả HTTP 404. Đăng ký chỉ lưu metadata triển khai, không đồng nghĩa hỗ trợ thực thi.

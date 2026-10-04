@@ -29,6 +29,8 @@ Custom field validators return `(is_valid, message)`. If a callback raises an ex
 
 `read_since(cursor=None)` flushes and fsyncs the active writer, reads durable frames, and returns `(records, (inode, byte_offset))`. The first call scans history, including legacy Parquet; later calls read new Arrow frames and follow file rotation. A missing active file, missing or truncated cursor file, corrupt frame, or fsync error rejects read-back. Archive filenames are still enumerated on each call, so cost depends on archive count as well as new records.
 
+Each append records its starting offset. If writing or fsyncing a frame fails, the journal truncates to that offset and fsyncs the truncation before allowing another append. If truncation or its fsync fails, the writer is poisoned and rejects writes until it is closed and reopened as a new instance; startup repairs an incomplete active tail.
+
 ### 2.3 Recoverable encryption (`encryption_validator.py`)
 
 `EncryptionValidator(config, key_resolver)` uses AES-256-GCM. Encryption requires `config["key_id"]` and a caller-supplied `key_resolver(key_id)` that returns exactly 32 bytes for an approved, retained key. Missing IDs, unavailable keys, or invalid key material raise `SecurityError`; the validator does not generate disposable encryption keys.
@@ -82,3 +84,7 @@ journal.log_event(event_dict)
 * [Adapters Module](./adapters.md)
 * [Core Module](./core.md)
 * [Cluster Lockdown](./cluster.md)
+
+`ErrorClassifier` invokes a supplied lockdown callback for HIGH or CRITICAL security classifications and CRITICAL performance classifications. `DataValidator.validate_table()` checks required Arrow types at all levels; strict validation additionally rejects nulls. Consistency checks compare rows in order, including decoded JSON details. Journal directory walks and file opens reject symlinks using directory descriptors and no-follow flags.
+
+The journal fsyncs directory entries after creation and rotation. New journal frames preserve typed `details` and original field presence in the binary envelope, so domain registration and stable-ID retries survive replay. The updated reader accepts older envelopes and legacy Parquet archives; older readers do not understand the extended envelope, so upgrade the reader before writing the new format. Metadata omitted from historical registration events cannot be reconstructed. Each journal path requires one owning process; see [local journal ownership](../consensus/ordering.md#local-journal-ownership).

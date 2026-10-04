@@ -36,6 +36,7 @@ The **SDK** module provides a Python Software Development Kit that enables exter
 
     * **Lockdown Awareness**: Automatically detects and handles errors when the Node is in lockdown mode (`X-Lockdown-Mode`).
     * **Connection Pooling**: Optimizes HTTP connection reuse to reduce latency.
+    * **Health Check**: Checks the API's `/api/ledger/health` route.
 
 *   :material-magnify-expand:{ .lg .middle } __Advanced Queries__
 
@@ -43,6 +44,8 @@ The **SDK** module provides a Python Software Development Kit that enables exter
 
     * **Entity Tracing**: Trace entity lifecycle across Sub-Chains.
     * **CID Resolution**: Automatically decrypts data from IPFS when querying blocks.
+
+Entity IDs are percent-encoded as one URL path segment for trace requests. When `api_key` is configured, both clients reject redirects for read requests; a 3xx response is returned as `HieraChainAPIError` so `X-API-Key` is never forwarded to a redirected origin.
 
 </div>
 

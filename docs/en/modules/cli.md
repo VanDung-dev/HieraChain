@@ -34,9 +34,10 @@ Used to initialize and monitor the hierarchical structure of chains.
 
     *   *Arguments*: `[supply_chain|healthcare|finance|manufacturing]`
     *   *Options*: `--name` (Required), `--parent` (Default: `main`).
+    *   The current hierarchy manager attaches sub-chains to `main`; a named nested parent is rejected explicitly.
 
 *   **`hrc chain list`**: List all existing chains and their block counts.
-*   **`hrc chain submit-proof`**: Currently exits with a nonzero status because the CLI chain registry is memory-only. Use the authenticated REST proof endpoint backed by durable SQL storage.
+*   **`hrc chain submit-proof`**: Currently exits with a nonzero status. Use the authenticated REST proof endpoint backed by durable SQL storage.
 
 ### `event` Commands (Event Management)
 
@@ -68,7 +69,7 @@ Used to operate API nodes.
 
 *   **`hrc node start`**: Start the FastAPI server.
 
-    *   *Options*: `--host`, `--port`, `--reload` (For development).
+    *   *Options*: `--host`, `--port`, `--reload` (For development). The global `--config` option selects the node configuration loaded before startup.
 
 *   **`hrc node init`**: Initialize data directory and default configuration for a new node.
 
@@ -81,7 +82,7 @@ Tools for auditors to check ledger integrity.
 
 Both commands accept `--db` (SQLite path/URL or PostgreSQL URL; otherwise the configured database is used). `verify signatures` also accepts `--limit` to check only the N most recent blocks in each chain. Signed events need a public key in `details.public_key` or `details.sender_public_key` for verification.
 
-These commands inspect stored blocks. CLI-created chains are currently memory-only and are not persisted by the CLI.
+These commands inspect stored blocks. Chain creation and event commands use the durable `HierarchyManager` registry and restore registered sub-chains from the configured SQLite or PostgreSQL store on each invocation. Event ordering uses each sub-chain's durable ordering journal.
 
 ---
 
@@ -94,14 +95,17 @@ These commands inspect stored blocks. CLI-created chains are currently memory-on
 hrc node init --data-dir ./my_data
 
 # Create a component supply chain
-hrc chain create supply_chain --name logistics_01 --parent main
+hrc --config ./my_data/config.yaml chain create supply_chain --name logistics_01 --parent main
 ```
 
 ### 2. Record a Production Process
 
 ```bash
 # Start production of entity ITEM-99
-hrc event add logistics_01 start_operation --entity-id ITEM-99 --details '{"line": "A1"}'
+hrc --config ./my_data/config.yaml event add logistics_01 start_operation --entity-id ITEM-99 --details '{"line": "A1"}'
+
+# Start the API with the same node configuration
+hrc --config ./my_data/config.yaml node start
 
 # Submit proofs through the authenticated REST API backed by durable SQL storage
 curl -X POST -H "X-API-Key: $HRC_API_KEY" http://localhost:2661/api/ledger/chains/logistics_01/submit-proof
@@ -118,11 +122,15 @@ hrc verify signatures --limit 100
 
 ## Configuration & Environment Variables
 
-CLI reads configuration from the `chains.json` file by default, or from a file specified via a global option:
+CLI reads `data/config.yaml` by default, or from a file specified before the command with the global option:
 
 ```bash
-hrc --config custom_config.json chain list
+hrc --config ./my_data/config.yaml chain list
 ```
+
+`hrc node init` writes YAML containing `database_url` and `node_id`. The CLI also accepts a JSON object with those fields. It applies the values to chain commands and API startup. Explicit `DATABASE_URL`, `HRC_DATABASE_URL`, `HRC_NODE_ID`, or `NODE_ID` environment values take precedence. Configuration files may contain only `database_url` and `node_id`.
+
+Sub-chain ordering journals are stored under `data/<chain-name>` relative to the current working directory. Keep that directory persistent and run the CLI from a stable working directory; a custom `--data-dir` currently relocates the hierarchy database and configuration, not those journals.
 
 ---
 

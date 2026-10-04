@@ -21,6 +21,7 @@ Không có quét chữ ký lúc khởi động trong `security/integrity.py`. C�
 * Merkle và chain link trong `hierachain/core/block.py` và `core/merkle_tree.py` (tiền tố phân tách domain `0x01`) và `consensus/ordering/storage.py:_verify_chain_links()` (chuỗi `previous_hash`).
 * Xác minh proof trong `hierachain/hierarchical/main_chain/proofs.py:_verify_proof_in_main_chain` (quét fallback) và `security/verify/block_verifier.py`.
 * Cơ chế toàn vẹn runtime dùng chain link, Merkle root, xác minh proof và consensus validation. Snapshot trạng thái và rollback thuộc trách nhiệm deployment.
+* `BlockVerifier.verify_chain()` xác minh toàn bộ chain: block đầu tiên phải là genesis ở index `0` với `previous_hash` bằng `"0"`. API này không nhận lịch sử một phần; bên gọi phải cung cấp toàn bộ chain.
 
 ```mermaid
 graph LR

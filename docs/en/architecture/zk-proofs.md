@@ -6,7 +6,7 @@ icon: material/shield-key
 
 # Zero-Knowledge Proofs
 
-HieraChain uses **Zero-Knowledge Proofs (ZK)** to ensure transaction authenticity across the hierarchical system without revealing detailed data of each Event. Sub-chains generate Proofs demonstrating valid state transitions, and the Main-chain verifies those Proofs.
+HieraChain exposes a ZK proof interface for Sub-chain submissions to MainChain. The current implementation supports mock proofs for development; production proving and verification are not implemented.
 
 ### 1. How ZKProver & ZKVerifier Work
 
@@ -15,14 +15,14 @@ The system provides two core modules for this task:
 * **`ZKProver`** (Located at Sub-chain - `hierachain/security/zk_prover.py`):
   
     * Acts as the Prover.
-    * When a Sub-chain generates a new block, it creates a new state (World State).
-    * `ZKProver` generates Proof code segments to prove the state transition logic from `old_state_root` to `new_state_root` at the corresponding `block_index`.
+    * Sub-chain proof inputs use the previous and latest block event Merkle roots.
+    * The current mock implementation binds those inputs to a hash. It does not prove an entity projection transition or validate business rules.
 
 * **`ZKVerifier`** (Located at Main-chain - `hierachain/security/verify/zk_verifier.py`):
   
     * Acts as the Verifier.
-    * Upon receiving Proof signals from Sub-chain, `ZKVerifier` analyzes and verifies mathematical validity and state integrity.
-    * Completely resolves **Fake Proofs** risk. If a Proof fails verification, the attached transaction on Main-chain will be outright rejected.
+    * For mock proofs, `ZKVerifier` checks the format and the commitment to the supplied public inputs.
+    * A rejected proof prevents its MainChain submission. Mock commitments are forgeable and do not provide a production zero-knowledge guarantee.
 
 ### 2. Operating Modes
 
@@ -31,23 +31,25 @@ Zero-Knowledge Proofs in HieraChain support two running modes depending on the a
 #### a. Mock Mode (Default)
 
 * This is the Development (Dev) or Testing environment mode.
-* Mock Mode simulates Groth16/Plonk ZK-SNARK by generating a simulated proof format of 2KB - 4KB with `mock_zkp_business\x00`.
+* Mock mode uses the `mock_zkp_v2\x00` format with a SHA-256 commitment to public inputs; it does not execute a SNARK circuit.
 * Instead of running algorithm circuits, mock mode uses interpolated hash computation (`hashlib.sha256`) on Public Inputs parameters and simulates a 100-500ms delay to mimic the real proof system.
 * Supports Main/Sub integrated development without requiring significant hardware resources.
 
 #### b. Production Mode (ZoKrates)
 
-* This is the actual production operation mode for Mainnet/Enterprise environments.
+* This is a reserved production interface, currently unsupported.
 * Requires the proving key directory at `ZK_PROVING_KEY_PATH` and verification key at `ZK_VERIFICATION_KEY_PATH`.
-* An external service such as ZoKrates generates proofs using the configured SNARK circuit.
+* The current production methods raise `NotImplementedError`; configuring key paths does not enable an external proving service.
 
 ### 3. Public Inputs
 
 As defined by `ZKPublicInputs`, the input arguments (synchronized between Prover and Verifier) include:
 
-* **`old_state_root` (str)**: Merkle Root of the World State at the immediately preceding block. Must be a valid hash.
-* **`new_state_root` (str)**: Latest Merkle Root after events are incorporated into the current update block.
-* **`block_index` (int)**: Block sequence number (this mechanism completely prevents Replay attacks).
+* **`old_state_root` (str)**: Event Merkle root of the immediately preceding block; the submission path uses `genesis` when no preceding block exists.
+* **`new_state_root` (str)**: Event Merkle root of the latest block, with the existing block-hash fallback when needed.
+* **`block_index` (int)**: Block sequence number bound into the proof; the submission layer must still enforce freshness and deduplication.
 * **`sub_chain_name` (str)**: Full identifier or name of the Sub-chain pushing the Proof.
 
 These parameters are serialized as standardized JSON bytes (using `sort_keys=True`) before being hashed for Proof generation.
+
+`WorldState.get_state_root()` hashes the entity query projection and is a separate diagnostic root. It is not supplied by the current cross-level proof path. Production proving and verification currently raise `NotImplementedError`; this root clarification does not implement a production ZK circuit.

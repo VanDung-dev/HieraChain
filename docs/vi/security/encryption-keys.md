@@ -18,7 +18,7 @@ File: `hierachain/security/key_manager.py`, `key_provider.py`
 * Provider có thể thay thế hỗ trợ nhiều nguồn khóa:
 
     * `LocalKeyProvider` giữ khóa trong bộ nhớ cục bộ.
-    * `FileVaultProvider` giữ dữ liệu mã hóa trên đĩa với AES-256-GCM.
+    * `FileVaultProvider` giữ dữ liệu mã hóa trên đĩa bằng Fernet, dùng AES-128-CBC với HMAC.
 
 * `KeyManager.revoke_key()` của API server lưu bền vững API key đã thu hồi qua SQLite hoặc Redis dùng chung đã cấu hình. Kiểm tra thu hồi không dùng kết quả permission trong cache.
 
@@ -39,14 +39,14 @@ File: `hierachain/cli/key.py`, `hierachain/security/key_provider.py` (`FileVault
 Không có `key_backup_manager.py` riêng. Cơ chế thực tế tối giản:
 
 * Tạo khóa chạy `python -m hierachain key generate --output validator_key.json` (CLI) để tạo cặp Ed25519 qua `Ed25519PrivateKey.generate()` và ghi JSON `{private_key, public_key}` dạng hex. File mới có mode `0600` trên hệ POSIX; lệnh từ chối ghi đè file đã có. Lệnh `show` và `verify` dùng để kiểm tra kết quả.
-* Vault mã hóa (chỉ cho dev và test) dùng `FileVaultProvider` để mã hóa file vault bằng `PBKDF2HMAC(SHA256, 310_000 iter)` và `Fernet`. Phần này phù hợp cho dev và test và được ghi rõ không dùng cho production. Với production hãy dùng HSM hoặc KMS qua interface `KeyProvider` và `HRC_VAULT_*`.
+* Vault mã hóa (chỉ cho dev và test) dùng `FileVaultProvider` để mã hóa file vault bằng `PBKDF2HMAC(SHA256, 310_000 iter)` và `Fernet(AES-128-CBC+HMAC)`. Password được truyền vào constructor. Hỗ trợ HSM hoặc KMS ở production cần một `KeyProvider` riêng cho ứng dụng; runtime không có master-key provider dựng sẵn. `HRC_VAULT_TOKEN` và `HRC_VAULT_PATH` cấu hình backend Vault riêng của `SecretManager`.
 * Không có sao lưu đa vị trí, không có kiểm tra toàn vẹn SHA-512 và không có tự động phân phối hay dọn dẹp. Operator phải tự sao chép `validator_key.json` hoặc `.vault` bằng công cụ sao lưu ngoài.
 
 ---
 
 ## Phạm vi khóa (thực tế)
 
-* Khóa validator và node là một `KeyPair` Ed25519 cho mỗi node (qua `LocalKeyProvider` hoặc `FileVaultProvider`), được tham chiếu bởi `HRC_VALIDATOR_IDENTITY` và `HRC_MASTER_KEY_FILE`/`HRC_MASTER_KEY_SOURCE`.
+* Khóa validator và node là một `KeyPair` Ed25519 cho mỗi node (qua `LocalKeyProvider` hoặc `FileVaultProvider`), được tham chiếu bởi `HRC_VALIDATOR_IDENTITY`. `HRC_MASTER_KEY_SOURCE=env` chỉ là alias tương thích; giá trị khác và `HRC_MASTER_KEY_FILE` không rỗng sẽ bị từ chối vì chưa có master-key provider.
 * API key được quản lý bởi `KeyManager` (tạo, thu hồi, phân quyền, cache qua `KeyStorage`/`KeyCacheManager`), không phải khóa ký cho từng entity.
 * Không có phân cấp sẵn như Master tới Domain tới Entity. Cách ly domain dựa trên việc tách Sub-Chain và role của MSP.
 

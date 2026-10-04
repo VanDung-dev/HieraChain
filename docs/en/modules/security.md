@@ -88,3 +88,7 @@ Main settings live in `hierachain/config/settings.py`:
 *   [Security Architecture](../architecture/security.md)
 *   [P2P Network Security](./network.md)
 *   [Monitoring and Alerts](./monitoring.md)
+
+## Structured log field redaction
+
+`sanitize_for_log()`, every `SecureLogger` level, security-event context, audit details and `log_user_action()` redact complete values identified by sensitive field names before traversing dictionaries and lists. Supported names include API keys, passwords, private keys, credentials, tokens, session IDs, authorization and prefixed secret fields, in snake_case, kebab-case or camelCase. Nested containers under a sensitive field become `***`; ordinary public keys remain visible. Existing string injection sanitization and text-pattern redaction still apply. Applications should supply secrets in named structured fields; arbitrary unnamed strings cannot reliably reveal their sensitivity.

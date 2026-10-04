@@ -30,7 +30,8 @@ graph TD
     Consensus -->|3. Validate| SubChain
     SubChain -->|4. Finalize Block| SubChain
     SubChain -->|5. Submit Proof| MainChain[Main Chain]
-    MainChain -->|6. Store Root Hash| Storage[World State]
+    MainChain -->|6. Persist Proof Anchor| Storage[Proof Storage]
+    SubChain -->|Apply Finalized Events| Projection[WorldState Projection]
 ```
 
 1. Create a Sub-Chain with `HierarchyManager.create_sub_chain(name, domain_type, metadata)`. This initializes a DomainChain and connects it to the Main Chain.

@@ -37,6 +37,8 @@ HieraChain dùng ba lớp bảo vệ độc lập cho giao tiếp mạng:
     * Xác thực danh tính nút thông qua chứng chỉ MSP (Membership Service Provider).
     * Chỉ cho phép các nút thuộc tổ chức (Organization) hợp lệ tham gia mạng lưới.
     * Quy trình Handshake 2 bước: `INIT` và `ACK`.
+    * Ràng buộc subject và khóa ký của chứng chỉ còn hiệu lực với routing ID
+      ZeroMQ và danh tính tổ chức đã đăng ký.
 
 *   :material-shield-sync:{ .lg .middle } __Lớp 3: Integrity & Replay Protection__
 
@@ -46,6 +48,7 @@ HieraChain dùng ba lớp bảo vệ độc lập cho giao tiếp mạng:
 
     * Mọi thông điệp P2P đều được ký số (Digital Signature).
     * Chống tấn công lặp lại (Replay Attacks) bằng cách kiểm tra Nonce duy nhất và Timestamp trong cửa sổ cho phép (60s).
+    * Cả hai thông điệp handshake đều có `timestamp` và `nonce` đã ký, được replay gate của transport chấp nhận.
 
 </div>
 
@@ -97,6 +100,12 @@ sequenceDiagram
     Note over NodeA, NodeB: 2. Authenticated P2P Channel Ready
 ```
 
+Responder gửi lại nonce của `HANDSHAKE_INIT` trong ACK đã ký. Initiator chỉ
+nhận ACK khi đang có handshake gửi đi tương ứng, peer vượt qua chính sách tin
+cậy đã cấu hình, và chứng chỉ ACK còn hiệu lực, được ràng buộc với routing ID
+cùng khóa ký của peer. Chứng chỉ CA, bản ghi danh tính, tổ chức hoặc khóa bị
+thiếu hay không khớp đều bị từ chối.
+
 ---
 
 ## Ví dụ sử dụng
@@ -140,3 +149,5 @@ await secure_node.send_secure("peer_002", payload)
 *   [Bảo mật và MSP (Security)](./security.md)
 *   [Đồng thuận BFT (Consensus)](../consensus/bft_consensus.md)
 *   [Giám sát mạng (Monitoring)](./monitoring.md)
+
+ZeroMQ nhận frame tối đa 1 MiB và đúng hai frame ứng dụng (định danh bên gửi và nội dung); frame thừa được đọc bỏ, không gom vào danh sách multipart Python. Kết nối secure xác minh danh tính và chữ ký trước khi lưu replay, với cache riêng tối đa 1.000 mục mỗi peer đã xác minh. Transport plain yêu cầu peer ID đã cấu hình và tách cache theo peer; không bảo đảm danh tính bằng chữ ký. Các giới hạn này cần đi cùng kiểm soát kết nối và băng thông ở tầng triển khai.

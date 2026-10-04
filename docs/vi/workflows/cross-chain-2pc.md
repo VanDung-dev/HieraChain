@@ -73,6 +73,7 @@ flowchart TD
 - Marker event của participant chứa transaction ID và bước thao tác. Khi retry, participant bỏ qua start hoặc completion event đã được chấp nhận, kể cả sau khi khởi động lại.
 - Sau COMMIT bền vững, phục hồi participant dùng payload đã được coordinator xác thực trước đó và marker event đã nhận; không chạy lại xác thực nghiệp vụ dựa trên entity registry chỉ tồn tại trong bộ nhớ.
 - `IN_DOUBT` là trạng thái có thể phục hồi, không phải thất bại cuối cùng. Gọi `transaction_manager.retry_pending()` để retry sau lỗi participant trong lúc chạy; khởi động lại và đăng ký participant cũng kích hoạt retry.
+- Recovery chiếm quyền xử lý từng giao dịch trong khi luồng coordinator đang hoạt động. Lần gọi `retry_pending()` đồng thời sẽ bỏ qua giao dịch đó và có thể retry sau khi luồng đang chạy nhả quyền. Coordinator cũng từ chối abort sau quyết định COMMIT bền vững hoặc chưa xác định.
 
 ## Method chính
 
