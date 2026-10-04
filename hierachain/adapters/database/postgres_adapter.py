@@ -39,6 +39,9 @@ class PostgresAdapter(SQLBase):
     and native PostgreSQL dialects.
     """
     _block_range_placeholder = "%s"
+    _ledger_placeholder = "%s"
+    _ledger_registry_lock_suffix = " FOR SHARE"
+    _ledger_begin = ""
 
     def __init__(self, database_url: str = "postgresql://hiera:hiera@localhost:5432/hierachain", pool_min: int = 1, pool_max: int = 10):
         self.database_url = database_url
@@ -416,7 +419,6 @@ class PostgresAdapter(SQLBase):
                 (encoded, time.time(), expected_revision),
             )
         saved = cursor.rowcount == 1
-        conn.commit()
         return saved
 
     @staticmethod

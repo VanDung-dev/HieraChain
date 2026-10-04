@@ -19,13 +19,14 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from typing import Any
 
+from hierachain.adapters.database.channel_ledger_sql import ChannelLedgerSQLStorage
 from hierachain.config.settings import settings
 from hierachain.core.blockchain import Blockchain
 from hierachain.security.secure_logging import get_storage_logger
 from hierachain.serialization import dumps_json, loads_json
 
 
-class SQLBase(ABC):
+class SQLBase(ChannelLedgerSQLStorage, ABC):
     """
     Abstract base class for SQL database adapters.
 
@@ -748,6 +749,7 @@ class SQLBase(ABC):
 
     def save_hierarchy_registry(
         self, state: dict[str, Any], *, expected_revision: str | None = None,
+        channel_ledgers: dict[str, Any] | None = None,
     ) -> bool:
         """Atomically reject a registry snapshot based on an obsolete revision."""
         try:
@@ -755,9 +757,14 @@ class SQLBase(ABC):
                 raise ValueError("Registry writes require a new revision")
             encoded = dumps_json(state)
             with self._get_connection() as conn:
-                return self._execute_save_hierarchy_registry(conn, encoded, expected_revision)
-        except Exception:
-            self.logger.exception("Could not persist hierarchy registry")
+                if not self._execute_save_hierarchy_registry(conn, encoded, expected_revision):
+                    conn.rollback()
+                    return False
+                self._initialize_channel_ledgers(conn, channel_ledgers or {})
+                conn.commit()
+                return True
+        except Exception as exc:
+            self.logger.error("Could not persist hierarchy registry", error_type=type(exc).__name__)
             return False
 
     @staticmethod
@@ -782,7 +789,6 @@ class SQLBase(ABC):
                 (encoded, time.time(), expected_revision),
             )
         saved = cursor.rowcount == 1
-        conn.commit()
         return saved
 
     def load_hierarchy_registry(self) -> dict[str, Any] | None:

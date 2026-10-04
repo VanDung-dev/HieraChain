@@ -5,6 +5,7 @@ Provides Redis persistence for blockchain data with the same public interface
 as SQLBase adapters. Supports store/load chains, blocks, events, and proofs.
 """
 
+import hashlib
 import json
 import logging
 import time
@@ -408,14 +409,19 @@ class RedisStorageAdapter:
 
     def save_hierarchy_registry(
         self, state: dict[str, Any], *, expected_revision: str | None = None,
+        channel_ledgers: dict[str, Any] | None = None,
     ) -> bool:
         """Use WATCH/MULTI to reject stale registry writes across workers."""
         if not isinstance(state.get("_revision"), str) or state["_revision"] == expected_revision:
             raise ValueError("Registry writes require a new revision")
         key = _k("hierarchy_registry")
+        seeds = {
+            self._channel_ledger_key(channel_id): dumps_json({"kind": "snapshot", "data": snapshot})
+            for channel_id, snapshot in (channel_ledgers or {}).items()
+        }
         try:
             with self.client.pipeline() as pipe:
-                pipe.watch(key)
+                pipe.watch(key, *seeds)
                 raw = pipe.get(key)
                 current = loads_json(raw) if raw is not None else None
                 if current is not None and not isinstance(current, dict):
@@ -423,15 +429,61 @@ class RedisStorageAdapter:
                 revision = current.get("_revision") if current is not None else None
                 if revision != expected_revision:
                     return False
+                if any(pipe.exists(ledger_key) for ledger_key in seeds):
+                    raise RuntimeError("Channel ledger already exists")
                 pipe.multi()
                 pipe.set(key, dumps_json(state).encode("utf-8"))
+                for ledger_key, seed in seeds.items():
+                    pipe.rpush(ledger_key, seed)
                 return bool(pipe.execute()[0])
         except redis_mod.WatchError:
             return False
 
+    @staticmethod
+    def _channel_ledger_key(channel_id: str) -> str:
+        return _k("channel_ledger", hashlib.sha256(channel_id.encode("utf-8")).hexdigest())
+
+    def append_channel_record(
+        self, channel_id: str, record: dict[str, Any], *,
+        expected_sequence: int, expected_registry_revision: str | None,
+    ) -> bool:
+        """Append atomically while both access metadata and ledger head are current."""
+        registry_key = _k("hierarchy_registry")
+        ledger_key = self._channel_ledger_key(channel_id)
+        encoded = dumps_json(record)
+        try:
+            with self.client.pipeline() as pipe:
+                pipe.watch(registry_key, ledger_key)
+                raw = pipe.get(registry_key)
+                state = loads_json(raw) if raw is not None else None
+                if (
+                    expected_registry_revision is None or not isinstance(state, dict)
+                    or state.get("_revision") != expected_registry_revision
+                    or state.get("_channel_ledger_version") != 1
+                    or channel_id not in state.get("channels", {})
+                    or expected_sequence < 1 or pipe.llen(ledger_key) != expected_sequence
+                ):
+                    return False
+                pipe.multi()
+                pipe.rpush(ledger_key, encoded)
+                return pipe.execute()[0] == expected_sequence + 1
+        except redis_mod.WatchError:
+            return False
+
+    def load_channel_records(self, channel_id: str, *, after_sequence: int = 0) -> dict[str, Any]:
+        """Read the append-only suffix without decoding earlier history."""
+        ledger_key = self._channel_ledger_key(channel_id)
+        revision = self.client.llen(ledger_key)
+        if revision < max(1, after_sequence):
+            raise RuntimeError("Persisted channel ledger is missing or truncated")
+        raw = self.client.lrange(ledger_key, after_sequence, revision - 1) if revision > after_sequence else []
+        if len(raw) != revision - after_sequence:
+            raise RuntimeError("Persisted channel ledger has missing records")
+        return {"revision": revision, "records": [loads_json(record) for record in raw]}
+
     def load_hierarchy_registry(self) -> dict[str, Any] | None:
         """Load access state from the configured Redis database."""
-        raw = self.client.get("hierachain:hierarchy_registry")
+        raw = self.client.get(_k("hierarchy_registry"))
         if raw is None:
             return None
         state = loads_json(raw)
