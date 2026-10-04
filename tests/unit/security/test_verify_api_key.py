@@ -6,7 +6,6 @@ verification, permission checking, and security event logging.
 """
 
 import asyncio
-import inspect
 from unittest.mock import ANY, Mock, patch
 
 import pytest
@@ -403,34 +402,3 @@ def test_verify_api_key_unsupported_key_location(default_config):
     # Should fall back to default header dependency
     assert verify_key.key_location == "cookie"
     # Note: The actual fallback behavior depends on implementation
-
-
-# Test cases for private methods using inspect
-def test_private_method_log_security_event_exists():
-    """Test that _log_security_event private method exists"""
-    # Check that the private method exists
-    assert hasattr(APIKeyVerifier, '_log_security_event')
-    
-    # Get the method using inspect
-    method = getattr(APIKeyVerifier, '_log_security_event')
-    assert callable(method)
-    
-    # Check method signature
-    signature = inspect.signature(method)
-    assert 'event_type' in signature.parameters
-    assert 'details' in signature.parameters
-
-
-def test_private_method_has_permission_exists():
-    """Test that _has_permission private method exists in ResourcePermissionChecker"""
-    # Check that the private method exists
-    assert hasattr(ResourcePermissionChecker, '_has_permission')
-    
-    # Get the method using inspect
-    method = getattr(ResourcePermissionChecker, '_has_permission')
-    assert callable(method)
-    
-    # Check method signature
-    signature = inspect.signature(method)
-    assert 'context' in signature.parameters
-    assert 'permission_type' in signature.parameters

@@ -3,10 +3,10 @@ Unit tests for hierachain.config.secret_manager.SecretManager.
 
 Tests cover:
 - env backend (mocking os.environ)
-- vault backend fallback when hvac is not configured
+- Vault failure handling when configuration is missing
 - aws JSON field selection and rejection of invalid payloads
 - default value handling
-- unknown backend fallback to env
+- unsupported backend rejection
 """
 import os
 from unittest.mock import MagicMock, patch
@@ -53,32 +53,33 @@ class TestEnvBackend:
 
 
 class TestVaultBackend:
-    def test_falls_back_to_env_when_vault_url_missing(self):
+    def test_missing_vault_url_uses_default_without_reading_env(self):
         env = {
             "HRC_SECRET_BACKEND": "vault",
             "HRC_VAULT_TOKEN": "tok",
             # HRC_VAULT_URL intentionally absent
-            "HRC_CLUSTER_SECRET": "env_fallback",
+            "HRC_CLUSTER_SECRET": "ambient-test-secret",
         }
         with patch.dict(os.environ, env, clear=False):
             os.environ.pop("HRC_VAULT_URL", None)
             from hierachain.config.secret_manager import SecretManager
             mgr = SecretManager()
-            # Without URL it falls back to env backend
-            assert mgr.get_secret("HRC_CLUSTER_SECRET") == "env_fallback"
+            assert mgr.get_secret("HRC_CLUSTER_SECRET") is None
+            assert mgr.get_secret("HRC_CLUSTER_SECRET", default="unavailable") == "unavailable"
 
-    def test_falls_back_to_env_when_vault_token_missing(self):
+    def test_missing_vault_token_uses_default_without_reading_env(self):
         env = {
             "HRC_SECRET_BACKEND": "vault",
             "HRC_VAULT_URL": "http://vault:8200",
             # HRC_VAULT_TOKEN intentionally absent
-            "HRC_CLUSTER_SECRET": "env_fallback",
+            "HRC_CLUSTER_SECRET": "ambient-test-secret",
         }
         with patch.dict(os.environ, env, clear=False):
             os.environ.pop("HRC_VAULT_TOKEN", None)
             from hierachain.config.secret_manager import SecretManager
             mgr = SecretManager()
-            assert mgr.get_secret("HRC_CLUSTER_SECRET") == "env_fallback"
+            assert mgr.get_secret("HRC_CLUSTER_SECRET") is None
+            assert mgr.get_secret("HRC_CLUSTER_SECRET", default="unavailable") == "unavailable"
 
     def test_uses_vault_when_configured(self):
         """Mock hvac client and verify we call it correctly."""
@@ -170,14 +171,8 @@ class TestAwsBackend:
 
 
 class TestUnknownBackend:
-    def test_falls_back_to_env_with_warning(self, caplog):
-        import logging
-        env = {"HRC_SECRET_BACKEND": "gcp", "MY_KEY": "my_value"}
-        with patch.dict(os.environ, env, clear=False):
+    def test_unsupported_backend_is_rejected(self):
+        with patch.dict(os.environ, {"HRC_SECRET_BACKEND": "gcp"}, clear=True):
             from hierachain.config.secret_manager import SecretManager
-            mgr = SecretManager()
-            with caplog.at_level(logging.WARNING, logger="hierachain.config.secret_manager"):
-                result = mgr.get_secret("MY_KEY")
-
-        assert result == "my_value"
-        assert any("Unknown HRC_SECRET_BACKEND" in m for m in caplog.messages)
+            with pytest.raises(ValueError, match="Unsupported HRC_SECRET_BACKEND"):
+                SecretManager()

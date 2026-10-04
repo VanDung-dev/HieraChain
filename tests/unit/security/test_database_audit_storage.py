@@ -216,8 +216,10 @@ def test_database_audit_storage_exception_handling(temp_db_path):
     with patch("sqlite3.connect", side_effect=sqlite3.OperationalError("Mock database disk image is malformed")):
         # Should catch exception and return False safely without crashing
         assert storage.store_event(event) is False
-        assert len(storage.retrieve_events(AuditFilter())) == 0
-        assert storage.get_event_count(AuditFilter()) == 0
+        with pytest.raises(RuntimeError, match="retrieve audit events from DB"):
+            storage.retrieve_events(AuditFilter())
+        with pytest.raises(RuntimeError, match="count audit events in DB"):
+            storage.get_event_count(AuditFilter())
         assert storage.cleanup_old_events(10) == 0
 
 

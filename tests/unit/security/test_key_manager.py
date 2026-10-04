@@ -5,15 +5,14 @@ This module contains unit tests for the KeyManager class functionality,
 including key validation, revocation checks, permissions, and key creation.
 """
 
-import time
 import sys
+import time
+from collections.abc import MutableMapping
 from unittest.mock import Mock
 
 import pytest
 
-from hierachain.security import (
-    KeyManager, initialize_default_keys
-)
+from hierachain.security import KeyManager, initialize_default_keys
 
 
 def test_key_manager_initialization():
@@ -27,7 +26,8 @@ def test_key_manager_initialization():
     assert km is not None
     assert isinstance(km.storage, dict)
     assert isinstance(km.revoked_keys, set)
-    assert isinstance(km.key_cache, dict)
+    assert isinstance(km.key_cache, MutableMapping)
+    assert dict(km.key_cache) == {}
     assert km.cache_ttl == 300
 
 
@@ -211,6 +211,19 @@ def test_cache_key():
     assert test_key in km.key_cache
     # Note: we can't directly compare the data since it's parsed from JSON
     assert km.key_cache[test_key]['ttl'] == 60
+
+
+def test_expired_key_cache_reloads_updated_storage_data() -> None:
+    """An expired cached identity must not hide newer backend data."""
+    manager = KeyManager()
+    api_key = manager.create_key("original-user", ["events"])
+    manager.cache_key(api_key, ttl=1)
+    manager.storage[api_key] = {**manager.storage[api_key], "user_id": "updated-user"}
+    assert manager.get_user(api_key) == "original-user"
+
+    manager.key_cache[api_key]["cached_at"] -= 2
+
+    assert manager.get_user(api_key) == "updated-user"
 
 
 def test_create_key():
