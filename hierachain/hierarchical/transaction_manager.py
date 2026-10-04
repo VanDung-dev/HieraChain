@@ -42,6 +42,8 @@ class CrossChainTransactionManager:
         self._journal_cursor: tuple[int, int] | None = None
         self._durable_records: dict[str, dict[str, Any]] = {}
         self._journal_lock = threading.RLock()
+        self._activity_lock = threading.Lock()
+        self._active_owners: dict[str, int] = {}
         self.journal = journal or TransactionJournal(
             storage_dir="transactions",
             active_log_name="cross_chain_2pc.arrow",
@@ -156,6 +158,20 @@ class CrossChainTransactionManager:
         transaction.state = state
         transaction.updated_at = time.time()
 
+    def _claim_transaction(self, tx_id: str) -> bool:
+        """Claim one transaction so execution and recovery cannot overlap."""
+        with self._activity_lock:
+            if tx_id in self._active_owners:
+                return False
+            self._active_owners[tx_id] = threading.get_ident()
+            return True
+
+    def _release_transaction(self, tx_id: str) -> None:
+        """Release a transaction claim owned by the current thread."""
+        with self._activity_lock:
+            if self._active_owners.get(tx_id) == threading.get_ident():
+                del self._active_owners[tx_id]
+
     def _abort_before_decision(
         self,
         transaction: CrossChainTransaction,
@@ -163,6 +179,11 @@ class CrossChainTransactionManager:
         dest_chain: Any,
     ) -> bool:
         tx_id = transaction.transaction_id
+        if self._phases.get(tx_id) in _COMMIT_PHASES:
+            self._set_state(transaction, TransactionState.IN_DOUBT)
+            logger.warning("2PC abort refused after a possible COMMIT decision for %s", tx_id)
+            return False
+
         self._set_state(transaction, TransactionState.IN_DOUBT)
         # This record is advisory; the durable absence of a COMMIT decision is
         # what makes abort the safe recovery action.
@@ -273,6 +294,15 @@ class CrossChainTransactionManager:
         return True
 
     def _execute_2pc(self, transaction: CrossChainTransaction) -> bool:
+        tx_id = transaction.transaction_id
+        if not self._claim_transaction(tx_id):
+            return False
+        try:
+            return self._execute_2pc_owned(transaction)
+        finally:
+            self._release_transaction(tx_id)
+
+    def _execute_2pc_owned(self, transaction: CrossChainTransaction) -> bool:
         source_chain = self.hierarchy_manager.get_sub_chain(transaction.source_chain)
         dest_chain = self.hierarchy_manager.get_sub_chain(transaction.destination_chain)
         if not _supports_2pc(source_chain) or not _supports_2pc(dest_chain):
@@ -318,24 +348,29 @@ class CrossChainTransactionManager:
         """Retry unresolved aborts or durable COMMIT decisions when chains are live."""
         self._refresh_unknown_decisions()
         for tx_id, transaction in list(self.transactions.items()):
-            phase = self._phases.get(tx_id)
-            if phase not in _UNRESOLVED_PHASES:
+            if not self._claim_transaction(tx_id):
                 continue
-            participants = self._get_participants(transaction)
-            if participants is None:
-                continue
-            source_chain, dest_chain = participants
-            if phase in _COMMIT_PHASES:
-                if phase == "commit_unknown":
+            try:
+                phase = self._phases.get(tx_id)
+                if phase not in _UNRESOLVED_PHASES:
                     continue
-                self._commit_forward(
-                    transaction,
-                    source_chain,
-                    dest_chain,
-                    restore_committed_state=True,
-                )
-            else:
-                self._abort_before_decision(transaction, source_chain, dest_chain)
+                participants = self._get_participants(transaction)
+                if participants is None:
+                    continue
+                source_chain, dest_chain = participants
+                if phase in _COMMIT_PHASES:
+                    if phase == "commit_unknown":
+                        continue
+                    self._commit_forward(
+                        transaction,
+                        source_chain,
+                        dest_chain,
+                        restore_committed_state=True,
+                    )
+                else:
+                    self._abort_before_decision(transaction, source_chain, dest_chain)
+            finally:
+                self._release_transaction(tx_id)
 
     def initiate_transaction(
         self,

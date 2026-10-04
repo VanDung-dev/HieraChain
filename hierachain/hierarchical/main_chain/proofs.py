@@ -29,11 +29,32 @@ def _find_proof_in_events(
 ) -> bool:
     """Check if a proof exists in a list of events."""
     for event in events:
+        details = event.get("details")
         if (
             event.get("event") == "proof_submission"
-            and event.get("details", {}).get("proof_hash") == proof_hash
-            and event.get("details", {}).get("sub_chain_name") == sub_chain_name
+            and isinstance(details, dict)
+            and details.get("proof_hash") == proof_hash
+            and details.get("sub_chain_name") == sub_chain_name
         ):
+            return True
+    return False
+
+
+def _proof_already_recorded(
+    chain: Any, sub_chain_name: str, proof_hash: str
+) -> bool:
+    """Find an existing pending or recorded proof while the MainChain is locked."""
+    if _find_proof_in_events(
+        getattr(chain, "pending_events", []), proof_hash, sub_chain_name
+    ):
+        return True
+    for block in chain.chain:
+        events = (
+            block.to_event_list()
+            if callable(getattr(block, "to_event_list", None))
+            else getattr(block, "events", [])
+        )
+        if _find_proof_in_events(events, proof_hash, sub_chain_name):
             return True
     return False
 
@@ -62,6 +83,8 @@ def _record_proof_on_main_chain(
 ) -> bool:
     """Record a proof on the Main Chain."""
     with chain.lock:
+        if _proof_already_recorded(chain, sub_chain_name, proof_hash):
+            return True
         proof_id = f"PROOF-{chain.proof_sequence + 1}"
         current_time = time.time()
         event: dict[str, Any] = {
@@ -109,6 +132,11 @@ def _refresh_durable_proofs(chain: Any) -> None:
                 "proof_hash": proof_hash,
                 "timestamp": event["timestamp"],
                 "block_index": block.index,
+                "latest_block_index": (
+                    event.get("metadata", {}).get("latest_block_index")
+                    if isinstance(event.get("metadata"), dict)
+                    else None
+                ),
             }
             recent.append({
                 "block_index": block.index,

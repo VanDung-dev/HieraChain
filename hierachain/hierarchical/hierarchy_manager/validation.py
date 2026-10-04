@@ -120,19 +120,67 @@ def _compute_proof_consistency(
     for name, chain in sub_chains.items():
         latest_block = chain.get_latest_block()
         latest_proof = main_chain.latest_proofs.get(name)
+        chain_height = len(chain.chain)
+        block_index = latest_block.index if latest_block else None
+
+        def submission_is_due() -> bool:
+            should_submit = getattr(chain, "should_submit_proof", None)
+            if not callable(should_submit):
+                return True
+            try:
+                return bool(should_submit())
+            except Exception:
+                logger.exception("Could not determine proof schedule for %s", name)
+                return True
 
         if not latest_proof:
+            pending = latest_block is not None and not submission_is_due()
             consistency_report[name] = {
                 "consistent": False,
-                "reason": "No proof submitted yet",
+                "pending": pending,
+                "reason": (
+                    "No proof submitted yet; the current tip is within the "
+                    "configured submission interval"
+                    if pending
+                    else "No proof submitted for the current Sub-Chain tip"
+                ),
+                "chain_height": chain_height,
+                "last_block_index": block_index,
             }
             continue
 
+        proof_hash = latest_proof.get("proof_hash")
+        matches_tip = (
+            latest_block is not None
+            and isinstance(proof_hash, str)
+            and proof_hash == latest_block.hash
+        )
+        anchored_index = latest_proof.get("latest_block_index")
+        tip_advanced = (
+            isinstance(anchored_index, int)
+            and not isinstance(anchored_index, bool)
+            and isinstance(block_index, int)
+            and block_index > anchored_index
+        )
+        pending = not matches_tip and tip_advanced and not submission_is_due()
         consistency_report[name] = {
-            "consistent": True,
-            "latest_proof_hash": latest_proof.get("proof_hash"),
-            "chain_height": len(chain.chain),
-            "last_block_index": latest_block.index if latest_block else 0,
+            "consistent": matches_tip,
+            "pending": pending,
+            "reason": (
+                None
+                if matches_tip
+                else (
+                    "The Sub-Chain tip advanced and its next proof is not yet due"
+                    if pending
+                    else "The latest MainChain proof does not match the current "
+                    "Sub-Chain tip"
+                )
+            ),
+            "latest_proof_hash": proof_hash,
+            "latest_block_hash": latest_block.hash if latest_block else None,
+            "latest_proof_block_index": anchored_index,
+            "chain_height": chain_height,
+            "last_block_index": block_index,
         }
 
     return consistency_report
@@ -163,4 +211,12 @@ def _validate_cross_chain_consistency(manager: Any) -> dict[str, Any]:
     results["proof_consistency"] = _compute_proof_consistency(
         manager.main_chain, manager.sub_chains
     )
+    # Pending describes why an anchor is not yet available; it does not make
+    # the child tip match the latest durable MainChain proof. Keep the useful
+    # scheduling detail while reporting the cross-chain state as unverified.
+    if any(
+        not proof["consistent"]
+        for proof in results["proof_consistency"].values()
+    ):
+        results["overall_consistent"] = False
     return results

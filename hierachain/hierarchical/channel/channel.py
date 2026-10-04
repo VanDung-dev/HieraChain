@@ -2,6 +2,8 @@
 Channel — secure data channel providing complete isolation between organizations.
 """
 
+from __future__ import annotations
+
 import logging
 import threading
 import time
@@ -18,6 +20,7 @@ from hierachain.hierarchical.channel.types import ChannelStatus, Organization
 
 if TYPE_CHECKING:
     from hierachain.hierarchical.private_data import PrivateCollection
+    from hierachain.security.identity_loader import NodeIdentity
 
 logger = logging.getLogger(__name__)
 
@@ -39,13 +42,16 @@ class Channel:
         channel_id: str,
         organizations: list[Organization],
         policy_config: dict[str, Any],
+        *,
+        node_identity: NodeIdentity | None = None,
+        trusted_public_keys: dict[str, bytes] | None = None,
     ):
         self.channel_id = channel_id
         self.organizations = {org.org_id: org for org in organizations}
         self.policy = ChannelPolicy(policy_config)
         self.private_collections: dict[str, PrivateCollection] = {}
         self.ordering_service = None
-        self.ledger = ChannelLedger()
+        self.ledger = ChannelLedger(node_identity, trusted_public_keys, channel_id)
         self.status = ChannelStatus.ACTIVE
         self._persist_registry: Callable[[], bool] | None = None
         self._refresh_registry: Callable[[], None] | None = None
@@ -238,8 +244,30 @@ class Channel:
         limit = query_params.get("limit", len(events))
         return events[:limit]
 
+    @_registry_operation
     def finalize_block(self) -> Any | None:
         return self.ledger.finalize_block()
+
+    def restore_statistics(self) -> None:
+        """Rebuild submission counters from the durable accepted event history."""
+        events = [event for block in self.ledger.blocks for event in block.to_event_list()]
+        events.extend(self.ledger.current_block_events)
+        statistics: dict[str, Any] = {
+            "total_events": 0,
+            "events_by_type": {},
+            "events_by_org": {org_id: 0 for org_id in self.organizations},
+        }
+        for event in events:
+            org_id = event.get("submitter_org")
+            if not org_id:
+                continue
+            statistics["total_events"] += 1
+            event_type = event.get("event", "unknown")
+            by_type = statistics["events_by_type"]
+            by_type[event_type] = by_type.get(event_type, 0) + 1
+            if org_id in statistics["events_by_org"]:
+                statistics["events_by_org"][org_id] += 1
+        self.event_statistics = statistics
 
     @_registry_operation
     def get_channel_info(self) -> dict[str, Any]:

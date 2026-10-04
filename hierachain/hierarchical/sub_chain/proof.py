@@ -3,6 +3,7 @@ Proof submission and ZK proof functions for Sub-Chain.
 """
 
 import logging
+import math
 import time
 from collections.abc import Callable
 from typing import Any, cast
@@ -270,31 +271,168 @@ def _update_local_state_after_proof(
 
 def _connect_sub_chain_to_main(sub_chain: Any, main_chain: Any) -> bool:
     """Connect a Sub-Chain to the Main Chain."""
+    previous_connection = getattr(sub_chain, "main_chain_connection", None)
     try:
-        metadata = {
-            "domain_type": sub_chain.domain_type,
-            "sub_chain_name": sub_chain.name,
-            "connected_at": time.time(),
-            "capabilities": ["domain_operations", "proof_submission"],
-        }
+        name = sub_chain.name
+        main_name = getattr(main_chain, "name", str(main_chain))
+        registered = name in getattr(main_chain, "registered_sub_chains", set())
+        registration = getattr(main_chain, "sub_chain_metadata", {}).get(name)
 
-        if main_chain.register_sub_chain(sub_chain.name, metadata):
-            sub_chain.main_chain_connection = main_chain
+        if registered:
+            if (
+                not isinstance(registration, dict)
+                or registration.get("domain_type", sub_chain.domain_type)
+                != sub_chain.domain_type
+                or registration.get("sub_chain_name", name) != name
+            ):
+                return False
+        else:
+            connected_at = time.time()
+            proposed_metadata = {
+                "domain_type": sub_chain.domain_type,
+                "sub_chain_name": name,
+                "connected_at": connected_at,
+                "capabilities": ["domain_operations", "proof_submission"],
+            }
+            if not main_chain.register_sub_chain(name, proposed_metadata):
+                # A concurrent or previously durable registration may have
+                # appeared since the first membership check. Reuse it only
+                # when its signed domain identity agrees with this child.
+                if name not in getattr(main_chain, "registered_sub_chains", set()):
+                    return False
+                registration = getattr(main_chain, "sub_chain_metadata", {}).get(name)
+                if (
+                    not isinstance(registration, dict)
+                    or registration.get("domain_type", sub_chain.domain_type)
+                    != sub_chain.domain_type
+                    or registration.get("sub_chain_name", name) != name
+                ):
+                    return False
+            else:
+                registration = getattr(main_chain, "sub_chain_metadata", {}).get(name)
 
+        if not _restore_proof_schedule(sub_chain, main_chain):
+            return False
+
+        registration_time = (
+            registration.get("connected_at") if isinstance(registration, dict) else None
+        )
+        if (
+            not isinstance(registration_time, (int, float))
+            or isinstance(registration_time, bool)
+            or not _is_finite_number(registration_time)
+        ):
+            registration_time = 0.0
+
+        sub_chain.main_chain_connection = main_chain
+        if not _has_connection_event(sub_chain, main_name):
             connection_event = {
-                "entity_id": sub_chain.name,
+                "entity_id": name,
                 "event": "main_chain_connection",
-                "timestamp": time.time(),
+                "event_id": f"main-connection:{name}:{main_name}",
+                "timestamp": registration_time,
                 "details": {
-                    "main_chain_name": getattr(main_chain, "name", str(main_chain)),
-                    "connected_at": time.time(),
+                    "main_chain_name": main_name,
+                    "connected_at": registration_time,
                     "status": "connected",
                 },
             }
-
-            sub_chain.add_event(connection_event)
-            return True
-    except (AttributeError, TypeError, ValueError):
+            try:
+                sub_chain.add_event(connection_event)
+            except Exception:
+                # An append can fail after its journal frame became durable.
+                # Treat that exact durable event as accepted; its stable ID
+                # makes a later retry content-safe.
+                if not _has_connection_event(sub_chain, main_name):
+                    sub_chain.main_chain_connection = previous_connection
+                    return False
+        return True
+    except (AttributeError, TypeError, ValueError, RuntimeError, OSError, OverflowError):
+        sub_chain.main_chain_connection = previous_connection
         return False
 
     return False
+
+
+def _restore_proof_schedule(sub_chain: Any, main_chain: Any) -> bool:
+    """Restore a conservative due/not-due schedule from the durable proof index."""
+    latest = getattr(main_chain, "latest_proofs", {}).get(sub_chain.name)
+    timestamp = latest.get("timestamp") if isinstance(latest, dict) else None
+    block_index = latest.get("latest_block_index") if isinstance(latest, dict) else None
+    finite_timestamp = _is_finite_number(timestamp)
+    get_latest_block = getattr(sub_chain, "get_latest_block", None)
+    latest_block = get_latest_block() if callable(get_latest_block) else None
+    tip_index = getattr(latest_block, "index", None)
+    if (
+        not isinstance(timestamp, (int, float))
+        or isinstance(timestamp, bool)
+        or not finite_timestamp
+        or timestamp <= 0
+        or timestamp > time.time()
+        or not isinstance(block_index, int)
+        or isinstance(block_index, bool)
+        or block_index < 0
+        or not isinstance(tip_index, int)
+        or isinstance(tip_index, bool)
+        or block_index > tip_index
+    ):
+        # Missing or malformed proof metadata must make the child immediately
+        # eligible for a fresh anchor instead of resetting the interval clock.
+        sub_chain.last_proof_submission = 0.0
+        sub_chain.last_proof_block_index = -1
+        return True
+    sub_chain.last_proof_submission = float(timestamp)
+    sub_chain.last_proof_block_index = block_index
+    return True
+
+
+def _is_finite_number(value: Any) -> bool:
+    """Check finite numeric metadata without accepting booleans or overflow."""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(value)
+    except (OverflowError, TypeError, ValueError):
+        return False
+
+
+def _has_connection_event(sub_chain: Any, main_name: str) -> bool:
+    """Find a matching connection event across committed and queued tiers."""
+    from hierachain.core.utils import get_block_events
+
+    def matches(event: Any) -> bool:
+        if not isinstance(event, dict):
+            return False
+        if (
+            event.get("event") != "main_chain_connection"
+            or event.get("entity_id") != sub_chain.name
+        ):
+            return False
+        details = event.get("details")
+        if not isinstance(details, dict):
+            return True
+        return details.get("main_chain_name", main_name) == main_name
+
+    for block in getattr(sub_chain, "chain", []):
+        if any(matches(event) for event in get_block_events(block)):
+            return True
+    if any(matches(event) for event in getattr(sub_chain, "pending_events", [])):
+        return True
+
+    ordering_service = getattr(sub_chain, "ordering_service", None)
+    for pending in getattr(ordering_service, "pending_events", {}).values():
+        if matches(getattr(pending, "event_data", None)):
+            return True
+
+    journal = getattr(ordering_service, "journal", None)
+    read_since = getattr(journal, "read_since", None)
+    if callable(read_since):
+        rows, _ = read_since()
+    else:
+        replay = getattr(journal, "replay", None)
+        rows = list(replay()) if callable(replay) else []
+    return any(
+        row.get("channel_id") == sub_chain.name and matches(row)
+        for row in rows
+        if isinstance(row, dict)
+    )

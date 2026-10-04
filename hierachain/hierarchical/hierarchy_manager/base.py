@@ -5,6 +5,7 @@ HierarchyManager class — coordinates Main Chain and Sub-Chains.
 from __future__ import annotations
 
 import logging
+import math
 import os
 import threading
 import time
@@ -35,7 +36,6 @@ from hierachain.hierarchical.private_data import PrivateCollection
 
 if TYPE_CHECKING:
     from hierachain.domains.chains.domain_chain import DomainChain
-from hierachain.adapters.database.redis_adapter import RedisStorageAdapter
 from hierachain.adapters.database.sqlite_adapter import SQLiteAdapter
 from hierachain.cluster.cross_level_sync import CrossLevelSyncManager
 from hierachain.cluster.cross_level_sync_types import (
@@ -94,13 +94,16 @@ class HierarchyManager:
         self._registry_state: dict[str, Any] | None = None
         self._registry_mutating = False
 
-        self.transaction_manager: CrossChainTransactionManager = (
-            CrossChainTransactionManager(self)
-        )
+        self._transaction_manager: CrossChainTransactionManager | None = None
+        self._closed = False
 
         # Bootstrap owns these resources until all recovery steps succeed.
         with ExitStack() as cleanup:
-            cleanup.callback(self.transaction_manager.journal.close)
+            cleanup.callback(self._close_transaction_manager)
+            # Registry/channel workers need no 2PC writer. Existing decisions
+            # must still be recovered, with the journal's exclusive lease.
+            if os.path.lexists(os.path.join("data", "transactions")):
+                _ = self.transaction_manager
             self.cross_level_sync: CrossLevelSyncManager | None = None
             if settings.CROSS_LEVEL_SYNC_ENABLED:
                 sync = CrossLevelSyncManager(
@@ -130,6 +133,41 @@ class HierarchyManager:
                 self._restore_hierarchy_registry()
             cleanup.pop_all()
 
+    @property
+    def transaction_manager(self) -> CrossChainTransactionManager:
+        """Acquire the single coordinator writer only when needed."""
+        if getattr(self, "_closed", False):
+            raise RuntimeError("Hierarchy manager is closed")
+        if self._transaction_manager is not None:
+            return self._transaction_manager
+        with self._registry_lock:
+            if self._closed:
+                raise RuntimeError("Hierarchy manager is closed")
+            if self._transaction_manager is None:
+                self._transaction_manager = CrossChainTransactionManager(self)
+            return self._transaction_manager
+
+    @transaction_manager.setter
+    def transaction_manager(self, manager: CrossChainTransactionManager) -> None:
+        self._transaction_manager = manager
+
+    def _close_transaction_manager(self) -> None:
+        if self._transaction_manager is not None:
+            self._transaction_manager.journal.close()
+
+    def close(self) -> None:
+        """Release owned orderers, coordinator and storage without opening new resources."""
+        with self._registry_lock:
+            if self._closed:
+                return
+            self._closed = True
+            with ExitStack() as cleanup:
+                if self.storage is not None:
+                    cleanup.callback(self.storage.close)
+                cleanup.callback(self._close_transaction_manager)
+                for chain in self.sub_chains.values():
+                    cleanup.callback(chain.shutdown)
+
     def _restore_main_chain(self) -> None:
         """Restore and verify the signed MainChain history before accepting proofs."""
         from hierachain.consensus.ordering.storage import (
@@ -153,6 +191,96 @@ class HierarchyManager:
         main._rebuild_event_indexes()
         _refresh_durable_proofs(main)
         main.proof_sequence = main.proof_count
+
+        # Registration state is an in-memory index over signed MainChain
+        # events. Rebuild it before _restore_sub_chains reconnects children;
+        # otherwise every restart appends another registration event and can
+        # replace the original registration metadata.
+        from hierachain.core.utils import get_block_events
+
+        registrations: dict[str, tuple[dict[str, Any], float]] = {}
+        for block in main.chain:
+            for event in get_block_events(block):
+                if event.get("event") != "sub_chain_registration":
+                    continue
+                name = event.get("entity_id")
+                details = event.get("details")
+                metadata = details.get("metadata") if isinstance(details, dict) else None
+                if (
+                    not isinstance(name, str)
+                    or not name
+                    or not isinstance(details, dict)
+                    or details.get("sub_chain_name") != name
+                    or not isinstance(metadata, dict)
+                    or (
+                        "sub_chain_name" in metadata
+                        and metadata["sub_chain_name"] != name
+                    )
+                    or (
+                        "domain_type" in metadata
+                        and (
+                            not isinstance(metadata["domain_type"], str)
+                            or not metadata["domain_type"]
+                        )
+                    )
+                ):
+                    raise RuntimeError("Invalid signed sub-chain registration event")
+                event_timestamp = event.get("timestamp")
+                try:
+                    valid_timestamp = (
+                        isinstance(event_timestamp, (int, float))
+                        and not isinstance(event_timestamp, bool)
+                        and math.isfinite(event_timestamp)
+                    )
+                except OverflowError:
+                    valid_timestamp = False
+                if not valid_timestamp:
+                    raise RuntimeError("Invalid sub-chain registration timestamp")
+                previous = registrations.get(name)
+                previous_domain = previous[0].get("domain_type") if previous else None
+                current_domain = metadata.get("domain_type")
+                if (
+                    previous_domain is not None
+                    and current_domain is not None
+                    and previous_domain != current_domain
+                ):
+                    raise RuntimeError(
+                        f"Conflicting signed domain types for sub-chain {name}"
+                    )
+                restored_metadata = deepcopy(previous[0]) if previous else {}
+                restored_metadata.update(deepcopy(metadata))
+                registrations[name] = (restored_metadata, float(event_timestamp))
+
+        for name, (metadata, registered_at) in registrations.items():
+            consensus = main.consensus
+            authorities = getattr(
+                consensus, "authorities", getattr(consensus, "validators", set())
+            )
+            authority_metadata = getattr(
+                consensus,
+                "authority_metadata",
+                getattr(consensus, "validator_metadata", None),
+            )
+            restored_authority = {
+                "role": "sub_chain",
+                "permissions": ["proof_submission"],
+                "registered_at": registered_at,
+                "metadata": deepcopy(metadata),
+            }
+            if name in authorities:
+                if isinstance(authority_metadata, dict):
+                    authority_metadata.setdefault(name, restored_authority)
+            else:
+                add_authority = getattr(consensus, "add_authority", None)
+                if not callable(add_authority) or add_authority(name, restored_authority) is not True:
+                    raise RuntimeError(
+                        f"Could not restore sub-chain authority: {name}"
+                    )
+
+        main.registered_sub_chains = set(registrations)
+        main.sub_chain_metadata = {
+            name: metadata for name, (metadata, _registered_at) in registrations.items()
+        }
 
     def _hierarchy_registry_snapshot(self) -> dict[str, Any]:
         for channel in self.channels.values():
@@ -187,6 +315,7 @@ class HierarchyManager:
                         "custom_policies": channel.policy.custom_policies,
                     },
                     "status": channel.status.value,
+                    "ledger": channel.ledger.snapshot(),
                 }
                 for channel_id, channel in self.channels.items()
             },
@@ -225,7 +354,7 @@ class HierarchyManager:
         self._apply_hierarchy_registry(state)
 
     def _apply_hierarchy_registry(self, state: dict[str, Any]) -> None:
-        """Refresh access state in place, preserving channel ledgers and references."""
+        """Refresh access and durable ledger state, preserving channel references."""
         if (
             not isinstance(state, dict)
             or not isinstance(state.get("organizations"), dict)
@@ -256,7 +385,9 @@ class HierarchyManager:
             org.members = members
             organizations[org_id] = org
 
-        prepared: dict[str, tuple[list[Any], ChannelPolicy, ChannelStatus]] = {}
+        from hierachain.hierarchical.channel.ledger import ChannelLedger
+
+        prepared: dict[str, tuple[list[Any], ChannelPolicy, ChannelStatus, dict[str, Any]]] = {}
         for channel_id, saved in state["channels"].items():
             if not isinstance(channel_id, str) or not isinstance(saved, dict):
                 raise RuntimeError("Invalid channel in hierarchy registry")
@@ -265,7 +396,11 @@ class HierarchyManager:
             if not isinstance(org_ids, list) or not isinstance(policy, dict):
                 raise RuntimeError("Invalid channel in hierarchy registry")
             channel_orgs = _build_channel_orgs(org_ids, organizations)
-            prepared[channel_id] = (channel_orgs, ChannelPolicy(policy), ChannelStatus(saved.get("status")))
+            ledger = ChannelLedger(self.main_chain.node_identity, self.main_chain.trusted_public_keys, channel_id)
+            ledger.restore(saved.get("ledger", {"blocks": [], "pending_events": []}))
+            prepared[channel_id] = (
+                channel_orgs, ChannelPolicy(policy), ChannelStatus(saved.get("status")), ledger.snapshot()
+            )
 
         # Validate the entire snapshot before updating objects held by callers.
         network = MultiOrgNetwork()
@@ -279,12 +414,16 @@ class HierarchyManager:
                 org = existing
             network.add_organization(org)
         channels: dict[str, Channel] = {}
-        for channel_id, (channel_orgs, policy, channel_status) in prepared.items():
+        for channel_id, (channel_orgs, policy, channel_status, ledger_state) in prepared.items():
             for org in channel_orgs:
                 org.member_registry = organizations[org.org_id].members
             channel = self.channels.get(channel_id)
             if channel is None:
-                channel = Channel(channel_id, channel_orgs, state["channels"][channel_id]["policy"])
+                channel = Channel(
+                    channel_id, channel_orgs, state["channels"][channel_id]["policy"],
+                    node_identity=self.main_chain.node_identity,
+                    trusted_public_keys=self.main_chain.trusted_public_keys,
+                )
             else:
                 channel.organizations = {org.org_id: org for org in channel_orgs}
                 channel.policy = policy
@@ -293,9 +432,13 @@ class HierarchyManager:
                     org.org_id: counts.get(org.org_id, 0) for org in channel_orgs
                 }
             channel.status = channel_status
+            channel.ledger.restore(ledger_state)
+            channel.restore_statistics()
             channel._persist_registry = self._persist_hierarchy_registry
             channel._registry_lock = self._registry_lock
             channel._refresh_registry = self._restore_hierarchy_registry
+            channel.ledger._lock = self._registry_lock
+            channel.ledger._persist = self._persist_hierarchy_registry
             channels[channel_id] = channel
         for channel_id, channel in self.channels.items():
             if channel_id not in channels:
@@ -643,11 +786,17 @@ class HierarchyManager:
                 "endorsement": "MAJORITY",
             }
 
-            channel = Channel(channel_id, organizations, policy)
+            channel = Channel(
+                channel_id, organizations, policy,
+                node_identity=self.main_chain.node_identity,
+                trusted_public_keys=self.main_chain.trusted_public_keys,
+            )
             self.channels[channel_id] = channel
             channel._persist_registry = self._persist_hierarchy_registry
             channel._registry_lock = self._registry_lock
             channel._refresh_registry = self._restore_hierarchy_registry
+            channel.ledger._lock = self._registry_lock
+            channel.ledger._persist = self._persist_hierarchy_registry
             return channel
         return self._mutate_registry(change, "Failed to persist channel registry")
 
@@ -729,7 +878,9 @@ class HierarchyManager:
                 raise RuntimeError("Configured PostgreSQL storage is unavailable") from exc
 
         if backend == "redis":
-            return RedisStorageAdapter()
+            raise RuntimeError(
+                "Redis ledger storage does not support durable signed blocks; use sqlite or postgres"
+            )
 
         if backend == "memory":
             return None
@@ -739,16 +890,153 @@ class HierarchyManager:
         self.main_chain = main_chain
 
     def add_sub_chain(self, chain_name, sub_chain, *, persist: bool = True):
-        if chain_name in self.sub_chains:
-            raise ValueError(f"Sub-chain {chain_name} already exists")
-        if persist and self.storage is not None and not self.storage.store_chain(sub_chain):
-            raise RuntimeError(f"Failed to persist sub-chain metadata: {chain_name}")
-        if not sub_chain.connect_to_main_chain(self.main_chain):
-            raise RuntimeError(f"Failed to connect sub-chain to main chain: {chain_name}")
-        self.sub_chains[chain_name] = sub_chain
-        if self.cross_level_sync:
-            self.cross_level_sync.connect_subchain(chain_name, sub_chain)
-        self.transaction_manager.retry_pending()
+        with self._registry_lock:
+            if chain_name in self.sub_chains:
+                raise ValueError(f"Sub-chain {chain_name} already exists")
+
+            main_chain = self.main_chain
+            registered_before = chain_name in main_chain.registered_sub_chains
+            pending_before = deepcopy(main_chain.pending_events)
+            previous_connection = getattr(
+                sub_chain, "main_chain_connection", None
+            )
+            sync_before = (
+                getattr(self.cross_level_sync, "_subchains", {}).get(chain_name)
+                if self.cross_level_sync
+                else None
+            )
+            try:
+                connected = sub_chain.connect_to_main_chain(main_chain)
+            except Exception:
+                self._rollback_new_main_chain_registration(
+                    chain_name,
+                    sub_chain,
+                    registered_before,
+                    pending_before,
+                    previous_connection,
+                )
+                raise
+            if not connected:
+                self._rollback_new_main_chain_registration(
+                    chain_name,
+                    sub_chain,
+                    registered_before,
+                    pending_before,
+                    previous_connection,
+                )
+                raise RuntimeError(
+                    f"Failed to connect sub-chain to main chain: {chain_name}"
+                )
+
+            persist_attempted = False
+            try:
+                if self.cross_level_sync:
+                    self.cross_level_sync.connect_subchain(chain_name, sub_chain)
+                if persist and self.storage is not None:
+                    persist_attempted = True
+                    if self.storage.store_chain(sub_chain) is not True:
+                        self._rollback_new_main_chain_registration(
+                            chain_name,
+                            sub_chain,
+                            registered_before,
+                            pending_before,
+                            previous_connection,
+                        )
+                        self._restore_cross_level_registration(chain_name, sync_before)
+                        raise RuntimeError(
+                            f"Failed to persist sub-chain metadata: {chain_name}"
+                        )
+                self.sub_chains[chain_name] = sub_chain
+            except Exception:
+                if self.sub_chains.get(chain_name) is sub_chain:
+                    del self.sub_chains[chain_name]
+                self._restore_cross_level_registration(chain_name, sync_before)
+                if not persist_attempted:
+                    self._rollback_new_main_chain_registration(
+                        chain_name,
+                        sub_chain,
+                        registered_before,
+                        pending_before,
+                        previous_connection,
+                    )
+                raise
+
+        # A participant retry failure does not invalidate the successfully
+        # connected and persisted sub-chain registration.
+        try:
+            self.transaction_manager.retry_pending()
+        except Exception:
+            logger.exception(
+                "Sub-chain %s was registered, but pending transaction retries failed",
+                chain_name,
+            )
+
+    def _restore_cross_level_registration(
+        self, chain_name: str, previous: Any | None
+    ) -> None:
+        """Restore the cross-level mapping after a pre-commit registration failure."""
+        if not self.cross_level_sync:
+            return
+        try:
+            if previous is None:
+                disconnect = getattr(
+                    self.cross_level_sync, "disconnect_subchain", None
+                )
+                if callable(disconnect):
+                    disconnect(chain_name)
+            else:
+                self.cross_level_sync.connect_subchain(chain_name, previous)
+        except Exception:
+            logger.exception(
+                "Could not restore cross-level registration for %s", chain_name
+            )
+
+    def _rollback_new_main_chain_registration(
+        self,
+        chain_name: str,
+        sub_chain: Any,
+        registered_before: bool,
+        pending_before: list[dict[str, Any]],
+        previous_connection: Any | None,
+    ) -> None:
+        """Undo an unpersisted registration that is still only pending in memory."""
+        if registered_before:
+            return
+
+        main_chain = self.main_chain
+        with main_chain.lock:
+            from hierachain.core.utils import get_block_events
+
+            for block in main_chain.chain:
+                if any(
+                    event.get("event") == "sub_chain_registration"
+                    and event.get("entity_id") == chain_name
+                    for event in get_block_events(block)
+                ):
+                    # A concurrent finalization made this registration durable.
+                    return
+
+            main_chain.registered_sub_chains.discard(chain_name)
+            main_chain.sub_chain_metadata.pop(chain_name, None)
+            remove_authority = getattr(main_chain.consensus, "remove_authority", None)
+            if callable(remove_authority):
+                remove_authority(chain_name)
+
+            new_pending = [
+                event
+                for event in main_chain.pending_events
+                if event not in pending_before
+                and event.get("event") == "sub_chain_registration"
+                and event.get("entity_id") == chain_name
+            ]
+            if new_pending:
+                main_chain.pending_events[:] = [
+                    event
+                    for event in main_chain.pending_events
+                    if event not in new_pending
+                ]
+            if getattr(sub_chain, "main_chain_connection", None) is main_chain:
+                sub_chain.main_chain_connection = previous_connection
 
     def __str__(self) -> str:
         return (

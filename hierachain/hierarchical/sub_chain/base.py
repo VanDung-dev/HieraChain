@@ -2,6 +2,7 @@
 SubChain class — domain-specific blockchain for HieraChain.
 """
 
+import copy
 import logging
 import os
 import re
@@ -122,6 +123,10 @@ class SubChain(Blockchain):
         self._init_ordering_service()
         try:
             self.world_state = WorldState()
+            # The local genesis may already match the orderer's bootstrap tip,
+            # so sync can legitimately skip rebuilding the projection.
+            for block in self.chain:
+                self.world_state.apply_block(block)
 
             # A valid journal backlog must finish instead of restarting replay every ten seconds.
             if not self.ordering_service.wait_for_active(timeout=None):
@@ -176,15 +181,14 @@ class SubChain(Blockchain):
             raise ValueError(f"Consensus rejected ordered block {finalized_block.index}")
         return finalized_block
 
-    def stop(self):
-        """Stop the background block consumer."""
+    def stop(self) -> None:
+        """Drain committed blocks and release background workers and writer leases."""
         try:
             self.finalize_sub_chain_block()
         except Exception as e:
             logger.warning("Error draining commit_queue during stop: %s", e)
 
-        if hasattr(self, '_shutdown_event'):
-            self._shutdown_event.set()
+        self.shutdown()
 
     @property
     def is_shutting_down(self) -> bool:
@@ -255,26 +259,36 @@ class SubChain(Blockchain):
         if not isinstance(event, dict):
             raise ValueError("Event must be a dictionary")
 
-        if "timestamp" not in event:
-            event["timestamp"] = time.time()
+        # Do not retain or normalize the caller's mutable event object.
+        event_snapshot = copy.deepcopy(event)
 
-        if "entity_id" not in event:
-            event["entity_id"] = event.get("sender", "system")
-        if "event" not in event:
-            event["event"] = event.get("type", "generic_event")
+        if "timestamp" not in event_snapshot:
+            event_snapshot["timestamp"] = time.time()
 
-        if not validate_event_structure(event):
+        if "entity_id" not in event_snapshot:
+            event_snapshot["entity_id"] = event_snapshot.get("sender", "system")
+        if "event" not in event_snapshot:
+            event_snapshot["event"] = event_snapshot.get("type", "generic_event")
+
+        if not validate_event_structure(event_snapshot):
             raise ValueError("Invalid event structure")
 
-        logger.debug("SubChain %s adding event: %s", self.name, event.get("event"))
-
-        event_id = self.ordering_service.receive_event(
-            event_data=event, channel_id=self.name, submitter_org=self.name
+        logger.debug(
+            "SubChain %s adding event: %s", self.name, event_snapshot.get("event")
         )
 
+        event_id = self.ordering_service.receive_event(
+            event_data=event_snapshot, channel_id=self.name, submitter_org=self.name
+        )
+        event_snapshot["event_id"] = event_id
+
         with self.lock:
-            if event not in self.pending_events:
-                self.pending_events.append(event)
+            if not any(
+                pending.get("event_id") == event_id
+                for pending in self.pending_events
+                if isinstance(pending, dict)
+            ):
+                self.pending_events.append(event_snapshot)
 
         return event_id
 
@@ -356,9 +370,13 @@ class SubChain(Blockchain):
         metadata_filter: Callable | None = None,
         zk_proof: bytes | None = None,
     ) -> bool:
-        return _submit_proof_for_sub_chain(
-            self, main_chain, metadata_filter, zk_proof
-        )
+        # The tip check, duplicate check, MainChain append, and durable
+        # read-back form one per-SubChain operation. The inherited lock is an
+        # RLock because proof submission re-enters normal chain operations.
+        with self.lock:
+            return _submit_proof_for_sub_chain(
+                self, main_chain, metadata_filter, zk_proof
+            )
 
     def should_submit_proof(self) -> bool:
         current_time = time.time()
