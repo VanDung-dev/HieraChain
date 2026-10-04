@@ -4,14 +4,7 @@ Chain management commands.
 
 import click
 
-from hierachain.cli.store import (
-    get_all_chains,
-    get_main_chain,
-    get_sub_chain,
-    save_chain_to_memory,
-    save_chains_to_file,
-)
-from hierachain.domains.chains.domain_chain import DomainChain
+from hierachain.cli.store import get_all_chains, get_hierarchy_manager
 
 
 @click.group()
@@ -27,34 +20,25 @@ def chain_group():
 @click.option('--name', required=True, help='Chain name')
 @click.option('--parent', default='main', help='Parent chain')
 @click.pass_context
-def create(ctx: click.Context, chain_type, name, parent):
-    """Create new chain"""
+def create(ctx: click.Context, chain_type: str, name: str, parent: str) -> None:
+    """Create a durable sub-chain attached to the main chain."""
+    if parent != "main":
+        raise click.ClickException(
+            "Nested parent chains are unsupported; --parent must be 'main'"
+        )
+
     try:
-        # Get parent chain
-        if parent == 'main':
-            parent_chain = get_main_chain()
-        else:
-            parent_chain = get_sub_chain(parent)
-            if not parent_chain:
-                click.echo(f"Parent chain not found: {parent}")
-                return
-        
-        # Create chain based on type
-        # For CLI prototype, we use DomainChain for all, setting the type attribute
-        chain = DomainChain(name, parent_chain)
-        chain.domain_type = chain_type
-        
-        # Store chain
-        save_chain_to_memory(chain)
-        
-        # Save to file
-        config_file = ctx.obj.get('config_file', 'chains.json')
-        save_chains_to_file(config_file)
-        
-        click.echo(f"Successfully created {chain_type} chain '{name}'")
-        
-    except Exception as e:
-        click.echo(f"Error creating chain: {e}")
+        manager = get_hierarchy_manager(ctx)
+        if manager.get_sub_chain(name) is not None:
+            raise click.ClickException(f"Sub-chain already exists: {name}")
+        if manager.create_sub_chain(name, chain_type) is not True:
+            raise click.ClickException(f"Could not create sub-chain: {name}")
+    except click.ClickException:
+        raise
+    except Exception as exc:
+        raise click.ClickException(f"Could not create sub-chain {name}: {exc}") from exc
+
+    click.echo(f"Successfully created {chain_type} sub-chain '{name}'")
 
 
 @chain_group.command()
@@ -67,19 +51,22 @@ def submit_proof(chain_name: str) -> None:
 
 
 @chain_group.command(name="list")
-def list_chains():
-    """List all chains"""
+@click.pass_context
+def list_chains(ctx: click.Context) -> None:
+    """List all registered sub-chains from durable storage."""
     try:
-        chains = get_all_chains()
+        chains = get_all_chains(ctx)
         if not chains:
-            click.echo("No chains found")
+            click.echo("No sub-chains found")
             return
         
-        click.echo("Available chains:")
+        click.echo("Available sub-chains:")
         for name, chain in chains.items():
             domain_type = getattr(chain, 'domain_type', 'generic')
             block_count = len(getattr(chain, 'chain', []))
             click.echo(f"  - {name} ({domain_type}) - {block_count} blocks")
         
-    except Exception as e:
-        click.echo(f"Error listing chains: {e}")
+    except click.ClickException:
+        raise
+    except Exception as exc:
+        raise click.ClickException(f"Could not list sub-chains: {exc}") from exc

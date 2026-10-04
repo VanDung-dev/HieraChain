@@ -25,20 +25,25 @@ from hierachain.cli.key import key_group
 from hierachain.cli.key import show as show_key_cmd
 from hierachain.cli.key import verify as verify_key_cmd
 from hierachain.cli.node import init_node, node_group, start_node
-from hierachain.cli.store import load_chains_from_file
+from hierachain.cli.store import load_node_config
 from hierachain.cli.verify import verify_group
+from hierachain.config.settings import settings
 
 
 @click.group()
-@click.option('--config', default='chains.json', help='Configuration file path')
+@click.option(
+    '--config',
+    default=settings.CLI_CONFIG_FILE,
+    show_default=True,
+    type=click.Path(dir_okay=False),
+    help='Node configuration file path',
+)
 @click.pass_context
-def hrc(ctx: click.Context, config):
+def hrc(ctx: click.Context, config: str) -> None:
     """HieraChain CLI - Simple management tool"""
     ctx.ensure_object(dict)
     ctx.obj['config_file'] = config
-    
-    # Load existing chains
-    load_chains_from_file(config)
+    load_node_config(ctx, config)
 
 
 # Register sub-commands (Groups)
