@@ -24,6 +24,7 @@ Ordering Service được thiết kế theo mô hình **Facade**, điều phối
 | **Certifier** | Xác thực chữ ký và quyền hạn của sự kiện trước khi sắp xếp. | `certifier.py` |
 | **Storage** | Quản lý lưu trữ bền vững cho các sự kiện đang chờ (Pending). | `storage.py` |
 | **Recovery** | Khôi phục trạng thái từ **Event Journal** sau sự cố. | `recovery.py` |
+| **Journal lookup** | Lập index commitment ID/kênh/nội dung bền vững để nhận stable ID. | `journal_lookup.py` |
 
 ---
 
@@ -50,6 +51,10 @@ Sự kiện được ghi đồng bộ vào **Event Journal** và fsync trước 
 
 Endpoint `GET /api/ledger/ready` trả HTTP 200 chỉ khi Ordering Service của mọi Sub-Chain đã đăng ký ở trạng thái `ACTIVE`; endpoint trả HTTP 503 khi bất kỳ service nào còn đang recovery hoặc ở trạng thái maintenance.
 
+`TransactionJournal.log_event()` vẫn flush và fsync mỗi lần append thành công trước khi trả về. `read_since()` đọc record từ đĩa nhưng tái sử dụng lần sync thành công nếu device, inode, kích thước, thời gian sửa và thời gian thay đổi của file active khớp trạng thái đã sync. Mở/đóng writer, rotation và ghi thất bại làm mất hiệu lực trạng thái đó. Trạng thái chưa biết hoặc đã đổi yêu cầu fsync lại; lỗi đọc và sync được truyền lên. Đường dẫn active bị thay bằng inode khác bị từ chối. `flush()` tường minh vẫn sync mỗi lần gọi. Các quy tắc này giữ hợp đồng journal ghi nối tiếp với một owner; ACK đọc lại vẫn cần dữ liệu từ đĩa.
+
+Stable ID trước hết kiểm tra trạng thái pending/batch/processed đang hoạt động và block storage. Với ID còn lại, `JournalEventLookup` quét lịch sử journal một lần khi dùng đầu tiên, sau đó chỉ đọc suffix sau cursor và lưu commitment kênh/nội dung nhỏ gọn. Index từ chối ID xung đột, kể cả các record trùng ID nhưng khác nội dung. Event cũ chỉ có trong journal cần payload để đưa lại vào hàng đợi vẫn đọc toàn bộ từ đĩa; index không giữ bản sao payload lịch sử. Journal tùy chỉnh hoặc thay thế không có lookup này giữ đường quét tương thích. Lịch sử tại cursor bị mất/cắt ngắn khiến thao tác bị từ chối. Quét ban đầu, liệt kê archive và metadata index vẫn tăng theo lịch sử được giữ; chưa bổ sung retention/compaction.
+
 `lockdown()` chờ commit đang chạy hoàn tất, sau đó chặn commit tiếp theo và sự kiện mới cho đến khi gọi `resume()`. Sự kiện trong hàng đợi và batch đã cắt được giữ để xử lý khi resume; journal vẫn được giữ để phục hồi sau crash. Hoàn tất recovery không ghi đè `LOCKDOWN`, và `resume()` không thể kích hoạt lại service đã dừng.
 
 ### 2. Batching Strategy
@@ -66,6 +71,10 @@ Module `Certifier` tích hợp chặt chẽ với hệ thống **Security** đ�
 *   Quyền truy cập vào kênh (Policy Enforcement).
 
 Certifier mặc định giữ 10.000 kết quả gần nhất (`EventCertifier(max_history=...)`). Event bị từ chối được xóa khỏi pending map. Sau khi kết quả bị loại khỏi cache, `get_event_status()` tra storage bền vững cho event đã commit và trả `ordered` không kèm kết quả certification; event bị từ chối từ lâu có thể trả `None`. Lịch sử này không phải bằng chứng certification bền vững.
+
+### 4. Chi phí commit và liên chuỗi
+
+Gán block index, liên kết previous hash, ký và commit storage vẫn được tuần tự hóa theo từng Ordering Service. Xác minh chữ ký giữ batch thread pool và các kiểm tra certification hiện có. Coordinator 2PC giữ record pha bền vững và đọc lại trước khi commit participant; quyết định COMMIT không rõ kết quả vẫn ở trạng thái nghi vấn và không cho phép rollback. Giảm đọc lại journal không loại bỏ các ranh giới toàn vẹn này hay biến ACK nhận event thành block finality. Các chain độc lập có thể chia tải bằng journal owner riêng; gom block không gom ACK lưu bền vững của event.
 
 ---
 

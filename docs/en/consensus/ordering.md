@@ -24,6 +24,7 @@ Ordering Service is designed using the **Facade** pattern, coordinating multiple
 | **Certifier** | Validates event signatures and permissions before ordering. | `certifier.py` |
 | **Storage** | Manages persistent storage for pending events. | `storage.py` |
 | **Recovery** | Restores state from **Event Journal** after failures. | `recovery.py` |
+| **Journal lookup** | Indexes durable ID/channel/content commitments for stable-ID admission. | `journal_lookup.py` |
 
 ---
 
@@ -50,6 +51,10 @@ Accepted events are synchronously written to the **Event Journal** and fsynced b
 
 The `GET /api/ledger/ready` endpoint returns HTTP 200 only when every registered Sub-Chain's Ordering Service is `ACTIVE`; it returns HTTP 503 while any service is recovering or in maintenance.
 
+`TransactionJournal.log_event()` still flushes and fsyncs every successful append before returning. `read_since()` reads records from disk but reuses a successful sync when the active file's device, inode, size, modification time and change time match the synchronized state. Opening/closing the writer, rotation and failed writes invalidate that state. Unknown or changed state requires another fsync; read and sync failures propagate. An active path replaced with another inode is rejected. Explicit `flush()` continues to synchronize every call. These rules retain the single-owner append-only journal contract; they do not make read-back a memory-only ACK.
+
+Stable IDs first check live pending/batch/processed state and block storage. For remaining IDs, `JournalEventLookup` scans journal history once on first use, then reads only the suffix after its cursor and stores compact channel/content commitments. It rejects conflicting IDs, including conflicting repeated records. An older journal-only event whose payload must be requeued still uses a full disk read; no historical payload copies are retained in the index. Custom or replaced journals without this lookup keep the compatibility scan. Missing/truncated cursor history fails closed. Initial scanning, archive enumeration and index metadata still grow with retained history; no retention/compaction is added.
+
 `lockdown()` waits for any in-flight commit to finish, then blocks further commits and incoming events until `resume()`. Queued events and an already cut batch remain available for resume; their journal entries are retained for crash recovery. Recovery completion does not override `LOCKDOWN`, and `resume()` cannot reactivate a stopped service.
 
 ### 2. Batching Strategy
@@ -66,6 +71,10 @@ The `Certifier` module integrates closely with the **Security** system to check:
 *   Channel access permissions (Policy Enforcement).
 
 The certifier retains the most recent 10,000 results by default (`EventCertifier(max_history=...)`). Rejected events leave the pending map. After a result is evicted, `get_event_status()` queries durable storage for committed events and returns `ordered` without a certification result; an older rejected event can return `None`. This history is not durable certification evidence.
+
+### 4. Commit and cross-chain costs
+
+Block index assignment, previous-hash linkage, signing and storage commitment remain serialized per Ordering Service. Signature verification retains the existing batch thread pool and certification checks. The 2PC coordinator keeps durable phase records and read-back before participant commits; uncertain COMMIT decisions remain in doubt and cannot trigger rollback. Reducing journal rereads does not remove these integrity boundaries or imply that an event acceptance ACK is block finality. Independent chains can partition load with separate journal owners; batching blocks does not batch event durability ACKs.
 
 ---
 

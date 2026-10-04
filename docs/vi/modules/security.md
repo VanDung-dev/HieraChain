@@ -8,7 +8,7 @@ icon: material/shield-lock
 
 ## Tổng quan
 
-Module security cung cấp lớp bảo vệ chính cho HieraChain. Nó không dựa vào một lớp duy nhất. Thay vào đó nó kết hợp danh tính, kiểm soát truy cập, bảo vệ tài nguyên và zero-knowledge proof, nên lỗi ở một chỗ không làm lộ toàn bộ hệ thống.
+Module security cung cấp lớp bảo vệ chính cho HieraChain. Nó không dựa vào một lớp duy nhất. Module kết hợp danh tính, kiểm soát truy cập, bảo vệ tài nguyên và tính toàn vẹn ledger có chữ ký. Các interface ZK tùy chọn hiện chỉ có mock phát triển; ZK production chưa được triển khai.
 
 ---
 
@@ -57,7 +57,7 @@ Thiết kế gom các biện pháp bảo vệ thành sáu nhóm phối hợp v�
 
     ---
 
-    Bảo vệ riêng tư xuyên chain bằng zero-knowledge proof (ZKP) để bên xác thực chỉ biết tính hợp lệ, không thấy dữ liệu.
+    Mock phát triển để kiểm thử luồng proof ZK; tạo và xác minh production chưa được triển khai.
     [:octicons-arrow-right-24: Chi tiết](../security/decentralized-zkp.md)
 
 </div>
@@ -79,7 +79,7 @@ Mọi phần của HieraChain đều dùng chung các lớp này:
 Các thiết lập chính nằm ở `hierachain/config/settings.py`:
 
 * `AUTH_ENABLED` bật hoặc tắt xác thực API.
-* `HRC_ENABLE_ZK_PROOFS` bật xác thực bằng ZK proof.
+* `HRC_ENABLE_ZK_PROOFS` bật luồng xác thực ZK; nó không cung cấp backend production. Xem [phạm vi ZK](../security/decentralized-zkp.md).
 
 ---
 

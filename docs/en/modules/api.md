@@ -70,7 +70,7 @@ These endpoints support business workflows:
 
 * Channels create private communication paths between organizations (`POST /api/business/channels`).
 * Private collection metadata can be managed, but `POST /api/business/private-data` currently returns HTTP 501 because this API has no private-data store. It does not accept inline values or IPFS references as stored data.
-* Domain contracts deploy and run business-specific smart contracts.
+* Domain contracts register metadata; `POST /api/business/contracts/execute` returns HTTP 501 because the execution engine is not implemented.
 * Organizations register and manage identities through MSP.
 
 ### admin: system and admin

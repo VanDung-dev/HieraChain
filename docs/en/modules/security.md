@@ -8,7 +8,7 @@ icon: material/shield-lock
 
 ## Overview
 
-The security module provides the main protections for HieraChain. It does not rely on one layer. Instead it combines identity, access control, resource protection, and zero-knowledge proofs so that a failure in one area does not expose the whole system.
+The security module provides the main protections for HieraChain. It does not rely on one layer. It combines identity, access control, resource protection and signed ledger integrity. The optional ZK interfaces currently provide development mocks; production ZK is unimplemented.
 
 ---
 
@@ -57,7 +57,7 @@ The design groups protections into six areas that work together:
 
     ---
 
-    Cross-chain privacy using zero-knowledge proofs (ZKP) so verifiers learn nothing beyond validity.
+    Development mocks for testing ZK proof flows; production proving and verification are unimplemented.
     [:octicons-arrow-right-24: Details](../security/decentralized-zkp.md)
 
 </div>
@@ -79,7 +79,7 @@ Each part of HieraChain uses the same layers:
 Main settings live in `hierachain/config/settings.py`:
 
 * `AUTH_ENABLED` turns API authentication on or off.
-* `HRC_ENABLE_ZK_PROOFS` enables ZK proof verification.
+* `HRC_ENABLE_ZK_PROOFS` enables the ZK verification path; it does not provide a production backend. See [ZK scope](../security/decentralized-zkp.md).
 
 ---
 

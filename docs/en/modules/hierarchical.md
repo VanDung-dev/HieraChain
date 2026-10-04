@@ -18,7 +18,7 @@ Components reside in dedicated packages under `hierachain/hierarchical/`.
 
 * Stores cryptographic block proofs rather than raw business event records.
 * Recursively sanitizes Sub-Chain registration metadata before storing it in the registry, consensus authority, or registration event; summaries expose only the sanitized copy.
-* Verifies state transitions using zero-knowledge proofs when enabled.
+* Exposes a ZK verification hook; production proving and verification are not implemented.
 * Validates cross-chain anchors under consortium or authority consensus.
 
 ### 2.2 Sub-Chain (`sub_chain/base.py`)
@@ -29,7 +29,7 @@ Components reside in dedicated packages under `hierachain/hierarchical/`.
 
 Startup loads block headers and ordered events with one SQL range query, while retaining Merkle, hash, trusted-signature, gap, and chain-link checks. Sub-Chain consumes the verified ordering bootstrap snapshot once instead of reading the full chain again; later synchronization reads fresh storage. Recovery rebuilds entity and event-type indexes and counters through the shared Blockchain index helper, so queries reflect the restored ledger.
 
-`validate_cross_chain_consistency()` compares each Sub-Chain tip hash with its latest durably stored MainChain proof. A missing or mismatched proof always makes `overall_consistent` false. When the tip has advanced but the configured proof interval has not elapsed, the per-chain result is `consistent: false, pending: true`; `pending` explains the scheduled wait but does not certify the unanchored tip. A MainChain proof is not treated as an anchor until its signed block has passed durable read-back.
+`validate_cross_chain_consistency()` compares each Sub-Chain tip hash with its latest durably stored MainChain proof. A missing or mismatched proof always sets `overall_consistent` to `false`. When the tip has advanced but the configured proof interval has not elapsed, the per-chain result is `consistent: false, pending: true`; `pending` explains the scheduled wait but does not certify the unanchored tip. A MainChain proof is not treated as an anchor until its signed block has passed durable read-back.
 
 ### 2.3 Hierarchy Manager (`hierarchy_manager/base.py`)
 
@@ -37,21 +37,38 @@ Startup loads block headers and ordered events with one SQL range query, while r
 * Manages communication channels, private data collections, and two-phase commit (2PC) transactions.
 * Compiles system-wide integrity reports across all registered chains.
 
-Organization/member/channel access state and channel ledgers are persisted with an internal `_revision`. SQLite and PostgreSQL use atomic conditional writes. Redis is rejected as a ledger backend until it supports durable signed-block persistence; Redis metadata helpers alone do not satisfy proof anchoring. Manager provisioning reloads and retries up to three times on an unsuccessful write. REST member provisioning rechecks the authenticated administrator on every retry. Channel configuration conflicts return failure and roll back the local change, requiring fresh endorsement before retry. Reads and channel access checks refresh shared access and ledger state while retaining the channel object; unavailable or missing persisted state fails closed. Memory-only managers retain local state.
+`HierarchyManager` remains the public coordinator and owns resources, shared state, and locks. Internal `recovery.py` replays and verifies durable chain history; `registry.py` handles access snapshots, migration, conditional persistence, refresh, and rollback. `organization.py` builds member/channel views, and `validation.py` produces integrity reports. These helpers share the coordinator's state without creating another registry or storage owner. Existing method signatures, recovery order, cleanup hooks, and storage contracts remain available.
 
-Snapshots without a revision are upgraded on their next successful write. Upgrade all registry writers together: mixing older unconditional writers with revision-aware writers is unsupported. Custom storage adapters must support `save_hierarchy_registry(state, expected_revision=...)` and reject stale revisions.
+#### Feature support boundary
 
-Channel submission persists accepted pending events before returning success; a storage failure returns HTTP 503 and leaves pending events and counters unchanged. Finalization atomically replaces pending events with a signed block in the snapshot. Restart restores pending events, verifies every finalized block against trusted keys, and rebuilds submission counters. Queries still return finalized blocks; an acceptance ACK does not mean finalization has occurred. Direct channels and explicit memory-only managers remain ephemeral. Registry snapshots contain the full channel history, so write size grows with history; retention/compaction is not provided by this change. Upgrade all writers together: legacy writers that omit ledger snapshots must not run alongside these writers.
+| Feature | Current behavior |
+| :--- | :--- |
+| Organization/member/channel registry | SQLite/PostgreSQL persistence and revision checks; explicit memory mode is ephemeral. |
+| Organization-to-chain assignment | `assign_organization_to_chain()` returns `False`; valid IDs log an unsupported-operation warning. It grants no access. Configure channel membership and policies for channel access. |
+| Private collections | Library objects provide an in-memory data store; the manager does not persist collections in its registry. REST private-data writes return HTTP 501. |
+| ZK proofs | Mock hashes are development fixtures. Production proving/verification are unimplemented; see [ZK scope](../security/decentralized-zkp.md). |
+| ERP vendor connectors | SAP/Oracle/Dynamics fixtures require explicit simulation opt-in. Real transport is application-provided; see [Integration](./integration.md). |
+| Contract execution | REST contract registration stores metadata; execution returns HTTP 501. |
+
+`get_cross_chain_statistics()["cross_chain_operations"]` is a reserved field that currently returns `0`, not a measured completed-operation count. A facade method or configuration option alone does not establish end-to-end feature support.
+
+Organization/member/channel access metadata is persisted with an internal `_revision` and `_channel_ledger_version: 1`. Registry snapshots omit channel ledger history. SQLite and PostgreSQL use atomic conditional writes. Redis adapter helpers support channel records, but Redis remains rejected as the manager's ledger backend because its other signed-block/proof persistence contracts are incomplete. Manager provisioning reloads and retries up to three times on an unsuccessful write. REST member provisioning rechecks the authenticated administrator on every retry. Channel configuration conflicts return failure and roll back the local change, requiring fresh endorsement before retry. Reads and channel access checks refresh shared metadata and consume only unseen records for the requested channel while retaining the channel object; unavailable or missing persisted state fails closed. Memory-only managers retain local state.
+
+Legacy registry snapshots containing embedded ledgers are validated and migrated during recovery. Registry replacement and per-channel seed records commit atomically; a failed migration preserves the old snapshot. Upgrade all registry writers together and stop older writers before migration: mixing snapshot writers with append-only writers is unsupported. Custom storage adapters must support `save_hierarchy_registry(state, expected_revision=..., channel_ledgers=...)`, atomically initialize the supplied ledger seeds, and reject stale revisions. They must also implement `append_channel_record(channel_id, record, expected_sequence=..., expected_registry_revision=...)` and `load_channel_records(channel_id, after_sequence=...)`.
+
+Channel submission appends one durable event record before returning success; a storage failure returns HTTP 503 and leaves pending events and counters unchanged. Each append atomically checks both the registry access revision and the channel sequence, so stale workers cannot overwrite history or append using a revoked access snapshot. Finalization appends a signed block record that consumes the current pending batch. SQL adapters store the channel head and records in `channel_ledger_heads` and `channel_ledger_records`; Redis helpers use a per-channel list with WATCH/MULTI checks. Event writes leave registry metadata unchanged and do not serialize earlier blocks or other channels. Finalization writes only the new block batch.
+
+Restart replays channel records, restores pending events, verifies every finalized block against trusted keys and its pending batch, and rebuilds submission counters. Subsequent refreshes apply only the new suffix and update counters incrementally. Invalid suffixes leave local ledger state unchanged. Queries still return finalized blocks; an acceptance ACK does not mean finalization has occurred. Direct channels and explicit memory-only managers remain ephemeral. Full startup verification, ledger memory usage and retained record storage still grow with history; this change adds no retention/compaction. Local access operations retain the manager registry lock.
 
 ### 2.4 Multi-organization, channels, and private data
 
 * `multi_org.py`: Manages member organizations, certificates, and MSP identities.
 * `channel/manager.py`: Partitions communication between specific groups of organizations.
-* `private_data.py`: Stores confidential payloads off-chain while anchoring cryptographic hashes on-chain.
+* `private_data.py`: Provides in-memory encrypted collections and hash helpers; durable storage and automatic ledger anchoring require caller integration.
 
 ## 3. Data flow
 
-Detailed data remains on Sub-Chains. Only Merkle roots and cryptographic proofs anchor to the Main Chain:
+Detailed data remains on Sub-Chains. Merkle roots and signed block proofs anchor to the Main Chain. The optional ZK branch in this design flow has only a mock implementation:
 
 ```mermaid
 graph TD
@@ -99,8 +116,8 @@ tx_id = manager.initiate_cross_chain_transaction(
 
 ## 5. Privacy and zero-knowledge verification
 
-* Main Chain verification: Sub-Chains can submit zero-knowledge proofs confirming valid state transitions according to consensus rules without revealing raw event details.
-* Private data collections: Sensitive payloads are restricted to authorized member nodes, while only hashes are propagated across the common ledger.
+* Main Chain verification: Signed block proofs and Merkle anchors provide the implemented integrity path. Mock ZK proofs do not establish state-transition correctness or zero-knowledge privacy; production ZK is unavailable.
+* Private data collections: The library offers encrypted in-memory payloads and organization checks. Applications must integrate durable storage and hash anchoring; REST writes remain unimplemented.
 
 ## Related
 

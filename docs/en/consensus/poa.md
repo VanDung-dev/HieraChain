@@ -31,7 +31,7 @@ The protocol operates based on trust in the identity of participating nodes:
 
     ---
 
-    The validator requires consecutive block timestamps to be at least half the configured `block_interval` apart.
+    By default, PoA adds no minimum spacing delay. Consecutive block timestamps must still be nondecreasing. A positive `block_interval` requires timestamps to be at least half that value apart.
 
 *   :material-account-multiple-check:{ .lg .middle } __Identity Management__
 
@@ -53,9 +53,15 @@ The protocol operates based on trust in the identity of participating nodes:
 
 | Parameter | Description | Default |
 | :--- | :--- | :--- |
-| `block_interval` | Time value used for the minimum-spacing check; the validator threshold is half this value. | `10.0` seconds |
+| `block_interval` | Optional spacing setting; `0` adds no delay, while a positive value retains a validator threshold of half this value. | `0.0` seconds |
 | `max_authorities` | Maximum number of Authority nodes in the network. | `100` |
-| `require_signature` | Mandatory valid signature to accept a block. | `True` |
+| `require_authority_signature` | Mandatory valid signature to accept a block. | `True` |
+
+MainChain and SubChain instances using PoA read this value from `HRC_BLOCK_INTERVAL`, which defaults to `0.0`. Direct `ProofOfAuthority()` construction also defaults to `0.0`. Negative or nonfinite values are rejected when constructing PoA.
+
+The SubChain orderer still batches events according to `block_size` and `batch_timeout` (defaults: 50 events and 1.0 second). Removing the PoA spacing delay does not remove batching time, signature verification, journal synchronization, or storage work. PoF keeps its separate timing configuration.
+
+For an existing deployment, an explicit `HRC_BLOCK_INTERVAL=10` retains the previous 5-second minimum spacing. Use `HRC_BLOCK_INTERVAL=0` to remove that spacing, and configure producers and validators consistently: a validator retaining the previous spacing rejects faster blocks. Existing blocks that satisfied the previous spacing remain valid with the new default.
 
 ---
 

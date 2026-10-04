@@ -70,7 +70,7 @@ Các endpoint này hỗ trợ quy trình nghiệp vụ:
 
 * Channel tạo kênh giao tiếp riêng giữa các tổ chức (`POST /api/business/channels`).
 * Có thể quản lý metadata của private collection, nhưng `POST /api/business/private-data` hiện trả HTTP 501 vì API chưa có kho lưu private data. Endpoint này không nhận giá trị inline hoặc tham chiếu IPFS như dữ liệu đã lưu.
-* Domain contract triển khai và chạy hợp đồng thông minh theo nghiệp vụ riêng.
+* Domain contract đăng ký metadata; `POST /api/business/contracts/execute` trả HTTP 501 vì engine thực thi chưa được triển khai.
 * Organization đăng ký và quản lý danh tính qua MSP.
 
 ### admin: system và admin

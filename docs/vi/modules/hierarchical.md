@@ -18,7 +18,7 @@ Các thành phần được tổ chức trong các gói chuyên biệt dưới `
 
 * Lưu trữ các bằng chứng khối mật mã thay vì dữ liệu sự kiện thô.
 * Lọc đệ quy metadata đăng ký Sub-Chain trước khi lưu vào registry, authority đồng thuận hoặc event đăng ký; bản tóm tắt chỉ trả bản đã lọc.
-* Xác thực các bước chuyển trạng thái bằng zero-knowledge proof khi được kích hoạt.
+* Cung cấp hook xác thực ZK; tạo và xác minh proof production chưa được triển khai.
 * Kiểm tra tính hợp lệ của các điểm neo liên chuỗi theo cơ chế đồng thuận thẩm quyền hoặc liên minh.
 
 ### 2.2 Chuỗi con Sub-Chain (`sub_chain/base.py`)
@@ -37,21 +37,38 @@ Khởi động đọc header block và event theo thứ tự bằng một truy v
 * Quản lý các kênh trao đổi (channel), bộ sưu tập dữ liệu riêng tư và giao dịch Two-Phase Commit (2PC).
 * Tổng hợp báo cáo tính toàn vẹn hệ thống trên toàn bộ các chuỗi đã đăng ký.
 
-Trạng thái truy cập tổ chức/thành viên/channel và ledger của channel được lưu cùng `_revision` nội bộ. SQLite và PostgreSQL dùng ghi có điều kiện nguyên tử. Redis bị từ chối làm ledger backend cho tới khi hỗ trợ lưu signed block bền vững; các helper metadata Redis chưa đủ đáp ứng proof anchoring. Provisioning qua manager tải lại và thử tối đa ba lần khi ghi không thành công. Provisioning thành viên qua REST kiểm tra lại quyền administrator đã xác thực trong mỗi lần retry. Conflict cấu hình channel trả thất bại và rollback thay đổi cục bộ, yêu cầu endorsement mới trước khi thử lại. Thao tác đọc và kiểm tra truy cập channel làm mới cả trạng thái truy cập và ledger chung, giữ nguyên object channel; backend không truy cập được hoặc trạng thái đã lưu bị mất sẽ từ chối truy cập. Manager chỉ dùng bộ nhớ giữ trạng thái cục bộ.
+`HierarchyManager` vẫn là coordinator công khai, sở hữu tài nguyên, trạng thái chung và lock. Module nội bộ `recovery.py` replay và xác thực lịch sử chuỗi bền vững; `registry.py` xử lý snapshot quyền truy cập, migration, ghi có điều kiện, refresh và rollback. `organization.py` tạo view thành viên/channel, còn `validation.py` tạo báo cáo tính toàn vẹn. Các helper dùng chung trạng thái của coordinator, không tạo registry hay storage owner thứ hai. Signature method, thứ tự recovery, hook cleanup và hợp đồng storage hiện có được giữ lại.
 
-Snapshot chưa có revision được nâng cấp khi ghi thành công lần tiếp theo. Cần nâng cấp đồng thời mọi registry writer: không hỗ trợ chạy lẫn writer cũ ghi vô điều kiện với writer có kiểm tra revision. Storage adapter tùy chỉnh phải hỗ trợ `save_hierarchy_registry(state, expected_revision=...)` và từ chối revision cũ.
+#### Ranh giới hỗ trợ tính năng
 
-Submission channel lưu bền vững event đang chờ trước khi trả thành công; lỗi storage trả HTTP 503 và không thay đổi pending events hay bộ đếm. Finalization thay nguyên tử pending events bằng signed block trong snapshot. Restart khôi phục pending events, kiểm tra từng finalized block bằng trusted keys và dựng lại bộ đếm submission. Query vẫn chỉ trả finalized blocks; ACK nhận event chưa đồng nghĩa đã finalize. Channel tạo trực tiếp và manager chỉ dùng memory vẫn là dữ liệu tạm. Registry snapshot chứa toàn bộ lịch sử channel nên kích thước mỗi lần ghi tăng theo lịch sử; thay đổi này chưa có retention/compaction. Nâng cấp mọi writer cùng lúc: không chạy writer cũ bỏ qua ledger snapshot cùng các writer mới.
+| Tính năng | Hành vi hiện tại |
+| :--- | :--- |
+| Registry tổ chức/thành viên/channel | SQLite/PostgreSQL lưu bền vững và kiểm tra revision; chế độ memory tường minh chỉ giữ dữ liệu tạm. |
+| Gán tổ chức vào chain | `assign_organization_to_chain()` trả `False`; ID hợp lệ ghi cảnh báo thao tác chưa được hỗ trợ. Method không cấp quyền. Cấu hình thành viên và policy của channel để kiểm soát truy cập channel. |
+| Private collection | Object thư viện có data store trong bộ nhớ; manager không persist collection vào registry. Ghi private data qua REST trả HTTP 501. |
+| ZK proof | Hash mock là fixture phát triển. Tạo/xác minh production chưa triển khai; xem [phạm vi ZK](../security/decentralized-zkp.md). |
+| Connector ERP theo hãng | Fixture SAP/Oracle/Dynamics yêu cầu opt-in mô phỏng tường minh. Ứng dụng cung cấp transport thật; xem [Integration](./integration.md). |
+| Thực thi contract | Đăng ký contract qua REST lưu metadata; thực thi trả HTTP 501. |
+
+`get_cross_chain_statistics()["cross_chain_operations"]` là trường dự phòng hiện trả `0`, không phải số operation hoàn tất đã đo. Có method facade hay tùy chọn cấu hình chưa đủ để xác nhận tính năng hoạt động xuyên suốt.
+
+Metadata truy cập tổ chức/thành viên/channel được lưu cùng `_revision` nội bộ và `_channel_ledger_version: 1`. Registry snapshot không chứa lịch sử ledger của channel. SQLite và PostgreSQL dùng ghi có điều kiện nguyên tử. Các helper Redis adapter hỗ trợ record của channel, nhưng Redis vẫn bị từ chối làm ledger backend của manager vì các hợp đồng lưu signed block/proof khác chưa hoàn chỉnh. Provisioning qua manager tải lại và thử tối đa ba lần khi ghi không thành công. Provisioning thành viên qua REST kiểm tra lại quyền administrator đã xác thực trong mỗi lần retry. Conflict cấu hình channel trả thất bại và rollback thay đổi cục bộ, yêu cầu endorsement mới trước khi thử lại. Thao tác đọc và kiểm tra truy cập channel làm mới metadata chung và chỉ đọc record chưa xử lý của channel được yêu cầu, giữ nguyên object channel; backend không truy cập được hoặc trạng thái đã lưu bị mất sẽ từ chối truy cập. Manager chỉ dùng bộ nhớ giữ trạng thái cục bộ.
+
+Registry snapshot cũ chứa ledger được kiểm tra và chuyển đổi trong quá trình recovery. Việc thay registry và tạo record khởi đầu cho từng channel được commit nguyên tử; migration thất bại giữ nguyên snapshot cũ. Cần nâng cấp đồng thời mọi registry writer và dừng writer cũ trước migration: không hỗ trợ chạy lẫn writer dùng snapshot với writer ghi nối tiếp. Storage adapter tùy chỉnh phải hỗ trợ `save_hierarchy_registry(state, expected_revision=..., channel_ledgers=...)`, khởi tạo nguyên tử các ledger seed được cung cấp và từ chối revision cũ. Adapter cũng phải triển khai `append_channel_record(channel_id, record, expected_sequence=..., expected_registry_revision=...)` và `load_channel_records(channel_id, after_sequence=...)`.
+
+Submission channel ghi nối tiếp một event record bền vững trước khi trả thành công; lỗi storage trả HTTP 503 và không thay đổi pending events hay bộ đếm. Mỗi lần append kiểm tra nguyên tử cả revision quyền truy cập trong registry và sequence của channel, nên worker có trạng thái cũ không thể ghi đè lịch sử hoặc append bằng snapshot quyền đã bị thu hồi. Finalization ghi nối tiếp một signed block record tiêu thụ batch event đang chờ. SQL adapter lưu head và record của channel trong `channel_ledger_heads` và `channel_ledger_records`; các helper Redis dùng list riêng từng channel với kiểm tra WATCH/MULTI. Ghi event giữ nguyên metadata registry và không serialize block cũ hay các channel khác. Finalization chỉ ghi batch block mới.
+
+Restart replay record của channel, khôi phục pending events, kiểm tra từng finalized block bằng trusted keys và batch pending tương ứng, rồi dựng lại bộ đếm submission. Các lần refresh sau chỉ áp dụng suffix mới và cập nhật bộ đếm tăng dần. Suffix không hợp lệ giữ nguyên trạng thái ledger cục bộ. Query vẫn chỉ trả finalized blocks; ACK nhận event chưa đồng nghĩa đã finalize. Channel tạo trực tiếp và manager chỉ dùng memory vẫn là dữ liệu tạm. Việc xác thực toàn bộ khi startup, bộ nhớ ledger và dữ liệu record giữ lại vẫn tăng theo lịch sử; thay đổi này chưa có retention/compaction. Thao tác truy cập cục bộ vẫn giữ registry lock của manager.
 
 ### 2.4 Đa tổ chức, kênh và dữ liệu riêng tư
 
 * `multi_org.py`: Quản lý các tổ chức thành viên, chứng chỉ và định danh MSP.
 * `channel/manager.py`: Phân vùng giao tiếp giữa các nhóm tổ chức cụ thể.
-* `private_data.py`: Lưu trữ dữ liệu nhạy cảm ngoài chuỗi (off-chain) và neo mã băm mật mã lên chuỗi.
+* `private_data.py`: Cung cấp collection mã hóa trong bộ nhớ và helper hash; lưu bền vững và tự động neo vào ledger cần tích hợp từ ứng dụng gọi.
 
 ## 3. Luồng dữ liệu
 
-Dữ liệu chi tiết được lưu trữ tại Sub-Chain. Chỉ có Merkle root và bằng chứng mật mã được neo lên Main Chain:
+Dữ liệu chi tiết được lưu trữ tại Sub-Chain. Merkle root và proof block có chữ ký được neo lên Main Chain. Nhánh ZK tùy chọn trong luồng thiết kế này chỉ có triển khai mock:
 
 ```mermaid
 graph TD
@@ -99,8 +116,8 @@ tx_id = manager.initiate_cross_chain_transaction(
 
 ## 5. Tính riêng tư và xác thực zero-knowledge
 
-* Xác thực Main Chain: Sub-Chain có thể nộp zero-knowledge proof để chứng minh bước chuyển trạng thái hợp lệ theo quy tắc đồng thuận mà không để lộ nội dung sự kiện thô.
-* Bộ sưu tập dữ liệu riêng tư: Dữ liệu nhạy cảm được giới hạn trong các node thành viên được cấp quyền, chỉ có mã băm được phát tán trên sổ cái chung.
+* Xác thực Main Chain: Proof block có chữ ký và điểm neo Merkle là luồng toàn vẹn đã triển khai. Proof ZK mock không chứng minh tính đúng đắn của bước chuyển trạng thái hay tính riêng tư zero-knowledge; ZK production chưa khả dụng.
+* Bộ sưu tập dữ liệu riêng tư: Thư viện cung cấp payload mã hóa trong bộ nhớ và kiểm tra tổ chức. Ứng dụng phải tích hợp lưu bền vững và neo hash; ghi qua REST chưa triển khai.
 
 ## Liên quan
 
