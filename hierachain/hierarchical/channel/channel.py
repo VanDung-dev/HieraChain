@@ -32,6 +32,7 @@ def _registry_operation(method: Callable[..., Any]) -> Callable[..., Any]:
         with self._registry_lock:
             if self._refresh_registry is not None:
                 self._refresh_registry()
+            self._refresh_ledger()
             return method(self, *args, **kwargs)
     return wrapped
 
@@ -217,15 +218,25 @@ class Channel:
         if not self.ledger.add_event(enriched_event):
             return False
 
-        self.event_statistics["total_events"] += 1
-        cast(dict[str, int], self.event_statistics["events_by_org"])[submitter_org_id] += 1
-
-        event_type = event.get("event", "unknown")
-        cast(dict[str, int], self.event_statistics["events_by_type"])[event_type] = (
-            cast(dict[str, int], self.event_statistics["events_by_type"]).get(event_type, 0) + 1
-        )
+        self._record_event_statistics(enriched_event)
         self.last_activity = time.time()
         return True
+
+    def _refresh_ledger(self) -> None:
+        for event in self.ledger.refresh():
+            self._record_event_statistics(event)
+
+    def _record_event_statistics(self, event: dict[str, Any]) -> None:
+        org_id = event.get("submitter_org")
+        if not org_id:
+            return
+        self.event_statistics["total_events"] += 1
+        by_org = self.event_statistics["events_by_org"]
+        if org_id in by_org:
+            by_org[org_id] += 1
+        event_type = event.get("event", "unknown")
+        by_type = self.event_statistics["events_by_type"]
+        by_type[event_type] = by_type.get(event_type, 0) + 1
 
     @_registry_operation
     def query_events(

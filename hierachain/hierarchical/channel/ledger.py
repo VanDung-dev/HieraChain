@@ -31,8 +31,96 @@ class ChannelLedger:
         self.height = 0
         self.last_block_hash = "0"
         self._lock = threading.RLock()
-        self._persist: Callable[[], bool] | None = None
+        self._storage: Any | None = None
+        self._registry_revision: Callable[[], str | None] | None = None
+        self._sequence = 0
         self.channel_id = channel_id
+
+    def bind_storage(self, storage: Any, registry_revision: Callable[[], str | None]) -> None:
+        """Use an initialized durable channel stream instead of registry snapshots."""
+        if not callable(getattr(storage, "append_channel_record", None)) or not callable(
+            getattr(storage, "load_channel_records", None)
+        ):
+            raise RuntimeError("Storage does not support durable channel ledgers")
+        self._storage = storage
+        self._registry_revision = registry_revision
+
+    def refresh(self) -> list[dict[str, Any]]:
+        """Validate and apply only unseen durable records, returning new accepted events."""
+        if self._storage is None:
+            return []
+        with self._lock:
+            suffix = self._storage.load_channel_records(self.channel_id, after_sequence=self._sequence)
+            if (
+                not isinstance(suffix, dict) or not isinstance(suffix.get("revision"), int)
+                or not isinstance(suffix.get("records"), list)
+                or suffix["revision"] - self._sequence != len(suffix["records"])
+            ):
+                raise RuntimeError("Invalid durable channel ledger suffix")
+            previous_blocks, previous_pending = self.blocks, self.current_block_events
+            block_count, pending_count = len(previous_blocks), len(previous_pending)
+            previous_sequence, previous_hash = self._sequence, self.last_block_hash
+            accepted = []
+            try:
+                for record in suffix["records"]:
+                    accepted.extend(self._replay_record(record))
+                    self._sequence += 1
+            except Exception:
+                # Roll back only newly applied records, without copying old history.
+                del previous_blocks[block_count:]
+                del previous_pending[pending_count:]
+                self.blocks, self.current_block_events = previous_blocks, previous_pending
+                self.height, self.last_block_hash = block_count, previous_hash
+                self._sequence = previous_sequence
+                raise
+            return accepted
+
+    def _replay_record(self, record: dict[str, Any]) -> list[dict[str, Any]]:
+        if not isinstance(record, dict):
+            raise RuntimeError("Invalid durable channel ledger record")
+        kind, data = record.get("kind"), record.get("data")
+        if kind == "snapshot" and self._sequence == 0:
+            self.restore(data)
+            return [event for block in self.blocks for event in block.to_event_list()] + list(self.current_block_events)
+        if self._sequence == 0:
+            raise RuntimeError("Durable channel ledger is missing its initial snapshot")
+        if kind == "event":
+            self._validate_pending_event(data)
+            self.current_block_events.append(deepcopy(data))
+            return [data]
+        if kind == "block":
+            try:
+                block = Block.from_dict(data)
+                self._validate_block(block, self.height, self.blocks[-1] if self.blocks else None)
+            except (KeyError, TypeError, ValueError) as exc:
+                raise RuntimeError("Invalid signed channel block history") from exc
+            if not self.current_block_events or block.to_event_list() != self.current_block_events:
+                raise RuntimeError("Channel block does not match durable pending events")
+            self.blocks.append(block)
+            self.height += 1
+            self.last_block_hash = block.hash
+            self.current_block_events = []
+            return []
+        raise RuntimeError("Invalid durable channel ledger record")
+
+    def _validate_pending_event(self, event: Any) -> None:
+        if (
+            not isinstance(event, dict) or not event.get("entity_id") or not event.get("event")
+            or (self.channel_id is not None and event.get("channel_id") != self.channel_id)
+        ):
+            raise RuntimeError("Invalid pending channel event")
+
+    def _validate_block(self, block: Block, index: int, previous: Block | None) -> None:
+        public_key = self.trusted_public_keys.get(block.creator_id)
+        if (
+            block.index != index or (index == 0 and block.previous_hash != "0") or public_key is None
+            or not get_block_verifier().verify_block(block, previous, public_key).is_valid
+            or (
+                self.channel_id is not None
+                and any(event.get("channel_id") != self.channel_id for event in block.to_event_list())
+            )
+        ):
+            raise RuntimeError("Invalid signed channel block history")
 
     def snapshot(self) -> dict[str, Any]:
         """Export both committed blocks and accepted events for durable recovery."""
@@ -54,39 +142,27 @@ class ChannelLedger:
             blocks = [Block.from_dict(row) for row in rows]
         except (KeyError, TypeError, ValueError) as exc:
             raise RuntimeError("Invalid signed channel block history") from exc
-        verifier = get_block_verifier()
         for index, block in enumerate(blocks):
             previous = blocks[index - 1] if index else None
-            public_key = self.trusted_public_keys.get(block.creator_id)
-            if (
-                block.index != index
-                or (index == 0 and block.previous_hash != "0")
-                or public_key is None
-                or not verifier.verify_block(block, previous, public_key).is_valid
-                or (
-                    self.channel_id is not None
-                    and any(event.get("channel_id") != self.channel_id for event in block.to_event_list())
-                )
-            ):
-                raise RuntimeError("Invalid signed channel block history")
-        if any(
-            not isinstance(event, dict) or not event.get("entity_id") or not event.get("event")
-            or (self.channel_id is not None and event.get("channel_id") != self.channel_id)
-            for event in pending
-        ):
-            raise RuntimeError("Invalid pending channel event")
+            self._validate_block(block, index, previous)
+        for event in pending:
+            self._validate_pending_event(event)
         with self._lock:
             self.blocks = blocks
             self.current_block_events = deepcopy(pending)
             self.height = len(blocks)
             self.last_block_hash = blocks[-1].hash if blocks else "0"
 
-    def _save(self) -> bool:
+    def _save(self, record: dict[str, Any]) -> bool:
         """A managed ledger must persist successfully before acknowledging a change."""
-        if self._persist is None:
+        if self._storage is None:
             return True
-        if self._persist() is not True:
+        revision = self._registry_revision() if self._registry_revision is not None else None
+        if self._storage.append_channel_record(
+            self.channel_id, record, expected_sequence=self._sequence, expected_registry_revision=revision,
+        ) is not True:
             raise RuntimeError("Failed to persist channel ledger")
+        self._sequence += 1
         return True
 
     def add_event(self, event: dict[str, Any]) -> bool:
@@ -108,12 +184,8 @@ class ChannelLedger:
                 accepted["channel_id"] = self.channel_id
             accepted["timestamp"] = accepted.get("timestamp", time.time())
             accepted["channel_event"] = True
+            self._save({"kind": "event", "data": accepted})
             self.current_block_events.append(accepted)
-            try:
-                self._save()
-            except Exception:
-                self.current_block_events.pop()
-                raise
             return True
 
     def finalize_block(self) -> Block | None:
@@ -139,21 +211,11 @@ class ChannelLedger:
         if not get_block_verifier().verify_block(block, public_key=public_key).is_valid:
             raise ValueError("Channel block signature verification failed")
 
-        pending = self.current_block_events
-        previous_hash = self.last_block_hash
+        self._save({"kind": "block", "data": block.to_dict()})
         self.blocks.append(block)
         self.height += 1
         self.last_block_hash = block.hash
         self.current_block_events = []
-        try:
-            self._save()
-        except Exception:
-            self.blocks.pop()
-            self.height -= 1
-            self.last_block_hash = previous_hash
-            self.current_block_events = pending
-            raise
-
         return block
 
     def get_events_by_filter(
