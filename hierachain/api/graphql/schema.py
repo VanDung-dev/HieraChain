@@ -52,6 +52,7 @@ class Query(ObjectType):
         from_timestamp=Float(),
         to_timestamp=Float(),
         limit=Int(),
+        after=String(),
         resolver=resolve_events
     )
 

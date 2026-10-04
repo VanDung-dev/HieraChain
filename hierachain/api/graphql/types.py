@@ -25,6 +25,7 @@ from hierachain.serialization import dumps_json
 
 
 class EventType(ObjectType):
+    cursor = String()
     entity_id = String()
     event_type = String()
     details = String()

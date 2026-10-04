@@ -1,6 +1,7 @@
+import base64
+import binascii
 import json
 import time
-from collections.abc import Iterator
 from typing import Any
 
 import graphene
@@ -14,6 +15,8 @@ from hierachain.api.graphql.types import (
     EventType,
 )
 from hierachain.api.ledger.depds import get_hierarchy_manager
+from hierachain.core.blockchain import Blockchain
+from hierachain.core.event_query import select_event_page
 from hierachain.core.utils import get_block_events
 from hierachain.serialization import dumps_json, loads_json
 
@@ -75,47 +78,26 @@ def resolve_blocks(
     return _get_blocks_from_chain(chain, from_index, to_index, _bounded_limit(limit), chain_name)
 
 
-def _filter_event_by_entity_id(event, entity_id):
-    if not entity_id:
-        return True
-    return getattr(event, 'entity_id', None) == entity_id
+def _decode_event_cursor(cursor: str | None, chain_name: str) -> tuple[int, int] | None:
+    if cursor is None:
+        return None
+    try:
+        if len(cursor) > 1024:
+            raise ValueError("Cursor is too long")
+        decoded = loads_json(base64.b64decode(cursor, altchars=b"-_", validate=True))
+        if (
+            not isinstance(decoded, list) or len(decoded) != 4 or decoded[0] != 1 or decoded[1] != chain_name
+            or any(type(value) is not int or value < 0 for value in decoded[2:])
+        ):
+            raise ValueError("Cursor does not identify an event in this chain")
+        return decoded[2], decoded[3]
+    except (ValueError, TypeError, binascii.Error) as exc:
+        raise ValueError("Invalid event cursor") from exc
 
 
-def _filter_event_by_type(event, event_type):
-    if not event_type:
-        return True
-    event_type_value = getattr(event, 'event_type', None) or getattr(event, 'event', None)
-    return event_type_value == event_type
-
-
-def _filter_event_by_time(event_time, from_timestamp, to_timestamp):
-    if not from_timestamp and not to_timestamp:
-        return True
-    if from_timestamp and event_time < from_timestamp:
-        return False
-    if to_timestamp and event_time > to_timestamp:
-        return False
-    return True
-
-
-def _filter_event(event, entity_id, event_type, from_timestamp, to_timestamp):
-    event_time = getattr(event, 'timestamp', 0)
-    return (
-        _filter_event_by_entity_id(event, entity_id) and
-        _filter_event_by_type(event, event_type) and
-        _filter_event_by_time(event_time, from_timestamp, to_timestamp)
-    )
-
-
-def _get_events_from_chain(
-    chain: Any, entity_id: str | None, event_type: str | None,
-    from_timestamp: float | None, to_timestamp: float | None,
-) -> Iterator[EventType]:
-    for block in chain.chain:
-        for row in get_block_events(block):
-            event = _to_event_type(row)
-            if _filter_event(event, entity_id, event_type, from_timestamp, to_timestamp):
-                yield event
+def _encode_event_cursor(chain_name: str, entry: dict[str, Any]) -> str:
+    raw = dumps_json([1, chain_name, entry["block_index"], entry["event_index"]]).encode("utf-8")
+    return base64.urlsafe_b64encode(raw).decode("ascii")
 
 
 def resolve_events(
@@ -127,18 +109,28 @@ def resolve_events(
     from_timestamp: float | None = None,
     to_timestamp: float | None = None,
     limit: int | None = None,
+    after: str | None = None,
 ) -> list[EventType]:
+    position = _decode_event_cursor(after, chain_name)
     chain = _get_chain_for_name(chain_name)
     effective_limit = _bounded_limit(limit)
     if not chain or effective_limit == 0:
         return []
 
+    filters = {
+        "entity_id": entity_id, "event_type": event_type, "from_timestamp": from_timestamp,
+        "to_timestamp": to_timestamp, "limit": effective_limit, "after": position,
+    }
+    entries = (
+        chain.get_event_page(**filters)
+        if isinstance(chain, Blockchain)
+        else select_event_page(chain.chain, **filters)
+    )
     events = []
-    for event in _get_events_from_chain(chain, entity_id, event_type, from_timestamp, to_timestamp):
+    for entry in entries:
+        event = _to_event_type(entry["event"])
+        event.cursor = _encode_event_cursor(chain_name, entry)
         events.append(event)
-        if len(events) >= effective_limit:
-            break
-
     return events
 
 
