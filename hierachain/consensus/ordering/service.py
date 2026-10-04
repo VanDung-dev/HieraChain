@@ -6,6 +6,7 @@ Coordinates between specialized components to provide ordering functionality.
 from __future__ import annotations
 
 import asyncio
+import copy
 import logging
 import threading
 import time
@@ -29,8 +30,42 @@ from hierachain.consensus.ordering.types import (
 from hierachain.consensus.ordering.utils import generate_event_id, make_serializable
 from hierachain.core.block import Block
 from hierachain.error_mitigation.journal import TransactionJournal
+from hierachain.serialization import dumps_canonical_json
 
 logger = logging.getLogger(__name__)
+
+
+def _event_content_fingerprint(event_data: dict[str, Any]) -> bytes:
+    """Return a stable comparison key that excludes routing and identity fields."""
+    if not isinstance(event_data, dict):
+        raise ValueError("event content must be a dictionary")
+    content = {
+        key: value
+        for key, value in event_data.items()
+        if key not in {"event_id", "channel_id"}
+    }
+    return dumps_canonical_json(make_serializable(content))
+
+
+def _assert_same_event(
+    event_id: str,
+    channel_id: str,
+    existing_channel_id: Any,
+    existing_data: Any,
+    candidate_data: dict[str, Any],
+) -> None:
+    """Fail closed if an event ID already names different content or a channel."""
+    if existing_channel_id != channel_id or not isinstance(existing_data, dict):
+        raise ValueError(f"Event ID {event_id} is already bound to different content")
+    if _event_content_fingerprint(existing_data) != _event_content_fingerprint(
+        candidate_data
+    ):
+        raise ValueError(f"Event ID {event_id} is already bound to different content")
+
+
+def _event_body_from_journal(row: dict[str, Any]) -> dict[str, Any]:
+    """Remove journal routing metadata before rebuilding a PendingEvent."""
+    return {key: value for key, value in row.items() if key != "channel_id"}
 
 
 class OrderingService:
@@ -175,13 +210,36 @@ class OrderingService:
             )
 
         self.metrics.record_received()
-        event_id = generate_event_id(event_data, channel_id)
-
-        if event_id in self.pending_events:
-            return event_id
-
-        # Enrich event_data with event_id for journal and block storage
-        enriched_data = {**event_data, "event_id": event_id}
+        # Snapshot before deriving an ID or publishing to the queue. Nested
+        # caller mutations must not change the journal/block payload later.
+        enriched_data = make_serializable(copy.deepcopy(event_data))
+        supplied_event_id = enriched_data.get("event_id")
+        if supplied_event_id is not None:
+            if not isinstance(supplied_event_id, str) or not supplied_event_id.strip():
+                raise ValueError("event_id must be a non-empty string when supplied")
+            event_id = supplied_event_id
+            existing_kind, journal_row = self._find_stable_event(
+                event_id, channel_id, enriched_data
+            )
+            if existing_kind in {"pending", "batch", "processed", "stored"}:
+                return event_id
+            if existing_kind == "journal":
+                # A prior journal append may have succeeded before the caller
+                # lost its acknowledgement. Requeue that exact durable record.
+                journal_body = _event_body_from_journal(journal_row)
+                pending_event = PendingEvent(
+                    event_id=event_id,
+                    event_data=journal_body,
+                    channel_id=channel_id,
+                    submitter_org=submitter_org,
+                    received_at=time.time(),
+                    status=EventStatus.PENDING,
+                )
+                self._enqueue_event(pending_event)
+                return event_id
+        else:
+            event_id = generate_event_id(enriched_data, channel_id)
+        enriched_data["event_id"] = event_id
 
         pending_event = PendingEvent(
             event_id=event_id,
@@ -197,6 +255,93 @@ class OrderingService:
 
         return event_id
 
+    def _find_stable_event(
+        self,
+        event_id: str,
+        channel_id: str,
+        candidate_data: dict[str, Any],
+    ) -> tuple[str | None, dict[str, Any] | None]:
+        """Find an existing stable ID and validate its content across all tiers."""
+        found_kind: str | None = None
+
+        pending = self.pending_events.get(event_id)
+        if pending is not None:
+            _assert_same_event(
+                event_id, channel_id, pending.channel_id,
+                pending.event_data, candidate_data,
+            )
+            found_kind = "pending"
+
+        builder = getattr(self, "block_builder", None)
+        if event_id in getattr(builder, "current_batch_ids", set()):
+            batched = next(
+                (
+                    item for item in getattr(builder, "current_batch", [])
+                    if item.event_id == event_id
+                ),
+                None,
+            )
+            if batched is None:
+                raise ValueError(
+                    f"Cannot verify existing event content for ID {event_id}"
+                )
+            _assert_same_event(
+                event_id, channel_id, batched.channel_id,
+                batched.event_data, candidate_data,
+            )
+            found_kind = found_kind or "batch"
+
+        processed = self.storage_handler.processed_events.get(event_id)
+        if processed is not None:
+            _assert_same_event(
+                event_id, channel_id, processed.channel_id,
+                processed.event_data, candidate_data,
+            )
+            found_kind = found_kind or "processed"
+
+        stored = self.storage_handler.storage.get_event_by_id(event_id)
+        if stored is not None:
+            stored_data = stored.get("data")
+            _assert_same_event(
+                event_id, channel_id, stored.get("chain_name"),
+                stored_data, candidate_data,
+            )
+            if stored_data.get("event_id") != event_id:
+                raise ValueError(
+                    f"Cannot verify existing event content for ID {event_id}"
+                )
+            found_kind = found_kind or "stored"
+
+        # Journal append precedes publication to pending, batch, processed,
+        # and stored tiers. Once one of those tiers validates the content,
+        # scanning every rotated journal frame again adds work to the normal
+        # replay path without improving duplicate protection. Unknown IDs
+        # still scan the journal to cover the ambiguous append-before-queue
+        # window.
+        if found_kind is not None:
+            return found_kind, None
+
+        # Journal records cover the ambiguous window after fsync and before
+        # in-memory queue publication, as well as recovery that has not run yet.
+        read_since = getattr(self.journal, "read_since", None)
+        if callable(read_since):
+            journal_rows, _ = read_since()
+        else:
+            journal_rows = list(self.journal.replay())
+        matching_journal_row: dict[str, Any] | None = None
+        for row in journal_rows:
+            if row.get("event_id") != event_id:
+                continue
+            _assert_same_event(
+                event_id, channel_id, row.get("channel_id"), row,
+                candidate_data,
+            )
+            matching_journal_row = row
+
+        if matching_journal_row is not None:
+            return "journal", matching_journal_row
+        return None, None
+
     def _enqueue_event(self, event: PendingEvent, journal_data: dict[str, Any] | None = None) -> None:
         """Reserve queue capacity before the durable write, then publish atomically."""
         deadline = time.monotonic() + self.enqueue_timeout
@@ -204,6 +349,38 @@ class OrderingService:
         # ponytail: Queue's condition holds capacity during fsync; use a separate
         # reservation queue only if profiling shows consumer contention here.
         with pool.not_full:
+            existing = self.pending_events.get(event.event_id)
+            if existing is not None:
+                _assert_same_event(
+                    event.event_id, event.channel_id, existing.channel_id,
+                    existing.event_data, event.event_data,
+                )
+                return
+            builder = getattr(self, "block_builder", None)
+            if event.event_id in getattr(builder, "current_batch_ids", set()):
+                batched = next(
+                    (
+                        item for item in getattr(builder, "current_batch", [])
+                        if item.event_id == event.event_id
+                    ),
+                    None,
+                )
+                if batched is None:
+                    raise ValueError(
+                        f"Cannot verify existing event content for ID {event.event_id}"
+                    )
+                _assert_same_event(
+                    event.event_id, event.channel_id, batched.channel_id,
+                    batched.event_data, event.event_data,
+                )
+                return
+            processed = self.storage_handler.processed_events.get(event.event_id)
+            if processed is not None:
+                _assert_same_event(
+                    event.event_id, event.channel_id, processed.channel_id,
+                    processed.event_data, event.event_data,
+                )
+                return
             while pool.maxsize > 0 and pool._qsize() >= pool.maxsize:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0 or self.should_stop.is_set() or self.status != OrderingStatus.ACTIVE:
@@ -223,22 +400,24 @@ class OrderingService:
         if not isinstance(event_data, dict):
             raise ValueError("event_data must be a dictionary")
 
-        event_id = event_data.get("event_id")
-        channel_id = event_data.get("channel_id")
-        if not isinstance(event_id, str) or not isinstance(channel_id, str):
+        snapshot = make_serializable(copy.deepcopy(event_data))
+        event_id = snapshot.get("event_id")
+        channel_id = snapshot.get("channel_id")
+        if (
+            not isinstance(event_id, str)
+            or not event_id.strip()
+            or not isinstance(channel_id, str)
+            or not channel_id.strip()
+        ):
             raise ValueError("journal event must contain event_id and channel_id")
 
-        if event_id in self.pending_events:
+        existing_kind, journal_row = self._find_stable_event(
+            event_id, channel_id, snapshot
+        )
+        if existing_kind in {"pending", "batch", "processed", "stored"}:
             return event_id
-
-        if (
-            event_id in getattr(self.block_builder, "current_batch_ids", set())
-            or event_id in self.storage_handler.processed_events
-        ):
-            return event_id
-
-        if self.storage_handler.storage.get_event_by_id(event_id) is not None:
-            return event_id
+        if existing_kind != "journal" or journal_row is None:
+            raise ValueError(f"Event ID {event_id} is not present in the journal")
 
         if self.status != OrderingStatus.ACTIVE:
             raise RuntimeError(
@@ -247,7 +426,7 @@ class OrderingService:
 
         pending_event = PendingEvent(
             event_id=event_id,
-            event_data=make_serializable(event_data),
+            event_data=_event_body_from_journal(journal_row),
             channel_id=channel_id,
             submitter_org="recovery",
             received_at=time.time(),

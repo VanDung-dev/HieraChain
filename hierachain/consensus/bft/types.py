@@ -2,6 +2,7 @@
 Core types and message definitions for BFT consensus.
 """
 
+import copy
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
@@ -50,7 +51,7 @@ class BFTMessage:
             "sender_id": self.sender_id,
             "timestamp": self.timestamp,
             "signature": self.signature,
-            "data": self.data,
+            "data": copy.deepcopy(self.data),
             "nonce": self.nonce
         }
 

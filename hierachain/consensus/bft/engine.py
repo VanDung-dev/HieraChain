@@ -3,11 +3,13 @@ BFT Consensus Engine component.
 """
 
 import logging
+from copy import deepcopy
 from typing import Any
 
 from hierachain.config.settings import settings
 from hierachain.consensus.bft.helpers import (
     _add_to_votes,
+    _build_consensus_event,
     _cleanup_messages,
     _create_signed_bft_message,
     _execute_consensus_operation,
@@ -32,6 +34,8 @@ class BFTConsensusEngine:
     def handle_pre_prepare(self, message: BFTMessage) -> bool:
         """Handle incoming PRE_PREPARE messages."""
         with self.consensus.lock:
+            if self.consensus.pending_apply_events:
+                return False
             if not _validate_pre_prep_basic(
                 self.consensus.node_id,
                 self.consensus.primary(),
@@ -42,36 +46,60 @@ class BFTConsensusEngine:
             ):
                 return False
 
+            if message.sequence_number in self.consensus.pre_prepare_messages:
+                return False
+
             if (
                 settings.ENABLE_ZK_PROOFS and
                 not verify_operation_zk_proof(message.data)
             ):
                 return False
 
-            self.consensus.pre_prepare_messages[message.sequence_number] = message
+            accepted_message = deepcopy(message)
+            self.consensus.pre_prepare_messages[
+                message.sequence_number
+            ] = accepted_message
             self.consensus.state = ConsensusState.PRE_PREPARED
-            
-            prep_msg = _create_signed_bft_message(
-                MessageType.PREPARE,
-                self.consensus.view,
-                message.sequence_number,
-                self.consensus.node_id,
-                self.consensus.key_provider,
-                {"digest": message.data.get("digest")}
-            )
+
+            prep_msg = self.record_local_prepare_vote(accepted_message)
+            if prep_msg is None:
+                return False
             self.consensus.dispatcher.broadcast_msg(prep_msg)
-            self.consensus.message_log.append(prep_msg)
-            if len(self.consensus.message_log) > self.consensus.MAX_MESSAGE_LOG:
-                self.consensus.message_log = self.consensus.message_log[-self.consensus.MAX_MESSAGE_LOG:]
+            self.check_prepare_quorum(
+                message.sequence_number, accepted_message.data.get("digest")
+            )
             self.consensus.view_change_manager.reset_timer()
             return True
+
+    def record_local_prepare_vote(self, pre_prepare: BFTMessage) -> BFTMessage | None:
+        """Record this node's signed PREPARE before it is broadcast."""
+        seq = pre_prepare.sequence_number
+        prepare_msg = _create_signed_bft_message(
+            MessageType.PREPARE,
+            pre_prepare.view,
+            seq,
+            self.consensus.node_id,
+            self.consensus.key_provider,
+            {"digest": pre_prepare.data.get("digest")},
+        )
+        votes = self.consensus.prepare_messages.setdefault(seq, [])
+        if not _add_to_votes(votes, prepare_msg):
+            return None
+        self._record_message(prepare_msg)
+        return prepare_msg
+
+    def _record_message(self, message: BFTMessage) -> None:
+        self.consensus.message_log.append(message)
+        if len(self.consensus.message_log) > self.consensus.MAX_MESSAGE_LOG:
+            self.consensus.message_log = self.consensus.message_log[
+                -self.consensus.MAX_MESSAGE_LOG:
+            ]
 
     def handle_prepare(self, message: BFTMessage) -> bool:
         """Handle incoming PREPARE messages"""
         with self.consensus.lock:
             if not _validate_prepare_msg(
                 message,
-                self.consensus.state,
                 self.consensus.pre_prepare_messages,
                 self.consensus.node_public_keys,
                 self.consensus.log_node_behavior
@@ -91,21 +119,28 @@ class BFTConsensusEngine:
 
     def check_prepare_quorum(self, seq: int, digest: str | None) -> bool:
         """Check if 2f PREPARE messages received."""
+        if seq <= self.consensus.committed_sequence or any(
+            vote.sender_id == self.consensus.node_id
+            for vote in self.consensus.commit_messages.get(seq, [])
+        ):
+            return False
         self.consensus.state, commit_msg = _process_prepare_quorum_logic(
             self.consensus.node_id,
             self.consensus.f,
             self.consensus.view,
             seq,
             digest,
-            self.consensus.state,
+            ConsensusState.PRE_PREPARED,
             len(self.consensus.prepare_messages[seq]),
             self.consensus.key_provider
         )
         if commit_msg:
+            commit_votes = self.consensus.commit_messages.setdefault(seq, [])
+            if not _add_to_votes(commit_votes, commit_msg):
+                return False
+            self._record_message(commit_msg)
             self.consensus.dispatcher.broadcast_msg(commit_msg)
-            self.consensus.message_log.append(commit_msg)
-            if len(self.consensus.message_log) > self.consensus.MAX_MESSAGE_LOG:
-                self.consensus.message_log = self.consensus.message_log[-self.consensus.MAX_MESSAGE_LOG:]
+            self.process_commit_quorum(seq)
             return True
         return False
 
@@ -115,7 +150,6 @@ class BFTConsensusEngine:
             if not _validate_commit_msg(
                 message,
                 self.consensus.pre_prepare_messages,
-                self.consensus.prepare_messages,
                 self.consensus.node_public_keys,
                 self.consensus.log_node_behavior
             ):
@@ -124,28 +158,55 @@ class BFTConsensusEngine:
             seq = message.sequence_number
             if seq not in self.consensus.commit_messages:
                 self.consensus.commit_messages[seq] = []
-                
-            if not _add_to_votes(self.consensus.commit_messages[seq], message):
-                return False
-            
+
+            # A repeated signed COMMIT can retrigger a failed local application.
+            _add_to_votes(self.consensus.commit_messages[seq], message)
             return self.process_commit_quorum(seq)
 
     def process_commit_quorum(self, seq: int) -> bool:
         """Check if commit quorum is reached and execute."""
+        applied = self._apply_commit_quorum(seq)
+        if applied:
+            # Quorums received while an earlier write was blocked are retained.
+            # Drain them after recovery without waiting for another network vote.
+            for waiting_seq in sorted(self.consensus.commit_messages):
+                if waiting_seq > self.consensus.committed_sequence:
+                    self._apply_commit_quorum(waiting_seq)
+        return applied
+
+    def _apply_commit_quorum(self, seq: int) -> bool:
+        """Apply one quorum while preserving the order of admitted requests."""
+        if seq <= self.consensus.committed_sequence:
+            return True
+        if seq != max(1, self.consensus.committed_sequence + 1):
+            # Sequence numbers start at 1. Buffer a future quorum even when its
+            # missing predecessor has not arrived locally yet.
+            return False
         reached, pre_prep = _process_commit_quorum_logic(
             self.consensus.f,
             self.consensus.commit_messages[seq],
             self.consensus.pre_prepare_messages
         )
         if reached and pre_prep:
-            _execute_consensus_operation(
-                self.consensus.chain,
-                pre_prep.data["request"]["operation"],
-                seq,
-                self.consensus.view
+            event = self.consensus.pending_apply_events.get(seq)
+            if event is None:
+                event = _build_event_from_pre_prepare(pre_prep, seq)
+                self.consensus.pending_apply_events[seq] = event
+            try:
+                _execute_consensus_operation(self.consensus.chain, event)
+            except Exception:
+                logger.exception(
+                    "Failed to apply BFT event for sequence %s; quorum remains "
+                    "available for retry",
+                    seq,
+                )
+                return False
+
+            self.consensus.committed_sequence = max(
+                self.consensus.committed_sequence, seq
             )
-            self.consensus.committed_sequence = max(self.consensus.committed_sequence, seq)
             self.consensus.state = ConsensusState.COMMITTED
+            self.consensus.pending_apply_events.pop(seq, None)
             _cleanup_messages(
                 self.consensus.pre_prepare_messages,
                 self.consensus.prepare_messages,
@@ -153,3 +214,12 @@ class BFTConsensusEngine:
             )
             return True
         return False
+
+
+def _build_event_from_pre_prepare(
+    message: BFTMessage, seq: int
+) -> dict[str, Any]:
+    request = message.data["request"]
+    return _build_consensus_event(
+        request["operation"], seq, message.view, message.data["digest"]
+    )

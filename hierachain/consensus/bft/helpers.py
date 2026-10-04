@@ -9,10 +9,12 @@ import logging
 import threading
 import time
 from collections.abc import Callable
+from copy import deepcopy
 from typing import Any
 
 from hierachain.config.settings import settings
 from hierachain.consensus.bft.types import BFTMessage, ConsensusState, MessageType
+from hierachain.serialization import dumps_canonical_json
 from hierachain.error_mitigation.consensus_validator import ConsensusValidator
 from hierachain.error_mitigation.error_classifier import ErrorClassifier
 from hierachain.security.security_utils import verify_signature
@@ -50,12 +52,47 @@ def verify_message_signature(
         return False
 
 def hash_request(request: dict[str, Any]) -> str:
-    req_str = (
-        f"{request.get('client_id')}:"
-        f"{request.get('timestamp')}:"
-        f"{request.get('operation')}"
-    )
-    return hashlib.sha256(req_str.encode()).hexdigest()
+    """Hash the complete request using a stable JSON representation."""
+    req_bytes = dumps_canonical_json(request)
+    return hashlib.sha256(req_bytes).hexdigest()
+
+
+def _request_digest_is_valid(data: dict[str, Any]) -> bool:
+    request = data.get("request")
+    digest = data.get("digest")
+    if (
+        not isinstance(request, dict)
+        or not isinstance(request.get("operation"), dict)
+        or not isinstance(digest, str)
+        or not digest
+    ):
+        return False
+    try:
+        return hash_request(request) == digest
+    except (TypeError, ValueError):
+        return False
+
+
+def _build_consensus_event(
+    operation: dict[str, Any], seq: int, view: int, digest: str
+) -> dict[str, Any]:
+    applied_at = time.time()
+    return {
+        "event_id": f"bft-{view}-{seq}-{digest[:16]}",
+        "entity_id": operation.get("entity_id"),
+        "event": operation.get("event_type", "consensus_operation"),
+        "timestamp": applied_at,
+        "details": deepcopy(operation.get("details", {})),
+        "consensus": {"sequence": seq, "view": view, "committed_at": applied_at},
+    }
+
+
+def _execute_consensus_operation(chain: Any, event: dict[str, Any]) -> None:
+    """Apply an already constructed event and propagate persistence failures."""
+    if chain is not None:
+        result = chain.add_event(deepcopy(event))
+        if result is False:
+            raise RuntimeError("Application chain rejected the BFT event")
 
 def verify_operation_zk_proof(data: dict[str, Any]) -> bool:
     operation = data.get("operation", {})
@@ -226,22 +263,6 @@ def start_view_change_timer(timeout: float, handler: Callable) -> threading.Time
 
 # --- Consensus-phase helpers ---
 
-def _execute_consensus_operation(
-    chain: Any, operation: dict[str, Any], seq: int, view: int
-) -> None:
-    try:
-        event = {
-            "entity_id": operation.get("entity_id"),
-            "event": operation.get("event_type", "consensus_operation"),
-            "timestamp": time.time(),
-            "details": operation.get("details", {}),
-            "consensus": {"sequence": seq, "view": view, "committed_at": time.time()},
-        }
-        if chain:
-            chain.add_event(event)
-    except Exception as e:
-        logger.error("Error executing operation: %s", e)
-
 def _log_behavior(
     error_classifier: Any, failure_counts: dict[str, int],
     max_failures: int, auto_recovery: bool, node_id: str,
@@ -312,32 +333,40 @@ def _add_to_votes(votes: list[BFTMessage], message: BFTMessage) -> bool:
     return True
 
 def _validate_prepare_msg(
-    message: BFTMessage, state: ConsensusState,
-    pre_prep_messages: dict[int, BFTMessage],
+    message: BFTMessage, pre_prep_messages: dict[int, BFTMessage],
     public_keys: dict[str, str], log_func: Callable[[str, str], None],
 ) -> bool:
     seq = message.sequence_number
-    if seq not in pre_prep_messages and state != ConsensusState.PRE_PREPARED:
+    pre_prep = pre_prep_messages.get(seq)
+    if pre_prep is None:
         return False
     if not verify_message_signature(message, public_keys):
         log_func(message.sender_id, "invalid_signature")
         return False
-    pre_prep = pre_prep_messages.get(seq)
-    if pre_prep and pre_prep.data.get("digest") != message.data.get("digest"):
+    if (
+        message.view != pre_prep.view
+        or pre_prep.data.get("digest") != message.data.get("digest")
+    ):
         log_func(message.sender_id, "digest_mismatch")
         return False
     return True
 
 def _validate_commit_msg(
     message: BFTMessage, pre_prep_messages: dict[int, BFTMessage],
-    prep_messages: dict[int, list[BFTMessage]],
     public_keys: dict[str, str], log_func: Callable[[str, str], None],
 ) -> bool:
     seq = message.sequence_number
-    if seq not in pre_prep_messages and seq not in prep_messages:
+    pre_prep = pre_prep_messages.get(seq)
+    if pre_prep is None:
         return False
     if not verify_message_signature(message, public_keys):
         log_func(message.sender_id, "invalid_signature")
+        return False
+    if (
+        message.view != pre_prep.view
+        or pre_prep.data.get("digest") != message.data.get("digest")
+    ):
+        log_func(message.sender_id, "digest_mismatch")
         return False
     return True
 
@@ -348,9 +377,12 @@ def _validate_pre_prep_basic(
     if (
         node_id == primary_id
         or message.view != view
+        or message.sequence_number < 1
         or message.sequence_number <= committed_seq
         or message.sender_id != primary_id
     ):
+        return False
+    if not _request_digest_is_valid(message.data):
         return False
     return verify_message_signature(message, public_keys)
 
@@ -375,13 +407,13 @@ def _process_commit_quorum_logic(
             continue
         expected_digest = pre_prep.data.get("digest")
         expected_view = pre_prep.view
-        matching = [
-            m for m in commit_msgs
+        matching_senders = {
+            m.sender_id for m in commit_msgs
             if m.sequence_number == msg.sequence_number
             and m.view == expected_view
-            and (m.data.get("digest") == expected_digest or expected_digest is None)
-        ]
-        if len(matching) >= 2 * f + 1:
+            and m.data.get("digest") == expected_digest
+        }
+        if len(matching_senders) >= 2 * f + 1:
             return True, pre_prep
     return False, None
 
