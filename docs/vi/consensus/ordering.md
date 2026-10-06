@@ -19,12 +19,14 @@ Ordering Service được thiết kế theo mô hình **Facade**, điều phối
 | Thành phần | Vai trò | Tệp tin |
 | :--- | :--- | :--- |
 | **OrderingService** | Điểm truy cập chính, quản lý vòng đời và cấu hình. | `service.py` |
-| **Processor** | Xử lý bất đồng bộ (Async), điều phối luồng sự kiện. | `processor.py` |
+| **Processor** | Thu thập bất đồng bộ, xác minh chữ ký theo batch, chứng nhận và xử lý sự kiện. | `processor.py` |
 | **Block Builder** | Gom nhóm sự kiện (Batching) và xây dựng cấu trúc khối. | `block_builder.py` |
 | **Certifier** | Xác thực chữ ký và quyền hạn của sự kiện trước khi sắp xếp. | `certifier.py` |
 | **Storage** | Quản lý lưu trữ bền vững cho các sự kiện đang chờ (Pending). | `storage.py` |
 | **Recovery** | Khôi phục trạng thái từ **Event Journal** sau sự cố. | `recovery.py` |
 | **Journal lookup** | Lập index commitment ID/kênh/nội dung bền vững để nhận stable ID. | `journal_lookup.py` |
+
+`OrderingService` sở hữu hàng đợi sự kiện, pending events, certifier, block builder, storage và metrics. `OrderingProcessor` truy cập các dependency này qua service và trực tiếp xử lý cả batch mới lẫn sự kiện replay. Việc tạo và commit block vẫn nằm trong `OrderingBlockManager`; replay journal vẫn nằm trong `OrderingRecovery`.
 
 ---
 

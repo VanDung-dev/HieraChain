@@ -19,12 +19,14 @@ Ordering Service is designed using the **Facade** pattern, coordinating multiple
 | Component | Role | File |
 | :--- | :--- | :--- |
 | **OrderingService** | Main access point, lifecycle and configuration management. | `service.py` |
-| **Processor** | Async processing, event flow coordination. | `processor.py` |
+| **Processor** | Async collection, batch signature verification, certification and event processing. | `processor.py` |
 | **Block Builder** | Event batching and block structure construction. | `block_builder.py` |
 | **Certifier** | Validates event signatures and permissions before ordering. | `certifier.py` |
 | **Storage** | Manages persistent storage for pending events. | `storage.py` |
 | **Recovery** | Restores state from **Event Journal** after failures. | `recovery.py` |
 | **Journal lookup** | Indexes durable ID/channel/content commitments for stable-ID admission. | `journal_lookup.py` |
+
+`OrderingService` owns the event queue, pending events, certifier, block builder, storage and metrics. `OrderingProcessor` accesses these dependencies through the service and processes both live batches and replayed events directly. Block creation and commit remain in `OrderingBlockManager`; journal replay remains in `OrderingRecovery`.
 
 ---
 
