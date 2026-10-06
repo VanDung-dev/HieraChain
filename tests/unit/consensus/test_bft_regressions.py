@@ -11,6 +11,7 @@ import pytest
 
 from hierachain.consensus import BFTConsensus, BFTMessage, MessageType, sign_message
 from hierachain.consensus.bft.types import ConsensusState
+from hierachain.error_mitigation import ValidationError
 from hierachain.security import KeyPair
 
 
@@ -33,6 +34,21 @@ def _build_network() -> dict[str, BFTConsensus]:
 def _shutdown_network(network: dict[str, BFTConsensus]) -> None:
     for node in network.values():
         node.shutdown()
+
+
+def test_membership_validation_counts_current_node_ids() -> None:
+    network = _build_network()
+    node = network["node_1"]
+    try:
+        assert node.consensus_validator.validate_node_count(node.all_nodes)
+        node._validate_bft_requirements()
+        node.all_nodes = node.all_nodes[:3]
+        assert node.n == 4
+        with pytest.raises(ValidationError):
+            node._validate_bft_requirements()
+        assert node.all_nodes == ["node_1", "node_2", "node_3"]
+    finally:
+        _shutdown_network(network)
 
 
 def test_later_quorum_waits_for_earlier_failed_application() -> None:

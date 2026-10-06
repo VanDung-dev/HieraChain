@@ -6,21 +6,20 @@ including message handling, consensus phases, and node communication.
 """
 
 import time
+from types import SimpleNamespace
 
 from hierachain.consensus import (
     BFTConsensus,
-    create_bft_network,
-    ConsensusError,
     BFTMessage,
+    ConsensusError,
     MessageType,
+    create_bft_network,
     sign_message,
-    verify_message_signature,
     validate_consensus_message,
+    verify_message_signature,
 )
+from hierachain.error_mitigation import ConsensusValidator, ErrorClassifier
 from hierachain.security import KeyPair
-from hierachain.error_mitigation import (
-    ConsensusValidator, ErrorClassifier
-)
 
 # Create a BFT network
 node_configs = [
@@ -150,15 +149,11 @@ def test_consensus_validator_integration():
     }
     validator = ConsensusValidator(validator_config)
 
-    # Create mock nodes
-    class MockNode:
-        def __init__(self, node_id, health_status="active"):
-            self.node_id = node_id
-            self.health_status = health_status
-            self.last_heartbeat = time.time()
-
     # Test with sufficient nodes
-    healthy_nodes = [MockNode(f"node_{i}") for i in range(4)]
+    healthy_nodes = [
+        SimpleNamespace(node_id=f"node_{i}", health_status="active", last_heartbeat=time.time())
+        for i in range(4)
+    ]
     assert validator.validate_node_count(healthy_nodes) is True
 
     # Test monitoring and scaling functionality
