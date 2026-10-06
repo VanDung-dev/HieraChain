@@ -11,10 +11,7 @@ import pytest
 from hierachain.core.block import Block
 from hierachain.core.cache import AdvancedCache
 from hierachain.integration.erp.change_detector import ChangeDetector
-from hierachain.monitoring.performance_monitor import (
-    PerformanceMonitor,
-    _collect_custom_metrics,
-)
+from hierachain.monitoring.performance_monitor import PerformanceMonitor
 from hierachain.monitoring.types import MetricType, MetricUnit
 from hierachain.risk_management.audit_logger import (
     AuditEvent,
@@ -101,7 +98,7 @@ def test_zero_custom_metric_threshold_is_active(severity: str, low_is_bad: bool)
         **{f"threshold_{severity}": 0}, callback=lambda: 0,
     )
     monitor.metrics["zero"].low_is_bad = low_is_bad
-    _collect_custom_metrics(monitor)
+    monitor._collect_custom_metrics()
     assert monitor.metrics["zero"].is_threshold_exceeded() == (True, severity)
 
 
