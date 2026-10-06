@@ -55,10 +55,8 @@ print(settings.AUTH_ENABLED)
 * Trong production, khi backend được chọn là PostgreSQL, cần đặt rõ `DATABASE_URL` hoặc `HRC_DATABASE_URL`. API từ chối URL fallback local có sẵn khi khởi động; bước này không kiểm tra kết nối tới database.
 * `DATABASE_URL` được ưu tiên khi có giá trị. Nếu rỗng hoặc chỉ có khoảng trắng, hệ thống dùng `HRC_DATABASE_URL`.
 * Nếu PostgreSQL không khả dụng, khởi tạo storage của chain sẽ thất bại. Đặt `HRC_STORAGE_BACKEND=sqlite` để chọn SQLite tường minh.
-* Cache nâng cao: `ADVANCED_CACHING_ENABLED` (mặc định: `True`)
-* `BLOCK_CACHE_SIZE` (mặc định: `5000`), `EVENT_CACHE_SIZE` (`20000`), `ENTITY_CACHE_SIZE` (`10000`)
-* Chính sách cache: `BLOCK_CACHE_POLICY` (`lru`), `EVENT_CACHE_POLICY` (`ttl`), `ENTITY_CACHE_POLICY` (`lfu`)
-* `ENTITY_TTL` (mặc định: `3600` giây)
+* Cache theo instance: `AdvancedCache(max_size=10000, eviction_policy="lru")` nhận cấu hình riêng; `set(key, value, ttl=...)` đặt TTL cho entry. `KeyManager` dùng cache khóa/quyền riêng và `cache_ttl` (mặc định: `300` giây). `block_cache_size` của Ordering vẫn là key cấu hình service (mặc định: `100`), không phải thuộc tính `Settings`.
+* Cấu hình không dùng đã bỏ: `ADVANCED_CACHING_ENABLED`, `BLOCK_CACHE_SIZE`, `EVENT_CACHE_SIZE`, `ENTITY_CACHE_SIZE`, `BLOCK_CACHE_POLICY`, `EVENT_CACHE_POLICY`, `ENTITY_CACHE_POLICY`, `ENTITY_TTL` và `hierachain.core.cache.DEFAULT_CACHE_CONFIG`. Các tên này chưa từng điều khiển cache runtime; bỏ import/truy cập trực tiếp và cấu hình instance cache hoặc service thực sự sử dụng chúng.
 * DB: `DATABASE_URL` (fallback khi development: `postgresql://hiera:hiera@localhost:5432/hierachain`; không dựa vào fallback này trong production)
 * Redis: `HRC_REDIS_HOST` hoặc `REDIS_HOST` (`localhost`), `HRC_REDIS_PORT` hoặc `REDIS_PORT` (`6379`), `REDIS_DB` (`0`). Tên có tiền tố HRC được ưu tiên.
 

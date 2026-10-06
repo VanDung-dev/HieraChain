@@ -1,6 +1,6 @@
 ---
 title: "Core Module"
-description: "Các cấu trúc nền tảng của sổ cái: Block, Blockchain, Merkle Tree và hệ thống Caching đa tầng."
+description: "Các cấu trúc nền tảng của sổ cái: Block, Blockchain, Merkle Tree và cache trong bộ nhớ."
 icon: material/cube
 ---
 
@@ -8,7 +8,7 @@ icon: material/cube
 
 ## 1. Tổng quan
 
-Module `core` chứa các cấu trúc dữ liệu nền tảng của sổ cái. Khối lưu trữ các sự kiện trong bảng Apache Arrow giúp lọc dữ liệu trong bộ nhớ với tốc độ cao và tính toán mã băm xác định. Cây Merkle mật mã cung cấp bằng chứng chứng minh sự kiện có mặt trong khối, kết hợp với bộ nhớ đệm đa tầng tăng tốc độ tra cứu khối, sự kiện và thực thể.
+Module `core` chứa các cấu trúc dữ liệu nền tảng của sổ cái. Khối lưu trữ các sự kiện trong bảng Apache Arrow giúp lọc dữ liệu trong bộ nhớ với tốc độ cao và tính toán mã băm xác định. Cây Merkle mật mã cung cấp bằng chứng chứng minh sự kiện có mặt trong khối. `AdvancedCache` cung cấp cache trong bộ nhớ theo instance, được `KeyManager` sử dụng để tra cứu khóa và quyền.
 
 ## 2. Các thành phần nền tảng
 

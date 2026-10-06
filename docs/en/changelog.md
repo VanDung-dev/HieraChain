@@ -8,9 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (56)"
+??? warning "Breaking Changes (57)"
 
     * 2026-10-06
+
+        * **Config & Core (Remove Unused Cache Metadata)**: Remove `Settings.ADVANCED_CACHING_ENABLED`, `BLOCK_CACHE_SIZE`, `EVENT_CACHE_SIZE`, `ENTITY_CACHE_SIZE`, `BLOCK_CACHE_POLICY`, `EVENT_CACHE_POLICY`, `ENTITY_CACHE_POLICY`, `ENTITY_TTL`, and `hierachain.core.cache.DEFAULT_CACHE_CONFIG`. Direct imports/accesses must migrate to actual cache-instance or service configuration; these names had no runtime consumers. `AdvancedCache`, `KeyManager` caches, and Ordering's `block_cache_size` retain their behavior. BFT node-count validation now receives node IDs directly without generating wrapper classes; quorum validation is unchanged.
 
         * **Error Mitigation (Advisory Logs)**: Capacity log events become `consensus_capacity_recommendation` (both payload and wrapper) and `resource_capacity_recommendation`; update filters for `auto_scaling_triggered`, `consensus_scaling`, and `resource_scaling_triggered`. Remove the fictitious `key_rotation_scheduled` event and `next_rotation` deadline. Public methods, legacy configuration, Parquet paths, BFT quorum checks, and retained-key AES-256-GCM behavior remain unchanged; provisioning and rotation belong to the host application.
 

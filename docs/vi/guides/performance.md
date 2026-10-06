@@ -16,11 +16,10 @@ icon: material/speedometer
 * Giảm chi phí IO/serialize: nhóm sự kiện theo lô, tránh payload nhị phân lớn trong `data`.
 * Dùng cache hợp lý: L1 trong bộ nhớ, L2 bền vững nếu cần.
 
-## Thiết lập liên quan (trích `config/settings.py`)
+## Cấu hình liên quan
 
-* `ADVANCED_CACHING_ENABLED`: bật cache nâng cao.
-* `BLOCK_CACHE_SIZE`, `EVENT_CACHE_SIZE`, `ENTITY_CACHE_SIZE`: kích thước cache.
-* Chính sách: `BLOCK_CACHE_POLICY` (lru/lfu/fifo/ttl), `EVENT_CACHE_POLICY`, `ENTITY_CACHE_POLICY`.
+* `AdvancedCache(max_size=..., eviction_policy=...)`: dung lượng và chính sách LRU/LFU/FIFO/TTL theo instance; TTL entry được truyền vào `set()`. Không có công tắc cache toàn cục hoặc tầng cache block/event/entity tự nối vào runtime.
+* `block_cache_size` của Ordering điều khiển deque lịch sử block cục bộ (mặc định: `100`).
 * Ordering batches: `OrderingService` khởi tạo trực tiếp mặc định 100 event và 2.0 giây; cấu hình SubChain mặc định dùng 50 event và 1.0 giây.
 
 ## Khuyến nghị
@@ -31,7 +30,7 @@ icon: material/speedometer
 ## Benchmark tối thiểu
 
 1. **Ghi 10k sự kiện và đo thời gian**: Chạy thử nghiệm tải cơ bản.
-2. **Điều chỉnh cấu hình**: Thử thay đổi các thiết lập batch của Ordering và `EVENT_CACHE_POLICY`.
+2. **Điều chỉnh cấu hình**: Thử thay đổi các thiết lập batch của Ordering; chỉ điều chỉnh instance cache khi tải đo được thực sự sử dụng chúng.
 3. **So sánh kết quả**: Đo lường throughput (events/sec) và độ trễ (latencies p50/p95).
 
 ## Quan sát hệ thống

@@ -55,10 +55,8 @@ print(settings.AUTH_ENABLED)
 * In production, when the selected backend is PostgreSQL, set `DATABASE_URL` or `HRC_DATABASE_URL` explicitly. API startup rejects the built-in local fallback URL; it does not test database connectivity.
 * `DATABASE_URL` takes precedence when nonblank. An empty or whitespace-only value falls back to `HRC_DATABASE_URL`.
 * If PostgreSQL is unavailable, chain storage initialization fails. Set `HRC_STORAGE_BACKEND=sqlite` to select SQLite explicitly.
-* Advanced caching: `ADVANCED_CACHING_ENABLED` (default: `True`)
-* `BLOCK_CACHE_SIZE` (default: `5000`), `EVENT_CACHE_SIZE` (`20000`), `ENTITY_CACHE_SIZE` (`10000`)
-* Cache policies: `BLOCK_CACHE_POLICY` (`lru`), `EVENT_CACHE_POLICY` (`ttl`), `ENTITY_CACHE_POLICY` (`lfu`)
-* `ENTITY_TTL` (default: `3600` seconds)
+* Cache instances: `AdvancedCache(max_size=10000, eviction_policy="lru")` accepts per-instance settings; `set(key, value, ttl=...)` sets entry TTL. `KeyManager` uses its own key/permission caches and `cache_ttl` (default: `300` seconds). Ordering's `block_cache_size` remains a service configuration key (default: `100`), not a `Settings` attribute.
+* Removed unused configuration: `ADVANCED_CACHING_ENABLED`, `BLOCK_CACHE_SIZE`, `EVENT_CACHE_SIZE`, `ENTITY_CACHE_SIZE`, `BLOCK_CACHE_POLICY`, `EVENT_CACHE_POLICY`, `ENTITY_CACHE_POLICY`, `ENTITY_TTL`, and `hierachain.core.cache.DEFAULT_CACHE_CONFIG`. These names never controlled runtime caches; remove direct imports/accesses and configure the cache instance or service that actually uses them.
 * DB: `DATABASE_URL` (development fallback: `postgresql://hiera:hiera@localhost:5432/hierachain`; do not rely on this fallback in production)
 * Redis: `HRC_REDIS_HOST` or `REDIS_HOST` (`localhost`), `HRC_REDIS_PORT` or `REDIS_PORT` (`6379`), `REDIS_DB` (`0`). HRC-prefixed names take precedence.
 

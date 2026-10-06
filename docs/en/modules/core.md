@@ -1,6 +1,6 @@
 ---
 title: "Core Module"
-description: "Core ledger primitives: Block, Blockchain, Merkle Tree, and Multi-tier Caching."
+description: "Core ledger primitives: Block, Blockchain, Merkle Tree, and in-memory caching."
 icon: material/cube
 ---
 
@@ -8,7 +8,7 @@ icon: material/cube
 
 ## 1. Overview
 
-The `core` module contains foundational data structures for the ledger. Blocks store events in Apache Arrow tables for fast in-memory filtering and deterministic hashing. Cryptographic Merkle trees prove event inclusion, and a multi-level cache speeds up block, event, and entity lookups.
+The `core` module contains foundational data structures for the ledger. Blocks store events in Apache Arrow tables for fast in-memory filtering and deterministic hashing. Cryptographic Merkle trees prove event inclusion. `AdvancedCache` provides per-instance in-memory caching, used by `KeyManager` for key and permission lookups.
 
 ## 2. Foundational components
 
