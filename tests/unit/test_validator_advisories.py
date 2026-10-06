@@ -74,6 +74,44 @@ def test_resource_advice_preserves_thresholds_and_legacy_flag(
     assert all(record["auto_scale_enabled"] is True for record in records)
 
 
+@pytest.mark.parametrize("resource_type, label", [("cpu", "CPU"), ("memory", "Memory"), ("disk", "Disk")])
+@pytest.mark.parametrize("delta", [-0.5, 0, 0.5])
+def test_custom_resource_thresholds_are_independent_and_strict(
+    resource_type: str, label: str, delta: float, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    thresholds = {"cpu": 20, "memory": 30, "disk": 40}
+    usage = dict(thresholds)
+    usage[resource_type] += delta
+    monkeypatch.setattr("psutil.cpu_percent", lambda interval: usage["cpu"])
+    monkeypatch.setattr("psutil.virtual_memory", lambda: SimpleNamespace(percent=usage["memory"]))
+    monkeypatch.setattr("psutil.disk_usage", lambda path: SimpleNamespace(used=usage["disk"], total=100))
+    config = {f"{resource}_threshold": threshold for resource, threshold in thresholds.items()}
+    status = ResourceValidator({**config, "auto_scale": True}).validate_resources()
+    assert status["violations"] == (
+        [f"{label} usage {usage[resource_type]:.1f}% > {thresholds[resource_type]}%"] if delta > 0 else []
+    )
+    records = [loads_json(row["data"]) for row in read_parquet_log(
+        "log/error_mitigation/resource_scaling.parquet",
+    ).to_pylist()]
+    assert [record["resource_type"] for record in records] == (
+        [resource_type] if delta > 0 and resource_type != "disk" else []
+    )
+
+
+def test_resource_log_failure_preserves_error_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("psutil.cpu_percent", lambda interval: 71)
+    monkeypatch.setattr("psutil.virtual_memory", lambda: SimpleNamespace(percent=81))
+    monkeypatch.setattr("psutil.disk_usage", lambda path: SimpleNamespace(used=86, total=100))
+    writer = Mock(side_effect=OSError("disk unavailable"))
+    monkeypatch.setattr("hierachain.core.parquet_log.write_parquet_log", writer)
+    assert ResourceValidator({"auto_scale": True}).validate_resources() == {
+        "error": "disk unavailable", "violations": [],
+    }
+    assert writer.call_count == 1
+    assert writer.call_args.args[1]["resource_type"] == "cpu"
+
+
 def test_consensus_log_failure_does_not_discard_healthy_nodes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
 ) -> None:
