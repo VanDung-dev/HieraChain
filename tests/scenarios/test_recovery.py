@@ -5,17 +5,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from hierachain.error_mitigation import ConsensusValidator
+from hierachain.error_mitigation import ConsensusValidator, ValidationError
 from hierachain.security import KeyManager
 
 
 @pytest.mark.recovery
 @pytest.mark.asyncio
-async def test_node_failure_detection_and_scaling():
-    """
-    Test automatic detection of node failures and scaling response.
-    Simulates Byzantine node failures and validates recovery.
-    """
+async def test_node_failure_detection_does_not_restore_quorum() -> None:
+    """Health filtering detects failure but cannot provision a replacement node."""
     config = {
         "f": 1,
         "auto_scale_threshold": 0.8,
@@ -39,11 +36,13 @@ async def test_node_failure_detection_and_scaling():
     failed_nodes[0].health_status = "failed"
     failed_nodes[0].last_heartbeat = time.time() - 60  # Old heartbeat
     
-    # Test that monitor detects and triggers scaling
+    # Detect failure and log a capacity recommendation.
     healthy_nodes = validator.monitor_and_scale(failed_nodes)
     
-    # Should detect failure and maintain minimum healthy nodes
-    assert len(healthy_nodes) >= 3  # Minimum for f=1
+    assert healthy_nodes == failed_nodes[1:]
+    assert len(failed_nodes) == 4
+    with pytest.raises(ValidationError):
+        validator.validate_node_count(healthy_nodes)
 
 
 @pytest.mark.recovery
