@@ -59,6 +59,8 @@ This example retains keys in memory. Production callers must preserve keys in th
 
 `ResourceValidator.validate_resources()` reports CPU, memory, and disk threshold violations. The legacy `auto_scale=True` flag additionally writes CPU/memory capacity recommendations; disk violations only produce warnings. Callers must invoke these checks themselves and handle provisioning through their host infrastructure.
 
+Thresholds default to CPU 70%, memory 80%, and disk 85%, configurable through `cpu_threshold`, `memory_threshold`, and `disk_threshold`. Checks run in CPU, memory, disk order; only usage strictly above a threshold is a violation, so equality passes.
+
 `EncryptionValidator.validate_config()` warns when `key_rotation_interval` is below the existing `min_key_rotation_interval` (2,592,000 seconds). This is an advisory configuration comparison, not an evaluation of key age or an expiry policy. It creates no schedule, deadline, or replacement key. The host application manages rotation and retention of old keys.
 
 Log consumers must update their event filters: `auto_scaling_triggered` and its `consensus_scaling` wrapper become `consensus_capacity_recommendation`; `resource_scaling_triggered` becomes `resource_capacity_recommendation`. The legacy Parquet paths `log/error_mitigation/consensus_scaling.parquet` and `log/error_mitigation/resource_scaling.parquet`, payload fields (including `auto_scale_enabled`), and existing records remain compatible. The misleading `key_rotation_scheduled` log and `next_rotation` field are removed; the interval warning remains.

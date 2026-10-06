@@ -59,6 +59,8 @@ Ví dụ này giữ khóa trong bộ nhớ. Caller production phải giữ khóa
 
 `ResourceValidator.validate_resources()` báo các vi phạm ngưỡng CPU, memory và disk. Cờ legacy `auto_scale=True` ghi thêm khuyến nghị tài nguyên CPU/memory; vi phạm disk chỉ tạo cảnh báo. Caller phải tự gọi các kiểm tra này và thực hiện cấp phát qua hạ tầng của host.
 
+Ngưỡng mặc định là CPU 70%, memory 80% và disk 85%, cấu hình qua `cpu_threshold`, `memory_threshold` và `disk_threshold`. Kiểm tra theo thứ tự CPU, memory, disk; chỉ mức sử dụng cao hơn ngưỡng mới là vi phạm, nên bằng ngưỡng vẫn được chấp nhận.
+
 `EncryptionValidator.validate_config()` cảnh báo khi `key_rotation_interval` dưới `min_key_rotation_interval` hiện có (2.592.000 giây). Đây là so sánh cấu hình để tham khảo, không đánh giá tuổi khóa hay áp dụng chính sách hết hạn. Nó không tạo lịch, deadline hoặc khóa thay thế. Ứng dụng host quản lý việc xoay khóa và giữ khóa cũ.
 
 Bên đọc log cần cập nhật bộ lọc sự kiện: `auto_scaling_triggered` và wrapper `consensus_scaling` đổi thành `consensus_capacity_recommendation`; `resource_scaling_triggered` đổi thành `resource_capacity_recommendation`. Các đường dẫn Parquet legacy `log/error_mitigation/consensus_scaling.parquet` và `log/error_mitigation/resource_scaling.parquet`, field payload (gồm `auto_scale_enabled`) và record hiện có vẫn tương thích. Log gây hiểu nhầm `key_rotation_scheduled` và field `next_rotation` được bỏ; cảnh báo về interval vẫn còn.
