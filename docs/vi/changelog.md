@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (55)"
+??? warning "Breaking Changes (56)"
+
+    * 2026-10-06
+
+        * **Giảm thiểu Lỗi (Log Khuyến nghị)**: Sự kiện log tài nguyên đổi thành `consensus_capacity_recommendation` (cả payload và wrapper) và `resource_capacity_recommendation`; cần cập nhật bộ lọc cho `auto_scaling_triggered`, `consensus_scaling` và `resource_scaling_triggered`. Bỏ sự kiện giả `key_rotation_scheduled` và deadline `next_rotation`. Phương thức public, cấu hình legacy, đường dẫn Parquet, kiểm tra quorum BFT và hành vi AES-256-GCM dùng khóa lưu giữ giữ nguyên; cấp phát và xoay khóa thuộc ứng dụng host.
 
     * 2026-10-05
 

@@ -8,7 +8,11 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (55)"
+??? warning "Breaking Changes (56)"
+
+    * 2026-10-06
+
+        * **Error Mitigation (Advisory Logs)**: Capacity log events become `consensus_capacity_recommendation` (both payload and wrapper) and `resource_capacity_recommendation`; update filters for `auto_scaling_triggered`, `consensus_scaling`, and `resource_scaling_triggered`. Remove the fictitious `key_rotation_scheduled` event and `next_rotation` deadline. Public methods, legacy configuration, Parquet paths, BFT quorum checks, and retained-key AES-256-GCM behavior remain unchanged; provisioning and rotation belong to the host application.
 
     * 2026-10-05
 

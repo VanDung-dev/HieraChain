@@ -53,6 +53,16 @@ assert reader.decrypt_data(envelope) == "business event"
 
 This example retains keys in memory. Production callers must preserve keys in their existing secure key store and restore the resolver after restart; keys are never embedded in the envelope. Encode the byte fields as Base64 for JSON storage and decode them back to bytes before decryption. The module's rotation notification does not provision or retain keys automatically. Older ciphertext whose random key was discarded by the previous implementation cannot be recovered by this change.
 
+### 2.4 Capacity and key rotation advice
+
+`ConsensusValidator.validate_node_count()` still rejects fewer than `3f+1` nodes. The legacy `monitor_and_scale()` method only returns healthy nodes and logs a capacity recommendation when their ratio falls below `auto_scale_threshold`; it neither changes membership nor restores quorum. The BFT runtime calls the node-count validator, but does not automatically invoke this health monitor.
+
+`ResourceValidator.validate_resources()` reports CPU, memory, and disk threshold violations. The legacy `auto_scale=True` flag additionally writes CPU/memory capacity recommendations; disk violations only produce warnings. Callers must invoke these checks themselves and handle provisioning through their host infrastructure.
+
+`EncryptionValidator.validate_config()` warns when `key_rotation_interval` is below the existing `min_key_rotation_interval` (2,592,000 seconds). This is an advisory configuration comparison, not an evaluation of key age or an expiry policy. It creates no schedule, deadline, or replacement key. The host application manages rotation and retention of old keys.
+
+Log consumers must update their event filters: `auto_scaling_triggered` and its `consensus_scaling` wrapper become `consensus_capacity_recommendation`; `resource_scaling_triggered` becomes `resource_capacity_recommendation`. The legacy Parquet paths `log/error_mitigation/consensus_scaling.parquet` and `log/error_mitigation/resource_scaling.parquet`, payload fields (including `auto_scale_enabled`), and existing records remain compatible. The misleading `key_rotation_scheduled` log and `next_rotation` field are removed; the interval warning remains.
+
 ## 3. Error classification strategy
 
 `ErrorClassifier` in `error_classifier.py` categorizes errors by severity and recommends mitigation actions:
