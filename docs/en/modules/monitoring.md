@@ -10,6 +10,8 @@ icon: material/chart-line
 
 The **Monitoring** module tracks infrastructure metrics such as CPU, RAM, and disk use. It also records HieraChain metrics, including event throughput, block closing time, and BFT consensus success rate.
 
+The module is opt-in. Importing `PerformanceMonitor` loads metric collection independently of alerting; importing `AlertManager` loads the alert engine independently of metric collection. The host application starts and stops monitoring explicitly, records ledger activity through the `record_*` methods, and can register `add_alert_handler()` callbacks for its existing observability system. Collection, threshold checks and reports belong to `PerformanceMonitor`; rules, alert state and delivery belong to `AlertManager`.
+
 ---
 
 ## Main Components
@@ -44,7 +46,7 @@ The **Monitoring** module tracks infrastructure metrics such as CPU, RAM, and di
 
     * Detects abnormal behavior based on **Z-Score** algorithm.
     * Analyzes historical data in sliding windows to determine standard deviation.
-    * Helps early detection of DDoS attacks or bottleneck congestion.
+    * Identifies statistical outliers in metric values.
 
 </div>
 
@@ -52,7 +54,7 @@ The **Monitoring** module tracks infrastructure metrics such as CPU, RAM, and di
 
 ## Monitoring and Alert Workflow
 
-The system operates in a continuous loop to ensure high availability:
+Calling `start_monitoring()` starts the collection loop. Alert callbacks run only when registered and `enable_alerts` is enabled. The host application feeds the optional alert engine through `check_metric()`, `create_alert()` or `send_alert()`.
 
 ```mermaid
 graph LR
@@ -73,9 +75,11 @@ graph LR
     end
 
     A & B & C --> D
-    D --> E
-    E --> G
     D --> F
+    D --> K[Registered Application Callback]
+    K --> J[Existing Observability System]
+    K --> G
+    G --> E
     G --> H[Email/Webhook Notification]
 ```
 
@@ -83,14 +87,14 @@ graph LR
 
 ## System Health Score
 
-HieraChain computes an overall health score (0-100) based on weighted alert thresholds:
+The monitor averages scores for metrics with data: normal = 100, warning = 50, critical = 0. Metrics without data are excluded:
 
 | Status | Score | Meaning |
 | :--- | :--- | :--- |
-| **Excellent** | 90 - 100 | System operating perfectly, no alerts. |
-| **Good** | 70 - 89 | Stable operation, possibly a few minor alerts. |
-| **Poor** | < 70 | Performance noticeably affected, needs review. |
-| **Critical** | N/A | At least one metric at **Critical Alert** level. |
+| `excellent` | 100 | All metrics with data are normal. |
+| `warning` | 50 to below 100 | At least one warning; no critical metrics. |
+| `critical` | 0 to below 100 | At least one critical metric. |
+| `no_data` | 0 | No metrics have data. |
 
 ---
 
@@ -98,21 +102,23 @@ HieraChain computes an overall health score (0-100) based on weighted alert thre
 
 ### 1. Start Performance Monitoring
 ```python
-from hierachain.monitoring import AlertManager, PerformanceMonitor
+from hierachain.monitoring import PerformanceMonitor
 
 monitor = PerformanceMonitor(config={"collection_interval": 10.0})
-alert_manager = AlertManager()
-monitor.start_monitoring()
-
-# Get instant health report
-health_score, status = monitor.get_health_score()
-print(f"System Health: {status} ({health_score}/100)")
+try:
+    monitor.start_monitoring()
+    health_score, status = monitor.get_health_score()
+    print(f"System Health: {status} ({health_score}/100)")
+finally:
+    monitor.stop_monitoring()
 ```
 
 ### 2. Define Alert Rules
 ```python
+from hierachain.monitoring import AlertManager
 from hierachain.monitoring.alert_system import AlertRule, AlertSeverity, AlertCategory
 
+alert_manager = AlertManager()
 rule = AlertRule(
     rule_id="TPS_DROP",
     name="Sharp throughput drop",
@@ -127,15 +133,17 @@ rule = AlertRule(
 alert_manager.add_alert_rule(rule)
 ```
 
+The host application supplies metric values to `alert_manager.check_metric("event_throughput", value)`. The two components are not connected automatically. With `enable_alerts=False`, the monitor continues collecting metrics and generating reports without invoking alert callbacks.
+
 ---
 
 ## Notifications and Escalation
 
 When an alert is created but not **Acknowledged** within the specified time:
 
-1.  The system automatically increases the severity level (e.g., from WARNING to CRITICAL).
-2.  Sends additional notifications to emergency recipient lists via Email/Webhook.
-3.  Records detailed logs in the Audit system for post-incident investigation.
+1.  The escalation counter increases and a critical notification is created.
+2.  Configured Email/Webhook notifiers receive that notification.
+3.  The escalation is logged. Acknowledging or resolving the original alert cancels its pending escalation timer.
 
 ---
 
@@ -145,4 +153,4 @@ When an alert is created but not **Acknowledged** within the specified time:
 *   [Security and Resource Guard](./security.md)
 *   [System Configuration](./config.md)
 
-Consensus success rate is healthy above 95%, warning at or below 95%, and critical at or below 90%. Critical metric alerts replace active lower-severity alerts. Notification delivery uses one worker and a queue of at most 128 alerts; a full queue records a failed notification while preserving alert history. SMTP and webhook requests use a 10-second timeout. Call `AlertManager.close()` to finish queued delivery; abrupt process exit can lose queued notifications.
+For the default PerformanceMonitor metric, consensus success rate is healthy above 95%, warning at or below 95%, and critical at or below 90%. Critical metric alerts replace active lower-severity alerts. Notification delivery uses one worker and a queue of at most 128 alerts; a full queue records a failed notification while preserving alert history. SMTP and webhook requests use a 10-second timeout. Call `AlertManager.close()` to stop accepting notifications and wait for queued delivery up to its timeout; abrupt process exit can lose queued notifications.
