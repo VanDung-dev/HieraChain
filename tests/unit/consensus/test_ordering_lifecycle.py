@@ -355,11 +355,13 @@ def test_concurrent_stable_retries_only_append_one_journal_record(
     ]
 
 
+@pytest.mark.parametrize("processing_path", ["single", "batch", "replay"])
 def test_rejected_results_do_not_remain_in_pending_or_grow_history(
     service: OrderingService,
+    processing_path: str,
 ) -> None:
     service.certifier = EventCertifier(max_history=8)
-    service.processor.executor.certifier = service.certifier
+    events = []
     for index in range(32):
         event = PendingEvent(
             str(index),
@@ -370,7 +372,16 @@ def test_rejected_results_do_not_remain_in_pending_or_grow_history(
             EventStatus.PENDING,
         )
         service.pending_events[event.event_id] = event
-        asyncio.run(service.processor.process_single_event(event))
+        events.append(event)
+    if processing_path == "batch":
+        asyncio.run(service.processor.process_batch(events))
+    else:
+        for event in events:
+            if processing_path == "replay":
+                with pytest.raises(ValueError, match="Replay rejected event"):
+                    asyncio.run(service.processor.process_replayed_event(event))
+            else:
+                asyncio.run(service.processor.process_single_event(event))
     assert not service.pending_events
     assert len(service.certifier.certified_events) == 8
     assert service.certifier.get_certification("0") is None

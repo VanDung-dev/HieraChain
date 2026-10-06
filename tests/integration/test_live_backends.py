@@ -26,6 +26,8 @@ from hierachain.api import server
 from hierachain.api.middleware import add_rate_limit
 from hierachain.config.settings import Settings
 from hierachain.config.settings import settings as runtime_settings
+from hierachain.consensus.ordering.service import OrderingService
+from hierachain.consensus.ordering.types import OrderingStatus
 from hierachain.security.brute_force_protector import BruteForceProtector
 from hierachain.security.key_manager import KeyManager
 
@@ -99,6 +101,60 @@ def test_revocation_and_lockout_survive_new_processes(redis_url: str, tmp_path: 
             ttl = redis.from_url(redis_url).ttl(RedisLockoutStore._key(ip))
             assert 0 < ttl <= 7
         first.reset(ip)
+
+
+def test_postgres_ordering_replays_pending_events_once_before_active(
+    postgres_url: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    config = {
+        "db_url": postgres_url,
+        "chain_name": "ordering-replay",
+        "storage_dir": "journal",
+        "block_size": 2,
+        "batch_size": 2,
+        "batch_timeout": 0.1,
+    }
+    event_ids = ["durable-first", "durable-second"]
+    # Leave acknowledged events only in the journal, without a running processor.
+    with monkeypatch.context() as patch:
+        patch.setattr(OrderingService, "_start_processing_thread", lambda self: None)
+        initial = OrderingService(dict(config))
+        try:
+            initial.status = OrderingStatus.ACTIVE
+            for event_id in event_ids:
+                initial.receive_event(
+                    {"event_id": event_id, "entity_id": event_id,
+                     "event": "created", "timestamp": 1.0},
+                    "ordering-replay", "org",
+                )
+                assert initial.storage_handler.storage.get_event_by_id(event_id) is None
+        finally:
+            initial.shutdown()
+
+    expected_blocks = None
+    for _ in range(2):
+        restarted = OrderingService(dict(config))
+        try:
+            assert restarted.wait_for_active(timeout=5.0)
+            blocks = restarted.storage_handler.get_blocks_from_db(0)
+            assert len(blocks) == 1
+            events = blocks[0].to_event_list()
+            assert [event["event_id"] for event in events] == event_ids
+            assert all(event["timestamp"] == 1.0 for event in events)
+            fingerprints = [(block.index, block.hash, block.merkle_root) for block in blocks]
+            if expected_blocks is None:
+                expected_blocks = fingerprints
+            else:
+                assert fingerprints == expected_blocks
+            with psycopg.connect(postgres_url) as connection:
+                rows = connection.execute(
+                    "SELECT event_id FROM events WHERE chain_name = %s ORDER BY event_id",
+                    (config["chain_name"],),
+                ).fetchall()
+            assert [row[0] for row in rows] == sorted(event_ids)
+        finally:
+            restarted.shutdown()
 
 
 def test_redis_rate_limiter_enforces_quota_and_fails_closed(redis_url: str) -> None:

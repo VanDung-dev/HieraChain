@@ -149,7 +149,6 @@ def test_replay_error_does_not_activate_ordering_service():
     recovery = OrderingRecovery(service, recovery_worker)
     processor = OrderingProcessor.__new__(OrderingProcessor)
     processor.service = service
-    processor.should_stop = service.should_stop
     processor.recovery = recovery
 
     with pytest.raises(RuntimeError, match="recovery"):
@@ -235,7 +234,6 @@ def test_corrupt_complete_frame_keeps_ordering_in_maintenance(
     recovery = OrderingRecovery(service, SimpleNamespace(block_manager=BlockManager()))
     processor = OrderingProcessor.__new__(OrderingProcessor)
     processor.service = service
-    processor.should_stop = service.should_stop
     processor.recovery = recovery
 
     with pytest.raises(ValueError, match="Corrupt Arrow batch"):
