@@ -25,6 +25,7 @@ class ResourceValidator:
         logger.info("Initialized ResourceValidator")
 
     def validate_resources(self) -> dict[str, Any]:
+        """Report resource violations; legacy auto_scale enables logged advice only."""
         try:
             import psutil
             cpu_percent = psutil.cpu_percent(interval=1)
@@ -56,7 +57,7 @@ class ResourceValidator:
             status["violations"].append(violation)
             logger.warning(violation)
             if self.auto_scale:
-                self._trigger_scaling("cpu")
+                self._log_capacity_recommendation("cpu")
 
     def _check_memory_usage(self, memory_percent: float, status: dict[str, Any]) -> None:
         if memory_percent > self.memory_threshold:
@@ -64,7 +65,7 @@ class ResourceValidator:
             status["violations"].append(violation)
             logger.warning(violation)
             if self.auto_scale:
-                self._trigger_scaling("memory")
+                self._log_capacity_recommendation("memory")
 
     def _check_disk_usage(self, disk_percent: float, status: dict[str, Any]) -> None:
         if disk_percent > self.disk_threshold:
@@ -72,13 +73,13 @@ class ResourceValidator:
             status["violations"].append(violation)
             logger.warning(violation)
 
-    def _trigger_scaling(self, resource_type: str) -> None:
-        scaling_event = {
-            "event": "resource_scaling_triggered",
+    def _log_capacity_recommendation(self, resource_type: str) -> None:
+        recommendation = {
+            "event": "resource_capacity_recommendation",
             "resource_type": resource_type,
             "timestamp": time.time(),
             "auto_scale_enabled": self.auto_scale,
         }
-        logger.info("Resource scaling triggered: %s", dumps_json(scaling_event))
+        logger.info("Resource capacity recommendation for the host application: %s", dumps_json(recommendation))
         from hierachain.core.parquet_log import write_parquet_log
-        write_parquet_log("log/error_mitigation/resource_scaling.parquet", scaling_event)
+        write_parquet_log("log/error_mitigation/resource_scaling.parquet", recommendation)

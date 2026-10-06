@@ -16,7 +16,7 @@ from typing import Any
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from hierachain.error_mitigation.validator_exceptions import SecurityError
-from hierachain.serialization import dumps_canonical_json, dumps_json
+from hierachain.serialization import dumps_canonical_json
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +40,10 @@ class EncryptionValidator:
             raise SecurityError(error_msg)
         key_rotation_interval = self.config.get("key_rotation_interval", 0)
         if key_rotation_interval < self.min_key_rotation_interval:
-            logger.warning("Key rotation interval %d below recommended %d", key_rotation_interval, self.min_key_rotation_interval)
-            self._schedule_key_rotation()
+            logger.warning(
+                "Key rotation interval %d below recommended %d; rotation is managed by the host application",
+                key_rotation_interval, self.min_key_rotation_interval,
+            )
         logger.info("Encryption configuration validation passed")
         return True
 
@@ -113,11 +115,3 @@ class EncryptionValidator:
         ):
             raise SecurityError("Invalid encrypted payload timestamp")
         return dumps_canonical_json({field: payload[field] for field in ("algorithm", "key_id", "timestamp")})
-
-    def _schedule_key_rotation(self) -> None:
-        rotation_event = {
-            "event": "key_rotation_scheduled",
-            "timestamp": time.time(),
-            "next_rotation": time.time() + self.min_key_rotation_interval,
-        }
-        logger.info("Key rotation scheduled: %s", dumps_json(rotation_event))

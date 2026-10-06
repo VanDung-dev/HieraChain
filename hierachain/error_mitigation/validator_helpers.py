@@ -16,14 +16,16 @@ from hierachain.serialization import dumps_json
 logger = logging.getLogger(__name__)
 
 
-def _log_scaling_event(event: dict[str, Any]) -> None:
+def _log_capacity_recommendation(event: dict[str, Any]) -> None:
     try:
         from hierachain.core.parquet_log import write_parquet_log
         log_entry = dumps_json(event, indent=2)
-        logger.info("Scaling event logged: %s", log_entry)
-        write_parquet_log("log/error_mitigation/consensus_scaling.parquet", {"event": "consensus_scaling", "payload": event, "log_entry": log_entry})
+        logger.info("Consensus capacity recommendation for the host application: %s", log_entry)
+        write_parquet_log("log/error_mitigation/consensus_scaling.parquet", {
+            "event": "consensus_capacity_recommendation", "payload": event, "log_entry": log_entry,
+        })
     except (OSError, ValueError) as ex:
-        logger.error("Failed to log scaling event: %s", ex)
+        logger.error("Failed to log capacity recommendation: %s", ex)
 
 
 def _is_string_type(type_: pa.DataType) -> bool:
