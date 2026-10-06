@@ -281,8 +281,7 @@ class BFTConsensus:
         self.verification_strictness = mitigation["strictness"]
         self.auto_recovery_enabled = mitigation["recovery"]
 
-    def _validate_bft_requirements(self):
+    def _validate_bft_requirements(self) -> None:
         """Validate BFT network requirements."""
         if self.consensus_validator:
-            nodes = [type('MockNode', (), {"node_id": n})() for n in self.all_nodes]
-            self.consensus_validator.validate_node_count(nodes)
+            self.consensus_validator.validate_node_count(self.all_nodes)

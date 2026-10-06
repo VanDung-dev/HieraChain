@@ -143,16 +143,6 @@ class Settings:
 
     DEFAULT_STORAGE_BACKEND = "postgres"
     
-    # Advanced Caching settings
-    ADVANCED_CACHING_ENABLED = True
-    BLOCK_CACHE_SIZE = 5000
-    EVENT_CACHE_SIZE = 20000
-    ENTITY_CACHE_SIZE = 10000
-    BLOCK_CACHE_POLICY = "lru"  # lru, lfu, fifo, ttl
-    EVENT_CACHE_POLICY = "ttl"
-    ENTITY_CACHE_POLICY = "lfu"
-    ENTITY_TTL = 3600  # 1 hour in seconds
-    
     # Hard limit for DoS protection
     EVENT_POOL_MAX_SIZE = int(os.getenv("HRC_EVENT_POOL_MAX_SIZE", "10000"))
 

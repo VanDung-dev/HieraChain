@@ -1,8 +1,7 @@
 """
 Core caching primitives for HieraChain Ledger.
 
-Provides AdvancedCache with multiple eviction policies (LRU, LFU, FIFO, TTL)
-and the default cache configuration constant.
+Provides AdvancedCache with multiple eviction policies (LRU, LFU, FIFO, TTL).
 """
 
 import logging
@@ -211,15 +210,3 @@ class AdvancedCache(MutableMapping[str, Any]):
 
     def __iter__(self) -> Iterator[str]:
         return iter(self.get_keys())
-
-
-DEFAULT_CACHE_CONFIG: dict[str, Any] = {
-    "block_cache_size": 5000,
-    "event_cache_size": 20000,
-    "entity_cache_size": 10000,
-    "block_cache_policy": "lru",
-    "event_cache_policy": "ttl",
-    "entity_cache_policy": "lfu",
-    "event_ttl": 300,
-    "entity_ttl": 3600,
-}
