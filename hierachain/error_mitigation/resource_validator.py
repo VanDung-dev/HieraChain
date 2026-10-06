@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, cast
+from typing import Any
 
 from hierachain.serialization import dumps_json
 
@@ -38,9 +38,17 @@ class ResourceValidator:
                 "timestamp": time.time(),
                 "violations": [],
             }
-            self._check_cpu_usage(cpu_percent, resource_status)
-            self._check_memory_usage(memory.percent, resource_status)
-            self._check_disk_usage(cast(float, resource_status["disk_percent"]), resource_status)
+            for resource_type, label, percent, threshold in (
+                ("cpu", "CPU", cpu_percent, self.cpu_threshold),
+                ("memory", "Memory", memory.percent, self.memory_threshold),
+                ("disk", "Disk", resource_status["disk_percent"], self.disk_threshold),
+            ):
+                if percent > threshold:
+                    violation = f"{label} usage {percent:.1f}% > {threshold}%"
+                    resource_status["violations"].append(violation)
+                    logger.warning(violation)
+                    if self.auto_scale and resource_type != "disk":
+                        self._log_capacity_recommendation(resource_type)
             if not resource_status["violations"]:
                 logger.info("All resource thresholds within limits")
             return resource_status
@@ -50,28 +58,6 @@ class ResourceValidator:
         except Exception as ex:
             logger.error("Resource validation failed: %s", ex)
             return {"error": str(ex), "violations": []}
-
-    def _check_cpu_usage(self, cpu_percent: float, status: dict[str, Any]) -> None:
-        if cpu_percent > self.cpu_threshold:
-            violation = f"CPU usage {cpu_percent:.1f}% > {self.cpu_threshold}%"
-            status["violations"].append(violation)
-            logger.warning(violation)
-            if self.auto_scale:
-                self._log_capacity_recommendation("cpu")
-
-    def _check_memory_usage(self, memory_percent: float, status: dict[str, Any]) -> None:
-        if memory_percent > self.memory_threshold:
-            violation = f"Memory usage {memory_percent:.1f}% > {self.memory_threshold}%"
-            status["violations"].append(violation)
-            logger.warning(violation)
-            if self.auto_scale:
-                self._log_capacity_recommendation("memory")
-
-    def _check_disk_usage(self, disk_percent: float, status: dict[str, Any]) -> None:
-        if disk_percent > self.disk_threshold:
-            violation = f"Disk usage {disk_percent:.1f}% > {self.disk_threshold}%"
-            status["violations"].append(violation)
-            logger.warning(violation)
 
     def _log_capacity_recommendation(self, resource_type: str) -> None:
         recommendation = {
