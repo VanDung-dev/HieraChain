@@ -8,13 +8,13 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (57)"
+??? warning "Breaking Changes (58)"
 
     * 2026-10-06
 
         * **Config & Core (Bỏ Metadata Cache Không dùng)**: Bỏ `Settings.ADVANCED_CACHING_ENABLED`, `BLOCK_CACHE_SIZE`, `EVENT_CACHE_SIZE`, `ENTITY_CACHE_SIZE`, `BLOCK_CACHE_POLICY`, `EVENT_CACHE_POLICY`, `ENTITY_CACHE_POLICY`, `ENTITY_TTL` và `hierachain.core.cache.DEFAULT_CACHE_CONFIG`. Import/truy cập trực tiếp cần chuyển sang cấu hình instance cache hoặc service thực tế; các tên này không có nơi đọc trong runtime. `AdvancedCache`, cache của `KeyManager` và `block_cache_size` của Ordering giữ nguyên hành vi. Kiểm tra số node BFT nay nhận trực tiếp ID node, không tạo lớp bọc; kiểm tra quorum không đổi.
-
         * **Giảm thiểu Lỗi (Log Khuyến nghị)**: Sự kiện log tài nguyên đổi thành `consensus_capacity_recommendation` (cả payload và wrapper) và `resource_capacity_recommendation`; cần cập nhật bộ lọc cho `auto_scaling_triggered`, `consensus_scaling` và `resource_scaling_triggered`. Bỏ sự kiện giả `key_rotation_scheduled` và deadline `next_rotation`. Phương thức public, cấu hình legacy, đường dẫn Parquet, kiểm tra quorum BFT và hành vi AES-256-GCM dùng khóa lưu giữ giữ nguyên; cấp phát và xoay khóa thuộc ứng dụng host.
+        * **Đồng thuận (Hợp nhất Ordering Processor)**: Bỏ `OrderingExecutor` (`hierachain/consensus/ordering/processor.py`) và gộp `process_batch()`/`process_single_event()` vào `OrderingProcessor`; `__init__` nhận `OrderingService` có kiểu và đọc `event_pool`/`pending_events`/`metrics`/`certifier`/`block_builder`/`storage_handler`/`should_stop`/`config` trực tiếp từ `service` thay vì cache bản sao thuộc tính, kèm annotation `-> None` cho các phương thức vòng đời. Import trực tiếp `OrderingExecutor` và truy cập `processor.event_pool`/`processor.should_stop`/`processor.executor` (cùng các thuộc tính cache tương tự) cần chuyển sang `processor.service.*` hoặc `process_batch`/`process_single_event` trên processor; luồng certification/batch/replay (`process_replayed_event()` với `allow_stale_timestamp`) giữ nguyên.
 
     * 2026-10-05
 
@@ -116,7 +116,12 @@ icon: material/history
 
         * **Cluster**: Loại bỏ `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) và các export liên quan khỏi `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (52)"
+??? note "Improvements (54)"
+
+    * 2026-10-06
+
+        * **Giám sát (Lazy-load Submodule)**: `hierachain/monitoring/__init__.py` hoãn import `alert_system`/`performance_monitor` qua `__getattr__` PEP 562 để mỗi module chỉ tải khi `AlertManager`/`PerformanceMonitor` được yêu cầu lần đầu; `__all__` và tên public giữ nguyên. Khởi tạo rule/notifier mặc định của `AlertManager` thành method với khớp rule gộp vào `check_metric()`, giữ luồng đánh giá một chỗ — trước đây cả hai submodule đều import eager khi nạp package.
+        * **Giảm thiểu Lỗi (Hợp nhất Kiểm tra Tài nguyên)**: `ResourceValidator` (`hierachain/error_mitigation/resource_validator.py`) gộp `_check_cpu_usage()`/`_check_memory_usage()`/`_check_disk_usage()` thành một vòng lặp CPU/memory/disk duy nhất với chuỗi violation giống hệt và chỉ phát advisory `resource_capacity_recommendation` (`auto_scale` opt-in, trừ disk), bỏ import `cast` không dùng — trước đây là ba helper private trùng lặp.
 
     * 2026-10-05
 

@@ -8,13 +8,13 @@ icon: material/history
 
 ## Unreleased
 
-??? warning "Breaking Changes (57)"
+??? warning "Breaking Changes (58)"
 
     * 2026-10-06
 
         * **Config & Core (Remove Unused Cache Metadata)**: Remove `Settings.ADVANCED_CACHING_ENABLED`, `BLOCK_CACHE_SIZE`, `EVENT_CACHE_SIZE`, `ENTITY_CACHE_SIZE`, `BLOCK_CACHE_POLICY`, `EVENT_CACHE_POLICY`, `ENTITY_CACHE_POLICY`, `ENTITY_TTL`, and `hierachain.core.cache.DEFAULT_CACHE_CONFIG`. Direct imports/accesses must migrate to actual cache-instance or service configuration; these names had no runtime consumers. `AdvancedCache`, `KeyManager` caches, and Ordering's `block_cache_size` retain their behavior. BFT node-count validation now receives node IDs directly without generating wrapper classes; quorum validation is unchanged.
-
         * **Error Mitigation (Advisory Logs)**: Capacity log events become `consensus_capacity_recommendation` (both payload and wrapper) and `resource_capacity_recommendation`; update filters for `auto_scaling_triggered`, `consensus_scaling`, and `resource_scaling_triggered`. Remove the fictitious `key_rotation_scheduled` event and `next_rotation` deadline. Public methods, legacy configuration, Parquet paths, BFT quorum checks, and retained-key AES-256-GCM behavior remain unchanged; provisioning and rotation belong to the host application.
+        * **Consensus (Ordering Processor Consolidation)**: Remove `OrderingExecutor` (`hierachain/consensus/ordering/processor.py`) and fold `process_batch()`/`process_single_event()` into `OrderingProcessor`; `__init__` takes a typed `OrderingService` and reads `event_pool`/`pending_events`/`metrics`/`certifier`/`block_builder`/`storage_handler`/`should_stop`/`config` live off `service` instead of caching attribute copies, with `-> None` annotations on lifecycle methods. Direct imports of `OrderingExecutor` and access to `processor.event_pool`/`processor.should_stop`/`processor.executor` (and sibling cached attributes) must migrate to `processor.service.*` or `process_batch`/`process_single_event` on the processor; certification/batch/replay flow (`process_replayed_event()` with `allow_stale_timestamp`) is unchanged.
 
     * 2026-10-05
 
@@ -116,7 +116,12 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (52)"
+??? note "Improvements (54)"
+
+    * 2026-10-06
+
+        * **Monitoring (Lazy Submodule Loading)**: `hierachain/monitoring/__init__.py` defers `alert_system`/`performance_monitor` imports behind a PEP 562 `__getattr__` so each module loads only when `AlertManager`/`PerformanceMonitor` is first requested; `__all__` and public names are unchanged. `AlertManager` default-rule/notifier setup becomes methods with rule matching folded into `check_metric()`, keeping evaluation in one place — previously both submodules imported eagerly at package import time.
+        * **Error Mitigation (Unified Resource Checks)**: `ResourceValidator` (`hierachain/error_mitigation/resource_validator.py`) consolidates `_check_cpu_usage()`/`_check_memory_usage()`/`_check_disk_usage()` into a single CPU/memory/disk loop with identical violation strings and advisory-only `resource_capacity_recommendation` emission (`auto_scale` opt-in, disk excluded), dropping the unused `cast` import — previously three duplicated private helpers.
 
     * 2026-10-05
 
