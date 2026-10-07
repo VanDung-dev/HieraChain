@@ -83,9 +83,10 @@ class OrderingStorageHandler:
     """Manages persistent storage and caching for blocks and events"""
     def __init__(self, config: dict[str, Any]):
         self.config = config
-        self.trusted_public_keys = (
-            config.get("trusted_public_keys")
-            if config.get("trusted_public_keys") is not None
+        trusted_public_keys = config.get("trusted_public_keys")
+        self.trusted_public_keys: dict[str, bytes] = (
+            trusted_public_keys
+            if trusted_public_keys is not None
             else load_trusted_block_keys(settings.BLOCK_TRUSTED_KEYS_FILE)
         )
         db_url = config.get("db_url", "")
@@ -136,14 +137,16 @@ class OrderingStorageHandler:
         if self.last_block is None or block.index >= self.last_block.index:
             self.last_block = block
         
-        # Calculate block latency for metrics before clearing
+        # Consume timing state only for events in the persisted block.
         current_time = time.time()
-        block_latency = sum(
-            current_time - e.received_at for e in self.processed_events.values()
-        )
-        event_count = len(self.processed_events)
-        self.processed_events.clear()
-        return event_count, block_latency
+        block_latency = 0.0
+        for event in block_data["events"]:
+            event_id = event.get("event_id")
+            if isinstance(event_id, str):
+                pending = self.processed_events.pop(event_id, None)
+                if pending is not None:
+                    block_latency += current_time - pending.received_at
+        return len(block_data["events"]), block_latency
 
     def get_blocks(self, start_index: int) -> list[Block]:
         start_index = max(start_index, 0)
