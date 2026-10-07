@@ -5,6 +5,8 @@ on:
     branches: [main, develop]
     paths:
       - 'hierachain/**'
+      - 'docker/**'
+      - 'scripts/benchmark_throughput.py'
       - 'tests/**'
       - '.github/workflows/test.yml'
       - 'pyproject.toml'
@@ -15,6 +17,8 @@ on:
     branches: [main, develop]
     paths:
       - 'hierachain/**'
+      - 'docker/**'
+      - 'scripts/benchmark_throughput.py'
       - 'tests/**'
       - '.github/workflows/test.yml'
       - 'pyproject.toml'
@@ -43,19 +47,28 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          python -m pip install uv
+          uv sync --frozen --extra dev
 
       - name: Run unit tests
-        run: pytest tests/unit -v --junitxml=test-results-unit.xml
+        run: |
+          for test_file in $(find tests/unit -name 'test_*.py' | sort); do
+            uv run --frozen --extra dev python -m pytest "$test_file" -v --junitxml="test-results-unit/${test_file//\//_}.xml"
+          done
 
       - name: Run integration tests
         if: success() || failure()
-        run: pytest tests/integration -v --junitxml=test-results-integration.xml
+        run: |
+          for test_file in $(find tests/integration -name 'test_*.py' | sort); do
+            uv run --frozen --extra dev python -m pytest "$test_file" -v --junitxml="test-results-integration/${test_file//\//_}.xml"
+          done
 
       - name: Run scenario tests
         if: success() || failure()
-        run: pytest tests/scenarios -v --junitxml=test-results-scenarios.xml
+        run: |
+          for test_file in $(find tests/scenarios -name 'test_*.py' | sort); do
+            uv run --frozen --extra dev python -m pytest "$test_file" -v --junitxml="test-results-scenarios/${test_file//\//_}.xml"
+          done
 
       - name: Upload test results
         if: always()
@@ -63,11 +76,95 @@ jobs:
         with:
           name: test-results-${{ matrix.python-version }}
           path: |
-            test-results-unit.xml
-            test-results-integration.xml
-            test-results-scenarios.xml
+            test-results-unit/
+            test-results-integration/
+            test-results-scenarios/
             .pytest_cache/
           retention-days: 7
+
+  backend-contracts:
+    name: Required PostgreSQL and Redis contracts
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: ${{ github.run_id }}
+          POSTGRES_DB: hrc_contracts
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7.4-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    env:
+      HRC_ENV: test
+      HRC_AUTH_ENABLED: 'false'
+      PGPASSWORD: ${{ github.run_id }}
+      HRC_TEST_POSTGRES_URL: postgresql://postgres:${{ github.run_id }}@localhost:5432/hrc_contracts
+      HRC_P2_TEST_POSTGRES_URL: postgresql://postgres:${{ github.run_id }}@localhost:5432/hrc_contracts
+      HRC_TEST_REDIS_PORT: '6379'
+      HRC_P2_TEST_REDIS_URL: redis://localhost:6379/13
+      HRC_TEST_AUDIT_MANIFEST_URL: postgresql://postgres:${{ github.run_id }}@localhost:5432/hrc_manifest
+      HRC_P2_TEST_MANIFEST_WRITE_URL: postgresql://manifest_writer:${{ github.run_id }}@localhost:5432/hrc_manifest_roles
+      HRC_P2_TEST_MANIFEST_READ_URL: postgresql://manifest_reader:${{ github.run_id }}@localhost:5432/hrc_manifest_roles
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install locked dependencies
+        run: |
+          python -m pip install uv
+          uv sync --frozen --extra dev
+      - name: Initialize isolated CLI and audit databases
+        run: |
+          uv run --frozen --extra dev python - <<'PY'
+          import os
+          import psycopg
+          from psycopg import sql
+          url = os.environ['HRC_TEST_POSTGRES_URL']
+          with psycopg.connect(url, autocommit=True) as connection:
+              for name in ('hrc_cli', 'hrc_manifest', 'hrc_manifest_roles'):
+                  connection.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(name)))
+              for role in ('manifest_writer', 'manifest_reader'):
+                  connection.execute(sql.SQL('CREATE ROLE {} LOGIN PASSWORD {}').format(
+                      sql.Identifier(role), sql.Literal(os.environ['PGPASSWORD'])))
+          for name in ('hrc_manifest', 'hrc_manifest_roles'):
+              with psycopg.connect(url.replace('/hrc_contracts', '/' + name)) as connection:
+                  connection.execute('CREATE TABLE public.audit_event_digests (event_id TEXT PRIMARY KEY, digest TEXT NOT NULL)')
+                  if name == 'hrc_manifest_roles':
+                      connection.execute('GRANT USAGE ON SCHEMA public TO manifest_writer, manifest_reader')
+                      connection.execute('GRANT INSERT ON public.audit_event_digests TO manifest_writer')
+                      connection.execute('GRANT SELECT ON public.audit_event_digests TO manifest_reader')
+          PY
+      - name: Run required backend files sequentially
+        run: |
+          for test_file in \
+            tests/unit/core/test_block_event_ownership.py \
+            tests/integration/test_bulk_storage.py \
+            tests/integration/test_registry_multiworker.py \
+            tests/integration/test_live_backends.py \
+            tests/integration/test_redis_adapter_integration.py \
+            tests/integration/test_audit_manifest_postgres.py \
+            tests/integration/test_audit_manifest_roles.py; do
+            uv run --frozen --extra dev python -m pytest "$test_file" -v --fail-on-skip --junitxml="test-results-backends/${test_file//\//_}.xml"
+          done
+      - name: Verify CLI against its own empty database
+        env:
+          HRC_TEST_POSTGRES_URL: postgresql://postgres:${{ github.run_id }}@localhost:5432/hrc_cli
+        run: >-
+          uv run --frozen --extra dev python -m pytest tests/integration/test_cli_postgres.py
+          -v --fail-on-skip --junitxml=test-results-backends/cli.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-backends
+          path: test-results-backends/
 
   lint:
     name: Lint
@@ -110,15 +207,21 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install mypy
+      - name: Install locked development dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install mypy types-requests
+          python -m pip install uv
+          uv sync --frozen --extra dev
 
       - name: Run type checking
-        run: mypy hierachain > type-check-results.txt 2>&1 || true
+        run: >-
+          uv run --frozen --extra dev ty check
+          hierachain/serialization.py hierachain/core/block.py hierachain/core/merkle_tree.py
+          hierachain/consensus/ordering/storage.py hierachain/consensus/ordering/metrics.py
+          hierachain/consensus/ordering/block_builder.py
+          > type-check-results.txt 2>&1
 
       - name: Upload type check results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: type-check-results
