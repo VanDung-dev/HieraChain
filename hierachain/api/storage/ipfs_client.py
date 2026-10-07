@@ -448,7 +448,7 @@ class IPFSClient:
         """
         try:
             self._ensure_connected()
-            resp = self.client.post(f"/api/v0/object/stat?arg={cid}")
+            resp = self.client.post("/api/v0/files/stat", params={"arg": f"/ipfs/{cid}"})
             return resp.is_success
         except (IPFSError, httpx.HTTPError):
             logger.debug("Content not available", cid=cid)
