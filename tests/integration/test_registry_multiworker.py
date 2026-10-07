@@ -32,9 +32,9 @@ def managers(
 ) -> Iterator[tuple[HierarchyManager, HierarchyManager]]:
     monkeypatch.chdir(tmp_path)
     backend = request.param
-    def cleanup() -> None:
-        pass
     if backend == "sqlite":
+        def cleanup() -> None:
+            pass
         def factory() -> Any:
             return SQLiteAdapter(str(tmp_path / "registry.db"))
     elif backend == "postgres":

@@ -213,10 +213,9 @@ def test_integrity_query_fails_closed_on_unverifiable_archive(
     event = _event("event-one", 1.0, "original")
     assert storage.store_event(event)
     hashes = {event.event_id: event.calculate_hash()}
-    def reader() -> dict[str, str]:
-        return hashes
-
     if failure == "archive_tamper":
+        def reader() -> dict[str, str]:
+            return hashes
         path = tmp_path / f"audit_{datetime.fromtimestamp(event.timestamp):%Y-%m-%d}.jsonl"
         payload = json.loads(path.read_text(encoding="utf-8"))
         payload["description"] = "changed"

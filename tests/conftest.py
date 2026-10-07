@@ -31,6 +31,17 @@ if _PROJECT_ROOT not in sys.path:
 _DATA_DIR = os.path.join(_PROJECT_ROOT, "data")
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption("--fail-on-skip", action="store_true", help="Fail required backend jobs on skipped tests")
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    if session.config.getoption("--fail-on-skip"):
+        reporter = session.config.pluginmanager.getplugin("terminalreporter")
+        if reporter is not None and reporter.stats.get("skipped"):
+            session.exitstatus = pytest.ExitCode.TESTS_FAILED
+
+
 @pytest.fixture
 def isolated_chain_storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Use per-case SQLite and journals for backend-independent chain tests."""
