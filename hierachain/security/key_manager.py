@@ -13,7 +13,10 @@ import time
 import warnings
 from typing import Any
 
-from hierachain.adapters.database.auth_state import RedisRevocationStore, SQLiteRevocationStore
+from hierachain.adapters.database.auth_state import (
+    RedisRevocationStore,
+    SQLiteRevocationStore,
+)
 from hierachain.core.cache import AdvancedCache
 from hierachain.security.secure_logging import SecureLogger
 from hierachain.serialization import dumps_json, loads_json

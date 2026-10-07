@@ -15,7 +15,10 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from hierachain.adapters.database.redis_rate_limiter import RateLimiterBackendError, RedisRateLimiter
+from hierachain.adapters.database.redis_rate_limiter import (
+    RateLimiterBackendError,
+    RedisRateLimiter,
+)
 
 logger = logging.getLogger(__name__)
 

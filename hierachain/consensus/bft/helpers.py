@@ -14,11 +14,11 @@ from typing import Any
 
 from hierachain.config.settings import settings
 from hierachain.consensus.bft.types import BFTMessage, ConsensusState, MessageType
-from hierachain.serialization import dumps_canonical_json
 from hierachain.error_mitigation.consensus_validator import ConsensusValidator
 from hierachain.error_mitigation.error_classifier import ErrorClassifier
 from hierachain.security.security_utils import verify_signature
 from hierachain.security.verify.zk_verifier import ZKVerifier
+from hierachain.serialization import dumps_canonical_json
 
 logger = logging.getLogger(__name__)
 

@@ -13,7 +13,10 @@ import threading
 import time
 from pathlib import Path
 
-from hierachain.adapters.database.auth_state import RedisLockoutStore, SQLiteLockoutStore
+from hierachain.adapters.database.auth_state import (
+    RedisLockoutStore,
+    SQLiteLockoutStore,
+)
 from hierachain.security.secure_logging import get_security_logger
 from hierachain.serialization import dumps_json, loads_json
 
