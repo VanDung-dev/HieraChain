@@ -76,6 +76,8 @@ Certifier mặc định giữ 10.000 kết quả gần nhất (`EventCertifier(m
 
 ### 4. Chi phí commit và liên chuỗi
 
+`events_committed` và `average_batch_size` chỉ đếm sự kiện trong block đã lưu thành công. Latency dùng thời điểm nhận của các sự kiện đó; trạng thái đo thời gian của sự kiện còn chờ trong batch khác được giữ lại. `batch_size` của processor có thể khác `block_size` của block mà không đếm sự kiện chưa commit.
+
 Gán block index, liên kết previous hash, ký và commit storage vẫn được tuần tự hóa theo từng Ordering Service. Xác minh chữ ký giữ batch thread pool và các kiểm tra certification hiện có. Coordinator 2PC giữ record pha bền vững và đọc lại trước khi commit participant; quyết định COMMIT không rõ kết quả vẫn ở trạng thái nghi vấn và không cho phép rollback. Giảm đọc lại journal không loại bỏ các ranh giới toàn vẹn này hay biến ACK nhận event thành block finality. Các chain độc lập có thể chia tải bằng journal owner riêng; gom block không gom ACK lưu bền vững của event.
 
 ---

@@ -44,6 +44,12 @@ python -m pytest tests -v
 
 Consensus integration, 2PC, data-flow and recovery tests use per-case temporary SQLite databases and journals. They do not require the PostgreSQL service from the application's `.env`; dedicated live-backend tests exercise PostgreSQL.
 
+### Required CI gates
+
+CI installs `uv.lock` with `uv sync --frozen --extra dev` and runs test files sequentially. A separate PostgreSQL 16/Redis 7.4 job provisions isolated databases and separate audit-manifest roles, then uses `--fail-on-skip` for its required backend contracts. Local backend tests remain optional when their service URLs are absent; IPFS daemon checks need a separate running daemon.
+
+The required `ty` gate covers serialization, core block/Merkle handling and ordering storage, metrics and block building. Other modules are not covered by this gate. The older mypy ignore settings do not apply to it.
+
 ### Durable Throughput Benchmark in Docker
 
 Run the benchmark from the current source tree with PostgreSQL 16, 1 CPU,
@@ -82,6 +88,8 @@ journal under `/app/data`. Journal fsync is always enabled. Override
 ### Docker Stress Testing
 
 Production stress requires `HRC_API_KEY` in the root `.env` or environment, using a key already provisioned in `HRC_API_KEYS_SOURCE_FILE` with `chains`, `events`, and `proofs` permissions (or `all`). Never paste the key into logs or reports. The launcher checks that a key is configured before deployment; pytest checks authenticated chain access on every node before running tests. Missing keys, 401/403/429 responses, and unreachable nodes stop the session. HTTP and WebSocket clients use the same key and `HRC_API_KEY_NAME` (default `X-API-Key`).
+
+The Docker source stage exports dependency constraints from `uv.lock`; the production stage installs the wheel and test tools under those constraints and runs `pip check`. Rebuild the image after changing the lockfile.
 
 After source changes, rebuild the wheel and image. The wheel build clears generated `build/` so deleted modules cannot survive in setuptools' cache:
 

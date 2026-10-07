@@ -31,7 +31,15 @@ Provides recommendations for achieving good performance when storing/processing 
 
 1. **Write 10k events and measure time**: Run basic load test.
 2. **Adjust configuration**: Try changing the ordering batch settings; tune cache instances only where the measured workload uses them.
-3. **Compare results**: Measure throughput (events/sec) and latency (p50/p95).
+3. **Compare results**: Measure committed-event throughput and latency (p95/p99), alongside rejected/unfinished events, batch wait, durability and I/O cost.
+
+The signed-event benchmark uses the same implementation locally and in Docker:
+
+```bash
+python -m scripts.benchmark_throughput --events 10000 --batch-size 100
+```
+
+Configure the node signing identity and trusted keys, and use an isolated database and journal through `HRC_BENCHMARK_DB_URL` and `HRC_BENCHMARK_JOURNAL_DIR`. The Docker wrapper requires PostgreSQL. The result reports committed events per second, rejected/unfinished counts, p95/p99, a 0.5-second batch timeout and the journal/storage durability boundary. Rejections or a 60-second processing timeout make the command fail. Latency measures when the client observes a committed block, including synchronous submission and block-draining delays; it is not an internal database commit timestamp. This benchmark does not measure I/O cost or establish a production SLA.
 
 ## System Observation
 

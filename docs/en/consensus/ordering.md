@@ -76,6 +76,8 @@ The certifier retains the most recent 10,000 results by default (`EventCertifier
 
 ### 4. Commit and cross-chain costs
 
+`events_committed` and `average_batch_size` count only events in successfully persisted blocks. Latency uses the receipt times of those events; timing state for events still waiting in another batch is retained. Processor `batch_size` can differ from block `block_size` without counting uncommitted events.
+
 Block index assignment, previous-hash linkage, signing and storage commitment remain serialized per Ordering Service. Signature verification retains the existing batch thread pool and certification checks. The 2PC coordinator keeps durable phase records and read-back before participant commits; uncertain COMMIT decisions remain in doubt and cannot trigger rollback. Reducing journal rereads does not remove these integrity boundaries or imply that an event acceptance ACK is block finality. Independent chains can partition load with separate journal owners; batching blocks does not batch event durability ACKs.
 
 ---

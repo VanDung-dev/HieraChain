@@ -44,6 +44,12 @@ python -m pytest tests -v
 
 Các test integration consensus, 2PC, luồng dữ liệu và recovery dùng SQLite và journal trong thư mục tạm riêng cho từng test. Chúng không yêu cầu dịch vụ PostgreSQL trong `.env` của ứng dụng; test live-backend chuyên biệt kiểm tra PostgreSQL.
 
+### Các cổng kiểm tra CI bắt buộc
+
+CI cài theo `uv.lock` bằng `uv sync --frozen --extra dev` và chạy từng file test tuần tự. Job PostgreSQL 16/Redis 7.4 riêng tạo database cô lập và các role audit-manifest tách biệt, sau đó dùng `--fail-on-skip` cho những contract backend bắt buộc. Test backend cục bộ vẫn có thể bỏ qua khi thiếu URL dịch vụ; kiểm tra daemon IPFS cần daemon đang chạy riêng.
+
+Cổng `ty` bắt buộc kiểm tra serialization, block/Merkle lõi và storage, metrics, block building của ordering. Các module khác chưa nằm trong cổng này. Cấu hình bỏ qua lỗi mypy cũ không áp dụng cho cổng này.
+
 ### Benchmark throughput bền vững bằng Docker
 
 Chạy benchmark từ source hiện tại với PostgreSQL 16, giới hạn 1 CPU, 1 GiB RAM
@@ -81,6 +87,8 @@ Profile này khởi động PostgreSQL 16 riêng và lưu journal append-only t�
 ### Kiểm thử Áp lực với Docker
 
 Stress ở chế độ production cần `HRC_API_KEY` trong `.env` gốc hoặc môi trường, dùng key đã được cấp trong `HRC_API_KEYS_SOURCE_FILE` với quyền `chains`, `events`và `proofs` (hoặc `all`). Không đưa key vào log hay báo cáo. Launcher kiểm tra có cấu hình key trước triển khai; pytest kiểm tra truy cập chain có xác thực trên từng node trước khi chạy test. Thiếu key, phản hồi 401/403/429 hoặc node không kết nối được sẽ dừng phiên test. Client HTTP và WebSocket dùng cùng key và `HRC_API_KEY_NAME` (mặc định `X-API-Key`).
+
+Stage source của Docker xuất constraint dependency từ `uv.lock`; stage production cài wheel và công cụ test theo constraint đó rồi chạy `pip check`. Build lại image sau khi đổi lockfile.
 
 Sau khi sửa source, build lại wheel và image. Lệnh build wheel xóa thư mục sinh tự động `build/` để module đã xóa không còn sót trong cache setuptools:
 

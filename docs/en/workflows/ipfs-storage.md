@@ -71,6 +71,8 @@ sequenceDiagram
 
 ## Error handling: IPFS unavailable
 
+`IPFSClient.is_available(cid)` checks `/api/v0/files/stat` with `arg=/ipfs/<cid>`. It returns `False` for unsuccessful responses or connection failures; it does not use the removed `/api/v0/object/stat` endpoint.
+
 ```mermaid
 flowchart LR
     CALL["upload_json(data)"]
