@@ -6,6 +6,7 @@ picklable hash functions for multiprocessing support.
 """
 
 import hashlib
+from collections.abc import Sequence
 from typing import Any
 
 from hierachain.serialization import dumps_canonical_json
@@ -51,9 +52,9 @@ class MerkleTree:
 
     def __init__(
         self,
-        data_list: list[str | dict[str, Any]] | None = None,
+        data_list: Sequence[str | dict[str, Any]] | None = None,
         leaves: list[str] | None = None
-    ):
+    ) -> None:
         if leaves is not None:
             self.leaves = leaves
         elif data_list is not None:
