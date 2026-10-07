@@ -116,7 +116,11 @@ icon: material/history
 
         * **Cluster**: Removed `StateSyncManager` (`hierachain/cluster/state_sync_manager.py`) and associated exports from `hierachain/cluster/__init__.py`.
 
-??? note "Improvements (54)"
+??? note "Improvements (55)"
+
+    * 2026-10-07
+
+        * **Core (Sequence Merkle Input)**: `MerkleTree.__init__` (`hierachain/core/merkle_tree.py`) widens `data_list` from `list[str | dict]` to `collections.abc.Sequence[str | dict]` and annotates `-> None`, accepting tuples and other read-only sequences without copying — previously required a concrete `list`.
 
     * 2026-10-06
 
@@ -214,7 +218,12 @@ icon: material/history
         * **Consensus (Ordering Service)**: Added capacity bounding for `event_pool` using `Settings.EVENT_POOL_MAX_SIZE` in `hierachain/consensus/ordering/service.py` to prevent unbounded memory growth, and added maintenance mode check in `submit_event` to wait for active status (`wait_for_active()`) and reject event submissions when not active.
         * **API (Ledger Events)**: Updated `/api/ledger/events` (`hierachain/api/ledger/events.py`) in `add_event` to return the authoritative `event_id` directly from `sub_chain.add_event(event)` instead of generating a synthetic positional identifier.
 
-??? warning "Fix (20)"
+??? warning "Fix (22)"
+
+    * 2026-10-07
+
+        * **Ordering (Committed-event Latency Accounting)**: `OrderingStorageHandler.save_block()` (`hierachain/consensus/ordering/storage.py`) consumes `processed_events` timing entries only for `event_id`s in the persisted block, retaining timings for events still pending in another batch, and types `trusted_public_keys` as `dict[str, bytes]` with the same configured/file-backed fallback — previously cleared the whole timing map on every commit.
+        * **Storage (IPFS Availability Check)**: `IPFSClient.is_available()` (`hierachain/api/storage/ipfs_client.py`) probes `/api/v0/files/stat` with `arg=/ipfs/<cid>` instead of the removed `/api/v0/object/stat?arg=<cid>`, returning `False` on unsuccessful responses or connection failures — previously called the unsupported endpoint.
 
     * 2026-10-04
 
