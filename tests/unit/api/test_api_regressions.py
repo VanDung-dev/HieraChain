@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from hierachain.api.business import contracts, private_data, state
 from hierachain.api.ledger import blocks, chains, depds
+from hierachain.config.settings import settings
 from hierachain.hierarchical.hierarchy_manager import HierarchyManager
 from hierachain.security.key_manager import KeyManager
 from hierachain.security.verify.api_key_verifier import APIKeyVerifier
@@ -17,6 +18,7 @@ from hierachain.security.verify.api_key_verifier import APIKeyVerifier
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(settings, "DATABASE_URL", f"sqlite:///{tmp_path / 'ordering.db'}")
     monkeypatch.setattr(HierarchyManager, "_create_storage", staticmethod(lambda: None))
     manager = HierarchyManager()
     monkeypatch.setattr(depds, "_hierarchy_manager", manager)
