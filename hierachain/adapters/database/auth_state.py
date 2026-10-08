@@ -11,6 +11,7 @@ from pathlib import Path
 
 
 def _key_digest(api_key: str) -> str:
+    """Return a stable API-key denylist index, not a stored password verifier."""
     return hashlib.sha256(api_key.encode()).hexdigest()
 
 
