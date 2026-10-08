@@ -8,10 +8,12 @@ including key validation, revocation checks, permissions, and key creation.
 import sys
 import time
 from collections.abc import MutableMapping
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
 
+from hierachain.adapters.database.auth_state import SQLiteRevocationStore, _key_digest
 from hierachain.security import KeyManager, initialize_default_keys
 
 
@@ -91,6 +93,29 @@ def test_is_revoked_with_non_revoked_key():
 
     result = km.is_revoked(non_revoked_key)
     assert result is False
+
+
+def test_revocation_digest_cannot_authenticate_and_survives_restart(tmp_path: Path) -> None:
+    path = tmp_path / "revocations.db"
+    manager = KeyManager(revocation_store=SQLiteRevocationStore(str(path)))
+    key = manager.create_key("same-user", ["events"])
+    other_key = manager.create_key("same-user", ["events"])
+    manager.cache_key(key)
+    assert manager.is_valid(key)
+    assert manager.has_permission(key, "events")
+    digest = _key_digest(key)
+    assert not manager.is_valid(digest)
+    assert not manager.has_permission(digest, "events")
+
+    manager.revoke_key(key)
+    restarted = KeyManager(storage_backend=manager.storage, revocation_store=SQLiteRevocationStore(str(path)))
+    assert restarted.is_revoked(key)
+    assert not restarted.is_valid(key)
+    assert not restarted.has_permission(key, "events")
+    assert restarted.is_valid(other_key)
+    assert restarted.has_permission(other_key, "events")
+    assert digest.encode() in path.read_bytes()
+    assert key.encode() not in path.read_bytes()
 
 
 def test_has_permission_with_valid_permission():
